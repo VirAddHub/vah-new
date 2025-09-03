@@ -1,0 +1,6 @@
+
+ests
+__mocks__
+coverage
+*.spec.js
+*.test.js
