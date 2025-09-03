@@ -34,6 +34,10 @@ const ORIGIN = (process.env.APP_ORIGIN || 'http://localhost:3000')
 const APP_URL = ORIGIN[0]; // for links in emails
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
 const JWT_COOKIE = process.env.JWT_COOKIE || 'vah_session';
+const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
+// Render/WeWeb on different domains? use None+Secure:
+const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
+
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
 const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'vah.db');
@@ -623,8 +627,14 @@ function issueToken(user, extra = {}) {
 }
 function setSession(res, user) {
     const token = issueToken(user);
-    res.cookie(JWT_COOKIE, token, { httpOnly: true, sameSite: NODE_ENV === 'production' ? 'strict' : 'lax', secure: NODE_ENV === 'production', maxAge: 7 * 24 * 3600 * 1000 });
+    res.cookie(JWT_COOKIE, token, {
+        httpOnly: true,
+        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE, // 'lax' | 'strict' | 'none'
+        secure: COOKIE_SECURE,
+        maxAge: 7 * 24 * 3600 * 1000
+    });
 }
+
 function auth(req, res, next) {
     const bearer = (req.headers.authorization || '').split(' ');
     const token = (bearer[0] === 'Bearer' && bearer[1]) || req.cookies[JWT_COOKIE];
@@ -857,9 +867,10 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
 app.post('/api/auth/logout', auth, (req, res) => {
     res.clearCookie(JWT_COOKIE, {
         httpOnly: true,
-        sameSite: NODE_ENV === 'production' ? 'strict' : 'lax',
-        secure: NODE_ENV === 'production'
+        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
+        secure: COOKIE_SECURE
     });
+
     logActivity(req.user.id, 'logout', null, null, req);
     res.status(204).end();
 });
