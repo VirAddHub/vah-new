@@ -110,11 +110,6 @@ const authLimiter =
         : createRateLimit(15 * 60 * 1000, 20, 'Too many authentication attempts');
 
 // Apply global rate limiter
-app.use(globalLimiter);
-
-
-app.use(globalLimiter);
-
 
 app.use(globalLimiter);
 app.use(compression());
