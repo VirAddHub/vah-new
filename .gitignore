@@ -1,0 +1,16 @@
+/node_modules/
+.env
+.env.*
+!.env.example
+logs/
+*.log
+vah.db
+vah.db-*
+*.sqlite
+*.sqlite-*
+coverage/
+.DS_Store
+.vscode/
+.history/
+_archive/
+*.pid
