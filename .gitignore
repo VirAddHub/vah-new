@@ -33,3 +33,11 @@ signup.json
 .env
 .env.*
 *.local
+
+# Local artifacts
+cookie.txt
+signup.json
+
+# Local artifacts
+cookie.txt
+signup.json
