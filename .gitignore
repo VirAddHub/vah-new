@@ -41,3 +41,6 @@ signup.json
 # Local artifacts
 cookie.txt
 signup.json
+
+# Next.js build output
+apps/web/.next/
