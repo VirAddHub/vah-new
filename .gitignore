@@ -25,3 +25,11 @@ coverage/
 .env.test
 vah.db*
 logs/
+# local debug/test files
+cookie.txt
+signup.json
+
+# env
+.env
+.env.*
+*.local
