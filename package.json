@@ -43,5 +43,9 @@
     "scripts",
     "README.md",
     "package.json"
-  ]
+  ],
+  "engines": {
+    "node": "^18 || ^20 || ^22",
+    "npm": ">=10"
+  }
 }
