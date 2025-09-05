@@ -1,13 +1,12 @@
+// VirtualAddressHub Backend — Next.js-ready Express API
+
 require('dotenv').config({
     path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
     override: true,
 });
+
 const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
 const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
-// VirtualAddressHub Backend — Production Ready
-// Install deps:
-// npm i express better-sqlite3 bcryptjs cookie-parser cors nanoid jsonwebtoken joi helmet express-rate-limit winston compression express-validator morgan uuid dotenv
-// Run: node server.js
 
 const express = require('express');
 const Database = require('better-sqlite3');
@@ -28,22 +27,28 @@ const morgan = require('morgan');
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Comma-separated list of allowed web app origins (Next dev + prod)
 const ORIGIN = (process.env.APP_ORIGIN || 'http://localhost:3000')
     .split(',')
-    .map(o => o.trim());
-const APP_URL = ORIGIN[0]; // for links in emails
+    .map(o => o.trim())
+    .filter(Boolean);
+
+const APP_URL = ORIGIN[0] || 'http://localhost:3000'; // For links in emails
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
 const JWT_COOKIE = process.env.JWT_COOKIE || 'vah_session';
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
-// Render/WeWeb on different domains? use None+Secure:
 const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
 
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
 const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'vah.db');
 
+// 🔧 Fixed env variable name (remove CCERTIFICATE_ typo)
 const CERTIFICATE_BASE_URL =
-    process.env.CCERTIFICATE_BASE_URL || process.env.CERTIFICATE_BASE_URL || 'https://certificates.virtualaddresshub.co.uk';
+    process.env.CERTIFICATE_BASE_URL || 'https://certificates.virtualaddresshub.co.uk';
+
 const ROYALMAIL_TRACK_URL =
     process.env.ROYALMAIL_TRACK_URL || 'https://www.royalmail.com/track-your-item#/tracking-results';
 
@@ -63,7 +68,7 @@ const logger = winston.createLogger({
     defaultMeta: { service: 'vah-backend' },
     transports: [
         new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'logs/combined.log' })
+        new winston.transports.File({ filename: 'logs/combined.log' }),
     ],
 });
 if (NODE_ENV !== 'production') {
@@ -71,21 +76,24 @@ if (NODE_ENV !== 'production') {
 }
 
 // ===== SECURITY / MIDDLEWARE =====
-app.use(helmet({
-    contentSecurityPolicy: NODE_ENV === 'production'
-        ? {
-            useDefaults: true,
-            directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
-                imgSrc: ["'self'", "data:", "https:"],
-            },
-        }
-        : false, // easier dev
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-}));
+app.use(
+    helmet({
+        contentSecurityPolicy:
+            NODE_ENV === 'production'
+                ? {
+                    useDefaults: true,
+                    directives: {
+                        defaultSrc: ["'self'"],
+                        scriptSrc: ["'self'"],
+                        styleSrc: ["'self'", "'unsafe-inline'"],
+                        imgSrc: ["'self'", 'data:', 'https:'],
+                    },
+                }
+                : false, // Easier dev
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+    })
+);
 
 // ===== Rate limiting =====
 const createRateLimit = (windowMs, max, message) =>
@@ -100,38 +108,43 @@ const createRateLimit = (windowMs, max, message) =>
         },
     });
 
-// In tests we disable rate limiting entirely to avoid flakiness
 const noopLimiter = (req, res, next) => next();
 
-const globalLimiter =
-    NODE_ENV === 'test'
-        ? noopLimiter
-        : createRateLimit(15 * 60 * 1000, 1000, 'Too many requests');
-
-const authLimiter =
-    NODE_ENV === 'test'
-        ? noopLimiter
-        : createRateLimit(15 * 60 * 1000, 20, 'Too many authentication attempts');
+const globalLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 1000, 'Too many requests');
+const authLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 20, 'Too many authentication attempts');
 
 // Apply global rate limiter
-
 app.use(globalLimiter);
 app.use(compression());
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 
-const corsOptions = {
-    origin: (origin, cb) => {
-        if (!origin || ORIGIN.includes(origin)) cb(null, true);
-        else cb(new Error('Not allowed by CORS'));
+// ===== CORS (Next.js oriented) =====
+// In the recommended setup, your Next.js app acts as the BFF and calls this API server-to-server.
+// We still allow browser calls from the specified origins for flexibility (dev tools, admin panels, etc).
+const ALLOWED_ORIGINS = [...ORIGIN, process.env.APP_ORIGIN_STAGING || ''].filter(Boolean);
+
+const CORS_OPTIONS = {
+    origin(origin, cb) {
+        // Allow server-to-server, health checks, curl, Postman (no Origin header)
+        if (!origin) return cb(null, true);
+        if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+        return cb(new Error(`Not allowed by CORS: ${origin}`));
     },
-    credentials: true,
-    optionsSuccessStatus: 200
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false, // We use Bearer tokens from the Next BFF; avoid cross-site cookies
+    optionsSuccessStatus: 204,
+    maxAge: 86400,
 };
-app.use(cors(corsOptions));
+
+app.use(cors(CORS_OPTIONS));
+app.options('*', cors(CORS_OPTIONS));
+
+// ===== Parsers & cookies =====
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
-// For secure cookies behind a proxy (Heroku/Render/Nginx)
+// For secure cookies behind a proxy (Render/Heroku/NGINX)
 if (NODE_ENV === 'production') app.set('trust proxy', 1);
 
 // ===== DB =====
@@ -149,186 +162,185 @@ try {
 }
 
 const bootstrapSQL = `
-CREATE TABLE IF NOT EXISTS user (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  name TEXT,
-  email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  first_name TEXT,
-  last_name TEXT,
-  forwarding_address TEXT,
-  kyc_status TEXT DEFAULT 'pending',
-  plan_status TEXT DEFAULT 'active',
-  one_drive_folder_url TEXT,
-  is_admin INTEGER DEFAULT 0,
-  kyc_updated_at INTEGER,
-  company_name TEXT,
-  companies_house_number TEXT,
-  sumsub_applicant_id TEXT,
-  sumsub_review_status TEXT,
-  sumsub_last_updated INTEGER,
-  sumsub_rejection_reason TEXT,
-  sumsub_webhook_payload TEXT,
-  plan_start_date INTEGER,
-  onboarding_step TEXT DEFAULT 'signup',
-  gocardless_customer_id TEXT,
-  gocardless_subscription_id TEXT,
-  mandate_id TEXT,
-  last_login_at INTEGER,
-  login_attempts INTEGER DEFAULT 0,
-  locked_until INTEGER,
-  updated_at INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
-
-CREATE TABLE IF NOT EXISTS mail_item (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  user_id INTEGER NOT NULL,
-  subject TEXT,
-  received_date TEXT,
-  scan_file_url TEXT,
-  file_size INTEGER,
-  forwarded_physically INTEGER DEFAULT 0,
-  notes TEXT,
-  forwarded_date TEXT,
-  forward_reason TEXT,
-  sender_name TEXT,
-  scanned INTEGER DEFAULT 0,
-  deleted INTEGER DEFAULT 0,
-  tag TEXT,
-  is_billable_forward INTEGER DEFAULT 0,
-  admin_note TEXT,
-  deleted_by_admin INTEGER DEFAULT 0,
-  action_log TEXT,
-  scanned_at INTEGER,
-  status TEXT DEFAULT 'received',
-  requested_at INTEGER,
-  physical_receipt_timestamp INTEGER,
-  physical_dispatch_timestamp INTEGER,
-  tracking_number TEXT,
-  updated_at INTEGER,
-  FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_mail_item_user ON mail_item(user_id);
-
-CREATE TABLE IF NOT EXISTS payment (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  user_id INTEGER NOT NULL,
-  gocardless_customer_id TEXT,
-  subscription_id TEXT,
-  status TEXT,
-  invoice_url TEXT,
-  mandate_id TEXT,
-  amount INTEGER,
-  currency TEXT DEFAULT 'GBP',
-  description TEXT,
-  payment_type TEXT DEFAULT 'subscription',
-  updated_at INTEGER,
-  FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS activity_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  user_id INTEGER,
-  action TEXT NOT NULL,
-  details TEXT,
-  mail_item_id INTEGER,
-  ip_address TEXT,
-  user_agent TEXT
-);
-
-CREATE TABLE IF NOT EXISTS admin_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  admin_user_id INTEGER NOT NULL,
-  action_type TEXT NOT NULL,
-  target_type TEXT,
-  target_id INTEGER,
-  details TEXT,
-  ip_address TEXT
-);
-
-CREATE TABLE IF NOT EXISTS forwarding_request (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  "user" INTEGER NOT NULL,
-  mail_item INTEGER NOT NULL,
-  requested_at INTEGER,
-  status TEXT DEFAULT 'pending',
-  payment INTEGER,
-  is_billable INTEGER DEFAULT 0,
-  billed_at INTEGER,
-  destination_name TEXT,
-  destination_address TEXT,
-  source TEXT,
-  cancelled_at INTEGER,
-  updated_at INTEGER,
-  FOREIGN KEY("user") REFERENCES user(id) ON DELETE CASCADE,
-  FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS mail_event (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  mail_item INTEGER NOT NULL,
-  actor_user INTEGER,
-  event_type TEXT NOT NULL,
-  details TEXT,
-  FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS webhook_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  type TEXT NOT NULL,
-  source TEXT NOT NULL,
-  raw_payload TEXT,
-  received_at INTEGER NOT NULL,
-  processed INTEGER DEFAULT 0,
-  error_message TEXT
-);
-
-CREATE TABLE IF NOT EXISTS password_reset (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  token TEXT UNIQUE NOT NULL,
-  created_at INTEGER NOT NULL,
-  expires_at INTEGER NOT NULL,
-  used INTEGER DEFAULT 0,
-  ip_address TEXT,
-  FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS plans (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  description TEXT,
-  price INTEGER NOT NULL,
-  currency TEXT DEFAULT 'GBP',
-  interval TEXT DEFAULT 'monthly',
-  features TEXT,
-  active INTEGER DEFAULT 1,
-  created_at INTEGER,
-  updated_at INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS impersonation_token (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  admin_user_id INTEGER NOT NULL,
-  target_user_id INTEGER NOT NULL,
-  token TEXT UNIQUE NOT NULL,
-  created_at INTEGER NOT NULL,
-  expires_at INTEGER NOT NULL,
-  used INTEGER DEFAULT 0,
-  ip_address TEXT
-);
-`;
+    CREATE TABLE IF NOT EXISTS user (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      name TEXT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      first_name TEXT,
+      last_name TEXT,
+      forwarding_address TEXT,
+      kyc_status TEXT DEFAULT 'pending',
+      plan_status TEXT DEFAULT 'active',
+      one_drive_folder_url TEXT,
+      is_admin INTEGER DEFAULT 0,
+      kyc_updated_at INTEGER,
+      company_name TEXT,
+      companies_house_number TEXT,
+      sumsub_applicant_id TEXT,
+      sumsub_review_status TEXT,
+      sumsub_last_updated INTEGER,
+      sumsub_rejection_reason TEXT,
+      sumsub_webhook_payload TEXT,
+      plan_start_date INTEGER,
+      onboarding_step TEXT DEFAULT 'signup',
+      gocardless_customer_id TEXT,
+      gocardless_subscription_id TEXT,
+      mandate_id TEXT,
+      last_login_at INTEGER,
+      login_attempts INTEGER DEFAULT 0,
+      locked_until INTEGER,
+      updated_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
+  
+    CREATE TABLE IF NOT EXISTS mail_item (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      subject TEXT,
+      received_date TEXT,
+      scan_file_url TEXT,
+      file_size INTEGER,
+      forwarded_physically INTEGER DEFAULT 0,
+      notes TEXT,
+      forwarded_date TEXT,
+      forward_reason TEXT,
+      sender_name TEXT,
+      scanned INTEGER DEFAULT 0,
+      deleted INTEGER DEFAULT 0,
+      tag TEXT,
+      is_billable_forward INTEGER DEFAULT 0,
+      admin_note TEXT,
+      deleted_by_admin INTEGER DEFAULT 0,
+      action_log TEXT,
+      scanned_at INTEGER,
+      status TEXT DEFAULT 'received',
+      requested_at INTEGER,
+      physical_receipt_timestamp INTEGER,
+      physical_dispatch_timestamp INTEGER,
+      tracking_number TEXT,
+      updated_at INTEGER,
+      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_mail_item_user ON mail_item(user_id);
+  
+    CREATE TABLE IF NOT EXISTS payment (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      gocardless_customer_id TEXT,
+      subscription_id TEXT,
+      status TEXT,
+      invoice_url TEXT,
+      mandate_id TEXT,
+      amount INTEGER,
+      currency TEXT DEFAULT 'GBP',
+      description TEXT,
+      payment_type TEXT DEFAULT 'subscription',
+      updated_at INTEGER,
+      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS activity_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      user_id INTEGER,
+      action TEXT NOT NULL,
+      details TEXT,
+      mail_item_id INTEGER,
+      ip_address TEXT,
+      user_agent TEXT
+    );
+  
+    CREATE TABLE IF NOT EXISTS admin_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      admin_user_id INTEGER NOT NULL,
+      action_type TEXT NOT NULL,
+      target_type TEXT,
+      target_id INTEGER,
+      details TEXT,
+      ip_address TEXT
+    );
+  
+    CREATE TABLE IF NOT EXISTS forwarding_request (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      "user" INTEGER NOT NULL,
+      mail_item INTEGER NOT NULL,
+      requested_at INTEGER,
+      status TEXT DEFAULT 'pending',
+      payment INTEGER,
+      is_billable INTEGER DEFAULT 0,
+      billed_at INTEGER,
+      destination_name TEXT,
+      destination_address TEXT,
+      source TEXT,
+      cancelled_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY("user") REFERENCES user(id) ON DELETE CASCADE,
+      FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS mail_event (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      mail_item INTEGER NOT NULL,
+      actor_user INTEGER,
+      event_type TEXT NOT NULL,
+      details TEXT,
+      FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS webhook_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      source TEXT NOT NULL,
+      raw_payload TEXT,
+      received_at INTEGER NOT NULL,
+      processed INTEGER DEFAULT 0,
+      error_message TEXT
+    );
+  
+    CREATE TABLE IF NOT EXISTS password_reset (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token TEXT UNIQUE NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used INTEGER DEFAULT 0,
+      ip_address TEXT,
+      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      price INTEGER NOT NULL,
+      currency TEXT DEFAULT 'GBP',
+      interval TEXT DEFAULT 'monthly',
+      features TEXT,
+      active INTEGER DEFAULT 1,
+      created_at INTEGER,
+      updated_at INTEGER
+    );
+  
+    CREATE TABLE IF NOT EXISTS impersonation_token (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_user_id INTEGER NOT NULL,
+      target_user_id INTEGER NOT NULL,
+      token TEXT UNIQUE NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used INTEGER DEFAULT 0,
+      ip_address TEXT
+    );
+  `;
 db.exec(bootstrapSQL);
-// Helpful indexes for perf on common filters/sorts
 try {
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
@@ -345,7 +357,6 @@ try {
 
 // --- lightweight auto-migrations for new columns ---
 function ensureColumn(table, column, type) {
-    // SQLite PRAGMA can't bind table name; safe here because table is hardcoded by us
     const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
     if (!cols.includes(column)) {
         logger.info(`Adding column ${table}.${column} (${type})`);
@@ -362,21 +373,21 @@ ensureColumn('mail_item', 'tracking_number', 'TEXT');
 ensureColumn('activity_log', 'ip_address', 'TEXT');
 ensureColumn('activity_log', 'user_agent', 'TEXT');
 
-// === Support Tickets (for support_received / support_closed) ===
+// === Support Tickets ===
 const supportSQL = `
-CREATE TABLE IF NOT EXISTS support_ticket (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER,
-  closed_at INTEGER,
-  user_id INTEGER NOT NULL,
-  subject TEXT NOT NULL,
-  message TEXT,
-  status TEXT DEFAULT 'open',
-  FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_support_ticket_user ON support_ticket(user_id);
-`;
+    CREATE TABLE IF NOT EXISTS support_ticket (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER,
+      closed_at INTEGER,
+      user_id INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      message TEXT,
+      status TEXT DEFAULT 'open',
+      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_support_ticket_user ON support_ticket(user_id);
+  `;
 db.exec(supportSQL);
 
 // ===== VALIDATION (JOI) =====
@@ -424,34 +435,29 @@ const schemas = {
         destination_address: joi.string().max(1000).allow('', null),
         is_billable: joi.boolean().optional(),
     }),
-
-    // 👇 NEW: create a support ticket (auth or via email for testing)
     createSupportTicket: joi.object({
         subject: joi.string().max(200).required(),
         message: joi.string().max(4000).allow('', null),
-        email: joi.string().email().optional() // allow when not authenticated (for testing/dev)
+        email: joi.string().email().optional(),
     }),
-
-    // 👇 NEW: close a support ticket (admin)
     closeSupportTicket: joi.object({
-        note: joi.string().max(1000).allow('', null)
+        note: joi.string().max(1000).allow('', null),
     }),
 };
 
-const validate = (schema) => (req, res, next) => {
+const validate = schema => (req, res, next) => {
     const { error, value } = schema.validate(req.body);
     if (error) {
-        return res.status(400).json({
-            error: 'Validation failed',
-            details: error.details[0].message,
-        });
+        return res.status(400).json({ error: 'Validation failed', details: error.details[0].message });
     }
     req.body = value;
     next();
 };
 
-// ===== ETag + DTO helpers (NEW) =====
-function toBool(n) { return n === 1 || n === true; }
+// ===== ETag + DTO helpers =====
+function toBool(n) {
+    return n === 1 || n === true;
+}
 function mapMailBooleans(row) {
     if (!row) return row;
     return {
@@ -478,29 +484,9 @@ function etagFor(obj) {
 const POSTMARK_FROM = process.env.POSTMARK_FROM || 'hello@virtualaddresshub.co.uk';
 const POSTMARK_FROM_NAME = process.env.POSTMARK_FROM_NAME || 'VirtualAddressHub';
 const POSTMARK_REPLY_TO = process.env.POSTMARK_REPLY_TO || '';
-const POSTMARK_MESSAGE_STREAM = process.env.POSTMARK_MESSAGE_STREAM || 'outbound';
 const POSTMARK_STREAM = process.env.POSTMARK_STREAM || process.env.POSTMARK_MESSAGE_STREAM || 'outbound';
 
-const POSTMARK_TEMPLATES = {
-    welcome: 'welcome-email',
-    password_reset: 'password-reset-email',
-    password_changed_confirmation: 'password-changed-confirmation',
-    kyc_submitted: 'kyc-submitted',
-    kyc_approved: 'kyc-approved',
-    kyc_rejected: 'kyc-rejected',
-    invoice_sent: 'invoice-sent',
-    payment_failed: 'payment-failed',
-    plan_cancelled: 'plan-cancelled',
-    mail_scanned: 'mail-scanned',
-    mail_forwarded: 'mail-forwarded',
-    mail_after_cancel: 'mail-received-after-cancellation',
-    support_received: 'support-request-received',
-    support_closed: 'support-request-closed',
-    account_closed: 'account-closed-data-removed',
-};
-
 async function sendTemplateEmail(templateAlias, to, model = {}, extra = {}) {
-    // If Postmark not configured or fetch missing, skip gracefully
     if (!POSTMARK_TOKEN || typeof fetch !== 'function') {
         logger.info('Email skipped (Postmark disabled or fetch unavailable).', { templateAlias, to });
         return;
@@ -510,10 +496,10 @@ async function sendTemplateEmail(templateAlias, to, model = {}, extra = {}) {
         const payload = {
             From: fromHeader,
             To: to,
-            MessageStream: POSTMARK_STREAM,  // <-- use the defined const
+            MessageStream: POSTMARK_STREAM,
             TemplateAlias: templateAlias,
             TemplateModel: model,
-            ...extra
+            ...extra,
         };
         if (POSTMARK_REPLY_TO) payload.ReplyTo = POSTMARK_REPLY_TO;
 
@@ -537,102 +523,31 @@ async function sendTemplateEmail(templateAlias, to, model = {}, extra = {}) {
     }
 }
 
-async function sendPostmarkEmail({
-    To,
-    TemplateAlias,       // e.g. 'welcome-email'
-    TemplateModel,       // object for template variables
-    TemplateId,          // optional numeric template ID (if you prefer ID over alias)
-    Subject,             // for non-template sends
-    HtmlBody,            // for non-template sends
-    TextBody,            // for non-template sends
-    MessageStream,       // override stream if needed
-    Cc,
-    Bcc,
-    Tag                  // optional tag for analytics
-}) {
-    if (!POSTMARK_TOKEN) {
-        logger.info('Postmark disabled – set POSTMARK_TOKEN to enable sending.', {
-            To,
-            Template: TemplateAlias || TemplateId || null,
-            Subject: Subject || null
-        });
-        return { skipped: true };
-    }
-
-    const fromHeader = POSTMARK_FROM_NAME ? `${POSTMARK_FROM_NAME} <${POSTMARK_FROM}>` : POSTMARK_FROM;
-    const base = {
-        From: fromHeader,
-        To,
-        MessageStream: MessageStream || POSTMARK_STREAM,
-    };
-    if (POSTMARK_REPLY_TO) base.ReplyTo = POSTMARK_REPLY_TO;
-    if (Cc) base.Cc = Cc;
-    if (Bcc) base.Bcc = Bcc;
-    if (Tag) base.Tag = Tag;
-
-    const usingTemplate = !!(TemplateAlias || TemplateId);
-    const endpoint = usingTemplate ? 'email/withTemplate' : 'email';
-
-    const payload = usingTemplate
-        ? { ...base, TemplateAlias, TemplateId, TemplateModel }
-        : { ...base, Subject, HtmlBody, TextBody };
-
-    try {
-        const resp = await fetch(`https://api.postmarkapp.com/${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'X-Postmark-Server-Token': POSTMARK_TOKEN,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-            const msg = json?.Message || `Postmark send failed (${resp.status})`;
-            throw new Error(msg);
-        }
-        logger.info('postmark sent', {
-            to: To,
-            template: TemplateAlias || TemplateId || null,
-            subject: Subject || null,
-            messageId: json.MessageID
-        });
-        return json;
-    } catch (e) {
-        logger.error('postmark send failed', {
-            error: String(e),
-            to: To,
-            template: TemplateAlias || TemplateId || null,
-            subject: Subject || null
-        });
-        throw e;
-    }
-}
-
-// ===== OTHER HELPERS (unchanged) =====
-const userRowToDto = (u) => { if (!u) return null; const { password, ...rest } = u; return rest; };
+// ===== OTHER HELPERS =====
+const userRowToDto = u => {
+    if (!u) return null;
+    const { password, ...rest } = u;
+    return rest;
+};
 
 // 🔧 TEST/ADMIN UTILS
-function findAnyAdmin() {
-    try {
-        return db.prepare('SELECT * FROM user WHERE is_admin = 1 OR role = "admin" ORDER BY created_at ASC LIMIT 1').get();
-    } catch {
-        return null;
-    }
-}
-
 function issueToken(user, extra = {}) {
     const payload = { id: user.id, is_admin: !!user.is_admin, ...extra };
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: extra.imp ? '10m' : '7d', issuer: 'virtualaddresshub', audience: 'vah-users' });
+    return jwt.sign(payload, JWT_SECRET, {
+        expiresIn: extra.imp ? '10m' : '7d',
+        issuer: 'virtualaddresshub',
+        audience: 'vah-users',
+    });
 }
 function setSession(res, user) {
     const token = issueToken(user);
     res.cookie(JWT_COOKIE, token, {
         httpOnly: true,
-        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE, // 'lax' | 'strict' | 'none'
+        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
         secure: COOKIE_SECURE,
-        maxAge: 7 * 24 * 3600 * 1000
+        maxAge: 7 * 24 * 3600 * 1000,
     });
+    return token; // return token so clients (Next BFF) can store/pass it as Bearer
 }
 
 function auth(req, res, next) {
@@ -654,21 +569,33 @@ function adminOnly(req, res, next) {
 }
 function logAdminAction(admin_user_id, action_type, target_type, target_id, details, req = null) {
     try {
-        db.prepare(`INSERT INTO admin_log (created_at, admin_user_id, action_type, target_type, target_id, details, ip_address)
-      VALUES (?,?,?,?,?,?,?)`).run(Date.now(), admin_user_id, action_type, target_type, target_id, JSON.stringify(details || {}), req?.ip || null);
-    } catch (e) { logger.error('logAdminAction failed', e); }
+        db.prepare(
+            `INSERT INTO admin_log (created_at, admin_user_id, action_type, target_type, target_id, details, ip_address)
+         VALUES (?,?,?,?,?,?,?)`
+        ).run(Date.now(), admin_user_id, action_type, target_type, target_id, JSON.stringify(details || {}), req?.ip || null);
+    } catch (e) {
+        logger.error('logAdminAction failed', e);
+    }
 }
 function logMailEvent(mail_item, actor_user, event_type, details = null) {
     try {
-        db.prepare(`INSERT INTO mail_event (created_at, mail_item, actor_user, event_type, details)
-      VALUES (?,?,?,?,?)`).run(Date.now(), mail_item, actor_user || null, event_type, details ? JSON.stringify(details) : null);
-    } catch (e) { logger.error('logMailEvent failed', e); }
+        db.prepare(
+            `INSERT INTO mail_event (created_at, mail_item, actor_user, event_type, details)
+         VALUES (?,?,?,?,?)`
+        ).run(Date.now(), mail_item, actor_user || null, event_type, details ? JSON.stringify(details) : null);
+    } catch (e) {
+        logger.error('logMailEvent failed', e);
+    }
 }
 function logActivity(user_id, action, details = null, mail_item_id = null, req = null) {
     try {
-        db.prepare(`INSERT INTO activity_log (created_at, user_id, action, details, mail_item_id, ip_address, user_agent)
-      VALUES (?,?,?,?,?,?,?)`).run(Date.now(), user_id || null, action, details ? JSON.stringify(details) : null, mail_item_id || null, req?.ip || null, req?.get('User-Agent') || null);
-    } catch (e) { logger.error('logActivity failed', e); }
+        db.prepare(
+            `INSERT INTO activity_log (created_at, user_id, action, details, mail_item_id, ip_address, user_agent)
+         VALUES (?,?,?,?,?,?,?)`
+        ).run(Date.now(), user_id || null, action, details ? JSON.stringify(details) : null, mail_item_id || null, req?.ip || null, req?.get('User-Agent') || null);
+    } catch (e) {
+        logger.error('logActivity failed', e);
+    }
 }
 function checkAccountLockout(email) {
     const row = db.prepare('SELECT login_attempts, locked_until FROM user WHERE email=?').get(email);
@@ -699,25 +626,28 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
 
         const token = crypto.randomBytes(32).toString('hex');
         const now = Date.now();
-        db.prepare('INSERT INTO password_reset (user_id, token, created_at, expires_at, ip_address) VALUES (?,?,?,?,?)')
-            .run(user.id, token, now, now + 60 * 60 * 1000, req.ip);
-
-        // Postmark: password reset
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.password_reset,
-            user.email,
-            {
-                first_name: user.first_name || '',
-                reset_url: `${APP_URL}/reset-password?token=${token}`,
-                expires_in_hours: 1
-            }
+        db.prepare('INSERT INTO password_reset (user_id, token, created_at, expires_at, ip_address) VALUES (?,?,?,?,?)').run(
+            user.id,
+            token,
+            now,
+            now + 60 * 60 * 1000,
+            req.ip
         );
+
+        await sendTemplateEmail('password-reset-email', user.email, {
+            first_name: user.first_name || '',
+            reset_url: `${APP_URL}/reset-password?token=${token}`,
+            expires_in_hours: 1,
+        });
 
         logActivity(user.id, 'password_reset_requested', { email }, null, req);
         const resp = { ok: true, message: 'If the email exists, we sent a link' };
-        if (NODE_ENV !== 'production') resp.debug_token = token; // dev helper
+        if (NODE_ENV !== 'production') resp.debug_token = token;
         res.json(resp);
-    } catch (e) { logger.error('reset request failed', e); res.status(500).json({ error: 'Password reset request failed' }); }
+    } catch (e) {
+        logger.error('reset request failed', e);
+        res.status(500).json({ error: 'Password reset request failed' });
+    }
 });
 
 app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassword), async (req, res) => {
@@ -731,21 +661,19 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
         db.prepare('UPDATE password_reset SET used=1 WHERE id=?').run(row.id);
         logActivity(row.user_id, 'password_reset_completed', null, null, req);
 
-        // Postmark: password changed confirmation
         const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(row.user_id);
         if (u) {
-            await sendTemplateEmail(
-                POSTMARK_TEMPLATES.password_changed_confirmation,
-                u.email,
-                {
-                    first_name: u.first_name || '',
-                    security_tips_url: `${APP_URL}/security`
-                }
-            );
+            await sendTemplateEmail('password-changed-confirmation', u.email, {
+                first_name: u.first_name || '',
+                security_tips_url: `${APP_URL}/security`,
+            });
         }
 
         res.json({ ok: true, message: 'Password has been reset successfully' });
-    } catch (e) { logger.error('reset failed', e); res.status(500).json({ error: 'Password reset failed' }); }
+    } catch (e) {
+        logger.error('reset failed', e);
+        res.status(500).json({ error: 'Password reset failed' });
+    }
 });
 
 app.post('/api/profile/update-password', auth, validate(schemas.updatePassword), async (req, res) => {
@@ -758,18 +686,16 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
         db.prepare('UPDATE user SET password=? WHERE id=?').run(hash, req.user.id);
         logActivity(req.user.id, 'password_changed', null, null, req);
 
-        // Postmark: password changed confirmation
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.password_changed_confirmation,
-            user.email,
-            {
-                first_name: user.first_name || '',
-                security_tips_url: `${APP_URL}/security`
-            }
-        );
+        await sendTemplateEmail('password-changed-confirmation', user.email, {
+            first_name: user.first_name || '',
+            security_tips_url: `${APP_URL}/security`,
+        });
 
         res.json({ ok: true, message: 'Password updated successfully' });
-    } catch (e) { logger.error('update pwd failed', e); res.status(500).json({ error: 'Password update failed' }); }
+    } catch (e) {
+        logger.error('update pwd failed', e);
+        res.status(500).json({ error: 'Password update failed' });
+    }
 });
 
 // ===== ADMIN SETUP (ONE-TIME) =====
@@ -783,20 +709,24 @@ app.post('/api/create-admin-user', authLimiter, (req, res) => {
         const hash = bcrypt.hashSync(password, 12);
         const now = Date.now();
         const name = `${first_name || ''} ${last_name || ''}`.trim();
-        const info = db.prepare(`INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
-      VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`).run(now, name, email, hash, first_name || '', last_name || '', now);
+        const info = db
+            .prepare(
+                `INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
+           VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
+            )
+            .run(now, name, email, hash, first_name || '', last_name || '', now);
         res.json({ ok: true, data: { user_id: info.lastInsertRowid }, message: 'Admin user created successfully.' });
     } catch (e) {
         if (String(e).includes('UNIQUE')) return res.status(409).json({ error: 'Email already registered' });
-        logger.error('admin create failed', e); res.status(500).json({ error: 'Admin user creation failed' });
+        logger.error('admin create failed', e);
+        res.status(500).json({ error: 'Admin user creation failed' });
     }
 });
-// ===== AUTH — SIGNUP =====
 
+// ===== AUTH — SIGNUP =====
 app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, res) => {
     const { email, password, first_name = '', last_name = '' } = req.body;
     try {
-        // unique email?
         const exists = db.prepare('SELECT id FROM user WHERE email=?').get(email);
         if (exists) return res.status(409).json({ error: 'Email already registered' });
 
@@ -804,50 +734,39 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
         const now = Date.now();
         const name = `${first_name} ${last_name}`.trim();
 
-        const info = db.prepare(`
-        INSERT INTO user (
-          created_at, name, email, password,
-          first_name, last_name,
-          kyc_status, plan_status, plan_start_date, onboarding_step
-        ) VALUES (?,?,?,?,?,?, 'pending', 'active', ?, 'signup')
-      `).run(now, name, email, hash, first_name, last_name, now);
+        const info = db
+            .prepare(
+                `
+          INSERT INTO user (
+            created_at, name, email, password,
+            first_name, last_name,
+            kyc_status, plan_status, plan_start_date, onboarding_step
+          ) VALUES (?,?,?,?,?,?, 'pending', 'active', ?, 'signup')
+        `
+            )
+            .run(now, name, email, hash, first_name, last_name, now);
 
         const user = db.prepare('SELECT * FROM user WHERE id=?').get(info.lastInsertRowid);
 
-        // create session cookie
-        setSession(res, user);
-
-        // send welcome email (template alias: "welcome-email")
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.welcome,
-            user.email,
-            {
-                first_name: user.first_name || '',
-                dashboard_url: APP_URL
-            }
-        );
+        const token = setSession(res, user); // cookie + token
+        await sendTemplateEmail('welcome-email', user.email, {
+            first_name: user.first_name || '',
+            dashboard_url: APP_URL,
+        });
 
         logActivity(user.id, 'signup', { email: user.email }, null, req);
-        return res.status(201).json({ ok: true, data: userRowToDto(user) });
+        return res.status(201).json({ ok: true, token, data: userRowToDto(user) });
     } catch (e) {
         logger.error('signup failed', e);
         return res.status(500).json({ error: 'Signup failed' });
     }
 });
-// ===== AUTH — LOGIN / LOGOUT =====
 
-// 👇 EDITED: robust test-only admin login bypass/rescue
+// ===== AUTH — LOGIN / LOGOUT =====
 app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => {
     const { email, password } = req.body;
-    const emailLower = String(email || '').toLowerCase();
 
-    // Look up the requested user first
     const user = db.prepare('SELECT * FROM user WHERE email=?').get(email);
-
-    // If tests are logging in with the *actual* admin email we have, bypass password
-    const isAdminUser = !!(user && ((user.is_admin === 1) || user.role === 'admin'));
-
-    // Normal lockout + password flow
     const lock = checkAccountLockout(email);
     if (lock.locked) return res.status(423).json({ error: 'Account locked. Try again later.' });
 
@@ -858,36 +777,33 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
     }
 
     clearLoginAttempts(email);
-    setSession(res, user);
+    const token = setSession(res, user);
     logActivity(user.id, 'login', null, null, req);
-    return res.json({ ok: true, data: userRowToDto(user) });
+    return res.json({ ok: true, token, data: userRowToDto(user) });
 });
-
 
 app.post('/api/auth/logout', auth, (req, res) => {
     res.clearCookie(JWT_COOKIE, {
         httpOnly: true,
         sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
-        secure: COOKIE_SECURE
+        secure: COOKIE_SECURE,
     });
 
     logActivity(req.user.id, 'logout', null, null, req);
     res.status(204).end();
 });
-// === TEST ADMIN BOOTSTRAP (HARDENED: always sync password & clear lockouts) ===
+
+// === TEST ADMIN BOOTSTRAP ===
 if (NODE_ENV === 'test') {
     const email = TEST_ADMIN_EMAIL;
     const rawPassword = TEST_ADMIN_PASSWORD;
     const now = Date.now();
 
-    // Discover user table columns
     const colRows = db.prepare(`PRAGMA table_info(user)`).all();
     const cols = new Set(colRows.map(r => r.name));
-    const has = (c) => cols.has(c);
+    const has = c => cols.has(c);
 
     const passHash = bcrypt.hashSync(rawPassword, 12);
-
-    // Admin representation can be role or is_admin; prefer role if present
     const adminSetSql = has('role') ? 'role = ?' : 'is_admin = ?';
     const adminSetVal = has('role') ? 'admin' : 1;
 
@@ -898,12 +814,14 @@ if (NODE_ENV === 'test') {
         const ph = ['?', '?'];
         const values = [now, email];
 
-        if (has('password')) { fields.push('password'); ph.push('?'); values.push(passHash); }
-        if (has('password_hash')) { fields.push('password_hash'); ph.push('?'); values.push(passHash); }
-
+        if (has('password')) {
+            fields.push('password'); ph.push('?'); values.push(passHash);
+        }
+        if (has('password_hash')) {
+            fields.push('password_hash'); ph.push('?'); values.push(passHash);
+        }
         if (has('role')) { fields.push('role'); ph.push('?'); values.push('admin'); }
         if (has('is_admin')) { fields.push('is_admin'); ph.push('?'); values.push(1); }
-
         if (has('name')) { fields.push('name'); ph.push('?'); values.push('Admin User'); }
         if (has('first_name')) { fields.push('first_name'); ph.push('?'); values.push('Admin'); }
         if (has('last_name')) { fields.push('last_name'); ph.push('?'); values.push('User'); }
@@ -926,9 +844,7 @@ if (NODE_ENV === 'test') {
 
         if (has('password')) { sets.push('password = ?'); values.push(passHash); }
         if (has('password_hash')) { sets.push('password_hash = ?'); values.push(passHash); }
-
         sets.push(adminSetSql); values.push(adminSetVal);
-
         if (has('kyc_status')) { sets.push('kyc_status = ?'); values.push('verified'); }
         if (has('plan_status')) { sets.push('plan_status = ?'); values.push('active'); }
         if (has('plan_start_date')) { sets.push('plan_start_date = ?'); values.push(now); }
@@ -951,7 +867,10 @@ app.get('/api/profile', auth, (req, res) => {
         const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
         if (!u) return res.status(404).json({ error: 'User not found' });
         res.json(userRowToDto(u));
-    } catch (e) { logger.error('profile fetch failed', e); res.status(500).json({ error: 'Profile fetch failed' }); }
+    } catch (e) {
+        logger.error('profile fetch failed', e);
+        res.status(500).json({ error: 'Profile fetch failed' });
+    }
 });
 app.post('/api/profile', auth, validate(schemas.updateProfile), (req, res) => {
     const patch = req.body || {};
@@ -966,7 +885,10 @@ app.post('/api/profile', auth, validate(schemas.updateProfile), (req, res) => {
         const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
         logActivity(req.user.id, 'profile_updated', patch, null, req);
         res.json(userRowToDto(u));
-    } catch (e) { logger.error('profile update failed', e); res.status(500).json({ error: 'Profile update failed' }); }
+    } catch (e) {
+        logger.error('profile update failed', e);
+        res.status(500).json({ error: 'Profile update failed' });
+    }
 });
 app.put('/api/profile/address', auth, (req, res) => {
     const { forwarding_address } = req.body || {};
@@ -976,7 +898,10 @@ app.put('/api/profile/address', auth, (req, res) => {
         const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
         logActivity(req.user.id, 'address_updated', { forwarding_address }, null, req);
         res.json(userRowToDto(u));
-    } catch (e) { logger.error('address update failed', e); res.status(500).json({ error: 'Address update failed' }); }
+    } catch (e) {
+        logger.error('address update failed', e);
+        res.status(500).json({ error: 'Address update failed' });
+    }
 });
 app.get('/api/profile/certificate-url', auth, (req, res) => {
     try {
@@ -984,40 +909,62 @@ app.get('/api/profile/certificate-url', auth, (req, res) => {
         if (!u) return res.status(404).json({ error: 'User not found' });
         if (u.kyc_status !== 'verified') return res.status(403).json({ error: 'KYC verification required' });
         res.json({ url: `${CERTIFICATE_BASE_URL}/${u.id}/proof-of-address.pdf` });
-    } catch (e) { logger.error('cert url failed', e); res.status(500).json({ error: 'Certificate URL generation failed' }); }
+    } catch (e) {
+        logger.error('cert url failed', e);
+        res.status(500).json({ error: 'Certificate URL generation failed' });
+    }
 });
 
 // ===== MAIL (USER) =====
-app.get('/api/mail-items', auth, [
-    query('status').optional().isIn(['received', 'scanned', 'forward_requested', 'forwarded', 'deleted']),
-    query('tag').optional().isLength({ max: 100 }),
-    query('search').optional().isLength({ max: 200 }),
-    query('page').optional().isInt({ min: 1 }),
-    query('per_page').optional().isInt({ min: 1, max: 100 })
-], (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query', details: errors.array() });
-    try {
-        const { status, tag, search, page = 1, per_page = 20 } = req.query;
-        let sql = 'SELECT * FROM mail_item WHERE user_id=? AND deleted=0';
-        const params = [req.user.id];
-        if (status) { sql += ' AND status=?'; params.push(status); }
-        if (tag) { sql += ' AND tag=?'; params.push(tag); }
-        if (search) { sql += ' AND (subject LIKE ? OR sender_name LIKE ? OR notes LIKE ?)'; const t = `%${search}%`; params.push(t, t, t); }
-        const total = db.prepare(sql.replace('SELECT *', 'SELECT COUNT(*) c')).get(...params).c;
-        const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
-        const items = db.prepare(sql + ' ORDER BY created_at DESC LIMIT ? OFFSET ?').all(...params, limit, offset);
-        res.json({ data: items, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
-    } catch (e) { logger.error('mail list failed', e); res.status(500).json({ error: 'Mail items fetch failed' }); }
-});
+app.get(
+    '/api/mail-items',
+    auth,
+    [
+        query('status').optional().isIn(['received', 'scanned', 'forward_requested', 'forwarded', 'deleted']),
+        query('tag').optional().isLength({ max: 100 }),
+        query('search').optional().isLength({ max: 200 }),
+        query('page').optional().isInt({ min: 1 }),
+        query('per_page').optional().isInt({ min: 1, max: 100 }),
+    ],
+    (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query', details: errors.array() });
+        try {
+            const { status, tag, search, page = 1, per_page = 20 } = req.query;
+            let sql = 'SELECT * FROM mail_item WHERE user_id=? AND deleted=0';
+            const params = [req.user.id];
+            if (status) { sql += ' AND status=?'; params.push(status); }
+            if (tag) { sql += ' AND tag=?'; params.push(tag); }
+            if (search) {
+                sql += ' AND (subject LIKE ? OR sender_name LIKE ? OR notes LIKE ?)';
+                const t = `%${search}%`;
+                params.push(t, t, t);
+            }
+            const total = db.prepare(sql.replace('SELECT *', 'SELECT COUNT(*) c')).get(...params).c;
+            const limit = parseInt(per_page);
+            const offset = (parseInt(page) - 1) * limit;
+            const items = db.prepare(sql + ' ORDER BY created_at DESC LIMIT ? OFFSET ?').all(...params, limit, offset);
+            res.json({
+                data: items,
+                meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) },
+            });
+        } catch (e) {
+            logger.error('mail list failed', e);
+            res.status(500).json({ error: 'Mail items fetch failed' });
+        }
+    }
+);
 app.get('/api/mail-items/:id', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
     const id = +req.params.id;
     const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
     res.json({ data: item });
 });
 app.get('/api/mail-items/:id/scan-url', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
     const id = +req.params.id;
     const row = db.prepare('SELECT scan_file_url FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
     if (!row) return res.status(404).json({ error: 'Mail item not found' });
@@ -1025,7 +972,8 @@ app.get('/api/mail-items/:id/scan-url', auth, param('id').isInt(), (req, res) =>
     res.json({ ok: true, data: { scan_url: row.scan_file_url } });
 });
 app.get('/api/mail-items/:id/history', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
     const id = +req.params.id;
     const exists = db.prepare('SELECT id FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
     if (!exists) return res.status(404).json({ error: 'Mail item not found' });
@@ -1033,8 +981,10 @@ app.get('/api/mail-items/:id/history', auth, param('id').isInt(), (req, res) => 
     res.json({ data: events });
 });
 app.post('/api/mail-items/:id/tag', auth, [param('id').isInt(), body('tag').optional().isLength({ max: 100 })], (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Validation failed', details: errors.array() });
-    const id = +req.params.id; const { tag } = req.body || {};
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    const id = +req.params.id;
+    const { tag } = req.body || {};
     const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
     db.prepare('UPDATE mail_item SET tag=? WHERE id=?').run(tag || null, id);
@@ -1043,7 +993,8 @@ app.post('/api/mail-items/:id/tag', auth, [param('id').isInt(), body('tag').opti
     res.json({ data: updated });
 });
 app.delete('/api/mail-items/:id', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
     const id = +req.params.id;
     const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
@@ -1053,7 +1004,8 @@ app.delete('/api/mail-items/:id', auth, param('id').isInt(), (req, res) => {
     res.json({ ok: true, message: 'Mail item archived.' });
 });
 app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
     const id = +req.params.id;
     const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=? AND deleted=1').get(id, req.user.id);
     if (!item) return res.status(404).json({ error: 'Deleted mail item not found' });
@@ -1066,7 +1018,8 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
     const { status, tag } = req.query || {};
-    let sql = 'SELECT * FROM mail_item WHERE user_id=? AND deleted=0'; const p = [req.user.id];
+    let sql = 'SELECT * FROM mail_item WHERE user_id=? AND deleted=0';
+    const p = [req.user.id];
     if (status) { sql += ' AND status=?'; p.push(status); }
     if (tag) { sql += ' AND tag=?'; p.push(tag); }
     sql += ' ORDER BY created_at DESC';
@@ -1074,17 +1027,20 @@ app.get('/api/mail', auth, (req, res) => {
 });
 app.post('/api/mail/bulk-forward-request', auth, (req, res) => {
     const { items = [], destination_name, destination_address } = req.body || {};
-    const forwarded = []; const errors = [];
-    const now = Date.now(); const limit = now - 30 * 24 * 3600 * 1000;
+    const forwarded = [];
+    const errors = [];
+    const now = Date.now();
+    const limit = now - 30 * 24 * 3600 * 1000;
     for (const id of items) {
         const row = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
         if (!row) { errors.push({ mail_id: id, reason: 'not_owner' }); continue; }
         if (row.deleted) { errors.push({ mail_id: id, reason: 'deleted' }); continue; }
         if (row.created_at < limit) { errors.push({ mail_id: id, reason: 'too_old' }); continue; }
         db.prepare("UPDATE mail_item SET status='forward_requested', requested_at=? WHERE id=?").run(now, id);
-        db.prepare(`INSERT INTO forwarding_request (created_at,"user",mail_item,requested_at,status,is_billable,destination_name,destination_address,source)
-      VALUES (?,?,?,?,'queued',0,?,?,'dashboard')`)
-            .run(now, req.user.id, id, now, destination_name || null, destination_address || null);
+        db.prepare(
+            `INSERT INTO forwarding_request (created_at,"user",mail_item,requested_at,status,is_billable,destination_name,destination_address,source)
+         VALUES (?,?,?,?,'queued',0,?,?,'dashboard')`
+        ).run(now, req.user.id, id, now, destination_name || null, destination_address || null);
         logMailEvent(id, req.user.id, 'forward_requested', { destination_name, destination_address });
         forwarded.push(id);
     }
@@ -1092,26 +1048,39 @@ app.post('/api/mail/bulk-forward-request', auth, (req, res) => {
 });
 
 // ===== FORWARDING =====
-app.get('/api/forwarding-requests', auth, [
-    query('status').optional().isIn(['pending', 'queued', 'processing', 'completed', 'cancelled', 'failed']),
-    query('page').optional().isInt({ min: 1 }),
-    query('per_page').optional().isInt({ min: 1, max: 100 })
-], (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query', details: errors.array() });
-    const { status, page = 1, per_page = 20 } = req.query;
-    let sql = `SELECT fr.*, mi.subject, mi.sender_name FROM forwarding_request fr
-             LEFT JOIN mail_item mi ON mi.id=fr.mail_item WHERE fr."user"=?`;
-    const p = [req.user.id]; if (status) { sql += ' AND fr.status=?'; p.push(status); }
-    const total = db.prepare(sql.replace('SELECT fr.*, mi.subject, mi.sender_name', 'SELECT COUNT(*) c')).get(...p).c;
-    const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
-    const rows = db.prepare(sql + ' ORDER BY fr.created_at DESC LIMIT ? OFFSET ?').all(...p, limit, offset);
-    res.json({ data: rows, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
-});
+app.get(
+    '/api/forwarding-requests',
+    auth,
+    [
+        query('status').optional().isIn(['pending', 'queued', 'processing', 'completed', 'cancelled', 'failed']),
+        query('page').optional().isInt({ min: 1 }),
+        query('per_page').optional().isInt({ min: 1, max: 100 }),
+    ],
+    (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query', details: errors.array() });
+        const { status, page = 1, per_page = 20 } = req.query;
+        let sql = `SELECT fr.*, mi.subject, mi.sender_name FROM forwarding_request fr
+                 LEFT JOIN mail_item mi ON mi.id=fr.mail_item WHERE fr."user"=?`;
+        const p = [req.user.id];
+        if (status) { sql += ' AND fr.status=?'; p.push(status); }
+        const total = db.prepare(sql.replace('SELECT fr.*, mi.subject, mi.sender_name', 'SELECT COUNT(*) c')).get(...p).c;
+        const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
+        const rows = db.prepare(sql + ' ORDER BY fr.created_at DESC LIMIT ? OFFSET ?').all(...p, limit, offset);
+        res.json({
+            data: rows,
+            meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) },
+        });
+    }
+);
 app.get('/api/forwarding-requests/:id', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
     const id = +req.params.id;
-    const row = db.prepare(`SELECT fr.*, mi.subject, mi.sender_name FROM forwarding_request fr
-    LEFT JOIN mail_item mi ON mi.id=fr.mail_item WHERE fr.id=? AND fr."user"=?`).get(id, req.user.id);
+    const row = db.prepare(
+        `SELECT fr.*, mi.subject, mi.sender_name FROM forwarding_request fr
+       LEFT JOIN mail_item mi ON mi.id=fr.mail_item WHERE fr.id=? AND fr."user"=?`
+    ).get(id, req.user.id);
     if (!row) return res.status(404).json({ error: 'Forwarding request not found' });
     res.json({ data: row });
 });
@@ -1120,26 +1089,42 @@ app.post('/api/forwarding-requests', auth, validate(schemas.forwardingRequest), 
     const mail = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(mail_item_id, req.user.id);
     if (!mail) return res.status(404).json({ error: 'Mail item not found' });
     if (mail.deleted) return res.status(400).json({ error: 'Cannot forward deleted mail item' });
-    if (mail.status === 'forward_requested' || mail.status === 'forwarded') return res.status(400).json({ error: 'Already requested' });
+    if (mail.status === 'forward_requested' || mail.status === 'forwarded')
+        return res.status(400).json({ error: 'Already requested' });
     const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
     const billable = is_billable || mail.created_at < thirtyDaysAgo;
     const now = Date.now();
-    const info = db.prepare(`INSERT INTO forwarding_request (created_at,"user",mail_item,requested_at,status,is_billable,destination_name,destination_address,source)
-    VALUES (?,?,?,?,'pending',?,?,?,'api')`).run(now, req.user.id, mail_item_id, now, billable ? 1 : 0, destination_name || null, destination_address || null);
+    const info = db
+        .prepare(
+            `INSERT INTO forwarding_request (created_at,"user",mail_item,requested_at,status,is_billable,destination_name,destination_address,source)
+         VALUES (?,?,?,?,'pending',?,?,?,'api')`
+        )
+        .run(now, req.user.id, mail_item_id, now, billable ? 1 : 0, destination_name || null, destination_address || null);
     db.prepare(`UPDATE mail_item SET status='forward_requested', requested_at=? WHERE id=?`).run(now, mail_item_id);
     logMailEvent(mail_item_id, req.user.id, 'forward_requested', { destination_name, destination_address, is_billable: billable });
-    const resp = { ok: true, message: 'Forwarding request created', data: { forwarding_request_id: info.lastInsertRowid, is_billable: billable } };
+    const resp = {
+        ok: true,
+        message: 'Forwarding request created',
+        data: { forwarding_request_id: info.lastInsertRowid, is_billable: billable },
+    };
     if (billable) resp.data.payment_link_url = `https://pay.gocardless.com/one-off/${info.lastInsertRowid}`;
     res.status(201).json(resp);
 });
 app.get('/api/forwarding-requests/usage', auth, (req, res) => {
-    const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0);
-    const totalFree = db.prepare('SELECT COUNT(*) c FROM forwarding_request WHERE "user"=? AND created_at>=? AND is_billable=0').get(req.user.id, start.getTime()).c;
-    const totalBill = db.prepare('SELECT COUNT(*) c FROM forwarding_request WHERE "user"=? AND created_at>=? AND is_billable=1').get(req.user.id, start.getTime()).c;
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const totalFree = db
+        .prepare('SELECT COUNT(*) c FROM forwarding_request WHERE "user"=? AND created_at>=? AND is_billable=0')
+        .get(req.user.id, start.getTime()).c;
+    const totalBill = db
+        .prepare('SELECT COUNT(*) c FROM forwarding_request WHERE "user"=? AND created_at>=? AND is_billable=1')
+        .get(req.user.id, start.getTime()).c;
     res.json({ ok: true, data: { total_free: totalFree, total_billable: totalBill } });
 });
 app.put('/api/forwarding-requests/:id/cancel', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
     const id = +req.params.id;
     const fr = db.prepare('SELECT * FROM forwarding_request WHERE id=? AND "user"=?').get(id, req.user.id);
     if (!fr) return res.status(404).json({ error: 'Forwarding request not found' });
@@ -1154,64 +1139,63 @@ app.get('/api/plans', (req, res) => {
     try {
         const plans = db.prepare('SELECT * FROM plans WHERE active=1 ORDER BY price ASC').all();
         res.json({ data: plans.map(p => ({ ...p, features: p.features ? JSON.parse(p.features) : [] })) });
-    } catch (e) { logger.error('plans failed', e); res.status(500).json({ error: 'Plans fetch failed' }); }
+    } catch (e) {
+        logger.error('plans failed', e);
+        res.status(500).json({ error: 'Plans fetch failed' });
+    }
 });
 
 // ===== PAYMENTS (USER) =====
-app.get('/api/payments', auth, [
-    query('page').optional().isInt({ min: 1 }),
-    query('per_page').optional().isInt({ min: 1, max: 100 })
-], (req, res) => {
-    const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query' });
-    const { page = 1, per_page = 20 } = req.query;
-    const total = db.prepare('SELECT COUNT(*) c FROM payment WHERE user_id=?').get(req.user.id).c;
-    const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
-    const rows = db.prepare('SELECT * FROM payment WHERE user_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(req.user.id, limit, offset);
-    res.json({ data: rows, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
-});
+app.get('/api/payments',
+    auth,
+    [query('page').optional().isInt({ min: 1 }), query('per_page').optional().isInt({ min: 1, max: 100 })],
+    (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid query' });
+        const { page = 1, per_page = 20 } = req.query;
+        const total = db.prepare('SELECT COUNT(*) c FROM payment WHERE user_id=?').get(req.user.id).c;
+        const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
+        const rows = db.prepare('SELECT * FROM payment WHERE user_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?').all(
+            req.user.id, limit, offset
+        );
+        res.json({ data: rows, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
+    }
+);
 app.get('/api/payments/subscriptions/status', auth, (req, res) => {
     const row = db.prepare('SELECT plan_status, plan_start_date, gocardless_subscription_id, mandate_id FROM user WHERE id=?').get(req.user.id);
     if (!row) return res.status(404).json({ error: 'User not found' });
     res.json({ data: row });
 });
-// Mock redirect flow (dev)
 app.post('/api/payments/redirect-flows', auth, (req, res) => {
     const redirectId = `RE${Date.now()}`;
     const redirectUrl = `https://pay.gocardless.com/flow/${redirectId}?user_id=${req.user.id}`;
     res.json({ ok: true, data: { redirect_url: redirectUrl, redirect_flow_id: redirectId } });
 });
-app.post('/api/payments/redirect-flows/:id/complete',
-    auth,
-    param('id').isString(),
-    (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid redirect flow id' });
+app.post('/api/payments/redirect-flows/:id/complete', auth, param('id').isString(), (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid redirect flow id' });
 
-        const id = req.params.id;
-        // Mock completion; in prod, call GoCardless to complete and persist result
-        db.prepare(`UPDATE user SET gocardless_customer_id=?, mandate_id=?, plan_status='active' WHERE id=?`)
-            .run(`CUST_${Date.now()}`, `MD_${Date.now()}`, req.user.id);
+    const id = req.params.id;
+    db.prepare(`UPDATE user SET gocardless_customer_id=?, mandate_id=?, plan_status='active' WHERE id=?`).run(
+        `CUST_${Date.now()}`,
+        `MD_${Date.now()}`,
+        req.user.id
+    );
 
-        res.json({ ok: true, message: 'Payment mandate successfully created.', data: { redirect_flow_id: id } });
-    }
-);
+    res.json({ ok: true, message: 'Payment mandate successfully created.', data: { redirect_flow_id: id } });
+});
 
 app.post('/api/payments/subscriptions', auth, async (req, res) => {
     const { action } = req.body || {};
     if (action !== 'cancel') return res.status(400).json({ error: 'Invalid action' });
     db.prepare(`UPDATE user SET plan_status='cancelled' WHERE id=?`).run(req.user.id);
 
-    // Postmark: plan cancelled
     const me = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     if (me) {
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.plan_cancelled,
-            me.email,
-            {
-                first_name: me.first_name || '',
-                reactivate_url: `${APP_URL}/billing`
-            }
-        );
+        await sendTemplateEmail('plan-cancelled', me.email, {
+            first_name: me.first_name || '',
+            reactivate_url: `${APP_URL}/billing`,
+        });
     }
 
     res.json({ ok: true, message: 'Your subscription has been cancelled.' });
@@ -1223,17 +1207,12 @@ app.post('/api/kyc/upload', auth, async (req, res) => {
     const applicantId = `applicant_${req.user.id}_${Date.now()}`;
     db.prepare('UPDATE user SET sumsub_applicant_id=? WHERE id=?').run(applicantId, req.user.id);
 
-    // Postmark: KYC submitted
     const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     if (u) {
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.kyc_submitted,
-            u.email,
-            {
-                first_name: u.first_name || '',
-                help_url: `${APP_URL}/kyc`
-            }
-        );
+        await sendTemplateEmail('kyc-submitted', u.email, {
+            first_name: u.first_name || '',
+            help_url: `${APP_URL}/kyc`,
+        });
     }
 
     res.json({ ok: true, data: { sdk_access_token: sdkToken } });
@@ -1248,29 +1227,35 @@ app.post('/api/kyc/resend-verification-link', auth, (req, res) => {
 app.post('/api/company-search', auth, (req, res) => {
     const { query: q } = req.body || {};
     if (!q) return res.status(400).json({ error: 'Search query required' });
-    res.json({ data: [{ name: `${q} Ltd`, number: '12345678', status: 'active' }, { name: `${q} Limited`, number: '87654321', status: 'active' }] });
+    res.json({
+        data: [
+            { name: `${q} Ltd`, number: '12345678', status: 'active' },
+            { name: `${q} Limited`, number: '87654321', status: 'active' },
+        ],
+    });
 });
+
 // ===== SUPPORT TICKETS =====
 app.post('/api/support/tickets', auth, validate(schemas.createSupportTicket), async (req, res) => {
     const { subject, message } = req.body;
     const now = Date.now();
-    const info = db.prepare(`
-      INSERT INTO support_ticket (created_at, user_id, subject, message, status)
-      VALUES (?,?,?,?, 'open')
-    `).run(now, req.user.id, subject, message || null);
+    const info = db
+        .prepare(
+            `
+        INSERT INTO support_ticket (created_at, user_id, subject, message, status)
+        VALUES (?,?,?,?, 'open')
+      `
+        )
+        .run(now, req.user.id, subject, message || null);
 
     const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     try {
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.support_received,
-            u.email,
-            {
-                first_name: u.first_name || '',
-                ticket_id: String(info.lastInsertRowid),
-                subject,
-                view_url: `${APP_URL}/support/tickets/${info.lastInsertRowid}`
-            }
-        );
+        await sendTemplateEmail('support-request-received', u.email, {
+            first_name: u.first_name || '',
+            ticket_id: String(info.lastInsertRowid),
+            subject,
+            view_url: `${APP_URL}/support/tickets/${info.lastInsertRowid}`,
+        });
     } catch (e) {
         logger.error('support received email failed', { error: e.message, ticket_id: info.lastInsertRowid });
     }
@@ -1278,45 +1263,51 @@ app.post('/api/support/tickets', auth, validate(schemas.createSupportTicket), as
     res.status(201).json({ ok: true, data: { ticket_id: info.lastInsertRowid } });
 });
 
-app.post('/api/admin/support/tickets/:id/close',
-    auth, adminOnly, param('id').isInt(), validate(schemas.closeSupportTicket),
-    async (req, res) => {
-        const errors = validationResult(req); if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid ticket id' });
+app.post('/api/admin/support/tickets/:id/close', auth, adminOnly, param('id').isInt(), validate(schemas.closeSupportTicket), async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid ticket id' });
 
-        const id = +req.params.id;
-        const row = db.prepare('SELECT st.*, u.email, u.first_name FROM support_ticket st JOIN user u ON u.id=st.user_id WHERE st.id=?').get(id);
-        if (!row) return res.status(404).json({ error: 'Ticket not found' });
-        if (row.status === 'closed') return res.status(400).json({ error: 'Already closed' });
+    const id = +req.params.id;
+    const row = db
+        .prepare('SELECT st.*, u.email, u.first_name FROM support_ticket st JOIN user u ON u.id=st.user_id WHERE st.id=?')
+        .get(id);
+    if (!row) return res.status(404).json({ error: 'Ticket not found' });
+    if (row.status === 'closed') return res.status(400).json({ error: 'Already closed' });
 
-        db.prepare("UPDATE support_ticket SET status='closed', closed_at=?, updated_at=? WHERE id=?")
-            .run(Date.now(), Date.now(), id);
-        logAdminAction(req.user.id, 'support_close', 'support_ticket', id, { note: req.body.note || null }, req);
+    db.prepare("UPDATE support_ticket SET status='closed', closed_at=?, updated_at=? WHERE id=?").run(Date.now(), Date.now(), id);
+    logAdminAction(req.user.id, 'support_close', 'support_ticket', id, { note: req.body.note || null }, req);
 
-        try {
-            await sendTemplateEmail(
-                POSTMARK_TEMPLATES.support_closed,
-                row.email,
-                {
-                    first_name: row.first_name || '',
-                    ticket_id: String(id),
-                    satisfaction_url: `${APP_URL}/support/feedback/${id}`
-                }
-            );
-        } catch (e) {
-            logger.error('support closed email failed', { error: e.message, ticket_id: id });
-        }
-
-        res.json({ ok: true, message: 'Ticket closed.' });
+    try {
+        await sendTemplateEmail('support-request-closed', row.email, {
+            first_name: row.first_name || '',
+            ticket_id: String(id),
+            satisfaction_url: `${APP_URL}/support/feedback/${id}`,
+        });
+    } catch (e) {
+        logger.error('support closed email failed', { error: e.message, ticket_id: id });
     }
-);
+
+    res.json({ ok: true, message: 'Ticket closed.' });
+});
 
 // ===== ADMIN — USERS =====
 app.get('/api/admin/users', auth, adminOnly, (req, res) => {
     const { page = 1, per_page = 20, search } = req.query || {};
     let sql = `SELECT id,created_at,name,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number FROM user`;
     const p = [];
-    if (search) { sql += ' WHERE name LIKE ? OR email LIKE ? OR company_name LIKE ?'; const s = `%${search}%`; p.push(s, s, s); }
-    const total = db.prepare(sql.replace('SELECT id,created_at,name,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number', 'SELECT COUNT(*) c')).get(...p).c;
+    if (search) {
+        sql += ' WHERE name LIKE ? OR email LIKE ? OR company_name LIKE ?';
+        const s = `%${search}%`;
+        p.push(s, s, s);
+    }
+    const total = db
+        .prepare(
+            sql.replace(
+                'SELECT id,created_at,name,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number',
+                'SELECT COUNT(*) c'
+            )
+        )
+        .get(...p).c;
     const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
     const rows = db.prepare(sql + ' ORDER BY created_at DESC LIMIT ? OFFSET ?').all(...p, limit, offset);
     res.json({ data: rows, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
@@ -1330,7 +1321,8 @@ app.get('/api/admin/users/:user_id', auth, adminOnly, param('user_id').isInt(), 
 app.put('/api/admin/users/:user_id', auth, adminOnly, param('user_id').isInt(), (req, res) => {
     const id = +req.params.user_id;
     const allowed = ['first_name', 'last_name', 'email', 'kyc_status', 'plan_status', 'is_admin', 'company_name', 'companies_house_number', 'forwarding_address'];
-    const apply = {}; for (const k of allowed) if (k in (req.body || {})) apply[k] = req.body[k];
+    const apply = {};
+    for (const k of allowed) if (k in (req.body || {})) apply[k] = req.body[k];
     if (!Object.keys(apply).length) return res.status(400).json({ error: 'No fields to update' });
     const sets = Object.keys(apply).map(k => `${k}=@${k}`).join(',');
     db.prepare(`UPDATE user SET ${sets} WHERE id=@id`).run({ ...apply, id });
@@ -1352,39 +1344,28 @@ app.put('/api/admin/users/:user_id/kyc-status', auth, adminOnly, param('user_id'
 
     logAdminAction(req.user.id, 'kyc_override', 'user', id, updates, req);
 
-    // Minimal fields just for the email
     const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(id);
 
-    // Best-effort email; don't fail the request if it errors
     try {
         if (u) {
             if (kyc_status === 'verified') {
-                await sendTemplateEmail(
-                    POSTMARK_TEMPLATES.kyc_approved,
-                    u.email,
-                    {
-                        first_name: u.first_name || '',
-                        dashboard_url: APP_URL,
-                        certificate_url: `${CERTIFICATE_BASE_URL}/${id}/proof-of-address.pdf`
-                    }
-                );
+                await sendTemplateEmail('kyc-approved', u.email, {
+                    first_name: u.first_name || '',
+                    dashboard_url: APP_URL,
+                    certificate_url: `${CERTIFICATE_BASE_URL}/${id}/proof-of-address.pdf`,
+                });
             } else if (kyc_status === 'rejected') {
-                await sendTemplateEmail(
-                    POSTMARK_TEMPLATES.kyc_rejected,
-                    u.email,
-                    {
-                        first_name: u.first_name || '',
-                        reason: rejection_reason || 'Verification was not approved',
-                        retry_url: `${APP_URL}/kyc`
-                    }
-                );
+                await sendTemplateEmail('kyc-rejected', u.email, {
+                    first_name: u.first_name || '',
+                    reason: rejection_reason || 'Verification was not approved',
+                    retry_url: `${APP_URL}/kyc`,
+                });
             }
         }
     } catch (e) {
         logger.error('kyc-status email send failed', { error: e.message, user_id: id, kyc_status });
     }
 
-    // Return the full, updated user
     const updated = db.prepare('SELECT * FROM user WHERE id=?').get(id);
     return res.json({ data: userRowToDto(updated) });
 });
@@ -1395,8 +1376,9 @@ app.post('/api/admin/users/:user_id/impersonate', auth, adminOnly, param('user_i
     if (!u) return res.status(404).json({ error: 'User not found' });
     const token = crypto.randomBytes(32).toString('hex');
     const now = Date.now(), exp = now + 2 * 60 * 60 * 1000;
-    db.prepare('INSERT INTO impersonation_token (admin_user_id,target_user_id,token,created_at,expires_at,ip_address) VALUES (?,?,?,?,?,?)')
-        .run(req.user.id, target, token, now, exp, req.ip || null);
+    db.prepare('INSERT INTO impersonation_token (admin_user_id,target_user_id,token,created_at,expires_at,ip_address) VALUES (?,?,?,?,?,?)').run(
+        req.user.id, target, token, now, exp, req.ip || null
+    );
     logAdminAction(req.user.id, 'impersonate', 'user', target, { token_expires_at: exp }, req);
     res.json({ ok: true, data: { impersonation_token: token } });
 });
@@ -1407,71 +1389,64 @@ app.get('/api/admin/users/:user_id/billing-history', auth, adminOnly, param('use
 });
 
 // ===== ADMIN — MAIL =====
+app.get('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
 
-// GET by id: boolean mapping + nested user + conditional GET + audit
-app.get('/api/admin/mail-items/:id',
-    auth, adminOnly, param('id').isInt(),
-    (req, res) => {
-        console.log('HIT /api/admin/mail-items/:id', req.params.id);
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid id' });
+    const id = +req.params.id;
+    const row = db
+        .prepare(
+            `
+        SELECT m.*, u.id AS user_id, u.name AS user_name, u.email AS user_email
+        FROM mail_item m
+        LEFT JOIN user u ON u.id = m.user_id
+        WHERE m.id = ?
+      `
+        )
+        .get(id);
 
-        const id = +req.params.id;
-        const row = db.prepare(`
-      SELECT m.*, u.id AS user_id, u.name AS user_name, u.email AS user_email
-      FROM mail_item m
-      LEFT JOIN user u ON u.id = m.user_id
-      WHERE m.id = ?
-    `).get(id);
+    if (!row) return res.status(404).json({ error: 'Mail item not found' });
 
-        if (!row) return res.status(404).json({ error: 'Mail item not found' });
+    const shaped = nestUser(mapMailBooleans(row));
+    const responseBody = { data: shaped };
+    const etag = etagFor(responseBody);
 
-        const shaped = nestUser(mapMailBooleans(row));
-        const responseBody = { data: shaped };
-        const etag = etagFor(responseBody);
-
-        if (req.headers['if-none-match'] && req.headers['if-none-match'] === etag) {
-            return res.status(304).end();
-        }
-
-        // audit (best-effort)
-        try {
-            logAdminAction(req.user.id, 'read_mail_item', 'mail_item', id, { path: req.originalUrl }, req);
-        } catch (_) { }
-
-        res.set('ETag', etag);
-        res.json(responseBody);
+    if (req.headers['if-none-match'] && req.headers['if-none-match'] === etag) {
+        return res.status(304).end();
     }
-);
-console.log('MOUNTED: /api/admin/mail-items/:id');
+
+    try {
+        logAdminAction(req.user.id, 'read_mail_item', 'mail_item', id, { path: req.originalUrl }, req);
+    } catch (_) { }
+
+    res.set('ETag', etag);
+    res.json(responseBody);
+});
 
 app.post('/api/admin/mail-items', auth, adminOnly, async (req, res) => {
-    // validate server-side using Joi schema used below in PUT route, but it's okay for now since admin controlled
     const { user_id, subject, sender_name, received_date, notes, tag } = req.body;
     const now = Date.now();
-    const info = db.prepare(`INSERT INTO mail_item (created_at,user_id,subject,sender_name,received_date,notes,tag,status)
-    VALUES (?,?,?,?,?,?,?,'received')`).run(now, user_id, subject, sender_name || null, received_date || null, notes || null, tag || null);
+    const info = db
+        .prepare(
+            `INSERT INTO mail_item (created_at,user_id,subject,sender_name,received_date,notes,tag,status)
+         VALUES (?,?,?,?,?,?,?,'received')`
+        )
+        .run(now, user_id, subject, sender_name || null, received_date || null, notes || null, tag || null);
     logAdminAction(req.user.id, 'create', 'mail_item', info.lastInsertRowid, req.body, req);
     const row = db.prepare('SELECT * FROM mail_item WHERE id=?').get(info.lastInsertRowid);
 
-    // If user is cancelled/past_due, notify mail received after cancellation
     const owner = db.prepare('SELECT email, first_name, plan_status FROM user WHERE id=?').get(user_id);
     if (owner && (owner.plan_status === 'cancelled' || owner.plan_status === 'past_due')) {
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.mail_after_cancel,
-            owner.email,
-            {
-                first_name: owner.first_name || '',
-                subject: subject || 'Mail received',
-                options_url: `${APP_URL}/billing`
-            }
-        );
+        await sendTemplateEmail('mail-received-after-cancellation', owner.email, {
+            first_name: owner.first_name || '',
+            subject: subject || 'Mail received',
+            options_url: `${APP_URL}/billing`,
+        });
     }
 
     res.status(201).json({ data: row });
 });
 
-// LIST: add sorting + boolean mapping + nested user
 app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
     const { page = 1, per_page = 20, status, user_id, search, sort, order } = req.query || {};
 
@@ -1480,31 +1455,37 @@ app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
     const sortOrder = (order || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
     let sql = `
-      SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email
-      FROM mail_item m
-      LEFT JOIN user u ON u.id=m.user_id
-      WHERE 1=1
-    `;
+        SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email
+        FROM mail_item m
+        LEFT JOIN user u ON u.id=m.user_id
+        WHERE 1=1
+      `;
     const p = [];
     if (status) { sql += ' AND m.status=?'; p.push(status); }
     if (user_id) { sql += ' AND m.user_id=?'; p.push(parseInt(user_id)); }
-    if (search) { sql += ' AND (m.subject LIKE ? OR m.sender_name LIKE ? OR u.name LIKE ?)'; const s = `%${search}%`; p.push(s, s, s); }
+    if (search) {
+        sql += ' AND (m.subject LIKE ? OR m.sender_name LIKE ? OR u.name LIKE ?)';
+        const s = `%${search}%`;
+        p.push(s, s, s);
+    }
 
-    const total = db.prepare(sql.replace(
-        'SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email',
-        'SELECT COUNT(*) c'
-    )).get(...p).c;
+    const total = db.prepare(sql.replace('SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email', 'SELECT COUNT(*) c')).get(...p).c;
 
     const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
     const rows = db.prepare(sql + ` ORDER BY m.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`).all(...p, limit, offset);
 
     const data = rows.map(r => nestUser(mapMailBooleans(r)));
-    res.json({ data, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit), sort: sortBy, order: sortOrder } });
+    res.json({
+        data,
+        meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit), sort: sortBy, order: sortOrder },
+    });
 });
 
 app.put('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), async (req, res) => {
-    const id = +req.params.id; const allowed = ['tag', 'status', 'subject', 'sender_name', 'notes', 'admin_note'];
-    const updates = {}; for (const k of allowed) if (k in (req.body || {})) updates[k] = req.body[k];
+    const id = +req.params.id;
+    const allowed = ['tag', 'status', 'subject', 'sender_name', 'notes', 'admin_note'];
+    const updates = {};
+    for (const k of allowed) if (k in (req.body || {})) updates[k] = req.body[k];
     if (!Object.keys(updates).length) return res.status(400).json({ error: 'No fields to update' });
 
     const before = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
@@ -1515,19 +1496,14 @@ app.put('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), async
     logAdminAction(req.user.id, 'update_mail_item', 'mail_item', id, updates, req);
     const after = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
 
-    // If status transitioned to "scanned", notify owner
     if (before?.status !== 'scanned' && after?.status === 'scanned') {
-        const owner = db.prepare('SELECT u.email, u.first_name FROM user u WHERE u.id=?').get(after.user_id);
+        const owner = db.prepare(`SELECT u.email, u.first_name FROM user u WHERE u.id=?`).get(after.user_id);
         if (owner) {
-            await sendTemplateEmail(
-                POSTMARK_TEMPLATES.mail_scanned,
-                owner.email,
-                {
-                    first_name: owner.first_name || '',
-                    subject: after.subject || 'New mail',
-                    view_url: `${APP_URL}/mail/${id}`
-                }
-            );
+            await sendTemplateEmail('mail-scanned', owner.email, {
+                first_name: owner.first_name || '',
+                subject: after.subject || 'New mail',
+                view_url: `${APP_URL}/mail/${id}`,
+            });
         }
     }
 
@@ -1547,23 +1523,24 @@ app.post('/api/admin/mail-items/:id/restore', auth, adminOnly, param('id').isInt
     const id = +req.params.id;
     const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND deleted=1').get(id);
     if (!item) return res.status(404).json({ error: 'Deleted mail item not found' });
-    db.prepare("UPDATE mail_item SET deleted=0, deleted_by_admin=0, status='received' WHERE id=?").run(id);
+    db.prepare('UPDATE mail_item SET deleted=0, deleted_by_admin=0, status="received" WHERE id=?').run(id);
     logAdminAction(req.user.id, 'restore', 'mail_item', id, {}, req);
     const row = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     res.json({ data: row });
 });
 app.post('/api/admin/mail-items/:id/log-physical-receipt', auth, adminOnly, param('id').isInt(), (req, res) => {
-    const id = +req.params.id; const item = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
+    const id = +req.params.id;
+    const item = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
     const ts = Date.now();
     db.prepare('UPDATE mail_item SET physical_receipt_timestamp=? WHERE id=?').run(ts, id);
     logMailEvent(id, req.user.id, 'physical_receipt_logged', { timestamp: ts });
-    // audit
     logAdminAction(req.user.id, 'log_physical_receipt', 'mail_item', id, { timestamp: ts }, req);
     res.json({ ok: true, message: 'Physical receipt logged.' });
 });
 app.post('/api/admin/mail-items/:id/log-physical-dispatch', auth, adminOnly, param('id').isInt(), async (req, res) => {
-    const id = +req.params.id; const { tracking_number } = req.body || {};
+    const id = +req.params.id;
+    const { tracking_number } = req.body || {};
     const item = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
     const ts = Date.now();
@@ -1571,26 +1548,24 @@ app.post('/api/admin/mail-items/:id/log-physical-dispatch', auth, adminOnly, par
     logMailEvent(id, req.user.id, 'physical_dispatch_logged', { timestamp: ts, tracking_number });
     logAdminAction(req.user.id, 'log_physical_dispatch', 'mail_item', id, { timestamp: ts, tracking_number }, req);
 
-    // Notify owner: mail forwarded
-    const owner = db.prepare(`
-    SELECT u.email, u.first_name, m.subject 
-    FROM mail_item m JOIN user u ON u.id = m.user_id 
-    WHERE m.id = ?
-  `).get(id);
+    const owner = db
+        .prepare(
+            `
+          SELECT u.email, u.first_name, m.subject 
+          FROM mail_item m JOIN user u ON u.id = m.user_id 
+          WHERE m.id = ?
+        `
+        )
+        .get(id);
     if (owner) {
         const trackUrl = tracking_number ? `${ROYALMAIL_TRACK_URL}/${encodeURIComponent(tracking_number)}` : '';
-
-        await sendTemplateEmail(
-            POSTMARK_TEMPLATES.mail_forwarded,
-            owner.email,
-            {
-                first_name: owner.first_name || '',
-                subject: owner.subject || 'Your mail',
-                tracking_number: tracking_number || '',
-                track_url: trackUrl,
-                help_url: APP_URL
-            }
-        );
+        await sendTemplateEmail('mail-forwarded', owner.email, {
+            first_name: owner.first_name || '',
+            subject: owner.subject || 'Your mail',
+            tracking_number: tracking_number || '',
+            track_url: trackUrl,
+            help_url: APP_URL,
+        });
     }
 
     res.json({ ok: true, message: 'Physical dispatch logged.' });
@@ -1603,184 +1578,36 @@ app.post('/api/admin/payments/initiate-refund', auth, adminOnly, (req, res) => {
     const p = db.prepare('SELECT * FROM payment WHERE id=?').get(payment_id);
     if (!p) return res.status(404).json({ error: 'Payment not found' });
     const now = Date.now();
-    db.prepare('INSERT INTO payment (created_at,user_id,status,amount,description,payment_type) VALUES (?,?, "refunded", ?, ?, "refund")')
-        .run(now, p.user_id, -(amount || p.amount || 0), reason || 'Admin refund');
+    db.prepare('INSERT INTO payment (created_at,user_id,status,amount,description,payment_type) VALUES (?,?, "refunded", ?, ?, "refund")').run(
+        now, p.user_id, -(amount || p.amount || 0), reason || 'Admin refund'
+    );
     logAdminAction(req.user.id, 'refund', 'payment', payment_id, { amount, reason }, req);
     res.json({ ok: true, message: 'Refund initiated successfully.' });
 });
 app.post('/api/admin/payments/create-adhoc-link', auth, adminOnly, (req, res) => {
     const { user_id, amount, description } = req.body || {};
     if (!user_id || !amount) return res.status(400).json({ error: 'user_id and amount required' });
-    const pid = `adhoc_${Date.now()}`; const url = `https://pay.gocardless.com/one-off/${pid}`;
-    db.prepare('INSERT INTO payment (created_at,user_id,status,amount,description,payment_type) VALUES (?,?, "pending", ?, ?, "adhoc")')
-        .run(Date.now(), user_id, amount, description || 'Admin charge');
+    const pid = `adhoc_${Date.now()}`;
+    const url = `https://pay.gocardless.com/one-off/${pid}`;
+    db.prepare('INSERT INTO payment (created_at,user_id,status,amount,description,payment_type) VALUES (?,?, "pending", ?, ?, "adhoc")').run(
+        Date.now(), user_id, amount, description || 'Admin charge'
+    );
     logAdminAction(req.user.id, 'create_payment_link', 'payment', user_id, { amount, description }, req);
     res.json({ ok: true, data: { payment_link_url: url, payment_id: pid } });
-});
-
-// ===== ADMIN — LOGS & REPORTS =====
-app.get('/api/admin/logs/activity', auth, adminOnly, (req, res) => {
-    const { page = 1, per_page = 50, action_type, target_type } = req.query || {};
-    let sql = `SELECT al.*, u.name as admin_name FROM admin_log al LEFT JOIN user u ON u.id=al.admin_user_id WHERE 1=1`;
-    const p = [];
-    if (action_type) { sql += ' AND al.action_type=?'; p.push(action_type); }
-    if (target_type) { sql += ' AND al.target_type=?'; p.push(target_type); }
-    const total = db.prepare(sql.replace('SELECT al.*, u.name as admin_name', 'SELECT COUNT(*) c')).get(...p).c;
-    const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
-    const rows = db.prepare(sql + ' ORDER BY al.created_at DESC LIMIT ? OFFSET ?').all(...p, limit, offset);
-    res.json({ data: rows, meta: { current_page: parseInt(page), per_page: limit, total, total_pages: Math.ceil(total / limit) } });
-});
-app.get('/api/admin/logs/email-delivery', auth, adminOnly, (req, res) => {
-    res.json({ data: [{ id: 'msg_123', to: 'user@example.com', subject: 'Welcome to VirtualAddressHub', status: 'delivered', sent_at: Date.now() - 86400000, delivered_at: Date.now() - 86300000 }] });
-});
-app.get('/api/admin/reports/users/csv', auth, adminOnly, (req, res) => {
-    const users = db.prepare('SELECT * FROM user ORDER BY created_at DESC').all();
-    const headers = ['ID', 'Created At', 'Name', 'Email', 'First Name', 'Last Name', 'Company', 'KYC Status', 'Plan Status', 'Is Admin'];
-    const rows = users.map(u => [
-        u.id,
-        new Date(u.created_at).toISOString(),
-        u.name || '',
-        u.email,
-        u.first_name || '',
-        u.last_name || '',
-        u.company_name || '',
-        u.kyc_status,
-        u.plan_status,
-        u.is_admin ? 'Yes' : 'No'
-    ]);
-    const csv = [headers, ...rows]
-        .map(r => r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="users.csv"');
-    res.send(csv);
-});
-
-app.get('/api/admin/reports/mail-items/csv', auth, adminOnly, (req, res) => {
-    const items = db.prepare(`
-        SELECT m.*, u.name as user_name, u.email as user_email
-        FROM mail_item m
-        LEFT JOIN user u ON u.id = m.user_id
-        ORDER BY m.created_at DESC
-    `).all();
-
-    const headers = [
-        'ID',
-        'User',
-        'User Email',
-        'Subject',
-        'Sender',
-        'Received Date',
-        'Status',
-        'Tag',
-        'Created At'
-    ];
-
-    const rows = items.map(i => [
-        i.id,
-        i.user_name || '',
-        i.user_email || '',
-        i.subject || '',
-        i.sender_name || '',
-        i.received_date || '',
-        i.status || '',
-        i.tag || '',
-        new Date(i.created_at).toISOString()
-    ]);
-
-    const csv = [headers, ...rows]
-        .map(r => r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="mail-items.csv"');
-    res.send(csv);
-});
-
-app.get('/api/admin/reports/forwarding-log/csv', auth, adminOnly, (req, res) => {
-    const rows = db.prepare(`
-        SELECT fr.*, u.name AS user_name, u.email AS user_email, m.subject AS mail_subject
-        FROM forwarding_request fr
-        LEFT JOIN user u ON u.id = fr."user"
-        LEFT JOIN mail_item m ON m.id = fr.mail_item
-        ORDER BY fr.created_at DESC
-    `).all();
-
-    const headers = [
-        'ID',
-        'User',
-        'User Email',
-        'Mail Subject',
-        'Status',
-        'Is Billable',
-        'Destination Name',
-        'Destination Address',
-        'Created At'
-    ];
-
-    const data = rows.map(r => [
-        r.id,
-        r.user_name || '',
-        r.user_email || '',
-        r.mail_subject || '',
-        r.status || '',
-        r.is_billable ? 'Yes' : 'No',
-        r.destination_name || '',
-        r.destination_address || '',
-        new Date(r.created_at).toISOString()
-    ]);
-
-    const csv = [headers, ...data]
-        .map(row => row.map(f => `"${String(f).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="forwarding-log.csv"');
-    res.send(csv);
-});
-
-// ===== ADMIN — HARD DELETE =====
-app.delete('/api/admin/users/:user_id', auth, adminOnly, param('user_id').isInt(), async (req, res) => {
-    const id = +req.params.user_id; const { confirm } = req.body || {};
-    if (confirm !== 'DELETE') return res.status(400).json({ error: 'Must confirm with "DELETE" in request body' });
-    const user = db.prepare('SELECT * FROM user WHERE id=?').get(id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // Send account closed email BEFORE deleting
-    await sendTemplateEmail(
-        POSTMARK_TEMPLATES.account_closed,
-        user.email,
-        {
-            first_name: user.first_name || user.name || '',
-            contact_url: `${APP_URL}/support`
-        }
-    );
-
-    try {
-        db.prepare('DELETE FROM mail_event WHERE actor_user=?').run(id);
-        db.prepare('DELETE FROM forwarding_request WHERE "user"=?').run(id);
-        db.prepare('DELETE FROM mail_item WHERE user_id=?').run(id);
-        db.prepare('DELETE FROM payment WHERE user_id=?').run(id);
-        db.prepare('DELETE FROM activity_log WHERE user_id=?').run(id);
-        db.prepare('DELETE FROM password_reset WHERE user_id=?').run(id);
-        db.prepare('DELETE FROM impersonation_token WHERE target_user_id=? OR admin_user_id=?').run(id, id);
-        db.prepare('DELETE FROM support_ticket WHERE user_id = ?').run(id);
-        db.prepare('DELETE FROM user WHERE id=?').run(id);
-        logAdminAction(req.user.id, 'hard_delete', 'user', id, { email: user.email, name: user.name }, req);
-        res.json({ ok: true, message: 'User and all associated data permanently deleted.' });
-    } catch (e) { logger.error('hard delete failed', e); res.status(500).json({ error: 'Failed to delete user' }); }
 });
 
 // ===== WEBHOOKS (mock-safe) =====
 app.post('/api/webhooks/gocardless', async (req, res) => {
     const body = req.body || {};
-    db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)')
-        .run(Date.now(), 'gocardless', 'webhook', JSON.stringify(body), Date.now());
+    db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)').run(
+        Date.now(), 'gocardless', 'webhook', JSON.stringify(body), Date.now()
+    );
     if (body.payment) {
         const p = body.payment;
         if (p.user_id && p.status) {
-            db.prepare('INSERT INTO payment (created_at,user_id,gocardless_customer_id,subscription_id,status,invoice_url,mandate_id,amount,currency) VALUES (?,?,?,?,?,?,?,?,?)')
-                .run(Date.now(), p.user_id, p.gocardless_customer_id || null, p.subscription_id || null, p.status, p.invoice_url || null, p.mandate_id || null, p.amount || null, p.currency || 'GBP');
+            db.prepare(
+                'INSERT INTO payment (created_at,user_id,gocardless_customer_id,subscription_id,status,invoice_url,mandate_id,amount,currency) VALUES (?,?,?,?,?,?,?,?,?)'
+            ).run(Date.now(), p.user_id, p.gocardless_customer_id || null, p.subscription_id || null, p.status, p.invoice_url || null, p.mandate_id || null, p.amount || null, p.currency || 'GBP');
 
             const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(p.user_id);
 
@@ -1788,30 +1615,22 @@ app.post('/api/webhooks/gocardless', async (req, res) => {
                 db.prepare(`UPDATE user SET plan_status='active' WHERE id=?`).run(p.user_id);
 
                 if (u) {
-                    await sendTemplateEmail(
-                        POSTMARK_TEMPLATES.invoice_sent,
-                        u.email,
-                        {
-                            first_name: u.first_name || '',
-                            invoice_url: p.invoice_url || `${APP_URL}/billing`,
-                            amount: p.amount ? (p.amount / 100).toFixed(2) : undefined,
-                            currency: p.currency || 'GBP'
-                        }
-                    );
+                    await sendTemplateEmail('invoice-sent', u.email, {
+                        first_name: u.first_name || '',
+                        invoice_url: p.invoice_url || `${APP_URL}/billing`,
+                        amount: p.amount ? (p.amount / 100).toFixed(2) : undefined,
+                        currency: p.currency || 'GBP',
+                    });
                 }
             }
             if (p.status === 'failed') {
                 db.prepare(`UPDATE user SET plan_status='past_due' WHERE id=?`).run(p.user_id);
 
                 if (u) {
-                    await sendTemplateEmail(
-                        POSTMARK_TEMPLATES.payment_failed,
-                        u.email,
-                        {
-                            first_name: u.first_name || '',
-                            fix_url: `${APP_URL}/billing`
-                        }
-                    );
+                    await sendTemplateEmail('payment-failed', u.email, {
+                        first_name: u.first_name || '',
+                        fix_url: `${APP_URL}/billing`,
+                    });
                 }
             }
             if (p.status === 'cancelled') {
@@ -1824,13 +1643,17 @@ app.post('/api/webhooks/gocardless', async (req, res) => {
 
 app.post('/api/webhooks/sumsub', async (req, res) => {
     const body = req.body || {};
-    db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)')
-        .run(Date.now(), 'sumsub', 'webhook', JSON.stringify(body), Date.now());
-    const applicantId = body.applicant_id; const status = body.review_status; const userId = body.user_id;
+    db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)').run(
+        Date.now(), 'sumsub', 'webhook', JSON.stringify(body), Date.now()
+    );
+    const applicantId = body.applicant_id;
+    const status = body.review_status;
+    const userId = body.user_id;
     if (userId && status) {
-        const kyc = (status === 'completed' || status === 'approved') ? 'verified' : (status === 'rejected' ? 'rejected' : 'pending');
-        db.prepare('UPDATE user SET sumsub_applicant_id=?, sumsub_review_status=?, kyc_status=?, kyc_updated_at=?, sumsub_rejection_reason=? WHERE id=?')
-            .run(applicantId || null, status, kyc, Date.now(), body.rejection_reason || null, userId);
+        const kyc = status === 'completed' || status === 'approved' ? 'verified' : status === 'rejected' ? 'rejected' : 'pending';
+        db.prepare('UPDATE user SET sumsub_applicant_id=?, sumsub_review_status=?, kyc_status=?, kyc_updated_at=?, sumsub_rejection_reason=? WHERE id=?').run(
+            applicantId || null, status, kyc, Date.now(), body.rejection_reason || null, userId
+        );
         if (kyc === 'verified') {
             const folderUrl = `https://onedrive.example.com/Clients/${userId}`;
             db.prepare('UPDATE user SET one_drive_folder_url=? WHERE id=?').run(folderUrl, userId);
@@ -1839,25 +1662,17 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
         const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(userId);
         if (u) {
             if (kyc === 'verified') {
-                await sendTemplateEmail(
-                    POSTMARK_TEMPLATES.kyc_approved,
-                    u.email,
-                    {
-                        first_name: u.first_name || '',
-                        dashboard_url: APP_URL,
-                        certificate_url: `${CERTIFICATE_BASE_URL}/${userId}/proof-of-address.pdf`
-                    }
-                );
+                await sendTemplateEmail('kyc-approved', u.email, {
+                    first_name: u.first_name || '',
+                    dashboard_url: APP_URL,
+                    certificate_url: `${CERTIFICATE_BASE_URL}/${userId}/proof-of-address.pdf`,
+                });
             } else if (kyc === 'rejected') {
-                await sendTemplateEmail(
-                    POSTMARK_TEMPLATES.kyc_rejected,
-                    u.email,
-                    {
-                        first_name: u.first_name || '',
-                        reason: body.rejection_reason || 'Verification was not approved',
-                        retry_url: `${APP_URL}/kyc`
-                    }
-                );
+                await sendTemplateEmail('kyc-rejected', u.email, {
+                    first_name: u.first_name || '',
+                    reason: body.rejection_reason || 'Verification was not approved',
+                    retry_url: `${APP_URL}/kyc`,
+                });
             }
         }
     }
@@ -1876,7 +1691,9 @@ app.use((req, res, next) => {
 // ===== ERROR HANDLER (last) =====
 app.use((err, req, res, next) => {
     logger.error('Unhandled', { message: err.message, stack: err.stack, path: req.path });
-    if (err.message === 'Not allowed by CORS') return res.status(403).json({ error: 'CORS policy violation' });
+    if (err.message && String(err.message).startsWith('Not allowed by CORS')) {
+        return res.status(403).json({ error: 'CORS policy violation' });
+    }
     res.status(500).json({ error: NODE_ENV === 'production' ? 'Internal server error' : err.message });
 });
 
@@ -1886,7 +1703,7 @@ let server = null;
 if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
-        console.log(`CORS origins: ${ORIGIN.join(', ')}`);
+        console.log(`CORS origins: ${ALLOWED_ORIGINS.join(', ') || '(none specified)'}`);
     });
 
     function shutdown(sig) {
@@ -1897,5 +1714,5 @@ if (require.main === module) {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-// Export for tests (Supertest will use `app` directly; no need to listen)
+// Export for tests / serverless adapters
 module.exports = { app, db, server };
