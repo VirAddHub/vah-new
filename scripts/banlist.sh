@@ -5,7 +5,7 @@ BANNED='login_test_admin_bypass|login_test_admin_rescue|/api/test/elevate|/api/t
 ROUTES="app\.(get|post|put|delete)\('/api/test"
 
 scan() {
-  local pattern="$1"
+  pattern="$1"
   # Build list of files to scan
   find . -type f \
     -not -path "./node_modules/*" \
