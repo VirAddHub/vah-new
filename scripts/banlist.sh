@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BANNED='login_test_admin_bypass|login_test_admin_rescue|/api/test/elevate|/api/test/login'
+BANNED="login_test_admin_bypass|login_test_admin_rescue|/api/test/elevate|/api/test/login"
 ROUTES="app\.(get|post|put|delete)\('/api/test"
 
 scan() {
