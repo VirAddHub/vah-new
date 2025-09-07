@@ -23,6 +23,11 @@ const compression = require('compression');
 const { body, query, param, validationResult } = require('express-validator');
 const morgan = require('morgan');
 
+const fs = require('fs');
+const path = require('path');
+fs.mkdirSync(path.join(process.cwd(), 'logs'), { recursive: true });
+
+
 // ===== ENV =====
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
@@ -45,7 +50,7 @@ const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024'
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
 const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'vah.db');
 
-// 🔧 Fixed env variable name (remove CCERTIFICATE_ typo)
+
 const CERTIFICATE_BASE_URL =
     process.env.CERTIFICATE_BASE_URL || 'https://certificates.virtualaddresshub.co.uk';
 
@@ -119,8 +124,6 @@ app.use(compression());
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 
 // ===== CORS (Next.js oriented) =====
-// In the recommended setup, your Next.js app acts as the BFF and calls this API server-to-server.
-// We still allow browser calls from the specified origins for flexibility (dev tools, admin panels, etc).
 const ALLOWED_ORIGINS = [...ORIGIN, process.env.APP_ORIGIN_STAGING || ''].filter(Boolean);
 
 const CORS_OPTIONS = {

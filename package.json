@@ -2,13 +2,16 @@
   "name": "word",
   "version": "1.0.0",
   "private": true,
-  "description": "",
-  "main": "server.js",
+  "description": "Next.js frontend (stable, prod-ready)",
   "scripts": {
     "prestart": "bash scripts/banlist.sh",
     "prebuild": "bash scripts/banlist.sh",
     "security-check": "bash scripts/banlist.sh",
-    "start": "node server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "NODE_ENV=test jest --runInBand",
     "ci": "bash scripts/banlist.sh && NODE_ENV=test jest --runInBand",
     "postinstall": "chmod +x scripts/banlist.sh || true"
@@ -24,26 +27,33 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.0.1",
+    "express-rate-limit": "^8.1.0",
     "express-validator": "^7.2.1",
+    "geist": "1.5.1",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "nanoid": "^5.1.5",
-    "uuid": "^11.1.0",
+    "next": "14.2.32",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "uuid": "^12.0.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "jest": "^30.1.3",
-    "supertest": "^7.1.4"
+    "@tailwindcss/postcss": "4.1.13",
+    "@types/node": "^24.3.1",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
+    "autoprefixer": "10.4.21",
+    "jest": "30.1.3",
+    "postcss": "8.5.6",
+    "rimraf": "6.0.1",
+    "supertest": "7.1.4",
+    "tailwindcss": "4.1.13",
+    "typescript": "5.9.2"
   },
-  "files": [
-    "server.js",
-    "scripts",
-    "README.md",
-    "package.json"
-  ],
   "engines": {
     "node": "^18 || ^20 || ^22",
     "npm": ">=10"

@@ -44,3 +44,45 @@ signup.json
 
 # Next.js build output
 apps/web/.next/
+
+# local env
+.env.local
+.env.test
+
+# logs & caches
+logs/
+.next/
+.turbo/
+
+# sqlite artifacts (keep files, just ignore in git)
+vah.db
+vah.db-*
+*.db
+*.db-shm
+*.db-wal
+
+# misc local files
+cookie.txt
+signup.json
+# extra ignores
+.env.local
+# === VAH frontend ignores ===
+.env*
+!.env.example
+
+.next/
+tsconfig.tsbuildinfo
+*.swp
+
+tools/**/node_modules/
+# === End VAH block ===
+
+# Local runtime files
+vah.cookies
+*.bak
+vah.db
+logs/
+
+# local logs
+var/
+logs/

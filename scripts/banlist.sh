@@ -1,37 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BANNED="login_test_admin_bypass|login_test_admin_rescue|/api/test/elevate|/api/test/login"
-ROUTES="app\.(get|post|put|delete)\('/api/test"
+PATS=(
+  "/api/test/login-as-admin"
+  "login_test_admin_bypass"
+  "login_test_admin_rescue"
+  "/api/test/elevate"
+  "/api/test/login"
+  "app\\.(get|post|put|delete)\\('/api/test"
+)
 
-scan() {
-  pattern="$1"
-  # Build list of files to scan
-  find . -type f \
-    -not -path "./node_modules/*" \
-    -not -path "./.git/*" \
-    -not -path "./.history/*" \
-    -not -path "./tests/*" \
-    -not -path "./logs/*" \
-    -not -path "./coverage/*" \
-    -not -path "./dist/*" \
-    -not -path "./build/*" \
-    -not -path "./tmp/*" \
-    -not -path "./scripts/banlist.sh" \
-    -print0 \
-  | xargs -0 grep -nE "$pattern"
-}
+found=0
+for pat in "${PATS[@]}"; do
+  matches="$(
+    { git ls-files -z 2>/dev/null || find . -type f -print0; } \
+      | xargs -0 grep -nE -- "$pat" 2>/dev/null \
+      | grep -v 'scripts/banlist.sh:' || true
+  )"
+  if [ -n "${matches}" ]; then
+    echo "❌ Banned pattern found: ${pat}"
+    echo "${matches}" | head -n 50
+    found=1
+  fi
+done
 
-# 1) Hard bans (must not exist in prod code)
-if scan "$BANNED"; then
+if [ "${found}" -ne 0 ]; then
   echo "❌ Banned test bypass present"
   exit 1
+else
+  echo "✅ No banned test bypass detected"
 fi
-
-# 2) Flag any stray /api/test routes (sanity check)
-if scan "$ROUTES"; then
-  echo "⚠️  Found /api/test route(s) — verify they are not present in prod code."
-  exit 1
-fi
-
-echo "✅ No banned test bypasses found."
