@@ -140,8 +140,10 @@ const CORS_OPTIONS = {
     maxAge: 86400,
 };
 
-app.use(cors(CORS_OPTIONS));
-app.options("/:path*", cors(CORS_OPTIONS));
+const corsMw = cors(CORS_OPTIONS);
+app.use(corsMw);
+// CORS preflight handler (no route pattern)
+app.use((req,res,next)=>{ if(req.method==='OPTIONS'){ return corsMw(req,res,()=>res.sendStatus(204)); } next(); });
 
 // ===== Parsers & cookies =====
 app.use(express.json({ limit: '2mb' }));
