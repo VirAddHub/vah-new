@@ -141,7 +141,7 @@ const CORS_OPTIONS = {
 };
 
 app.use(cors(CORS_OPTIONS));
-app.options('*', cors(CORS_OPTIONS));
+app.options("/:path*", cors(CORS_OPTIONS));
 
 // ===== Parsers & cookies =====
 app.use(express.json({ limit: '2mb' }));
