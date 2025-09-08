@@ -421,6 +421,7 @@ ensureColumn('activity_log', 'user_agent', 'TEXT');
 ensureColumn('user', 'password_reset_token', 'TEXT');
 ensureColumn('user', 'password_reset_expires', 'INTEGER');
 ensureColumn('user', 'password_reset_used_at', 'INTEGER');
+ensureColumn('user', 'password_reset_token_hash', 'TEXT');
 
 // ✅ GoCardless columns (safe to run multiple times):
 ensureColumn('user', 'gocardless_customer_id', 'TEXT');
@@ -808,14 +809,16 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
         const publicResp = { success: true, message: 'If an account exists, a reset link has been sent.' };
         if (!user) return res.json(publicResp);
 
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresMs = Date.now() + 30 * 60 * 1000; // 30 mins
+        const { newToken, sha256Hex } = require("./lib/token");
+        const token = newToken(32);
+        const hash = sha256Hex(token);
+        const expires = Date.now() + 30*60*1000;
 
         db.prepare(`
             UPDATE user
-            SET password_reset_token = ?, password_reset_expires = ?, password_reset_used_at = NULL
+            SET password_reset_token_hash = ?, password_reset_token = NULL, password_reset_expires = ?, password_reset_used_at = NULL
             WHERE id = ?
-        `).run(token, expiresMs, user.id);
+        `).run(hash, expires, user.id);
 
         const link = `${APP_URL}/reset-password/confirm?token=${token}`;
         const name = user.name || 'there';
@@ -853,11 +856,31 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
 app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassword), async (req, res) => {
     const { token, new_password } = req.body;
     try {
-        const row = db.prepare(`
+        const { sha256Hex } = require("./lib/token");
+        const h = sha256Hex(token);
+        const now = Date.now();
+
+        // First try hashed column
+        let row = db.prepare(`
             SELECT id, password_reset_expires, password_reset_used_at
             FROM user
-            WHERE password_reset_token = ?
-        `).get(token);
+            WHERE password_reset_token_hash = ?
+            AND password_reset_expires IS NOT NULL AND password_reset_expires > ?
+            AND password_reset_used_at IS NULL
+            LIMIT 1
+        `).get(h, now);
+
+        // Legacy fallback (if any old plaintext tokens exist)
+        if (!row) {
+            row = db.prepare(`
+                SELECT id, password_reset_expires, password_reset_used_at
+                FROM user
+                WHERE password_reset_token = ?
+                AND password_reset_expires IS NOT NULL AND password_reset_expires > ?
+                AND password_reset_used_at IS NULL
+                LIMIT 1
+            `).get(token, now);
+        }
 
         if (!row) {
             return res.status(400).json({ success: false, code: 'invalid_token', message: 'Invalid or expired token' });
@@ -884,12 +907,11 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
         }
 
         const hashed = bcrypt.hashSync(new_password, 10);
-        const now = Date.now();
 
         const tx = db.transaction(() => {
             db.prepare(`
                 UPDATE user
-                SET password = ?, password_reset_token = NULL, password_reset_used_at = ?, password_reset_expires = NULL, login_attempts = 0, locked_until = NULL
+                SET password = ?, password_reset_token_hash = NULL, password_reset_token = NULL, password_reset_used_at = ?, password_reset_expires = NULL, login_attempts = 0, locked_until = NULL
                 WHERE id = ?
             `).run(hashed, now, row.id);
         });
