@@ -51,6 +51,7 @@ router.get("/search", (req, res) => {
         try {
             const sql = `
         SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted,
+               m.file_id, m.forwarding_status, m.storage_expires_at,
                bm25(mail_item_fts) AS score
         FROM mail_item_fts
         JOIN mail_item m ON m.id = mail_item_fts.rowid
@@ -71,7 +72,8 @@ router.get("/search", (req, res) => {
     // --- LIKE fallback / empty q
     const likeQ = `%${q.replace(/[%_]/g, "")}%`;
     const sql = `
-    SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted
+    SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted,
+           m.file_id, m.forwarding_status, m.storage_expires_at
     FROM mail_item m
     WHERE ${where.join(" AND ")}
       ${q ? "AND (m.subject LIKE ? OR m.sender_name LIKE ? OR m.notes LIKE ? OR m.tag LIKE ?)" : ""}

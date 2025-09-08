@@ -462,8 +462,8 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
     `);
 
-    // Notifications table (idempotent)
-    db.exec(`
+// Notifications table (idempotent)
+db.exec(`
     CREATE TABLE IF NOT EXISTS notification (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -482,7 +482,43 @@ db.exec(`
     ensureColumn('mail_item', 'updated_by', 'INTEGER');
     ensureColumn('mail_item', 'updated_at', 'INTEGER');
 
+    // OneDrive file metadata table (no blobs)
     db.exec(`
+    CREATE TABLE IF NOT EXISTS file (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      mail_item_id INTEGER,
+      drive_id TEXT,
+      item_id TEXT UNIQUE,   -- OneDrive driveItem id (unique)
+      path TEXT,
+      name TEXT,
+      size INTEGER,
+      mime TEXT,
+      etag TEXT,
+      modified_at INTEGER,
+      web_url TEXT,
+      share_url TEXT,
+      share_expires_at INTEGER,
+      deleted INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS file_user_created ON file(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
+    `);
+
+    // Mail columns to match your Make flow
+    ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
+    ensureColumn('mail_item', 'file_id', 'INTEGER');
+    ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Requested' | 'Forwarded'
+    ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
+
+    // Defaults (safe re-run)
+    db.exec(`
+      UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No');
+    `);
+
+db.exec(`
       CREATE TABLE IF NOT EXISTS mail_audit (
         id INTEGER PRIMARY KEY,
         item_id INTEGER NOT NULL,
@@ -495,9 +531,9 @@ db.exec(`
       CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
     `);
 
-    // Trigger: whenever a mail_item row changes, snapshot before/after key fields
-    // (Note: admin routes also set updated_by so trigger captures the actor.)
-    db.exec(`
+// Trigger: whenever a mail_item row changes, snapshot before/after key fields
+// (Note: admin routes also set updated_by so trigger captures the actor.)
+db.exec(`
       CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
       BEGIN
         INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
@@ -1402,6 +1438,18 @@ const { httpMetricsMiddleware } = require("./lib/metrics");
 const metricsRoute = require("./routes/metrics");
 app.use(httpMetricsMiddleware());         // request counters + latency hist
 app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
+
+// ===== OneDrive Webhook Routes =====
+const onedriveWebhook = require("./routes/webhooks-onedrive");
+app.use("/api/webhooks/onedrive", onedriveWebhook);
+
+// ===== Files Routes =====
+const filesRoute = require("./routes/files");
+app.use("/api/files", filesRoute);
+
+// ===== Mail Forward Routes =====
+const mailForwardRoute = require("./routes/mail-forward");
+app.use("/api/mail", mailForwardRoute);
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
