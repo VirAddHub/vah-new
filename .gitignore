@@ -86,3 +86,22 @@ logs/
 # local logs
 var/
 logs/
+
+# ── Frontend (Next.js) local-only stuff ─────────────────────────
+.next/
+out/
+node_modules/
+.env*
+cookies.txt
+*.log
+coverage/
+dist/
+.DS_Store
+
+# local-only
+.env.local
+.env.development
+cookies.txt
+var/
+logs/
+/apps/web/package-lock.json
