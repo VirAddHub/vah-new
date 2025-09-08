@@ -1,0 +1,29 @@
+groups:
+- name: vah_slo
+  rules:
+  - alert: HighErrorRate
+    expr: job:request_errors_ratio > 0.01
+    for: 5m
+    labels:
+      severity: page
+    annotations:
+      summary: "High error rate (>1% 5xx)"
+      description: "Check logs using X-Request-ID correlation."
+
+  - alert: HighLatencyP95
+    expr: job_route:request_duration_ms:p95{route="/api/mail-items/search"} > 400
+    for: 10m
+    labels:
+      severity: warn
+    annotations:
+      summary: "Search p95 latency high"
+      description: "Investigate DB/FTS load and recent deploys."
+
+  - alert: ForwardBlockedSpike
+    expr: increase(vah_forward_requests_total{result="blocked"}[10m]) > 50
+    for: 10m
+    labels:
+      severity: warn
+    annotations:
+      summary: "Spike in blocked forwarding requests"
+      description: "Likely policy/expiry regression or UI flow issue."

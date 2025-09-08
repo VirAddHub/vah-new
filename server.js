@@ -51,31 +51,31 @@ app.use(cookieParser());
 
 // Request ID for traceability
 app.use((req, res, next) => {
-  req.requestId = req.headers["x-request-id"] || crypto.randomUUID();
-  res.setHeader("X-Request-ID", req.requestId);
-  next();
+    req.requestId = req.headers["x-request-id"] || crypto.randomUUID();
+    res.setHeader("X-Request-ID", req.requestId);
+    next();
 });
 
 // CSP (Content Security Policy) - tune domains as needed
 app.use((_, res, next) => {
-  res.setHeader("Content-Security-Policy",
-    "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; " +
-    "img-src 'self' data: blob: https:; " +
-    "script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-    "connect-src 'self' https://api-sandbox.gocardless.com https://api.sumsub.com;"
-  );
-  next();
+    res.setHeader("Content-Security-Policy",
+        "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; " +
+        "img-src 'self' data: blob: https:; " +
+        "script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+        "connect-src 'self' https://api-sandbox.gocardless.com https://api.sumsub.com;"
+    );
+    next();
 });
 
 // CSRF guard for state-changing routes (skip webhooks mounted with raw body)
 const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
 function csrfGuard(req, res, next) {
-  if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
-  if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
-  const origin = req.headers.origin || "";
-  const referer = req.headers.referer || "";
-  if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
-  return res.status(403).json({ ok: false, error: "csrf_blocked" });
+    if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
+    if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
+    const origin = req.headers.origin || "";
+    const referer = req.headers.referer || "";
+    if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
+    return res.status(403).json({ ok: false, error: "csrf_blocked" });
 }
 app.use(csrfGuard);
 
