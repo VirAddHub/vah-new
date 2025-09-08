@@ -2,12 +2,18 @@ const express = require("express");
 const { db } = require("../lib/db");
 const router = express.Router();
 
+// Test endpoint
+router.get("/test", (req, res) => {
+    res.json({ ok: true, message: "Mail search route is working", user: req.user });
+});
+
 /**
  * GET /api/mail/search?q=&limit=&offset=&tag=&status=&deleted=true|false
  * Returns only current user's mail.
  */
-router.get("/search", (req, res) => {
+router.get("/", (req, res) => {
     const userId = Number(req.user?.id || 0);
+    console.log("[mail-search] userId:", userId, "req.user:", req.user);
     if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
     const q = String(req.query.q || "").trim();
@@ -33,12 +39,18 @@ router.get("/search", (req, res) => {
         WHERE mail_item_fts MATCH ? AND ${where.join(" AND ")}
         ORDER BY score ASC, m.created_at DESC
         LIMIT ? OFFSET ?`;
+            console.log("[mail-search] FTS query:", sql);
+            console.log("[mail-search] FTS args:", [q, ...args, limit, offset]);
             const items = db.prepare(sql).all(q, ...args, limit, offset);
+            console.log("[mail-search] FTS results:", items.length);
             const total = db.prepare(
                 `SELECT COUNT(*) AS c FROM mail_item_fts JOIN mail_item m ON m.id=mail_item_fts.rowid WHERE mail_item_fts MATCH ? AND ${where.join(" AND ")}`
             ).get(q, ...args).c;
             return res.json({ ok: true, total, items });
-        } catch (_) { /* fall back to LIKE */ }
+        } catch (e) { 
+            console.log("[mail-search] FTS error:", e.message);
+            /* fall back to LIKE */ 
+        }
     }
 
     const likeQ = `%${q.replace(/[%_]/g, "")}%`;
@@ -50,7 +62,10 @@ router.get("/search", (req, res) => {
     ORDER BY m.created_at DESC
     LIMIT ? OFFSET ?`;
     const likeArgs = q ? [...args, likeQ, likeQ, likeQ, likeQ, limit, offset] : [...args, limit, offset];
+    console.log("[mail-search] LIKE query:", sql);
+    console.log("[mail-search] LIKE args:", likeArgs);
     const items = db.prepare(sql).all(...likeArgs);
+    console.log("[mail-search] LIKE results:", items.length);
 
     const countSql = `
     SELECT COUNT(*) AS c FROM mail_item m

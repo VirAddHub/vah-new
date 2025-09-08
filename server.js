@@ -26,6 +26,9 @@ const sumsubWebhook = require("./routes/webhooks-sumsub"); // keep if you split 
 // --- jwt helper (existing)
 const jwt = require('jsonwebtoken');
 
+// --- cookie options helper
+const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
+
 // --- init
 const app = express();
 app.set("trust proxy", 1);
@@ -67,16 +70,32 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
 const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
 
+// Enhanced auth middleware: supports cookies, Bearer JWT, and dev override
 app.use((req, _res, next) => {
-    const token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
+    let token = null;
+
+    // 1) cookie (normal path)
+    token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
+
+    // 2) Authorization: Bearer <jwt> (great for curl/tests)
+    const auth = req.headers.authorization || "";
+    if (!token && auth.startsWith("Bearer ")) token = auth.slice(7).trim();
+
     if (token) {
         try {
             const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
             req.user = { id: payload.id, is_admin: !!payload.is_admin, imp: !!payload.imp };
         } catch (_) {
-            // ignore invalid/expired
+            // ignore invalid/expired token
         }
     }
+
+    // 3) Dev-only safety valve: X-Dev-User-Id sets req.user for quick smoke tests
+    if (!req.user && process.env.NODE_ENV !== "production") {
+        const devId = Number(req.header("x-dev-user-id") || 0);
+        if (devId) req.user = { id: devId, email: `dev+${devId}@local`, is_admin: true };
+    }
+
     next();
 });
 
@@ -411,6 +430,7 @@ const { ensureMailFts } = require("./lib/db-fts");
 const { setDb } = require("./lib/db");
 setDb(db);
 ensureMailFts(db);
+console.log("[fts] mail_item_fts ensured");
 
 // === Support Tickets ===
 const supportSQL = `
@@ -580,12 +600,7 @@ function issueToken(user, extra = {}) {
 }
 function setSession(res, user) {
     const token = issueToken(user);
-    res.cookie(JWT_COOKIE, token, {
-        httpOnly: true,
-        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
-        secure: COOKIE_SECURE,
-        maxAge: 7 * 24 * 3600 * 1000,
-    });
+    res.cookie(JWT_COOKIE, token, sessionCookieOptions());
     return token; // return token so clients (Next BFF) can store/pass it as Bearer
 }
 
@@ -1001,7 +1016,11 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
     clearLoginAttempts(email);
     const token = setSession(res, user);
     logActivity(user.id, 'login', null, null, req);
-    return res.json({ ok: true, token, data: userRowToDto(user) });
+    
+    // Include dev_jwt in development for curl testing
+    const body = { ok: true, token, data: userRowToDto(user) };
+    if (process.env.NODE_ENV !== "production") body.dev_jwt = token;
+    return res.json(body);
 });
 
 app.post('/api/auth/logout', auth, (req, res) => {
@@ -1082,6 +1101,11 @@ if (NODE_ENV === 'test') {
         logger.info('Ensured test admin user exists', { email });
     }
 }
+
+// ===== DEBUG =====
+app.get("/api/debug/whoami", (req, res) => {
+    res.json({ ok: true, user: req.user || null, secure: isSecureEnv() });
+});
 
 // ===== PROFILE =====
 app.get('/api/profile', auth, (req, res) => {
@@ -1236,6 +1260,12 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
     const restored = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     res.json({ data: restored });
 });
+
+// ===== Mail Search Routes =====
+const mailSearch = require("./routes/mail-search");
+const adminMail = require("./routes/admin-mail");
+app.use("/api/mail/search", mailSearch);
+app.use("/api/admin", adminMail);
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
@@ -1905,10 +1935,7 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
 app.get('/api/healthz', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // ===== Mail Search & Admin Routes =====
-const mailSearch = require("./routes/mail-search");
-const adminMail = require("./routes/admin-mail");
-app.use("/api/mail", mailSearch);
-app.use("/api/admin", adminMail);
+// (moved earlier to avoid route conflicts)
 
 // ===== 404 for unknown /api/* =====
 app.use((req, res, next) => {
@@ -1944,3 +1971,4 @@ if (require.main === module) {
 
 // Export for tests / serverless adapters
 module.exports = { app, db, server };
+
