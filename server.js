@@ -110,7 +110,7 @@ const APP_URL = process.env.APP_ORIGIN || 'http://localhost:3000';
 
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
-const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'vah.db');
+const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'var/local/vah.db');
 
 
 const CERTIFICATE_BASE_URL =
@@ -1016,7 +1016,7 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
     clearLoginAttempts(email);
     const token = setSession(res, user);
     logActivity(user.id, 'login', null, null, req);
-    
+
     // Include dev_jwt in development for curl testing
     const body = { ok: true, token, data: userRowToDto(user) };
     if (process.env.NODE_ENV !== "production") body.dev_jwt = token;
@@ -1107,6 +1107,16 @@ app.get("/api/debug/whoami", (req, res) => {
     res.json({ ok: true, user: req.user || null, secure: isSecureEnv() });
 });
 
+app.get("/api/debug/db-info", (_req, res) => {
+    try {
+        const list = db.prepare("PRAGMA database_list").all();
+        const counts = db.prepare("SELECT COUNT(*) AS c FROM mail_item").get();
+        res.json({ ok: true, db: list, mailCount: counts.c });
+    } catch (e) {
+        res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
 // ===== PROFILE =====
 app.get('/api/profile', auth, (req, res) => {
     try {
@@ -1160,6 +1170,10 @@ app.get('/api/profile/certificate-url', auth, (req, res) => {
         res.status(500).json({ error: 'Certificate URL generation failed' });
     }
 });
+
+// ===== Mail Search Routes (mounted early to avoid conflicts) =====
+const mailSearch = require("./routes/mail-search");
+app.use("/api/mail-items", mailSearch);
 
 // ===== MAIL (USER) =====
 app.get(
@@ -1261,10 +1275,11 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
     res.json({ data: restored });
 });
 
-// ===== Mail Search Routes =====
-const mailSearch = require("./routes/mail-search");
+// ===== Mail Search Routes (mounted early to avoid conflicts) =====
+// (moved to before existing mail-items routes)
+
+// ===== Admin Mail Routes =====
 const adminMail = require("./routes/admin-mail");
-app.use("/api/mail/search", mailSearch);
 app.use("/api/admin", adminMail);
 
 // Legacy (used by your frontend bulk forward)

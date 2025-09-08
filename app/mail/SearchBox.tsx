@@ -11,7 +11,7 @@ export default function SearchBox() {
     useEffect(() => {
         const ctrl = new AbortController();
         const t = setTimeout(async () => {
-            const r = await fetch(`/api/bff/mail/search?q=${encodeURIComponent(q)}&limit=20`, {
+            const r = await fetch(`/api/bff/mail-items/search?q=${encodeURIComponent(q)}&limit=20`, {
                 credentials: "include",
                 signal: ctrl.signal,
             });
