@@ -1453,18 +1453,18 @@ app.use("/api/mail", mailForwardRoute);
 
 // ===== Dev Repair Routes =====
 if (process.env.NODE_ENV !== "production") {
-  // Self-heal FTS on boot in dev
-  try {
-    const { selfHealFts } = require("./lib/fts-repair");
-    const r = selfHealFts();
-    console.log("[fts] self-heal:", r);
-  } catch (e) {
-    console.warn("[fts] self-heal failed:", e?.message || e);
-  }
+    // Self-heal FTS on boot in dev
+    try {
+        const { selfHealFts } = require("./lib/fts-repair");
+        const r = selfHealFts();
+        console.log("[fts] self-heal:", r);
+    } catch (e) {
+        console.warn("[fts] self-heal failed:", e?.message || e);
+    }
 
-  // Mount repair routes
-  const adminRepair = require("./routes/admin-repair");
-  app.use("/api/admin/repair", adminRepair);
+    // Mount repair routes
+    const adminRepair = require("./routes/admin-repair");
+    app.use("/api/admin/repair", adminRepair);
 }
 
 // ===== Forward Audit Routes =====

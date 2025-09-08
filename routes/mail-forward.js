@@ -20,7 +20,7 @@ function auditForward(userId, mailId, result, reason) {
         `);
         db.prepare(`INSERT INTO forward_audit (mail_item_id,user_id,result,reason,created_at)
                     VALUES (?,?,?,?,?)`).run(mailId, userId, result, reason || null, Date.now());
-    } catch (_) {}
+    } catch (_) { }
 }
 
 /** POST /api/mail/forward  { mail_item_id, recipient, notes?, adminOverride? } */

@@ -13,7 +13,7 @@ router.post("/:id/signed-url", async (req, res) => {
     if (!id) return res.status(400).json({ ok: false, error: "bad_id" });
     const f = db.prepare(`SELECT * FROM file WHERE id=?`).get(id);
     if (!f || f.user_id !== userId) return res.status(404).json({ ok: false, error: "not_found" });
-    
+
     // Downloads are allowed even after storage expiry (per ALLOW_DOWNLOAD_AFTER_EXPIRY=true)
     // Only block if the file was hard-deleted from OneDrive
     if (f.deleted) return res.status(410).json({ ok: false, error: "gone" });
