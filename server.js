@@ -462,8 +462,8 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
     `);
 
-// Notifications table (idempotent)
-db.exec(`
+    // Notifications table (idempotent)
+    db.exec(`
     CREATE TABLE IF NOT EXISTS notification (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -476,6 +476,44 @@ db.exec(`
     );
     CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
+    `);
+
+    // Track who/when updated mail items
+    ensureColumn('mail_item', 'updated_by', 'INTEGER');
+    ensureColumn('mail_item', 'updated_at', 'INTEGER');
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS mail_audit (
+        id INTEGER PRIMARY KEY,
+        item_id INTEGER NOT NULL,
+        user_id INTEGER,                 -- actor (admin) if available
+        action TEXT NOT NULL,            -- 'update' | 'bulk_update'
+        before_json TEXT,                -- JSON snapshot of key fields
+        after_json  TEXT,                -- JSON snapshot of key fields
+        created_at INTEGER NOT NULL      -- ms
+      );
+      CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
+    `);
+
+    // Trigger: whenever a mail_item row changes, snapshot before/after key fields
+    // (Note: admin routes also set updated_by so trigger captures the actor.)
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
+      BEGIN
+        INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
+        VALUES (
+          new.id,
+          new.updated_by,
+          'update',
+          json_object(
+            'tag', old.tag, 'status', old.status, 'notes', old.notes, 'deleted', old.deleted
+          ),
+          json_object(
+            'tag', new.tag, 'status', new.status, 'notes', new.notes, 'deleted', new.deleted
+          ),
+          strftime('%s','now')*1000
+        );
+      END;
     `);
 
 // ✅ Mail FTS5 setup
@@ -1337,7 +1375,11 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
 
 // ===== Admin Mail Routes =====
 const adminMail = require("./routes/admin-mail");
+const adminMailBulk = require("./routes/admin-mail-bulk");
+const adminAudit = require("./routes/admin-audit");
 app.use("/api/admin", adminMail);
+app.use("/api/admin", adminMailBulk);
+app.use("/api/admin", adminAudit);
 
 // ===== Email Preferences Routes =====
 const emailPrefs = require("./routes/email-prefs");

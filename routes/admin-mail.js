@@ -14,6 +14,10 @@ router.patch("/mail-items/:id", (req, res) => {
     if (typeof status === "string") { fields.push("status = ?"); args.push(status); }
     if (typeof notes === "string") { fields.push("notes = ?"); args.push(notes); }
     if (deleted === true || deleted === false) { fields.push("deleted = ?"); args.push(deleted ? 1 : 0); }
+    // audit fields
+    fields.push("updated_by = ?"); args.push(Number(req.user.id));
+    fields.push("updated_at = ?"); args.push(Date.now());
+
     if (!fields.length) return res.status(400).json({ ok: false, error: "no_changes" });
 
     const info = db.prepare(`UPDATE mail_item SET ${fields.join(", ")} WHERE id = ?`).run(...args, id);
