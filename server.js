@@ -435,8 +435,8 @@ ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
 ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
 ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
 
-    // Set sane defaults for email preferences
-    db.exec(`
+// Set sane defaults for email preferences
+db.exec(`
       UPDATE user SET
         email_pref_marketing = COALESCE(email_pref_marketing, 1),
         email_pref_product   = COALESCE(email_pref_product, 1),
@@ -460,6 +460,22 @@ ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
       expires_at INTEGER                   -- ms
     );
     CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
+    `);
+
+    // Notifications table (idempotent)
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS notification (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,           -- e.g. 'kyc', 'security', 'export', 'billing'
+      title TEXT NOT NULL,
+      body TEXT,
+      meta TEXT,                    -- JSON string
+      created_at INTEGER NOT NULL,  -- ms
+      read_at INTEGER               -- ms or NULL
+    );
+    CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
     `);
 
 // ✅ Mail FTS5 setup
@@ -1334,6 +1350,10 @@ const { scheduleCleanup } = require("./lib/gdpr-export");
 app.use("/api/profile", gdprExport);   // requires auth
 app.use("/api/downloads", downloads);  // token-auth
 scheduleCleanup();
+
+// ===== Notifications Routes =====
+const notifications = require("./routes/notifications");
+app.use("/api/notifications", notifications);
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {

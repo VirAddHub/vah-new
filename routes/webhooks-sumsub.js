@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const { notify } = require('../lib/notify');
 
 const router = express.Router();
 
@@ -90,6 +91,15 @@ router.post('/', (req, res) => {
     // Note: mail_event requires a valid mail_item, so we skip audit logging for KYC events
   });
   tx();
+
+  // Send notification to user
+  notify({
+    userId: userRow.id,
+    type: "kyc",
+    title: `KYC status: ${statusText}`,
+    body: rejectReason ? `Reason: ${rejectReason}` : "",
+    meta: { applicantId, reviewStatus, reviewAnswer }
+  });
 
   return res.json({ ok: true });
 });
