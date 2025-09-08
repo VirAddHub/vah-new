@@ -423,17 +423,17 @@ ensureColumn('user', 'password_reset_expires', 'INTEGER');
 ensureColumn('user', 'password_reset_used_at', 'INTEGER');
 
 // ✅ GoCardless columns (safe to run multiple times):
-    ensureColumn('user', 'gocardless_customer_id', 'TEXT');
-    ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
-    ensureColumn('user', 'gocardless_session_token', 'TEXT');
-    ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
-    
-    // Email preferences
-    ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
-    ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
-    ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
-    ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
-    ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
+ensureColumn('user', 'gocardless_customer_id', 'TEXT');
+ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
+ensureColumn('user', 'gocardless_session_token', 'TEXT');
+ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+
+// Email preferences
+ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
+ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
+ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
+ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
+ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
 
     // Set sane defaults for email preferences
     db.exec(`
@@ -441,6 +441,25 @@ ensureColumn('user', 'password_reset_used_at', 'INTEGER');
         email_pref_marketing = COALESCE(email_pref_marketing, 1),
         email_pref_product   = COALESCE(email_pref_product, 1),
         email_pref_security  = COALESCE(email_pref_security, 1)
+    `);
+
+    // GDPR export table (idempotent)
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS export_job (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,                  -- 'gdpr_v1'
+      status TEXT NOT NULL,                -- 'pending'|'running'|'done'|'error'
+      created_at INTEGER NOT NULL,         -- ms
+      started_at INTEGER,
+      completed_at INTEGER,
+      error TEXT,
+      file_path TEXT,                      -- absolute path
+      file_size INTEGER,
+      token TEXT,                          -- opaque download token
+      expires_at INTEGER                   -- ms
+    );
+    CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
     `);
 
 // ✅ Mail FTS5 setup
@@ -1307,6 +1326,14 @@ app.use("/api/admin", adminMail);
 // ===== Email Preferences Routes =====
 const emailPrefs = require("./routes/email-prefs");
 app.use("/api/profile", emailPrefs);
+
+// ===== GDPR Export Routes =====
+const gdprExport = require("./routes/gdpr-export");
+const downloads = require("./routes/downloads");
+const { scheduleCleanup } = require("./lib/gdpr-export");
+app.use("/api/profile", gdprExport);   // requires auth
+app.use("/api/downloads", downloads);  // token-auth
+scheduleCleanup();
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
