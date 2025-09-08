@@ -1451,6 +1451,26 @@ app.use("/api/files", filesRoute);
 const mailForwardRoute = require("./routes/mail-forward");
 app.use("/api/mail", mailForwardRoute);
 
+// ===== Dev Repair Routes =====
+if (process.env.NODE_ENV !== "production") {
+  // Self-heal FTS on boot in dev
+  try {
+    const { selfHealFts } = require("./lib/fts-repair");
+    const r = selfHealFts();
+    console.log("[fts] self-heal:", r);
+  } catch (e) {
+    console.warn("[fts] self-heal failed:", e?.message || e);
+  }
+
+  // Mount repair routes
+  const adminRepair = require("./routes/admin-repair");
+  app.use("/api/admin/repair", adminRepair);
+}
+
+// ===== Forward Audit Routes =====
+const adminForwardAudit = require("./routes/admin-forward-audit");
+app.use("/api/admin/forward-audit", adminForwardAudit);
+
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
     const { status, tag } = req.query || {};
@@ -2149,7 +2169,7 @@ if (require.main === module) {
     setInterval(() => {
         try {
             const now = Date.now();
-            const soon = now + 48*60*60*1000;
+            const soon = now + 48 * 60 * 60 * 1000;
             const rows = db.prepare(`
                 SELECT id, user_id, storage_expires_at
                 FROM mail_item
@@ -2165,8 +2185,8 @@ if (require.main === module) {
                 body: "You have mail that expires in the next 48 hours.",
                 meta: { mail_item_id: r.id, expires_at: r.storage_expires_at }
             }));
-        } catch (_) {}
-    }, 60*60*1000); // Run every hour
+        } catch (_) { }
+    }, 60 * 60 * 1000); // Run every hour
 
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);
