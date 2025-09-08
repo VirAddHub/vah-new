@@ -63,6 +63,9 @@ app.use("/api/webhooks/gc", express.raw({ type: "*/*" }), gcWebhook);
 // normal JSON body parser for everything else
 app.use(express.json());
 
+// ===== WEBHOOKS (before auth) =====
+// (moved to after database initialization)
+
 // safe auth attach (don't crash if cookie missing/invalid)
 const JWT_COOKIE = process.env.JWT_COOKIE || "vah_session";
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
@@ -420,10 +423,25 @@ ensureColumn('user', 'password_reset_expires', 'INTEGER');
 ensureColumn('user', 'password_reset_used_at', 'INTEGER');
 
 // ✅ GoCardless columns (safe to run multiple times):
-ensureColumn('user', 'gocardless_customer_id', 'TEXT');
-ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
-ensureColumn('user', 'gocardless_session_token', 'TEXT');
-ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+    ensureColumn('user', 'gocardless_customer_id', 'TEXT');
+    ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
+    ensureColumn('user', 'gocardless_session_token', 'TEXT');
+    ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+    
+    // Email preferences
+    ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
+    ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
+    ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
+    ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
+    ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
+
+    // Set sane defaults for email preferences
+    db.exec(`
+      UPDATE user SET
+        email_pref_marketing = COALESCE(email_pref_marketing, 1),
+        email_pref_product   = COALESCE(email_pref_product, 1),
+        email_pref_security  = COALESCE(email_pref_security, 1)
+    `);
 
 // ✅ Mail FTS5 setup
 const { ensureMailFts } = require("./lib/db-fts");
@@ -431,6 +449,10 @@ const { setDb } = require("./lib/db");
 setDb(db);
 ensureMailFts(db);
 console.log("[fts] mail_item_fts ensured");
+
+// ===== WEBHOOKS (after database initialization) =====
+const postmarkWebhook = require("./routes/webhooks-postmark");
+app.use("/api/webhooks/postmark", postmarkWebhook);
 
 // === Support Tickets ===
 const supportSQL = `
@@ -1281,6 +1303,10 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
 // ===== Admin Mail Routes =====
 const adminMail = require("./routes/admin-mail");
 app.use("/api/admin", adminMail);
+
+// ===== Email Preferences Routes =====
+const emailPrefs = require("./routes/email-prefs");
+app.use("/api/profile", emailPrefs);
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
