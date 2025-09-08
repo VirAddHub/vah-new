@@ -33,14 +33,14 @@ app.set("trust proxy", 1);
 // security + CORS (must be before routes)
 app.use(helmet());
 app.use(
-  cors({
-    origin: [
-      process.env.APP_ORIGIN,
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-    ].filter(Boolean),
-    credentials: true,
-  })
+    cors({
+        origin: [
+            process.env.APP_ORIGIN,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ].filter(Boolean),
+        credentials: true,
+    })
 );
 
 // cookies must come before any access to req.cookies
@@ -59,23 +59,26 @@ app.use(express.json());
 // safe auth attach (don't crash if cookie missing/invalid)
 const JWT_COOKIE = process.env.JWT_COOKIE || "vah_session";
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
+const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
 
 app.use((req, _res, next) => {
-  const token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
-  if (token) {
-    try {
-      const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
-      req.user = { id: payload.id, is_admin: !!payload.is_admin, imp: !!payload.imp };
-    } catch (_) {
-      // ignore invalid/expired
+    const token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
+    if (token) {
+        try {
+            const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
+            req.user = { id: payload.id, is_admin: !!payload.is_admin, imp: !!payload.imp };
+        } catch (_) {
+            // ignore invalid/expired
+        }
     }
-  }
-  next();
+    next();
 });
 
 // ===== ENV =====
 const PORT = Number(process.env.PORT || 4000);
-const NODE_ENV = process.env.NODE_ENV || 'development';
+// NODE_ENV already declared above
 
 const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
 const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
@@ -742,53 +745,53 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
 const { sumsubFetch } = require("./lib/sumsub");
 
 app.post("/api/kyc/start", async (req, res) => {
-  try {
-    // use session user; allow dev override via body.userId if unauthenticated
-    const userId = Number(req.user?.id || req.body?.userId);
-    if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
+    try {
+        // use session user; allow dev override via body.userId if unauthenticated
+        const userId = Number(req.user?.id || req.body?.userId);
+        if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
-    const user = db
-      .prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?")
-      .get(userId);
-    if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
+        const user = db
+            .prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?")
+            .get(userId);
+        if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
 
-    const levelName = process.env.SUMSUB_LEVEL || "basic-kyc";
+        const levelName = process.env.SUMSUB_LEVEL || "basic-kyc";
 
-    // ensure applicant
-    let applicantId = user.sumsub_applicant_id;
-    if (!applicantId) {
-      // if creds missing, short-circuit in dev
-      if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
-        return res.json({ ok: true, token: "dev_stub_token", applicantId: "app_dev" });
-      }
+        // ensure applicant
+        let applicantId = user.sumsub_applicant_id;
+        if (!applicantId) {
+            // if creds missing, short-circuit in dev
+            if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+                return res.json({ ok: true, token: "dev_stub_token", applicantId: "app_dev" });
+            }
 
-      const created = await sumsubFetch("POST", "/resources/applicants", {
-        externalUserId: String(user.id),
-        email: user.email,
-        info: { firstName: user.first_name || "", lastName: user.last_name || "" },
-      });
-      applicantId = created?.id;
-      if (!applicantId) throw new Error("sumsub: missing applicant id");
-      db.prepare("UPDATE user SET sumsub_applicant_id = ? WHERE id = ?").run(applicantId, user.id);
+            const created = await sumsubFetch("POST", "/resources/applicants", {
+                externalUserId: String(user.id),
+                email: user.email,
+                info: { firstName: user.first_name || "", lastName: user.last_name || "" },
+            });
+            applicantId = created?.id;
+            if (!applicantId) throw new Error("sumsub: missing applicant id");
+            db.prepare("UPDATE user SET sumsub_applicant_id = ? WHERE id = ?").run(applicantId, user.id);
+        }
+
+        // fetch SDK token
+        if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+            // dev fallback still returns a token-like value
+            return res.json({ ok: true, token: "dev_stub_token", applicantId });
+        }
+
+        const tokenResp = await sumsubFetch(
+            "POST",
+            `/resources/accessTokens?userId=${encodeURIComponent(String(user.id))}&levelName=${encodeURIComponent(levelName)}`,
+            {}
+        );
+
+        return res.json({ ok: true, token: tokenResp?.token, applicantId });
+    } catch (e) {
+        console.error("[/api/kyc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
     }
-
-    // fetch SDK token
-    if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
-      // dev fallback still returns a token-like value
-      return res.json({ ok: true, token: "dev_stub_token", applicantId });
-    }
-
-    const tokenResp = await sumsubFetch(
-      "POST",
-      `/resources/accessTokens?userId=${encodeURIComponent(String(user.id))}&levelName=${encodeURIComponent(levelName)}`,
-      {}
-    );
-
-    return res.json({ ok: true, token: tokenResp?.token, applicantId });
-  } catch (e) {
-    console.error("[/api/kyc/start]", e);
-    return res.status(500).json({ ok: false, error: "server_error" });
-  }
 });
 
 app.post('/api/profile/update-password', auth, validate(schemas.updatePassword), async (req, res) => {
@@ -1818,7 +1821,7 @@ let server = null;
 if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
-        console.log(`CORS origins: ${ALLOWED_ORIGINS.join(', ') || '(none specified)'}`);
+        console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
     });
 
     function shutdown(sig) {
