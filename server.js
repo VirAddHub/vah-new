@@ -812,7 +812,7 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
         const { newToken, sha256Hex } = require("./lib/token");
         const token = newToken(32);
         const hash = sha256Hex(token);
-        const expires = Date.now() + 30*60*1000;
+        const expires = Date.now() + 30 * 60 * 1000;
 
         db.prepare(`
             UPDATE user
