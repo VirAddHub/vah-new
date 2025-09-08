@@ -150,6 +150,10 @@ app.use((req,res,next)=>{ if(req.method==='OPTIONS'){ return corsMw(req,res,()=>
 const sumsubWebhook = require('./routes/webhooks-sumsub');
 app.use('/api/webhooks/sumsub', express.raw({ type: '*/*' }), sumsubWebhook);
 
+// KYC start/continue flow
+const kycStart = require('./routes/kyc-start');
+app.use('/api/kyc', auth, kycStart);
+
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
