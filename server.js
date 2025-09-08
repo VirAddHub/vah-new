@@ -49,6 +49,36 @@ app.use(
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
 
+// Request ID for traceability
+app.use((req, res, next) => {
+  req.requestId = req.headers["x-request-id"] || crypto.randomUUID();
+  res.setHeader("X-Request-ID", req.requestId);
+  next();
+});
+
+// CSP (Content Security Policy) - tune domains as needed
+app.use((_, res, next) => {
+  res.setHeader("Content-Security-Policy",
+    "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; " +
+    "img-src 'self' data: blob: https:; " +
+    "script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+    "connect-src 'self' https://api-sandbox.gocardless.com https://api.sumsub.com;"
+  );
+  next();
+});
+
+// CSRF guard for state-changing routes (skip webhooks mounted with raw body)
+const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
+function csrfGuard(req, res, next) {
+  if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
+  if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
+  const origin = req.headers.origin || "";
+  const referer = req.headers.referer || "";
+  if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
+  return res.status(403).json({ ok: false, error: "csrf_blocked" });
+}
+app.use(csrfGuard);
+
 // light rate limit for auth-ish routes (safe to leave global)
 const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(authLimiter);
@@ -383,6 +413,22 @@ const bootstrapSQL = `
       used INTEGER DEFAULT 0,
       ip_address TEXT
     );
+
+    -- RBAC: Organizations and memberships
+    CREATE TABLE IF NOT EXISTS org (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at INTEGER DEFAULT (strftime('%s','now')*1000)
+    );
+
+    CREATE TABLE IF NOT EXISTS membership (
+      user_id INTEGER NOT NULL,
+      org_id INTEGER NOT NULL,
+      role TEXT NOT NULL, -- owner|admin|member
+      PRIMARY KEY (user_id, org_id),
+      FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+      FOREIGN KEY (org_id) REFERENCES org(id) ON DELETE CASCADE
+    );
   `;
 db.exec(bootstrapSQL);
 try {
@@ -393,6 +439,14 @@ try {
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_user_status ON forwarding_request("user", status);
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_created_at ON forwarding_request(created_at);
       CREATE INDEX IF NOT EXISTS idx_payment_user_created_at ON payment(user_id, created_at);
+      
+      -- Fast index for hashed password reset lookups
+      CREATE INDEX IF NOT EXISTS idx_user_pr_hash ON user(password_reset_token_hash);
+      
+      -- RBAC indexes
+      CREATE INDEX IF NOT EXISTS idx_membership_user ON membership(user_id);
+      CREATE INDEX IF NOT EXISTS idx_membership_org ON membership(org_id);
+      CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
     `);
     logger.info('Indexes ensured');
 } catch (e) {
@@ -482,6 +536,9 @@ db.exec(`
 // Track who/when updated mail items
 ensureColumn('mail_item', 'updated_by', 'INTEGER');
 ensureColumn('mail_item', 'updated_at', 'INTEGER');
+
+// RBAC: Add org_id to mail_item for multi-tenancy
+ensureColumn('mail_item', 'org_id', 'INTEGER');
 
 // OneDrive file metadata table (no blobs)
 db.exec(`
