@@ -26,7 +26,7 @@ function verifyHmac(raw, headerSig) {
     const secret = process.env.MAKE_ONEDRIVE_HMAC_SECRET || "";
     if (!secret) return process.env.NODE_ENV !== "production";
     if (!raw || !headerSig) return false;
-    const mac = crypto.createHmac("sha256", secret).update(raw).digest("hex");
+    const mac = crypto.createHmac("sha256", secret).update(raw.toString("utf8")).digest("hex");
     try {
         const a = Buffer.from(mac);
         const b = Buffer.from(headerSig);
