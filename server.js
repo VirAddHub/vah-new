@@ -5,50 +5,145 @@ require('dotenv').config({
     override: true,
 });
 
-const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
-const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
-
-const express = require('express');
-const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const joi = require('joi');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+// --- core & middleware
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
-const { body, query, param, validationResult } = require('express-validator');
 const morgan = require('morgan');
+const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const joi = require('joi');
+const { body, query, param, validationResult } = require('express-validator');
 
-const fs = require('fs');
-const path = require('path');
-fs.mkdirSync(path.join(process.cwd(), 'logs'), { recursive: true });
+// --- routes that need raw body (webhooks)
+const sumsubWebhook = require("./routes/webhooks-sumsub"); // keep if you split it out
 
+// --- jwt helper (existing)
+const jwt = require('jsonwebtoken');
 
-// ===== ENV =====
+// --- cookie options helper
+const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
+
+// --- init
 const app = express();
-const PORT = Number(process.env.PORT || 4000);
-const NODE_ENV = process.env.NODE_ENV || 'development';
+app.set("trust proxy", 1);
 
-// Comma-separated list of allowed web app origins (Next dev + prod)
-const ORIGIN = (process.env.APP_ORIGIN || 'http://localhost:3000')
-    .split(',')
-    .map(o => o.trim())
-    .filter(Boolean);
+// security + CORS (must be before routes)
+app.use(helmet());
+app.use(
+    cors({
+        origin: [
+            process.env.APP_ORIGIN,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ].filter(Boolean),
+        credentials: true,
+    })
+);
 
-const APP_URL = ORIGIN[0] || 'http://localhost:3000'; // For links in emails
+// cookies must come before any access to req.cookies
+app.use(cookieParser());
 
+// Request ID for traceability
+app.use((req, res, next) => {
+    req.requestId = req.headers["x-request-id"] || crypto.randomUUID();
+    res.setHeader("X-Request-ID", req.requestId);
+    next();
+});
+
+// CSP (Content Security Policy) - tune domains as needed
+app.use((_, res, next) => {
+    res.setHeader("Content-Security-Policy",
+        "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; " +
+        "img-src 'self' data: blob: https:; " +
+        "script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+        "connect-src 'self' https://api-sandbox.gocardless.com https://api.sumsub.com;"
+    );
+    next();
+});
+
+// CSRF guard for state-changing routes (skip webhooks mounted with raw body)
+const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
+function csrfGuard(req, res, next) {
+    if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
+    if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
+    const origin = req.headers.origin || "";
+    const referer = req.headers.referer || "";
+    if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
+    return res.status(403).json({ ok: false, error: "csrf_blocked" });
+}
+app.use(csrfGuard);
+
+// light rate limit for auth-ish routes (safe to leave global)
+const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
+app.use(authLimiter);
+
+// 🚨 Route-level RAW body for Sumsub webhook (signature check needs raw bytes)
+app.use("/api/webhooks/sumsub", express.raw({ type: "*/*" }), sumsubWebhook);
+
+// 🚨 Route-level RAW body for GoCardless webhook (signature check needs raw bytes)
+const gcWebhook = require("./routes/webhooks-gc");
+app.use("/api/webhooks/gc", express.raw({ type: "*/*" }), gcWebhook);
+
+// normal JSON body parser for everything else
+app.use(express.json());
+
+// ===== WEBHOOKS (before auth) =====
+// (moved to after database initialization)
+
+// safe auth attach (don't crash if cookie missing/invalid)
+const JWT_COOKIE = process.env.JWT_COOKIE || "vah_session";
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
-const JWT_COOKIE = process.env.JWT_COOKIE || 'vah_session';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
 const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
 
+// Enhanced auth middleware: supports cookies, Bearer JWT, and dev override
+app.use((req, _res, next) => {
+    let token = null;
+
+    // 1) cookie (normal path)
+    token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
+
+    // 2) Authorization: Bearer <jwt> (great for curl/tests)
+    const auth = req.headers.authorization || "";
+    if (!token && auth.startsWith("Bearer ")) token = auth.slice(7).trim();
+
+    if (token) {
+        try {
+            const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
+            req.user = { id: payload.id, is_admin: !!payload.is_admin, imp: !!payload.imp };
+        } catch (_) {
+            // ignore invalid/expired token
+        }
+    }
+
+    // 3) Dev-only safety valve: X-Dev-User-Id sets req.user for quick smoke tests
+    if (!req.user && process.env.NODE_ENV !== "production") {
+        const devId = Number(req.header("x-dev-user-id") || 0);
+        if (devId) req.user = { id: devId, email: `dev+${devId}@local`, is_admin: true };
+    }
+
+    next();
+});
+
+// ===== ENV =====
+const PORT = Number(process.env.PORT || 4000);
+// NODE_ENV already declared above
+
+const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
+const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
+
+const APP_URL = process.env.APP_ORIGIN || 'http://localhost:3000';
+
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
-const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'vah.db');
+const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'var/local/vah.db');
 
 
 const CERTIFICATE_BASE_URL =
@@ -116,41 +211,15 @@ const createRateLimit = (windowMs, max, message) =>
 const noopLimiter = (req, res, next) => next();
 
 const globalLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 1000, 'Too many requests');
-const authLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 20, 'Too many authentication attempts');
+// authLimiter already declared above
 
 // Apply global rate limiter
 app.use(globalLimiter);
 app.use(compression());
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 
-// ===== CORS (Next.js oriented) =====
-const ALLOWED_ORIGINS = [...ORIGIN, process.env.APP_ORIGIN_STAGING || ''].filter(Boolean);
 
-const CORS_OPTIONS = {
-    origin(origin, cb) {
-        // Allow server-to-server, health checks, curl, Postman (no Origin header)
-        if (!origin) return cb(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-        return cb(new Error(`Not allowed by CORS: ${origin}`));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false, // We use Bearer tokens from the Next BFF; avoid cross-site cookies
-    optionsSuccessStatus: 204,
-    maxAge: 86400,
-};
-
-const corsMw = cors(CORS_OPTIONS);
-app.use(corsMw);
-// CORS preflight handler (no route pattern)
-app.use((req,res,next)=>{ if(req.method==='OPTIONS'){ return corsMw(req,res,()=>res.sendStatus(204)); } next(); });
-
-// ===== Parsers & cookies =====
-app.use(express.json({ limit: '2mb' }));
-app.use(cookieParser());
-
-// For secure cookies behind a proxy (Render/Heroku/NGINX)
-if (NODE_ENV === 'production') app.set('trust proxy', 1);
+// ===== Database & Additional Setup =====
 
 // ===== DB =====
 let db;
@@ -344,6 +413,22 @@ const bootstrapSQL = `
       used INTEGER DEFAULT 0,
       ip_address TEXT
     );
+
+    -- RBAC: Organizations and memberships
+    CREATE TABLE IF NOT EXISTS org (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at INTEGER DEFAULT (strftime('%s','now')*1000)
+    );
+
+    CREATE TABLE IF NOT EXISTS membership (
+      user_id INTEGER NOT NULL,
+      org_id INTEGER NOT NULL,
+      role TEXT NOT NULL, -- owner|admin|member
+      PRIMARY KEY (user_id, org_id),
+      FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+      FOREIGN KEY (org_id) REFERENCES org(id) ON DELETE CASCADE
+    );
   `;
 db.exec(bootstrapSQL);
 try {
@@ -354,6 +439,14 @@ try {
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_user_status ON forwarding_request("user", status);
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_created_at ON forwarding_request(created_at);
       CREATE INDEX IF NOT EXISTS idx_payment_user_created_at ON payment(user_id, created_at);
+      
+      -- Fast index for hashed password reset lookups
+      CREATE INDEX IF NOT EXISTS idx_user_pr_hash ON user(password_reset_token_hash);
+      
+      -- RBAC indexes
+      CREATE INDEX IF NOT EXISTS idx_membership_user ON membership(user_id);
+      CREATE INDEX IF NOT EXISTS idx_membership_org ON membership(org_id);
+      CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
     `);
     logger.info('Indexes ensured');
 } catch (e) {
@@ -377,6 +470,156 @@ ensureColumn('mail_item', 'tracking_number', 'TEXT');
 // ✅ Migrate older DBs that are missing these:
 ensureColumn('activity_log', 'ip_address', 'TEXT');
 ensureColumn('activity_log', 'user_agent', 'TEXT');
+
+// ✅ Password reset columns (safe to run multiple times):
+ensureColumn('user', 'password_reset_token', 'TEXT');
+ensureColumn('user', 'password_reset_expires', 'INTEGER');
+ensureColumn('user', 'password_reset_used_at', 'INTEGER');
+ensureColumn('user', 'password_reset_token_hash', 'TEXT');
+
+// ✅ GoCardless columns (safe to run multiple times):
+ensureColumn('user', 'gocardless_customer_id', 'TEXT');
+ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
+ensureColumn('user', 'gocardless_session_token', 'TEXT');
+ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+
+// Email preferences
+ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
+ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
+ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
+ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
+ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
+
+// Set sane defaults for email preferences
+db.exec(`
+      UPDATE user SET
+        email_pref_marketing = COALESCE(email_pref_marketing, 1),
+        email_pref_product   = COALESCE(email_pref_product, 1),
+        email_pref_security  = COALESCE(email_pref_security, 1)
+    `);
+
+// GDPR export table (idempotent)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS export_job (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,                  -- 'gdpr_v1'
+      status TEXT NOT NULL,                -- 'pending'|'running'|'done'|'error'
+      created_at INTEGER NOT NULL,         -- ms
+      started_at INTEGER,
+      completed_at INTEGER,
+      error TEXT,
+      file_path TEXT,                      -- absolute path
+      file_size INTEGER,
+      token TEXT,                          -- opaque download token
+      expires_at INTEGER                   -- ms
+    );
+    CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
+    `);
+
+// Notifications table (idempotent)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS notification (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,           -- e.g. 'kyc', 'security', 'export', 'billing'
+      title TEXT NOT NULL,
+      body TEXT,
+      meta TEXT,                    -- JSON string
+      created_at INTEGER NOT NULL,  -- ms
+      read_at INTEGER               -- ms or NULL
+    );
+    CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
+    `);
+
+// Track who/when updated mail items
+ensureColumn('mail_item', 'updated_by', 'INTEGER');
+ensureColumn('mail_item', 'updated_at', 'INTEGER');
+
+// RBAC: Add org_id to mail_item for multi-tenancy
+ensureColumn('mail_item', 'org_id', 'INTEGER');
+
+// OneDrive file metadata table (no blobs)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS file (
+      id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      mail_item_id INTEGER,
+      drive_id TEXT,
+      item_id TEXT UNIQUE,   -- OneDrive driveItem id (unique)
+      path TEXT,
+      name TEXT,
+      size INTEGER,
+      mime TEXT,
+      etag TEXT,
+      modified_at INTEGER,
+      web_url TEXT,
+      share_url TEXT,
+      share_expires_at INTEGER,
+      deleted INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS file_user_created ON file(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
+    `);
+
+// Mail columns to match your Make flow
+ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
+ensureColumn('mail_item', 'file_id', 'INTEGER');
+ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Requested' | 'Forwarded'
+ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
+
+// Defaults (safe re-run)
+db.exec(`
+      UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No');
+    `);
+
+db.exec(`
+      CREATE TABLE IF NOT EXISTS mail_audit (
+        id INTEGER PRIMARY KEY,
+        item_id INTEGER NOT NULL,
+        user_id INTEGER,                 -- actor (admin) if available
+        action TEXT NOT NULL,            -- 'update' | 'bulk_update'
+        before_json TEXT,                -- JSON snapshot of key fields
+        after_json  TEXT,                -- JSON snapshot of key fields
+        created_at INTEGER NOT NULL      -- ms
+      );
+      CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
+    `);
+
+// Trigger: whenever a mail_item row changes, snapshot before/after key fields
+// (Note: admin routes also set updated_by so trigger captures the actor.)
+db.exec(`
+      CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
+      BEGIN
+        INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
+        VALUES (
+          new.id,
+          new.updated_by,
+          'update',
+          json_object(
+            'tag', old.tag, 'status', old.status, 'notes', old.notes, 'deleted', old.deleted
+          ),
+          json_object(
+            'tag', new.tag, 'status', new.status, 'notes', new.notes, 'deleted', new.deleted
+          ),
+          strftime('%s','now')*1000
+        );
+      END;
+    `);
+
+// ✅ Mail FTS5 setup
+const { ensureMailFts } = require("./lib/db-fts");
+const { setDb } = require("./lib/db");
+setDb(db);
+ensureMailFts(db);
+console.log("[fts] mail_item_fts ensured");
+
+// ===== WEBHOOKS (after database initialization) =====
+const postmarkWebhook = require("./routes/webhooks-postmark");
+app.use("/api/webhooks/postmark", postmarkWebhook);
 
 // === Support Tickets ===
 const supportSQL = `
@@ -546,18 +789,13 @@ function issueToken(user, extra = {}) {
 }
 function setSession(res, user) {
     const token = issueToken(user);
-    res.cookie(JWT_COOKIE, token, {
-        httpOnly: true,
-        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
-        secure: COOKIE_SECURE,
-        maxAge: 7 * 24 * 3600 * 1000,
-    });
+    res.cookie(JWT_COOKIE, token, sessionCookieOptions());
     return token; // return token so clients (Next BFF) can store/pass it as Bearer
 }
 
 function auth(req, res, next) {
     const bearer = (req.headers.authorization || '').split(' ');
-    const token = (bearer[0] === 'Bearer' && bearer[1]) || req.cookies[JWT_COOKIE];
+    const token = (bearer[0] === 'Bearer' && bearer[1]) || (req.cookies && req.cookies[JWT_COOKIE]);
     if (!token) return res.status(401).json({ error: 'Authentication required' });
     try {
         const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
@@ -624,60 +862,264 @@ function clearLoginAttempts(email) {
 app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.passwordReset), async (req, res) => {
     const { email } = req.body;
     try {
-        const user = db.prepare('SELECT * FROM user WHERE email=?').get(email);
-        if (!user) return res.json({ ok: true, message: 'If the email exists, we sent a link' });
-        const existing = db.prepare('SELECT * FROM password_reset WHERE user_id=? AND used=0 AND expires_at>?').get(user.id, Date.now());
-        if (existing) return res.status(429).json({ error: 'Password reset already requested. Please wait.' });
+        const user = db.prepare('SELECT id, email, name FROM user WHERE email = ?').get(email);
+        const publicResp = { success: true, message: 'If an account exists, a reset link has been sent.' };
+        if (!user) return res.json(publicResp);
 
-        const token = crypto.randomBytes(32).toString('hex');
-        const now = Date.now();
-        db.prepare('INSERT INTO password_reset (user_id, token, created_at, expires_at, ip_address) VALUES (?,?,?,?,?)').run(
-            user.id,
-            token,
-            now,
-            now + 60 * 60 * 1000,
-            req.ip
-        );
+        const { newToken, sha256Hex } = require("./lib/token");
+        const token = newToken(32);
+        const hash = sha256Hex(token);
+        const expires = Date.now() + 30 * 60 * 1000;
 
-        await sendTemplateEmail('password-reset-email', user.email, {
-            first_name: user.first_name || '',
-            reset_url: `${APP_URL}/reset-password?token=${token}`,
-            expires_in_hours: 1,
-        });
+        db.prepare(`
+            UPDATE user
+            SET password_reset_token_hash = ?, password_reset_token = NULL, password_reset_expires = ?, password_reset_used_at = NULL
+            WHERE id = ?
+        `).run(hash, expires, user.id);
+
+        const link = `${APP_URL}/reset-password/confirm?token=${token}`;
+        const name = user.name || 'there';
+
+        const html = `
+            <p>Hi ${name},</p>
+            <p>We received a request to reset your VirtualAddressHub password.</p>
+            <p><a href="${link}">Reset your password</a> (valid for 30 minutes).</p>
+            <p>If you didn't request this, you can ignore this email.</p>
+        `;
+
+        try {
+            const { sendEmail } = require('./lib/mailer');
+            await sendEmail({
+                to: user.email,
+                subject: 'Reset your VirtualAddressHub password',
+                html,
+                text: `Reset link: ${link}`,
+            });
+        } catch (err) {
+            logger.error('[reset-password-request] email send failed', err);
+            // Still return public success to avoid enumeration
+        }
 
         logActivity(user.id, 'password_reset_requested', { email }, null, req);
-        const resp = { ok: true, message: 'If the email exists, we sent a link' };
+        const resp = { success: true, message: 'If an account exists, a reset link has been sent.' };
         if (NODE_ENV !== 'production') resp.debug_token = token;
         res.json(resp);
     } catch (e) {
         logger.error('reset request failed', e);
-        res.status(500).json({ error: 'Password reset request failed' });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
 app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassword), async (req, res) => {
     const { token, new_password } = req.body;
     try {
-        const row = db.prepare('SELECT * FROM password_reset WHERE token=? AND used=0').get(token);
-        if (!row) return res.status(400).json({ error: 'Invalid or used token' });
-        if (Date.now() > row.expires_at) return res.status(400).json({ error: 'Token expired' });
-        const hash = bcrypt.hashSync(new_password, 12);
-        db.prepare('UPDATE user SET password=?, login_attempts=0, locked_until=NULL WHERE id=?').run(hash, row.user_id);
-        db.prepare('UPDATE password_reset SET used=1 WHERE id=?').run(row.id);
-        logActivity(row.user_id, 'password_reset_completed', null, null, req);
+        const { sha256Hex } = require("./lib/token");
+        const h = sha256Hex(token);
+        const now = Date.now();
 
-        const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(row.user_id);
-        if (u) {
-            await sendTemplateEmail('password-changed-confirmation', u.email, {
-                first_name: u.first_name || '',
-                security_tips_url: `${APP_URL}/security`,
-            });
+        // First try hashed column
+        let row = db.prepare(`
+            SELECT id, password_reset_expires, password_reset_used_at
+            FROM user
+            WHERE password_reset_token_hash = ?
+            AND password_reset_expires IS NOT NULL AND password_reset_expires > ?
+            AND password_reset_used_at IS NULL
+            LIMIT 1
+        `).get(h, now);
+
+        // Legacy fallback (if any old plaintext tokens exist)
+        if (!row) {
+            row = db.prepare(`
+                SELECT id, password_reset_expires, password_reset_used_at
+                FROM user
+                WHERE password_reset_token = ?
+                AND password_reset_expires IS NOT NULL AND password_reset_expires > ?
+                AND password_reset_used_at IS NULL
+                LIMIT 1
+            `).get(token, now);
         }
 
-        res.json({ ok: true, message: 'Password has been reset successfully' });
+        if (!row) {
+            return res.status(400).json({ success: false, code: 'invalid_token', message: 'Invalid or expired token' });
+        }
+        if (row.password_reset_used_at) {
+            return res.status(400).json({ success: false, code: 'used', message: 'This link has already been used' });
+        }
+        if (!row.password_reset_expires || Date.now() > Number(row.password_reset_expires)) {
+            return res.status(400).json({ success: false, code: 'expired', message: 'Token expired' });
+        }
+
+        // Simple password policy check
+        if (new_password.length < 8) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+        }
+        if (!/[A-Z]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one uppercase letter' });
+        }
+        if (!/[a-z]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one lowercase letter' });
+        }
+        if (!/[0-9]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one number' });
+        }
+
+        const hashed = bcrypt.hashSync(new_password, 10);
+
+        const tx = db.transaction(() => {
+            db.prepare(`
+                UPDATE user
+                SET password = ?, password_reset_token_hash = NULL, password_reset_token = NULL, password_reset_used_at = ?, password_reset_expires = NULL, login_attempts = 0, locked_until = NULL
+                WHERE id = ?
+            `).run(hashed, now, row.id);
+        });
+        tx();
+
+        logActivity(row.id, 'password_reset_completed', null, null, req);
+        res.json({ success: true, message: 'Password updated. You can now log in.' });
     } catch (e) {
         logger.error('reset failed', e);
-        res.status(500).json({ error: 'Password reset failed' });
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// --- KYC: start/continue (requires req.user or dev userId)
+const { sumsubFetch } = require("./lib/sumsub");
+
+// --- GoCardless: Direct Debit setup
+const { gcFetch } = require("./lib/gocardless");
+
+app.post("/api/kyc/start", async (req, res) => {
+    try {
+        // use session user; allow dev override via body.userId if unauthenticated
+        const userId = Number(req.user?.id || req.body?.userId);
+        if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
+
+        const user = db
+            .prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?")
+            .get(userId);
+        if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
+
+        const levelName = process.env.SUMSUB_LEVEL || "basic-kyc";
+
+        // ensure applicant
+        let applicantId = user.sumsub_applicant_id;
+        if (!applicantId) {
+            // if creds missing, short-circuit in dev
+            if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+                return res.json({ ok: true, token: "dev_stub_token", applicantId: "app_dev" });
+            }
+
+            const created = await sumsubFetch("POST", "/resources/applicants", {
+                externalUserId: String(user.id),
+                email: user.email,
+                info: { firstName: user.first_name || "", lastName: user.last_name || "" },
+            });
+            applicantId = created?.id;
+            if (!applicantId) throw new Error("sumsub: missing applicant id");
+            db.prepare("UPDATE user SET sumsub_applicant_id = ? WHERE id = ?").run(applicantId, user.id);
+        }
+
+        // fetch SDK token
+        if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+            // dev fallback still returns a token-like value
+            return res.json({ ok: true, token: "dev_stub_token", applicantId });
+        }
+
+        const tokenResp = await sumsubFetch(
+            "POST",
+            `/resources/accessTokens?userId=${encodeURIComponent(String(user.id))}&levelName=${encodeURIComponent(levelName)}`,
+            {}
+        );
+
+        return res.json({ ok: true, token: tokenResp?.token, applicantId });
+    } catch (e) {
+        console.error("[/api/kyc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
+    }
+});
+
+// --- GoCardless: Redirect Flow Start
+app.post("/api/gc/redirect-flow/start", async (req, res) => {
+    try {
+        const userId = Number(req.user?.id || req.body?.userId);
+        if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
+
+        const user = db.prepare(
+            "SELECT id, email, first_name, last_name, gocardless_session_token FROM user WHERE id = ?"
+        ).get(userId);
+        if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
+
+        const sessionToken = user.gocardless_session_token || crypto.randomBytes(24).toString("hex");
+        const successUrl = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing/gc/callback`;
+
+        // Create Redirect Flow
+        const body = {
+            redirect_flows: {
+                session_token: sessionToken,
+                success_redirect_url: successUrl,
+                description: "VirtualAddressHub Direct Debit",
+                prefilled_customer: {
+                    email: user.email,
+                    given_name: user.first_name || "",
+                    family_name: user.last_name || "",
+                },
+            },
+        };
+        const created = await gcFetch("POST", "/redirect_flows", body);
+
+        db.prepare(`
+      UPDATE user SET gocardless_session_token=?, gocardless_redirect_flow_id=?
+      WHERE id=?
+    `).run(sessionToken, created?.redirect_flows?.id || null, user.id);
+
+        return res.json({
+            ok: true,
+            redirect_url: created?.redirect_flows?.redirect_url,
+            redirect_flow_id: created?.redirect_flows?.id,
+        });
+    } catch (e) {
+        console.error("[gc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
+    }
+});
+
+// --- GoCardless: Redirect Flow Callback
+app.get("/api/gc/redirect-flow/callback", async (req, res) => {
+    try {
+        const userId = Number(req.user?.id || 0);
+        if (!userId) return res.status(401).send("Unauthenticated");
+
+        const redirectFlowId = String(req.query.redirect_flow_id || "");
+        if (!redirectFlowId) return res.status(400).send("Missing redirect_flow_id");
+
+        const row = db.prepare(
+            "SELECT gocardless_session_token FROM user WHERE id=?"
+        ).get(userId);
+        if (!row?.gocardless_session_token) return res.status(400).send("Missing session token");
+
+        // Complete the redirect flow
+        const completed = await gcFetch(
+            "POST",
+            `/redirect_flows/${encodeURIComponent(redirectFlowId)}/actions/complete`,
+            { data: { session_token: row.gocardless_session_token } }
+        );
+
+        const links = completed?.redirect_flows?.links || {};
+        const mandateId = links.mandate || null;
+        const customerId = links.customer || null;
+
+        db.prepare(`
+      UPDATE user
+      SET gocardless_mandate_id=?, gocardless_customer_id=?, gocardless_redirect_flow_id=NULL
+      WHERE id=?
+    `).run(mandateId, customerId, userId);
+
+        const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=ok`;
+        return res.redirect(302, dest);
+    } catch (e) {
+        console.error("[gc/callback]", e);
+        const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=error`;
+        return res.redirect(302, dest);
     }
 });
 
@@ -784,7 +1226,11 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
     clearLoginAttempts(email);
     const token = setSession(res, user);
     logActivity(user.id, 'login', null, null, req);
-    return res.json({ ok: true, token, data: userRowToDto(user) });
+
+    // Include dev_jwt in development for curl testing
+    const body = { ok: true, token, data: userRowToDto(user) };
+    if (process.env.NODE_ENV !== "production") body.dev_jwt = token;
+    return res.json(body);
 });
 
 app.post('/api/auth/logout', auth, (req, res) => {
@@ -866,6 +1312,21 @@ if (NODE_ENV === 'test') {
     }
 }
 
+// ===== DEBUG =====
+app.get("/api/debug/whoami", (req, res) => {
+    res.json({ ok: true, user: req.user || null, secure: isSecureEnv() });
+});
+
+app.get("/api/debug/db-info", (_req, res) => {
+    try {
+        const list = db.prepare("PRAGMA database_list").all();
+        const counts = db.prepare("SELECT COUNT(*) AS c FROM mail_item").get();
+        res.json({ ok: true, db: list, mailCount: counts.c });
+    } catch (e) {
+        res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
 // ===== PROFILE =====
 app.get('/api/profile', auth, (req, res) => {
     try {
@@ -919,6 +1380,10 @@ app.get('/api/profile/certificate-url', auth, (req, res) => {
         res.status(500).json({ error: 'Certificate URL generation failed' });
     }
 });
+
+// ===== Mail Search Routes (mounted early to avoid conflicts) =====
+const mailSearch = require("./routes/mail-search");
+app.use("/api/mail-items", mailSearch);
 
 // ===== MAIL (USER) =====
 app.get(
@@ -1019,6 +1484,71 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
     const restored = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     res.json({ data: restored });
 });
+
+// ===== Mail Search Routes (mounted early to avoid conflicts) =====
+// (moved to before existing mail-items routes)
+
+// ===== Admin Mail Routes =====
+const adminMail = require("./routes/admin-mail");
+const adminMailBulk = require("./routes/admin-mail-bulk");
+const adminAudit = require("./routes/admin-audit");
+app.use("/api/admin", adminMail);
+app.use("/api/admin", adminMailBulk);
+app.use("/api/admin", adminAudit);
+
+// ===== Email Preferences Routes =====
+const emailPrefs = require("./routes/email-prefs");
+app.use("/api/profile", emailPrefs);
+
+// ===== GDPR Export Routes =====
+const gdprExport = require("./routes/gdpr-export");
+const downloads = require("./routes/downloads");
+const { scheduleCleanup } = require("./lib/gdpr-export");
+app.use("/api/profile", gdprExport);   // requires auth
+app.use("/api/downloads", downloads);  // token-auth
+scheduleCleanup();
+
+// ===== Notifications Routes =====
+const notifications = require("./routes/notifications");
+app.use("/api/notifications", notifications);
+
+// ===== Metrics Routes =====
+const { httpMetricsMiddleware } = require("./lib/metrics");
+const metricsRoute = require("./routes/metrics");
+app.use(httpMetricsMiddleware());         // request counters + latency hist
+app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
+
+// ===== OneDrive Webhook Routes =====
+const onedriveWebhook = require("./routes/webhooks-onedrive");
+app.use("/api/webhooks/onedrive", express.raw({ type: "*/*" }), onedriveWebhook);
+
+// ===== Files Routes =====
+const filesRoute = require("./routes/files");
+app.use("/api/files", filesRoute);
+
+// ===== Mail Forward Routes =====
+const mailForwardRoute = require("./routes/mail-forward");
+app.use("/api/mail", mailForwardRoute);
+
+// ===== Dev Repair Routes =====
+if (process.env.NODE_ENV !== "production") {
+    // Self-heal FTS on boot in dev
+    try {
+        const { selfHealFts } = require("./lib/fts-repair");
+        const r = selfHealFts();
+        console.log("[fts] self-heal:", r);
+    } catch (e) {
+        console.warn("[fts] self-heal failed:", e?.message || e);
+    }
+
+    // Mount repair routes
+    const adminRepair = require("./routes/admin-repair");
+    app.use("/api/admin/repair", adminRepair);
+}
+
+// ===== Forward Audit Routes =====
+const adminForwardAudit = require("./routes/admin-forward-audit");
+app.use("/api/admin/forward-audit", adminForwardAudit);
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
@@ -1687,6 +2217,9 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
 // ===== HEALTH =====
 app.get('/api/healthz', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// ===== Mail Search & Admin Routes =====
+// (moved earlier to avoid route conflicts)
+
 // ===== 404 for unknown /api/* =====
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
@@ -1708,8 +2241,31 @@ let server = null;
 if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
-        console.log(`CORS origins: ${ALLOWED_ORIGINS.join(', ') || '(none specified)'}`);
+        console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
     });
+
+    // ===== EXPIRING SOON NUDGE (48h warning) =====
+    setInterval(() => {
+        try {
+            const now = Date.now();
+            const soon = now + 48 * 60 * 60 * 1000;
+            const rows = db.prepare(`
+                SELECT id, user_id, storage_expires_at
+                FROM mail_item
+                WHERE storage_expires_at BETWEEN ? AND ?
+                  AND forwarding_status = 'No'
+            `).all(now, soon);
+
+            const { notify } = require("./lib/notify");
+            rows.forEach(r => notify({
+                userId: r.user_id,
+                type: "mail",
+                title: "Forwarding window ending soon",
+                body: "You have mail that expires in the next 48 hours.",
+                meta: { mail_item_id: r.id, expires_at: r.storage_expires_at }
+            }));
+        } catch (_) { }
+    }, 60 * 60 * 1000); // Run every hour
 
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);
@@ -1721,3 +2277,4 @@ if (require.main === module) {
 
 // Export for tests / serverless adapters
 module.exports = { app, db, server };
+

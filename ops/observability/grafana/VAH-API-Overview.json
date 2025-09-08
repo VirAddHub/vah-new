@@ -1,0 +1,97 @@
+{
+    "title": "VAH — API Overview",
+    "uid": "vah-api-overview",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+        {
+            "type": "timeseries",
+            "title": "RPS by route",
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "expr": "sum by (route) (rate(vah_http_requests_total[1m]))",
+                    "legendFormat": "{{route}}"
+                }
+            ]
+        },
+        {
+            "type": "timeseries",
+            "title": "Error rate (%)",
+            "gridPos": {
+                "x": 0,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "expr": "100 * (sum(rate(vah_http_requests_total{code=~\"5..\"}[5m])) / clamp_min(sum(rate(vah_http_requests_total[5m])), 1))",
+                    "legendFormat": "5xx %"
+                }
+            ]
+        },
+        {
+            "type": "timeseries",
+            "title": "HTTP p95 latency by route (ms)",
+            "gridPos": {
+                "x": 12,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum by (le, route) (rate(vah_http_request_duration_ms_bucket[5m])))",
+                    "legendFormat": "{{route}}"
+                }
+            ]
+        },
+        {
+            "type": "timeseries",
+            "title": "DB p95 query duration (ms)",
+            "gridPos": {
+                "x": 0,
+                "y": 16,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum by (le) (rate(vah_db_query_duration_ms_bucket[5m])))",
+                    "legendFormat": "db p95"
+                }
+            ]
+        },
+        {
+            "type": "timeseries",
+            "title": "Forwarding results (rate by result)",
+            "gridPos": {
+                "x": 12,
+                "y": 16,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "expr": "sum by (result) (rate(vah_forward_requests_total[5m]))",
+                    "legendFormat": "{{result}}"
+                }
+            ]
+        }
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-6h",
+        "to": "now"
+    }
+}
