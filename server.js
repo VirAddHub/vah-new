@@ -5,46 +5,82 @@ require('dotenv').config({
     override: true,
 });
 
-const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
-const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
-
-const express = require('express');
-const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const joi = require('joi');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+// --- core & middleware
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
-const { body, query, param, validationResult } = require('express-validator');
 const morgan = require('morgan');
+const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const joi = require('joi');
+const { body, query, param, validationResult } = require('express-validator');
 
-const fs = require('fs');
-const path = require('path');
-fs.mkdirSync(path.join(process.cwd(), 'logs'), { recursive: true });
+// --- routes that need raw body (webhooks)
+const sumsubWebhook = require("./routes/webhooks-sumsub"); // keep if you split it out
 
+// --- jwt helper (existing)
+const jwt = require('jsonwebtoken');
+
+// --- init
+const app = express();
+app.set("trust proxy", 1);
+
+// security + CORS (must be before routes)
+app.use(helmet());
+app.use(
+  cors({
+    origin: [
+      process.env.APP_ORIGIN,
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ].filter(Boolean),
+    credentials: true,
+  })
+);
+
+// cookies must come before any access to req.cookies
+app.use(cookieParser());
+
+// light rate limit for auth-ish routes (safe to leave global)
+const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
+app.use(authLimiter);
+
+// 🚨 Route-level RAW body for Sumsub webhook (signature check needs raw bytes)
+app.use("/api/webhooks/sumsub", express.raw({ type: "*/*" }), sumsubWebhook);
+
+// normal JSON body parser for everything else
+app.use(express.json());
+
+// safe auth attach (don't crash if cookie missing/invalid)
+const JWT_COOKIE = process.env.JWT_COOKIE || "vah_session";
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
+
+app.use((req, _res, next) => {
+  const token = (req.cookies && req.cookies[JWT_COOKIE]) || null;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
+      req.user = { id: payload.id, is_admin: !!payload.is_admin, imp: !!payload.imp };
+    } catch (_) {
+      // ignore invalid/expired
+    }
+  }
+  next();
+});
 
 // ===== ENV =====
-const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Comma-separated list of allowed web app origins (Next dev + prod)
-const ORIGIN = (process.env.APP_ORIGIN || 'http://localhost:3000')
-    .split(',')
-    .map(o => o.trim())
-    .filter(Boolean);
+const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
+const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
 
-const APP_URL = ORIGIN[0] || 'http://localhost:3000'; // For links in emails
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-change-this';
-const JWT_COOKIE = process.env.JWT_COOKIE || 'vah_session';
-const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'strict' : 'lax')).toLowerCase();
-const COOKIE_SECURE = (process.env.COOKIE_SECURE || (NODE_ENV === 'production' ? 'true' : 'false')) === 'true';
+const APP_URL = process.env.APP_ORIGIN || 'http://localhost:3000';
 
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
@@ -116,49 +152,15 @@ const createRateLimit = (windowMs, max, message) =>
 const noopLimiter = (req, res, next) => next();
 
 const globalLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 1000, 'Too many requests');
-const authLimiter = NODE_ENV === 'test' ? noopLimiter : createRateLimit(15 * 60 * 1000, 20, 'Too many authentication attempts');
+// authLimiter already declared above
 
 // Apply global rate limiter
 app.use(globalLimiter);
 app.use(compression());
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 
-// ===== CORS (Next.js oriented) =====
-const ALLOWED_ORIGINS = [...ORIGIN, process.env.APP_ORIGIN_STAGING || ''].filter(Boolean);
 
-const CORS_OPTIONS = {
-    origin(origin, cb) {
-        // Allow server-to-server, health checks, curl, Postman (no Origin header)
-        if (!origin) return cb(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-        return cb(new Error(`Not allowed by CORS: ${origin}`));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false, // We use Bearer tokens from the Next BFF; avoid cross-site cookies
-    optionsSuccessStatus: 204,
-    maxAge: 86400,
-};
-
-const corsMw = cors(CORS_OPTIONS);
-app.use(corsMw);
-// CORS preflight handler (no route pattern)
-app.use((req,res,next)=>{ if(req.method==='OPTIONS'){ return corsMw(req,res,()=>res.sendStatus(204)); } next(); });
-
-// ===== Parsers & cookies =====
-// Sumsub webhook needs raw body for signature verification
-const sumsubWebhook = require('./routes/webhooks-sumsub');
-app.use('/api/webhooks/sumsub', express.raw({ type: '*/*' }), sumsubWebhook);
-
-// KYC start/continue flow
-const kycStart = require('./routes/kyc-start');
-app.use('/api/kyc', auth, kycStart);
-
-app.use(express.json({ limit: '2mb' }));
-app.use(cookieParser());
-
-// For secure cookies behind a proxy (Render/Heroku/NGINX)
-if (NODE_ENV === 'production') app.set('trust proxy', 1);
+// ===== Database & Additional Setup =====
 
 // ===== DB =====
 let db;
@@ -570,7 +572,7 @@ function setSession(res, user) {
 
 function auth(req, res, next) {
     const bearer = (req.headers.authorization || '').split(' ');
-    const token = (bearer[0] === 'Bearer' && bearer[1]) || req.cookies[JWT_COOKIE];
+    const token = (bearer[0] === 'Bearer' && bearer[1]) || (req.cookies && req.cookies[JWT_COOKIE]);
     if (!token) return res.status(401).json({ error: 'Authentication required' });
     try {
         const payload = jwt.verify(token, JWT_SECRET, { issuer: 'virtualaddresshub', audience: 'vah-users' });
@@ -734,6 +736,59 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
         logger.error('reset failed', e);
         res.status(500).json({ success: false, message: 'Server error' });
     }
+});
+
+// --- KYC: start/continue (requires req.user or dev userId)
+const { sumsubFetch } = require("./lib/sumsub");
+
+app.post("/api/kyc/start", async (req, res) => {
+  try {
+    // use session user; allow dev override via body.userId if unauthenticated
+    const userId = Number(req.user?.id || req.body?.userId);
+    if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
+
+    const user = db
+      .prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?")
+      .get(userId);
+    if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
+
+    const levelName = process.env.SUMSUB_LEVEL || "basic-kyc";
+
+    // ensure applicant
+    let applicantId = user.sumsub_applicant_id;
+    if (!applicantId) {
+      // if creds missing, short-circuit in dev
+      if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+        return res.json({ ok: true, token: "dev_stub_token", applicantId: "app_dev" });
+      }
+
+      const created = await sumsubFetch("POST", "/resources/applicants", {
+        externalUserId: String(user.id),
+        email: user.email,
+        info: { firstName: user.first_name || "", lastName: user.last_name || "" },
+      });
+      applicantId = created?.id;
+      if (!applicantId) throw new Error("sumsub: missing applicant id");
+      db.prepare("UPDATE user SET sumsub_applicant_id = ? WHERE id = ?").run(applicantId, user.id);
+    }
+
+    // fetch SDK token
+    if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
+      // dev fallback still returns a token-like value
+      return res.json({ ok: true, token: "dev_stub_token", applicantId });
+    }
+
+    const tokenResp = await sumsubFetch(
+      "POST",
+      `/resources/accessTokens?userId=${encodeURIComponent(String(user.id))}&levelName=${encodeURIComponent(levelName)}`,
+      {}
+    );
+
+    return res.json({ ok: true, token: tokenResp?.token, applicantId });
+  } catch (e) {
+    console.error("[/api/kyc/start]", e);
+    return res.status(500).json({ ok: false, error: "server_error" });
+  }
 });
 
 app.post('/api/profile/update-password', auth, validate(schemas.updatePassword), async (req, res) => {
