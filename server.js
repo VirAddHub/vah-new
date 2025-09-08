@@ -406,6 +406,12 @@ ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
 ensureColumn('user', 'gocardless_session_token', 'TEXT');
 ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
 
+// ✅ Mail FTS5 setup
+const { ensureMailFts } = require("./lib/db-fts");
+const { setDb } = require("./lib/db");
+setDb(db);
+ensureMailFts(db);
+
 // === Support Tickets ===
 const supportSQL = `
     CREATE TABLE IF NOT EXISTS support_ticket (
@@ -800,96 +806,96 @@ app.post("/api/kyc/start", async (req, res) => {
             {}
         );
 
-    return res.json({ ok: true, token: tokenResp?.token, applicantId });
-  } catch (e) {
-    console.error("[/api/kyc/start]", e);
-    return res.status(500).json({ ok: false, error: "server_error" });
-  }
+        return res.json({ ok: true, token: tokenResp?.token, applicantId });
+    } catch (e) {
+        console.error("[/api/kyc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
+    }
 });
 
 // --- GoCardless: Redirect Flow Start
 app.post("/api/gc/redirect-flow/start", async (req, res) => {
-  try {
-    const userId = Number(req.user?.id || req.body?.userId);
-    if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
+    try {
+        const userId = Number(req.user?.id || req.body?.userId);
+        if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
-    const user = db.prepare(
-      "SELECT id, email, first_name, last_name, gocardless_session_token FROM user WHERE id = ?"
-    ).get(userId);
-    if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
+        const user = db.prepare(
+            "SELECT id, email, first_name, last_name, gocardless_session_token FROM user WHERE id = ?"
+        ).get(userId);
+        if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
 
-    const sessionToken = user.gocardless_session_token || crypto.randomBytes(24).toString("hex");
-    const successUrl = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing/gc/callback`;
+        const sessionToken = user.gocardless_session_token || crypto.randomBytes(24).toString("hex");
+        const successUrl = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing/gc/callback`;
 
-    // Create Redirect Flow
-    const body = {
-      redirect_flows: {
-        session_token: sessionToken,
-        success_redirect_url: successUrl,
-        description: "VirtualAddressHub Direct Debit",
-        prefilled_customer: {
-          email: user.email,
-          given_name: user.first_name || "",
-          family_name: user.last_name || "",
-        },
-      },
-    };
-    const created = await gcFetch("POST", "/redirect_flows", body);
+        // Create Redirect Flow
+        const body = {
+            redirect_flows: {
+                session_token: sessionToken,
+                success_redirect_url: successUrl,
+                description: "VirtualAddressHub Direct Debit",
+                prefilled_customer: {
+                    email: user.email,
+                    given_name: user.first_name || "",
+                    family_name: user.last_name || "",
+                },
+            },
+        };
+        const created = await gcFetch("POST", "/redirect_flows", body);
 
-    db.prepare(`
+        db.prepare(`
       UPDATE user SET gocardless_session_token=?, gocardless_redirect_flow_id=?
       WHERE id=?
     `).run(sessionToken, created?.redirect_flows?.id || null, user.id);
 
-    return res.json({
-      ok: true,
-      redirect_url: created?.redirect_flows?.redirect_url,
-      redirect_flow_id: created?.redirect_flows?.id,
-    });
-  } catch (e) {
-    console.error("[gc/start]", e);
-    return res.status(500).json({ ok: false, error: "server_error" });
-  }
+        return res.json({
+            ok: true,
+            redirect_url: created?.redirect_flows?.redirect_url,
+            redirect_flow_id: created?.redirect_flows?.id,
+        });
+    } catch (e) {
+        console.error("[gc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
+    }
 });
 
 // --- GoCardless: Redirect Flow Callback
 app.get("/api/gc/redirect-flow/callback", async (req, res) => {
-  try {
-    const userId = Number(req.user?.id || 0);
-    if (!userId) return res.status(401).send("Unauthenticated");
+    try {
+        const userId = Number(req.user?.id || 0);
+        if (!userId) return res.status(401).send("Unauthenticated");
 
-    const redirectFlowId = String(req.query.redirect_flow_id || "");
-    if (!redirectFlowId) return res.status(400).send("Missing redirect_flow_id");
+        const redirectFlowId = String(req.query.redirect_flow_id || "");
+        if (!redirectFlowId) return res.status(400).send("Missing redirect_flow_id");
 
-    const row = db.prepare(
-      "SELECT gocardless_session_token FROM user WHERE id=?"
-    ).get(userId);
-    if (!row?.gocardless_session_token) return res.status(400).send("Missing session token");
+        const row = db.prepare(
+            "SELECT gocardless_session_token FROM user WHERE id=?"
+        ).get(userId);
+        if (!row?.gocardless_session_token) return res.status(400).send("Missing session token");
 
-    // Complete the redirect flow
-    const completed = await gcFetch(
-      "POST",
-      `/redirect_flows/${encodeURIComponent(redirectFlowId)}/actions/complete`,
-      { data: { session_token: row.gocardless_session_token } }
-    );
-    
-    const links = completed?.redirect_flows?.links || {};
-    const mandateId = links.mandate || null;
-    const customerId = links.customer || null;
+        // Complete the redirect flow
+        const completed = await gcFetch(
+            "POST",
+            `/redirect_flows/${encodeURIComponent(redirectFlowId)}/actions/complete`,
+            { data: { session_token: row.gocardless_session_token } }
+        );
 
-    db.prepare(`
+        const links = completed?.redirect_flows?.links || {};
+        const mandateId = links.mandate || null;
+        const customerId = links.customer || null;
+
+        db.prepare(`
       UPDATE user
       SET gocardless_mandate_id=?, gocardless_customer_id=?, gocardless_redirect_flow_id=NULL
       WHERE id=?
     `).run(mandateId, customerId, userId);
 
-    const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=ok`;
-    return res.redirect(302, dest);
-  } catch (e) {
-    console.error("[gc/callback]", e);
-    const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=error`;
-    return res.redirect(302, dest);
-  }
+        const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=ok`;
+        return res.redirect(302, dest);
+    } catch (e) {
+        console.error("[gc/callback]", e);
+        const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=error`;
+        return res.redirect(302, dest);
+    }
 });
 
 app.post('/api/profile/update-password', auth, validate(schemas.updatePassword), async (req, res) => {
@@ -1897,6 +1903,12 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
 
 // ===== HEALTH =====
 app.get('/api/healthz', (req, res) => res.json({ ok: true, ts: Date.now() }));
+
+// ===== Mail Search & Admin Routes =====
+const mailSearch = require("./routes/mail-search");
+const adminMail = require("./routes/admin-mail");
+app.use("/api/mail", mailSearch);
+app.use("/api/admin", adminMail);
 
 // ===== 404 for unknown /api/* =====
 app.use((req, res, next) => {
