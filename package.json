@@ -22,7 +22,7 @@
   "dependencies": {
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.2.0",
+    "better-sqlite3": "^9.6.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -59,8 +59,8 @@
     "typescript": "5.9.2"
   },
   "engines": {
-    "node": "^20 || ^22",
-    "npm": ">=10"
+    "node": ">=18.17.0",
+    "npm": ">=9"
   },
   "overrides": {
     "react": "18.2.0",

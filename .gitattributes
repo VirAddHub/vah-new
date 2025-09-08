@@ -1,0 +1,4 @@
+# Lockfiles are generated; don't merge them, keep ours on this branch.
+package-lock.json merge=ours
+yarn.lock merge=ours
+pnpm-lock.yaml merge=ours
