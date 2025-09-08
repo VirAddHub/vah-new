@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const { db } = require("../lib/db");
 
 const router = express.Router();
@@ -12,6 +13,7 @@ function basicAuthOk(req) {
     const [u, p] = Buffer.from(hdr.slice(6), "base64").toString("utf8").split(":");
     return u === user && p === pass;
 }
+
 function ipAllowed(req) {
     const allow = (process.env.MAKE_ONEDRIVE_ALLOWED_IPS || "")
         .split(",").map(s => s.trim()).filter(Boolean);
@@ -19,12 +21,39 @@ function ipAllowed(req) {
     const ip = (req.headers["x-forwarded-for"] || req.ip || "").toString().split(",")[0].trim();
     return allow.includes(ip);
 }
+
+function verifyHmac(raw, headerSig) {
+    const secret = process.env.MAKE_ONEDRIVE_HMAC_SECRET || "";
+    if (!secret) return process.env.NODE_ENV !== "production";
+    if (!raw || !headerSig) return false;
+    const mac = crypto.createHmac("sha256", secret).update(raw).digest("hex");
+    try {
+        const a = Buffer.from(mac);
+        const b = Buffer.from(headerSig);
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+        return false;
+    }
+}
 const RETENTION_DAYS = Number(process.env.STORAGE_RETENTION_DAYS || 14);
 const MS_DAY = 24 * 60 * 60 * 1000;
 
 router.post("/", (req, res) => {
     if (!basicAuthOk(req) || !ipAllowed(req)) {
         return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    const headerSig = req.header("x-vah-signature");
+    const raw = req.body; // Buffer (because express.raw)
+    if (!verifyHmac(raw, headerSig)) {
+        return res.status(401).json({ ok: false, error: "bad_signature" });
+    }
+
+    let b;
+    try {
+        b = JSON.parse(raw.toString("utf8") || "{}");
+    } catch {
+        return res.status(400).json({ ok: false, error: "invalid_json" });
     }
 
     /**
@@ -38,7 +67,6 @@ router.post("/", (req, res) => {
      *   scanDate           // ISO string or ms (used for storage_expires_at)
      * }
      */
-    const b = req.body || {};
     const event = String(b.event || "").toLowerCase();
     let userId = Number(b.userId || 0);
     if (!userId && b.userCrn) {

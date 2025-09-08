@@ -1441,7 +1441,7 @@ app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
 
 // ===== OneDrive Webhook Routes =====
 const onedriveWebhook = require("./routes/webhooks-onedrive");
-app.use("/api/webhooks/onedrive", onedriveWebhook);
+app.use("/api/webhooks/onedrive", express.raw({ type: "*/*" }), onedriveWebhook);
 
 // ===== Files Routes =====
 const filesRoute = require("./routes/files");
