@@ -18,7 +18,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # Use install (not ci) to avoid lockfile mismatch failures
       - name: Install deps
         run: npm install --no-audit --no-fund
 
