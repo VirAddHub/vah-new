@@ -1,0 +1,40 @@
+/* app/globals.css */
+@import "tailwindcss";
+
+:root {
+    --bg: #0b0f14;
+    --fg: #e6edf3;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--fg);
+}
+
+a {
+    text-decoration: none;
+}
+
+:root {
+    --bg: #0b0f14;
+    --fg: #e6edf3;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--fg);
+}
+
+a {
+    text-decoration: none;
+}

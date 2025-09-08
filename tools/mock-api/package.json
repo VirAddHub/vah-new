@@ -1,0 +1,12 @@
+{
+  "name": "mock-api",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cookie-parser": "^1.4.6"
+  },
+  "scripts": {
+    "start": "node mock-api.mjs"
+  }
+}
