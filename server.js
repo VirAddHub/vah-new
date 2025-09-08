@@ -629,60 +629,88 @@ function clearLoginAttempts(email) {
 app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.passwordReset), async (req, res) => {
     const { email } = req.body;
     try {
-        const user = db.prepare('SELECT * FROM user WHERE email=?').get(email);
-        if (!user) return res.json({ ok: true, message: 'If the email exists, we sent a link' });
-        const existing = db.prepare('SELECT * FROM password_reset WHERE user_id=? AND used=0 AND expires_at>?').get(user.id, Date.now());
-        if (existing) return res.status(429).json({ error: 'Password reset already requested. Please wait.' });
+        const user = db.prepare('SELECT id, email, name FROM user WHERE email = ?').get(email);
+        const publicResp = { success: true, message: 'If an account exists, a reset link has been sent.' };
+        if (!user) return res.json(publicResp);
 
         const token = crypto.randomBytes(32).toString('hex');
-        const now = Date.now();
-        db.prepare('INSERT INTO password_reset (user_id, token, created_at, expires_at, ip_address) VALUES (?,?,?,?,?)').run(
-            user.id,
-            token,
-            now,
-            now + 60 * 60 * 1000,
-            req.ip
-        );
+        const expiresMs = Date.now() + 30 * 60 * 1000; // 30 mins
 
-        await sendTemplateEmail('password-reset-email', user.email, {
-            first_name: user.first_name || '',
-            reset_url: `${APP_URL}/reset-password?token=${token}`,
-            expires_in_hours: 1,
-        });
+        db.prepare(`
+            UPDATE user
+            SET password_reset_token = ?, password_reset_expires = ?, password_reset_used_at = NULL
+            WHERE id = ?
+        `).run(token, expiresMs, user.id);
+
+        const link = `${APP_URL}/reset-password/confirm?token=${token}`;
+        const name = user.name || 'there';
+
+        const html = `
+            <p>Hi ${name},</p>
+            <p>We received a request to reset your VirtualAddressHub password.</p>
+            <p><a href="${link}">Reset your password</a> (valid for 30 minutes).</p>
+            <p>If you didn't request this, you can ignore this email.</p>
+        `;
+
+        try {
+            const { sendEmail } = require('./lib/mailer');
+            await sendEmail({
+                to: user.email,
+                subject: 'Reset your VirtualAddressHub password',
+                html,
+                text: `Reset link: ${link}`,
+            });
+        } catch (err) {
+            logger.error('[reset-password-request] email send failed', err);
+            // Still return public success to avoid enumeration
+        }
 
         logActivity(user.id, 'password_reset_requested', { email }, null, req);
-        const resp = { ok: true, message: 'If the email exists, we sent a link' };
+        const resp = { success: true, message: 'If an account exists, a reset link has been sent.' };
         if (NODE_ENV !== 'production') resp.debug_token = token;
         res.json(resp);
     } catch (e) {
         logger.error('reset request failed', e);
-        res.status(500).json({ error: 'Password reset request failed' });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
 app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassword), async (req, res) => {
     const { token, new_password } = req.body;
     try {
-        const row = db.prepare('SELECT * FROM password_reset WHERE token=? AND used=0').get(token);
-        if (!row) return res.status(400).json({ error: 'Invalid or used token' });
-        if (Date.now() > row.expires_at) return res.status(400).json({ error: 'Token expired' });
-        const hash = bcrypt.hashSync(new_password, 12);
-        db.prepare('UPDATE user SET password=?, login_attempts=0, locked_until=NULL WHERE id=?').run(hash, row.user_id);
-        db.prepare('UPDATE password_reset SET used=1 WHERE id=?').run(row.id);
-        logActivity(row.user_id, 'password_reset_completed', null, null, req);
+        const row = db.prepare(`
+            SELECT id, password_reset_expires, password_reset_used_at
+            FROM user
+            WHERE password_reset_token = ?
+        `).get(token);
 
-        const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(row.user_id);
-        if (u) {
-            await sendTemplateEmail('password-changed-confirmation', u.email, {
-                first_name: u.first_name || '',
-                security_tips_url: `${APP_URL}/security`,
-            });
+        if (!row) {
+            return res.status(400).json({ success: false, code: 'invalid_token', message: 'Invalid or expired token' });
+        }
+        if (row.password_reset_used_at) {
+            return res.status(400).json({ success: false, code: 'used', message: 'This link has already been used' });
+        }
+        if (!row.password_reset_expires || Date.now() > Number(row.password_reset_expires)) {
+            return res.status(400).json({ success: false, code: 'expired', message: 'Token expired' });
         }
 
-        res.json({ ok: true, message: 'Password has been reset successfully' });
+        const hashed = bcrypt.hashSync(new_password, 10);
+        const now = Date.now();
+
+        const tx = db.transaction(() => {
+            db.prepare(`
+                UPDATE user
+                SET password = ?, password_reset_token = NULL, password_reset_used_at = ?, password_reset_expires = NULL, login_attempts = 0, locked_until = NULL
+                WHERE id = ?
+            `).run(hashed, now, row.id);
+        });
+        tx();
+
+        logActivity(row.id, 'password_reset_completed', null, null, req);
+        res.json({ success: true, message: 'Password updated. You can now log in.' });
     } catch (e) {
         logger.error('reset failed', e);
-        res.status(500).json({ error: 'Password reset failed' });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
