@@ -478,12 +478,12 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
     `);
 
-    // Track who/when updated mail items
-    ensureColumn('mail_item', 'updated_by', 'INTEGER');
-    ensureColumn('mail_item', 'updated_at', 'INTEGER');
+// Track who/when updated mail items
+ensureColumn('mail_item', 'updated_by', 'INTEGER');
+ensureColumn('mail_item', 'updated_at', 'INTEGER');
 
-    // OneDrive file metadata table (no blobs)
-    db.exec(`
+// OneDrive file metadata table (no blobs)
+db.exec(`
     CREATE TABLE IF NOT EXISTS file (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -507,14 +507,14 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
     `);
 
-    // Mail columns to match your Make flow
-    ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
-    ensureColumn('mail_item', 'file_id', 'INTEGER');
-    ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Requested' | 'Forwarded'
-    ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
+// Mail columns to match your Make flow
+ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
+ensureColumn('mail_item', 'file_id', 'INTEGER');
+ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Requested' | 'Forwarded'
+ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
 
-    // Defaults (safe re-run)
-    db.exec(`
+// Defaults (safe re-run)
+db.exec(`
       UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No');
     `);
 
@@ -2144,6 +2144,29 @@ if (require.main === module) {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
     });
+
+    // ===== EXPIRING SOON NUDGE (48h warning) =====
+    setInterval(() => {
+        try {
+            const now = Date.now();
+            const soon = now + 48*60*60*1000;
+            const rows = db.prepare(`
+                SELECT id, user_id, storage_expires_at
+                FROM mail_item
+                WHERE storage_expires_at BETWEEN ? AND ?
+                  AND forwarding_status = 'No'
+            `).all(now, soon);
+
+            const { notify } = require("./lib/notify");
+            rows.forEach(r => notify({
+                userId: r.user_id,
+                type: "mail",
+                title: "Forwarding window ending soon",
+                body: "You have mail that expires in the next 48 hours.",
+                meta: { mail_item_id: r.id, expires_at: r.storage_expires_at }
+            }));
+        } catch (_) {}
+    }, 60*60*1000); // Run every hour
 
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);
