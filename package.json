@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "NODE_ENV=test jest --runInBand",
     "ci": "bash scripts/banlist.sh && NODE_ENV=test jest --runInBand",
-    "postinstall": "chmod +x scripts/banlist.sh || true"
+    "postinstall": "chmod +x scripts/banlist.sh || true && bash scripts/patch-native.sh"
   },
   "keywords": [],
   "author": "",
