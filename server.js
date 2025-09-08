@@ -146,6 +146,10 @@ app.use(corsMw);
 app.use((req,res,next)=>{ if(req.method==='OPTIONS'){ return corsMw(req,res,()=>res.sendStatus(204)); } next(); });
 
 // ===== Parsers & cookies =====
+// Sumsub webhook needs raw body for signature verification
+const sumsubWebhook = require('./routes/webhooks-sumsub');
+app.use('/api/webhooks/sumsub', express.raw({ type: '*/*' }), sumsubWebhook);
+
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
@@ -692,6 +696,20 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
         }
         if (!row.password_reset_expires || Date.now() > Number(row.password_reset_expires)) {
             return res.status(400).json({ success: false, code: 'expired', message: 'Token expired' });
+        }
+
+        // Simple password policy check
+        if (new_password.length < 8) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+        }
+        if (!/[A-Z]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one uppercase letter' });
+        }
+        if (!/[a-z]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one lowercase letter' });
+        }
+        if (!/[0-9]/.test(new_password)) {
+            return res.status(400).json({ success: false, message: 'Password must contain at least one number' });
         }
 
         const hashed = bcrypt.hashSync(new_password, 10);
