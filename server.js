@@ -378,6 +378,11 @@ ensureColumn('mail_item', 'tracking_number', 'TEXT');
 ensureColumn('activity_log', 'ip_address', 'TEXT');
 ensureColumn('activity_log', 'user_agent', 'TEXT');
 
+// ✅ Password reset columns (safe to run multiple times):
+ensureColumn('user', 'password_reset_token', 'TEXT');
+ensureColumn('user', 'password_reset_expires', 'INTEGER');
+ensureColumn('user', 'password_reset_used_at', 'INTEGER');
+
 // === Support Tickets ===
 const supportSQL = `
     CREATE TABLE IF NOT EXISTS support_ticket (
