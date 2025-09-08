@@ -443,8 +443,8 @@ db.exec(`
         email_pref_security  = COALESCE(email_pref_security, 1)
     `);
 
-    // GDPR export table (idempotent)
-    db.exec(`
+// GDPR export table (idempotent)
+db.exec(`
     CREATE TABLE IF NOT EXISTS export_job (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -462,8 +462,8 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
     `);
 
-    // Notifications table (idempotent)
-    db.exec(`
+// Notifications table (idempotent)
+db.exec(`
     CREATE TABLE IF NOT EXISTS notification (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -1354,6 +1354,12 @@ scheduleCleanup();
 // ===== Notifications Routes =====
 const notifications = require("./routes/notifications");
 app.use("/api/notifications", notifications);
+
+// ===== Metrics Routes =====
+const { httpMetricsMiddleware } = require("./lib/metrics");
+const metricsRoute = require("./routes/metrics");
+app.use(httpMetricsMiddleware());         // request counters + latency hist
+app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
 
 // Legacy (used by your frontend bulk forward)
 app.get('/api/mail', auth, (req, res) => {
