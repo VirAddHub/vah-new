@@ -26,8 +26,8 @@ const path = require('path');
 // If running from dist/, compiled TS lives in ./db
 // If running from repo root, TS sources live in ./src/db
 const DB_MODULE_PATH = fs.existsSync(path.join(__dirname, 'db', 'index.js'))
-  ? './db'
-  : './src/db';
+    ? './db'
+    : './src/db';
 
 // Database adapters
 const { ensureSchema, selectOne, selectMany, execute, insertReturningId } = require(DB_MODULE_PATH);
@@ -2340,6 +2340,7 @@ if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
+        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000','https://www.virtualaddresshub.co.uk']);
     });
 
     // ===== EXPIRING SOON NUDGE (48h warning) =====
