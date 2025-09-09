@@ -39,23 +39,28 @@ app.set("trust proxy", 1);
 
 // security + CORS (must be before routes)
 app.use(helmet());
+
+// cookies must come before any access to req.cookies
+app.use(cookieParser());
+
 app.use(
     cors({
-        origin: [
-            process.env.APP_ORIGIN,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "https://www.virtualaddresshub.co.uk"
-        ].filter(Boolean),
+        origin: (origin, cb) => {
+            const allowed = [
+                process.env.APP_ORIGIN,
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://www.virtualaddresshub.co.uk"
+            ].filter(Boolean);
+            const ok = allowed.includes(origin || '') || !origin;
+            return cb(null, ok);
+        },
         credentials: true,
-        methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
         exposedHeaders: []
     })
 );
-
-// cookies must come before any access to req.cookies
-app.use(cookieParser());
 
 // Request ID for traceability
 app.use((req, res, next) => {
