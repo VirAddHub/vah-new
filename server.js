@@ -2340,7 +2340,7 @@ if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
-        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000','https://www.virtualaddresshub.co.uk']);
+        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk']);
     });
 
     // ===== EXPIRING SOON NUDGE (48h warning) =====
