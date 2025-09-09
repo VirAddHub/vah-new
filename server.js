@@ -95,6 +95,15 @@ app.use((_, res, next) => {
 const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(authLimiter);
 
+// setup rate limiter (stricter for admin setup)
+const setupLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many setup attempts'
+});
+
 // Sumsub webhook (raw body handled globally)
 app.use("/api/webhooks/sumsub", sumsubWebhook);
 
@@ -153,7 +162,12 @@ const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
 
 const APP_URL = process.env.APP_ORIGIN || 'http://localhost:3000';
 
-const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET || 'setup-secret-2024';
+const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET;
+if (process.env.NODE_ENV === 'production' && !ADMIN_SETUP_SECRET) {
+    throw new Error('ADMIN_SETUP_SECRET is required in production');
+}
+
+const SETUP_ENABLED = process.env.SETUP_ENABLED === 'true';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
 const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'var/local/vah.db');
 
@@ -1244,29 +1258,39 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
 });
 
 // ===== ADMIN SETUP (ONE-TIME) =====
-app.post('/api/create-admin-user', authLimiter, (req, res) => {
-    const { email, password, first_name, last_name, setup_secret } = req.body || {};
-    if (setup_secret !== ADMIN_SETUP_SECRET) return res.status(403).json({ error: 'Invalid setup credentials' });
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-    try {
-        const exists = db.prepare('SELECT id FROM user WHERE is_admin=1').get();
-        if (exists) return res.status(409).json({ error: 'Admin user already exists' });
-        const hash = bcrypt.hashSync(password, 12);
-        const now = Date.now();
-        const name = `${first_name || ''} ${last_name || ''}`.trim();
-        const info = db
-            .prepare(
-                `INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
-           VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
-            )
-            .run(now, name, email, hash, first_name || '', last_name || '', now);
-        res.json({ ok: true, data: { user_id: info.lastInsertRowid }, message: 'Admin user created successfully.' });
-    } catch (e) {
-        if (String(e).includes('UNIQUE')) return res.status(409).json({ error: 'Email already registered' });
-        logger.error('admin create failed', e);
-        res.status(500).json({ error: 'Admin user creation failed' });
-    }
-});
+// Only mount the setup route if explicitly enabled
+if (SETUP_ENABLED) {
+    app.post('/api/create-admin-user', setupLimiter, (req, res) => {
+        try {
+            // Check header-based authentication (more secure than body)
+            const provided = req.get('x-setup-secret');
+            if (!ADMIN_SETUP_SECRET || provided !== ADMIN_SETUP_SECRET) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const { email, password, first_name, last_name } = req.body || {};
+            if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+            
+            const exists = db.prepare('SELECT id FROM user WHERE is_admin=1').get();
+            if (exists) return res.status(409).json({ error: 'Admin user already exists' });
+            
+            const hash = bcrypt.hashSync(password, 12);
+            const now = Date.now();
+            const name = `${first_name || ''} ${last_name || ''}`.trim();
+            const info = db
+                .prepare(
+                    `INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
+               VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
+                )
+                .run(now, name, email, hash, first_name || '', last_name || '', now);
+            res.json({ ok: true, data: { user_id: info.lastInsertRowid }, message: 'Admin user created successfully.' });
+        } catch (e) {
+            if (String(e).includes('UNIQUE')) return res.status(409).json({ error: 'Email already registered' });
+            logger.error('admin create failed', e);
+            res.status(500).json({ error: 'Admin user creation failed' });
+        }
+    });
+}
 
 // ===== AUTH — SIGNUP =====
 app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, res) => {
