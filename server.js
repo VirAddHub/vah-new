@@ -20,9 +20,17 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');
+const fs = require('fs');
+const path = require('path');
+
+// If running from dist/, compiled TS lives in ./db
+// If running from repo root, TS sources live in ./src/db
+const DB_MODULE_PATH = fs.existsSync(path.join(__dirname, 'db', 'index.js'))
+  ? './db'
+  : './src/db';
 
 // Database adapters
-const { ensureSchema, selectOne, selectMany, execute, insertReturningId } = require('./src/db');
+const { ensureSchema, selectOne, selectMany, execute, insertReturningId } = require(DB_MODULE_PATH);
 
 // --- routes that need raw body (webhooks)
 const sumsubWebhook = require("./routes/webhooks-sumsub"); // keep if you split it out
@@ -45,10 +53,10 @@ app.use(cookieParser());
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
 app.use(cors({
-  origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
-  credentials: true,
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+    origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
 }));
 
 // Webhooks BEFORE csurf (raw body)
@@ -56,12 +64,12 @@ app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook han
 
 // CSRF in cookie mode for cross-site
 app.use(csrf({
-  cookie: { httpOnly: true, sameSite: 'none', secure: true }
+    cookie: { httpOnly: true, sameSite: 'none', secure: true }
 }));
 
 // CSRF token endpoint
 app.get('/api/csrf', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+    res.json({ csrfToken: req.csrfToken() });
 });
 
 // Request ID for traceability
@@ -234,11 +242,11 @@ try {
         logger.info('Using PostgreSQL database');
     } else {
         // SQLite - keep existing initialization
-    db = new Database(DB_PATH);
-    db.pragma('foreign_keys = ON');
-    db.pragma('journal_mode = WAL');
-    db.pragma('synchronous = NORMAL');
-    db.pragma('busy_timeout = 5000');
+        db = new Database(DB_PATH);
+        db.pragma('foreign_keys = ON');
+        db.pragma('journal_mode = WAL');
+        db.pragma('synchronous = NORMAL');
+        db.pragma('busy_timeout = 5000');
         logger.info('Using SQLite database');
     }
     logger.info('DB connected');
@@ -448,15 +456,15 @@ if (process.env.DB_CLIENT === 'pg') {
     logger.info('PostgreSQL schema will be ensured by adapter');
 } else {
     // SQLite schema initialization
-db.exec(bootstrapSQL);
+    db.exec(bootstrapSQL);
 }
 // Create indexes based on database type
 if (process.env.DB_CLIENT === 'pg') {
     // PostgreSQL indexes are handled by the schema adapter
     logger.info('PostgreSQL indexes will be ensured by adapter');
 } else {
-try {
-    db.exec(`
+    try {
+        db.exec(`
       CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
       CREATE INDEX IF NOT EXISTS idx_mail_item_created_at ON mail_item(created_at);
       CREATE INDEX IF NOT EXISTS idx_mail_item_tag ON mail_item(tag);
@@ -473,8 +481,8 @@ try {
           CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
         `);
         logger.info('SQLite indexes ensured');
-} catch (e) {
-    logger.warn('Index creation failed (non-fatal)', { error: String(e) });
+    } catch (e) {
+        logger.warn('Index creation failed (non-fatal)', { error: String(e) });
     }
 }
 
@@ -498,22 +506,22 @@ async function ensureColumn(table, column, type) {
         }
     } else {
         // SQLite - use PRAGMA
-    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-    if (!cols.includes(column)) {
-        logger.info(`Adding column ${table}.${column} (${type})`);
-        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(column)) {
+            logger.info(`Adding column ${table}.${column} (${type})`);
+            db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
         }
     }
 }
 
 // Run migrations asynchronously
 (async () => {
-// Columns introduced in recent versions:
+    // Columns introduced in recent versions:
     await ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'tracking_number', 'TEXT');
 
-// ✅ Migrate older DBs that are missing these:
+    // ✅ Migrate older DBs that are missing these:
     await ensureColumn('activity_log', 'ip_address', 'TEXT');
     await ensureColumn('activity_log', 'user_agent', 'TEXT');
 
