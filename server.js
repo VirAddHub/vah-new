@@ -45,8 +45,12 @@ app.use(
             process.env.APP_ORIGIN,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            "https://www.virtualaddresshub.co.uk"
         ].filter(Boolean),
         credentials: true,
+        methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+        allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+        exposedHeaders: []
     })
 );
 
@@ -76,9 +80,12 @@ const csrfProtection = csrf({
     cookie: {
         httpOnly: true,
         sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production'
+        secure: true
     }
 });
+
+// Exempt webhooks from CSRF (before csurf middleware)
+app.use('/api/webhooks', express.raw({ type: '*/*' }));
 
 // CSRF token endpoint (GET): returns the token
 app.get('/api/csrf', csrfProtection, (req, res) => {
@@ -111,11 +118,11 @@ const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(authLimiter);
 
 // 🚨 Route-level RAW body for Sumsub webhook (signature check needs raw bytes)
-app.use("/api/webhooks/sumsub", express.raw({ type: "*/*" }), sumsubWebhook);
+app.use("/api/webhooks/sumsub", sumsubWebhook);
 
 // 🚨 Route-level RAW body for GoCardless webhook (signature check needs raw bytes)
 const gcWebhook = require("./routes/webhooks-gc");
-app.use("/api/webhooks/gc", express.raw({ type: "*/*" }), gcWebhook);
+app.use("/api/webhooks/gc", gcWebhook);
 
 // normal JSON body parser for everything else
 app.use(express.json());

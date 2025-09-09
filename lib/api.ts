@@ -27,15 +27,27 @@ export async function apiGet<T>(path: string) {
   return (await res.json()) as T;
 }
 
-export async function apiPost<T>(path: string, data: unknown) {
+export async function apiPost<T>(path: string, data: unknown, headers: Record<string,string> = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(`POST ${path} ${res.status}`);
   return (await res.json()) as T;
+}
+
+export async function getCsrfToken() {
+  const res = await fetch(`${BASE}/api/csrf`, { credentials: 'include' });
+  const { csrfToken } = await res.json();
+  return csrfToken as string;
+}
+
+// One-liner for CSRF-protected POSTs
+export async function apiPostCSRF<T>(path: string, data: unknown) {
+  const token = await getCsrfToken();
+  return apiPost<T>(path, data, { 'X-CSRF-Token': token });
 }
 
 // Keep the existing api object for backward compatibility
