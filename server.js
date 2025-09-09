@@ -35,32 +35,34 @@ const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
 
 // --- init
 const app = express();
-app.set("trust proxy", 1);
+app.set('trust proxy', 1); // required for secure cookies behind Render
 
-// security + CORS (must be before routes)
+// Security first
 app.use(helmet());
 
-// cookies must come before any access to req.cookies
+// Cookies, then CORS (with CSRF header allowed)
 app.use(cookieParser());
 
-app.use(
-    cors({
-        origin: (origin, cb) => {
-            const allowed = [
-                process.env.APP_ORIGIN,
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "https://www.virtualaddresshub.co.uk"
-            ].filter(Boolean);
-            const ok = allowed.includes(origin || '') || !origin;
-            return cb(null, ok);
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-        exposedHeaders: []
-    })
-);
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
+app.use(cors({
+  origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
+  credentials: true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+}));
+
+// Webhooks BEFORE csurf (raw body)
+app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
+
+// CSRF in cookie mode for cross-site
+app.use(csrf({
+  cookie: { httpOnly: true, sameSite: 'none', secure: true }
+}));
+
+// CSRF token endpoint
+app.get('/api/csrf', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
 
 // Request ID for traceability
 app.use((req, res, next) => {
@@ -80,52 +82,15 @@ app.use((_, res, next) => {
     next();
 });
 
-// CSRF protection with csurf (cookie mode for cross-site frontends)
-const csrfProtection = csrf({
-    cookie: {
-        httpOnly: true,
-        sameSite: 'none',
-        secure: true
-    }
-});
-
-// Exempt webhooks from CSRF (before csurf middleware)
-app.use('/api/webhooks', express.raw({ type: '*/*' }));
-
-// CSRF token endpoint (GET): returns the token
-app.get('/api/csrf', csrfProtection, (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
-
-// CSRF guard for state-changing routes (skip webhooks mounted with raw body)
-const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
-function csrfGuard(req, res, next) {
-    if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
-    if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
-    if (req.path === "/api/csrf") return next(); // CSRF token endpoint
-
-    // Fallback to origin checking for backward compatibility
-    const origin = req.headers.origin || "";
-    const referer = req.headers.referer || "";
-    if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
-    return res.status(403).json({ ok: false, error: "csrf_blocked" });
-}
-app.use(csrfGuard);
-
-// Apply CSRF protection globally (except webhooks)
-app.use((req, res, next) => {
-    if (req.path.startsWith("/api/webhooks/")) return next();
-    return csrfProtection(req, res, next);
-});
 
 // light rate limit for auth-ish routes (safe to leave global)
 const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(authLimiter);
 
-// 🚨 Route-level RAW body for Sumsub webhook (signature check needs raw bytes)
+// Sumsub webhook (raw body handled globally)
 app.use("/api/webhooks/sumsub", sumsubWebhook);
 
-// 🚨 Route-level RAW body for GoCardless webhook (signature check needs raw bytes)
+// GoCardless webhook (raw body handled globally)
 const gcWebhook = require("./routes/webhooks-gc");
 app.use("/api/webhooks/gc", gcWebhook);
 
@@ -269,11 +234,11 @@ try {
         logger.info('Using PostgreSQL database');
     } else {
         // SQLite - keep existing initialization
-        db = new Database(DB_PATH);
-        db.pragma('foreign_keys = ON');
-        db.pragma('journal_mode = WAL');
-        db.pragma('synchronous = NORMAL');
-        db.pragma('busy_timeout = 5000');
+    db = new Database(DB_PATH);
+    db.pragma('foreign_keys = ON');
+    db.pragma('journal_mode = WAL');
+    db.pragma('synchronous = NORMAL');
+    db.pragma('busy_timeout = 5000');
         logger.info('Using SQLite database');
     }
     logger.info('DB connected');
@@ -483,15 +448,15 @@ if (process.env.DB_CLIENT === 'pg') {
     logger.info('PostgreSQL schema will be ensured by adapter');
 } else {
     // SQLite schema initialization
-    db.exec(bootstrapSQL);
+db.exec(bootstrapSQL);
 }
 // Create indexes based on database type
 if (process.env.DB_CLIENT === 'pg') {
     // PostgreSQL indexes are handled by the schema adapter
     logger.info('PostgreSQL indexes will be ensured by adapter');
 } else {
-    try {
-        db.exec(`
+try {
+    db.exec(`
       CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
       CREATE INDEX IF NOT EXISTS idx_mail_item_created_at ON mail_item(created_at);
       CREATE INDEX IF NOT EXISTS idx_mail_item_tag ON mail_item(tag);
@@ -508,8 +473,8 @@ if (process.env.DB_CLIENT === 'pg') {
           CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
         `);
         logger.info('SQLite indexes ensured');
-    } catch (e) {
-        logger.warn('Index creation failed (non-fatal)', { error: String(e) });
+} catch (e) {
+    logger.warn('Index creation failed (non-fatal)', { error: String(e) });
     }
 }
 
@@ -533,22 +498,22 @@ async function ensureColumn(table, column, type) {
         }
     } else {
         // SQLite - use PRAGMA
-        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-        if (!cols.includes(column)) {
-            logger.info(`Adding column ${table}.${column} (${type})`);
-            db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+    if (!cols.includes(column)) {
+        logger.info(`Adding column ${table}.${column} (${type})`);
+        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
         }
     }
 }
 
 // Run migrations asynchronously
 (async () => {
-    // Columns introduced in recent versions:
+// Columns introduced in recent versions:
     await ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'tracking_number', 'TEXT');
 
-    // ✅ Migrate older DBs that are missing these:
+// ✅ Migrate older DBs that are missing these:
     await ensureColumn('activity_log', 'ip_address', 'TEXT');
     await ensureColumn('activity_log', 'user_agent', 'TEXT');
 
@@ -1645,7 +1610,7 @@ app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
 
 // ===== OneDrive Webhook Routes =====
 const onedriveWebhook = require("./routes/webhooks-onedrive");
-app.use("/api/webhooks/onedrive", express.raw({ type: "*/*" }), onedriveWebhook);
+app.use("/api/webhooks/onedrive", onedriveWebhook);
 
 // ===== Files Routes =====
 const filesRoute = require("./routes/files");
