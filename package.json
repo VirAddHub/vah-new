@@ -12,7 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "typecheck:backend": "tsc -p tsconfig.backend.json --noEmit",
-    "build:backend": "tsc -p tsconfig.backend.json --outDir dist && cp -r routes dist/ && cp -r lib dist/ && cp server.js dist/",
+    "build:backend": "npm ci --include=dev && tsc -p tsconfig.backend.json --outDir dist && cp -r routes dist/ && cp -r lib dist/ && cp server.js dist/",
     "start:backend": "node dist/server.js"
   },
   "keywords": [],
