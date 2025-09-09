@@ -2375,24 +2375,24 @@ if (require.main === module) {
 
 // Debug status (staging-only convenience)
 app.get('/__status', (req, res) => {
-  const routes = [];
-  (app._router?.stack || []).forEach((m) => {
-    if (m.route && m.route.path) {
-      const methods = Object.keys(m.route.methods || {}).map(k => k.toUpperCase());
-      methods.forEach((meth) => routes.push(`${meth} ${m.route.path}`));
-    }
-  });
+    const routes = [];
+    (app._router?.stack || []).forEach((m) => {
+        if (m.route && m.route.path) {
+            const methods = Object.keys(m.route.methods || {}).map(k => k.toUpperCase());
+            methods.forEach((meth) => routes.push(`${meth} ${m.route.path}`));
+        }
+    });
 
-  res.json({
-    pid: process.pid,
-    dir: __dirname,
-    usingDistDb: fs.existsSync(path.join(__dirname, 'db', 'index.js')),
-    haveCsrf: routes.includes('GET /api/csrf'),
-    branch: process.env.RENDER_GIT_BRANCH,
-    commit: process.env.RENDER_GIT_COMMIT,
-    node: process.version,
-    routes: routes.slice(0, 30) // keep short
-  });
+    res.json({
+        pid: process.pid,
+        dir: __dirname,
+        usingDistDb: fs.existsSync(path.join(__dirname, 'db', 'index.js')),
+        haveCsrf: routes.includes('GET /api/csrf'),
+        branch: process.env.RENDER_GIT_BRANCH,
+        commit: process.env.RENDER_GIT_COMMIT,
+        node: process.version,
+        routes: routes.slice(0, 30) // keep short
+    });
 });
 
 // Export for tests / serverless adapters
