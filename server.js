@@ -1270,10 +1270,10 @@ if (SETUP_ENABLED) {
 
             const { email, password, first_name, last_name } = req.body || {};
             if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-            
+
             const exists = db.prepare('SELECT id FROM user WHERE is_admin=1').get();
             if (exists) return res.status(409).json({ error: 'Admin user already exists' });
-            
+
             const hash = bcrypt.hashSync(password, 12);
             const now = Date.now();
             const name = `${first_name || ''} ${last_name || ''}`.trim();
