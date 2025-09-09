@@ -10,6 +10,7 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const csrf = require("csurf");
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
@@ -70,17 +71,40 @@ app.use((_, res, next) => {
     next();
 });
 
+// CSRF protection with csurf (cookie mode for cross-site frontends)
+const csrfProtection = csrf({
+    cookie: {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: process.env.NODE_ENV === 'production'
+    }
+});
+
+// CSRF token endpoint (GET): returns the token
+app.get('/api/csrf', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
+
 // CSRF guard for state-changing routes (skip webhooks mounted with raw body)
 const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
 function csrfGuard(req, res, next) {
     if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
     if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
+    if (req.path === "/api/csrf") return next(); // CSRF token endpoint
+
+    // Fallback to origin checking for backward compatibility
     const origin = req.headers.origin || "";
     const referer = req.headers.referer || "";
     if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
     return res.status(403).json({ ok: false, error: "csrf_blocked" });
 }
 app.use(csrfGuard);
+
+// Apply CSRF protection globally (except webhooks)
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/webhooks/")) return next();
+    return csrfProtection(req, res, next);
+});
 
 // light rate limit for auth-ish routes (safe to leave global)
 const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
@@ -2355,6 +2379,8 @@ if (require.main === module) {
             }));
         } catch (_) { }
     }, 60 * 60 * 1000); // Run every hour
+
+
 
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);
