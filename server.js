@@ -233,11 +233,11 @@ try {
         logger.info('Using PostgreSQL database');
     } else {
         // SQLite - keep existing initialization
-    db = new Database(DB_PATH);
-    db.pragma('foreign_keys = ON');
-    db.pragma('journal_mode = WAL');
-    db.pragma('synchronous = NORMAL');
-    db.pragma('busy_timeout = 5000');
+        db = new Database(DB_PATH);
+        db.pragma('foreign_keys = ON');
+        db.pragma('journal_mode = WAL');
+        db.pragma('synchronous = NORMAL');
+        db.pragma('busy_timeout = 5000');
         logger.info('Using SQLite database');
     }
     logger.info('DB connected');
@@ -447,15 +447,15 @@ if (process.env.DB_CLIENT === 'pg') {
     logger.info('PostgreSQL schema will be ensured by adapter');
 } else {
     // SQLite schema initialization
-db.exec(bootstrapSQL);
+    db.exec(bootstrapSQL);
 }
 // Create indexes based on database type
 if (process.env.DB_CLIENT === 'pg') {
     // PostgreSQL indexes are handled by the schema adapter
     logger.info('PostgreSQL indexes will be ensured by adapter');
 } else {
-try {
-    db.exec(`
+    try {
+        db.exec(`
       CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
       CREATE INDEX IF NOT EXISTS idx_mail_item_created_at ON mail_item(created_at);
       CREATE INDEX IF NOT EXISTS idx_mail_item_tag ON mail_item(tag);
@@ -472,8 +472,8 @@ try {
           CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
         `);
         logger.info('SQLite indexes ensured');
-} catch (e) {
-    logger.warn('Index creation failed (non-fatal)', { error: String(e) });
+    } catch (e) {
+        logger.warn('Index creation failed (non-fatal)', { error: String(e) });
     }
 }
 
@@ -487,7 +487,7 @@ async function ensureColumn(table, column, type) {
                 FROM information_schema.columns 
                 WHERE table_name = $1 AND column_name = $2
             `, [table, column]);
-            
+
             if (!result) {
                 logger.info(`Adding column ${table}.${column} (${type})`);
                 await execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
@@ -497,22 +497,22 @@ async function ensureColumn(table, column, type) {
         }
     } else {
         // SQLite - use PRAGMA
-    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-    if (!cols.includes(column)) {
-        logger.info(`Adding column ${table}.${column} (${type})`);
-        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(column)) {
+            logger.info(`Adding column ${table}.${column} (${type})`);
+            db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
         }
     }
 }
 
 // Run migrations asynchronously
 (async () => {
-// Columns introduced in recent versions:
+    // Columns introduced in recent versions:
     await ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
     await ensureColumn('mail_item', 'tracking_number', 'TEXT');
 
-// ✅ Migrate older DBs that are missing these:
+    // ✅ Migrate older DBs that are missing these:
     await ensureColumn('activity_log', 'ip_address', 'TEXT');
     await ensureColumn('activity_log', 'user_agent', 'TEXT');
 
@@ -642,11 +642,13 @@ ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Req
 ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
 
 // Defaults (safe re-run)
-if (process.env.DB_CLIENT === 'pg') {
-    await execute(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
-} else {
-    db.exec(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
-}
+(async () => {
+    if (process.env.DB_CLIENT === 'pg') {
+        await execute(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
+    } else {
+        db.exec(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
+    }
+})();
 
 if (process.env.DB_CLIENT === 'pg') {
     // PostgreSQL - handled by schema adapter
