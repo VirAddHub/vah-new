@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
+import type { Request, Response, NextFunction } from 'express';
 
 // Database adapters
 import { ensureSchema, selectOne, selectMany, execute, insertReturningId } from './db';
@@ -30,14 +31,23 @@ app.set("trust proxy", 1);
 
 // security + CORS (must be before routes)
 app.use(helmet());
+
+// Normalize APP_ORIGIN into a clean string array
+const ALLOWED_ORIGINS: string[] = (process.env.APP_ORIGIN ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter((s): s is string => s.length > 0);
+
 app.use(
     cors({
-        origin: [
-            process.env.APP_ORIGIN,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ].filter(Boolean),
+        // Use function form to avoid TS complaints and support no-Origin requests (curl, healthchecks)
+        origin(origin, cb) {
+            const allowed = !origin || ALLOWED_ORIGINS.includes(origin);
+            cb(allowed ? null : new Error('Not allowed by CORS'), allowed);
+        },
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
     })
 );
 
@@ -68,7 +78,7 @@ app.use(morgan('combined', {
 }));
 
 // Request ID middleware
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
     const requestId = crypto.randomUUID();
     req.headers['x-request-id'] = requestId;
     res.set('X-Request-ID', requestId);
@@ -76,8 +86,8 @@ app.use((req, res, next) => {
 });
 
 // CSP middleware
-app.use((req, res, next) => {
-    res.set('Content-Security-Policy', 
+app.use((req: Request, res: Response, next: NextFunction) => {
+    res.set('Content-Security-Policy',
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
         "style-src 'self' 'unsafe-inline'; " +
@@ -94,19 +104,19 @@ app.use((req, res, next) => {
 // CSRF protection for state-changing routes
 const csrfProtection = (req: any, res: any, next: any) => {
     // Skip CSRF for webhooks and API routes that don't change state
-    if (req.path.startsWith('/api/webhooks/') || 
+    if (req.path.startsWith('/api/webhooks/') ||
         req.path.startsWith('/api/metrics') ||
         req.method === 'GET') {
         return next();
     }
-    
+
     const token = req.headers['x-csrf-token'] || req.body._csrf;
     const sessionToken = req.session?.csrfToken;
-    
+
     if (!token || !sessionToken || token !== sessionToken) {
         return res.status(403).json({ error: 'Invalid CSRF token' });
     }
-    
+
     next();
 };
 
@@ -150,7 +160,7 @@ const ensureColumn = async (table: string, column: string, type: string) => {
         const result = await selectOne(`
             SELECT name FROM pragma_table_info(?) WHERE name = ?
         `, [table, column]);
-        
+
         if (!result) {
             await execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
             logger.info(`Added column ${column} to ${table}`);
@@ -164,7 +174,7 @@ const ensureColumn = async (table: string, column: string, type: string) => {
 // Initialize database and start server
 async function start() {
     await initializeDatabase();
-    
+
     // Mount routes
     app.use('/api', require('../routes/profile'));
     app.use('/api', require('../routes/mail-items'));
@@ -186,7 +196,7 @@ async function start() {
     app.use('/api', require('../routes/admin-forward-audit'));
     app.use('/api', require('../routes/debug'));
     app.use('/api', require('../routes/metrics'));
-    
+
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
