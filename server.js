@@ -2340,7 +2340,7 @@ if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
-        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000','https://www.virtualaddresshub.co.uk']);
+        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk']);
     });
 
     // ===== EXPIRING SOON NUDGE (48h warning) =====
@@ -2365,9 +2365,6 @@ if (require.main === module) {
             }));
         } catch (_) { }
     }, 60 * 60 * 1000); // Run every hour
-
-
-
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);
         server.close(() => process.exit(0));
@@ -2375,6 +2372,28 @@ if (require.main === module) {
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
+
+// Debug status (staging-only convenience)
+app.get('/__status', (req, res) => {
+    const routes = [];
+    (app._router?.stack || []).forEach((m) => {
+        if (m.route && m.route.path) {
+            const methods = Object.keys(m.route.methods || {}).map(k => k.toUpperCase());
+            methods.forEach((meth) => routes.push(`${meth} ${m.route.path}`));
+        }
+    });
+
+    res.json({
+        pid: process.pid,
+        dir: __dirname,
+        usingDistDb: fs.existsSync(path.join(__dirname, 'db', 'index.js')),
+        haveCsrf: routes.includes('GET /api/csrf'),
+        branch: process.env.RENDER_GIT_BRANCH,
+        commit: process.env.RENDER_GIT_COMMIT,
+        node: process.version,
+        routes: routes.slice(0, 30) // keep short
+    });
+});
 
 // Export for tests / serverless adapters
 module.exports = { app, db, server };

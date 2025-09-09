@@ -8,6 +8,7 @@ export default function HomePage() {
       <div className="flex gap-3 justify-center">
         <Link className="px-4 py-2 rounded bg-white/10 hover:bg-white/20" href="/(auth)/login">Log in</Link>
         <Link className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white" href="/(auth)/signup">Create account</Link>
+        <Link className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 text-white" href="/debug">Debug</Link>
       </div>
     </section>
   );

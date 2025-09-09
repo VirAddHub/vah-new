@@ -10,9 +10,9 @@ let impl: any;
 impl = client === 'pg' ? require('./pg') : require('./sqlite');
 
 export const {
-  ensureSchema,
-  selectOne,
-  selectMany,
-  execute,
-  insertReturningId,
+    ensureSchema,
+    selectOne,
+    selectMany,
+    execute,
+    insertReturningId,
 } = impl;
