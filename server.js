@@ -10,6 +10,7 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const csrf = require("csurf");
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
@@ -19,6 +20,17 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');
+const fs = require('fs');
+const path = require('path');
+
+// If running from dist/, compiled TS lives in ./db
+// If running from repo root, TS sources live in ./src/db
+const DB_MODULE_PATH = fs.existsSync(path.join(__dirname, 'db', 'index.js'))
+    ? './db'
+    : './src/db';
+
+// Database adapters
+const { ensureSchema, selectOne, selectMany, execute, insertReturningId } = require(DB_MODULE_PATH);
 
 // --- routes that need raw body (webhooks)
 const sumsubWebhook = require("./routes/webhooks-sumsub"); // keep if you split it out
@@ -31,23 +43,34 @@ const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
 
 // --- init
 const app = express();
-app.set("trust proxy", 1);
+app.set('trust proxy', 1); // required for secure cookies behind Render
 
-// security + CORS (must be before routes)
+// Security first
 app.use(helmet());
-app.use(
-    cors({
-        origin: [
-            process.env.APP_ORIGIN,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ].filter(Boolean),
-        credentials: true,
-    })
-);
 
-// cookies must come before any access to req.cookies
+// Cookies, then CORS (with CSRF header allowed)
 app.use(cookieParser());
+
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
+app.use(cors({
+    origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+}));
+
+// Webhooks BEFORE csurf (raw body)
+app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
+
+// CSRF in cookie mode for cross-site
+app.use(csrf({
+    cookie: { httpOnly: true, sameSite: 'none', secure: true }
+}));
+
+// CSRF token endpoint
+app.get('/api/csrf', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
 
 // Request ID for traceability
 app.use((req, res, next) => {
@@ -67,28 +90,17 @@ app.use((_, res, next) => {
     next();
 });
 
-// CSRF guard for state-changing routes (skip webhooks mounted with raw body)
-const SAFE_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
-function csrfGuard(req, res, next) {
-    if (!/^(POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
-    if (req.path.startsWith("/api/webhooks/")) return next(); // webhooks are signed separately
-    const origin = req.headers.origin || "";
-    const referer = req.headers.referer || "";
-    if (origin === SAFE_ORIGIN || referer.startsWith(SAFE_ORIGIN + "/")) return next();
-    return res.status(403).json({ ok: false, error: "csrf_blocked" });
-}
-app.use(csrfGuard);
 
 // light rate limit for auth-ish routes (safe to leave global)
 const authLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(authLimiter);
 
-// 🚨 Route-level RAW body for Sumsub webhook (signature check needs raw bytes)
-app.use("/api/webhooks/sumsub", express.raw({ type: "*/*" }), sumsubWebhook);
+// Sumsub webhook (raw body handled globally)
+app.use("/api/webhooks/sumsub", sumsubWebhook);
 
-// 🚨 Route-level RAW body for GoCardless webhook (signature check needs raw bytes)
+// GoCardless webhook (raw body handled globally)
 const gcWebhook = require("./routes/webhooks-gc");
-app.use("/api/webhooks/gc", express.raw({ type: "*/*" }), gcWebhook);
+app.use("/api/webhooks/gc", gcWebhook);
 
 // normal JSON body parser for everything else
 app.use(express.json());
@@ -224,11 +236,19 @@ app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }
 // ===== DB =====
 let db;
 try {
-    db = new Database(DB_PATH);
-    db.pragma('foreign_keys = ON');
-    db.pragma('journal_mode = WAL');
-    db.pragma('synchronous = NORMAL');
-    db.pragma('busy_timeout = 5000');
+    // Initialize database based on DB_CLIENT environment variable
+    if (process.env.DB_CLIENT === 'pg') {
+        // PostgreSQL - schema will be ensured by the adapter
+        logger.info('Using PostgreSQL database');
+    } else {
+        // SQLite - keep existing initialization
+        db = new Database(DB_PATH);
+        db.pragma('foreign_keys = ON');
+        db.pragma('journal_mode = WAL');
+        db.pragma('synchronous = NORMAL');
+        db.pragma('busy_timeout = 5000');
+        logger.info('Using SQLite database');
+    }
     logger.info('DB connected');
 } catch (e) {
     logger.error('DB connect failed', e);
@@ -430,108 +450,162 @@ const bootstrapSQL = `
       FOREIGN KEY (org_id) REFERENCES org(id) ON DELETE CASCADE
     );
   `;
-db.exec(bootstrapSQL);
-try {
-    db.exec(`
+// Initialize schema based on database type
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL schema is handled by the adapter
+    logger.info('PostgreSQL schema will be ensured by adapter');
+} else {
+    // SQLite schema initialization
+    db.exec(bootstrapSQL);
+}
+// Create indexes based on database type
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL indexes are handled by the schema adapter
+    logger.info('PostgreSQL indexes will be ensured by adapter');
+} else {
+    try {
+        db.exec(`
       CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
       CREATE INDEX IF NOT EXISTS idx_mail_item_created_at ON mail_item(created_at);
       CREATE INDEX IF NOT EXISTS idx_mail_item_tag ON mail_item(tag);
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_user_status ON forwarding_request("user", status);
       CREATE INDEX IF NOT EXISTS idx_forwarding_request_created_at ON forwarding_request(created_at);
       CREATE INDEX IF NOT EXISTS idx_payment_user_created_at ON payment(user_id, created_at);
-      
-      -- Fast index for hashed password reset lookups
-      CREATE INDEX IF NOT EXISTS idx_user_pr_hash ON user(password_reset_token_hash);
-      
-      -- RBAC indexes
-      CREATE INDEX IF NOT EXISTS idx_membership_user ON membership(user_id);
-      CREATE INDEX IF NOT EXISTS idx_membership_org ON membership(org_id);
-      CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
-    `);
-    logger.info('Indexes ensured');
-} catch (e) {
-    logger.warn('Index creation failed (non-fatal)', { error: String(e) });
-}
-
-// --- lightweight auto-migrations for new columns ---
-function ensureColumn(table, column, type) {
-    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-    if (!cols.includes(column)) {
-        logger.info(`Adding column ${table}.${column} (${type})`);
-        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+          
+          -- Fast index for hashed password reset lookups
+          CREATE INDEX IF NOT EXISTS idx_user_pr_hash ON user(password_reset_token_hash);
+          
+          -- RBAC indexes
+          CREATE INDEX IF NOT EXISTS idx_membership_user ON membership(user_id);
+          CREATE INDEX IF NOT EXISTS idx_membership_org ON membership(org_id);
+          CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
+        `);
+        logger.info('SQLite indexes ensured');
+    } catch (e) {
+        logger.warn('Index creation failed (non-fatal)', { error: String(e) });
     }
 }
 
-// Columns introduced in recent versions:
-ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
-ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
-ensureColumn('mail_item', 'tracking_number', 'TEXT');
+// --- lightweight auto-migrations for new columns ---
+async function ensureColumn(table, column, type) {
+    if (process.env.DB_CLIENT === 'pg') {
+        // PostgreSQL - check if column exists
+        try {
+            const result = await selectOne(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = $1 AND column_name = $2
+            `, [table, column]);
 
-// ✅ Migrate older DBs that are missing these:
-ensureColumn('activity_log', 'ip_address', 'TEXT');
-ensureColumn('activity_log', 'user_agent', 'TEXT');
+            if (!result) {
+                logger.info(`Adding column ${table}.${column} (${type})`);
+                await execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+            }
+        } catch (e) {
+            logger.warn(`Column ${column} might already exist in ${table}`, { error: String(e) });
+        }
+    } else {
+        // SQLite - use PRAGMA
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+        if (!cols.includes(column)) {
+            logger.info(`Adding column ${table}.${column} (${type})`);
+            db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+        }
+    }
+}
 
-// ✅ Password reset columns (safe to run multiple times):
-ensureColumn('user', 'password_reset_token', 'TEXT');
-ensureColumn('user', 'password_reset_expires', 'INTEGER');
-ensureColumn('user', 'password_reset_used_at', 'INTEGER');
-ensureColumn('user', 'password_reset_token_hash', 'TEXT');
+// Run migrations asynchronously
+(async () => {
+    // Columns introduced in recent versions:
+    await ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
+    await ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
+    await ensureColumn('mail_item', 'tracking_number', 'TEXT');
 
-// ✅ GoCardless columns (safe to run multiple times):
-ensureColumn('user', 'gocardless_customer_id', 'TEXT');
-ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
-ensureColumn('user', 'gocardless_session_token', 'TEXT');
-ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+    // ✅ Migrate older DBs that are missing these:
+    await ensureColumn('activity_log', 'ip_address', 'TEXT');
+    await ensureColumn('activity_log', 'user_agent', 'TEXT');
 
-// Email preferences
-ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
-ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
-ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
-ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
-ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
+    // ✅ Password reset columns (safe to run multiple times):
+    await ensureColumn('user', 'password_reset_token', 'TEXT');
+    await ensureColumn('user', 'password_reset_expires', 'INTEGER');
+    await ensureColumn('user', 'password_reset_used_at', 'INTEGER');
+    await ensureColumn('user', 'password_reset_token_hash', 'TEXT');
 
-// Set sane defaults for email preferences
-db.exec(`
-      UPDATE user SET
-        email_pref_marketing = COALESCE(email_pref_marketing, 1),
-        email_pref_product   = COALESCE(email_pref_product, 1),
-        email_pref_security  = COALESCE(email_pref_security, 1)
-    `);
+    // ✅ GoCardless columns (safe to run multiple times):
+    await ensureColumn('user', 'gocardless_customer_id', 'TEXT');
+    await ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
+    await ensureColumn('user', 'gocardless_session_token', 'TEXT');
+    await ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
+
+    // Email preferences
+    await ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
+    await ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
+    await ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
+    await ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
+    await ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
+
+    // Set sane defaults for email preferences
+    if (process.env.DB_CLIENT === 'pg') {
+        await execute(`
+            UPDATE "user" SET
+              email_pref_marketing = COALESCE(email_pref_marketing, 1),
+              email_pref_product   = COALESCE(email_pref_product, 1),
+              email_pref_security  = COALESCE(email_pref_security, 1)
+        `);
+    } else {
+        db.exec(`
+            UPDATE user SET
+              email_pref_marketing = COALESCE(email_pref_marketing, 1),
+              email_pref_product   = COALESCE(email_pref_product, 1),
+              email_pref_security  = COALESCE(email_pref_security, 1)
+        `);
+    }
+})();
 
 // GDPR export table (idempotent)
-db.exec(`
-    CREATE TABLE IF NOT EXISTS export_job (
-      id INTEGER PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      type TEXT NOT NULL,                  -- 'gdpr_v1'
-      status TEXT NOT NULL,                -- 'pending'|'running'|'done'|'error'
-      created_at INTEGER NOT NULL,         -- ms
-      started_at INTEGER,
-      completed_at INTEGER,
-      error TEXT,
-      file_path TEXT,                      -- absolute path
-      file_size INTEGER,
-      token TEXT,                          -- opaque download token
-      expires_at INTEGER                   -- ms
-    );
-    CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - handled by schema adapter
+    logger.info('PostgreSQL tables will be ensured by adapter');
+} else {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS export_job (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          type TEXT NOT NULL,                  -- 'gdpr_v1'
+          status TEXT NOT NULL,                -- 'pending'|'running'|'done'|'error'
+          created_at INTEGER NOT NULL,         -- ms
+          started_at INTEGER,
+          completed_at INTEGER,
+          error TEXT,
+          file_path TEXT,                      -- absolute path
+          file_size INTEGER,
+          token TEXT,                          -- opaque download token
+          expires_at INTEGER                   -- ms
+        );
+        CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
     `);
+}
 
 // Notifications table (idempotent)
-db.exec(`
-    CREATE TABLE IF NOT EXISTS notification (
-      id INTEGER PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      type TEXT NOT NULL,           -- e.g. 'kyc', 'security', 'export', 'billing'
-      title TEXT NOT NULL,
-      body TEXT,
-      meta TEXT,                    -- JSON string
-      created_at INTEGER NOT NULL,  -- ms
-      read_at INTEGER               -- ms or NULL
-    );
-    CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - handled by schema adapter
+    logger.info('PostgreSQL tables will be ensured by adapter');
+} else {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS notification (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          type TEXT NOT NULL,           -- e.g. 'kyc', 'security', 'export', 'billing'
+          title TEXT NOT NULL,
+          body TEXT,
+          meta TEXT,                    -- JSON string
+          created_at INTEGER NOT NULL,  -- ms
+          read_at INTEGER               -- ms or NULL
+        );
+        CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
     `);
+}
 
 // Track who/when updated mail items
 ensureColumn('mail_item', 'updated_by', 'INTEGER');
@@ -541,29 +615,34 @@ ensureColumn('mail_item', 'updated_at', 'INTEGER');
 ensureColumn('mail_item', 'org_id', 'INTEGER');
 
 // OneDrive file metadata table (no blobs)
-db.exec(`
-    CREATE TABLE IF NOT EXISTS file (
-      id INTEGER PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      mail_item_id INTEGER,
-      drive_id TEXT,
-      item_id TEXT UNIQUE,   -- OneDrive driveItem id (unique)
-      path TEXT,
-      name TEXT,
-      size INTEGER,
-      mime TEXT,
-      etag TEXT,
-      modified_at INTEGER,
-      web_url TEXT,
-      share_url TEXT,
-      share_expires_at INTEGER,
-      deleted INTEGER DEFAULT 0,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS file_user_created ON file(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - handled by schema adapter
+    logger.info('PostgreSQL tables will be ensured by adapter');
+} else {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS file (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          mail_item_id INTEGER,
+          drive_id TEXT,
+          item_id TEXT UNIQUE,   -- OneDrive driveItem id (unique)
+          path TEXT,
+          name TEXT,
+          size INTEGER,
+          mime TEXT,
+          etag TEXT,
+          modified_at INTEGER,
+          web_url TEXT,
+          share_url TEXT,
+          share_expires_at INTEGER,
+          deleted INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS file_user_created ON file(user_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
     `);
+}
 
 // Mail columns to match your Make flow
 ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
@@ -572,50 +651,69 @@ ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Req
 ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
 
 // Defaults (safe re-run)
-db.exec(`
-      UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No');
-    `);
+(async () => {
+    if (process.env.DB_CLIENT === 'pg') {
+        await execute(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
+    } else {
+        db.exec(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
+    }
+})();
 
-db.exec(`
-      CREATE TABLE IF NOT EXISTS mail_audit (
-        id INTEGER PRIMARY KEY,
-        item_id INTEGER NOT NULL,
-        user_id INTEGER,                 -- actor (admin) if available
-        action TEXT NOT NULL,            -- 'update' | 'bulk_update'
-        before_json TEXT,                -- JSON snapshot of key fields
-        after_json  TEXT,                -- JSON snapshot of key fields
-        created_at INTEGER NOT NULL      -- ms
-      );
-      CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - handled by schema adapter
+    logger.info('PostgreSQL tables will be ensured by adapter');
+} else {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS mail_audit (
+          id INTEGER PRIMARY KEY,
+          item_id INTEGER NOT NULL,
+          user_id INTEGER,                 -- actor (admin) if available
+          action TEXT NOT NULL,            -- 'update' | 'bulk_update'
+          before_json TEXT,                -- JSON snapshot of key fields
+          after_json  TEXT,                -- JSON snapshot of key fields
+          created_at INTEGER NOT NULL      -- ms
+        );
+        CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
     `);
+}
 
 // Trigger: whenever a mail_item row changes, snapshot before/after key fields
 // (Note: admin routes also set updated_by so trigger captures the actor.)
-db.exec(`
-      CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
-      BEGIN
-        INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
-        VALUES (
-          new.id,
-          new.updated_by,
-          'update',
-          json_object(
-            'tag', old.tag, 'status', old.status, 'notes', old.notes, 'deleted', old.deleted
-          ),
-          json_object(
-            'tag', new.tag, 'status', new.status, 'notes', new.notes, 'deleted', new.deleted
-          ),
-          strftime('%s','now')*1000
-        );
-      END;
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - triggers handled by schema adapter
+    logger.info('PostgreSQL triggers will be ensured by adapter');
+} else {
+    db.exec(`
+        CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
+        BEGIN
+          INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
+          VALUES (
+            new.id,
+            new.updated_by,
+            'update',
+            json_object(
+              'tag', old.tag, 'status', old.status, 'notes', old.notes, 'deleted', old.deleted
+            ),
+            json_object(
+              'tag', new.tag, 'status', new.status, 'notes', new.notes, 'deleted', new.deleted
+            ),
+            strftime('%s','now')*1000
+          );
+        END;
     `);
+}
 
 // ✅ Mail FTS5 setup
-const { ensureMailFts } = require("./lib/db-fts");
-const { setDb } = require("./lib/db");
-setDb(db);
-ensureMailFts(db);
-console.log("[fts] mail_item_fts ensured");
+if (process.env.DB_CLIENT === 'pg') {
+    // PostgreSQL - FTS handled by schema adapter
+    logger.info('PostgreSQL FTS will be ensured by adapter');
+} else {
+    const { ensureMailFts } = require("./lib/db-fts");
+    const { setDb } = require("./lib/db");
+    setDb(db);
+    ensureMailFts(db);
+    console.log("[fts] mail_item_fts ensured");
+}
 
 // ===== WEBHOOKS (after database initialization) =====
 const postmarkWebhook = require("./routes/webhooks-postmark");
@@ -1520,7 +1618,7 @@ app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
 
 // ===== OneDrive Webhook Routes =====
 const onedriveWebhook = require("./routes/webhooks-onedrive");
-app.use("/api/webhooks/onedrive", express.raw({ type: "*/*" }), onedriveWebhook);
+app.use("/api/webhooks/onedrive", onedriveWebhook);
 
 // ===== Files Routes =====
 const filesRoute = require("./routes/files");
@@ -2242,6 +2340,7 @@ if (require.main === module) {
     server = app.listen(PORT, () => {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
+        console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000','https://www.virtualaddresshub.co.uk']);
     });
 
     // ===== EXPIRING SOON NUDGE (48h warning) =====
@@ -2266,6 +2365,8 @@ if (require.main === module) {
             }));
         } catch (_) { }
     }, 60 * 60 * 1000); // Run every hour
+
+
 
     function shutdown(sig) {
         console.log(`\n${sig} received. Shutting down...`);

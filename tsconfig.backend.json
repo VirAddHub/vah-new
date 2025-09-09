@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "resolveJsonModule": true,
+        "types": [
+            "node"
+        ],
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "declaration": true,
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "apps",
+        "app",
+        "lib",
+        "hooks",
+        "middleware.ts"
+    ]
+}

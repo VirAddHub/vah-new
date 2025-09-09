@@ -10,12 +10,20 @@
     "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:backend": "tsc -p tsconfig.backend.json --noEmit",
+    "build:backend": "npm ci --include=dev && tsc -p tsconfig.backend.json --outDir dist && cp -r routes dist/ && cp -r lib dist/ && cp server.js dist/",
+    "start:backend": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "dependencies": {
+    "@types/pg": "8.15.5",
     "archiver": "^7.0.1",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.2",
@@ -24,6 +32,7 @@
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csurf": "1.11.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
@@ -38,6 +47,7 @@
     "nanoid": "^5.1.5",
     "next": "14.2.32",
     "node-fetch": "^3.3.2",
+    "pg": "8.16.3",
     "postcss": "^8.4.47",
     "prom-client": "^15.1.3",
     "react": "18.2.0",
@@ -48,6 +58,14 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
+    "@types/compression": "1.8.1",
+    "@types/cookie-parser": "1.4.9",
+    "@types/cors": "2.8.19",
+    "@types/csurf": "1.11.5",
+    "@types/express": "5.0.3",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/morgan": "1.9.10",
     "@types/node": "20.14.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -57,10 +75,6 @@
     "rimraf": "6.0.1",
     "supertest": "7.1.4",
     "typescript": "5.5.4"
-  },
-  "engines": {
-    "node": ">=18.18 <19",
-    "npm": ">=9"
   },
   "overrides": {
     "@tailwindcss/postcss": "0.0.0-security",
