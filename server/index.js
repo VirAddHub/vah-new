@@ -133,6 +133,15 @@ app.use(express.json());
 // Health check route
 app.use('/api', require('./routes/health'));
 
+// Public plans route
+const publicPlansRouter = require("./routes/plans");
+app.use(publicPlansRouter);
+// admin plans CRUD
+try {
+    const adminPlans = require("./routes/admin-plans");
+    app.use(adminPlans);
+} catch (_) { }
+
 // Mail items routes (scan URLs)
 const mailItemsRoutes = require("./routes/mail-items");
 const mailSearchRoutes = require("./routes/mail-search");

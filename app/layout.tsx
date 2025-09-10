@@ -3,8 +3,8 @@ import { ReactNode } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/Footer';
 
-export const metadata = { 
-  title: 'Virtual Address Hub - Your Digital Mailroom', 
+export const metadata = {
+  title: 'Virtual Address Hub - Your Digital Mailroom',
   description: 'Secure mail scanning, forwarding & proof of address. Get a professional UK address and manage your mail digitally.',
   keywords: 'virtual address, mail forwarding, digital mailroom, UK address, mail scanning',
   openGraph: {

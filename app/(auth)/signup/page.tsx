@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function SignupPage() {
   const r = useRouter();
-  const [form, setForm] = useState({ first_name:'', last_name:'', email:'', password:'' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '' });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -29,19 +29,19 @@ export default function SignupPage() {
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">First name</label>
-          <Input value={form.first_name} onChange={e=>set('first_name', e.target.value)} />
+          <Input value={form.first_name} onChange={e => set('first_name', e.target.value)} />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Last name</label>
-          <Input value={form.last_name} onChange={e=>set('last_name', e.target.value)} />
+          <Input value={form.last_name} onChange={e => set('last_name', e.target.value)} />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Email</label>
-          <Input type="email" value={form.email} onChange={e=>set('email', e.target.value)} required />
+          <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} required />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Password</label>
-          <Input type="password" value={form.password} onChange={e=>set('password', e.target.value)} required />
+          <Input type="password" value={form.password} onChange={e => set('password', e.target.value)} required />
         </div>
         {err && <p className="text-red-400 text-sm">{err}</p>}
         <Button type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create account'}</Button>

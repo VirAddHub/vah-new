@@ -116,3 +116,33 @@ CREATE INDEX IF NOT EXISTS idx_mail_items_subject   ON mail_item(subject);
 CREATE INDEX IF NOT EXISTS idx_mail_items_sender    ON mail_item(sender_name);
 CREATE INDEX IF NOT EXISTS idx_mail_items_received  ON mail_item(received_date);
 CREATE INDEX IF NOT EXISTS idx_mail_items_created   ON mail_item(created_at);
+
+-- === pricing plans (SQLite) ===
+CREATE TABLE IF NOT EXISTS plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  price_pence INTEGER NOT NULL CHECK(price_pence>=0),
+  interval TEXT NOT NULL CHECK(interval IN ('month','year')),
+  currency TEXT NOT NULL DEFAULT 'GBP',
+  features_json TEXT NOT NULL DEFAULT '[]',
+  active INTEGER NOT NULL DEFAULT 0,
+  vat_inclusive INTEGER NOT NULL DEFAULT 1,
+  trial_days INTEGER NOT NULL DEFAULT 0,
+  sort INTEGER NOT NULL DEFAULT 0,
+  effective_at TEXT,
+  retired_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS plan_price_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  plan_id INTEGER NOT NULL,
+  price_pence INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'GBP',
+  effective_at TEXT NOT NULL DEFAULT (datetime('now')),
+  note TEXT,
+  FOREIGN KEY (plan_id) REFERENCES plans(id)
+);
+CREATE INDEX IF NOT EXISTS idx_plans_active_sort ON plans(active, sort, price_pence);

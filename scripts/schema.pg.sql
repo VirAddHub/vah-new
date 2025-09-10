@@ -72,6 +72,35 @@ CREATE TABLE IF NOT EXISTS activity_log (
   user_agent TEXT
 );
 
+-- === pricing plans (PostgreSQL) ===
+CREATE TABLE IF NOT EXISTS plans (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  price_pence INTEGER NOT NULL CHECK(price_pence>=0),
+  interval TEXT NOT NULL CHECK(interval IN ('month','year')),
+  currency TEXT NOT NULL DEFAULT 'GBP',
+  features_json TEXT NOT NULL DEFAULT '[]',
+  active BOOLEAN NOT NULL DEFAULT FALSE,
+  vat_inclusive BOOLEAN NOT NULL DEFAULT TRUE,
+  trial_days INTEGER NOT NULL DEFAULT 0,
+  sort INTEGER NOT NULL DEFAULT 0,
+  effective_at TIMESTAMPTZ,
+  retired_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS plan_price_history (
+  id SERIAL PRIMARY KEY,
+  plan_id INTEGER NOT NULL REFERENCES plans(id),
+  price_pence INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'GBP',
+  effective_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  note TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_plans_active_sort ON plans(active, sort, price_pence);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_mail_item_user_id ON mail_item(user_id);
 CREATE INDEX IF NOT EXISTS idx_mail_item_status ON mail_item(status);

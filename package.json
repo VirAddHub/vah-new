@@ -22,6 +22,8 @@
     "test:production": "node test/test-production-ready.mjs",
     "db:init": "node scripts/db-init.cjs",
     "db:seed": "node scripts/seed-dev.cjs",
+    "db:migrate:plans": "node scripts/db-migrate-plans.cjs",
+    "db:seed:plans": "node scripts/db-seed-plans.cjs",
     "db:reset": "node scripts/db-reset.cjs && npm run db:init && npm run db:seed",
     "db:integrity": "node scripts/db-integrity.cjs",
     "db:rebuild": "node scripts/db-rebuild.cjs",
