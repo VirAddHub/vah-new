@@ -1,5 +1,5 @@
 const express = require("express");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 const router = express.Router();
 
 /** GET /api/admin/mail-audit?item_id=&limit=&offset= */

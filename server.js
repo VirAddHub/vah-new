@@ -5,6 +5,12 @@ require('dotenv').config({
     override: true,
 });
 
+// Set DEV_MODE for testing if not already set
+if (!process.env.DEV_MODE) {
+    process.env.DEV_MODE = '1';
+    console.log('Set DEV_MODE=1 for development testing');
+}
+
 // --- core & middleware
 const express = require("express");
 const helmet = require("helmet");
@@ -15,9 +21,10 @@ const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
 const morgan = require('morgan');
-const Database = require('better-sqlite3');
+const { db } = require('./server/db.js');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const devBypass = require('./middleware/devBypass');
 const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');
 const fs = require('fs');
@@ -62,10 +69,26 @@ app.use(cors({
 // Webhooks BEFORE csurf (raw body)
 app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
 
-// CSRF in cookie mode for cross-site
-app.use(csrf({
-    cookie: { httpOnly: true, sameSite: 'none', secure: true }
-}));
+// Dev bypass middleware (must be before CSRF)
+app.use(devBypass);
+
+// CSRF in cookie mode for cross-site (with dev bypass support)
+const csrfMiddleware = csrf({
+    cookie: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production'
+    }
+});
+
+// Conditional CSRF - skip for dev bypass
+app.use((req, res, next) => {
+    if (req.__devBypass) {
+        console.log('Skipping CSRF for dev bypass request');
+        return next(); // skip CSRF in dev bypass
+    }
+    return csrfMiddleware(req, res, next);
+});
 
 // CSRF token endpoint
 app.get('/api/csrf', (req, res) => {
@@ -114,6 +137,12 @@ app.use("/api/webhooks/gc", gcWebhook);
 // normal JSON body parser for everything else
 app.use(express.json());
 
+// Mail items routes (scan URLs)
+const mailItemsRoutes = require("./server/routes/mail-items");
+const mailSearchRoutes = require("./server/routes/mail-search");
+app.use("/api", mailItemsRoutes);
+app.use("/api", mailSearchRoutes);
+
 // ===== WEBHOOKS (before auth) =====
 // (moved to after database initialization)
 
@@ -147,7 +176,10 @@ app.use((req, _res, next) => {
     // 3) Dev-only safety valve: X-Dev-User-Id sets req.user for quick smoke tests
     if (!req.user && process.env.NODE_ENV !== "production") {
         const devId = Number(req.header("x-dev-user-id") || 0);
-        if (devId) req.user = { id: devId, email: `dev+${devId}@local`, is_admin: true };
+        if (devId) {
+            req.user = { id: devId, email: `dev+${devId}@local`, is_admin: true };
+            console.log('Dev override activated for user:', devId);
+        }
     }
 
     next();
@@ -169,7 +201,7 @@ if (process.env.NODE_ENV === 'production' && !ADMIN_SETUP_SECRET) {
 
 const SETUP_ENABLED = process.env.SETUP_ENABLED === 'true';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
-const DB_PATH = process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'var/local/vah.db');
+const DB_PATH = process.env.DATABASE_URL || process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'data/app.db');
 
 
 const CERTIFICATE_BASE_URL =
@@ -248,19 +280,13 @@ app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }
 // ===== Database & Additional Setup =====
 
 // ===== DB =====
-let db;
 try {
     // Initialize database based on DB_CLIENT environment variable
     if (process.env.DB_CLIENT === 'pg') {
         // PostgreSQL - schema will be ensured by the adapter
         logger.info('Using PostgreSQL database');
     } else {
-        // SQLite - keep existing initialization
-        db = new Database(DB_PATH);
-        db.pragma('foreign_keys = ON');
-        db.pragma('journal_mode = WAL');
-        db.pragma('synchronous = NORMAL');
-        db.pragma('busy_timeout = 5000');
+        // SQLite - using centralized db connection from server/db.ts
         logger.info('Using SQLite database');
     }
     logger.info('DB connected');
@@ -269,486 +295,39 @@ try {
     process.exit(1);
 }
 
-const bootstrapSQL = `
-    CREATE TABLE IF NOT EXISTS user (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      name TEXT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      first_name TEXT,
-      last_name TEXT,
-      forwarding_address TEXT,
-      kyc_status TEXT DEFAULT 'pending',
-      plan_status TEXT DEFAULT 'active',
-      one_drive_folder_url TEXT,
-      is_admin INTEGER DEFAULT 0,
-      kyc_updated_at INTEGER,
-      company_name TEXT,
-      companies_house_number TEXT,
-      sumsub_applicant_id TEXT,
-      sumsub_review_status TEXT,
-      sumsub_last_updated INTEGER,
-      sumsub_rejection_reason TEXT,
-      sumsub_webhook_payload TEXT,
-      plan_start_date INTEGER,
-      onboarding_step TEXT DEFAULT 'signup',
-      gocardless_customer_id TEXT,
-      gocardless_subscription_id TEXT,
-      mandate_id TEXT,
-      last_login_at INTEGER,
-      login_attempts INTEGER DEFAULT 0,
-      locked_until INTEGER,
-      updated_at INTEGER
-    );
-    CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
-  
-    CREATE TABLE IF NOT EXISTS mail_item (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      subject TEXT,
-      received_date TEXT,
-      scan_file_url TEXT,
-      file_size INTEGER,
-      forwarded_physically INTEGER DEFAULT 0,
-      notes TEXT,
-      forwarded_date TEXT,
-      forward_reason TEXT,
-      sender_name TEXT,
-      scanned INTEGER DEFAULT 0,
-      deleted INTEGER DEFAULT 0,
-      tag TEXT,
-      is_billable_forward INTEGER DEFAULT 0,
-      admin_note TEXT,
-      deleted_by_admin INTEGER DEFAULT 0,
-      action_log TEXT,
-      scanned_at INTEGER,
-      status TEXT DEFAULT 'received',
-      requested_at INTEGER,
-      physical_receipt_timestamp INTEGER,
-      physical_dispatch_timestamp INTEGER,
-      tracking_number TEXT,
-      updated_at INTEGER,
-      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_mail_item_user ON mail_item(user_id);
-  
-    CREATE TABLE IF NOT EXISTS payment (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      gocardless_customer_id TEXT,
-      subscription_id TEXT,
-      status TEXT,
-      invoice_url TEXT,
-      mandate_id TEXT,
-      amount INTEGER,
-      currency TEXT DEFAULT 'GBP',
-      description TEXT,
-      payment_type TEXT DEFAULT 'subscription',
-      updated_at INTEGER,
-      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-    );
-  
-    CREATE TABLE IF NOT EXISTS activity_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      user_id INTEGER,
-      action TEXT NOT NULL,
-      details TEXT,
-      mail_item_id INTEGER,
-      ip_address TEXT,
-      user_agent TEXT
-    );
-  
-    CREATE TABLE IF NOT EXISTS admin_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      admin_user_id INTEGER NOT NULL,
-      action_type TEXT NOT NULL,
-      target_type TEXT,
-      target_id INTEGER,
-      details TEXT,
-      ip_address TEXT
-    );
-  
-    CREATE TABLE IF NOT EXISTS forwarding_request (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      "user" INTEGER NOT NULL,
-      mail_item INTEGER NOT NULL,
-      requested_at INTEGER,
-      status TEXT DEFAULT 'pending',
-      payment INTEGER,
-      is_billable INTEGER DEFAULT 0,
-      billed_at INTEGER,
-      destination_name TEXT,
-      destination_address TEXT,
-      source TEXT,
-      cancelled_at INTEGER,
-      updated_at INTEGER,
-      FOREIGN KEY("user") REFERENCES user(id) ON DELETE CASCADE,
-      FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
-    );
-  
-    CREATE TABLE IF NOT EXISTS mail_event (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      mail_item INTEGER NOT NULL,
-      actor_user INTEGER,
-      event_type TEXT NOT NULL,
-      details TEXT,
-      FOREIGN KEY(mail_item) REFERENCES mail_item(id) ON DELETE CASCADE
-    );
-  
-    CREATE TABLE IF NOT EXISTS webhook_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      type TEXT NOT NULL,
-      source TEXT NOT NULL,
-      raw_payload TEXT,
-      received_at INTEGER NOT NULL,
-      processed INTEGER DEFAULT 0,
-      error_message TEXT
-    );
-  
-    CREATE TABLE IF NOT EXISTS password_reset (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      created_at INTEGER NOT NULL,
-      expires_at INTEGER NOT NULL,
-      used INTEGER DEFAULT 0,
-      ip_address TEXT,
-      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-    );
-  
-    CREATE TABLE IF NOT EXISTS plans (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT,
-      price INTEGER NOT NULL,
-      currency TEXT DEFAULT 'GBP',
-      interval TEXT DEFAULT 'monthly',
-      features TEXT,
-      active INTEGER DEFAULT 1,
-      created_at INTEGER,
-      updated_at INTEGER
-    );
-  
-    CREATE TABLE IF NOT EXISTS impersonation_token (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      admin_user_id INTEGER NOT NULL,
-      target_user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      created_at INTEGER NOT NULL,
-      expires_at INTEGER NOT NULL,
-      used INTEGER DEFAULT 0,
-      ip_address TEXT
-    );
-
-    -- RBAC: Organizations and memberships
-    CREATE TABLE IF NOT EXISTS org (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      created_at INTEGER DEFAULT (strftime('%s','now')*1000)
-    );
-
-    CREATE TABLE IF NOT EXISTS membership (
-      user_id INTEGER NOT NULL,
-      org_id INTEGER NOT NULL,
-      role TEXT NOT NULL, -- owner|admin|member
-      PRIMARY KEY (user_id, org_id),
-      FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-      FOREIGN KEY (org_id) REFERENCES org(id) ON DELETE CASCADE
-    );
-  `;
+// Schema is now managed by scripts/db-schema.sql and npm run db:init
 // Initialize schema based on database type
 if (process.env.DB_CLIENT === 'pg') {
     // PostgreSQL schema is handled by the adapter
     logger.info('PostgreSQL schema will be ensured by adapter');
 } else {
-    // SQLite schema initialization
-    db.exec(bootstrapSQL);
-}
-// Create indexes based on database type
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL indexes are handled by the schema adapter
-    logger.info('PostgreSQL indexes will be ensured by adapter');
-} else {
+    // Check if schema exists, don't create it
     try {
-        db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_mail_item_user_status ON mail_item(user_id, status);
-      CREATE INDEX IF NOT EXISTS idx_mail_item_created_at ON mail_item(created_at);
-      CREATE INDEX IF NOT EXISTS idx_mail_item_tag ON mail_item(tag);
-      CREATE INDEX IF NOT EXISTS idx_forwarding_request_user_status ON forwarding_request("user", status);
-      CREATE INDEX IF NOT EXISTS idx_forwarding_request_created_at ON forwarding_request(created_at);
-      CREATE INDEX IF NOT EXISTS idx_payment_user_created_at ON payment(user_id, created_at);
-          
-          -- Fast index for hashed password reset lookups
-          CREATE INDEX IF NOT EXISTS idx_user_pr_hash ON user(password_reset_token_hash);
-          
-          -- RBAC indexes
-          CREATE INDEX IF NOT EXISTS idx_membership_user ON membership(user_id);
-          CREATE INDEX IF NOT EXISTS idx_membership_org ON membership(org_id);
-          CREATE INDEX IF NOT EXISTS idx_mail_org_created ON mail_item(org_id, created_at DESC);
-        `);
-        logger.info('SQLite indexes ensured');
+        const mustHave = ["user", "mail_item", "admin_log", "mail_event", "activity_log"];
+        const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+        const names = new Set(rows.map(r => r.name));
+        const missing = mustHave.filter(t => !names.has(t));
+        if (missing.length) {
+            console.error("❌ DB schema missing tables:", missing);
+            console.error("Run: npm run db:init");
+            process.exit(1);
+        }
+        logger.info('SQLite schema check passed');
     } catch (e) {
-        logger.warn('Index creation failed (non-fatal)', { error: String(e) });
+        console.error("❌ DB check failed:", e);
+        process.exit(1);
     }
 }
 
-// --- lightweight auto-migrations for new columns ---
-async function ensureColumn(table, column, type) {
-    if (process.env.DB_CLIENT === 'pg') {
-        // PostgreSQL - check if column exists
-        try {
-            const result = await selectOne(`
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = $1 AND column_name = $2
-            `, [table, column]);
+// All schema management is now handled by scripts/db-schema.sql and npm run db:init
 
-            if (!result) {
-                logger.info(`Adding column ${table}.${column} (${type})`);
-                await execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
-            }
-        } catch (e) {
-            logger.warn(`Column ${column} might already exist in ${table}`, { error: String(e) });
-        }
-    } else {
-        // SQLite - use PRAGMA
-        const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-        if (!cols.includes(column)) {
-            logger.info(`Adding column ${table}.${column} (${type})`);
-            db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
-        }
-    }
-}
+// All table creation is now handled by scripts/db-schema.sql
 
-// Run migrations asynchronously
-(async () => {
-    // Columns introduced in recent versions:
-    await ensureColumn('mail_item', 'physical_receipt_timestamp', 'INTEGER');
-    await ensureColumn('mail_item', 'physical_dispatch_timestamp', 'INTEGER');
-    await ensureColumn('mail_item', 'tracking_number', 'TEXT');
-
-    // ✅ Migrate older DBs that are missing these:
-    await ensureColumn('activity_log', 'ip_address', 'TEXT');
-    await ensureColumn('activity_log', 'user_agent', 'TEXT');
-
-    // ✅ Password reset columns (safe to run multiple times):
-    await ensureColumn('user', 'password_reset_token', 'TEXT');
-    await ensureColumn('user', 'password_reset_expires', 'INTEGER');
-    await ensureColumn('user', 'password_reset_used_at', 'INTEGER');
-    await ensureColumn('user', 'password_reset_token_hash', 'TEXT');
-
-    // ✅ GoCardless columns (safe to run multiple times):
-    await ensureColumn('user', 'gocardless_customer_id', 'TEXT');
-    await ensureColumn('user', 'gocardless_mandate_id', 'TEXT');
-    await ensureColumn('user', 'gocardless_session_token', 'TEXT');
-    await ensureColumn('user', 'gocardless_redirect_flow_id', 'TEXT');
-
-    // Email preferences
-    await ensureColumn('user', 'email_pref_marketing', 'INTEGER');   // 1/0
-    await ensureColumn('user', 'email_pref_product', 'INTEGER');     // 1/0
-    await ensureColumn('user', 'email_pref_security', 'INTEGER');    // 1/0
-    await ensureColumn('user', 'email_unsubscribed_at', 'INTEGER');  // ms
-    await ensureColumn('user', 'email_bounced_at', 'INTEGER');       // ms
-
-    // Set sane defaults for email preferences
-    if (process.env.DB_CLIENT === 'pg') {
-        await execute(`
-            UPDATE "user" SET
-              email_pref_marketing = COALESCE(email_pref_marketing, 1),
-              email_pref_product   = COALESCE(email_pref_product, 1),
-              email_pref_security  = COALESCE(email_pref_security, 1)
-        `);
-    } else {
-        db.exec(`
-            UPDATE user SET
-              email_pref_marketing = COALESCE(email_pref_marketing, 1),
-              email_pref_product   = COALESCE(email_pref_product, 1),
-              email_pref_security  = COALESCE(email_pref_security, 1)
-        `);
-    }
-})();
-
-// GDPR export table (idempotent)
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - handled by schema adapter
-    logger.info('PostgreSQL tables will be ensured by adapter');
-} else {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS export_job (
-          id INTEGER PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          type TEXT NOT NULL,                  -- 'gdpr_v1'
-          status TEXT NOT NULL,                -- 'pending'|'running'|'done'|'error'
-          created_at INTEGER NOT NULL,         -- ms
-          started_at INTEGER,
-          completed_at INTEGER,
-          error TEXT,
-          file_path TEXT,                      -- absolute path
-          file_size INTEGER,
-          token TEXT,                          -- opaque download token
-          expires_at INTEGER                   -- ms
-        );
-        CREATE INDEX IF NOT EXISTS export_job_user_created ON export_job(user_id, created_at DESC);
-    `);
-}
-
-// Notifications table (idempotent)
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - handled by schema adapter
-    logger.info('PostgreSQL tables will be ensured by adapter');
-} else {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS notification (
-          id INTEGER PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          type TEXT NOT NULL,           -- e.g. 'kyc', 'security', 'export', 'billing'
-          title TEXT NOT NULL,
-          body TEXT,
-          meta TEXT,                    -- JSON string
-          created_at INTEGER NOT NULL,  -- ms
-          read_at INTEGER               -- ms or NULL
-        );
-        CREATE INDEX IF NOT EXISTS notification_user_created ON notification(user_id, created_at DESC);
-        CREATE INDEX IF NOT EXISTS notification_user_unread  ON notification(user_id, read_at);
-    `);
-}
-
-// Track who/when updated mail items
-ensureColumn('mail_item', 'updated_by', 'INTEGER');
-ensureColumn('mail_item', 'updated_at', 'INTEGER');
-
-// RBAC: Add org_id to mail_item for multi-tenancy
-ensureColumn('mail_item', 'org_id', 'INTEGER');
-
-// OneDrive file metadata table (no blobs)
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - handled by schema adapter
-    logger.info('PostgreSQL tables will be ensured by adapter');
-} else {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS file (
-          id INTEGER PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          mail_item_id INTEGER,
-          drive_id TEXT,
-          item_id TEXT UNIQUE,   -- OneDrive driveItem id (unique)
-          path TEXT,
-          name TEXT,
-          size INTEGER,
-          mime TEXT,
-          etag TEXT,
-          modified_at INTEGER,
-          web_url TEXT,
-          share_url TEXT,
-          share_expires_at INTEGER,
-          deleted INTEGER DEFAULT 0,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS file_user_created ON file(user_id, created_at DESC);
-        CREATE INDEX IF NOT EXISTS file_itemid ON file(item_id);
-    `);
-}
-
-// Mail columns to match your Make flow
-ensureColumn('user', 'company_reg_no', 'TEXT'); // for CRN lookup (optional)
-ensureColumn('mail_item', 'file_id', 'INTEGER');
-ensureColumn('mail_item', 'forwarding_status', 'TEXT');      // e.g. 'No' | 'Requested' | 'Forwarded'
-ensureColumn('mail_item', 'storage_expires_at', 'INTEGER');  // ms timestamp
-
-// Defaults (safe re-run)
-(async () => {
-    if (process.env.DB_CLIENT === 'pg') {
-        await execute(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
-    } else {
-        db.exec(`UPDATE mail_item SET forwarding_status = COALESCE(forwarding_status, 'No')`);
-    }
-})();
-
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - handled by schema adapter
-    logger.info('PostgreSQL tables will be ensured by adapter');
-} else {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS mail_audit (
-          id INTEGER PRIMARY KEY,
-          item_id INTEGER NOT NULL,
-          user_id INTEGER,                 -- actor (admin) if available
-          action TEXT NOT NULL,            -- 'update' | 'bulk_update'
-          before_json TEXT,                -- JSON snapshot of key fields
-          after_json  TEXT,                -- JSON snapshot of key fields
-          created_at INTEGER NOT NULL      -- ms
-        );
-        CREATE INDEX IF NOT EXISTS mail_audit_item_created ON mail_audit(item_id, created_at DESC);
-    `);
-}
-
-// Trigger: whenever a mail_item row changes, snapshot before/after key fields
-// (Note: admin routes also set updated_by so trigger captures the actor.)
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - triggers handled by schema adapter
-    logger.info('PostgreSQL triggers will be ensured by adapter');
-} else {
-    db.exec(`
-        CREATE TRIGGER IF NOT EXISTS mail_item_au_audit AFTER UPDATE ON mail_item
-        BEGIN
-          INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
-          VALUES (
-            new.id,
-            new.updated_by,
-            'update',
-            json_object(
-              'tag', old.tag, 'status', old.status, 'notes', old.notes, 'deleted', old.deleted
-            ),
-            json_object(
-              'tag', new.tag, 'status', new.status, 'notes', new.notes, 'deleted', new.deleted
-            ),
-            strftime('%s','now')*1000
-          );
-        END;
-    `);
-}
-
-// ✅ Mail FTS5 setup
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL - FTS handled by schema adapter
-    logger.info('PostgreSQL FTS will be ensured by adapter');
-} else {
-    const { ensureMailFts } = require("./lib/db-fts");
-    const { setDb } = require("./lib/db");
-    setDb(db);
-    ensureMailFts(db);
-    console.log("[fts] mail_item_fts ensured");
-}
+// All remaining schema is handled by scripts/db-schema.sql
 
 // ===== WEBHOOKS (after database initialization) =====
 const postmarkWebhook = require("./routes/webhooks-postmark");
 app.use("/api/webhooks/postmark", postmarkWebhook);
-
-// === Support Tickets ===
-const supportSQL = `
-    CREATE TABLE IF NOT EXISTS support_ticket (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER,
-      closed_at INTEGER,
-      user_id INTEGER NOT NULL,
-      subject TEXT NOT NULL,
-      message TEXT,
-      status TEXT DEFAULT 'open',
-      FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_support_ticket_user ON support_ticket(user_id);
-  `;
-db.exec(supportSQL);
 
 // ===== VALIDATION (JOI) =====
 const schemas = {
@@ -837,7 +416,7 @@ function nestUser(row) {
 }
 function etagFor(obj) {
     const json = JSON.stringify(obj);
-    return `W/"${Buffer.byteLength(json)}-${crypto.createHash('sha1').update(json).digest('base64')}"`;
+    return `W / "${Buffer.byteLength(json)}-${crypto.createHash('sha1').update(json).digest('base64')}"`;
 }
 
 // ===== POSTMARK CONFIG + HELPERS =====
@@ -906,6 +485,12 @@ function setSession(res, user) {
 }
 
 function auth(req, res, next) {
+    // Check for dev bypass first
+    if (req.__devBypass && req.user) {
+        console.log('Auth middleware: Using dev bypass user:', req.user.email);
+        return next();
+    }
+
     const bearer = (req.headers.authorization || '').split(' ');
     const token = (bearer[0] === 'Bearer' && bearer[1]) || (req.cookies && req.cookies[JWT_COOKIE]);
     if (!token) return res.status(401).json({ error: 'Authentication required' });
@@ -919,6 +504,12 @@ function auth(req, res, next) {
     }
 }
 function adminOnly(req, res, next) {
+    // Check for dev bypass first
+    if (req.__devBypass && req.user?.role === 'admin') {
+        console.log('AdminOnly middleware: Using dev bypass admin:', req.user.email);
+        return next();
+    }
+
     if (!req.user?.is_admin) return res.status(403).json({ error: 'Admin access required' });
     next();
 }
@@ -984,20 +575,20 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
         const expires = Date.now() + 30 * 60 * 1000;
 
         db.prepare(`
-            UPDATE user
-            SET password_reset_token_hash = ?, password_reset_token = NULL, password_reset_expires = ?, password_reset_used_at = NULL
-            WHERE id = ?
-        `).run(hash, expires, user.id);
+    UPDATE user
+    SET password_reset_token_hash = ?, password_reset_token = NULL, password_reset_expires = ?, password_reset_used_at = NULL
+    WHERE id = ?
+    `).run(hash, expires, user.id);
 
         const link = `${APP_URL}/reset-password/confirm?token=${token}`;
         const name = user.name || 'there';
 
         const html = `
-            <p>Hi ${name},</p>
-            <p>We received a request to reset your VirtualAddressHub password.</p>
-            <p><a href="${link}">Reset your password</a> (valid for 30 minutes).</p>
-            <p>If you didn't request this, you can ignore this email.</p>
-        `;
+    <p>Hi ${name},</p>
+    <p>We received a request to reset your VirtualAddressHub password.</p>
+    <p><a href="${link}">Reset your password</a> (valid for 30 minutes).</p>
+    <p>If you didn't request this, you can ignore this email.</p>
+    `;
 
         try {
             const { sendEmail } = require('./lib/mailer');
@@ -1031,13 +622,13 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
 
         // First try hashed column
         let row = db.prepare(`
-            SELECT id, password_reset_expires, password_reset_used_at
-            FROM user
-            WHERE password_reset_token_hash = ?
+    SELECT id, password_reset_expires, password_reset_used_at
+    FROM user
+    WHERE password_reset_token_hash = ?
             AND password_reset_expires IS NOT NULL AND password_reset_expires > ?
-            AND password_reset_used_at IS NULL
-            LIMIT 1
-        `).get(h, now);
+    AND password_reset_used_at IS NULL
+    LIMIT 1
+    `).get(h, now);
 
         // Legacy fallback (if any old plaintext tokens exist)
         if (!row) {
@@ -1180,8 +771,8 @@ app.post("/api/gc/redirect-flow/start", async (req, res) => {
         const created = await gcFetch("POST", "/redirect_flows", body);
 
         db.prepare(`
-      UPDATE user SET gocardless_session_token=?, gocardless_redirect_flow_id=?
-      WHERE id=?
+    UPDATE user SET gocardless_session_token=?, gocardless_redirect_flow_id=?
+    WHERE id=?
     `).run(sessionToken, created?.redirect_flows?.id || null, user.id);
 
         return res.json({
@@ -1221,9 +812,9 @@ app.get("/api/gc/redirect-flow/callback", async (req, res) => {
         const customerId = links.customer || null;
 
         db.prepare(`
-      UPDATE user
-      SET gocardless_mandate_id=?, gocardless_customer_id=?, gocardless_redirect_flow_id=NULL
-      WHERE id=?
+    UPDATE user
+    SET gocardless_mandate_id=?, gocardless_customer_id=?, gocardless_redirect_flow_id=NULL
+    WHERE id=?
     `).run(mandateId, customerId, userId);
 
         const dest = `${process.env.APP_ORIGIN || "http://localhost:3000"}/billing?dd=ok`;
@@ -1280,7 +871,7 @@ if (SETUP_ENABLED) {
             const info = db
                 .prepare(
                     `INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
-               VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
+           VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
                 )
                 .run(now, name, email, hash, first_name || '', last_name || '', now);
             res.json({ ok: true, data: { user_id: info.lastInsertRowid }, message: 'Admin user created successfully.' });
@@ -1554,15 +1145,7 @@ app.get('/api/mail-items/:id', auth, param('id').isInt(), (req, res) => {
     if (!item) return res.status(404).json({ error: 'Mail item not found' });
     res.json({ data: item });
 });
-app.get('/api/mail-items/:id/scan-url', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
-    const id = +req.params.id;
-    const row = db.prepare('SELECT scan_file_url FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
-    if (!row) return res.status(404).json({ error: 'Mail item not found' });
-    if (!row.scan_file_url) return res.status(404).json({ error: 'No scan available' });
-    res.json({ ok: true, data: { scan_url: row.scan_file_url } });
-});
+// Moved to server/routes/mail-items.js
 app.get('/api/mail-items/:id/history', auth, param('id').isInt(), (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
@@ -1654,14 +1237,7 @@ app.use("/api/mail", mailForwardRoute);
 
 // ===== Dev Repair Routes =====
 if (process.env.NODE_ENV !== "production") {
-    // Self-heal FTS on boot in dev
-    try {
-        const { selfHealFts } = require("./lib/fts-repair");
-        const r = selfHealFts();
-        console.log("[fts] self-heal:", r);
-    } catch (e) {
-        console.warn("[fts] self-heal failed:", e?.message || e);
-    }
+    // FTS removed to prevent database corruption
 
     // Mount repair routes
     const adminRepair = require("./routes/admin-repair");
@@ -2081,27 +1657,67 @@ app.get('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), (req,
 });
 
 app.post('/api/admin/mail-items', auth, adminOnly, async (req, res) => {
-    const { user_id, subject, sender_name, received_date, notes, tag } = req.body;
-    const now = Date.now();
-    const info = db
-        .prepare(
-            `INSERT INTO mail_item (created_at,user_id,subject,sender_name,received_date,notes,tag,status)
-         VALUES (?,?,?,?,?,?,?,'received')`
-        )
-        .run(now, user_id, subject, sender_name || null, received_date || null, notes || null, tag || null);
-    logAdminAction(req.user.id, 'create', 'mail_item', info.lastInsertRowid, req.body, req);
-    const row = db.prepare('SELECT * FROM mail_item WHERE id=?').get(info.lastInsertRowid);
+    const idempotencyKey = req.headers['idempotency-key'] || req.headers['Idempotency-Key'];
+    const IDEM_RE = /^\d{6}-\d{4}$/; // YYMMDD-#### format
 
-    const owner = db.prepare('SELECT email, first_name, plan_status FROM user WHERE id=?').get(user_id);
-    if (owner && (owner.plan_status === 'cancelled' || owner.plan_status === 'past_due')) {
-        await sendTemplateEmail('mail-received-after-cancellation', owner.email, {
-            first_name: owner.first_name || '',
-            subject: subject || 'Mail received',
-            options_url: `${APP_URL}/billing`,
+    if (!idempotencyKey || !IDEM_RE.test(idempotencyKey)) {
+        return res.status(422).json({
+            error: 'Missing or bad Idempotency-Key header (use YYMMDD-#### format like 250910-0001)'
         });
     }
 
-    res.status(201).json({ data: row });
+    // Check if this idempotency key was already used
+    const existing = db.prepare('SELECT id, user_id FROM mail_item WHERE idempotency_key = ?').get(idempotencyKey);
+    if (existing) {
+        return res.json({
+            mail_item_id: existing.id,
+            user_id: existing.user_id,
+            message: 'Item already exists (idempotent)'
+        });
+    }
+
+    const { user_id, subject, sender_name, received_date, notes, tag } = req.body;
+    const now = Date.now();
+
+    try {
+        const info = db
+            .prepare(
+                `INSERT INTO mail_item (created_at,user_id,subject,sender_name,received_date,notes,tag,status,idempotency_key)
+    VALUES (?,?,?,?,?,?,?,'received',?)`
+            )
+            .run(now, user_id, subject, sender_name || null, received_date || null, notes || null, tag || null, idempotencyKey);
+
+        logAdminAction(req.user.id, 'create', 'mail_item', info.lastInsertRowid, req.body, req);
+        const row = db.prepare('SELECT * FROM mail_item WHERE id=?').get(info.lastInsertRowid);
+
+        const owner = db.prepare('SELECT email, first_name, plan_status FROM user WHERE id=?').get(user_id);
+        if (owner && (owner.plan_status === 'cancelled' || owner.plan_status === 'past_due')) {
+            await sendTemplateEmail('mail-received-after-cancellation', owner.email, {
+                first_name: owner.first_name || '',
+                subject: subject || 'Mail received',
+                options_url: `${APP_URL}/billing`,
+            });
+        }
+
+        res.status(201).json({
+            mail_item_id: info.lastInsertRowid,
+            user_id: user_id,
+            data: row
+        });
+    } catch (e) {
+        // Race condition: if unique constraint hit, fetch and return existing
+        if (e.message && e.message.includes('UNIQUE constraint failed')) {
+            const again = db.prepare('SELECT id, user_id FROM mail_item WHERE idempotency_key = ?').get(idempotencyKey);
+            if (again) {
+                return res.json({
+                    mail_item_id: again.id,
+                    user_id: again.user_id,
+                    message: 'Item already exists (idempotent)'
+                });
+            }
+        }
+        throw e;
+    }
 });
 
 app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
@@ -2140,18 +1756,52 @@ app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
 
 app.put('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), async (req, res) => {
     const id = +req.params.id;
-    const allowed = ['tag', 'status', 'subject', 'sender_name', 'notes', 'admin_note'];
+    const allowed = ['tag', 'status', 'subject', 'sender_name', 'notes', 'admin_note', 'scan_file_url', 'file_size'];
     const updates = {};
     for (const k of allowed) if (k in (req.body || {})) updates[k] = req.body[k];
     if (!Object.keys(updates).length) return res.status(400).json({ error: 'No fields to update' });
 
-    const before = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
+    // Special guard for "Mark as Scanned" - requires scan to be attached first
+    if (updates.status === 'scanned') {
+        const item = db.prepare('SELECT id, scan_file_url, received_date FROM mail_item WHERE id = ?').get(id);
+        if (!item) return res.status(404).json({ error: 'Mail item not found' });
 
-    const sets = Object.keys(updates).map(k => `${k}=@${k}`).join(',');
-    db.prepare(`UPDATE mail_item SET ${sets} WHERE id=@id`).run({ ...updates, id });
+        // Check if scan is attached (scan_file_url)
+        if (!item.scan_file_url) {
+            return res.status(409).json({
+                error: 'Attach scan before marking as scanned',
+                message: 'A scan must be attached before marking the item as scanned'
+            });
+        }
+
+        // Calculate shred date (received + 30 days)
+        const receivedAt = item.received_date ? new Date(item.received_date) : new Date();
+        const shredDate = new Date(receivedAt);
+        shredDate.setDate(shredDate.getDate() + 30);
+
+        // Add scanned timestamp and shred date to updates
+        updates.scanned = 1;
+        updates.scanned_at = Date.now();
+        updates.notes = (updates.notes || '') + ` [Shred date: ${shredDate.toISOString().split('T')[0]}]`;
+    }
+
+    // Use transaction for atomic "Mark as Scanned" operation
+    const tx = db.transaction((mailId, updateData) => {
+        const before = db.prepare('SELECT * FROM mail_item WHERE id=?').get(mailId);
+
+        const sets = Object.keys(updateData).map(k => `${k}=?`).join(',');
+        const values = Object.values(updateData);
+        db.prepare(`UPDATE mail_item SET ${sets} WHERE id=?`).run(...values, mailId);
+
+        const after = db.prepare('SELECT * FROM mail_item WHERE id=?').get(mailId);
+
+        return { before, after };
+    });
+
+    const { before, after } = tx(id, updates);
+
     logMailEvent(id, req.user.id, 'admin_updated', updates);
     logAdminAction(req.user.id, 'update_mail_item', 'mail_item', id, updates, req);
-    const after = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
 
     if (before?.status !== 'scanned' && after?.status === 'scanned') {
         const owner = db.prepare(`SELECT u.email, u.first_name FROM user u WHERE u.id=?`).get(after.user_id);
@@ -2373,11 +2023,11 @@ if (require.main === module) {
             const now = Date.now();
             const soon = now + 48 * 60 * 60 * 1000;
             const rows = db.prepare(`
-                SELECT id, user_id, storage_expires_at
-                FROM mail_item
-                WHERE storage_expires_at BETWEEN ? AND ?
-                  AND forwarding_status = 'No'
-            `).all(now, soon);
+    SELECT id, user_id, storage_expires_at
+    FROM mail_item
+    WHERE storage_expires_at BETWEEN ? AND ?
+    AND forwarding_status = 'No'
+    `).all(now, soon);
 
             const { notify } = require("./lib/notify");
             rows.forEach(r => notify({
