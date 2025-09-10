@@ -20,3 +20,7 @@ var/
 .history/
 .DS_Store
 Thumbs.db
+
+# ops artifacts
+ops/artifacts/*
+*.zip
