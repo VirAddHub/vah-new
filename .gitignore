@@ -1,29 +1,22 @@
-# Node & Next
+# build & deps
 node_modules/
-.npmrc
 .next/
 out/
-dist/
 coverage/
-*.log
-logs/
-.cache/
 
-# Env & secrets
+# env & local
 .env*
-!.env.example
 !.env.production.example
-env.production.example
+*.local
 
-# DB & backups
-data/*.db
-data/*.db-*
-data/*.db-journal
-data/*.sqlite
-backups/
+# data & logs
+data/*.db*
+data/*.db-wal
+data/*.db-shm
+logs/
+var/
 
-# OS/editor
+# editor cruft
+.history/
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
