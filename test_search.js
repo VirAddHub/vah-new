@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const { setDb } = require("./lib/db");
 
 // Initialize database
-const db = new Database('var/local/vah.db');
+const { db } = require('./server/db.js');
 setDb(db);
 
 console.log("Testing mail search directly...");

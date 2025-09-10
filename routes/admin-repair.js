@@ -1,25 +1,13 @@
 const express = require("express");
-const { db } = require("../lib/db");
-const { selfHealFts, rebuildFts } = require("../lib/fts-repair");
-
 const router = express.Router();
 
-// Require dev OR admin
-function isAllowed(req) {
-    if (process.env.NODE_ENV !== "production") return true;
-    return !!req.user?.is_admin;
-}
-
-router.post("/fts", (req, res) => {
-    if (!isAllowed(req)) return res.status(403).json({ ok: false, error: "forbidden" });
-    const result = selfHealFts();
-    return res.json({ ok: true, ...result });
+// Disable legacy FTS repair endpoints to prevent DB corruption
+router.post("/fts", (_req, res) => {
+    return res.status(410).json({ error: "FTS is disabled in this build." });
 });
 
-router.post("/fts/rebuild", (req, res) => {
-    if (!isAllowed(req)) return res.status(403).json({ ok: false, error: "forbidden" });
-    const result = rebuildFts();
-    return res.json({ ok: true, ...result });
+router.post("/fts/rebuild", (_req, res) => {
+    return res.status(410).json({ error: "FTS is disabled in this build." });
 });
 
 router.post("/backfill-expiry", (req, res) => {
@@ -36,8 +24,7 @@ router.post("/backfill-expiry", (req, res) => {
          AND created_at IS NOT NULL
     `).run(delta).changes;
 
-        // quick probe to ensure triggers are in place
-        try { db.prepare(`SELECT 1 FROM mail_item_fts LIMIT 1`).get(); } catch { /* ignore */ }
+        // FTS removed to prevent database corruption
 
         return updated;
     });

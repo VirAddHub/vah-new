@@ -3,15 +3,8 @@ const { sumsubFetch } = require("../lib/sumsub");
 
 const router = express.Router();
 
-// Get database instance from server.js context
-let db;
-router.use((req, res, next) => {
-  if (!db) {
-    const Database = require('better-sqlite3');
-    db = new Database(process.env.DB_PATH || './vah.db');
-  }
-  next();
-});
+// Use centralized database connection
+const { db } = require('../server/db.js');
 
 /**
  * POST /api/kyc/start
@@ -30,9 +23,9 @@ router.post("/start", async (req, res) => {
 
     // Check if Sumsub credentials are configured
     if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
-      return res.json({ 
-        ok: true, 
-        token: "dev_token_" + Date.now(), 
+      return res.json({
+        ok: true,
+        token: "dev_token_" + Date.now(),
         applicantId: "dev_applicant_" + user.id,
         message: "Development mode - Sumsub credentials not configured"
       });

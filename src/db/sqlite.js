@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const DB_PATH = process.env.SQLITE_PATH || 'vah.db';
 if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, '');
-const db = new Database(DB_PATH);
+const { db } = require("../../server/db.js");
 
 function normalize(sql) { return sql.replace(/\$\d+/g, '?'); }
 
