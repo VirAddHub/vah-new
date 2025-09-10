@@ -7,8 +7,11 @@ import PlanForm from '@/components/admin/PlanForm';
 export default function EditPlan({ params }: { params: { id: string } }) {
     const [plan, setPlan] = useState<Plan | null>(null);
     useEffect(() => { (async () => { const r = await adminFetch(`/api/admin/plans/${params.id}`); setPlan(r.data); })(); }, [params.id]);
+    
     if (!plan) return <div className="p-6">Loading…</div>;
+    
     async function publish(active: boolean) {
+        if (!plan) return; // Additional guard
         await adminFetch(`/api/admin/plans/${plan.id}/publish`, { method: 'POST', body: JSON.stringify({ active }) });
         location.reload();
     }
