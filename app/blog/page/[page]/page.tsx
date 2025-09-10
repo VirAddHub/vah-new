@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { getAllPosts, POSTS_PER_PAGE } from "@/lib/posts";
+import { paginatePosts } from "@/lib/posts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = false;
 
-export default function BlogIndex() {
-  const posts = getAllPosts();
-  console.log("Blog posts loaded:", posts.length, posts.map(p => p.slug));
-  const firstPage = posts.slice(0, POSTS_PER_PAGE);
+type Props = { params: { page: string } };
+export function generateStaticParams() {
+    return Array.from({ length: 20 }, (_, i) => ({ page: String(i + 1) }));
+}
+
+export default function BlogPage({ params }: Props) {
+    const n = Number(params.page || "1");
+    const { items, current, lastPage } = paginatePosts(n);
 
     return (
         <main className="mx-auto max-w-3xl px-4 py-12">
-            <h1 className="text-3xl font-semibold mb-6">Blog</h1>
+            <h1 className="text-3xl font-semibold mb-6">Blog — Page {current}</h1>
             <ul className="space-y-8">
-                {firstPage.map(p => (
+                {items.map(p => (
                     <li key={p.slug} className="border-b pb-6">
                         <Link href={`/blog/${p.slug}`} className="text-xl font-medium hover:underline">
                             {p.frontMatter.title}
@@ -25,11 +29,10 @@ export default function BlogIndex() {
                     </li>
                 ))}
             </ul>
-            {posts.length > POSTS_PER_PAGE && (
-                <div className="mt-10">
-                    <Link href="/blog/page/2" className="underline">Older posts →</Link>
-                </div>
-            )}
+            <nav className="mt-10 flex items-center justify-between">
+                {current > 1 ? <Link href={`/blog/page/${current - 1}`} className="underline">← Newer</Link> : <span />}
+                {current < lastPage ? <Link href={`/blog/page/${current + 1}`} className="underline">Older →</Link> : <span />}
+            </nav>
         </main>
     );
 }

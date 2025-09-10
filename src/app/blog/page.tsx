@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = false;
 
 export default function BlogIndex() {
-  const posts = getAllPosts();
-  console.log("Blog posts loaded:", posts.length, posts.map(p => p.slug));
-  const firstPage = posts.slice(0, POSTS_PER_PAGE);
+    const posts = getAllPosts();
+    console.log("Blog posts loaded:", posts.length, posts.map(p => p.slug));
+    const firstPage = posts.slice(0, POSTS_PER_PAGE);
 
     return (
         <main className="mx-auto max-w-3xl px-4 py-12">
