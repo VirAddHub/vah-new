@@ -1,5 +1,5 @@
 const express = require("express");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 const fetch = (...args) => import("node-fetch").then(m => m.default(...args));
 const { forwardingCounter } = require("../lib/metrics-forwarding");
 const router = express.Router();

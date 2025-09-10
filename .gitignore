@@ -1,107 +1,22 @@
-/node_modules/
-.env
-.env.*
-!.env.example
-logs/
-*.log
-vah.db
-vah.db-*
-*.sqlite
-*.sqlite-*
-coverage/
-.DS_Store
-.vscode/
-.history/
-_archive/
-*.pid
-
-# Test artifacts
-coverage/
-*.lcov
-.junit/
-
-# Env & local
-.env
-.env.test
-vah.db*
-logs/
-# local debug/test files
-cookie.txt
-signup.json
-
-# env
-.env
-.env.*
-*.local
-
-# Local artifacts
-cookie.txt
-signup.json
-
-# Local artifacts
-cookie.txt
-signup.json
-
-# Next.js build output
-apps/web/.next/
-
-# local env
-.env.local
-.env.test
-
-# logs & caches
-logs/
-.next/
-.turbo/
-
-# sqlite artifacts (keep files, just ignore in git)
-vah.db
-vah.db-*
-*.db
-*.db-shm
-*.db-wal
-
-# misc local files
-cookie.txt
-signup.json
-# extra ignores
-.env.local
-# === VAH frontend ignores ===
-.env*
-!.env.example
-
-.next/
-tsconfig.tsbuildinfo
-*.swp
-
-tools/**/node_modules/
-# === End VAH block ===
-
-# Local runtime files
-vah.cookies
-*.bak
-vah.db
-logs/
-
-# local logs
-var/
-logs/
-
-# ── Frontend (Next.js) local-only stuff ─────────────────────────
+# build & deps
+node_modules/
 .next/
 out/
-node_modules/
-.env*
-cookies.txt
-*.log
 coverage/
-dist/
-.DS_Store
 
-# local-only
-.env.local
-.env.development
-cookies.txt
-var/
+# env & local
+.env*
+!.env.production.example
+*.local
+
+# data & logs
+data/*.db*
+data/*.db-wal
+data/*.db-shm
 logs/
-/apps/web/package-lock.json
+var/
+
+# editor cruft
+.history/
+.DS_Store
+Thumbs.db

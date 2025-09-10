@@ -1,5 +1,5 @@
 const express = require("express");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 const { timeDb } = require("../lib/metrics");
 const router = express.Router();
 
@@ -48,24 +48,25 @@ router.get("/search", (req, res) => {
 
     // --- FTS branch
     if (q) {
+        // FTS disabled to prevent database corruption - using LIKE search instead
         try {
             const sql = `
         SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted,
-               m.file_id, m.forwarding_status, m.storage_expires_at,
-               bm25(mail_item_fts) AS score
-        FROM mail_item_fts
-        JOIN mail_item m ON m.id = mail_item_fts.rowid
-        WHERE mail_item_fts MATCH ? AND ${where.join(" AND ")}
-        ORDER BY score ASC, m.created_at DESC
+               m.file_id, m.forwarding_status, m.storage_expires_at
+        FROM mail_item m
+        WHERE (m.subject LIKE ? OR m.sender_name LIKE ? OR m.tag LIKE ? OR m.notes LIKE ?) AND ${where.join(" AND ")}
+        ORDER BY m.created_at DESC
         LIMIT ? OFFSET ?`;
-            const items = timeDb("all", () => db.prepare(sql).all(q, ...args, limit, offset));
+            const searchTerm = `%${q}%`;
+            const items = timeDb("all", () => db.prepare(sql).all(searchTerm, searchTerm, searchTerm, searchTerm, ...args, limit, offset));
             const total = timeDb("get", () => db.prepare(
-                `SELECT COUNT(*) AS c FROM mail_item_fts JOIN mail_item m ON m.id=mail_item_fts.rowid WHERE mail_item_fts MATCH ? AND ${where.join(" AND ")}`
-            ).get(q, ...args)).c;
+                `SELECT COUNT(*) AS c FROM mail_item m WHERE (m.subject LIKE ? OR m.sender_name LIKE ? OR m.tag LIKE ? OR m.notes LIKE ?) AND ${where.join(" AND ")}`
+            ).get(searchTerm, searchTerm, searchTerm, searchTerm, ...args)).c;
 
-            return res.json(attachDebug({ ok: true, total, items }, sql, [q, ...args, limit, offset], "fts"));
-        } catch (_) {
-            // swallow FTS syntax error, fall through to LIKE
+            return res.json(attachDebug({ ok: true, total, items }, sql, [searchTerm, searchTerm, searchTerm, searchTerm, ...args, limit, offset], "like"));
+        } catch (e) {
+            // fall through to LIKE
+            console.warn("Search failed:", e.message);
         }
     }
 

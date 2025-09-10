@@ -3,15 +3,8 @@ const crypto = require("crypto");
 
 const router = express.Router();
 
-// Get database instance from server.js context
-let db;
-router.use((req, res, next) => {
-  if (!db) {
-    const Database = require('better-sqlite3');
-    db = new Database(process.env.DB_PATH || './vah.db');
-  }
-  next();
-});
+// Use centralized database connection
+const { db } = require('../server/db.js');
 
 // GoCardless uses the 'Webhook-Signature' header and HMAC with your endpoint secret.
 // Compare against the raw body bytes.

@@ -1,6 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ function verifyHmac(raw, headerSig) {
         return false;
     }
 }
-const RETENTION_DAYS = Number(process.env.STORAGE_RETENTION_DAYS || 14);
+const RETENTION_DAYS = Number(process.env.STORAGE_RETENTION_DAYS || 365);
 const MS_DAY = 24 * 60 * 60 * 1000;
 
 router.post("/", (req, res) => {

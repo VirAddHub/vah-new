@@ -5,15 +5,8 @@ const { sendEmail } = require("../lib/mailer");
 
 const router = express.Router();
 
-// Get database instance from server.js context
-let db;
-router.use((req, res, next) => {
-  if (!db) {
-    const Database = require("better-sqlite3");
-    db = new Database(process.env.DB_PATH || "./vah.db");
-  }
-  next();
-});
+// Use centralized database connection
+const { db } = require('../server/db.js');
 
 /**
  * POST /api/profile/reset-password-request

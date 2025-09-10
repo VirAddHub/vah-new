@@ -1,5 +1,5 @@
 const express = require("express");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 const router = express.Router();
 
 /** PATCH /api/admin/mail-items/:id { tag?, status?, notes?, deleted? } */

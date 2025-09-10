@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const { db } = require("../lib/db");
+const { db } = require("../server/db.js");
 const { runGdprExport } = require("../lib/gdpr-export");
 
 const router = express.Router();
