@@ -12,7 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "typecheck:backend": "tsc -p tsconfig.backend.json --noEmit",
-    "build:backend": "npm ci --include=dev && tsc -p tsconfig.backend.json --outDir dist && mkdir -p dist && cp -r server dist/ 2>/dev/null || true && cp -r routes dist/ 2>/dev/null || true && cp -r lib dist/ 2>/dev/null || true && cp server.js dist/ 2>/dev/null || true",
+    "build:backend": "npm ci --include=dev && tsc -p tsconfig.backend.json --outDir dist && mkdir -p dist && cp -r server dist/ 2>/dev/null || true && cp -r routes dist/ 2>/dev/null || true && cp -r lib dist/ 2>/dev/null || true && cp -r middleware dist/ 2>/dev/null || true && cp server.js dist/ 2>/dev/null || true",
     "start:backend": "node dist/server.js",
     "test": "node test/run-all-tests.mjs",
     "test:basic": "node test/test-basic.mjs",
