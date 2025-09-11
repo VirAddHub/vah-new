@@ -29,6 +29,7 @@ const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
+const { generateCertificatePDF } = require('./services/certificate');
 
 // Database functions are handled directly through the db instance
 
@@ -74,11 +75,14 @@ const csrfMiddleware = csrf({
     }
 });
 
-// Conditional CSRF - skip for dev bypass
+// Conditional CSRF - skip for dev bypass and webhooks
 app.use((req, res, next) => {
     if (req.__devBypass) {
         console.log('Skipping CSRF for dev bypass request');
         return next(); // skip CSRF in dev bypass
+    }
+    if (req.path.startsWith('/api/webhooks/')) {
+        return next(); // skip CSRF for webhooks
     }
     return csrfMiddleware(req, res, next);
 });
@@ -192,6 +196,9 @@ app.use((req, _res, next) => {
 
 // ===== ENV =====
 const PORT = Number(process.env.PORT || 4000);
+const HOST = process.env.HOST || '0.0.0.0';
+const DATA_DIR = process.env.DATA_DIR || './data';
+const INVOICES_DIR = process.env.INVOICES_DIR || `${DATA_DIR}/invoices`;
 // NODE_ENV already declared above
 
 const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
@@ -430,11 +437,31 @@ const POSTMARK_FROM_NAME = process.env.POSTMARK_FROM_NAME || 'VirtualAddressHub'
 const POSTMARK_REPLY_TO = process.env.POSTMARK_REPLY_TO || '';
 const POSTMARK_STREAM = process.env.POSTMARK_STREAM || process.env.POSTMARK_MESSAGE_STREAM || 'outbound';
 
+// Import URL utilities
+const { webUrl, loginUrlWithNext } = require('./utils/urls');
+const dayjs = require('dayjs');
+const PDFDocument = require('pdfkit');
+
+// Helper: produce a CTA URL for emails
+function buildCta({ ctaPath, ctaUrl }) {
+    if (ctaUrl) return ctaUrl;
+    if (ctaPath) return loginUrlWithNext(ctaPath);
+    // default to dashboard (with login bounce)
+    return loginUrlWithNext('/dashboard');
+}
+
 async function sendTemplateEmail(templateAlias, to, model = {}, extra = {}) {
     if (!POSTMARK_TOKEN || typeof fetch !== 'function') {
         logger.info('Email skipped (Postmark disabled or fetch unavailable).', { templateAlias, to });
         return;
     }
+
+    // Inject CTA URL if not provided
+    const injected = { ...model };
+    if (!injected.cta_url) {
+        injected.cta_url = buildCta({ ctaPath: model.cta_path, ctaUrl: model.cta_url });
+    }
+
     try {
         const fromHeader = POSTMARK_FROM_NAME ? `${POSTMARK_FROM_NAME} <${POSTMARK_FROM}>` : POSTMARK_FROM;
         const payload = {
@@ -442,7 +469,7 @@ async function sendTemplateEmail(templateAlias, to, model = {}, extra = {}) {
             To: to,
             MessageStream: POSTMARK_STREAM,
             TemplateAlias: templateAlias,
-            TemplateModel: model,
+            TemplateModel: injected,
             ...extra,
         };
         if (POSTMARK_REPLY_TO) payload.ReplyTo = POSTMARK_REPLY_TO;
@@ -473,6 +500,128 @@ const userRowToDto = u => {
     const { password, ...rest } = u;
     return rest;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KYC + Profile + Forwarding helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function requireKycApproved(req, res, next) {
+    const st = (req.user && req.user.kyc_status) || 'unknown';
+    if (st !== 'approved' && st !== 'verified') {
+        return res.status(409).json({
+            error: 'kyc_required',
+            message: 'Please complete identity verification to continue.'
+        });
+    }
+    next();
+}
+
+function markReverifyRequired(userId) {
+    try {
+        db.prepare(`
+      UPDATE user
+      SET kyc_status = 'reverify_required',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(userId);
+    } catch (e) {
+        (logger || console).error('markReverifyRequired failed', e);
+    }
+}
+
+function pickEditableSelfProfile(body) {
+    const out = {};
+    if (typeof body?.email === 'string') out.email = body.email.trim();
+    if (typeof body?.phone === 'string') out.phone = body.phone.trim();
+    return out;
+}
+
+// Default to 14 days; can override with FORWARDING_MAX_DAYS env.
+const FORWARDING_MAX_DAYS = parseInt(process.env.FORWARDING_MAX_DAYS || '14', 10);
+
+// Import invoice service
+const { createInvoiceFromPayment, issueInvoiceToken } = require('./services/invoice');
+
+// Import email templates
+const { emailInvoiceSent } = require('./mailer-templates');
+
+// Invoice management constants
+const INVOICE_PDF_DIR = process.env.INVOICE_PDF_DIR || path.join(process.cwd(), 'data', 'invoices');
+const BASE_URL = process.env.BASE_URL || 'http://localhost:4000';
+
+// TTL configuration
+const TTL_USER_MIN = Number(process.env.INVOICE_LINK_TTL_USER_MIN || 30);
+const TTL_ADMIN_MIN = Number(process.env.INVOICE_LINK_TTL_ADMIN_MIN || 60);
+
+function ensureDirSync(dir) {
+    try {
+        fs.mkdirSync(dir, { recursive: true });
+    } catch (_) { }
+}
+
+function absApiUrl(p) {
+    return `${BASE_URL.replace(/\/+$/, '')}${p.startsWith('/') ? p : `/${p}`}`;
+}
+
+function hasAdminish(req) {
+    const r = req.user?.role;
+    return r === 'staff' || r === 'admin' || r === 'owner';
+}
+
+// Safety: make sure tables exist (no-op if already created)
+try {
+    db.prepare(`
+        CREATE TABLE IF NOT EXISTS invoice (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            number TEXT NOT NULL,
+            gocardless_payment_id TEXT,
+            amount_pence INTEGER NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'GBP',
+            period_start TEXT NOT NULL,
+            period_end   TEXT NOT NULL,
+            pdf_path TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `).run();
+    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_number ON invoice(number)`).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_user ON invoice(user_id)`).run();
+    db.prepare(`
+        CREATE TABLE IF NOT EXISTS invoice_token (
+            token TEXT PRIMARY KEY,
+            invoice_id INTEGER NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME
+        )
+    `).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_token_expires ON invoice_token(expires_at)`).run();
+} catch (e) {
+    (logger || console).error('ensure invoice tables failed', e);
+}
+
+// Token cleanup scheduler
+function cleanupExpiredInvoiceTokens() {
+    const now = new Date().toISOString();
+    const info = db.prepare(`
+        DELETE FROM invoice_token
+        WHERE expires_at < ?
+    `).run(now);
+    if (info.changes) console.log(`invoice_token cleanup: expired tokens removed=${info.changes}`);
+}
+
+// If not already defined from earlier patches:
+if (typeof global.issueInvoiceToken !== 'function') {
+    global.issueInvoiceToken = function issueInvoiceToken(invoiceId, ttlMinutes = 60) {
+        const token = crypto.randomBytes(24).toString('hex');
+        const expires_at = dayjs().add(ttlMinutes, 'minute').toISOString();
+        db.prepare(`INSERT INTO invoice_token (token, invoice_id, expires_at) VALUES (?, ?, ?)`).run(token, invoiceId, expires_at);
+        console.log(`token_created(invoice_id=${invoiceId}, ttl_min=${ttlMinutes})`);
+        return token;
+    }
+}
+
+// Run cleanup on boot and every 15 minutes
+cleanupExpiredInvoiceTokens();
+setInterval(cleanupExpiredInvoiceTokens, 15 * 60 * 1000);
 
 // 🔧 TEST/ADMIN UTILS
 function issueToken(user, extra = {}) {
@@ -563,7 +712,7 @@ function incrementLoginAttempts(email) {
     db.prepare('UPDATE user SET login_attempts=?, locked_until=? WHERE email=?').run(attempts, locked_until, email);
 }
 function clearLoginAttempts(email) {
-    db.prepare('UPDATE user SET login_attempts=0, locked_until=NULL, last_login_at=? WHERE email=?').run(Date.now(), email);
+    db.prepare('UPDATE user SET login_attempts=0, locked_until=NULL WHERE email=?').run(email);
 }
 
 // ===== PASSWORD RESET =====
@@ -903,17 +1052,28 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
             .prepare(
                 `
           INSERT INTO user (
-            created_at, name, email, password,
+            created_at, updated_at, name, email, password,
             first_name, last_name,
             kyc_status, plan_status, plan_start_date, onboarding_step
-          ) VALUES (?,?,?,?,?,?, 'pending', 'active', ?, 'signup')
+          ) VALUES (?,?,?,?,?,?,?, 'pending', 'active', ?, 'signup')
         `
             )
-            .run(now, name, email, hash, first_name, last_name, now);
+            .run(now, now, name, email, hash, first_name, last_name, now);
 
         const user = db.prepare('SELECT * FROM user WHERE id=?').get(info.lastInsertRowid);
 
         const token = setSession(res, user); // cookie + token
+
+        // Set role cookie for Next.js middleware
+        const roleCookieOpts = {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+        };
+        res.cookie('vah_role', user.role || 'user', roleCookieOpts);
+
         await sendTemplateEmail('welcome-email', user.email, {
             first_name: user.first_name || '',
             dashboard_url: APP_URL,
@@ -945,6 +1105,16 @@ app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => 
     const token = setSession(res, user);
     logActivity(user.id, 'login', null, null, req);
 
+    // Set role cookie for Next.js middleware
+    const roleCookieOpts = {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+    };
+    res.cookie('vah_role', user.role || 'user', roleCookieOpts);
+
     // Include dev_jwt in development for curl testing
     const body = { ok: true, token, data: userRowToDto(user) };
     if (process.env.NODE_ENV !== "production") body.dev_jwt = token;
@@ -958,8 +1128,201 @@ app.post('/api/auth/logout', auth, (req, res) => {
         secure: COOKIE_SECURE,
     });
 
+    // Clear role cookie for Next.js middleware
+    res.clearCookie('vah_role', { path: '/' });
+
     logActivity(req.user.id, 'logout', null, null, req);
     res.status(204).end();
+});
+
+// === INVOICE DOWNLOAD ===
+// GET /api/invoices/:token -> stream PDF once
+app.get('/api/invoices/:token', async (req, res) => {
+    try {
+        const t = db.prepare(`SELECT * FROM invoice_token WHERE token = ?`).get(req.params.token);
+        if (!t) {
+            console.log(`token_reuse_attempt(token=not_found)`);
+            return res.status(404).json({ error: 'not_found' });
+        }
+        if (t.used_at) {
+            console.log(`token_reuse_attempt(invoice_id=${t.invoice_id}, already_used)`);
+            return res.status(410).json({ error: 'gone' });
+        }
+        if (new Date(t.expires_at).getTime() < Date.now()) {
+            console.log(`token_reuse_attempt(invoice_id=${t.invoice_id}, expired)`);
+            return res.status(410).json({ error: 'expired' });
+        }
+
+        const inv = db.prepare(`SELECT * FROM invoice WHERE id = ?`).get(t.invoice_id);
+        if (!inv) return res.status(404).json({ error: 'invoice_not_found' });
+
+        // mark token used
+        db.prepare(`UPDATE invoice_token SET used_at = CURRENT_TIMESTAMP WHERE token = ?`).run(req.params.token);
+        console.log(`token_used(invoice_id=${t.invoice_id})`);
+
+        // stream file
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${inv.number}.pdf"`);
+        fs.createReadStream(inv.pdf_path).pipe(res);
+    } catch (e) {
+        console.log(`token_reuse_attempt(error=${e.message})`);
+        (logger || console).error('invoice download failed', e);
+        res.status(500).json({ error: 'download_failed' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Invoices API
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/admin/invoices?user_id=&from=YYYY-MM-DD&to=YYYY-MM-DD&q=&limit=&offset=
+app.get('/api/admin/invoices', auth, (req, res) => {
+    if (!hasAdminish(req)) return res.status(403).json({ error: 'forbidden' });
+    const { user_id, from, to, q, limit = '50', offset = '0' } = req.query || {};
+    const where = [];
+    const params = [];
+    if (user_id) { where.push('i.user_id = ?'); params.push(String(user_id)); }
+    if (from) { where.push('i.created_at >= ?'); params.push(`${from} 00:00:00`); }
+    if (to) { where.push('i.created_at <= ?'); params.push(`${to} 23:59:59`); }
+    if (q) { where.push('(i.number LIKE ? OR u.email LIKE ? OR u.business_name LIKE ?)'); params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
+    const sql = `
+        SELECT i.*, u.email, u.business_name
+        FROM invoice i
+        JOIN user u ON u.id = i.user_id
+        ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+        ORDER BY i.created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+    params.push(Number(limit) || 50, Number(offset) || 0);
+    try {
+        const rows = db.prepare(sql).all(...params);
+        res.json({ ok: true, data: rows });
+    } catch (e) {
+        (logger || console).error('admin invoices list failed', e);
+        res.status(500).json({ error: 'list_failed' });
+    }
+});
+
+// GET /api/admin/invoices/:id
+app.get('/api/admin/invoices/:id', auth, (req, res) => {
+    if (!hasAdminish(req)) return res.status(403).json({ error: 'forbidden' });
+    try {
+        const row = db.prepare(`
+            SELECT i.*, u.email, u.business_name
+            FROM invoice i JOIN user u ON u.id = i.user_id
+            WHERE i.id = ?
+        `).get(req.params.id);
+        if (!row) return res.status(404).json({ error: 'not_found' });
+        res.json({ ok: true, data: row });
+    } catch (e) {
+        res.status(500).json({ error: 'read_failed' });
+    }
+});
+
+// POST /api/admin/invoices/:id/link  -> returns fresh one-time URL
+app.post('/api/admin/invoices/:id/link', auth, (req, res) => {
+    if (!hasAdminish(req)) return res.status(403).json({ error: 'forbidden' });
+    try {
+        const inv = db.prepare(`SELECT * FROM invoice WHERE id = ?`).get(req.params.id);
+        if (!inv) return res.status(404).json({ error: 'not_found' });
+        const token = global.issueInvoiceToken(inv.id, TTL_ADMIN_MIN);
+        const url = absApiUrl(`/api/invoices/${token}`);
+        res.json({ ok: true, url, token, expires_in_minutes: TTL_ADMIN_MIN });
+    } catch (e) {
+        (logger || console).error('admin invoice link failed', e);
+        res.status(500).json({ error: 'link_failed' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User Billing Invoices API (for /billing page)
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/billing/invoices  -> list current user's invoices
+app.get('/api/billing/invoices', auth, (req, res) => {
+    try {
+        const rows = db.prepare(`
+            SELECT id, number, amount_pence, currency, period_start, period_end, created_at
+            FROM invoice
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        `).all(req.user.id);
+        res.json({ ok: true, data: rows });
+    } catch (e) {
+        (logger || console).error('user billing invoices list failed', e);
+        res.status(500).json({ error: 'list_failed' });
+    }
+});
+
+// POST /api/billing/invoices/:id/link -> current user gets a fresh one-time PDF URL
+app.post('/api/billing/invoices/:id/link', auth, (req, res) => {
+    try {
+        const inv = db.prepare(`SELECT * FROM invoice WHERE id = ?`).get(req.params.id);
+        if (!inv || inv.user_id !== req.user.id) return res.status(404).json({ error: 'not_found' });
+        const token = global.issueInvoiceToken(inv.id, TTL_USER_MIN);
+        const url = absApiUrl(`/api/invoices/${token}`);
+        res.json({ ok: true, url, token, expires_in_minutes: TTL_USER_MIN });
+    } catch (e) {
+        res.status(500).json({ error: 'link_failed' });
+    }
+});
+
+// POST /api/admin/invoices/:id/resend -> admin resends invoice email with fresh token
+app.post('/api/admin/invoices/:id/resend', auth, async (req, res) => {
+    if (!hasAdminish(req)) return res.status(403).json({ error: 'forbidden' });
+    try {
+        const inv = db.prepare(`SELECT * FROM invoice WHERE id = ?`).get(req.params.id);
+        if (!inv) return res.status(404).json({ error: 'not_found' });
+
+        const user = db.prepare(`SELECT * FROM user WHERE id = ?`).get(inv.user_id);
+        if (!user) return res.status(404).json({ error: 'user_not_found' });
+
+        // Create fresh token
+        const token = global.issueInvoiceToken(inv.id, TTL_ADMIN_MIN);
+
+        // Send the "Invoice Ready" email
+        await emailInvoiceSent({
+            to: user.email,
+            first_name: user.first_name || 'there',
+            amountPennies: inv.amount_pence,
+            periodStart: inv.period_start,
+            periodEnd: inv.period_end,
+            oneTimeToken: token
+        });
+
+        res.json({ ok: true, token, expires_in_minutes: TTL_ADMIN_MIN });
+    } catch (e) {
+        (logger || console).error('admin invoice resend failed', e);
+        res.status(500).json({ error: 'resend_failed' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Certificate API (Proof of Address)
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/profile/certificate.pdf -> generate fresh certificate PDF
+app.get('/api/profile/certificate.pdf', auth, async (req, res) => {
+    try {
+        // Require KYC approved (adjust to your field naming)
+        if (!req.user || !['approved', 'verified', 'Approved', 'Verified'].includes(String(req.user.kyc_status || '').toLowerCase())) {
+            return res.status(403).json({ error: 'kyc_required', message: 'Certificate available after KYC approval.' });
+        }
+
+        // Pull business/company trading name if you have it; fallback to account name or email
+        const user = req.user;
+        const clientBusinessName = user.company_name || user.trading_name || user.business_name || user.name || user.email;
+        const clientContactName = user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+
+        const { pdfPath, filename } = await generateCertificatePDF({
+            clientBusinessName,
+            clientContactName
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        fs.createReadStream(pdfPath).pipe(res);
+    } catch (e) {
+        console.error('certificate_error', e);
+        res.status(500).json({ error: 'server_error' });
+    }
 });
 
 // === TEST ADMIN BOOTSTRAP ===
@@ -1056,22 +1419,43 @@ app.get('/api/profile', auth, (req, res) => {
         res.status(500).json({ error: 'Profile fetch failed' });
     }
 });
-app.post('/api/profile', auth, validate(schemas.updateProfile), (req, res) => {
-    const patch = req.body || {};
+// PROFILE — update (KYC-locked: user can change only email & phone)
+app.post('/api/profile', auth, (req, res) => {
     try {
-        if (patch.email) {
-            const dupe = db.prepare('SELECT id FROM user WHERE email=? AND id != ?').get(patch.email, req.user.id);
-            if (dupe) return res.status(409).json({ error: 'Email already in use' });
+        const u = req.user;
+        const triedLocked =
+            'first_name' in (req.body || {}) ||
+            'last_name' in (req.body || {}) ||
+            'business_name' in (req.body || {}) ||
+            'trading_name' in (req.body || {});
+        if (triedLocked) {
+            return res.status(422).json({
+                error: 'locked_fields',
+                message: 'Name and business details are KYC-locked. Please contact support.'
+            });
         }
-        const sets = Object.keys(patch).map(k => `${k}=@${k}`).join(',');
-        if (!sets) return res.status(400).json({ error: 'No fields to update' });
-        db.prepare(`UPDATE user SET ${sets} WHERE id=@id`).run({ ...patch, id: req.user.id });
-        const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
-        logActivity(req.user.id, 'profile_updated', patch, null, req);
-        res.json(userRowToDto(u));
+        const allowed = pickEditableSelfProfile(req.body || {});
+        if (Object.keys(allowed).length) {
+            if (allowed.email) {
+                const dupe = db.prepare('SELECT id FROM user WHERE email=? AND id != ?').get(allowed.email, req.user.id);
+                if (dupe) return res.status(409).json({ error: 'Email already in use' });
+            }
+            db.prepare(`
+        UPDATE user SET
+          email = COALESCE(@email, email),
+          phone = COALESCE(@phone, phone),
+          updated_at = ?
+        WHERE id = @id
+      `).run({ id: u.id, ...allowed, updated_at: Date.now() });
+        }
+        const row = db.prepare(`
+      SELECT id, first_name, last_name, business_name, trading_name, email, phone, kyc_status
+      FROM user WHERE id=?
+    `).get(u.id);
+        res.json({ ok: true, data: row });
     } catch (e) {
-        logger.error('profile update failed', e);
-        res.status(500).json({ error: 'Profile update failed' });
+        (logger || console).error('profile update failed', e);
+        res.status(500).json({ error: 'update_failed' });
     }
 });
 app.put('/api/profile/address', auth, (req, res) => {
@@ -1087,15 +1471,31 @@ app.put('/api/profile/address', auth, (req, res) => {
         res.status(500).json({ error: 'Address update failed' });
     }
 });
-app.get('/api/profile/certificate-url', auth, (req, res) => {
+// Certificate URL (letter of certification) — require KYC approved
+app.get('/api/profile/certificate-url', auth, requireKycApproved, (req, res) => {
     try {
-        const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
-        if (!u) return res.status(404).json({ error: 'User not found' });
-        if (u.kyc_status !== 'verified') return res.status(403).json({ error: 'KYC verification required' });
-        res.json({ url: `${CERTIFICATE_BASE_URL}/${u.id}/proof-of-address.pdf` });
+        const url = `${CERTIFICATE_BASE_URL}/${req.user.id}/proof-of-address.pdf`;
+        res.json({ ok: true, url });
     } catch (e) {
-        logger.error('cert url failed', e);
-        res.status(500).json({ error: 'Certificate URL generation failed' });
+        res.status(500).json({ error: 'certificate_failed' });
+    }
+});
+
+// User requests business/trading name change → support ticket + force re-KYC
+app.post('/api/profile/request-business-name-change', auth, (req, res) => {
+    try {
+        const reason = (req.body && req.body.reason) || 'Business/trading name change requested';
+        const details = (req.body && req.body.details) || '';
+        const body = `${reason}${details ? `\n\nDetails: ${details}` : ''}`;
+        db.prepare(`
+      INSERT INTO support_tickets (user_id, subject, body, category, status)
+      VALUES (@user_id, 'Business Name Change', @body, 'BUSINESS_NAME_CHANGE', 'open')
+    `).run({ user_id: req.user.id, body });
+        markReverifyRequired(req.user.id);
+        res.json({ ok: true, kyc_status: 'reverify_required' });
+    } catch (e) {
+        (logger || console).error('name change ticket failed', e);
+        res.status(500).json({ error: 'ticket_failed' });
     }
 });
 
@@ -1172,16 +1572,9 @@ app.post('/api/mail-items/:id/tag', auth, [param('id').isInt(), body('tag').opti
     const updated = db.prepare('SELECT * FROM mail_item WHERE id=?').get(id);
     res.json({ data: updated });
 });
+// USER — delete mail item DISABLED: long-term retention (download forever)
 app.delete('/api/mail-items/:id', auth, param('id').isInt(), (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ error: 'Invalid mail id' });
-    const id = +req.params.id;
-    const item = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(id, req.user.id);
-    if (!item) return res.status(404).json({ error: 'Mail item not found' });
-    db.prepare(`UPDATE mail_item SET deleted=1, status='deleted' WHERE id=?`).run(id);
-    logMailEvent(id, req.user.id, 'deleted');
-    logActivity(req.user.id, 'mail_deleted', { mail_item_id: id }, id, req);
-    res.json({ ok: true, message: 'Mail item archived.' });
+    return res.status(403).json({ error: 'forbidden', message: 'Users cannot delete mail items.' });
 });
 app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) => {
     const errors = validationResult(req);
@@ -1322,31 +1715,28 @@ app.get('/api/forwarding-requests/:id', auth, param('id').isInt(), (req, res) =>
     if (!row) return res.status(404).json({ error: 'Forwarding request not found' });
     res.json({ data: row });
 });
-app.post('/api/forwarding-requests', auth, validate(schemas.forwardingRequest), (req, res) => {
-    const { mail_item_id, destination_name, destination_address, is_billable = false } = req.body || {};
-    const mail = db.prepare('SELECT * FROM mail_item WHERE id=? AND user_id=?').get(mail_item_id, req.user.id);
-    if (!mail) return res.status(404).json({ error: 'Mail item not found' });
-    if (mail.deleted) return res.status(400).json({ error: 'Cannot forward deleted mail item' });
-    if (mail.status === 'forward_requested' || mail.status === 'forwarded')
-        return res.status(400).json({ error: 'Already requested' });
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
-    const billable = is_billable || mail.created_at < thirtyDaysAgo;
-    const now = Date.now();
-    const info = db
-        .prepare(
-            `INSERT INTO forwarding_request (created_at,"user",mail_item,requested_at,status,is_billable,destination_name,destination_address,source)
-         VALUES (?,?,?,?,'pending',?,?,?,'api')`
-        )
-        .run(now, req.user.id, mail_item_id, now, billable ? 1 : 0, destination_name || null, destination_address || null);
-    db.prepare(`UPDATE mail_item SET status='forward_requested', requested_at=? WHERE id=?`).run(now, mail_item_id);
-    logMailEvent(mail_item_id, req.user.id, 'forward_requested', { destination_name, destination_address, is_billable: billable });
-    const resp = {
-        ok: true,
-        message: 'Forwarding request created',
-        data: { forwarding_request_id: info.lastInsertRowid, is_billable: billable },
-    };
-    if (billable) resp.data.payment_link_url = `https://pay.gocardless.com/one-off/${info.lastInsertRowid}`;
-    res.status(201).json(resp);
+// FORWARDING REQUESTS — create (require KYC + age guard)
+app.post('/api/forwarding-requests', auth, requireKycApproved, (req, res) => {
+    try {
+        const { mail_item_id, address_id, notes } = req.body || {};
+        const item = db.prepare(`SELECT id, user_id, received_date FROM mail_item WHERE id = ?`).get(mail_item_id);
+        if (!item || item.user_id !== req.user.id) return res.status(404).json({ error: 'not_found' });
+        const daysOld = Math.floor((Date.now() - new Date(item.received_date).getTime()) / (1000 * 60 * 60 * 24));
+        if (Number.isFinite(FORWARDING_MAX_DAYS) && daysOld > FORWARDING_MAX_DAYS) {
+            return res.status(422).json({
+                error: 'too_old',
+                message: `This item is ${daysOld} days old. Physical forwarding is unavailable; download remains available.`
+            });
+        }
+        const ins = db.prepare(`
+      INSERT INTO forwarding_request (user_id, mail_item_id, address_id, notes, status)
+      VALUES (@user_id, @mail_item_id, @address_id, @notes, 'pending')
+    `);
+        const r = ins.run({ user_id: req.user.id, mail_item_id, address_id, notes: notes || null });
+        res.json({ ok: true, id: r.lastInsertRowid });
+    } catch (e) {
+        res.status(500).json({ error: 'create_failed' });
+    }
 });
 app.get('/api/forwarding-requests/usage', auth, (req, res) => {
     const start = new Date();
@@ -1909,49 +2299,6 @@ app.post('/api/admin/payments/create-adhoc-link', auth, adminOnly, (req, res) =>
 });
 
 // ===== WEBHOOKS (mock-safe) =====
-app.post('/api/webhooks/gocardless', async (req, res) => {
-    const body = req.body || {};
-    db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)').run(
-        Date.now(), 'gocardless', 'webhook', JSON.stringify(body), Date.now()
-    );
-    if (body.payment) {
-        const p = body.payment;
-        if (p.user_id && p.status) {
-            db.prepare(
-                'INSERT INTO payment (created_at,user_id,gocardless_customer_id,subscription_id,status,invoice_url,mandate_id,amount,currency) VALUES (?,?,?,?,?,?,?,?,?)'
-            ).run(Date.now(), p.user_id, p.gocardless_customer_id || null, p.subscription_id || null, p.status, p.invoice_url || null, p.mandate_id || null, p.amount || null, p.currency || 'GBP');
-
-            const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(p.user_id);
-
-            if (p.status === 'confirmed' || p.status === 'paid') {
-                db.prepare(`UPDATE user SET plan_status='active' WHERE id=?`).run(p.user_id);
-
-                if (u) {
-                    await sendTemplateEmail('invoice-sent', u.email, {
-                        first_name: u.first_name || '',
-                        invoice_url: p.invoice_url || `${APP_URL}/billing`,
-                        amount: p.amount ? (p.amount / 100).toFixed(2) : undefined,
-                        currency: p.currency || 'GBP',
-                    });
-                }
-            }
-            if (p.status === 'failed') {
-                db.prepare(`UPDATE user SET plan_status='past_due' WHERE id=?`).run(p.user_id);
-
-                if (u) {
-                    await sendTemplateEmail('payment-failed', u.email, {
-                        first_name: u.first_name || '',
-                        fix_url: `${APP_URL}/billing`,
-                    });
-                }
-            }
-            if (p.status === 'cancelled') {
-                db.prepare(`UPDATE user SET plan_status='past_due' WHERE id=?`).run(p.user_id);
-            }
-        }
-    }
-    res.json({ ok: true });
-});
 
 app.post('/api/webhooks/sumsub', async (req, res) => {
     const body = req.body || {};
@@ -2016,8 +2363,8 @@ app.use((err, req, res, next) => {
 let server = null;
 
 if (require.main === module) {
-    server = app.listen(PORT, () => {
-        console.log(`VAH backend listening on http://localhost:${PORT}`);
+    server = app.listen(PORT, HOST, () => {
+        console.log(`API listening on http://${HOST}:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
         console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk']);
     });

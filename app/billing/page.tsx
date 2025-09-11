@@ -1,57 +1,84 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import DownloadInvoiceButton from '@/components/billing/DownloadInvoiceButton';
 
-type Payment = {
+type Invoice = {
   id: number;
-  created_at?: number;
-  status?: string;
-  invoice_url?: string;
+  number: string;
+  amount_pence: number;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  created_at: string;
 };
 
+function fmtGBP(pennies: number) {
+  return `£${(pennies / 100).toFixed(2)}`;
+}
+function fmtDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function BillingPage() {
-  const [rows, setRows] = useState<Payment[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<Payment[]>('/payments')
-      .then(setRows)
-      .catch((e) => setErr(e.message))
-      .finally(() => setLoading(false));
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // BFF passthrough keeps cookies/session
+        const res = await fetch(`/api/bff/billing/invoices`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Failed to load invoices`);
+        const j = await res.json();
+        setInvoices(j.data || []);
+      } catch (e: any) {
+        setError(e.message || 'Failed to load invoices');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  if (loading) return <main className="p-6">Loading…</main>;
-  if (err) return <main className="p-6 text-red-600">{err}</main>;
-
   return (
-    <main className="p-6">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-semibold mb-4">Billing</h1>
-      {rows.length === 0 ? (
-        <p>No payments yet.</p>
-      ) : (
-        <table className="w-full text-sm border">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-2">Date</th>
-              <th className="text-left p-2">Status</th>
-              <th className="text-left p-2">Invoice</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((p) => (
-              <tr key={p.id} className="border-b">
-                <td className="p-2">{p.created_at ? new Date(p.created_at).toLocaleString() : '-'}</td>
-                <td className="p-2">{p.status ?? '-'}</td>
-                <td className="p-2">
-                  {p.invoice_url ? <a className="underline" href={p.invoice_url} target="_blank">Open</a> : '-'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="text-sm text-gray-600 mb-6">Your invoices appear below. Download links are single-use and expire shortly.</p>
+
+      {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm">{error}</div>}
+      {loading ? <div>Loading…</div> : (
+        invoices.length === 0 ? <div>No invoices yet.</div> : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2">Invoice #</th>
+                  <th className="text-left px-4 py-2">Date</th>
+                  <th className="text-left px-4 py-2">Period</th>
+                  <th className="text-left px-4 py-2">Amount</th>
+                  <th className="text-left px-4 py-2">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map(inv => (
+                  <tr key={inv.id} className="border-t">
+                    <td className="px-4 py-2 font-mono text-xs">{inv.number}</td>
+                    <td className="px-4 py-2">{fmtDate(inv.created_at)}</td>
+                    <td className="px-4 py-2">{fmtDate(inv.period_start)} — {fmtDate(inv.period_end)}</td>
+                    <td className="px-4 py-2">{fmtGBP(inv.amount_pence)}</td>
+                    <td className="px-4 py-2">
+                      <DownloadInvoiceButton invoiceId={inv.id} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
-    </main>
+    </div>
   );
 }

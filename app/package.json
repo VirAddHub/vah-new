@@ -1,0 +1,7 @@
+{
+    "name": "vah-frontend",
+    "scripts": {
+        "build": "next build",
+        "start": "next start -p $PORT"
+    }
+}

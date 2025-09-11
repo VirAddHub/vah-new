@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: vah-api
+    rootDir: server
+    env: node
+    buildCommand: npm ci
+    startCommand: node index.js
+    healthCheckPath: /api/health
+    disk:
+      name: vah-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ORIGIN
+        value: https://api.virtualaddresshub.co.uk
+      - key: DATA_DIR
+        value: /var/data
+      - key: INVOICE_LINK_TTL_USER_MIN
+        value: "30"
+      - key: INVOICE_LINK_TTL_ADMIN_MIN
+        value: "60"
+      # Set these in Render Dashboard (leave unsynced here if you prefer):
+      - key: POSTMARK_API_TOKEN
+        sync: false
+      - key: POSTMARK_FROM
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: GO_CARDLESS_SECRET
+        sync: false
+      - key: SUMSUB_SECRET
+        sync: false
+
+  - type: web
+    name: vah-frontend
+    rootDir: app
+    env: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_BASE_URL
+        value: https://www.virtualaddresshub.co.uk
+      - key: BACKEND_API_ORIGIN
+        value: https://api.virtualaddresshub.co.uk/api

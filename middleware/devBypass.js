@@ -3,7 +3,7 @@
 
 module.exports = function devBypass(req, res, next) {
     if (process.env.DEV_MODE === "1" && req.headers["x-dev-admin"] === "1") {
-        req.user = { id: 1, role: "admin", email: "dev@local" }; // numeric id
+        req.user = { id: 1, role: "admin", email: "dev@local", kyc_status: "approved" }; // numeric id
         req.isAuthenticated = () => true;
         req.__devBypass = true;
     }

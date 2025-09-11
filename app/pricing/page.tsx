@@ -21,6 +21,16 @@ export default async function PricingPage() {
                         Feature comparison table here…
                     </div>
                 </Card>
+
+                {/* Service note */}
+                <div className="mt-12 text-center">
+                    <p className="text-gray-600 mb-4">
+                        <strong>Service note:</strong> Letters from HMRC and Companies House are free to send.
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        All plans include secure mail handling and GDPR compliance.
+                    </p>
+                </div>
             </div>
         </>
     );

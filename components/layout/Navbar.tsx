@@ -16,6 +16,7 @@ export function Navbar() {
         <Link href="/mail" className={active('/mail')}>Mail</Link>
         <Link href="/support/tickets" className={active('/support')}>Support</Link>
         <Link href="/billing" className={active('/billing')}>Billing</Link>
+        <Link href="/help" className={active('/help')}>Help</Link>
         <div className="ml-auto flex items-center gap-3">
           <Link href="/profile" className={active('/profile')}>Profile</Link>
           <button onClick={logout} className="text-sm opacity-70 hover:opacity-100">Logout</button>

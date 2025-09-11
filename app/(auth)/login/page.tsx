@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiGet, apiPostCSRF } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export default function LoginPage() {
   const r = useRouter();
+  const search = useSearchParams();
+  const nextParam = search?.get('next') || '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -22,8 +24,19 @@ export default function LoginPage() {
       const profile = await apiGet('/api/profile');
       setMe(profile);
       setErr('Logged in ✅');
-      // Redirect after successful login
-      setTimeout(() => r.push('/dashboard'), 1000);
+
+      // Honor ?next= if provided and user is not adminish or next points to admin-allowed page
+      const adminish = profile && typeof profile === 'object' && 'role' in profile && ['staff', 'admin', 'owner'].includes((profile as any).role);
+      const want = decodeURIComponent(nextParam);
+      const isAdminNext = want.startsWith('/admin');
+
+      if (isAdminNext && !adminish) {
+        setTimeout(() => r.push('/dashboard'), 1000);
+      } else if (!want || want === '/') {
+        setTimeout(() => r.push(adminish ? '/admin' : '/dashboard'), 1000);
+      } else {
+        setTimeout(() => r.push(want), 1000);
+      }
     } catch (error: any) {
       setErr(`Login failed ❌ ${error?.message ?? ''}`);
     } finally {
