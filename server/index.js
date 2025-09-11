@@ -21,14 +21,28 @@ const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
 const morgan = require('morgan');
-const { db } = require('./db.js');
+const { db, DATA_DIR } = require('./db.js');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const devBypass = require('../middleware/devBypass');
+const path = require('path');
+
+// Ensure all required directories exist at boot
+function ensureDir(p) {
+  try { 
+    fs.mkdirSync(p, { recursive: true }); 
+  } catch (e) {
+    // Directory might already exist, ignore error
+  }
+}
+
+const INVOICES_DIR = process.env.INVOICES_DIR || path.join(DATA_DIR, 'invoices');
+const BACKUPS_DIR = process.env.BACKUPS_DIR || path.join(DATA_DIR, 'backups');
+
+ensureDir(INVOICES_DIR);
+ensureDir(BACKUPS_DIR);
 const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');
-const fs = require('fs');
-const path = require('path');
 const { generateCertificatePDF } = require('./services/certificate');
 
 // Database functions are handled directly through the db instance
@@ -197,8 +211,7 @@ app.use((req, _res, next) => {
 // ===== ENV =====
 const PORT = Number(process.env.PORT || 4000);
 const HOST = process.env.HOST || '0.0.0.0';
-const DATA_DIR = process.env.DATA_DIR || './data';
-const INVOICES_DIR = process.env.INVOICES_DIR || `${DATA_DIR}/invoices`;
+// DATA_DIR and INVOICES_DIR already declared above
 // NODE_ENV already declared above
 
 const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';

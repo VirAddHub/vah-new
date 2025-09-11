@@ -17,6 +17,10 @@ services:
         value: https://api.virtualaddresshub.co.uk
       - key: DATA_DIR
         value: /var/data
+      - key: INVOICES_DIR
+        value: /var/data/invoices
+      - key: BACKUPS_DIR
+        value: /var/data/backups
       - key: INVOICE_LINK_TTL_USER_MIN
         value: "30"
       - key: INVOICE_LINK_TTL_ADMIN_MIN
