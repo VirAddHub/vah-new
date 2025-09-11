@@ -28,7 +28,10 @@
         "name": "next"
       }
     ],
-    "types": ["node", "@playwright/test"]
+    "types": [
+      "node",
+      "@playwright/test"
+    ]
   },
   "include": [
     "next-env.d.ts",

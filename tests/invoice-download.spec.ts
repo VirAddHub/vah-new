@@ -3,13 +3,13 @@ import { test, expect } from '@playwright/test';
 test('invoice link is single-use (second = 410)', async ({ request }) => {
     // Use backend API directly for testing
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-    
+
     const linkRes = await request.post(`${backendUrl}/api/admin/invoices/1/link`, {
         headers: {
             'X-Dev-Admin': '1'
         }
     });
-    
+
     expect(linkRes.ok()).toBeTruthy();
     const { token } = await linkRes.json();
 
