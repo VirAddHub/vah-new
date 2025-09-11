@@ -39,6 +39,7 @@
     "node_modules",
     ".next",
     "server/**",
+    "src/**",
     "scripts/**",
     "migrations/**",
     "drizzle/**",
