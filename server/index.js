@@ -29,11 +29,11 @@ const path = require('path');
 
 // Ensure all required directories exist at boot
 function ensureDir(p) {
-  try { 
-    fs.mkdirSync(p, { recursive: true }); 
-  } catch (e) {
-    // Directory might already exist, ignore error
-  }
+    try {
+        fs.mkdirSync(p, { recursive: true });
+    } catch (e) {
+        // Directory might already exist, ignore error
+    }
 }
 
 const INVOICES_DIR = process.env.INVOICES_DIR || path.join(DATA_DIR, 'invoices');
