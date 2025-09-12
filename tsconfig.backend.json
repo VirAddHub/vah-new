@@ -13,13 +13,15 @@
             "node"
         ],
         "outDir": "./dist",
-        "rootDir": "./src",
+        "rootDir": "./",
         "declaration": true,
         "sourceMap": true
     },
     "include": [
         "src/**/*.ts",
-        "src/**/*.d.ts"
+        "src/**/*.d.ts",
+        "server/**/*.ts",
+        "server/**/*.d.ts"
     ],
     "exclude": [
         "node_modules",

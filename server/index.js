@@ -5,9 +5,8 @@ require('dotenv').config({
     override: true,
 });
 
-// Validate environment variables in production
-const { validateEnvironment } = require('./bootstrap/requireEnv');
-validateEnvironment();
+// Import and use strict environment validation
+const { env } = require('./bootstrap/env');
 
 // Set DEV_MODE for testing if not already set
 if (!process.env.DEV_MODE) {
@@ -25,7 +24,7 @@ const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
 const morgan = require('morgan');
-const { db, DATA_DIR } = require('./db.js');
+const { db } = require('./db.js');
 const { resolveDataDir, resolveInvoicesDir } = require('./storage-paths');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -43,8 +42,10 @@ function ensureDir(p) {
     }
 }
 
-const INVOICES_DIR = resolveInvoicesDir();
-const BACKUPS_DIR = process.env.BACKUPS_DIR || path.join(DATA_DIR, 'backups');
+// Use validated environment variables
+const DATA_DIR = env.DATA_DIR;
+const INVOICES_DIR = env.INVOICES_DIR;
+const BACKUPS_DIR = env.BACKUPS_DIR;
 
 ensureDir(BACKUPS_DIR);
 const joi = require('joi');
@@ -217,13 +218,13 @@ app.use((req, _res, next) => {
 // ===== ENV =====
 const PORT = Number(process.env.PORT || 4000);
 const HOST = process.env.HOST || '0.0.0.0';
-// DATA_DIR and INVOICES_DIR already declared above
+// DATA_DIR, INVOICES_DIR, BACKUPS_DIR already declared above from validated env
 // NODE_ENV already declared above
 
 const TEST_ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@example.com';
 const TEST_ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
 
-const APP_URL = process.env.APP_ORIGIN || 'http://localhost:3000';
+const APP_URL = env.APP_ORIGIN || 'http://localhost:3000';
 
 const ADMIN_SETUP_SECRET = process.env.ADMIN_SETUP_SECRET;
 if (process.env.NODE_ENV === 'production' && !ADMIN_SETUP_SECRET) {
