@@ -20,7 +20,7 @@ export default function SignupPage() {
     setBusy(false);
     if (!('ok' in res) || !res.ok) { setErr((res as any).error || 'Signup failed'); return; }
     if ((res as any).data?.token) localStorage.setItem('vah_token', (res as any).data.token);
-    r.push('/dashboard');
+    r.push('/signup/step-2');
   }
 
   return (
