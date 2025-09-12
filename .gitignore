@@ -9,6 +9,7 @@ dist/
 .env*
 !.env.example
 !.env.production.example
+!env.example
 *.local
 
 # data & logs

@@ -5,6 +5,10 @@ require('dotenv').config({
     override: true,
 });
 
+// Validate environment variables in production
+const { validateEnvironment } = require('./bootstrap/requireEnv');
+validateEnvironment();
+
 // Set DEV_MODE for testing if not already set
 if (!process.env.DEV_MODE) {
     process.env.DEV_MODE = '1';
