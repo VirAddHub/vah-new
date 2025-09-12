@@ -1,18 +1,9 @@
 const Database = require("better-sqlite3");
 const path = require("path");
-const fs = require("fs");
+const { resolveDataDir } = require('./storage-paths');
 
-function ensureDir(p) {
-    if (!fs.existsSync(p)) {
-        fs.mkdirSync(p, { recursive: true });
-    }
-}
-
-const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, '../data');
+const DATA_DIR = resolveDataDir();
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
-
-// Ensure the data directory exists before opening database
-ensureDir(DATA_DIR);
 
 const db = new Database(DB_FILE, { fileMustExist: false });
 

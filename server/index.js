@@ -22,10 +22,12 @@ const winston = require('winston');
 const compression = require('compression');
 const morgan = require('morgan');
 const { db, DATA_DIR } = require('./db.js');
+const { resolveDataDir, resolveInvoicesDir } = require('./storage-paths');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const devBypass = require('../middleware/devBypass');
 const path = require('path');
+const fs = require('fs');
 
 // Ensure all required directories exist at boot
 function ensureDir(p) {
@@ -36,10 +38,9 @@ function ensureDir(p) {
     }
 }
 
-const INVOICES_DIR = process.env.INVOICES_DIR || path.join(DATA_DIR, 'invoices');
+const INVOICES_DIR = resolveInvoicesDir();
 const BACKUPS_DIR = process.env.BACKUPS_DIR || path.join(DATA_DIR, 'backups');
 
-ensureDir(INVOICES_DIR);
 ensureDir(BACKUPS_DIR);
 const joi = require('joi');
 const { body, query, param, validationResult } = require('express-validator');

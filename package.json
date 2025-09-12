@@ -21,7 +21,7 @@
     "test:endpoints": "node test/test-endpoints.mjs",
     "test:webhook": "node test/test-webhook.mjs",
     "test:production": "node test/test-production-ready.mjs",
-    "db:init": "node scripts/db-init.cjs",
+    "db:init": "node scripts/migrate-sqlite.cjs",
     "db:seed": "node scripts/seed-dev.cjs",
     "db:migrate:plans": "node scripts/db-migrate-plans.cjs",
     "db:migrate:kyc": "node scripts/db-migrate-kyc.cjs",

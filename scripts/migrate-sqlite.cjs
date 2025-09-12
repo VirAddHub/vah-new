@@ -1,12 +1,11 @@
 /* scripts/migrate-sqlite.cjs */
-const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const { resolveDataDir } = require('../server/storage-paths');
 
-const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, '../data');
-const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
+const DATA_DIR = resolveDataDir();
+const DB_FILE  = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
 
-fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE, { fileMustExist: false });
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
