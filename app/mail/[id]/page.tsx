@@ -12,7 +12,7 @@ export default function MailDetailPage() {
   const [item, setItem] = useState<MailItem | null>(null);
   const [profile, setProfile] = useState<any>(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     api.get(`/api/mail-items/${id}`).then((r: any) => setItem(r?.data || null));
     api.get('/api/profile').then((r: any) => setProfile(r?.data || null));
   }, [id]);
