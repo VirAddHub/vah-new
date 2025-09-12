@@ -26,6 +26,7 @@ const { resolveDataDir, resolveInvoicesDir } = require('./storage-paths');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const devBypass = require('../middleware/devBypass');
+const forwardingGuard = require('./middleware/forwarding-guard');
 const path = require('path');
 const fs = require('fs');
 
@@ -1730,7 +1731,7 @@ app.get('/api/forwarding-requests/:id', auth, param('id').isInt(), (req, res) =>
     res.json({ data: row });
 });
 // FORWARDING REQUESTS — create (require KYC + age guard)
-app.post('/api/forwarding-requests', auth, requireKycApproved, (req, res) => {
+app.post('/api/forwarding-requests', auth, requireKycApproved, forwardingGuard, (req, res) => {
     try {
         const { mail_item_id, address_id, notes } = req.body || {};
         const item = db.prepare(`SELECT id, user_id, received_date FROM mail_item WHERE id = ?`).get(mail_item_id);

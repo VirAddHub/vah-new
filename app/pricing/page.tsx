@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { PricingSection } from '@/components/PricingSection';
+import { GovtFreeForwardingNote, GovtFreeForwardingFootnote } from '@/app/components/PricingExtras';
 
 async function getPlans() {
     try {
@@ -24,10 +25,9 @@ export default async function PricingPage() {
 
                 {/* Service note */}
                 <div className="mt-12 text-center">
-                    <p className="text-gray-600 mb-4">
-                        <strong>Service note:</strong> Letters from HMRC and Companies House are free to send.
-                    </p>
-                    <p className="text-sm text-gray-500">
+                    <GovtFreeForwardingNote />
+                    <GovtFreeForwardingFootnote />
+                    <p className="text-sm text-gray-500 mt-4">
                         All plans include secure mail handling and GDPR compliance.
                     </p>
                 </div>

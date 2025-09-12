@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import HelpKeyBenefit from './Benefit';
 
 const faqs = [
     {
@@ -43,6 +44,10 @@ const faqs = [
     {
         question: "Is there a minimum contract period?",
         answer: "No, there are no minimum contract periods. You can cancel your service at any time with 30 days notice. We believe in providing flexible solutions for your business needs."
+    },
+    {
+        question: "Do you charge to forward HMRC or Companies House letters?",
+        answer: "No, we forward letters from HMRC and Companies House free of charge. This applies to letters only - parcels and magazines are not included in this offer."
     }
 ];
 
@@ -75,6 +80,7 @@ export default function HelpPage() {
                     <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                         Find answers to common questions and get the support you need.
                     </p>
+                    <HelpKeyBenefit />
                 </div>
 
                 {/* Search */}

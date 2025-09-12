@@ -1,5 +1,8 @@
 // server/mailer-templates.js
 const { send } = require('./mailer');
+
+// Note: Add this line to welcome and kyc-approved email templates in Postmark:
+// "Tip: We forward letters from HMRC and Companies House free — just request forwarding from your dashboard."
 const {
     buildDashboardLink,
     buildBillingLink,
