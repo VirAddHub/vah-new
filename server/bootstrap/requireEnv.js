@@ -38,4 +38,22 @@ function validateEnvironment() {
     }
 }
 
-module.exports = { validateEnvironment };
+// Create env object with validated values
+const env = {
+    DATA_DIR: process.env.DATA_DIR || './dist/data',
+    INVOICES_DIR: process.env.INVOICES_DIR || './dist/data/invoices',
+    BACKUPS_DIR: process.env.BACKUPS_DIR || './dist/data/backups',
+    APP_ORIGIN: process.env.APP_ORIGIN,
+    BACKEND_API_ORIGIN: process.env.BACKEND_API_ORIGIN,
+    COOKIE_SECRET: process.env.COOKIE_SECRET || 'dev-cookie-secret-please-change',
+    POSTMARK_API_TOKEN: process.env.POSTMARK_API_TOKEN,
+    POSTMARK_FROM: process.env.POSTMARK_FROM,
+    GO_CARDLESS_SECRET: process.env.GO_CARDLESS_SECRET,
+    SUMSUB_SECRET: process.env.SUMSUB_SECRET,
+    COMPANIES_HOUSE_API_KEY: process.env.COMPANIES_HOUSE_API_KEY,
+    ADDRESS_API_KEY: process.env.ADDRESS_API_KEY,
+    INVOICE_LINK_TTL_USER_MIN: parseInt(process.env.INVOICE_LINK_TTL_USER_MIN || '30'),
+    INVOICE_LINK_TTL_ADMIN_MIN: parseInt(process.env.INVOICE_LINK_TTL_ADMIN_MIN || '60'),
+};
+
+module.exports = { validateEnvironment, env };

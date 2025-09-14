@@ -6,7 +6,8 @@ require('dotenv').config({
 });
 
 // Import and use strict environment validation
-const { env } = require('./bootstrap/env');
+const { validateEnvironment, env } = require('./bootstrap/requireEnv');
+validateEnvironment();
 
 // Set DEV_MODE for testing if not already set
 if (!process.env.DEV_MODE) {
