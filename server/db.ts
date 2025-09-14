@@ -3,7 +3,7 @@ import path from "node:path";
 
 const DB_PATH = process.env.DATABASE_URL || process.env.DB_PATH || path.join(process.cwd(), "data", "app.db");
 
-export const db = new Database(DB_PATH, { fileMustExist: false });
+export const db: Database.Database = new Database(DB_PATH, { fileMustExist: false });
 
 // Safety PRAGMAs
 db.pragma("journal_mode = WAL");

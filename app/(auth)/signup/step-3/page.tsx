@@ -1,15 +1,66 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
 export default function SignupStep3() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [busy, setBusy] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState('professional');
 
-    const handleComplete = () => {
-        // TODO: Process payment and complete signup
-        router.push('/dashboard');
+    // Handle return from GoCardless
+    useEffect(() => {
+        const success = searchParams.get('success');
+        const sessionId = searchParams.get('session_id');
+
+        if (success === '1' && sessionId) {
+            handlePaymentConfirm(sessionId);
+        }
+    }, [searchParams]);
+
+    const handlePaymentConfirm = async (sessionId: string) => {
+        setBusy(true);
+        try {
+            const response = await fetch('/api/bff/gocardless/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+
+            if (response.ok) {
+                router.push('/dashboard');
+            } else {
+                alert('Payment confirmation failed');
+            }
+        } catch (error) {
+            console.error('Error confirming payment:', error);
+            alert('Payment confirmation failed');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleSetUpPayment = async () => {
+        setBusy(true);
+        try {
+            const response = await fetch('/api/bff/gocardless/create', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Failed to set up payment');
+            }
+        } catch (error) {
+            console.error('Error setting up payment:', error);
+            alert('Failed to set up payment');
+        } finally {
+            setBusy(false);
+        }
     };
 
     const handleBack = () => {
@@ -53,14 +104,26 @@ export default function SignupStep3() {
                     </p>
                 </div>
 
+                {/* Payment Setup */}
+                <div className="bg-blue-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-medium mb-4">Set up Direct Debit</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Complete your signup by setting up secure Direct Debit payments.
+                        You can cancel or change your plan at any time.
+                    </p>
+                    <Button onClick={handleSetUpPayment} disabled={busy} className="w-full">
+                        {busy ? 'Setting up…' : 'Set up Direct Debit'}
+                    </Button>
+                </div>
+
                 {/* Navigation */}
                 <div className="flex justify-between pt-6">
                     <Button type="button" variant="outline" onClick={handleBack}>
                         Back
                     </Button>
-                    <Button onClick={handleComplete} disabled={busy}>
-                        {busy ? 'Processing…' : 'Complete Signup'}
-                    </Button>
+                    <div className="text-sm text-gray-500">
+                        Complete payment to finish signup
+                    </div>
                 </div>
             </div>
         </div>

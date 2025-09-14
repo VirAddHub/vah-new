@@ -156,6 +156,10 @@ app.use("/api/webhooks/gc", gcWebhook);
 // normal JSON body parser for everything else
 app.use(express.json());
 
+// Rate limiting
+const customRateLimit = require('./middleware/rateLimit');
+app.use(customRateLimit({ windowMs: 60000, max: 120 }));
+
 // Health check route
 app.use('/api', require('./routes/health'));
 
@@ -173,6 +177,15 @@ const mailItemsRoutes = require("./routes/mail-items");
 const mailSearchRoutes = require("./routes/mail-search");
 app.use("/api", mailItemsRoutes);
 app.use("/api", mailSearchRoutes);
+
+// New routes from mega-patch
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/onboarding', require('./routes/onboarding'));
+app.use('/api/billing', require('./routes/billing'));
+app.use('/api', require('./routes/certificate'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/mail', require('./routes/mail-forward'));
 
 // ===== WEBHOOKS (before auth) =====
 // (moved to after database initialization)

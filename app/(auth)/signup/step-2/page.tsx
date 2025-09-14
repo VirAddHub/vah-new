@@ -48,9 +48,40 @@ export default function SignupStep2() {
         }));
     };
 
-    const handleNext = () => {
-        // TODO: Save business details and proceed to payment step
-        router.push('/signup/step-3');
+    const handleNext = async () => {
+        if (!form.business_name || !form.address_line1 || !form.city || !form.postcode) {
+            return;
+        }
+
+        setBusy(true);
+        try {
+            const response = await fetch('/api/bff/signup/step-2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    business_name: form.business_name,
+                    trading_name: form.trading_name || '',
+                    companies_house_number: form.company_number || '',
+                    address_line1: form.address_line1,
+                    address_line2: form.address_line2 || '',
+                    city: form.city,
+                    postcode: form.postcode,
+                    phone: '', // TODO: Add phone field to form
+                    email: '' // TODO: Get from user context
+                })
+            });
+
+            if (response.ok) {
+                router.push('/signup/step-3');
+            } else {
+                alert('Failed to save business details');
+            }
+        } catch (error) {
+            console.error('Error saving business details:', error);
+            alert('Failed to save business details');
+        } finally {
+            setBusy(false);
+        }
     };
 
     const handleBack = () => {
