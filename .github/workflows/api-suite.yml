@@ -2,24 +2,59 @@ name: API Suite
 on:
   push:
   pull_request:
+concurrency:
+  group: api-suite-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   api-suite:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      NEXT_TELEMETRY_DISABLED: 1
+      SQLITE_PATH: ${{ github.workspace }}/data/app.db
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with:
+          node-version: '20'
+          cache: 'npm'
+
       - run: npm ci
-      # Ensure DB path exists (your db.ts also creates it now, but belt & braces)
       - run: mkdir -p data
+      - run: ./scripts/seed.sh
+
       # start servers
-      - run: npm run dev &
-      - run: |
-          echo "Waiting for servers…"
-          n=0
-          until curl -sf http://localhost:4000/api/ready && curl -sf http://localhost:3000/api/bff/health; do
-            ((n++)); if [ $n -gt 60 ]; then echo "Servers didn't start"; exit 1; fi
+      - name: Start dev servers
+        run: |
+          npm run dev > dev.log 2>&1 &
+          echo $! > dev.pid
+
+      - name: Wait for servers
+        run: |
+          echo "Waiting for backend (:4000) and BFF (:3000)…"
+          for i in {1..60}; do
+            if curl -sf http://localhost:4000/api/ready >/dev/null && \
+               curl -sf http://localhost:3000/api/bff/health >/dev/null; then
+              echo "Servers are up."
+              exit 0
+            fi
             sleep 2
           done
-      - run: npm run test:api
+          echo "Servers did not start in time"; exit 1
+
+      - name: Run API suite
+        run: npm run test:api
+      - name: Kill servers
+        if: always()
+        run: |
+          if [ -f dev.pid ]; then kill $(cat dev.pid) || true; fi
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-logs
+          path: dev.log

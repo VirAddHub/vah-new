@@ -382,6 +382,14 @@ async function main() {
             `${r.passed ? "✅" : "❌"} [${r.origin}] ${r.method.padEnd(6)} ${r.path}  (${r.ms}ms) ${r.note ? "— " + r.note : ""}`
         );
     });
+
+    // Hard failure if any tests failed
+    if (fail > 0) {
+        console.log(`\n❌ ${fail} test(s) failed. Build will fail.`);
+        process.exitCode = 1;
+    } else {
+        console.log(`\n🎉 All ${total} tests passed!`);
+    }
 }
 
 main().catch((e) => {
