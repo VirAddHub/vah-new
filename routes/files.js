@@ -1,5 +1,5 @@
 const express = require("express");
-const { db } = require("../server/db.js");
+const { db } = require("../server/db");
 const fetch = (...args) => import("node-fetch").then(m => m.default(...args));
 
 const router = express.Router();

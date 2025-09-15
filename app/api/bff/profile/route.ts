@@ -1,11 +1,8 @@
 import { NextRequest } from 'next/server'
-import { proxy } from '../../_lib/proxy'
+import { proxy } from '@/app/api/_lib/proxy'
 
-export async function GET(req: NextRequest) {
-    return proxy(req, '/profile')
-}
+export const runtime = 'nodejs'
 
-export async function PUT(req: NextRequest) {
-    const body = await req.json()
-    return proxy(req, '/profile', { method: 'PUT', body: JSON.stringify(body) })
+export function GET(req: NextRequest) {
+    return proxy(req, '/api/profile');
 }

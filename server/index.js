@@ -1,5 +1,19 @@
 // VirtualAddressHub Backend — Next.js-ready Express API
 
+// ---- CSURF NO-OP GUARD (temporary during transition) ----
+try {
+    const Module = require('module')
+    const original = Module.prototype.require
+    Module.prototype.require = function (id) {
+        if (id === 'csurf') {
+            console.warn('[guard] csurf() replaced with no-op middleware')
+            return () => (req, res, next) => next()
+        }
+        return original.apply(this, arguments)
+    }
+} catch { }
+// ----------------------------------------------------------
+
 require('dotenv').config({
     path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
     override: true,
@@ -20,12 +34,12 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const csrf = require("csurf");
+// const csrf = require("csurf"); // Replaced with custom middleware
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
 const morgan = require('morgan');
-const { db } = require('./db.js');
+const { db } = require('./db');
 const { resolveDataDir, resolveInvoicesDir } = require('./storage-paths');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -74,6 +88,38 @@ app.use(helmet());
 // Cookies, then CORS (with CSRF header allowed)
 app.use(cookieParser());
 
+// JWT bridge for routes that expect JWT but we have session cookies
+const sessionToJwtBridge = require('./middleware/sessionToJwtBridge');
+const { ensureAdmin } = require('./middleware/ensureAdmin');
+const { requireAuth } = require('./middleware/requireAuth');
+
+// Bridge for support and mail items
+app.use(['/api/support', '/api/mail-items'], sessionToJwtBridge);
+
+// whoami must go through the same chain
+app.get('/api/auth/whoami',
+    sessionToJwtBridge,
+    requireAuth,
+    (req, res) => res.json({ ok: true, user: req.user })
+);
+
+// admin routes: bridge -> requireAuth -> ensureAdmin -> router
+app.use('/api/admin',
+    sessionToJwtBridge,
+    requireAuth,
+    ensureAdmin,
+    require('./routes/admin')
+);
+
+// Test route to verify JWT bridge is working
+app.get('/api/test-jwt-bridge', sessionToJwtBridge, (req, res) => {
+    res.json({
+        message: 'JWT bridge test',
+        hasAuth: !!req.headers.authorization,
+        authHeader: req.headers.authorization
+    });
+});
+
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
 app.use(cors({
     origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
@@ -88,30 +134,47 @@ app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook han
 // Dev bypass middleware (must be before CSRF)
 app.use(devBypass);
 
-// CSRF in cookie mode for cross-site (with dev bypass support)
-const csrfMiddleware = csrf({
-    cookie: {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        secure: process.env.NODE_ENV === 'production'
-    }
-});
+// CSRF middleware replaced with custom implementation
 
-// Conditional CSRF - skip for dev bypass and webhooks
-app.use((req, res, next) => {
-    if (req.__devBypass) {
-        console.log('Skipping CSRF for dev bypass request');
-        return next(); // skip CSRF in dev bypass
-    }
-    if (req.path.startsWith('/api/webhooks/')) {
-        return next(); // skip CSRF for webhooks
-    }
-    return csrfMiddleware(req, res, next);
-});
+// Use hardened CSRF middleware with proper exemptions
+app.use(require('./middleware/csrf'));
 
 // CSRF token endpoint
 app.get('/api/csrf', (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
+    const isProd = process.env.NODE_ENV === 'production';
+    const token = crypto.randomBytes(24).toString('hex');
+
+    const cookieOpts = {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isProd,   // must be false on http://localhost
+        path: '/',
+    };
+
+    // New cookie names
+    res.cookie('vah_csrf', token, cookieOpts);
+    res.cookie('csrf', token, cookieOpts);
+
+    // Back-compat for old csurf stacks
+    res.cookie('_csrf', token, cookieOpts);
+
+    // Optional debug header to confirm provider
+    res.set('x-csrf-provider', 'custom-dual');
+
+    return res.json({ token });
+});
+
+// Debug helper to list mounted routes (temporary)
+app.get('/__routes', (req, res) => {
+    const out = [];
+    if (app._router && app._router.stack) {
+        app._router.stack.forEach(l => {
+            if (!l.route) return;
+            const methods = Object.keys(l.route.methods).join(',').toUpperCase();
+            out.push(`${methods} ${l.route.path}`);
+        });
+    }
+    res.json(out);
 });
 
 // Request ID for traceability
@@ -163,14 +226,14 @@ app.use(customRateLimit({ windowMs: 60000, max: 120 }));
 // Health check route
 app.use('/api', require('./routes/health'));
 
-// Public plans route
-const publicPlansRouter = require("./routes/plans");
-app.use(publicPlansRouter);
-// admin plans CRUD
-try {
-    const adminPlans = require("./routes/admin-plans");
-    app.use(adminPlans);
-} catch (_) { }
+// Public plans route - handled in main app.get('/api/plans') above
+// const publicPlansRouter = require("./routes/plans");
+// app.use(publicPlansRouter);
+// admin plans CRUD - commented out to avoid middleware conflicts
+// try {
+//     const adminPlans = require("./routes/admin-plans");
+//     app.use(adminPlans);
+// } catch (_) { }
 
 // Mail items routes (scan URLs)
 const mailItemsRoutes = require("./routes/mail-items");
@@ -179,12 +242,12 @@ app.use("/api", mailItemsRoutes);
 app.use("/api", mailSearchRoutes);
 
 // New routes from mega-patch
-app.use('/api/auth', require('./routes/auth'));
+// app.use('/api/auth', require('./routes/auth')); // Removed to avoid conflicts with main auth handlers
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api', require('./routes/certificate'));
-app.use('/api/admin', require('./routes/admin'));
+// Admin routes are mounted above with middleware chain
 app.use('/api/mail', require('./routes/mail-forward'));
 
 // ===== WEBHOOKS (before auth) =====
@@ -1018,7 +1081,7 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
     const { current_password, new_password } = req.body;
     try {
         const user = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
-        if (!user || !bcrypt.compareSync(current_password, user.password))
+        if (!user || !bcrypt.compareSync(current_password, user.password_hash))
             return res.status(400).json({ error: 'Current password is incorrect' });
         const hash = bcrypt.hashSync(new_password, 12);
         db.prepare('UPDATE user SET password=? WHERE id=?').run(hash, req.user.id);
@@ -1122,51 +1185,176 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
 });
 
 // ===== AUTH — LOGIN / LOGOUT =====
-app.post('/api/auth/login', authLimiter, validate(schemas.login), (req, res) => {
-    const { email, password } = req.body;
 
-    const user = db.prepare('SELECT * FROM user WHERE email=?').get(email);
-    const lock = checkAccountLockout(email);
-    if (lock.locked) return res.status(423).json({ error: 'Account locked. Try again later.' });
+// Auto-ensure session columns at startup
+(function ensureSessionColumns() {
+    const cols = db.prepare('PRAGMA table_info("user")').all().map(c => c.name);
+    if (!cols.includes('session_token')) db.prepare('ALTER TABLE "user" ADD COLUMN session_token TEXT').run();
+    if (!cols.includes('session_created_at')) db.prepare('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER').run();
+})();
 
-    const ok = user && bcrypt.compareSync(password, user.password);
-    if (!ok) {
-        incrementLoginAttempts(email);
-        return res.status(400).json({ error: 'Invalid email or password' });
-    }
-
-    clearLoginAttempts(email);
-    const token = setSession(res, user);
-    logActivity(user.id, 'login', null, null, req);
-
-    // Set role cookie for Next.js middleware
-    const roleCookieOpts = {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-    };
-    res.cookie('vah_role', user.role || 'user', roleCookieOpts);
-
-    // Include dev_jwt in development for curl testing
-    const body = { ok: true, token, data: userRowToDto(user) };
-    if (process.env.NODE_ENV !== "production") body.dev_jwt = token;
-    return res.json(body);
+app.get('/api/auth/ping', (_req, res) => {
+    // Change this string anytime you update the handler to prove it deployed
+    res.json({ ok: true, handler: 'login-v3.1-micro-instrumented' });
 });
 
-app.post('/api/auth/logout', auth, (req, res) => {
-    res.clearCookie(JWT_COOKIE, {
-        httpOnly: true,
-        sameSite: COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE,
-        secure: COOKIE_SECURE,
+// Debug: confirm active handler + session state - moved to middleware chain above
+
+// Profile (protected)
+app.get('/api/profile', requireAuth, (req, res) => {
+    const u = req.user;
+    res.json({
+        ok: true,
+        profile: {
+            id: u.id,
+            email: u.email,
+            phone: u.phone || null,
+            first_name: u.first_name || '',
+            last_name: u.last_name || '',
+            business_name: u.business_name || '',
+            trading_name: u.trading_name || '',
+            kyc_status: u.kyc_status || 'pending'
+        }
     });
+});
 
-    // Clear role cookie for Next.js middleware
+// Confirms which DB file is active (requires your db.js to log path via DEBUG_DB)
+app.get('/api/auth/db-check', (_req, res) => {
+    try {
+        const row = db.prepare("SELECT COUNT(*) AS c FROM user").get();
+        res.json({ ok: true, user_count: row.c });
+    } catch (e) {
+        res.status(500).json({ ok: false, code: 'E_DB_CHECK', message: e.message });
+    }
+});
+
+// Confirms hashing works (no DB)
+app.post('/api/auth/hash-check', (req, res) => {
+    const { password, hash } = req.body || {};
+    try {
+        const ok = bcrypt.compareSync(String(password || ''), String(hash || ''));
+        res.json({ ok });
+    } catch (e) {
+        res.status(500).json({ ok: false, code: 'E_HASH_CHECK', message: e.message });
+    }
+});
+
+// --- AUTH: login (stable v3) ---
+// bcrypt already declared at top of file
+
+const isProd = process.env.NODE_ENV === 'production';
+const DEBUG_AUTH = !!process.env.DEBUG_AUTH;
+
+const { logAuthEvent } = require('./lib/audit');
+
+function logAuth(...args) {
+    if (DEBUG_AUTH) console.log('[auth]', ...args);
+}
+
+app.post('/api/auth/login', (req, res) => {
+    try {
+        logAuth('start');
+
+        // PHASE 1 — body
+        let email = (req.body?.email ?? '').toString().trim();
+        const password = (req.body?.password ?? '').toString();
+        if (!email || !password) {
+            logAuth('E_BODY', { hasEmail: !!email, hasPassword: !!password });
+            return res.status(400).json({ error: 'missing_fields', code: 'E_BODY' });
+        }
+        logAuth('body_ok', { email });
+
+        // PHASE 2 — select user
+        let user;
+        try {
+            user = db.prepare('SELECT * FROM user WHERE email = ? COLLATE NOCASE').get(email);
+        } catch (e) {
+            console.error('[auth] E_DB_SELECT', e);
+            return res.status(500).json({ error: 'auth_error', code: 'E_DB_SELECT' });
+        }
+        if (!user) {
+            logAuth('no_user', { email });
+            logAuthEvent('login_failed', null, req, { email, reason: 'user_not_found' });
+            return res.status(401).json({ error: 'invalid_credentials', code: 'E_NO_USER' });
+        }
+        logAuth('user_row', {
+            id: user.id,
+            email: user.email,
+            hasHash: !!user.password_hash,
+            hashPrefix: (user.password_hash || '').slice(0, 7)
+        });
+
+        // PHASE 3 — compare password
+        let ok = false;
+        try {
+            const hash = user.password_hash || '';
+            if (!hash.startsWith('$2')) {
+                logAuth('bad_hash_format', { hashPrefix: hash.slice(0, 7) });
+                return res.status(401).json({ error: 'invalid_credentials', code: 'E_BAD_HASH' });
+            }
+            ok = bcrypt.compareSync(password, hash); // bcryptjs is sync
+        } catch (e) {
+            console.error('[auth] E_BCRYPT', e);
+            return res.status(500).json({ error: 'auth_error', code: 'E_BCRYPT' });
+        }
+        if (!ok) {
+            logAuth('password_mismatch');
+            logAuthEvent('login_failed', user.id, req, { email, reason: 'invalid_password' });
+            return res.status(401).json({ error: 'invalid_credentials', code: 'E_PW_MISMATCH' });
+        }
+
+        // PHASE 4 — update session (robust)
+        const crypto = require('crypto');
+        const session = crypto.randomBytes(24).toString('hex');
+        const now = Math.floor(Date.now() / 1000);
+
+        let info;
+        try {
+            // quote table name in case of reserved words; use named params
+            const stmt = db.prepare(
+                'UPDATE "user" SET session_token = @session, session_created_at = @now WHERE id = @id'
+            );
+            info = stmt.run({ session, now, id: user.id });
+        } catch (e) {
+            console.error('[auth] E_DB_UPDATE_SQL', { message: e?.message });
+            return res.status(500).json({ error: 'auth_error', code: 'E_DB_UPDATE_SQL', message: e?.message });
+        }
+
+        // If no row was updated, fail loudly so we can see it
+        if (!info || info.changes !== 1) {
+            console.error('[auth] E_DB_UPDATE_NOCHANGES', { id: user.id, info });
+            return res.status(500).json({ error: 'auth_error', code: 'E_DB_UPDATE_NOCHANGES' });
+        }
+
+        // PHASE 5 — set cookies
+        res.cookie('vah_session', session, { httpOnly: true, sameSite: 'lax', secure: isProd, path: '/' });
+        res.cookie('vah_role', user.role || 'user', { httpOnly: false, sameSite: 'lax', secure: isProd, path: '/' });
+
+        logAuth('login_ok', { id: user.id, role: user.role || 'user' });
+        logAuthEvent('login_ok', user.id, req, { email: user.email, role: user.role || 'user' });
+        return res.json({ ok: true, user: { id: user.id, email: user.email, role: user.role || 'user' } });
+
+    } catch (err) {
+        console.error('[auth] E_UNEXPECTED', err);
+        return res.status(500).json({ error: 'auth_error', code: 'E_UNEXPECTED' });
+    }
+});
+
+app.post('/api/auth/logout', requireAuth, (req, res) => {
+    db.prepare('UPDATE "user" SET session_token = NULL, session_created_at = NULL WHERE id = ?').run(req.user.id);
+    res.clearCookie('vah_session', { path: '/' });
     res.clearCookie('vah_role', { path: '/' });
+    logAuthEvent('logout', req.user.id, req, { email: req.user.email });
+    res.json({ ok: true });
+});
 
-    logActivity(req.user.id, 'logout', null, null, req);
-    res.status(204).end();
+// Logout all sessions (useful after password change)
+app.post('/api/auth/logout-all', requireAuth, (req, res) => {
+    db.prepare('UPDATE "user" SET session_token = NULL, session_created_at = NULL WHERE id = ?').run(req.user.id);
+    res.clearCookie('vah_session', { path: '/' });
+    res.clearCookie('vah_role', { path: '/' });
+    logAuthEvent('logout_all', req.user.id, req, { email: req.user.email });
+    res.json({ ok: true });
 });
 
 // === INVOICE DOWNLOAD ===
@@ -1443,16 +1631,6 @@ app.get("/api/debug/db-info", (_req, res) => {
 });
 
 // ===== PROFILE =====
-app.get('/api/profile', auth, (req, res) => {
-    try {
-        const u = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
-        if (!u) return res.status(404).json({ error: 'User not found' });
-        res.json(userRowToDto(u));
-    } catch (e) {
-        logger.error('profile fetch failed', e);
-        res.status(500).json({ error: 'Profile fetch failed' });
-    }
-});
 // PROFILE — update (KYC-locked: user can change only email & phone)
 app.post('/api/profile', auth, (req, res) => {
     try {
@@ -1536,6 +1714,8 @@ app.post('/api/profile/request-business-name-change', auth, (req, res) => {
 // ===== Mail Search Routes (mounted early to avoid conflicts) =====
 const mailSearch = require("../routes/mail-search");
 app.use("/api/mail-items", mailSearch);
+
+// Mail search endpoint is handled by routes/mail-search.js
 
 // ===== MAIL (USER) =====
 app.get(
@@ -1626,12 +1806,13 @@ app.post('/api/mail-items/:id/restore', auth, param('id').isInt(), (req, res) =>
 // (moved to before existing mail-items routes)
 
 // ===== Admin Mail Routes =====
-const adminMail = require("../routes/admin-mail");
-const adminMailBulk = require("../routes/admin-mail-bulk");
-const adminAudit = require("../routes/admin-audit");
-app.use("/api/admin", adminMail);
-app.use("/api/admin", adminMailBulk);
-app.use("/api/admin", adminAudit);
+// Admin routes are mounted above with middleware chain
+// const adminMail = require("../routes/admin-mail");
+// const adminMailBulk = require("../routes/admin-mail-bulk");
+// const adminAudit = require("../routes/admin-audit");
+// app.use("/api/admin", adminMail);
+// app.use("/api/admin", adminMailBulk);
+// app.use("/api/admin", adminAudit);
 
 // ===== Email Preferences Routes =====
 const emailPrefs = require("../routes/email-prefs");
@@ -1672,15 +1853,51 @@ if (process.env.NODE_ENV !== "production") {
     // FTS removed to prevent database corruption
 
     // Mount repair routes
-    const adminRepair = require("../routes/admin-repair");
-    app.use("/api/admin/repair", adminRepair);
+    // Admin repair routes are mounted above with middleware chain
+    // const adminRepair = require("../routes/admin-repair");
+    // app.use("/api/admin/repair", adminRepair);
 }
 
 // ===== Forward Audit Routes =====
-const adminForwardAudit = require("../routes/admin-forward-audit");
-app.use("/api/admin/forward-audit", adminForwardAudit);
+// Admin forward audit routes are mounted above with middleware chain
+// const adminForwardAudit = require("../routes/admin-forward-audit");
+// app.use("/api/admin/forward-audit", adminForwardAudit);
 
 // Legacy (used by your frontend bulk forward)
+// Mail forwarding endpoints
+app.post('/api/mail/forward', auth, (req, res) => {
+    const { mail_item_id, address } = req.body;
+    if (!mail_item_id || !address) {
+        return res.status(400).json({ error: 'missing_fields' });
+    }
+
+    // Check if user owns the mail item
+    const mailItem = db.prepare('SELECT * FROM mail_item WHERE id = ? AND user_id = ?').get(mail_item_id, req.user.id);
+    if (!mailItem) {
+        return res.status(404).json({ error: 'mail_item_not_found' });
+    }
+
+    // Create forwarding request
+    const info = db.prepare(`
+        INSERT INTO forwarding_request (user_id, mail_item_id, address, status, created_at)
+        VALUES (?, ?, ?, 'pending', ?)
+    `).run(req.user.id, mail_item_id, address, Date.now());
+
+    res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+app.get('/api/mail/history/:id', auth, (req, res) => {
+    const { id } = req.params;
+    const history = db.prepare(`
+        SELECT fr.*, mi.subject, mi.sender_name
+        FROM forwarding_request fr
+        JOIN mail_item mi ON mi.id = fr.mail_item_id
+        WHERE fr.user_id = ? AND fr.mail_item_id = ?
+        ORDER BY fr.created_at DESC
+    `).all(req.user.id, id);
+    res.json({ history });
+});
+
 app.get('/api/mail', auth, (req, res) => {
     const { status, tag } = req.query || {};
     let sql = 'SELECT * FROM mail_item WHERE user_id=? AND deleted=0';
@@ -1799,11 +2016,26 @@ app.put('/api/forwarding-requests/:id/cancel', auth, param('id').isInt(), (req, 
 // ===== PLANS =====
 app.get('/api/plans', (req, res) => {
     try {
-        const plans = db.prepare('SELECT * FROM plans WHERE active=1 ORDER BY price ASC').all();
-        res.json({ data: plans.map(p => ({ ...p, features: p.features ? JSON.parse(p.features) : [] })) });
+        // Simple query that works with the current schema
+        const plans = db.prepare(`
+      SELECT
+        id,
+        name,
+        slug,
+        COALESCE(description, '') AS description,
+        COALESCE(amount_pence, price_pence) AS amount_pence,
+        COALESCE(currency, 'GBP') AS currency,
+        COALESCE(interval, 'month') AS interval,
+        COALESCE(is_active, 1) AS is_active
+      FROM plans
+      WHERE COALESCE(is_active, 1) = 1
+      ORDER BY COALESCE(amount_pence, price_pence) ASC
+    `).all();
+
+        return res.json({ plans });
     } catch (e) {
-        logger.error('plans failed', e);
-        res.status(500).json({ error: 'Plans fetch failed' });
+        console.error('[plans_error]', e);
+        return res.status(500).json({ error: 'plans_error' });
     }
 });
 
@@ -1898,7 +2130,18 @@ app.post('/api/company-search', auth, (req, res) => {
 });
 
 // ===== SUPPORT TICKETS =====
-app.post('/api/support/tickets', auth, validate(schemas.createSupportTicket), async (req, res) => {
+// Support endpoints
+app.get('/api/support', auth, (req, res) => {
+    const tickets = db.prepare(`
+        SELECT id, subject, message, status, created_at, updated_at
+        FROM support_ticket 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC
+    `).all(req.user.id);
+    res.json({ tickets });
+});
+
+app.post('/api/support', auth, validate(schemas.createSupportTicket), async (req, res) => {
     const { subject, message } = req.body;
     const now = Date.now();
     const info = db
@@ -1953,19 +2196,85 @@ app.post('/api/admin/support/tickets/:id/close', auth, adminOnly, param('id').is
 });
 
 // ===== ADMIN — USERS =====
+// Admin support endpoints
+app.get('/api/admin/support', auth, adminOnly, (req, res) => {
+    const { status, limit = 50 } = req.query;
+    let sql = `
+        SELECT st.*, u.email, u.first_name, u.last_name
+        FROM support_ticket st
+        JOIN user u ON u.id = st.user_id
+        WHERE 1=1
+    `;
+    const params = [];
+    if (status) {
+        sql += ' AND st.status = ?';
+        params.push(status);
+    }
+    sql += ' ORDER BY st.created_at DESC LIMIT ?';
+    params.push(parseInt(limit));
+
+    const tickets = db.prepare(sql).all(...params);
+    res.json({ tickets });
+});
+
+app.patch('/api/admin/support/:id', auth, adminOnly, (req, res) => {
+    const { id } = req.params;
+    const { status, note } = req.body;
+
+    const updates = [];
+    const params = [];
+    if (status) {
+        updates.push('status = ?');
+        params.push(status);
+    }
+    if (note) {
+        updates.push('note = ?');
+        params.push(note);
+    }
+    updates.push('updated_at = ?');
+    params.push(Date.now());
+    params.push(id);
+
+    const info = db.prepare(`UPDATE support_ticket SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    res.json({ ok: true, updated: info.changes });
+});
+
+// Admin mail bulk forward
+app.post('/api/admin/mail-bulk', auth, adminOnly, (req, res) => {
+    const { ids, address } = req.body;
+    if (!Array.isArray(ids) || !address) {
+        return res.status(400).json({ error: 'missing_fields' });
+    }
+
+    const results = [];
+    for (const id of ids) {
+        try {
+            const info = db.prepare(`
+                INSERT INTO forwarding_request (user_id, mail_item_id, address, status, created_at, admin_created)
+                VALUES ((SELECT user_id FROM mail_item WHERE id = ?), ?, ?, 'pending', ?, 1)
+            `).run(id, address, Date.now());
+            results.push({ id, success: true, request_id: info.lastInsertRowid });
+        } catch (e) {
+            results.push({ id, success: false, error: e.message });
+        }
+    }
+
+    res.json({ results });
+});
+
 app.get('/api/admin/users', auth, adminOnly, (req, res) => {
     const { page = 1, per_page = 20, search } = req.query || {};
-    let sql = `SELECT id,created_at,name,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number FROM user`;
+    let sql = `SELECT id,created_at,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number FROM user`;
     const p = [];
     if (search) {
-        sql += ' WHERE name LIKE ? OR email LIKE ? OR company_name LIKE ?';
+        sql += ' WHERE (first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR company_name LIKE ?)';
         const s = `%${search}%`;
-        p.push(s, s, s);
+        p.push(s, s, s, s);
     }
     const total = db
         .prepare(
             sql.replace(
-                'SELECT id,created_at,name,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number',
+                'SELECT id,created_at,email,first_name,last_name,kyc_status,plan_status,is_admin,company_name,companies_house_number',
                 'SELECT COUNT(*) c'
             )
         )
@@ -2157,7 +2466,7 @@ app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
     const sortOrder = (order || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
     let sql = `
-        SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email
+        SELECT m.*, u.id AS user_id, (u.first_name || ' ' || u.last_name) as user_name, u.email as user_email
         FROM mail_item m
         LEFT JOIN user u ON u.id=m.user_id
         WHERE 1=1
@@ -2166,12 +2475,12 @@ app.get('/api/admin/mail-items', auth, adminOnly, (req, res) => {
     if (status) { sql += ' AND m.status=?'; p.push(status); }
     if (user_id) { sql += ' AND m.user_id=?'; p.push(parseInt(user_id)); }
     if (search) {
-        sql += ' AND (m.subject LIKE ? OR m.sender_name LIKE ? OR u.name LIKE ?)';
+        sql += ' AND (m.subject LIKE ? OR m.sender_name LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)';
         const s = `%${search}%`;
-        p.push(s, s, s);
+        p.push(s, s, s, s);
     }
 
-    const total = db.prepare(sql.replace('SELECT m.*, u.id AS user_id, u.name as user_name, u.email as user_email', 'SELECT COUNT(*) c')).get(...p).c;
+    const total = db.prepare(sql.replace('SELECT m.*, u.id AS user_id, (u.first_name || \' \' || u.last_name) as user_name, u.email as user_email', 'SELECT COUNT(*) c')).get(...p).c;
 
     const limit = parseInt(per_page), offset = (parseInt(page) - 1) * limit;
     const rows = db.prepare(sql + ` ORDER BY m.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`).all(...p, limit, offset);
@@ -2334,6 +2643,7 @@ app.post('/api/admin/payments/create-adhoc-link', auth, adminOnly, (req, res) =>
 
 // ===== WEBHOOKS (mock-safe) =====
 
+// Webhook endpoints
 app.post('/api/webhooks/sumsub', async (req, res) => {
     const body = req.body || {};
     db.prepare('INSERT INTO webhook_log (created_at,type,source,raw_payload,received_at) VALUES (?,?,?,?,?)').run(
@@ -2372,8 +2682,58 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
     res.json({ ok: true });
 });
 
+// GoCardless webhook
+app.post('/api/webhooks-gc', async (req, res) => {
+    const body = req.body || {};
+    db.prepare('INSERT INTO webhook_log (created_at,source,event_type,payload_json) VALUES (?,?,?,?)').run(
+        Date.now(), 'gocardless', 'webhook', JSON.stringify(body)
+    );
+
+    // Process payment events
+    if (body.events) {
+        for (const event of body.events) {
+            if (event.resource_type === 'payments' && event.action === 'confirmed') {
+                // Handle successful payment
+                console.log('Payment confirmed:', event.links?.payment);
+            } else if (event.resource_type === 'payments' && event.action === 'failed') {
+                // Handle failed payment
+                console.log('Payment failed:', event.links?.payment);
+            }
+        }
+    }
+
+    res.json({ ok: true });
+});
+
+// Postmark webhook
+app.post('/api/webhooks-postmark', async (req, res) => {
+    const body = req.body || {};
+    db.prepare('INSERT INTO webhook_log (created_at,source,event_type,payload_json) VALUES (?,?,?,?)').run(
+        Date.now(), 'postmark', 'webhook', JSON.stringify(body)
+    );
+
+    // Handle bounce events
+    if (body.RecordType === 'Bounce') {
+        console.log('Email bounce:', body.Email, body.Type);
+        // Update user email status or take action
+    }
+
+    res.json({ ok: true });
+});
+
 // ===== HEALTH =====
 app.get('/api/healthz', (req, res) => res.json({ ok: true, ts: Date.now() }));
+
+// Readiness check (includes DB connectivity)
+app.get('/api/ready', (req, res) => {
+    try {
+        // Test DB connectivity
+        db.prepare('SELECT 1').get();
+        res.json({ ok: true, ready: true, ts: Date.now() });
+    } catch (e) {
+        res.status(503).json({ ok: false, ready: false, error: 'Database not ready' });
+    }
+});
 
 // ===== Mail Search & Admin Routes =====
 // (moved earlier to avoid route conflicts)

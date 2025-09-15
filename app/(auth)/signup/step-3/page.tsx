@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
-export default function SignupStep3() {
+function SignupStep3Content() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [busy, setBusy] = useState(false);
@@ -127,5 +127,13 @@ export default function SignupStep3() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignupStep3() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignupStep3Content />
+        </Suspense>
     );
 }

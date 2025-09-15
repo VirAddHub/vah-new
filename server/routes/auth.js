@@ -26,23 +26,9 @@ function clearSessionCookie(res) {
 }
 
 // DB helpers (adjust for your schema)
-const db = require('../db'); // your better-sqlite3 instance
+const { db } = require('../db'); // your better-sqlite3 instance
 
-router.post('/login', validate(
-    z.object({ email: z.string().email(), password: z.string().min(6) })
-), (req, res) => {
-    const { email, password } = req.body;
-    const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
-    if (!user) return res.status(401).json({ error: 'invalid_credentials' });
-    // TODO: replace with real password check
-    if (user.password !== password) return res.status(401).json({ error: 'invalid_credentials' });
-
-    const token = crypto.randomBytes(24).toString('hex');
-    db.prepare('UPDATE user SET session_token = ?, session_created_at = strftime("%s","now") WHERE id = ?').run(token, user.id);
-
-    setSessionCookie(res, token, user.is_admin ? 'admin' : 'user');
-    res.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
-});
+// Login handler moved to main server/index.js to avoid conflicts
 
 router.post('/logout', (_req, res) => {
     clearSessionCookie(res);

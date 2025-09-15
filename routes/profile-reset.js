@@ -6,7 +6,7 @@ const { sendEmail } = require("../lib/mailer");
 const router = express.Router();
 
 // Use centralized database connection
-const { db } = require('../server/db.js');
+const { db } = require('../server/db');
 
 /**
  * POST /api/profile/reset-password-request

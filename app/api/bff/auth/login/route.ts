@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
-import { proxy } from '../../_lib/proxy'
+import { proxy } from '@/app/api/_lib/proxy'
+
+export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-    const body = await req.json()
-    return proxy(req, '/auth/login', { method: 'POST', body: JSON.stringify(body) })
+    return proxy(req, '/api/auth/login')
 }

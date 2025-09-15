@@ -5,7 +5,7 @@ const dayjs = require('dayjs');
 const router = express.Router();
 
 // Use centralized database connection
-const { db } = require('../server/db.js');
+const { db } = require('../server/db');
 
 // Import invoice functions
 const { createInvoiceFromPayment } = require('../server/services/invoice');

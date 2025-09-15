@@ -4,7 +4,7 @@ const { sumsubFetch } = require("../lib/sumsub");
 const router = express.Router();
 
 // Use centralized database connection
-const { db } = require('../server/db.js');
+const { db } = require('../server/db');
 
 /**
  * POST /api/kyc/start

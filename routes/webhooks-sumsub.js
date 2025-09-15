@@ -5,7 +5,7 @@ const { notify } = require('../lib/notify');
 const router = express.Router();
 
 // Use centralized database connection
-const { db } = require('../server/db.js');
+const { db } = require('../server/db');
 
 function verifySig(secret, rawBody, signature) {
   // Sumsub sends x-payload-digest: hex(hmacsha256(secret, raw_body))

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { validate, z } = require('../lib/validate');
-const db = require('../db');
+const { db } = require('../db');
 
 // Auth middleware (replace with your real session logic)
 function requireAuth(req, res, next) {

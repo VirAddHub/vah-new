@@ -1,0 +1,305 @@
+############################################################
+# full-pass-bff-backend.http
+# Dual-origin test suite: BFF (Next.js :3000) + Backend (:4000)
+# Requires REST Client extension with "Remember Cookies" enabled.
+############################################################
+
+@bff = http://localhost:3000/api/bff
+@api = http://localhost:4000/api
+@adminEmail = admin@virtualaddresshub.co.uk
+@adminPass = Admin123!
+@forwardAddress = Home, 1 Test St, AB1 2CD
+
+### -------------------------------------------------------
+### BFF (Next.js) — cookie jar: bffJar
+### -------------------------------------------------------
+
+@jar=bffJar
+
+### BFF-01) CSRF (BFF)
+GET {{bff}}/auth/csrf
+
+> {% client.global.set("csrfBff", response.body.token || response.body.csrfToken || ""); %}
+
+### BFF-02) Login (BFF → backend)
+POST {{bff}}/auth/login
+x-csrf-token: {{csrfBff}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+### BFF-03) WhoAmI (protected)
+GET {{bff}}/auth/whoami
+
+### BFF-04) Profile (protected)
+GET {{bff}}/profile
+
+### BFF-05) Ready (proxy)
+GET {{bff}}/ready
+
+### BFF-06) Health (proxy)
+GET {{bff}}/health
+
+### BFF-07) Plans (proxy)
+GET {{bff}}/plans
+
+### BFF-08) Billing summary (proxy)
+GET {{bff}}/billing
+
+### BFF-09) Invoices (proxy)
+GET {{bff}}/billing/invoices
+
+> {%
+  const b = response.body;
+  let id = "";
+  if (Array.isArray(b) && b.length) id = b[0].id || "";
+  if (!id && b && b.invoices && b.invoices.length) id = b.invoices[0].id || "";
+  client.global.set("invoiceIdBff", id || "");
+%}
+
+### BFF-10) Invoice link (proxy)
+GET {{bff}}/billing/invoices/{{invoiceIdBff}}/link
+
+### BFF-11) Support list (proxy)
+GET {{bff}}/support
+
+### BFF-12) CSRF (for support create)
+GET {{bff}}/auth/csrf
+> {% client.global.set("csrfBff", response.body.token || response.body.csrfToken || ""); %}
+
+### BFF-13) Support create (proxy)
+POST {{bff}}/support
+x-csrf-token: {{csrfBff}}
+content-type: application/json
+
+{
+  "subject": "Name change",
+  "message": "Please update my trading name."
+}
+
+### BFF-14) Mail items (proxy)
+GET {{bff}}/mail-items
+
+> {%
+  const b = response.body;
+  let mid = "";
+  if (Array.isArray(b) && b.length) mid = b[0].id || "";
+  if (!mid && b && b.items && b.items.length) mid = b.items[0].id || "";
+  client.global.set("mailIdBff", mid || "");
+%}
+
+### BFF-15) Mail item detail (proxy)
+GET {{bff}}/mail-items/{{mailIdBff}}
+
+### BFF-16) Mail scan URL (proxy)
+GET {{bff}}/mail-items/{{mailIdBff}}/scan-url
+
+### BFF-17) CSRF (for forward)
+GET {{bff}}/auth/csrf
+> {% client.global.set("csrfBff", response.body.token || response.body.csrfToken || ""); %}
+
+### BFF-18) Mail forward (proxy)
+POST {{bff}}/mail/forward
+x-csrf-token: {{csrfBff}}
+content-type: application/json
+
+{
+  "mail_item_id": {{mailIdBff}},
+  "address": "{{forwardAddress}}"
+}
+
+### BFF-19) Mail history (proxy)
+GET {{bff}}/mail/history/{{mailIdBff}}
+
+### BFF-20) Admin users (proxy; requires admin)
+GET {{bff}}/admin/users?limit=10
+
+> {%
+  const b = response.body;
+  let uid = "";
+  if (Array.isArray(b) && b.length) uid = b[0].id || "";
+  if (!uid && b && b.users && b.users.length) uid = b.users[0].id || "";
+  client.global.set("adminUserIdBff", uid || "");
+%}
+
+### BFF-21) CSRF (for admin user update)
+GET {{bff}}/auth/csrf
+> {% client.global.set("csrfBff", response.body.token || response.body.csrfToken || ""); %}
+
+### BFF-22) Admin user update (proxy)
+PATCH {{bff}}/admin/users/{{adminUserIdBff}}
+x-csrf-token: {{csrfBff}}
+content-type: application/json
+
+{
+  "role": "admin"
+}
+
+### BFF-23) Metrics (proxy)
+GET {{bff}}/metrics
+
+### BFF-24) CSRF (for logout)
+GET {{bff}}/auth/csrf
+> {% client.global.set("csrfBff", response.body.token || response.body.csrfToken || ""); %}
+
+### BFF-25) Logout (proxy)
+POST {{bff}}/auth/logout
+x-csrf-token: {{csrfBff}}
+
+### -------------------------------------------------------
+### Backend (Express) — cookie jar: apiJar
+### -------------------------------------------------------
+
+@jar=apiJar
+
+### API-01) Ready
+GET {{api}}/ready
+
+### API-02) Health
+GET {{api}}/health
+
+### API-03) CSRF
+GET {{api}}/csrf
+
+> {% client.global.set("csrfApi", response.body.token || response.body.csrfToken || ""); %}
+
+### API-04) Login
+POST {{api}}/auth/login
+x-csrf-token: {{csrfApi}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+### API-05) WhoAmI
+GET {{api}}/auth/whoami
+
+### API-06) Profile
+GET {{api}}/profile
+
+### API-07) Plans
+GET {{api}}/plans
+
+### API-08) Billing summary
+GET {{api}}/billing
+
+### API-09) Invoices
+GET {{api}}/billing/invoices
+
+> {%
+  const b = response.body;
+  let id = "";
+  if (Array.isArray(b) && b.length) id = b[0].id || "";
+  if (!id && b && b.invoices && b.invoices.length) id = b.invoices[0].id || "";
+  client.global.set("invoiceIdApi", id || "");
+%}
+
+### API-10) Invoice link
+GET {{api}}/billing/invoices/{{invoiceIdApi}}/link
+
+### API-11) Support list
+GET {{api}}/support
+
+### API-12) CSRF (for support create)
+GET {{api}}/csrf
+> {% client.global.set("csrfApi", response.body.token || response.body.csrfToken || ""); %}
+
+### API-13) Support create
+POST {{api}}/support
+x-csrf-token: {{csrfApi}}
+content-type: application/json
+
+{
+  "subject": "Support via API",
+  "message": "Testing support create."
+}
+
+### API-14) Mail items
+GET {{api}}/mail-items
+
+> {%
+  const b = response.body;
+  let mid = "";
+  if (Array.isArray(b) && b.length) mid = b[0].id || "";
+  if (!mid && b && b.items && b.items.length) mid = b.items[0].id || "";
+  client.global.set("mailIdApi", mid || "");
+%}
+
+### API-15) Mail item detail
+GET {{api}}/mail-items/{{mailIdApi}}
+
+### API-16) Mail scan URL
+GET {{api}}/mail-items/{{mailIdApi}}/scan-url
+
+### API-17) CSRF (for forward)
+GET {{api}}/csrf
+> {% client.global.set("csrfApi", response.body.token || response.body.csrfToken || ""); %}
+
+### API-18) Mail forward
+POST {{api}}/mail/forward
+x-csrf-token: {{csrfApi}}
+content-type: application/json
+
+{
+  "mail_item_id": {{mailIdApi}},
+  "address": "{{forwardAddress}}"
+}
+
+### API-19) Mail history
+GET {{api}}/mail/history/{{mailIdApi}}
+
+### API-20) Admin users (requires admin role)
+GET {{api}}/admin/users?limit=10
+
+### API-21) Admin mail-items (sample)
+GET {{api}}/admin/mail-items?limit=10
+
+### API-22) Metrics
+GET {{api}}/metrics
+
+### API-23) CSRF (for logout)
+GET {{api}}/csrf
+> {% client.global.set("csrfApi", response.body.token || response.body.csrfToken || ""); %}
+
+### API-24) Logout
+POST {{api}}/auth/logout
+x-csrf-token: {{csrfApi}}
+
+### -------------------------------------------------------
+### Webhooks (CSRF-exempt)
+### -------------------------------------------------------
+
+### WH-01) GoCardless paid
+POST {{api}}/webhooks-gc
+content-type: application/json
+
+{
+  "events": [
+    { "resource_type": "payments", "action": "confirmed", "links": { "payment": "PM123" } }
+  ]
+}
+
+### WH-02) GoCardless failed
+POST {{api}}/webhooks-gc
+content-type: application/json
+
+{
+  "events": [
+    { "resource_type": "payments", "action": "failed", "links": { "payment": "PM999" } }
+  ]
+}
+
+### WH-03) Postmark bounce
+POST {{api}}/webhooks-postmark
+content-type: application/json
+
+{
+  "RecordType": "Bounce",
+  "Type": "HardBounce",
+  "Email": "user@example.com"
+}

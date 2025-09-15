@@ -1,0 +1,30 @@
+@bff = http://localhost:3000/api/bff
+@email = admin@virtualaddresshub.co.uk
+@pass  = Admin123!
+
+### 01) CSRF (expect Set-Cookie: vah_csrf, csrf, _csrf; header x-csrf-provider: custom-dual)
+GET {{bff}}/auth/csrf
+# Inspect Set-Cookie in the response headers
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+
+### 02) Login (echo token)
+POST {{bff}}/auth/login
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{pass}}"
+}
+
+### 03) WhoAmI
+GET {{bff}}/auth/whoami
+
+### 04) Profile
+GET {{bff}}/profile
+
+### 05) CSRF + Logout
+GET {{bff}}/auth/csrf
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+POST {{bff}}/auth/logout
+x-csrf-token: {{csrf}}

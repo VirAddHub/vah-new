@@ -1,0 +1,721 @@
+@base = http://localhost:4000/api
+@adminEmail = admin@virtualaddresshub.co.uk
+@adminPass = Admin123!
+@testEmail = test.user@example.com
+@testPass = Test123!
+@companyNumber = 00000000
+@forwardAddress = Home, 1 Test St, AB1 2CD
+
+### ───────────────────────────────────────────────────────────────────────────
+### 0) CSRF helper (call before state-changing requests)
+GET {{base}}/csrf
+
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+
+### ───────────────────────────────────────────────────────────────────────────
+### 1) AUTHENTICATION & USER
+### 1.1 Signup (if implemented)
+POST {{base}}/auth/signup
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPass}}"
+}
+
+### 1.2 Login (admin)
+# (Run "0) CSRF helper" immediately before this, if token expires)
+POST {{base}}/auth/login
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+### 1.3 Login wrong password (negative)
+POST {{base}}/auth/login
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "WrongPassword!"
+}
+
+### 1.4 WhoAmI (should show current user)
+GET {{base}}/auth/whoami
+
+### 1.5 Logout
+GET {{base}}/csrf
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+POST {{base}}/auth/logout
+x-csrf-token: {{csrf}}
+
+### 1.6 Logout All Sessions
+GET {{base}}/csrf
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+POST {{base}}/auth/logout-all
+x-csrf-token: {{csrf}}
+
+### 1.7 Ping (debug handler)
+GET {{base}}/auth/ping
+
+### 1.8 DB check (debug)
+GET {{base}}/auth/db-check
+
+### 1.9 Hash check (debug) — demo body (won't match)
+POST {{base}}/auth/hash-check
+content-type: application/json
+
+{
+  "plaintext": "demo",
+  "hash": "$2b$10$Gm6P0..examplehashDOESNOTMATCH"
+}
+
+### 1.10 Reset password request
+GET {{base}}/csrf
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+POST {{base}}/profile/reset-password-request
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}"
+}
+
+### 1.11 Reset password confirm (token placeholder)
+POST {{base}}/profile/reset-password
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "token": "PLACEHOLDER_TOKEN",
+  "new_password": "Admin123!"
+}
+
+### 1.12 Update password (when logged in)
+# Re-login admin
+GET {{base}}/csrf
+> {% client.global.set("csrf", response.body.token || response.body.csrfToken || ""); %}
+POST {{base}}/auth/login
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+POST {{base}}/profile/update-password
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "current_password": "{{adminPass}}",
+  "new_password": "Admin123!"
+}
+
+### 1.13 Profile (GET)
+GET {{base}}/profile
+
+### 1.14 Profile (POST update) — demo payload
+POST {{base}}/profile
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "phone": "+441234567890"
+}
+
+### 1.15 Update address (PUT)
+PUT {{base}}/profile/address
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "address": "New Office, 2 Example Rd, ZZ1 1ZZ"
+}
+
+### ───────────────────────────────────────────────────────────────────────────
+### 2) BUSINESS & ONBOARDING
+### 2.1 Save business details
+POST {{base}}/onboarding/business
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "business_name": "Example Ltd",
+  "trading_name": "Example",
+  "company_number": "{{companyNumber}}"
+}
+
+### 2.2 Company search
+POST {{base}}/company-search
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "query": "Example"
+}
+
+### 2.3 KYC start
+POST {{base}}/kyc/start
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "return_url": "https://localhost:3000/kyc/return"
+}
+
+### 2.4 KYC upload (placeholder)
+POST {{base}}/kyc/upload
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "doc_type": "passport",
+  "file_token": "UPLOAD_TOKEN_PLACEHOLDER"
+}
+
+### 2.5 KYC status
+GET {{base}}/kyc/status
+
+### 2.6 Resend verification link
+POST {{base}}/kyc/resend-verification-link
+x-csrf-token: {{csrf}}
+
+### 2.7 Request business name change
+POST {{base}}/profile/request-business-name-change
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "new_name": "Example Group Ltd"
+}
+
+### 2.8 Certificate URL (KYC must be approved)
+GET {{base}}/profile/certificate-url
+
+### ───────────────────────────────────────────────────────────────────────────
+### 3) BILLING & PAYMENTS
+### 3.1 Billing summary
+GET {{base}}/billing
+
+### 3.2 Create mandate
+POST {{base}}/billing/mandate/create
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "redirect_url": "https://localhost:3000/payments/return"
+}
+
+### 3.3 Confirm mandate
+POST {{base}}/billing/mandate/confirm
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "session_id": "MANDATE_SESSION_PLACEHOLDER"
+}
+
+### 3.4 Invoices (list)
+GET {{base}}/billing/invoices
+
+> {%
+  const b = response.body;
+  let id = "";
+  if (Array.isArray(b) && b.length) id = b[0].id || b[0].invoice_id || "";
+  if (!id && b && b.invoices && b.invoices.length) id = b.invoices[0].id || b.invoices[0].invoice_id || "";
+  client.global.set("invoiceId", id || "");
+%}
+
+### 3.5 Invoice link (GET variant)
+GET {{base}}/billing/invoices/{{invoiceId}}/link
+
+### 3.6 Invoice link (POST variant if implemented)
+POST {{base}}/billing/invoices/{{invoiceId}}/link
+x-csrf-token: {{csrf}}
+
+### 3.7 Payment retry
+POST {{base}}/billing/retry
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "invoice_id": "{{invoiceId}}"
+}
+
+### 3.8 Cancel subscription
+POST {{base}}/billing/cancel
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "reason": "user_request"
+}
+
+### 3.9 Payments (list)
+GET {{base}}/payments
+
+### 3.10 Subscription status
+GET {{base}}/payments/subscriptions/status
+
+### 3.11 Redirect flows (start)
+POST {{base}}/payments/redirect-flows
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "success_redirect_url": "https://localhost:3000/payments/success",
+  "cancel_redirect_url": "https://localhost:3000/payments/cancel"
+}
+
+> {% client.global.set("redirectFlowId", response.body && (response.body.id || response.body.flow_id || "")); %}
+
+### 3.12 Redirect flows (complete)
+POST {{base}}/payments/redirect-flows/{{redirectFlowId}}/complete
+x-csrf-token: {{csrf}}
+
+### 3.13 Create subscription
+POST {{base}}/payments/subscriptions
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "plan_id": "basic"
+}
+
+### ───────────────────────────────────────────────────────────────────────────
+### 4) MAIL MANAGEMENT
+### 4.1 Mail items (list)
+GET {{base}}/mail-items
+> {%
+  const b = response.body;
+  let id = "";
+  if (Array.isArray(b) && b.length) id = b[0].id || "";
+  if (!id && b && b.items && b.items.length) id = b.items[0].id || "";
+  client.global.set("mailId", id || "");
+%}
+
+### 4.2 Mail item (detail)
+GET {{base}}/mail-items/{{mailId}}
+
+### 4.3 Mail item history (variant A)
+GET {{base}}/mail-items/{{mailId}}/history
+
+### 4.4 Mail item tag
+POST {{base}}/mail-items/{{mailId}}/tag
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "tag": "HMRC"
+}
+
+### 4.5 Mail item delete
+DELETE {{base}}/mail-items/{{mailId}}
+x-csrf-token: {{csrf}}
+
+### 4.6 Mail item restore
+POST {{base}}/mail-items/{{mailId}}/restore
+x-csrf-token: {{csrf}}
+
+### 4.7 Scan URL (signed link)
+GET {{base}}/mail-items/{{mailId}}/scan-url
+
+### 4.8 Scan token (invalid demo)
+GET {{base}}/scans/INVALID_OR_EXPIRED_TOKEN
+
+### 4.9 Search mail (alt path)
+GET {{base}}/search/mail?q=invoice&limit=10
+
+### 4.10 Forward mail (policy may block if >14 days or KYC pending)
+POST {{base}}/mail/forward
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "mail_item_id": {{mailId}},
+  "address": "{{forwardAddress}}"
+}
+
+### 4.11 Forwarding history (variant B)
+GET {{base}}/mail/history/{{mailId}}
+
+### 4.12 Mail summary (if implemented)
+GET {{base}}/mail
+
+### 4.13 Bulk forward request (user)
+POST {{base}}/mail/bulk-forward-request
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "ids": [ {{mailId}} ],
+  "address": "{{forwardAddress}}"
+}
+
+### 4.14 Forwarding requests (list)
+GET {{base}}/forwarding-requests
+
+> {% 
+  const b = response.body;
+  let fid = "";
+  if (Array.isArray(b) && b.length) fid = b[0].id || "";
+  if (!fid && b && b.items && b.items.length) fid = b.items[0].id || "";
+  client.global.set("forwardReqId", fid || "");
+%}
+
+### 4.15 Forwarding request (get)
+GET {{base}}/forwarding-requests/{{forwardReqId}}
+
+### 4.16 Forwarding requests (create — alt path)
+POST {{base}}/forwarding-requests
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "mail_item_id": {{mailId}},
+  "address": "{{forwardAddress}}"
+}
+
+### 4.17 Forwarding usage
+GET {{base}}/forwarding-requests/usage
+
+### 4.18 Cancel forwarding request
+PUT {{base}}/forwarding-requests/{{forwardReqId}}/cancel
+x-csrf-token: {{csrf}}
+
+### 4.19 Bulk forward (admin variant path)
+POST {{base}}/mail/forward/bulk
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "ids": [ {{mailId}} ],
+  "address": "{{forwardAddress}}"
+}
+
+### 4.20 Mail search (alt endpoint name)
+GET {{base}}/mail-search?q=tax&limit=10
+
+### ───────────────────────────────────────────────────────────────────────────
+### 5) ADMIN FUNCTIONS
+### 5.1 Users list
+GET {{base}}/admin/users?limit=20
+
+> {%
+  const b = response.body;
+  let uid = "";
+  if (Array.isArray(b) && b.length) uid = b[0].id || "";
+  if (!uid && b && b.users && b.users.length) uid = b.users[0].id || "";
+  client.global.set("adminUserId", uid || "");
+%}
+
+### 5.2 User get
+GET {{base}}/admin/users/{{adminUserId}}
+
+### 5.3 User update
+PUT {{base}}/admin/users/{{adminUserId}}
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "role": "admin"
+}
+
+### 5.4 Update KYC status
+PUT {{base}}/admin/users/{{adminUserId}}/kyc-status
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "kyc_status": "approved"
+}
+
+### 5.5 Impersonate
+POST {{base}}/admin/users/{{adminUserId}}/impersonate
+x-csrf-token: {{csrf}}
+
+### 5.6 Billing history (user)
+GET {{base}}/admin/users/{{adminUserId}}/billing-history
+
+### 5.7 Admin mail items (list)
+GET {{base}}/admin/mail-items?limit=20
+
+> {%
+  const b = response.body;
+  let amid = "";
+  if (Array.isArray(b) && b.length) amid = b[0].id || "";
+  if (!amid && b && b.items && b.items.length) amid = b.items[0].id || "";
+  client.global.set("adminMailId", amid || "");
+%}
+
+### 5.8 Admin mail item (get)
+GET {{base}}/admin/mail-items/{{adminMailId}}
+
+### 5.9 Admin mail create
+POST {{base}}/admin/mail-items
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "tag": "INTAKE",
+  "note": "Found mail intake"
+}
+
+> {% client.global.set("adminMailId", response.body && (response.body.id || "")); %}
+
+### 5.10 Admin mail update
+PUT {{base}}/admin/mail-items/{{adminMailId}}
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "status": "scanned",
+  "tag": "Priority"
+}
+
+### 5.11 Admin mail delete
+DELETE {{base}}/admin/mail-items/{{adminMailId}}
+x-csrf-token: {{csrf}}
+
+### 5.12 Admin mail restore
+POST {{base}}/admin/mail-items/{{adminMailId}}/restore
+x-csrf-token: {{csrf}}
+
+### 5.13 Log physical receipt
+POST {{base}}/admin/mail-items/{{adminMailId}}/log-physical-receipt
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "received_at": "2024-01-01T10:00:00Z"
+}
+
+### 5.14 Log physical dispatch
+POST {{base}}/admin/mail-items/{{adminMailId}}/log-physical-dispatch
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "carrier": "Royal Mail",
+  "tracking": "RM123456789GB"
+}
+
+### 5.15 Plans list (admin)
+GET {{base}}/admin/plans
+
+> {% client.global.set("planId", (response.body && response.body[0] && (response.body[0].id || "")) || ""); %}
+
+### 5.16 Plans create (admin)
+POST {{base}}/admin/plans
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "name": "Premium",
+  "price": 1999
+}
+
+> {% client.global.set("planId", response.body && (response.body.id || "")); %}
+
+### 5.17 Plans update (admin)
+PATCH {{base}}/admin/plans/{{planId}}
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "price": 1499
+}
+
+### 5.18 Plans delete (admin)
+DELETE {{base}}/admin/plans/{{planId}}
+x-csrf-token: {{csrf}}
+
+### 5.19 Support tickets (admin list)
+GET {{base}}/admin/support
+
+> {%
+  const b = response.body;
+  let tid = "";
+  if (Array.isArray(b) && b.length) tid = b[0].id || "";
+  if (!tid && b && b.tickets && b.tickets.length) tid = b.tickets[0].id || "";
+  client.global.set("ticketId", tid || "");
+%}
+
+### 5.20 Support update (admin)
+PATCH {{base}}/admin/support/{{ticketId}}
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "status": "resolved"
+}
+
+### 5.21 Support close (admin)
+POST {{base}}/admin/support/tickets/{{ticketId}}/close
+x-csrf-token: {{csrf}}
+
+### 5.22 Admin mail-bulk
+POST {{base}}/admin/mail-bulk
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "ids": [ {{adminMailId}} ],
+  "action": "forward",
+  "address": "{{forwardAddress}}"
+}
+
+### 5.23 Admin payments: refund (demo)
+POST {{base}}/admin/payments/initiate-refund
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "payment_id": "PM_EXAMPLE"
+}
+
+### 5.24 Admin payments: adhoc link
+POST {{base}}/admin/payments/create-adhoc-link
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "amount": 500
+}
+
+### 5.25 Admin invoices list
+GET {{base}}/admin/invoices
+
+### ───────────────────────────────────────────────────────────────────────────
+### 6) SUPPORT (USER) & PLANS (PUBLIC)
+### 6.1 Support (user list)
+GET {{base}}/support
+
+### 6.2 Support create (user)
+POST {{base}}/support
+x-csrf-token: {{csrf}}
+content-type: application/json
+
+{
+  "subject": "Trading name change",
+  "message": "Please update as attached."
+}
+
+### 6.3 Plans (public list)
+GET {{base}}/plans
+
+### ───────────────────────────────────────────────────────────────────────────
+### 7) WEBHOOKS & EXTERNAL
+### 7.1 Sumsub webhook (GREEN)
+POST {{base}}/webhooks/sumsub
+content-type: application/json
+
+{
+  "type": "applicantReviewed",
+  "reviewStatus": "completed",
+  "reviewResult": { "reviewAnswer": "GREEN" },
+  "applicantId": "demo"
+}
+
+### 7.2 Sumsub webhook (RED)
+POST {{base}}/webhooks/sumsub
+content-type: application/json
+
+{
+  "type": "applicantReviewed",
+  "reviewStatus": "completed",
+  "reviewResult": { "reviewAnswer": "RED" },
+  "applicantId": "demo"
+}
+
+### 7.3 GoCardless webhook (paid)
+POST {{base}}/webhooks-gc
+content-type: application/json
+
+{
+  "events": [
+    { "resource_type": "payments", "action": "confirmed", "links": { "payment": "PM123" } }
+  ]
+}
+
+### 7.4 GoCardless webhook (failed)
+POST {{base}}/webhooks-gc
+content-type: application/json
+
+{
+  "events": [
+    { "resource_type": "payments", "action": "failed", "links": { "payment": "PM999" } }
+  ]
+}
+
+### 7.5 Postmark bounce webhook
+POST {{base}}/webhooks-postmark
+content-type: application/json
+
+{
+  "RecordType": "Bounce",
+  "Type": "HardBounce",
+  "Email": "user@example.com"
+}
+
+### 7.6 OneDrive webhook (if present)
+POST {{base}}/webhooks/onedrive
+content-type: application/json
+
+{
+  "event": "file_created",
+  "path": "/Example/new.pdf"
+}
+
+### 7.7 GoCardless callback (GET)
+GET {{base}}/webhooks/gc
+
+### ───────────────────────────────────────────────────────────────────────────
+### 8) SYSTEM & MONITORING
+### 8.1 Health
+GET {{base}}/health
+
+### 8.2 Healthz (alt)
+GET {{base}}/healthz
+
+### 8.3 Ready
+GET {{base}}/ready
+
+### 8.4 Metrics (Prometheus)
+GET {{base}}/metrics
+
+### 8.5 Internal status
+GET {{base}}/__status
+
+### 8.6 Debug whoami (alt)
+GET {{base}}/debug/whoami
+
+### 8.7 Debug DB info
+GET {{base}}/debug/db-info
+
+### 8.8 Public invoice by token (invalid demo)
+GET {{base}}/invoices/INVALID_OR_EXPIRED_TOKEN
+
+### ───────────────────────────────────────────────────────────────────────────
+### 9) CERTIFICATES & DOCUMENTS
+### 9.1 Certificate PDF (download)
+GET {{base}}/profile/certificate.pdf
+
+### 9.2 Certificate URL (already in 2.8, included again to confirm)
+GET {{base}}/profile/certificate-url
+
+### ───────────────────────────────────────────────────────────────────────────
+### 10) ADDITIONAL
+### 10.1 Create admin user (guarded)
+POST {{base}}/create-admin-user
+x-csrf-token: {{csrf}}
+
+### 10.2 Files (list or info)
+GET {{base}}/files

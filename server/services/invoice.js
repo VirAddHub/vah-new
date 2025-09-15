@@ -52,7 +52,7 @@ function renderInvoicePDF({ filePath, invoice, user, plan }) {
 }
 
 function issueInvoiceToken(invoiceId, ttlMinutes = 30) {
-    const { db } = require('../db.js');
+    const { db } = require('../db');
     const token = randToken();
     const expires_at = dayjs().add(ttlMinutes, 'minute').toDate().toISOString();
     db.prepare(`INSERT INTO invoice_token (token, invoice_id, expires_at) VALUES (?, ?, ?)`).run(token, invoiceId, expires_at);
@@ -60,7 +60,7 @@ function issueInvoiceToken(invoiceId, ttlMinutes = 30) {
 }
 
 async function createInvoiceFromPayment({ user, plan, gcPayment }) {
-    const { db } = require('../db.js');
+    const { db } = require('../db');
 
     // gcPayment fields you typically have: id, amount (in pence), charge_date (YYYY-MM-DD)
     const amount_pence = gcPayment.amount;

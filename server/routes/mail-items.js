@@ -1,6 +1,6 @@
 const express = require("express");
 const crypto = require("node:crypto");
-const { db } = require("../db.js");
+const { db } = require("../db");
 const router = express.Router();
 
 // GET /api/mail-items/:id/scan-url  → returns { url, expires_at }

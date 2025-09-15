@@ -10,6 +10,7 @@ export default function SignupStep2() {
     const router = useRouter();
     const [form, setForm] = useState({
         business_name: '',
+        trading_name: '',
         company_number: '',
         address_line1: '',
         address_line2: '',

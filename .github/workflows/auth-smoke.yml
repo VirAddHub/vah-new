@@ -1,0 +1,16 @@
+name: auth-smoke
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npm run build:backend
+      - run: SQLITE_PATH=./data/app.db node scripts/reset-password.cjs admin@virtualaddresshub.co.uk Admin123!
+      - run: |
+          (DEBUG_AUTH=1 DEBUG_DB=1 SQLITE_PATH=./data/app.db node dist/server/index.js &) 
+          sleep 3
+          BASE=http://localhost:4000 npm run test:smoke

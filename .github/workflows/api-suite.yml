@@ -1,0 +1,25 @@
+name: API Suite
+on:
+  push:
+  pull_request:
+jobs:
+  api-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      # Ensure DB path exists (your db.ts also creates it now, but belt & braces)
+      - run: mkdir -p data
+      # start servers
+      - run: npm run dev &
+      - run: |
+          echo "Waiting for servers…"
+          n=0
+          until curl -sf http://localhost:4000/api/ready && curl -sf http://localhost:3000/api/bff/health; do
+            ((n++)); if [ $n -gt 60 ]; then echo "Servers didn't start"; exit 1; fi
+            sleep 2
+          done
+      - run: npm run test:api
