@@ -56,27 +56,27 @@ ON CONFLICT(id) DO UPDATE SET
  slug=COALESCE(excluded.slug,plans.slug)
 `);
 [
-  { id: 1, name: 'Basic',        description: 'Virtual address basic', amount_pence:  999, price_pence:  999, currency:'GBP', interval:'month' },
-  { id: 2, name: 'Professional', description: 'For growing teams',     amount_pence: 1999, price_pence: 1999, currency:'GBP', interval:'month' },
-  { id: 3, name: 'Business',     description: 'High volume',           amount_pence: 4999, price_pence: 4999, currency:'GBP', interval:'month' },
+    { id: 1, name: 'Basic', description: 'Virtual address basic', amount_pence: 999, price_pence: 999, currency: 'GBP', interval: 'month' },
+    { id: 2, name: 'Professional', description: 'For growing teams', amount_pence: 1999, price_pence: 1999, currency: 'GBP', interval: 'month' },
+    { id: 3, name: 'Business', description: 'High volume', amount_pence: 4999, price_pence: 4999, currency: 'GBP', interval: 'month' },
 ].forEach(p => upsertPlan.run({ ...p, slug: mkSlug(p.name) }));
 
 const adminEmail = process.env.ADMIN_EMAIL || 'admin@virtualaddresshub.co.uk';
-const adminPass  = process.env.ADMIN_PASSWORD || 'Admin123!';
+const adminPass = process.env.ADMIN_PASSWORD || 'Admin123!';
 
 const row = db.prepare('SELECT id FROM user WHERE email = ?').get(adminEmail);
 const hash = bcrypt.hashSync(adminPass, 10);
 
 if (!row) {
-  db.prepare(`
+    db.prepare(`
     INSERT INTO user (email,password_hash,role,first_name,last_name,created_at)
     VALUES (?,?,?,?,?,datetime('now'))
   `).run(adminEmail, hash, 'admin', 'Admin', 'User');
-  console.log(`👤 Created admin user: ${adminEmail}`);
+    console.log(`👤 Created admin user: ${adminEmail}`);
 } else {
-  db.prepare('UPDATE user SET password_hash=?, role="admin", updated_at=datetime("now") WHERE email=?')
-    .run(hash, adminEmail);
-  console.log(`🔑 Updated admin password: ${adminEmail}`);
+    db.prepare('UPDATE user SET password_hash=?, role="admin", updated_at=datetime("now") WHERE email=?')
+        .run(hash, adminEmail);
+    console.log(`🔑 Updated admin password: ${adminEmail}`);
 }
 
 console.log(`✅ Seed complete → ${DB_PATH}`);
