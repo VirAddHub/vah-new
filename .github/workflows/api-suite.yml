@@ -31,39 +31,50 @@ jobs:
       - name: Seed DB
         env:
           SQLITE_PATH: ./data/app.db
-          ADMIN_EMAIL: admin@virtualaddresshub.co.uk
-          ADMIN_PASS: Admin123!
-        run: ./scripts/seed.sh
+        run: node scripts/seed.cjs
 
-      # start servers
-      - name: Start dev servers
-        run: |
-          npm run dev > dev.log 2>&1 &
-          echo $! > dev.pid
+      - name: Build (web + backend)
+        run: npm run build
 
-      - name: Wait for servers
+      - name: Start backend (:4000)
+        env:
+          NODE_ENV: production
+          SQLITE_PATH: ./data/app.db
+          PORT: 4000
         run: |
-          echo "Waiting for backend (:4000) and BFF (:3000)…"
-          for i in {1..60}; do
-            if curl -sf http://localhost:4000/api/ready >/dev/null && \
-               curl -sf http://localhost:3000/api/bff/health >/dev/null; then
-              echo "Servers are up."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Servers did not start in time"; exit 1
+          node dist/server/index.js > backend.log 2>&1 & echo $! > backend.pid
+
+      - name: Start BFF (:3000)
+        env:
+          NODE_ENV: production
+        run: |
+          npx next start -p 3000 > web.log 2>&1 & echo $! > web.pid
+
+      - name: Wait for ports (max 180s)
+        run: npx wait-on -t 180000 tcp:4000 http://localhost:3000/api/bff/ready
 
       - name: Run API suite
-        run: npm run test:api
-      - name: Kill servers
+        env:
+          SQLITE_PATH: ./data/app.db
+        run: node scripts/run-api-suite.mjs
+
+      - name: Print logs on failure
+        if: failure()
+        run: |
+          echo '=== backend.log ==='; tail -n +1 backend.log || true
+          echo '=== web.log ===';     tail -n +1 web.log || true
+
+      - name: Stop servers
         if: always()
         run: |
-          if [ -f dev.pid ]; then kill $(cat dev.pid) || true; fi
+          kill $(cat backend.pid) 2>/dev/null || true
+          kill $(cat web.pid) 2>/dev/null || true
 
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: dev-logs
-          path: dev.log
+          path: |
+            backend.log
+            web.log

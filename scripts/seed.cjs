@@ -1,79 +1,82 @@
+#!/usr/bin/env node
 /* scripts/seed.cjs */
+const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const { resolveDataDir } = require('../server/storage-paths');
+const bcrypt = require('bcryptjs');
 
-const DATA_DIR = resolveDataDir();
-const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
-const db = new Database(DB_FILE, { fileMustExist: false });
+const DB_PATH = process.env.SQLITE_PATH || path.join(process.cwd(), 'data', 'app.db');
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
-// Check if we already have data
-const userCount = db.prepare('SELECT COUNT(*) as count FROM user').get().count;
-const planCount = db.prepare('SELECT COUNT(*) as count FROM plans').get().count;
+const db = new Database(DB_PATH);
+db.pragma('journal_mode = WAL');
 
-if (userCount > 0 && planCount > 0) {
-    console.log('[seed] Database already has data, skipping seed');
-    db.close();
-    process.exit(0);
-}
+db.exec(`
+CREATE TABLE IF NOT EXISTS user (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  role TEXT DEFAULT 'user',
+  first_name TEXT,
+  last_name TEXT,
+  session_token TEXT,
+  session_created_at TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT
+);
 
-console.log('[seed] Seeding initial data...');
+CREATE TABLE IF NOT EXISTS plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  amount_pence INTEGER NOT NULL,
+  price_pence INTEGER, -- older dumps used this; we'll keep both
+  currency TEXT DEFAULT 'GBP',
+  "interval" TEXT DEFAULT 'month',
+  slug TEXT UNIQUE
+);
 
-// Seed plans
-const plans = [
-    {
-        name: 'Basic',
-        price_pence: 999, // £9.99
-        features: 'Virtual address, mail forwarding, basic support',
-        is_active: 1
-    },
-    {
-        name: 'Professional',
-        price_pence: 1999, // £19.99
-        features: 'Virtual address, mail forwarding, priority support, document scanning',
-        is_active: 1
-    },
-    {
-        name: 'Business',
-        price_pence: 4999, // £49.99
-        features: 'Virtual address, mail forwarding, premium support, document scanning, multiple addresses',
-        is_active: 1
-    }
-];
-
-const insertPlan = db.prepare(`
-  INSERT OR IGNORE INTO plans (name, price_pence, features, is_active)
-  VALUES (?, ?, ?, ?)
+CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
+CREATE INDEX IF NOT EXISTS idx_user_session_token ON user(session_token);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_slug ON plans(slug);
 `);
 
-plans.forEach(plan => {
-    insertPlan.run(plan.name, plan.price_pence, plan.features, plan.is_active);
-    console.log(`[seed] Added plan: ${plan.name}`);
-});
+const mkSlug = (name) => (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-// Seed a default admin user (only if no users exist)
-if (userCount === 0) {
-    const bcrypt = require('bcryptjs');
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Password123!';
-    const passwordHash = bcrypt.hashSync(adminPassword, 10);
+const upsertPlan = db.prepare(`
+INSERT INTO plans (id,name,description,amount_pence,price_pence,currency,"interval",slug)
+VALUES (@id,@name,@description,@amount_pence,@price_pence,@currency,@interval,@slug)
+ON CONFLICT(id) DO UPDATE SET
+ name=excluded.name,
+ description=COALESCE(excluded.description,plans.description),
+ amount_pence=excluded.amount_pence,
+ price_pence=excluded.price_pence,
+ currency=excluded.currency,
+ "interval"=excluded."interval",
+ slug=COALESCE(excluded.slug,plans.slug)
+`);
+[
+  { id: 1, name: 'Basic',        description: 'Virtual address basic', amount_pence:  999, price_pence:  999, currency:'GBP', interval:'month' },
+  { id: 2, name: 'Professional', description: 'For growing teams',     amount_pence: 1999, price_pence: 1999, currency:'GBP', interval:'month' },
+  { id: 3, name: 'Business',     description: 'High volume',           amount_pence: 4999, price_pence: 4999, currency:'GBP', interval:'month' },
+].forEach(p => upsertPlan.run({ ...p, slug: mkSlug(p.name) }));
 
-    const insertUser = db.prepare(`
-    INSERT INTO user (email, first_name, last_name, password_hash, role, kyc_status)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
+const adminEmail = process.env.ADMIN_EMAIL || 'admin@virtualaddresshub.co.uk';
+const adminPass  = process.env.ADMIN_PASSWORD || 'Admin123!';
 
-    insertUser.run(
-        'admin@virtualaddresshub.co.uk',
-        'Admin',
-        'User',
-        passwordHash,
-        'admin',
-        'approved'
-    );
+const row = db.prepare('SELECT id FROM user WHERE email = ?').get(adminEmail);
+const hash = bcrypt.hashSync(adminPass, 10);
 
-    console.log('[seed] Added admin user: admin@virtualaddresshub.co.uk');
-    console.log(`[seed] Admin password: ${adminPassword}`);
+if (!row) {
+  db.prepare(`
+    INSERT INTO user (email,password_hash,role,first_name,last_name,created_at)
+    VALUES (?,?,?,?,?,datetime('now'))
+  `).run(adminEmail, hash, 'admin', 'Admin', 'User');
+  console.log(`👤 Created admin user: ${adminEmail}`);
+} else {
+  db.prepare('UPDATE user SET password_hash=?, role="admin", updated_at=datetime("now") WHERE email=?')
+    .run(hash, adminEmail);
+  console.log(`🔑 Updated admin password: ${adminEmail}`);
 }
 
-console.log('[seed] Done');
-db.close();
+console.log(`✅ Seed complete → ${DB_PATH}`);
