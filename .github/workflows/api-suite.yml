@@ -22,9 +22,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
-      - run: mkdir -p data
-      - run: ./scripts/seed.sh
+      - name: Ensure data dir
+        run: mkdir -p data
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Seed DB
+        env:
+          SQLITE_PATH: ./data/app.db
+          ADMIN_EMAIL: admin@virtualaddresshub.co.uk
+          ADMIN_PASS: Admin123!
+        run: ./scripts/seed.sh
 
       # start servers
       - name: Start dev servers

@@ -3,6 +3,7 @@
 //   node scripts/reset-password.cjs admin@virtualaddresshub.co.uk NewPass123!
 // Requires: better-sqlite3, bcryptjs (no native build needed)
 
+const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
@@ -13,6 +14,9 @@ const configured = process.env.SQLITE_PATH; // optional
 const sqlitePath = configured
     ? (path.isAbsolute(configured) ? configured : path.join(ROOT, configured))
     : path.join(ROOT, 'data', 'app.db'); // <- your canonical path
+
+// Ensure the directory exists before creating the database
+fs.mkdirSync(path.dirname(sqlitePath), { recursive: true });
 
 const [, , emailArg, passArg] = process.argv;
 const email = (emailArg || '').trim().toLowerCase();

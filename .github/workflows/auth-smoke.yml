@@ -8,6 +8,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
+      - run: mkdir -p data
       - run: npm run build:backend
       - run: SQLITE_PATH=./data/app.db node scripts/reset-password.cjs admin@virtualaddresshub.co.uk Admin123!
       - run: |

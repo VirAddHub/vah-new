@@ -111,14 +111,6 @@ app.use('/api/admin',
     require('./routes/admin')
 );
 
-// Test route to verify JWT bridge is working
-app.get('/api/test-jwt-bridge', sessionToJwtBridge, (req, res) => {
-    res.json({
-        message: 'JWT bridge test',
-        hasAuth: !!req.headers.authorization,
-        authHeader: req.headers.authorization
-    });
-});
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
 app.use(cors({
