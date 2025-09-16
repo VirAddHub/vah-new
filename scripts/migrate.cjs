@@ -18,14 +18,24 @@ if (fs.existsSync(baseSchemaPath)) {
   const baseSchema = fs.readFileSync(baseSchemaPath, 'utf8');
   db.exec(baseSchema);
   console.log('[migrate] base schema applied');
+  
+  // Debug: show what tables were created
+  const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+  console.log('[migrate] tables created:', tables.map(t => t.name));
 }
 
 // Then load *.sql from migrations in lexical order (001_, 002_, ...)
 const migrationsDir = path.join(__dirname, '..', 'migrations');
-const files = fs
-  .readdirSync(migrationsDir)
-  .filter((f) => f.endsWith('.sql'))
-  .sort();
+let files = [];
+if (fs.existsSync(migrationsDir)) {
+  files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+  console.log(`[migrate] found ${files.length} migration files in ${migrationsDir}`);
+} else {
+  console.log(`[migrate] migrations directory not found: ${migrationsDir}`);
+}
 
 let maxVersion = 0;
 db.exec('BEGIN');
@@ -42,6 +52,11 @@ try {
   db.pragma(`user_version = ${maxVersion}`);
   db.exec('COMMIT');
   console.log('[migrate] done');
+  
+  // Debug: show final table list
+  const finalTables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+  console.log('[migrate] final tables:', finalTables.map(t => t.name));
+  
   console.log('✅ Migration completed successfully');
 } catch (err) {
   db.exec('ROLLBACK');
