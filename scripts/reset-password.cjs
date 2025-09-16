@@ -5,12 +5,16 @@ const bcrypt = require('bcryptjs');
 const { resolveDbPath } = require('./lib/db-path.cjs');
 
 function usage() {
-    console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
-    process.exit(1);
+  console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
+  console.log('Or set TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD environment variables');
+  process.exit(1);
 }
 
 const [, , email, newPassword] = process.argv;
-if (!email || !newPassword) usage();
+const finalEmail = email || process.env.TEST_ADMIN_EMAIL;
+const finalPassword = newPassword || process.env.TEST_ADMIN_PASSWORD;
+
+if (!finalEmail || !finalPassword) usage();
 
 const dbPath = resolveDbPath();
 console.log('[reset-password] db:', dbPath);
@@ -47,25 +51,25 @@ try {
 // --- upsert user ---
 const nowMs = Date.now();
 const sessionToken = crypto.randomBytes(32).toString('hex');
-const passwordHash = bcrypt.hashSync(newPassword, 10);
+const passwordHash = bcrypt.hashSync(finalPassword, 10);
 
 // try fetch existing user
-const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
+        const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(finalEmail);
 
 db.exec('BEGIN');
 try {
     if (!existing) {
         console.log('[reset-password] user not found, creating admin user...');
         db.prepare(`
-      INSERT INTO user (email, password_hash, is_admin, created_at, updated_at, session_token, session_created_at)
-      VALUES (?, ?, 1, ?, ?, ?, ?)
-    `).run(email, passwordHash, nowMs, nowMs, sessionToken, nowMs);
+          INSERT INTO user (email, password_hash, is_admin, created_at, updated_at, session_token, session_created_at)
+          VALUES (?, ?, 1, ?, ?, ?, ?)
+        `).run(finalEmail, passwordHash, nowMs, nowMs, sessionToken, nowMs);
     } else {
         db.prepare(`
       UPDATE user
       SET password_hash = ?, session_token = ?, session_created_at = ?, updated_at = ?
       WHERE email = ?
-    `).run(passwordHash, sessionToken, nowMs, nowMs, email);
+    `).run(passwordHash, sessionToken, nowMs, nowMs, finalEmail);
     }
     db.exec('COMMIT');
 } catch (err) {
@@ -75,7 +79,7 @@ try {
 }
 
 // verify and print
-const user = db.prepare('SELECT id, email, is_admin, session_token, session_created_at FROM user WHERE email = ?').get(email);
+const user = db.prepare('SELECT id, email, is_admin, session_token, session_created_at FROM user WHERE email = ?').get(finalEmail);
 console.log('✅ Password reset complete.');
 console.log('   user:', { id: user.id, email: user.email, is_admin: !!user.is_admin });
 console.log('   session_token:', user.session_token);
