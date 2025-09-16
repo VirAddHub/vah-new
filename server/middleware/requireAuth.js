@@ -15,7 +15,7 @@ function findBySession(token) {
     WHERE session_token = ?
   `).get(token);
     if (!row) return null;
-    const created = Math.floor(new Date(row.session_created_at).getTime() / 1000);
+    const created = row.session_created_at; // already a Unix timestamp in seconds
     const age = nowSec() - created;
     if (age > SESSION_TTL_SECS) return { expired: true };
     if (age > SLIDE_AFTER_SECS) {
