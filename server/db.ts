@@ -71,14 +71,20 @@ const db = {
             // PostgreSQL prepared statement simulation
             return {
                 get: async (params: any = {}) => {
-                    const rows = await pgQuery(sql, Object.values(params));
+                    // Handle both direct parameters (like SQLite) and object parameters
+                    const paramArray = Array.isArray(params) ? params : Object.values(params);
+                    const rows = await pgQuery(sql, paramArray);
                     return rows[0];
                 },
                 all: async (params: any = {}) => {
-                    return await pgQuery(sql, Object.values(params));
+                    // Handle both direct parameters (like SQLite) and object parameters
+                    const paramArray = Array.isArray(params) ? params : Object.values(params);
+                    return await pgQuery(sql, paramArray);
                 },
                 run: async (params: any = {}) => {
-                    const rows = await pgQuery(sql, Object.values(params));
+                    // Handle both direct parameters (like SQLite) and object parameters
+                    const paramArray = Array.isArray(params) ? params : Object.values(params);
+                    const rows = await pgQuery(sql, paramArray);
                     return { changes: rows.length, lastInsertRowid: rows[0]?.id };
                 }
             };
