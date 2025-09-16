@@ -403,27 +403,32 @@ try {
 
 // Schema is now managed by scripts/db-schema.sql and npm run db:init
 // Initialize schema based on database type
-if (process.env.DB_CLIENT === 'pg') {
-    // PostgreSQL schema is handled by the adapter
-    logger.info('PostgreSQL schema will be ensured by adapter');
-} else {
-    // Check if schema exists, don't create it
-    try {
-        const mustHave = ["user", "mail_item", "admin_log", "mail_event", "activity_log"];
-        const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-        const names = new Set(rows.map(r => r.name));
-        const missing = mustHave.filter(t => !names.has(t));
-        if (missing.length) {
-            console.error("❌ DB schema missing tables:", missing);
-            console.error("Run: npm run db:init");
+(async () => {
+    const isPg = /^postgres/i.test(process.env.DATABASE_URL || '');
+
+    if (isPg) {
+        // PostgreSQL schema is handled by the adapter
+        logger.info('PostgreSQL schema will be ensured by adapter');
+    } else {
+        // Check if schema exists, don't create it
+        try {
+            const mustHave = ["user", "mail_item", "admin_log", "mail_event", "activity_log"];
+            const { listTables } = require('./db');
+            const tables = await listTables();
+            const names = new Set(tables);
+            const missing = mustHave.filter(t => !names.has(t));
+            if (missing.length) {
+                console.error("❌ DB schema missing tables:", missing);
+                console.error("Run: npm run db:init");
+                process.exit(1);
+            }
+            logger.info('SQLite schema check passed');
+        } catch (e) {
+            console.error("❌ DB check failed:", e);
             process.exit(1);
         }
-        logger.info('SQLite schema check passed');
-    } catch (e) {
-        console.error("❌ DB check failed:", e);
-        process.exit(1);
     }
-}
+})();
 
 // All schema management is now handled by scripts/db-schema.sql and npm run db:init
 

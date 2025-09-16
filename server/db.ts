@@ -157,6 +157,32 @@ if (!IS_PG) {
     }
 }
 
+// Cross-DB helper to list tables
+export async function listTables(): Promise<string[]> {
+    if (IS_PG) {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
+        
+        try {
+            const { rows } = await pool.query(
+                `select table_name as name
+                 from information_schema.tables
+                 where table_schema = 'public' and table_type = 'BASE TABLE'`
+            );
+            return rows.map(r => r.name);
+        } finally {
+            await pool.end();
+        }
+    } else {
+        const sqliteDb = sqlite();
+        const rows = sqliteDb.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+        return rows.map((r: any) => r.name);
+    }
+}
+
 // ✅ Export in a way that supports BOTH styles safely:
 //
 //   const { db } = require('../db')   // preferred
