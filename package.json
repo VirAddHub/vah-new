@@ -9,6 +9,7 @@
     "seed": "node scripts/seed.cjs",
     "db:prepare": "npm run migrate && npm run seed",
     "db:init": "npm run db:prepare",
+    "start:ci": "node server.js",
     "//2": "── Backend checks & tests ───────────────────────────────────────",
     "typecheck:backend": "tsc -p tsconfig.backend.json --noEmit",
     "test:backend": "npm run db:prepare && jest --config jest.backend.config.cjs",

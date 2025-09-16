@@ -4,14 +4,15 @@ on:
   push:
   pull_request:
 
-env:
-  NODE_ENV: test
-  PORT: 4000
-  DATABASE_URL: data/app.db
-
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      PORT: 4000
+      # single source of truth for DB path
+      DATABASE_URL: data/app.db
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,30 +26,30 @@ jobs:
       - name: Install deps
         run: npm install
 
-      # Prepare DB (auto-migrate inside seed is OK, this is explicit)
       - name: Prepare database (migrate → seed)
         run: npm run db:prepare
 
-      # Start backend server in background
-      - name: Start backend
+      - name: Start backend (background)
         run: |
-          node server.js &
+          # start and capture output
+          npm run start:ci > server.log 2>&1 &
           echo $! > server.pid
+          sleep 1
+          echo "---- tail server.log (boot) ----"
+          tail -n +1 server.log || true
 
-      # Wait for backend to be ready (drop the 3000/BFF check unless you start Next.js)
-      - name: Wait for backend
+      - name: Wait for backend readiness
         run: npx wait-on -t 180000 tcp:4000 http://localhost:4000/api/ready
 
-      # Typecheck backend if you want here
       - name: Typecheck backend
         run: npm run typecheck:backend
 
-      # Run API tests (point your tests at http://localhost:4000)
       - name: Run backend tests
         run: npm run test:backend
 
-      # Always tear down the server
-      - name: Stop backend
+      - name: Stop backend + show logs on failure
         if: always()
         run: |
+          echo "---- tail server.log (final) ----"
+          tail -n +500 server.log || true
           if [ -f server.pid ]; then kill $(cat server.pid) || true; fi

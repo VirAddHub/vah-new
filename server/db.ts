@@ -15,12 +15,12 @@ const instance = new Database(dbFile, { fileMustExist: false });
 
 // Make SQLite more resilient
 try {
-  instance.pragma('busy_timeout = 5000');     // wait up to 5s on lock
-  instance.pragma('journal_mode = WAL');      // robust journaling for concurrent readers
-  instance.pragma('synchronous = NORMAL');    // good balance for WAL
+    instance.pragma('busy_timeout = 5000');     // wait up to 5s on lock
+    instance.pragma('journal_mode = WAL');      // robust journaling for concurrent readers
+    instance.pragma('synchronous = NORMAL');    // good balance for WAL
 } catch (e) {
-  // non-fatal; just log
-  console.warn('SQLite PRAGMAs failed to apply:', e);
+    // non-fatal; just log
+    console.warn('SQLite PRAGMAs failed to apply:', e);
 }
 
 // OPTIONAL: disable any "runtime migration" logic here.
