@@ -39,6 +39,10 @@ function sqlite() {
 
 // PostgreSQL query function
 async function pgQuery(sql: string, params: any[] = []) {
+    if (!sql || !String(sql).trim()) {
+        return [];
+    }
+    
     const { Pool } = require('pg');
     const pool = new Pool({
         connectionString: DATABASE_URL,
@@ -48,6 +52,12 @@ async function pgQuery(sql: string, params: any[] = []) {
     try {
         const result = await pool.query(sql, params);
         return result.rows;
+    } catch (err) {
+        if (process.env.DEBUG_SQL) {
+            console.error('[SQL FAILED]', String(sql));
+            if (params && params.length) console.error('[PARAMS]', params);
+        }
+        throw err;
     } finally {
         await pool.end();
     }

@@ -667,7 +667,12 @@ function hasAdminish(req) {
 }
 
 // Safety: make sure tables exist (no-op if already created, SQLite only)
-if (process.env.DB_CLIENT !== 'pg') {
+const isPg =
+    (process.env.DB_CLIENT || '').toLowerCase().startsWith('pg') ||
+    (process.env.DATABASE_URL || '').startsWith('postgres://') ||
+    (process.env.DATABASE_URL || '').startsWith('postgresql://');
+
+if (!isPg) {
     try {
         db.prepare(`
             CREATE TABLE IF NOT EXISTS invoice (
