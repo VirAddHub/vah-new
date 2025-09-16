@@ -122,6 +122,10 @@ const db = {
     
     exec: (sql: string) => {
         if (IS_PG) {
+            // PostgreSQL doesn't have exec - use pgQuery instead
+            if (!sql || !String(sql).trim()) {
+                return Promise.resolve();
+            }
             return pgQuery(sql);
         } else {
             const sqliteDb = sqlite();
