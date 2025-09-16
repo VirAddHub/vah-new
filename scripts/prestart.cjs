@@ -10,6 +10,12 @@ if (kind === 'sqlite') {
     execSync('node scripts/migrate-sqlite.cjs', { stdio: 'inherit' });
     execSync('node scripts/seed.cjs', { stdio: 'inherit' });
 } else {
-    console.log('[prestart] Postgres detected — skipping SQLite migrate/seed');
-    // TODO: add PG migrator later (e.g. drizzle/knex/prisma)
+    console.log('[prestart] Postgres detected — running PG migrate');
+    execSync('node scripts/migrate-pg.cjs', { stdio: 'inherit' });
+    // Optional: run PG seed for basic data
+    try {
+        execSync('node scripts/seed-pg.cjs', { stdio: 'inherit' });
+    } catch (err) {
+        console.warn('[prestart] PG seed failed (non-critical):', err.message);
+    }
 }
