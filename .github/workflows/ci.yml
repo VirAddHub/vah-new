@@ -4,11 +4,14 @@ on:
   push:
   pull_request:
 
+env:
+  NODE_ENV: test
+  PORT: 4000
+  DATABASE_URL: data/app.db
+
 jobs:
-  build:
+  api-tests:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: sqlite:data/app.db
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,41 +25,30 @@ jobs:
       - name: Install deps
         run: npm install
 
-      # Prepare DB to avoid any import-time bootstrap surprises
-      - name: Run migrations
-        run: npm run migrate
-      
-      - name: Run seeding
-        run: npm run seed
+      # Prepare DB (auto-migrate inside seed is OK, this is explicit)
+      - name: Prepare database (migrate → seed)
+        run: npm run db:prepare
 
-      - name: Typecheck (backend)
+      # Start backend server in background
+      - name: Start backend
+        run: |
+          node server.js &
+          echo $! > server.pid
+
+      # Wait for backend to be ready (drop the 3000/BFF check unless you start Next.js)
+      - name: Wait for backend
+        run: npx wait-on -t 180000 tcp:4000 http://localhost:4000/api/ready
+
+      # Typecheck backend if you want here
+      - name: Typecheck backend
         run: npm run typecheck:backend
 
-  test:
-    runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: sqlite:data/app.db
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install deps
-        run: npm install
-
-      - name: Run migrations
-        run: npm run migrate
-      
-      - name: Run seeding
-        run: npm run seed
-
-      - name: Typecheck (backend)
-        run: npm run typecheck:backend
-
+      # Run API tests (point your tests at http://localhost:4000)
       - name: Run backend tests
-        run: jest --config jest.backend.config.cjs
+        run: npm run test:backend
+
+      # Always tear down the server
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f server.pid ]; then kill $(cat server.pid) || true; fi

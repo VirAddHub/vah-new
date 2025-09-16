@@ -82,6 +82,11 @@ const { sessionCookieOptions, isSecureEnv } = require("../lib/cookies");
 const app = express();
 app.set('trust proxy', 1); // required for secure cookies behind Render
 
+// Health / readiness probe for CI and Render
+app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
+    res.json({ ok: true, service: 'vah-backend' });
+});
+
 // Security first
 app.use(helmet());
 
@@ -2756,8 +2761,9 @@ let server = null;
 
 if (require.main === module) {
     server = app.listen(PORT, HOST, () => {
-        console.log(`API listening on http://${HOST}:${PORT}`);
+        console.log(`VAH backend listening on http://${HOST}:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
+        console.log('DATABASE_URL:', process.env.DATABASE_URL || '(not set)');
         console.log('Booted with CSRF route /api/csrf, allowed origins:', ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk']);
     });
 

@@ -1,50 +1,33 @@
-import Database from "better-sqlite3";
-import path from "node:path";
-import fs from "node:fs";
+import Database from 'better-sqlite3';
+import { resolveDbPath } from './dbPath';
 
-// Resolve project root relative to this file location.
-// Works for source (server/*) and compiled (dist/server/*).
-const ROOT = path.resolve(__dirname, '..', '..');
+// ...
 
-// Primary configuration: DATABASE_URL
-// Fallback to legacy env vars for backward compatibility
-const configured = process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH;
-const DB_PATH = configured
-    ? (configured.startsWith('file:')
-        ? configured.replace('file:', '')
-        : (path.isAbsolute(configured) ? configured : path.join(ROOT, configured)))
-    : path.join(ROOT, 'data', 'app.db');
-
-// Ensure the directory exists before creating the database
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-
-// Helpful log once at boot (can remove later)
-console.info("info: Using SQLite database file", {
-    service: "vah-backend",
-    path: DB_PATH,
-    cwd: process.cwd(),
-    timestamp: new Date().toISOString(),
+const dbFile = resolveDbPath(process.env.DATABASE_URL);
+console.info('info: Using SQLite database file', {
+  service: 'vah-backend',
+  path: dbFile,
+  cwd: process.cwd(),
+  timestamp: new Date().toISOString(),
 });
 
-const instance = new Database(DB_PATH, { fileMustExist: false });
+const instance = new Database(dbFile);
 
-// Safety PRAGMAS
-instance.pragma("journal_mode = WAL");
-instance.pragma("synchronous = NORMAL");
-instance.pragma("foreign_keys = ON");
-instance.pragma("busy_timeout = 5000"); // back off if another writer is busy
+// OPTIONAL: disable any "runtime migration" logic here.
+// If you have code that scans and "applies" JS migrations at boot, remove/guard it:
+// if (process.env.RUNTIME_MIGRATIONS === 'on') { ... }  // default should be off.
 
-// Run migrations on startup
-try {
-    const { runMigrations } = require('../lib/migrate.js');
-    runMigrations(instance);
-} catch (err) {
-    // TS 4.4+: catch variable is `unknown`. Narrow it:
-    if (err instanceof Error) {
-        console.warn('Migration system not available:', err.message);
-    } else {
-        console.warn('Migration system not available (non-Error):', err);
-    }
+// Hard guard: if core tables are missing, guide the operator to prepare the DB
+const rows = instance.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+const names = new Set(rows.map(r => r.name));
+const missing: string[] = [];
+for (const t of ['user','mail_item','admin_log','mail_event','activity_log']) {
+  if (!names.has(t) && !names.has(t + 's')) missing.push(t);
+}
+if (missing.length) {
+  console.error('❌ DB schema missing tables:', missing);
+  console.error('Run: npm run db:init');
+  process.exit(1);
 }
 
 // ✅ Export in a way that supports BOTH styles safely:
