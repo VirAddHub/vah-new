@@ -11,6 +11,31 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 
+// Check for schema drift and add missing columns
+const hasSessionToken = db.prepare(
+  "SELECT 1 FROM pragma_table_info('user') WHERE name='session_token'"
+).get();
+if (!hasSessionToken) {
+  console.log('Adding missing session_token column...');
+  db.exec("ALTER TABLE user ADD COLUMN session_token TEXT");
+}
+
+const hasSessionCreatedAt = db.prepare(
+  "SELECT 1 FROM pragma_table_info('user') WHERE name='session_created_at'"
+).get();
+if (!hasSessionCreatedAt) {
+  console.log('Adding missing session_created_at column...');
+  db.exec("ALTER TABLE user ADD COLUMN session_created_at TEXT");
+}
+
+const hasPasswordHash = db.prepare(
+  "SELECT 1 FROM pragma_table_info('user') WHERE name='password_hash'"
+).get();
+if (!hasPasswordHash) {
+  console.log('Adding missing password_hash column...');
+  db.exec("ALTER TABLE user ADD COLUMN password_hash TEXT");
+}
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS user (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

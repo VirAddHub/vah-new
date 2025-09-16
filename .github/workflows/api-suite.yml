@@ -13,6 +13,7 @@ jobs:
     env:
       NODE_ENV: test
       NEXT_TELEMETRY_DISABLED: 1
+      DATABASE_URL: file:${{ github.workspace }}/data/app.db
       DB_PATH: ${{ github.workspace }}/data/app.db
       SQLITE_PATH: ${{ github.workspace }}/data/app.db
       PORT: 4000
@@ -33,6 +34,7 @@ jobs:
         run: |
           mkdir -p data
           sqlite3 "$DB_PATH" ".read scripts/db-schema.sql"
+          node scripts/migrate.cjs
           node scripts/seed.cjs
       
       - name: Start backend (dev mode)

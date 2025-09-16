@@ -6,10 +6,13 @@ import fs from "node:fs";
 // Works for source (server/*) and compiled (dist/server/*).
 const ROOT = path.resolve(__dirname, '..', '..');
 
-// Allow override via multiple env vars; resolve relative to project root if not absolute.
+// Primary configuration: DATABASE_URL
+// Fallback to legacy env vars for backward compatibility
 const configured = process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH;
 const DB_PATH = configured
-    ? (path.isAbsolute(configured) ? configured : path.join(ROOT, configured))
+    ? (configured.startsWith('file:') 
+        ? configured.replace('file:', '') 
+        : (path.isAbsolute(configured) ? configured : path.join(ROOT, configured)))
     : path.join(ROOT, 'data', 'app.db');
 
 // Ensure the directory exists before creating the database
@@ -30,6 +33,14 @@ instance.pragma("journal_mode = WAL");
 instance.pragma("synchronous = NORMAL");
 instance.pragma("foreign_keys = ON");
 instance.pragma("busy_timeout = 5000"); // back off if another writer is busy
+
+// Run migrations on startup
+try {
+  const { runMigrations } = require('../lib/migrate.js');
+  runMigrations(instance);
+} catch (error) {
+  console.warn('Migration system not available:', error.message);
+}
 
 // ✅ Export in a way that supports BOTH styles safely:
 //
