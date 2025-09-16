@@ -21,13 +21,13 @@ db.prepare(`
 
 function has(name) { return !!db.prepare(`SELECT 1 FROM _migrations WHERE name=?`).get(name); }
 function apply(name, sql) {
-    if (has(name)) return;
-    const trx = db.transaction(() => {
-        db.exec(sql);
-        db.prepare(`INSERT INTO _migrations (name) VALUES (?)`).run(name);
-    });
-    trx();
-    console.log(`[migrate] applied: ${name}`);
+  if (has(name)) return;
+  const trx = db.transaction(() => {
+    db.exec(sql);
+    db.prepare(`INSERT INTO _migrations (name) VALUES (?)`).run(name);
+  });
+  trx();
+  console.log(`[migrate] applied: ${name}`);
 }
 
 // --- Minimal core schema (idempotent) ---
@@ -169,17 +169,20 @@ apply('013_webhook_log', `
   CREATE INDEX IF NOT EXISTS idx_webhook_created ON webhook_log(created_at);
 `);
 
-// Plans table
+// Plans table (updated with proper structure)
 apply('014_plans', `
   CREATE TABLE IF NOT EXISTS plans (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    description TEXT,
     price_pence INTEGER NOT NULL,
-    features TEXT,
-    is_active BOOLEAN DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
   );
-  CREATE INDEX IF NOT EXISTS idx_plans_active ON plans(is_active);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_slug ON plans(slug);
+  CREATE INDEX IF NOT EXISTS idx_plans_active ON plans(active);
 `);
 
 console.log('[migrate] done');

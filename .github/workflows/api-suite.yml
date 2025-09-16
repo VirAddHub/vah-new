@@ -13,9 +13,9 @@ jobs:
     env:
       NODE_ENV: test
       NEXT_TELEMETRY_DISABLED: 1
-      DATABASE_URL: file:${{ github.workspace }}/data/app.db
-      DB_PATH: ${{ github.workspace }}/data/app.db
-      SQLITE_PATH: ${{ github.workspace }}/data/app.db
+      DATABASE_URL: file:${{ github.workspace }}/dist/data/app.db
+      DB_PATH: ${{ github.workspace }}/dist/data/app.db
+      SQLITE_PATH: ${{ github.workspace }}/dist/data/app.db
       PORT: 4000
       BACKEND_URL: http://localhost:4000
 
@@ -30,12 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Prepare database
-        run: |
-          mkdir -p data
-          sqlite3 "$DB_PATH" ".read scripts/db-schema.sql"
-          node scripts/migrate.cjs
-          node scripts/seed.cjs
+      - name: Prepare database folder
+        run: mkdir -p dist/data
+
+      # ✅ Run migrations (baseline + additive)
+      - name: Migrate
+        run: node scripts/migrate.cjs
+
+      # ✅ Seed AFTER migrations
+      - name: Seed
+        run: node scripts/seed.cjs
       
       - name: Start backend (dev mode)
         run: |

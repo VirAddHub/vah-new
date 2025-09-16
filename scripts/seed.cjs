@@ -11,98 +11,85 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 
-// Check for schema drift and add missing columns
-const hasSessionToken = db.prepare(
-  "SELECT 1 FROM pragma_table_info('user') WHERE name='session_token'"
+// 1) Ensure baseline exists (fail fast if someone tries to seed pre-migration)
+const userExists = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='user'"
 ).get();
-if (!hasSessionToken) {
-  console.log('Adding missing session_token column...');
-  db.exec("ALTER TABLE user ADD COLUMN session_token TEXT");
+const plansExists = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='plans'"
+).get();
+
+if (!userExists || !plansExists) {
+    console.error("❌ Seed aborted: run migrations before seeding.");
+    process.exit(1);
 }
 
-const hasSessionCreatedAt = db.prepare(
-  "SELECT 1 FROM pragma_table_info('user') WHERE name='session_created_at'"
+// 2) Choose correct price column (amount_pence vs price_pence)
+const hasAmountPence = db.prepare(
+    "SELECT 1 FROM pragma_table_info('plans') WHERE name='amount_pence'"
 ).get();
-if (!hasSessionCreatedAt) {
-  console.log('Adding missing session_created_at column...');
-  db.exec("ALTER TABLE user ADD COLUMN session_created_at TEXT");
-}
-
-const hasPasswordHash = db.prepare(
-  "SELECT 1 FROM pragma_table_info('user') WHERE name='password_hash'"
+const hasPricePence = db.prepare(
+    "SELECT 1 FROM pragma_table_info('plans') WHERE name='price_pence'"
 ).get();
-if (!hasPasswordHash) {
-  console.log('Adding missing password_hash column...');
-  db.exec("ALTER TABLE user ADD COLUMN password_hash TEXT");
+
+if (!hasAmountPence && !hasPricePence) {
+    console.error("❌ Seed aborted: plans table has neither amount_pence nor price_pence");
+    process.exit(1);
 }
+const priceCol = hasAmountPence ? "amount_pence" : "price_pence";
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS user (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT,
-  role TEXT DEFAULT 'user',
-  first_name TEXT,
-  last_name TEXT,
-  session_token TEXT,
-  session_created_at TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS plans (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  description TEXT,
-  amount_pence INTEGER NOT NULL,
-  price_pence INTEGER, -- older dumps used this; we'll keep both
-  currency TEXT DEFAULT 'GBP',
-  "interval" TEXT DEFAULT 'month',
-  slug TEXT UNIQUE
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_email ON user(email);
-CREATE INDEX IF NOT EXISTS idx_user_session_token ON user(session_token);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_slug ON plans(slug);
-`);
-
-const mkSlug = (name) => (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
+// 3) Upsert helper (SQLite 3.24+)
 const upsertPlan = db.prepare(`
-INSERT INTO plans (id,name,description,amount_pence,price_pence,currency,"interval",slug)
-VALUES (@id,@name,@description,@amount_pence,@price_pence,@currency,@interval,@slug)
-ON CONFLICT(id) DO UPDATE SET
- name=excluded.name,
- description=COALESCE(excluded.description,plans.description),
- amount_pence=excluded.amount_pence,
- price_pence=excluded.price_pence,
- currency=excluded.currency,
- "interval"=excluded."interval",
- slug=COALESCE(excluded.slug,plans.slug)
+  INSERT INTO plans (name, slug, description, ${priceCol}, active)
+  VALUES (@name, @slug, @description, @price, 1)
+  ON CONFLICT(slug) DO UPDATE SET
+    name=excluded.name,
+    description=excluded.description,
+    ${priceCol}=excluded.${priceCol},
+    active=1,
+    updated_at=CURRENT_TIMESTAMP
 `);
-[
-    { id: 1, name: 'Basic', description: 'Virtual address basic', amount_pence: 999, price_pence: 999, currency: 'GBP', interval: 'month' },
-    { id: 2, name: 'Professional', description: 'For growing teams', amount_pence: 1999, price_pence: 1999, currency: 'GBP', interval: 'month' },
-    { id: 3, name: 'Business', description: 'High volume', amount_pence: 4999, price_pence: 4999, currency: 'GBP', interval: 'month' },
-].forEach(p => upsertPlan.run({ ...p, slug: mkSlug(p.name) }));
 
-const adminEmail = process.env.ADMIN_EMAIL || 'admin@virtualaddresshub.co.uk';
-const adminPass = process.env.ADMIN_PASSWORD || 'Admin123!';
+const plans = [
+    { name: "Basic", slug: "basic", description: "Starter plan", price: 990 },
+    { name: "Professional", slug: "professional", description: "For growing teams", price: 2990 },
+    { name: "Business", slug: "business", description: "For companies", price: 5990 },
+];
 
-const row = db.prepare('SELECT id FROM user WHERE email = ?').get(adminEmail);
-const hash = bcrypt.hashSync(adminPass, 10);
-const isoNow = new Date().toISOString();
+db.transaction(() => {
+    for (const p of plans) upsertPlan.run(p);
+})();
 
-if (!row) {
-    db.prepare(`
-    INSERT INTO user (email,password_hash,role,first_name,last_name,created_at,updated_at)
-    VALUES (?,?,?,?,?,?,?)
-  `).run(adminEmail, hash, 'admin', 'Admin', 'User', isoNow, isoNow);
-    console.log(`👤 Created admin user: ${adminEmail}`);
-} else {
-    db.prepare('UPDATE user SET password_hash=?, role=?, updated_at=? WHERE email=?')
-        .run(hash, 'admin', isoNow, adminEmail);
-    console.log(`🔑 Updated admin password: ${adminEmail}`);
-}
+// 4) Admin user upsert (password_hash preferred, fallback to password)
+const hasPasswordHash = db.prepare(
+    "SELECT 1 FROM pragma_table_info('user') WHERE name='password_hash'"
+).get();
 
-console.log(`✅ Seed complete → ${DB_PATH}`);
+const ensureUser = hasPasswordHash
+    ? db.prepare(`
+      INSERT INTO user (email, password_hash, role)
+      VALUES (@email, @password_hash, 'admin')
+      ON CONFLICT(email) DO UPDATE SET
+        password_hash=excluded.password_hash,
+        role='admin',
+        updated_at=CURRENT_TIMESTAMP
+    `)
+    : db.prepare(`
+      INSERT INTO user (email, password, role)
+      VALUES (@email, @password, 'admin')
+      ON CONFLICT(email) DO UPDATE SET
+        password=excluded.password,
+        role='admin',
+        updated_at=CURRENT_TIMESTAMP
+    `);
+
+const adminEmail = "admin@virtualaddresshub.co.uk";
+const adminPassHash = bcrypt.hashSync("Admin123!", 10);
+
+ensureUser.run(
+    hasPasswordHash
+        ? { email: adminEmail, password_hash: adminPassHash }
+        : { email: adminEmail, password: "Admin123!" }
+);
+
+console.log("✅ Seed complete");
