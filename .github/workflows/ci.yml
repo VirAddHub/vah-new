@@ -23,8 +23,11 @@ jobs:
         run: npm install
 
       # Prepare DB to avoid any import-time bootstrap surprises
-      - name: Prepare database (migrate → seed)
-        run: npm run db:prepare
+      - name: Run migrations
+        run: npm run migrate
+      
+      - name: Run seeding
+        run: npm run seed
 
       - name: Typecheck (backend)
         run: npm run typecheck:backend
@@ -46,8 +49,11 @@ jobs:
       - name: Install deps
         run: npm install
 
-      - name: Prepare database (migrate → seed)
-        run: npm run db:prepare
+      - name: Run migrations
+        run: npm run migrate
+      
+      - name: Run seeding
+        run: npm run seed
 
       - name: Typecheck (backend)
         run: npm run typecheck:backend

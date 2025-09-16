@@ -5,6 +5,8 @@ const Database = require('better-sqlite3');
 const { resolveDbPath } = require('./lib/db-path.cjs');
 
 console.log('Running SQLite migrations...');
+console.log('[migrate] current working directory:', process.cwd());
+console.log('[migrate] __dirname:', __dirname);
 
 const dbPath = resolveDbPath();
 console.log('[migrate] db:', dbPath);
@@ -13,15 +15,28 @@ const db = new Database(dbPath);
 
 // First, apply the base schema
 const baseSchemaPath = path.join(__dirname, 'db-schema.sql');
+console.log('[migrate] looking for base schema at:', baseSchemaPath);
+console.log('[migrate] base schema exists:', fs.existsSync(baseSchemaPath));
+
 if (fs.existsSync(baseSchemaPath)) {
   console.log('[migrate] applying base schema...');
-  const baseSchema = fs.readFileSync(baseSchemaPath, 'utf8');
-  db.exec(baseSchema);
-  console.log('[migrate] base schema applied');
-  
-  // Debug: show what tables were created
-  const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
-  console.log('[migrate] tables created:', tables.map(t => t.name));
+  try {
+    const baseSchema = fs.readFileSync(baseSchemaPath, 'utf8');
+    db.exec(baseSchema);
+    console.log('[migrate] base schema applied');
+    
+    // Debug: show what tables were created
+    const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all();
+    console.log('[migrate] tables created:', tables.map(t => t.name));
+  } catch (err) {
+    console.error('[migrate] error applying base schema:', err.message);
+    throw err;
+  }
+} else {
+  console.error('[migrate] base schema file not found at:', baseSchemaPath);
+  console.error('[migrate] current working directory:', process.cwd());
+  console.error('[migrate] __dirname:', __dirname);
+  process.exit(1);
 }
 
 // Then load *.sql from migrations in lexical order (001_, 002_, ...)
