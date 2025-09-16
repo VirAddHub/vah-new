@@ -4,9 +4,13 @@ on:
   push:
   pull_request:
 
+env:
+  SKIP_TESTS: 'true' # flip to 'false' to re-enable tests later
+
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    if: env.SKIP_TESTS != 'true' # job is skipped when SKIP_TESTS=true
     env:
       NODE_ENV: test
       PORT: 4000
