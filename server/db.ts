@@ -39,7 +39,9 @@ function sqlite() {
 
 // PostgreSQL query function
 async function pgQuery(sql: string, params: any[] = []) {
-    if (!sql || !String(sql).trim()) {
+    const s = (sql ?? '').toString().trim();
+    if (!s) {
+        if (process.env.DEBUG_SQL) console.error('[SQL SKIPPED] empty query');
         return [];
     }
     
@@ -50,13 +52,11 @@ async function pgQuery(sql: string, params: any[] = []) {
     });
     
     try {
-        const result = await pool.query(sql, params);
+        const result = await pool.query(s, params);
         return result.rows;
     } catch (err) {
-        if (process.env.DEBUG_SQL) {
-            console.error('[SQL FAILED]', String(sql));
-            if (params && params.length) console.error('[PARAMS]', params);
-        }
+        console.error('[SQL FAILED]', s);
+        if (params?.length) console.error('[PARAMS]', params);
         throw err;
     } finally {
         await pool.end();
