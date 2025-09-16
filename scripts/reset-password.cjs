@@ -26,7 +26,7 @@ const isoNow = new Date().toISOString();
 
 // Introspect columns to be schema-flexible
 const cols = new Set(
-  db.prepare(`PRAGMA table_info(user)`).all().map(r => r.name)
+    db.prepare(`PRAGMA table_info(user)`).all().map(r => r.name)
 );
 
 const hasPasswordHash = cols.has('password_hash');
@@ -37,27 +37,27 @@ const hasSessionCreatedAt = cols.has('session_created_at');
 
 // Add missing columns if they don't exist (schema drift protection)
 if (!hasPasswordHash && !hasPassword) {
-  console.log('Adding missing password_hash column...');
-  db.exec("ALTER TABLE user ADD COLUMN password_hash TEXT");
-  cols.add('password_hash');
+    console.log('Adding missing password_hash column...');
+    db.exec("ALTER TABLE user ADD COLUMN password_hash TEXT");
+    cols.add('password_hash');
 }
 
 if (!hasUpdatedAt) {
-  console.log('Adding missing updated_at column...');
-  db.exec("ALTER TABLE user ADD COLUMN updated_at TEXT");
-  cols.add('updated_at');
+    console.log('Adding missing updated_at column...');
+    db.exec("ALTER TABLE user ADD COLUMN updated_at TEXT");
+    cols.add('updated_at');
 }
 
 if (!hasSessionToken) {
-  console.log('Adding missing session_token column...');
-  db.exec("ALTER TABLE user ADD COLUMN session_token TEXT");
-  cols.add('session_token');
+    console.log('Adding missing session_token column...');
+    db.exec("ALTER TABLE user ADD COLUMN session_token TEXT");
+    cols.add('session_token');
 }
 
 if (!hasSessionCreatedAt) {
-  console.log('Adding missing session_created_at column...');
-  db.exec("ALTER TABLE user ADD COLUMN session_created_at TEXT");
-  cols.add('session_created_at');
+    console.log('Adding missing session_created_at column...');
+    db.exec("ALTER TABLE user ADD COLUMN session_created_at TEXT");
+    cols.add('session_created_at');
 }
 
 // Make sure user exists
@@ -72,24 +72,24 @@ const hash = bcrypt.hashSync(newPassword, 10);
 
 // Build UPDATE statements safely (no now())
 const tx = db.transaction(() => {
-  // Use password_hash if available, otherwise fall back to password
-  const passwordColumn = cols.has('password_hash') ? 'password_hash' : 'password';
-  
-  if (cols.has('updated_at')) {
-    db.prepare(`UPDATE user SET ${passwordColumn} = ?, updated_at = ? WHERE email = ?`)
-      .run(hash, isoNow, email);
-  } else {
-    db.prepare(`UPDATE user SET ${passwordColumn} = ? WHERE email = ?`)
-      .run(hash, email);
-  }
+    // Use password_hash if available, otherwise fall back to password
+    const passwordColumn = cols.has('password_hash') ? 'password_hash' : 'password';
 
-  // Clear any session (optional)
-  if (cols.has('session_token')) {
-    db.prepare(`UPDATE user SET session_token = NULL WHERE email = ?`).run(email);
-  }
-  if (cols.has('session_created_at')) {
-    db.prepare(`UPDATE user SET session_created_at = NULL WHERE email = ?`).run(email);
-  }
+    if (cols.has('updated_at')) {
+        db.prepare(`UPDATE user SET ${passwordColumn} = ?, updated_at = ? WHERE email = ?`)
+            .run(hash, isoNow, email);
+    } else {
+        db.prepare(`UPDATE user SET ${passwordColumn} = ? WHERE email = ?`)
+            .run(hash, email);
+    }
+
+    // Clear any session (optional)
+    if (cols.has('session_token')) {
+        db.prepare(`UPDATE user SET session_token = NULL WHERE email = ?`).run(email);
+    }
+    if (cols.has('session_created_at')) {
+        db.prepare(`UPDATE user SET session_created_at = NULL WHERE email = ?`).run(email);
+    }
 });
 
 tx();

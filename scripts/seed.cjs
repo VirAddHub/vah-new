@@ -1,95 +1,79 @@
-#!/usr/bin/env node
-/* scripts/seed.cjs */
-const fs = require('fs');
-const path = require('path');
+/* eslint-disable no-console */
 const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
+const { resolveDbPath } = require('./lib/db-path.cjs');
 
-const DB_PATH = process.env.SQLITE_PATH || path.join(process.cwd(), 'data', 'app.db');
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-
-// 1) Ensure baseline exists (fail fast if someone tries to seed pre-migration)
-const userExists = db.prepare(
-    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='user'"
-).get();
-const plansExists = db.prepare(
-    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='plans'"
-).get();
-
-if (!userExists || !plansExists) {
-    console.error("❌ Seed aborted: run migrations before seeding.");
-    process.exit(1);
-}
-
-// 2) Choose correct price column (amount_pence vs price_pence)
-const hasAmountPence = db.prepare(
-    "SELECT 1 FROM pragma_table_info('plans') WHERE name='amount_pence'"
-).get();
-const hasPricePence = db.prepare(
-    "SELECT 1 FROM pragma_table_info('plans') WHERE name='price_pence'"
-).get();
-
-if (!hasAmountPence && !hasPricePence) {
-    console.error("❌ Seed aborted: plans table has neither amount_pence nor price_pence");
-    process.exit(1);
-}
-const priceCol = hasAmountPence ? "amount_pence" : "price_pence";
-
-// 3) Upsert helper (SQLite 3.24+)
-const upsertPlan = db.prepare(`
-  INSERT INTO plans (name, slug, description, ${priceCol}, active)
-  VALUES (@name, @slug, @description, @price, 1)
-  ON CONFLICT(slug) DO UPDATE SET
-    name=excluded.name,
-    description=excluded.description,
-    ${priceCol}=excluded.${priceCol},
-    active=1,
-    updated_at=CURRENT_TIMESTAMP
-`);
-
-const plans = [
-    { name: "Basic", slug: "basic", description: "Starter plan", price: 990 },
-    { name: "Professional", slug: "professional", description: "For growing teams", price: 2990 },
-    { name: "Business", slug: "business", description: "For companies", price: 5990 },
+const REQUIRED_TABLES = [
+  'user',
+  'mail_item',
+  'admin_log',
+  'mail_event',
+  'activity_log',
+  'plans',
+  'audit_log',
+  'password_reset',
 ];
 
-db.transaction(() => {
-    for (const p of plans) upsertPlan.run(p);
+(function main() {
+  const dbPath = resolveDbPath();
+  console.log('[seed] db:', dbPath);
+
+  const db = new Database(dbPath);
+
+  // Guard 1: required tables exist
+  const existing = db
+    .prepare(`SELECT name FROM sqlite_master WHERE type='table'`)
+    .all()
+    .map((r) => r.name);
+
+  const missing = REQUIRED_TABLES.filter((t) => !existing.includes(t));
+  if (missing.length) {
+    console.error('❌ Seed aborted: missing tables after migrations:', missing);
+    console.error('   Run: npm run migrate');
+    process.exit(1);
+  }
+
+  // Guard 2: schema version sanity (optional)
+  const [{ user_version }] = db.pragma('user_version', { simple: false });
+  if (!user_version || Number.isNaN(user_version)) {
+    console.warn('[seed] Warning: user_version is not set; continuing anyway.');
+  } else {
+    console.log(`[seed] schema version: ${user_version}`);
+  }
+
+  // Begin idempotent seeding
+  db.exec('BEGIN');
+  try {
+    // ── Plans (idempotent UPSERT) ────────────────────────────────
+    db.prepare(`
+      INSERT INTO plans (id, slug, name, description, price_pence, currency, active, interval)
+      VALUES (1, 'digital_mailbox', 'Digital Mailbox Plan', 'Basic digital mailbox service', 999, 'GBP', 1, 'month')
+      ON CONFLICT(id) DO UPDATE SET
+        slug=excluded.slug,
+        name=excluded.name,
+        description=excluded.description,
+        price_pence=excluded.price_pence,
+        currency=excluded.currency,
+        active=excluded.active,
+        interval=excluded.interval;
+    `).run();
+
+    // ── Example admin user (uncomment & adapt if desired) ───────
+    // db.prepare(`
+    //   INSERT INTO user (id, email, password_hash, is_admin, created_at)
+    //   VALUES (1, 'admin@example.com', '$2b$10$replace_me', 1, strftime('%s','now')*1000)
+    //   ON CONFLICT(id) DO NOTHING;
+    // `).run();
+
+    db.exec('COMMIT');
+    console.log('✅ Seed completed successfully');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    if (err instanceof Error) {
+      console.error('Seed error:', err.message);
+      console.error(err.stack);
+    } else {
+      console.error('Seed error (non-Error):', err);
+    }
+    process.exit(1);
+  }
 })();
-
-// 4) Admin user upsert (password_hash preferred, fallback to password)
-const hasPasswordHash = db.prepare(
-    "SELECT 1 FROM pragma_table_info('user') WHERE name='password_hash'"
-).get();
-
-const ensureUser = hasPasswordHash
-    ? db.prepare(`
-      INSERT INTO user (email, password_hash, role)
-      VALUES (@email, @password_hash, 'admin')
-      ON CONFLICT(email) DO UPDATE SET
-        password_hash=excluded.password_hash,
-        role='admin',
-        updated_at=CURRENT_TIMESTAMP
-    `)
-    : db.prepare(`
-      INSERT INTO user (email, password, role)
-      VALUES (@email, @password, 'admin')
-      ON CONFLICT(email) DO UPDATE SET
-        password=excluded.password,
-        role='admin',
-        updated_at=CURRENT_TIMESTAMP
-    `);
-
-const adminEmail = "admin@virtualaddresshub.co.uk";
-const adminPassHash = bcrypt.hashSync("Admin123!", 10);
-
-ensureUser.run(
-    hasPasswordHash
-        ? { email: adminEmail, password_hash: adminPassHash }
-        : { email: adminEmail, password: "Admin123!" }
-);
-
-console.log("✅ Seed complete");

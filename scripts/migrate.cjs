@@ -1,22 +1,55 @@
-#!/usr/bin/env node
-// scripts/migrate.cjs - Run database migrations
-const { execSync } = require('child_process');
+/* eslint-disable no-console */
+const fs = require('fs');
 const path = require('path');
+const Database = require('better-sqlite3');
+const { resolveDbPath } = require('./lib/db-path.cjs');
 
-const command = process.argv[2];
+console.log('Running SQLite migrations...');
 
+const dbPath = resolveDbPath();
+console.log('[migrate] db:', dbPath);
+
+const db = new Database(dbPath);
+
+// First, apply the base schema
+const baseSchemaPath = path.join(__dirname, 'db-schema.sql');
+if (fs.existsSync(baseSchemaPath)) {
+  console.log('[migrate] applying base schema...');
+  const baseSchema = fs.readFileSync(baseSchemaPath, 'utf8');
+  db.exec(baseSchema);
+  console.log('[migrate] base schema applied');
+}
+
+// Then load *.sql from migrations in lexical order (001_, 002_, ...)
+const migrationsDir = path.join(__dirname, '..', 'migrations');
+const files = fs
+  .readdirSync(migrationsDir)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
+
+let maxVersion = 0;
+db.exec('BEGIN');
 try {
-  if (command === 'rollback') {
-    console.log('❌ Rollback not supported with SQLite migration system');
-    process.exit(1);
-  } else {
-    console.log('Running SQLite migrations...');
-    // Use the SQLite migration system
-    execSync('node scripts/migrate-sqlite.cjs', { stdio: 'inherit' });
+  for (const file of files) {
+    const version = parseInt(file.match(/^\d+/)?.[0] || '0', 10);
+    const name = file.replace(/\.sql$/, '');
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    db.exec(sql);
+    console.log('[migrate] applied:', name);
+    if (version > maxVersion) maxVersion = version;
   }
-
+  // record a monotonic version marker so seed can verify (optional)
+  db.pragma(`user_version = ${maxVersion}`);
+  db.exec('COMMIT');
+  console.log('[migrate] done');
   console.log('✅ Migration completed successfully');
-} catch (error) {
-  console.error('❌ Migration failed:', error.message);
+} catch (err) {
+  db.exec('ROLLBACK');
+  if (err instanceof Error) {
+    console.error('Migration error:', err.message);
+    console.error(err.stack);
+  } else {
+    console.error('Migration error (non-Error):', err);
+  }
   process.exit(1);
 }
