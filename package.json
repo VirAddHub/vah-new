@@ -22,6 +22,7 @@
     "clean": "rimraf dist .next",
     "build": "npm run clean && npm run build:backend && npm run build:web",
     "build:backend": "tsc -p tsconfig.server.json && npm run copy:server-files",
+    "prestart:backend": "node scripts/prestart.cjs",
     "copy:server-files": "cp server/*.js dist/server/ 2>/dev/null || true && cp -r server/bootstrap dist/server/ 2>/dev/null || true && cp -r server/routes dist/server/ 2>/dev/null || true && cp -r server/lib dist/server/ 2>/dev/null || true && cp -r server/middleware dist/server/ 2>/dev/null || true && cp -r server/services dist/server/ 2>/dev/null || true && cp -r server/utils dist/server/ 2>/dev/null || true && mkdir -p dist/middleware && cp middleware/*.js dist/middleware/ 2>/dev/null || true && cp -r routes dist/ 2>/dev/null || true && cp -r lib dist/ 2>/dev/null || true",
     "build:web": "next build",
     "predev": "node -e \"const fs=require('fs');const p=process.env.SQLITE_PATH||'./data/app.db';fs.mkdirSync(require('path').dirname(p),{recursive:true});\"",
