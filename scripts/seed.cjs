@@ -66,16 +66,17 @@ const adminPass = process.env.ADMIN_PASSWORD || 'Admin123!';
 
 const row = db.prepare('SELECT id FROM user WHERE email = ?').get(adminEmail);
 const hash = bcrypt.hashSync(adminPass, 10);
+const isoNow = new Date().toISOString();
 
 if (!row) {
     db.prepare(`
     INSERT INTO user (email,password_hash,role,first_name,last_name,created_at,updated_at)
-    VALUES (?,?,?,?,?,datetime('now'),datetime('now'))
-  `).run(adminEmail, hash, 'admin', 'Admin', 'User');
+    VALUES (?,?,?,?,?,?,?)
+  `).run(adminEmail, hash, 'admin', 'Admin', 'User', isoNow, isoNow);
     console.log(`👤 Created admin user: ${adminEmail}`);
 } else {
-    db.prepare('UPDATE user SET password_hash=?, role=?, updated_at=datetime(\'now\') WHERE email=?')
-        .run(hash, 'admin', adminEmail);
+    db.prepare('UPDATE user SET password_hash=?, role=?, updated_at=? WHERE email=?')
+        .run(hash, 'admin', isoNow, adminEmail);
     console.log(`🔑 Updated admin password: ${adminEmail}`);
 }
 

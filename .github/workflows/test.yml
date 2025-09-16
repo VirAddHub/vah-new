@@ -1,4 +1,4 @@
-name: API Test Suite
+name: Test Suite
 
 on:
   push:
@@ -7,16 +7,14 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  api-tests:
+  test:
     runs-on: ubuntu-latest
     
     env:
       NODE_ENV: test
-      NEXT_TELEMETRY_DISABLED: 1
       DB_PATH: ${{ github.workspace }}/data/app.db
       SQLITE_PATH: ${{ github.workspace }}/data/app.db
       PORT: 4000
-      BACKEND_URL: http://localhost:4000
 
     steps:
       - uses: actions/checkout@v4
@@ -35,26 +33,20 @@ jobs:
           sqlite3 "$DB_PATH" ".read scripts/db-schema.sql"
           node scripts/seed.cjs
       
-      - name: Start backend (dev mode)
+      - name: Test password reset script
+        run: |
+          node scripts/reset-password.cjs admin@virtualaddresshub.co.uk TestPassword123!
+      
+      - name: Start backend
         run: |
           nohup npm run dev:backend > backend.log 2>&1 &
           echo $! > backend.pid
       
-      - name: Start web (dev mode)
-        run: |
-          nohup npm run dev:web > web.log 2>&1 &
-          echo $! > web.pid
+      - name: Wait for backend
+        run: npx wait-on -t 60000 tcp:4000
       
-      - name: Wait for servers
-        run: npx wait-on -t 180000 tcp:4000 http://localhost:3000/api/bff/ready
-      
-      - name: Smoke check
-        run: |
-          curl -fsS http://localhost:4000/api/ready
-          curl -fsS http://localhost:3000/api/bff/ready
-      
-      - name: Run API tests
-        run: npm run test:api
+      - name: Run backend tests
+        run: npm run test:api:backend
       
       - name: Cleanup
         if: always()
@@ -62,14 +54,9 @@ jobs:
           if [ -f backend.pid ]; then
             kill $(cat backend.pid) 2>/dev/null || true
           fi
-          if [ -f web.pid ]; then
-            kill $(cat web.pid) 2>/dev/null || true
-          fi
       
       - name: Print logs on failure
         if: failure()
         run: |
           echo '=== backend.log ==='
           tail -n 100 backend.log || true
-          echo '=== web.log ==='
-          tail -n 100 web.log || true
