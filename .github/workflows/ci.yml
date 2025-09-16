@@ -29,6 +29,12 @@ jobs:
       - name: Prepare database (migrate → seed)
         run: npm run db:prepare
 
+      - name: Ensure admin credentials
+        env:
+          ADMIN_EMAIL: admin@virtualaddresshub.co.uk
+          ADMIN_PASSWORD: TestPassword123!
+        run: node scripts/reset-password.cjs "$ADMIN_EMAIL" "$ADMIN_PASSWORD"
+
       - name: Start backend (background)
         run: |
           # start and capture output

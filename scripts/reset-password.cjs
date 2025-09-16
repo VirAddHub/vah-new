@@ -5,9 +5,9 @@ const bcrypt = require('bcryptjs');
 const { resolveDbPath } = require('./lib/db-path.cjs');
 
 function usage() {
-  console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
-  console.log('Or set TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD environment variables');
-  process.exit(1);
+    console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
+    console.log('Or set TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD environment variables');
+    process.exit(1);
 }
 
 const [, , email, newPassword] = process.argv;
@@ -54,7 +54,7 @@ const sessionToken = crypto.randomBytes(32).toString('hex');
 const passwordHash = bcrypt.hashSync(finalPassword, 10);
 
 // try fetch existing user
-        const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(finalEmail);
+const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(finalEmail);
 
 db.exec('BEGIN');
 try {

@@ -44,7 +44,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node test/run-all-tests.mjs",
-    "test:smoke": "BASE=http://localhost:4000 jest -c tests/jest.config.cjs tests/auth.smoke.spec.ts",
+    "test:smoke": "BASE=http://localhost:4000 ADMIN_EMAIL=admin@virtualaddresshub.co.uk ADMIN_PASSWORD=TestPassword123! jest -c tests/jest.config.cjs tests/auth.smoke.spec.ts",
     "test:basic": "node test/test-basic.mjs",
     "test:comprehensive": "node test/test-comprehensive.mjs",
     "test:endpoints": "node test/test-endpoints.mjs",
