@@ -1189,10 +1189,44 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
 // ===== AUTH — LOGIN / LOGOUT =====
 
 // Auto-ensure session columns at startup
-(function ensureSessionColumns() {
-    const cols = db.prepare('PRAGMA table_info("user")').all().map(c => c.name);
-    if (!cols.includes('session_token')) db.prepare('ALTER TABLE "user" ADD COLUMN session_token TEXT').run();
-    if (!cols.includes('session_created_at')) db.prepare('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER').run();
+(async function ensureSessionColumns() {
+    try {
+        const isPg = /^postgres/i.test(process.env.DATABASE_URL || '');
+        
+        if (isPg) {
+            // PostgreSQL: Check if columns exist using information_schema
+            const { Pool } = require('pg');
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+            });
+            
+            try {
+                const { rows } = await pool.query(`
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'user' AND table_schema = 'public'
+                `);
+                const cols = rows.map(r => r.column_name);
+                
+                if (!cols.includes('session_token')) {
+                    await pool.query('ALTER TABLE "user" ADD COLUMN session_token TEXT');
+                }
+                if (!cols.includes('session_created_at')) {
+                    await pool.query('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER');
+                }
+            } finally {
+                await pool.end();
+            }
+        } else {
+            // SQLite: Use PRAGMA
+            const cols = db.prepare('PRAGMA table_info("user")').all().map(c => c.name);
+            if (!cols.includes('session_token')) db.prepare('ALTER TABLE "user" ADD COLUMN session_token TEXT').run();
+            if (!cols.includes('session_created_at')) db.prepare('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER').run();
+        }
+    } catch (error) {
+        console.warn('Failed to ensure session columns:', error.message);
+    }
 })();
 
 app.get('/api/auth/ping', (_req, res) => {
