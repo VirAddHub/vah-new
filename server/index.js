@@ -666,35 +666,37 @@ function hasAdminish(req) {
     return r === 'staff' || r === 'admin' || r === 'owner';
 }
 
-// Safety: make sure tables exist (no-op if already created)
-try {
-    db.prepare(`
-        CREATE TABLE IF NOT EXISTS invoice (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            number TEXT NOT NULL,
-            gocardless_payment_id TEXT,
-            amount_pence INTEGER NOT NULL,
-            currency TEXT NOT NULL DEFAULT 'GBP',
-            period_start TEXT NOT NULL,
-            period_end   TEXT NOT NULL,
-            pdf_path TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `).run();
-    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_number ON invoice(number)`).run();
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_user ON invoice(user_id)`).run();
-    db.prepare(`
-        CREATE TABLE IF NOT EXISTS invoice_token (
-            token TEXT PRIMARY KEY,
-            invoice_id INTEGER NOT NULL,
-            expires_at DATETIME NOT NULL,
-            used_at DATETIME
-        )
-    `).run();
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_token_expires ON invoice_token(expires_at)`).run();
-} catch (e) {
-    (logger || console).error('ensure invoice tables failed', e);
+// Safety: make sure tables exist (no-op if already created, SQLite only)
+if (process.env.DB_CLIENT !== 'pg') {
+    try {
+        db.prepare(`
+            CREATE TABLE IF NOT EXISTS invoice (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                number TEXT NOT NULL,
+                gocardless_payment_id TEXT,
+                amount_pence INTEGER NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'GBP',
+                period_start TEXT NOT NULL,
+                period_end   TEXT NOT NULL,
+                pdf_path TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+        db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_number ON invoice(number)`).run();
+        db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_user ON invoice(user_id)`).run();
+        db.prepare(`
+            CREATE TABLE IF NOT EXISTS invoice_token (
+                token TEXT PRIMARY KEY,
+                invoice_id INTEGER NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME
+            )
+        `).run();
+        db.prepare(`CREATE INDEX IF NOT EXISTS idx_invoice_token_expires ON invoice_token(expires_at)`).run();
+    } catch (e) {
+        (logger || console).error('ensure invoice tables failed', e);
+    }
 }
 
 // Token cleanup scheduler
