@@ -10,8 +10,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 // Fallback to legacy env vars for backward compatibility
 const configured = process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH;
 const DB_PATH = configured
-    ? (configured.startsWith('file:') 
-        ? configured.replace('file:', '') 
+    ? (configured.startsWith('file:')
+        ? configured.replace('file:', '')
         : (path.isAbsolute(configured) ? configured : path.join(ROOT, configured)))
     : path.join(ROOT, 'data', 'app.db');
 
@@ -36,10 +36,15 @@ instance.pragma("busy_timeout = 5000"); // back off if another writer is busy
 
 // Run migrations on startup
 try {
-  const { runMigrations } = require('../lib/migrate.js');
-  runMigrations(instance);
-} catch (error) {
-  console.warn('Migration system not available:', error.message);
+    const { runMigrations } = require('../lib/migrate.js');
+    runMigrations(instance);
+} catch (err) {
+    // TS 4.4+: catch variable is `unknown`. Narrow it:
+    if (err instanceof Error) {
+        console.warn('Migration system not available:', err.message);
+    } else {
+        console.warn('Migration system not available (non-Error):', err);
+    }
 }
 
 // ✅ Export in a way that supports BOTH styles safely:

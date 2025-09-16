@@ -1,16 +1,52 @@
 name: CI
+
 on:
   push:
-    branches: [dev, main]
   pull_request:
-    branches: [main]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm install
+
+      # Prepare DB to avoid any import-time bootstrap surprises
+      - name: Prepare database (migrate → seed)
+        run: npm run db:prepare
+
+      - name: Typecheck (backend)
+        run: npm run typecheck:backend
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Prepare database (migrate → seed)
+        run: npm run db:prepare
+
+      - name: Typecheck (backend)
+        run: npm run typecheck:backend
+
+      - name: Run backend tests
+        run: jest --config jest.backend.config.cjs
