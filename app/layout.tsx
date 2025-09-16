@@ -1,26 +1,30 @@
 import './globals.css';
 import { ReactNode } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/Footer';
+import { AuthProvider } from '@/lib/auth-context';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata = {
-  title: 'Virtual Address Hub - Your Digital Mailroom',
-  description: 'Secure mail scanning, forwarding & proof of address. Get a professional UK address and manage your mail digitally.',
-  keywords: 'virtual address, mail forwarding, digital mailroom, UK address, mail scanning',
+  title: 'VirtualAddressHub - Professional Mail Management',
+  description: 'Your Official London Business Address: Secure, Compliant, and Simple. Professional mail management for UK businesses.',
+  keywords: 'virtual address, mail forwarding, digital mailroom, UK address, mail scanning, London business address',
   openGraph: {
-    title: 'Virtual Address Hub - Your Digital Mailroom',
-    description: 'Secure mail scanning, forwarding & proof of address. Get a professional UK address and manage your mail digitally.',
+    title: 'VirtualAddressHub - Professional Mail Management',
+    description: 'Your Official London Business Address: Secure, Compliant, and Simple.',
     type: 'website',
   }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-900 text-white">
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <ErrorBoundary>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

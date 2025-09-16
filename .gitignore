@@ -27,3 +27,10 @@ Thumbs.db
 # ops artifacts
 ops/artifacts/*
 *.zip
+# local db & build
+*.db
+*.db-*
+vah.db*
+data/*.db*
+*.tsbuildinfo
+.cookies.backend.txt

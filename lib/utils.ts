@@ -37,7 +37,7 @@ export function formatDateTime(date: string | Date) {
  */
 export function formatRelativeTime(input: Date | number | string | undefined | null): string {
   if (!input) return '';
-  
+
   const d = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(d.getTime())) return '';
 
@@ -46,22 +46,22 @@ export function formatRelativeTime(input: Date | number | string | undefined | n
 
   const sec = 1000;
   const min = 60 * sec;
-  const hr  = 60 * min;
+  const hr = 60 * min;
   const day = 24 * hr;
-  const wk  = 7 * day;
-  const mo  = 30 * day;  // coarse
-  const yr  = 365 * day; // coarse
+  const wk = 7 * day;
+  const mo = 30 * day;  // coarse
+  const yr = 365 * day; // coarse
 
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
   if (abs < 30 * sec) return 'just now';
 
-  if (abs < min)       return rtf.format(Math.round(diffMs / sec), 'second');
-  if (abs < hr)        return rtf.format(Math.round(diffMs / min), 'minute');
-  if (abs < day)       return rtf.format(Math.round(diffMs / hr),  'hour');
-  if (abs < wk)        return rtf.format(Math.round(diffMs / day), 'day');
-  if (abs < mo)        return rtf.format(Math.round(diffMs / wk),  'week');
-  if (abs < yr)        return rtf.format(Math.round(diffMs / mo),  'month');
+  if (abs < min) return rtf.format(Math.round(diffMs / sec), 'second');
+  if (abs < hr) return rtf.format(Math.round(diffMs / min), 'minute');
+  if (abs < day) return rtf.format(Math.round(diffMs / hr), 'hour');
+  if (abs < wk) return rtf.format(Math.round(diffMs / day), 'day');
+  if (abs < mo) return rtf.format(Math.round(diffMs / wk), 'week');
+  if (abs < yr) return rtf.format(Math.round(diffMs / mo), 'month');
   return rtf.format(Math.round(diffMs / yr), 'year');
 }
 
