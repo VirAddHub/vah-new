@@ -34,3 +34,11 @@ vah.db*
 data/*.db*
 *.tsbuildinfo
 .cookies.backend.txt
+
+# local db & build
+*.db
+*.db-*
+vah.db*
+data/*.db*
+*.tsbuildinfo
+.cookies.backend.txt
