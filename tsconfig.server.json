@@ -9,7 +9,8 @@
         "skipLibCheck": true,
         "allowJs": true,
         "checkJs": false,
-        "noEmit": true
+        "noEmit": false,
+        "outDir": "./dist"
     },
     "include": [
         "server/**/*",

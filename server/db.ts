@@ -28,7 +28,7 @@ try {
 // if (process.env.RUNTIME_MIGRATIONS === 'on') { ... }  // default should be off.
 
 // Hard guard: if core tables are missing, guide the operator to prepare the DB
-const rows = instance.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all() as Array<{name: string}>;
+const rows = instance.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all() as Array<{ name: string }>;
 const names = new Set(rows.map(r => r.name));
 const missing: string[] = [];
 for (const t of ['user', 'mail_item', 'admin_log', 'mail_event', 'activity_log']) {
