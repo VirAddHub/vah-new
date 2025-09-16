@@ -1217,10 +1217,20 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
                 const cols = rows.map(r => r.column_name);
                 
                 if (!cols.includes('session_token')) {
-                    await pool.query('ALTER TABLE "user" ADD COLUMN session_token TEXT');
+                    try {
+                        await pool.query('ALTER TABLE "user" ADD COLUMN session_token TEXT');
+                    } catch (err) {
+                        console.error('[SQL FAILED] ALTER TABLE user ADD COLUMN session_token:', err.message);
+                        if (process.env.DEBUG_SQL) console.error('[SQL DETAILS]', err);
+                    }
                 }
                 if (!cols.includes('session_created_at')) {
-                    await pool.query('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER');
+                    try {
+                        await pool.query('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER');
+                    } catch (err) {
+                        console.error('[SQL FAILED] ALTER TABLE user ADD COLUMN session_created_at:', err.message);
+                        if (process.env.DEBUG_SQL) console.error('[SQL DETAILS]', err);
+                    }
                 }
             } finally {
                 await pool.end();
