@@ -5,8 +5,8 @@ const bcrypt = require('bcryptjs');
 const { resolveDbPath } = require('./lib/db-path.cjs');
 
 function usage() {
-  console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
-  process.exit(1);
+    console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
+    process.exit(1);
 }
 
 const [, , email, newPassword] = process.argv;
@@ -19,29 +19,29 @@ const db = new Database(dbPath);
 
 // --- helpers ---
 function hasColumn(table, col) {
-  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
-  return cols.includes(col);
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+    return cols.includes(col);
 }
 
 function ensureColumn(table, colDef) {
-  const [col] = colDef.split(/\s+/);
-  if (!hasColumn(table, col)) {
-    console.log(`[reset-password] adding missing column ${table}.${col} ...`);
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef};`);
-  }
+    const [col] = colDef.split(/\s+/);
+    if (!hasColumn(table, col)) {
+        console.log(`[reset-password] adding missing column ${table}.${col} ...`);
+        db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef};`);
+    }
 }
 
 // --- ensure required columns exist (safe, idempotent) ---
 db.exec('BEGIN');
 try {
-  ensureColumn('user', 'password_hash TEXT');
-  ensureColumn('user', 'session_token TEXT');
-  ensureColumn('user', 'session_created_at INTEGER');
-  db.exec('COMMIT');
+    ensureColumn('user', 'password_hash TEXT');
+    ensureColumn('user', 'session_token TEXT');
+    ensureColumn('user', 'session_created_at INTEGER');
+    db.exec('COMMIT');
 } catch (err) {
-  db.exec('ROLLBACK');
-  console.error('Schema check/add failed:', err instanceof Error ? err.message : err);
-  process.exit(1);
+    db.exec('ROLLBACK');
+    console.error('Schema check/add failed:', err instanceof Error ? err.message : err);
+    process.exit(1);
 }
 
 // --- upsert user ---
@@ -54,24 +54,24 @@ const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
 
 db.exec('BEGIN');
 try {
-  if (!existing) {
-    console.log('[reset-password] user not found, creating admin user...');
-    db.prepare(`
+    if (!existing) {
+        console.log('[reset-password] user not found, creating admin user...');
+        db.prepare(`
       INSERT INTO user (email, password_hash, is_admin, created_at, updated_at, session_token, session_created_at)
       VALUES (?, ?, 1, ?, ?, ?, ?)
     `).run(email, passwordHash, nowMs, nowMs, sessionToken, nowMs);
-  } else {
-    db.prepare(`
+    } else {
+        db.prepare(`
       UPDATE user
       SET password_hash = ?, session_token = ?, session_created_at = ?, updated_at = ?
       WHERE email = ?
     `).run(passwordHash, sessionToken, nowMs, nowMs, email);
-  }
-  db.exec('COMMIT');
+    }
+    db.exec('COMMIT');
 } catch (err) {
-  db.exec('ROLLBACK');
-  console.error('Upsert failed:', err instanceof Error ? err.message : err);
-  process.exit(1);
+    db.exec('ROLLBACK');
+    console.error('Upsert failed:', err instanceof Error ? err.message : err);
+    process.exit(1);
 }
 
 // verify and print
