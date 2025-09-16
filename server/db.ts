@@ -172,7 +172,7 @@ export async function listTables(): Promise<string[]> {
                  from information_schema.tables
                  where table_schema = 'public' and table_type = 'BASE TABLE'`
             );
-            return rows.map(r => r.name);
+            return rows.map((r: any) => r.name);
         } finally {
             await pool.end();
         }
