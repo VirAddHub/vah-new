@@ -1,98 +1,82 @@
-#!/usr/bin/env node
-// scripts/reset-password.cjs
 /* eslint-disable no-console */
-const fs = require('fs');
-const path = require('path');
 const Database = require('better-sqlite3');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { resolveDbPath } = require('./lib/db-path.cjs');
 
-const DB_PATH =
-    process.env.DB_PATH ||
-    process.env.SQLITE_PATH ||
-    path.join(process.cwd(), 'data', 'app.db');
-
-// Ensure folder exists
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+function usage() {
+  console.log('Usage: node scripts/reset-password.cjs <email> <newPassword>');
+  process.exit(1);
+}
 
 const [, , email, newPassword] = process.argv;
+if (!email || !newPassword) usage();
 
-if (!email || !newPassword) {
-    console.error('Usage: node scripts/reset-password.cjs <email> <newPassword>');
-    process.exit(1);
+const dbPath = resolveDbPath();
+console.log('[reset-password] db:', dbPath);
+
+const db = new Database(dbPath);
+
+// --- helpers ---
+function hasColumn(table, col) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
+  return cols.includes(col);
 }
 
-const db = new Database(DB_PATH);
-const isoNow = new Date().toISOString();
-
-// Introspect columns to be schema-flexible
-const cols = new Set(
-    db.prepare(`PRAGMA table_info(user)`).all().map(r => r.name)
-);
-
-const hasPasswordHash = cols.has('password_hash');
-const hasPassword = cols.has('password');        // legacy/alt column
-const hasUpdatedAt = cols.has('updated_at');
-const hasSessionToken = cols.has('session_token');
-const hasSessionCreatedAt = cols.has('session_created_at');
-
-// Add missing columns if they don't exist (schema drift protection)
-if (!hasPasswordHash && !hasPassword) {
-    console.log('Adding missing password_hash column...');
-    db.exec("ALTER TABLE user ADD COLUMN password_hash TEXT");
-    cols.add('password_hash');
+function ensureColumn(table, colDef) {
+  const [col] = colDef.split(/\s+/);
+  if (!hasColumn(table, col)) {
+    console.log(`[reset-password] adding missing column ${table}.${col} ...`);
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef};`);
+  }
 }
 
-if (!hasUpdatedAt) {
-    console.log('Adding missing updated_at column...');
-    db.exec("ALTER TABLE user ADD COLUMN updated_at TEXT");
-    cols.add('updated_at');
+// --- ensure required columns exist (safe, idempotent) ---
+db.exec('BEGIN');
+try {
+  ensureColumn('user', 'password_hash TEXT');
+  ensureColumn('user', 'session_token TEXT');
+  ensureColumn('user', 'session_created_at INTEGER');
+  db.exec('COMMIT');
+} catch (err) {
+  db.exec('ROLLBACK');
+  console.error('Schema check/add failed:', err instanceof Error ? err.message : err);
+  process.exit(1);
 }
 
-if (!hasSessionToken) {
-    console.log('Adding missing session_token column...');
-    db.exec("ALTER TABLE user ADD COLUMN session_token TEXT");
-    cols.add('session_token');
+// --- upsert user ---
+const nowMs = Date.now();
+const sessionToken = crypto.randomBytes(32).toString('hex');
+const passwordHash = bcrypt.hashSync(newPassword, 10);
+
+// try fetch existing user
+const existing = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
+
+db.exec('BEGIN');
+try {
+  if (!existing) {
+    console.log('[reset-password] user not found, creating admin user...');
+    db.prepare(`
+      INSERT INTO user (email, password_hash, is_admin, created_at, updated_at, session_token, session_created_at)
+      VALUES (?, ?, 1, ?, ?, ?, ?)
+    `).run(email, passwordHash, nowMs, nowMs, sessionToken, nowMs);
+  } else {
+    db.prepare(`
+      UPDATE user
+      SET password_hash = ?, session_token = ?, session_created_at = ?, updated_at = ?
+      WHERE email = ?
+    `).run(passwordHash, sessionToken, nowMs, nowMs, email);
+  }
+  db.exec('COMMIT');
+} catch (err) {
+  db.exec('ROLLBACK');
+  console.error('Upsert failed:', err instanceof Error ? err.message : err);
+  process.exit(1);
 }
 
-if (!hasSessionCreatedAt) {
-    console.log('Adding missing session_created_at column...');
-    db.exec("ALTER TABLE user ADD COLUMN session_created_at TEXT");
-    cols.add('session_created_at');
-}
-
-// Make sure user exists
-const existing = db.prepare(`SELECT id, email FROM user WHERE email = ? LIMIT 1`).get(email);
-if (!existing) {
-    console.error(`User not found: ${email}`);
-    process.exit(1);
-}
-
-// Hash
-const hash = bcrypt.hashSync(newPassword, 10);
-
-// Build UPDATE statements safely (no now())
-const tx = db.transaction(() => {
-    // Use password_hash if available, otherwise fall back to password
-    const passwordColumn = cols.has('password_hash') ? 'password_hash' : 'password';
-
-    if (cols.has('updated_at')) {
-        db.prepare(`UPDATE user SET ${passwordColumn} = ?, updated_at = ? WHERE email = ?`)
-            .run(hash, isoNow, email);
-    } else {
-        db.prepare(`UPDATE user SET ${passwordColumn} = ? WHERE email = ?`)
-            .run(hash, email);
-    }
-
-    // Clear any session (optional)
-    if (cols.has('session_token')) {
-        db.prepare(`UPDATE user SET session_token = NULL WHERE email = ?`).run(email);
-    }
-    if (cols.has('session_created_at')) {
-        db.prepare(`UPDATE user SET session_created_at = NULL WHERE email = ?`).run(email);
-    }
-});
-
-tx();
-
-console.log(`✅ Password reset for ${email}`);
-console.log(`DB: ${DB_PATH}`);
+// verify and print
+const user = db.prepare('SELECT id, email, is_admin, session_token, session_created_at FROM user WHERE email = ?').get(email);
+console.log('✅ Password reset complete.');
+console.log('   user:', { id: user.id, email: user.email, is_admin: !!user.is_admin });
+console.log('   session_token:', user.session_token);
+console.log('   session_created_at:', user.session_created_at);
