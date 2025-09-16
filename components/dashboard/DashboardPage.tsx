@@ -17,10 +17,31 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { formatRelativeTime } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
+// Type definitions for dashboard data
+interface MailStats {
+    newToday: number;
+    unread: number;
+    invoicesDue: number;
+    total: number;
+}
+
+interface MailItem {
+    id: string;
+    subject: string;
+    sender_name: string;
+    received_date: string;
+    status: string;
+    created_at: string;
+}
+
 export function DashboardPage() {
     const router = useRouter();
     const { mail, isLoading: mailLoading, refetch: refetchMail } = useMail();
     const { stats, isLoading: statsLoading, refetch: refetchStats } = useMailStats();
+
+    // Type the data properly
+    const typedStats = stats as MailStats | undefined;
+    const typedMail = mail as MailItem[] | undefined;
 
     const handleRefresh = () => {
         refetchMail();
@@ -83,10 +104,10 @@ export function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats?.newToday || 0}
+                            {typedStats?.newToday || 0}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            +{stats?.newToday || 0} from yesterday
+                            +{typedStats?.newToday || 0} from yesterday
                         </p>
                         <Button
                             variant="link"
@@ -105,10 +126,10 @@ export function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats?.unread || 0}
+                            {typedStats?.unread || 0}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            {stats?.unread || 0} items need attention
+                            {typedStats?.unread || 0} items need attention
                         </p>
                         <Button
                             variant="link"
@@ -131,10 +152,10 @@ export function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats?.invoicesDue || 0}
+                            {typedStats?.invoicesDue || 0}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            {stats?.invoicesDue || 0} invoices pending
+                            {typedStats?.invoicesDue || 0} invoices pending
                         </p>
                         <Button
                             variant="link"
@@ -153,7 +174,7 @@ export function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats?.total || 0}
+                            {typedStats?.total || 0}
                         </div>
                         <p className="text-xs text-muted-foreground">
                             All time mail items
@@ -175,20 +196,20 @@ export function DashboardPage() {
                     <CardTitle>Recent Mail</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {mail?.length > 0 ? (
+                    {typedMail && typedMail.length > 0 ? (
                         <div className="space-y-4">
-                            {mail.slice(0, 5).map((item: any) => (
+                            {typedMail.slice(0, 5).map((item: MailItem) => (
                                 <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center space-x-3">
                                         <Mail className="h-4 w-4 text-muted-foreground" />
                                         <div>
-                                            <p className="font-medium">{item.sender || 'Unknown Sender'}</p>
+                                            <p className="font-medium">{item.sender_name || 'Unknown Sender'}</p>
                                             <p className="text-sm text-muted-foreground">{item.subject || 'No Subject'}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm text-muted-foreground">
-                                            {formatRelativeTime(item.receivedAt || item.createdAt)}
+                                            {formatRelativeTime(item.received_date || item.created_at)}
                                         </p>
                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${item.status === 'unread'
                                                 ? 'bg-yellow-100 text-yellow-800'

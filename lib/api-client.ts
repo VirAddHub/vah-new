@@ -130,15 +130,16 @@ export class ApiClient {
 
     // Set authentication token
     setAuthToken(token: string) {
-        this.defaultHeaders = {
-            ...this.defaultHeaders,
+        const headers: Record<string, string> = {
+            ...(this.defaultHeaders as Record<string, string>),
             Authorization: `Bearer ${token}`,
         };
+        this.defaultHeaders = headers;
     }
 
     // Clear authentication token
     clearAuthToken() {
-        const { Authorization, ...headers } = this.defaultHeaders;
+        const { Authorization, ...headers } = this.defaultHeaders as Record<string, string>;
         this.defaultHeaders = headers;
     }
 }
