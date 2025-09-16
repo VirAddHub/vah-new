@@ -1616,7 +1616,13 @@ app.get("/api/debug/db-info", (_req, res) => {
     try {
         const list = db.prepare("PRAGMA database_list").all();
         const counts = db.prepare("SELECT COUNT(*) AS c FROM mail_item").get();
-        res.json({ ok: true, db: list, mailCount: counts.c });
+        res.json({
+            ok: true,
+            db: list,
+            mailCount: counts.c,
+            dbPath: process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH || require('path').join(process.cwd(), 'data', 'app.db'),
+            cwd: process.cwd()
+        });
     } catch (e) {
         res.status(500).json({ ok: false, error: String(e) });
     }
@@ -2018,9 +2024,9 @@ app.get('/api/plans', (req, res) => {
         COALESCE(amount_pence, price_pence) AS amount_pence,
         COALESCE(currency, 'GBP') AS currency,
         COALESCE(interval, 'month') AS interval,
-        COALESCE(is_active, 1) AS is_active
+        COALESCE(active, 1) AS is_active
       FROM plans
-      WHERE COALESCE(is_active, 1) = 1
+      WHERE COALESCE(active, 1) = 1
       ORDER BY COALESCE(amount_pence, price_pence) ASC
     `).all();
 

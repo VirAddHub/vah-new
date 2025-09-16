@@ -6,8 +6,8 @@ import fs from "node:fs";
 // Works for source (server/*) and compiled (dist/server/*).
 const ROOT = path.resolve(__dirname, '..', '..');
 
-// Allow override via SQLITE_PATH; resolve relative to project root if not absolute.
-const configured = process.env.SQLITE_PATH;
+// Allow override via multiple env vars; resolve relative to project root if not absolute.
+const configured = process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH;
 const DB_PATH = configured
     ? (path.isAbsolute(configured) ? configured : path.join(ROOT, configured))
     : path.join(ROOT, 'data', 'app.db');
@@ -16,9 +16,12 @@ const DB_PATH = configured
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 // Helpful log once at boot (can remove later)
-if (process.env.DEBUG_DB || process.env.DEBUG_AUTH) {
-    console.log('[db] using SQLite file:', DB_PATH);
-}
+console.info("info: Using SQLite database file", {
+    service: "vah-backend",
+    path: DB_PATH,
+    cwd: process.cwd(),
+    timestamp: new Date().toISOString(),
+});
 
 const instance = new Database(DB_PATH, { fileMustExist: false });
 

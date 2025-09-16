@@ -69,13 +69,13 @@ const hash = bcrypt.hashSync(adminPass, 10);
 
 if (!row) {
     db.prepare(`
-    INSERT INTO user (email,password_hash,role,first_name,last_name,created_at)
-    VALUES (?,?,?,?,?,datetime('now'))
+    INSERT INTO user (email,password_hash,role,first_name,last_name,created_at,updated_at)
+    VALUES (?,?,?,?,?,datetime('now'),datetime('now'))
   `).run(adminEmail, hash, 'admin', 'Admin', 'User');
     console.log(`👤 Created admin user: ${adminEmail}`);
 } else {
-    db.prepare('UPDATE user SET password_hash=?, role="admin", updated_at=datetime("now") WHERE email=?')
-        .run(hash, adminEmail);
+    db.prepare('UPDATE user SET password_hash=?, role=?, updated_at=datetime(\'now\') WHERE email=?')
+        .run(hash, 'admin', adminEmail);
     console.log(`🔑 Updated admin password: ${adminEmail}`);
 }
 
