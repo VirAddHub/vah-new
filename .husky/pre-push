@@ -1,18 +1,13 @@
 #!/usr/bin/env sh
+# DO NOT add `. "$(dirname -- "$0")/_/husky.sh"` — it's deprecated and broke your shell
+set -e
 
-# Skip locally if you want: run with SKIP_PREPUSH=1 git push
 if [ "$SKIP_PREPUSH" = "1" ]; then
-  echo "[pre-push] skipped (SKIP_PREPUSH=1)"; exit 0
+  echo "[pre-push] skipped"; exit 0
 fi
 
 echo "[pre-push] Running checks…"
-
-# Keep it lightweight: typecheck only. (No server start; no ports)
-npm run -s typecheck || exit 1
-# Note: Linting is disabled for now due to many frontend linting issues
-# npm run -s lint || exit 1
-
-# Optional: unit tests only (no network!)
-# npm run -s test:unit || exit 1
-
+npm run -s typecheck
+# Temporarily disable linting due to many frontend issues
+# npm run -s lint
 echo "[pre-push] OK"
