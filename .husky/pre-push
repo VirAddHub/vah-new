@@ -3,4 +3,10 @@ set -e
 
 echo "[pre-push] Running checks…"
 npm run test:prepush
+
+if [ "${RUN_SMOKE:-0}" = "1" ]; then
+  echo "[pre-push] Running optional smoke…"
+  npm run test:prepush:smoke
+fi
+
 echo "[pre-push] OK"
