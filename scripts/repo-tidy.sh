@@ -40,7 +40,11 @@ remove_tracked () {
 remove_tracked_by_glob () {
   local glob="$1"
   # list matching tracked files; remove them
-  mapfile -t hits < <(git ls-files -- "$glob")
+  local hits=()
+  while IFS= read -r line; do
+    hits+=("$line")
+  done < <(git ls-files -- "$glob")
+  
   if (( ${#hits[@]} )); then
     if [[ $DRY -eq 1 ]]; then
       for f in "${hits[@]}"; do say "DRY: would git rm -f -- '$f'"; done
