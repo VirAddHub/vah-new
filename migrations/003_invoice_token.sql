@@ -6,5 +6,4 @@ CREATE TABLE IF NOT EXISTS invoice_token (
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_invoice_token_expires_at ON invoice_token (expires_at);
