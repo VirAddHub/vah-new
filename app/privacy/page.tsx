@@ -1,6 +1,12 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
+export const metadata = {
+  title: 'Privacy Policy | Virtual Address Hub',
+  description:
+    'Learn how Virtual Address Hub collects, uses and protects your personal data. GDPR-compliant processing, retention and your rights.',
+};
+
 export default function PrivacyPolicyPage() {
     return (
         <div className="min-h-screen flex flex-col">
@@ -17,15 +23,15 @@ export default function PrivacyPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    Virtual Address Hub ("we," "our," or "us") is committed to protecting your privacy. 
-                                    This Privacy Policy explains how we collect, use, disclose, and safeguard your 
+                                    Virtual Address Hub ("we," "our," or "us") is committed to protecting your privacy.
+                                    This Privacy Policy explains how we collect, use, disclose, and safeguard your
                                     information when you use our virtual address and mail management services.
                                 </p>
                             </section>
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">2.1 Personal Information</h3>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
                                     <li>Name, email address, and contact details</li>
@@ -134,8 +140,8 @@ export default function PrivacyPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">9. International Transfers</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    Your data may be transferred to and processed in countries outside the UK/EEA. 
-                                    We ensure appropriate safeguards are in place to protect your data in accordance 
+                                    Your data may be transferred to and processed in countries outside the UK/EEA.
+                                    We ensure appropriate safeguards are in place to protect your data in accordance
                                     with applicable data protection laws.
                                 </p>
                             </section>
@@ -143,7 +149,7 @@ export default function PrivacyPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">10. Children's Privacy</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    Our services are not intended for individuals under 18 years of age. 
+                                    Our services are not intended for individuals under 18 years of age.
                                     We do not knowingly collect personal information from children under 18.
                                 </p>
                             </section>
@@ -151,8 +157,8 @@ export default function PrivacyPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">11. Changes to This Policy</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    We may update this Privacy Policy from time to time. We will notify you of any 
-                                    material changes by posting the new Privacy Policy on this page and updating 
+                                    We may update this Privacy Policy from time to time. We will notify you of any
+                                    material changes by posting the new Privacy Policy on this page and updating
                                     the "Last updated" date.
                                 </p>
                             </section>
@@ -164,8 +170,8 @@ export default function PrivacyPolicyPage() {
                                 </p>
                                 <div className="bg-white/5 rounded-lg p-6">
                                     <p className="text-gray-300">
-                                        <strong>Email:</strong> privacy@virtualaddresshub.co.uk<br/>
-                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br/>
+                                        <strong>Email:</strong> privacy@virtualaddresshub.co.uk<br />
+                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br />
                                         <strong>Data Protection Officer:</strong> dpo@virtualaddresshub.co.uk
                                     </p>
                                 </div>

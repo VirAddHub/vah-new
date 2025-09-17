@@ -1,6 +1,12 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
+export const metadata = {
+  title: 'KYC Policy | Virtual Address Hub',
+  description:
+    'Our Know Your Customer policy: identity verification requirements, AML measures and data handling practices.',
+};
+
 export default function KycPolicyPage() {
     return (
         <div className="min-h-screen flex flex-col">
@@ -17,9 +23,9 @@ export default function KycPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    Virtual Address Hub is committed to maintaining the highest standards of compliance 
-                                    with anti-money laundering (AML) and Know Your Customer (KYC) regulations. This policy 
-                                    outlines our requirements for customer identification and verification to ensure 
+                                    Virtual Address Hub is committed to maintaining the highest standards of compliance
+                                    with anti-money laundering (AML) and Know Your Customer (KYC) regulations. This policy
+                                    outlines our requirements for customer identification and verification to ensure
                                     the integrity of our services and compliance with UK financial regulations.
                                 </p>
                             </section>
@@ -40,7 +46,7 @@ export default function KycPolicyPage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">3. Customer Identification Requirements</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">3.1 Individual Customers</h3>
                                 <p className="text-gray-300 leading-relaxed mb-4">We require the following documents:</p>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
@@ -72,7 +78,7 @@ export default function KycPolicyPage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">4. Verification Process</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">4.1 Document Verification</h3>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
                                     <li>All documents must be clear, legible, and unaltered</li>
@@ -150,7 +156,7 @@ export default function KycPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">9. Suspicious Activity Reporting</h2>
                                 <p className="text-gray-300 leading-relaxed mb-4">
-                                    We are required to report suspicious activities to the National Crime Agency (NCA). 
+                                    We are required to report suspicious activities to the National Crime Agency (NCA).
                                     This includes:
                                 </p>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
@@ -193,8 +199,8 @@ export default function KycPolicyPage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">12. Changes to This Policy</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    We may update this KYC Policy from time to time to reflect changes in regulations 
-                                    or our business practices. We will notify you of any material changes and post the 
+                                    We may update this KYC Policy from time to time to reflect changes in regulations
+                                    or our business practices. We will notify you of any material changes and post the
                                     updated policy on our website.
                                 </p>
                             </section>
@@ -206,9 +212,9 @@ export default function KycPolicyPage() {
                                 </p>
                                 <div className="bg-white/5 rounded-lg p-6">
                                     <p className="text-gray-300">
-                                        <strong>Compliance Team:</strong> compliance@virtualaddresshub.co.uk<br/>
-                                        <strong>Data Protection Officer:</strong> dpo@virtualaddresshub.co.uk<br/>
-                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br/>
+                                        <strong>Compliance Team:</strong> compliance@virtualaddresshub.co.uk<br />
+                                        <strong>Data Protection Officer:</strong> dpo@virtualaddresshub.co.uk<br />
+                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br />
                                         <strong>Phone:</strong> [Your Phone Number]
                                     </p>
                                 </div>

@@ -1,6 +1,12 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
+export const metadata = {
+  title: 'Terms of Service | Virtual Address Hub',
+  description:
+    'The terms that govern your use of Virtual Address Hub, including account, billing, acceptable use and limitations of liability.',
+};
+
 export default function TermsOfServicePage() {
     return (
         <div className="min-h-screen flex flex-col">
@@ -17,8 +23,8 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    By accessing and using Virtual Address Hub's services, you accept and agree to be bound 
-                                    by the terms and provision of this agreement. If you do not agree to abide by the above, 
+                                    By accessing and using Virtual Address Hub's services, you accept and agree to be bound
+                                    by the terms and provision of this agreement. If you do not agree to abide by the above,
                                     please do not use this service.
                                 </p>
                             </section>
@@ -40,7 +46,7 @@ export default function TermsOfServicePage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">3. User Responsibilities</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">3.1 Account Requirements</h3>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
                                     <li>Provide accurate and complete information during registration</li>
@@ -62,7 +68,7 @@ export default function TermsOfServicePage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">4. Mail Handling Terms</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">4.1 Mail Processing</h3>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
                                     <li>Mail is scanned and digitized within 24 hours of receipt</li>
@@ -83,7 +89,7 @@ export default function TermsOfServicePage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">5. Payment Terms</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">5.1 Subscription Fees</h3>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
                                     <li>Fees are charged in advance on a monthly or annual basis</li>
@@ -102,7 +108,7 @@ export default function TermsOfServicePage() {
 
                                 <h3 className="text-xl font-medium mb-3 mt-6">5.3 Refunds</h3>
                                 <p className="text-gray-300 leading-relaxed">
-                                    Refunds are provided at our discretion and may be subject to administrative fees. 
+                                    Refunds are provided at our discretion and may be subject to administrative fees.
                                     No refunds for services already provided or mail already processed.
                                 </p>
                             </section>
@@ -120,8 +126,8 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">7. Data Protection and Privacy</h2>
                                 <p className="text-gray-300 leading-relaxed mb-4">
-                                    Your privacy is important to us. Our data practices are governed by our Privacy Policy, 
-                                    which is incorporated into these terms by reference. We comply with GDPR and UK data 
+                                    Your privacy is important to us. Our data practices are governed by our Privacy Policy,
+                                    which is incorporated into these terms by reference. We comply with GDPR and UK data
                                     protection laws.
                                 </p>
                                 <ul className="list-disc list-inside text-gray-300 space-y-2">
@@ -158,10 +164,10 @@ export default function TermsOfServicePage() {
 
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">10. Termination</h2>
-                                
+
                                 <h3 className="text-xl font-medium mb-3">10.1 Termination by You</h3>
                                 <p className="text-gray-300 leading-relaxed">
-                                    You may terminate your account at any time with 30 days' written notice. 
+                                    You may terminate your account at any time with 30 days' written notice.
                                     You remain responsible for all charges incurred up to the termination date.
                                 </p>
 
@@ -188,8 +194,8 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">12. Changes to Terms</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    We may modify these terms at any time. We will notify you of material changes 
-                                    via email or through our service. Continued use of our service after changes 
+                                    We may modify these terms at any time. We will notify you of material changes
+                                    via email or through our service. Continued use of our service after changes
                                     constitutes acceptance of the new terms.
                                 </p>
                             </section>
@@ -197,7 +203,7 @@ export default function TermsOfServicePage() {
                             <section>
                                 <h2 className="text-2xl font-semibold mb-4">13. Governing Law</h2>
                                 <p className="text-gray-300 leading-relaxed">
-                                    These terms are governed by the laws of England and Wales. Any disputes 
+                                    These terms are governed by the laws of England and Wales. Any disputes
                                     will be subject to the exclusive jurisdiction of the courts of England and Wales.
                                 </p>
                             </section>
@@ -209,8 +215,8 @@ export default function TermsOfServicePage() {
                                 </p>
                                 <div className="bg-white/5 rounded-lg p-6">
                                     <p className="text-gray-300">
-                                        <strong>Email:</strong> legal@virtualaddresshub.co.uk<br/>
-                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br/>
+                                        <strong>Email:</strong> legal@virtualaddresshub.co.uk<br />
+                                        <strong>Address:</strong> Virtual Address Hub, [Your Business Address]<br />
                                         <strong>Phone:</strong> [Your Phone Number]
                                     </p>
                                 </div>
