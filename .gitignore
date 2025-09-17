@@ -64,3 +64,38 @@ app.db-shm
 app.db-wal
 vah_corrupted.db
 vah.db.backup
+
+# --- repo hygiene (keep tests, ignore junk) ---
+
+# local db & backups (we use Postgres in prod)
+app.db
+app.db-shm
+app.db-wal
+vah_corrupted.db
+vah.db.backup
+vah_backup.sql
+
+# logs & pids
+logs/
+web.log
+*.pid
+
+# request sandboxes & cookies/csrf
+*.http
+*.cookies.txt
+*.cookie.txt
+*.csrf.txt
+csrf-token.txt
+
+# misc local junk folders
+.history/
+_archive/
+-Force/
+backups/
+
+# dev-only tooling we don't deploy
+tools/mock-api/
+
+# test outputs (keep the directory; ignore artifacts)
+test-results/**
+!test-results/.gitkeep
