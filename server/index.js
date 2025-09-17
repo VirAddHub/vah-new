@@ -23,11 +23,7 @@ require('dotenv').config({
 const { validateEnvironment, env } = require('./bootstrap/requireEnv');
 validateEnvironment();
 
-// Set DEV_MODE for testing if not already set
-if (!process.env.DEV_MODE) {
-    process.env.DEV_MODE = '1';
-    console.log('Set DEV_MODE=1 for development testing');
-}
+// DEV_MODE is controlled by environment variables only
 
 // --- core & middleware
 const express = require("express");
@@ -803,29 +799,29 @@ function logActivity(user_id, action, details = null, mail_item_id = null, req =
         logger.error('logActivity failed', e);
     }
 }
-function checkAccountLockout(email) {
-    const row = db.prepare('SELECT login_attempts, locked_until FROM user WHERE email=?').get(email);
+async function checkAccountLockout(email) {
+    const row = await db.get('SELECT login_attempts, locked_until FROM user WHERE email=?', [email]);
     if (row?.locked_until && Date.now() < row.locked_until) return { locked: true, until: row.locked_until };
     return { locked: false };
 }
-function incrementLoginAttempts(email) {
-    const u = db.prepare('SELECT id, login_attempts FROM user WHERE email=?').get(email);
+async function incrementLoginAttempts(email) {
+    const u = await db.get('SELECT id, login_attempts FROM user WHERE email=?', [email]);
     if (!u) return;
     const attempts = (u.login_attempts || 0) + 1;
     const LOCKOUT_DURATION = 15 * 60 * 1000;
     const MAX_ATTEMPTS = 5;
     const locked_until = attempts >= MAX_ATTEMPTS ? Date.now() + LOCKOUT_DURATION : null;
-    db.prepare('UPDATE user SET login_attempts=?, locked_until=? WHERE email=?').run(attempts, locked_until, email);
+    await db.run('UPDATE user SET login_attempts=?, locked_until=? WHERE email=?', [attempts, locked_until, email]);
 }
-function clearLoginAttempts(email) {
-    db.prepare('UPDATE user SET login_attempts=0, locked_until=NULL WHERE email=?').run(email);
+async function clearLoginAttempts(email) {
+    await db.run('UPDATE user SET login_attempts=0, locked_until=NULL WHERE email=?', [email]);
 }
 
 // ===== PASSWORD RESET =====
 app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.passwordReset), async (req, res) => {
     const { email } = req.body;
     try {
-        const user = db.prepare('SELECT id, email, name FROM user WHERE email = ?').get(email);
+        const user = await db.get('SELECT id, email, name FROM user WHERE email = ?', [email]);
         const publicResp = { success: true, message: 'If an account exists, a reset link has been sent.' };
         if (!user) return res.json(publicResp);
 
@@ -1147,26 +1143,25 @@ if (SETUP_ENABLED) {
 app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, res) => {
     const { email, password, first_name = '', last_name = '' } = req.body;
     try {
-        const exists = db.prepare('SELECT id FROM user WHERE email=?').get(email);
+        const exists = await db.get('SELECT id FROM user WHERE email=?', [email]);
         if (exists) return res.status(409).json({ error: 'Email already registered' });
 
         const hash = bcrypt.hashSync(password, 12);
         const now = Date.now();
         const name = `${first_name} ${last_name}`.trim();
 
-        const info = db
-            .prepare(
-                `
+        const info = await db.run(
+            `
           INSERT INTO user (
             created_at, updated_at, name, email, password,
             first_name, last_name,
             kyc_status, plan_status, plan_start_date, onboarding_step
           ) VALUES (?,?,?,?,?,?,?, 'pending', 'active', ?, 'signup')
-        `
-            )
-            .run(now, now, name, email, hash, first_name, last_name, now);
+        `,
+            [now, now, name, email, hash, first_name, last_name, now]
+        );
 
-        const user = db.prepare('SELECT * FROM user WHERE id=?').get(info.lastInsertRowid);
+        const user = await db.get('SELECT * FROM user WHERE id=?', [info.insertId]);
 
         const token = setSession(res, user); // cookie + token
 
@@ -1272,9 +1267,9 @@ app.get('/api/profile', requireAuth, (req, res) => {
 });
 
 // Confirms which DB file is active (requires your db.js to log path via DEBUG_DB)
-app.get('/api/auth/db-check', (_req, res) => {
+app.get('/api/auth/db-check', async (_req, res) => {
     try {
-        const row = db.prepare("SELECT COUNT(*) AS c FROM user").get();
+        const row = await db.get("SELECT COUNT(*) AS c FROM user", []);
         res.json({ ok: true, user_count: row.c });
     } catch (e) {
         res.status(500).json({ ok: false, code: 'E_DB_CHECK', message: e.message });
@@ -1320,7 +1315,7 @@ app.post('/api/auth/login', (req, res) => {
         // PHASE 2 — select user
         let user;
         try {
-            user = db.prepare('SELECT * FROM user WHERE email = ? COLLATE NOCASE').get(email);
+            user = await db.get('SELECT * FROM user WHERE email = ? COLLATE NOCASE', [email]);
         } catch (e) {
             console.error('[auth] E_DB_SELECT', e);
             return res.status(500).json({ error: 'auth_error', code: 'E_DB_SELECT' });

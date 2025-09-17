@@ -13,7 +13,7 @@ module.exports = async function sessionToJwtBridge(req, res, next) {
         const cookieToken = req.cookies?.vah_session;
         if (!cookieToken) return next();
 
-        const row = db.prepare('SELECT id, email, role FROM user WHERE session_token = ?').get(cookieToken);
+        const row = await db.get('SELECT id, email, role FROM user WHERE session_token = ?', [cookieToken]);
         if (!row) return next();
 
         const isAdmin = (row.role || '').toLowerCase() === 'admin';

@@ -7,24 +7,24 @@ const SLIDE_AFTER_SECS = Number(process.env.SLIDE_AFTER_SECS || 60 * 5);
 
 function nowSec() { return Math.floor(Date.now() / 1000); }
 
-function findBySession(token) {
+async function findBySession(token) {
     if (!token) return null;
-    const row = db.prepare(`
+    const row = await db.get(`
     SELECT id, email, role, session_created_at
     FROM user
     WHERE session_token = ?
-  `).get(token);
+  `, [token]);
     if (!row) return null;
     const created = row.session_created_at; // already a Unix timestamp in seconds
     const age = nowSec() - created;
     if (age > SESSION_TTL_SECS) return { expired: true };
     if (age > SLIDE_AFTER_SECS) {
-        db.prepare(`UPDATE user SET session_created_at = CURRENT_TIMESTAMP WHERE id = ?`).run(row.id);
+        await db.run(`UPDATE user SET session_created_at = CURRENT_TIMESTAMP WHERE id = ?`, [row.id]);
     }
     return { id: row.id, email: row.email, role: row.role || 'user' };
 }
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
     // 1) Bearer JWT
     const auth = req.headers.authorization || '';
     if (auth.startsWith('Bearer ')) {
@@ -36,7 +36,7 @@ function requireAuth(req, res, next) {
     }
     // 2) vah_session cookie
     const token = req.cookies?.vah_session || '';
-    const u = findBySession(token);
+    const u = await findBySession(token);
     if (!u) return res.status(401).json({ error: 'invalid_session' });
     if (u.expired) return res.status(401).json({ error: 'session_expired' });
     req.user = { id: u.id, email: u.email, role: u.role || 'user' };
