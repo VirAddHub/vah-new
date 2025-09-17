@@ -42,3 +42,25 @@ vah.db*
 data/*.db*
 *.tsbuildinfo
 .cookies.backend.txt
+
+
+# temp/test artifacts
+*.cookies.txt
+*.cookie.txt
+*.csrf.txt
+csrf-token.txt
+*-test.http
+*-verification.http
+*-bff.http
+*.pid
+test-login.json
+login.json
+debug-session.sql
+web.log
+
+# local SQLite (optional; keep if you use sqlite in dev)
+app.db
+app.db-shm
+app.db-wal
+vah_corrupted.db
+vah.db.backup
