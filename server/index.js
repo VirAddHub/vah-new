@@ -400,9 +400,9 @@ try {
 // Schema is now managed by scripts/db-schema.sql and npm run db:init
 // Initialize schema based on database type
 (async () => {
-    const isPg = /^postgres/i.test(process.env.DATABASE_URL || '');
+    const { DB_CLIENT } = require('./db');
 
-    if (isPg) {
+    if (DB_CLIENT === 'pg') {
         // PostgreSQL schema is handled by the adapter
         logger.info('PostgreSQL schema will be ensured by adapter');
     } else {
@@ -1193,9 +1193,9 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
 // Auto-ensure session columns at startup
 (async function ensureSessionColumns() {
     try {
-        const isPg = /^postgres/i.test(process.env.DATABASE_URL || '');
+        const { DB_CLIENT } = require('./db');
 
-        if (isPg) {
+        if (DB_CLIENT === 'pg') {
             // PostgreSQL: Check if columns exist using information_schema
             const { Pool } = require('pg');
             const pool = new Pool({

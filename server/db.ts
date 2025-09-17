@@ -72,8 +72,9 @@ let pgPool: import('pg').Pool | null = null;
 if (DB_CLIENT === 'sqlite') {
   // NOTE: keep path configurable via env for local dev; do NOT use in production.
   const Database = require('better-sqlite3') as typeof import('better-sqlite3');
+  const { resolveDataDir } = require('./storage-paths');
   const SQLITE_PATH =
-    process.env.SQLITE_PATH || process.env.DB_PATH || 'app.db';
+    process.env.SQLITE_PATH || process.env.DB_PATH || require('path').join(resolveDataDir(), 'app.db');
   sqlite = new Database(SQLITE_PATH);
 } else {
   const { Pool } = require('pg') as typeof import('pg');
@@ -262,4 +263,19 @@ const db: DB = ((): DB => {
   };
 })();
 
-export { db, DB_CLIENT };
+// Helper function to list tables (for schema validation)
+async function listTables(): Promise<string[]> {
+  if (DB_CLIENT === 'sqlite') {
+    // Use the existing SQLite instance
+    const result = sqlite!.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    return result.map((row: any) => row.name);
+  } else {
+    // PostgreSQL
+    const { rows } = await withPgClient((c) => 
+      c.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+    );
+    return rows.map((row: any) => row.tablename);
+  }
+}
+
+export { db, DB_CLIENT, listTables };
