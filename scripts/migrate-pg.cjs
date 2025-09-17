@@ -13,7 +13,10 @@ const dir = path.join(__dirname, 'migrations-pg');
 const files = fs.readdirSync(dir).filter(f => f.match(/^\d+_.*\.sql$/)).sort();
 
 (async () => {
-    const client = new Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const client = new Client({
+        connectionString: DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
     await client.connect();
 
     await client.query('BEGIN');

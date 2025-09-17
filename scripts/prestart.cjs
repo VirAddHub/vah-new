@@ -1,21 +1,26 @@
 /* eslint-disable no-console */
 const { execSync } = require('child_process');
-const { dbKind } = require('./lib/db-kind.cjs');
 
-const kind = dbKind();
-console.log('[prestart] DB kind:', kind);
+if (!process.env.DATABASE_URL) {
+    console.error('[prestart] DATABASE_URL is required for PostgreSQL-only mode');
+    process.exit(1);
+}
 
-if (kind === 'sqlite') {
-    console.log('[prestart] running SQLite migrate + seed');
-    execSync('node scripts/migrate-sqlite.cjs', { stdio: 'inherit' });
-    execSync('node scripts/seed.cjs', { stdio: 'inherit' });
-} else {
-    console.log('[prestart] Postgres detected — running PG migrate');
+console.log('[prestart] DB: postgres');
+console.log('[prestart] running PostgreSQL migrate + seed');
+
+try {
     execSync('node scripts/migrate-pg.cjs', { stdio: 'inherit' });
-    // Optional: run PG seed for basic data
-    try {
-        execSync('node scripts/seed-pg.cjs', { stdio: 'inherit' });
-    } catch (err) {
-        console.warn('[prestart] PG seed failed (non-critical):', err.message);
-    }
+    console.log('[prestart] PostgreSQL migration completed');
+} catch (err) {
+    console.error('[prestart] PostgreSQL migration failed:', err.message);
+    process.exit(1);
+}
+
+// Optional: run PG seed for basic data
+try {
+    execSync('node scripts/seed-pg.cjs', { stdio: 'inherit' });
+    console.log('[prestart] PostgreSQL seed completed');
+} catch (err) {
+    console.warn('[prestart] PG seed failed (non-critical):', err.message);
 }
