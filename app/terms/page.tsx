@@ -2,9 +2,9 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
 export const metadata = {
-  title: 'Terms of Service | Virtual Address Hub',
-  description:
-    'The terms that govern your use of Virtual Address Hub, including account, billing, acceptable use and limitations of liability.',
+    title: 'Terms of Service | Virtual Address Hub',
+    description:
+        'The terms that govern your use of Virtual Address Hub, including account, billing, acceptable use and limitations of liability.',
 };
 
 export default function TermsOfServicePage() {

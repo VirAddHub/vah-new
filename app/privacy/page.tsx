@@ -2,9 +2,9 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
 export const metadata = {
-  title: 'Privacy Policy | Virtual Address Hub',
-  description:
-    'Learn how Virtual Address Hub collects, uses and protects your personal data. GDPR-compliant processing, retention and your rights.',
+    title: 'Privacy Policy | Virtual Address Hub',
+    description:
+        'Learn how Virtual Address Hub collects, uses and protects your personal data. GDPR-compliant processing, retention and your rights.',
 };
 
 export default function PrivacyPolicyPage() {

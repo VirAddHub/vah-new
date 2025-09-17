@@ -1,4 +1,15 @@
-# Security Guidelines
+# 🔐 Security Guidelines
+
+> **Important:** This document lists **what** secrets/env vars are required.  
+> It **never** contains real values. Keep all real secrets in Render/GitHub Secrets.
+
+**TL;DR**
+- Real secrets live only in **Render env vars** (prod) and **GitHub Secrets** (CI).
+- `.env.example` files are documentation placeholders only.
+- If a secret ever leaks, **rotate immediately** and redeploy.
+- Enable **GitHub Secret Scanning** and **Push Protection**.
+
+---
 
 ## Environment Variables
 
@@ -105,3 +116,31 @@ For GitHub Actions or other CI systems:
 4. **Rotate keys** regularly and immediately if exposed
 5. **Monitor** for exposed secrets in git history
 6. **Use different keys** for different environments (dev/staging/prod)
+
+---
+
+## GitHub Secret Scanning & Push Protection
+
+1) **Enable for the repository/organization**  
+   - Settings → Code security & analysis → Enable **Secret scanning** and **Push protection**.
+
+2) **Optional local scan before pushing**  
+   - With Docker:
+     ```bash
+     docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo --redact
+     ```
+   - Or install gitleaks locally and run `gitleaks detect --redact`.
+
+3) **Optional pre-push gated scan**  
+   - Set `RUN_SECRET_SCAN=1` when you want the hook to run a local scan (see `.husky/pre-push`).
+
+---
+
+## Rotation Checklist (when exposure suspected)
+
+1. Rotate exposed key in the vendor dashboard (Postmark, GoCardless, etc.)
+2. Update the new value in Render (and GitHub Secrets if used in CI)
+3. Redeploy affected services
+4. Run a repo-wide history scan (e.g., `gitleaks detect --redact`)
+5. If something landed in history, rewrite with `git filter-repo` and **force-push**
+6. Notify teammates to re-clone/reset to the new history

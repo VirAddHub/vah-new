@@ -2,9 +2,9 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
 export const metadata = {
-  title: 'KYC Policy | Virtual Address Hub',
-  description:
-    'Our Know Your Customer policy: identity verification requirements, AML measures and data handling practices.',
+    title: 'KYC Policy | Virtual Address Hub',
+    description:
+        'Our Know Your Customer policy: identity verification requirements, AML measures and data handling practices.',
 };
 
 export default function KycPolicyPage() {
