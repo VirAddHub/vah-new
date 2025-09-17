@@ -1,13 +1,6 @@
 #!/usr/bin/env sh
-# DO NOT add `. "$(dirname -- "$0")/_/husky.sh"` — it's deprecated and broke your shell
 set -e
 
-if [ "$SKIP_PREPUSH" = "1" ]; then
-  echo "[pre-push] skipped"; exit 0
-fi
-
 echo "[pre-push] Running checks…"
-npm run -s typecheck
-# Temporarily disable linting due to many frontend issues
-# npm run -s lint
+npm run test:prepush
 echo "[pre-push] OK"
