@@ -26,7 +26,7 @@ function clearSessionCookie(res) {
 }
 
 // DB helpers (adjust for your schema)
-const { db } = require('../db'); // your better-sqlite3 instance
+const { db } = require('../db'); // Postgres database instance
 
 // Login handler moved to main server/index.js to avoid conflicts
 

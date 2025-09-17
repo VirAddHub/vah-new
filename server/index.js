@@ -307,7 +307,7 @@ if (process.env.NODE_ENV === 'production' && !ADMIN_SETUP_SECRET) {
 
 const SETUP_ENABLED = process.env.SETUP_ENABLED === 'true';
 const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
-const DB_PATH = process.env.DATABASE_URL || process.env.DB_PATH || (NODE_ENV === 'test' ? ':memory:' : 'data/app.db');
+const DB_PATH = process.env.DATABASE_URL;
 
 
 const CERTIFICATE_BASE_URL =
@@ -1681,7 +1681,7 @@ app.get("/api/debug/db-info", (_req, res) => {
             ok: true,
             db: list,
             mailCount: counts.c,
-            dbPath: process.env.DATABASE_URL || process.env.DB_PATH || process.env.SQLITE_PATH || require('path').join(process.cwd(), 'data', 'app.db'),
+            dbPath: process.env.DATABASE_URL,
             cwd: process.cwd()
         });
     } catch (e) {
@@ -2816,6 +2816,17 @@ app.use((err, req, res, next) => {
 let server = null;
 
 if (require.main === module) {
+    // Run one-off maintenance before listening
+    (async () => {
+        try {
+            const { cleanupExpiredTokens } = require('./bootstrap/cleanup');
+            await cleanupExpiredTokens();
+            console.log('[boot] Cleanup completed successfully');
+        } catch (e) {
+            console.error('[boot] cleanupExpiredTokens failed:', e?.message || e);
+        }
+    })();
+
     server = app.listen(PORT, HOST, () => {
         console.log(`VAH backend listening on http://${HOST}:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
