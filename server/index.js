@@ -1194,7 +1194,7 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
 (async function ensureSessionColumns() {
     try {
         const isPg = /^postgres/i.test(process.env.DATABASE_URL || '');
-        
+
         if (isPg) {
             // PostgreSQL: Check if columns exist using information_schema
             const { Pool } = require('pg');
@@ -1202,7 +1202,7 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
                 connectionString: process.env.DATABASE_URL,
                 ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
             });
-            
+
             try {
                 const { rows } = await pool.query(`
                     SELECT column_name 
@@ -1210,7 +1210,7 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
                     WHERE table_name = 'user' AND table_schema = 'public'
                 `);
                 const cols = rows.map(r => r.column_name);
-                
+
                 if (!cols.includes('session_token')) {
                     try {
                         await pool.query('ALTER TABLE "user" ADD COLUMN session_token TEXT');
@@ -1299,7 +1299,7 @@ function logAuth(...args) {
     if (DEBUG_AUTH) console.log('[auth]', ...args);
 }
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     try {
         logAuth('start');
 
