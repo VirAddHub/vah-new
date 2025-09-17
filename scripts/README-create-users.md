@@ -7,6 +7,8 @@ This directory contains several scripts to create admin and worker users in your
 - **Admin**: `admin@yourdomain.com` / `CHANGE_ME_AFTER_FIRST_LOGIN`
 - **Worker**: `worker@yourdomain.com` / `CHANGE_ME_AFTER_FIRST_LOGIN`
 
+**⚠️ SECURITY WARNING**: Change passwords immediately after first login!
+
 ## Script Options
 
 ### 1. Direct SQL (Recommended)

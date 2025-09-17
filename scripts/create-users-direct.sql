@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 INSERT INTO "user" (email, password, first_name, last_name, role, is_admin, status, created_at, updated_at)
 VALUES (
   'ops@virtualaddresshub.co.uk',
-  crypt('***REMOVED***', gen_salt('bf', 10)),  -- bcrypt with cost 10
+  crypt('CHANGE_ME_AFTER_FIRST_LOGIN', gen_salt('bf', 10)),  -- bcrypt with cost 10
   'Site', 
   'Admin',
   'admin', 

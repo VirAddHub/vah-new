@@ -17,8 +17,8 @@ const bcrypt = require('bcrypt');
         await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
 
         // Create admin user
-        const adminEmail = 'admin@yourdomain.com';
-        const adminPassword = 'CHANGE_ME_AFTER_FIRST_LOGIN';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@yourdomain.com';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'CHANGE_ME_AFTER_FIRST_LOGIN';
         const adminHash = await bcrypt.hash(adminPassword, 10);
         const now = Math.floor(Date.now());
 
@@ -43,8 +43,8 @@ const bcrypt = require('bcrypt');
         ]);
 
         // Create worker user
-        const workerEmail = 'worker@yourdomain.com';
-        const workerPassword = 'CHANGE_ME_AFTER_FIRST_LOGIN';
+        const workerEmail = process.env.WORKER_EMAIL || 'worker@yourdomain.com';
+        const workerPassword = process.env.WORKER_PASSWORD || 'CHANGE_ME_AFTER_FIRST_LOGIN';
         const workerHash = await bcrypt.hash(workerPassword, 10);
 
         await client.query(`
