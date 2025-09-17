@@ -1,5 +1,5 @@
 const express = require('express');
-const { db, DB_KIND } = require('../db');
+const { db, DB_CLIENT } = require('../db');
 const router = express.Router();
 
 router.get('/health', async (_req, res) => {
@@ -7,7 +7,7 @@ router.get('/health', async (_req, res) => {
     await db.get('SELECT 1', []);
     return res.status(200).json({
       ok: true,
-      db: DB_KIND,
+      db: DB_CLIENT,
       uptime: process.uptime(),
       ts: new Date().toISOString()
     });
@@ -15,7 +15,7 @@ router.get('/health', async (_req, res) => {
     return res.status(500).json({ 
       ok: false, 
       error: e.message, 
-      db: DB_KIND,
+      db: DB_CLIENT,
       uptime: process.uptime(),
       ts: new Date().toISOString()
     });
