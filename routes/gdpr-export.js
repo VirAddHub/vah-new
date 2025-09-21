@@ -70,14 +70,15 @@ router.get("/export/status", async (req, res) => {
 function shape(j) {
   if (!j) return null;
   const base = process.env.APP_ORIGIN || "http://localhost:3000";
-  const download = (j.status === "done" && j.token && j.expires_at && Date.now() < j.expires_at)
+  const expiresAt = j.storage_expires_at || j.expires_at;
+  const download = (j.status === "done" && j.token && expiresAt && Date.now() < expiresAt)
     ? `${base}/api/bff/downloads/export/${j.token}` : null;
   return {
     id: j.id, status: j.status,
     created_at: j.created_at, started_at: j.started_at, completed_at: j.completed_at,
     error: j.error || null,
     size: j.file_size || null,
-    download, expires_at: j.expires_at || null,
+    download, expires_at: expiresAt || null,
   };
 }
 
