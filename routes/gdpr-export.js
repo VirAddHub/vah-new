@@ -11,42 +11,59 @@ router.post("/export/request", async (req, res) => {
   const userId = Number(req.user?.id || 0);
   if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
 
-  // throttle: if a pending/running job exists or a completed in last 12h, return that
-  const recent = db.prepare(`
-    SELECT * FROM export_job
-    WHERE user_id=? AND type='gdpr_v1'
-    ORDER BY created_at DESC
-    LIMIT 1
-  `).get(userId);
+  try {
+    // throttle: if a pending/running job exists or a completed in last 12h, return that
+    const recent = await db.get(`
+      SELECT * FROM export_job
+      WHERE user_id=? AND type='gdpr_v1'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [userId]);
 
-  const twelveHours = 12 * 60 * 60 * 1000;
-  const now = Date.now();
-  if (recent && (recent.status === "pending" || recent.status === "running" || (recent.status === "done" && (now - recent.created_at) < twelveHours))) {
-    return res.status(202).json({ ok: true, job: shape(recent) });
+    const twelveHours = 12 * 60 * 60 * 1000;
+    const now = Date.now();
+    if (recent && (recent.status === "pending" || recent.status === "running" || (recent.status === "done" && (now - recent.created_at) < twelveHours))) {
+      return res.status(202).json({ ok: true, job: shape(recent) });
+    }
+
+    const result = await db.run(`
+      INSERT INTO export_job (user_id, type, status, created_at)
+      VALUES (?, 'gdpr_v1', 'pending', ?)
+    `, [userId, now]);
+    const jobId = result.insertId || result.lastInsertRowid;
+
+    // kick async job
+    setImmediate(() => runGdprExport(jobId));
+
+    const job = await db.get(`SELECT * FROM export_job WHERE id=?`, [jobId]);
+    return res.status(202).json({ ok: true, job: shape(job) });
+  } catch (e) {
+    if (e?.code === '42P01') {
+      return res.status(503).json({ ok: false, error: "export_job table not available" });
+    }
+    console.error('[gdpr-export] error:', e?.message || e);
+    return res.status(500).json({ ok: false, error: "internal error" });
   }
-
-  const info = db.prepare(`
-    INSERT INTO export_job (user_id, type, status, created_at)
-    VALUES (?, 'gdpr_v1', 'pending', ?)
-  `).run(userId, now);
-  const jobId = info.lastInsertRowid;
-
-  // kick async job
-  setImmediate(() => runGdprExport(jobId));
-
-  const job = db.prepare(`SELECT * FROM export_job WHERE id=?`).get(jobId);
-  return res.status(202).json({ ok: true, job: shape(job) });
 });
 
 /** GET /api/profile/gdpr/export/status */
-router.get("/export/status", (req, res) => {
+router.get("/export/status", async (req, res) => {
   const userId = Number(req.user?.id || 0);
   if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
-  const row = db.prepare(`
-    SELECT * FROM export_job WHERE user_id=? AND type='gdpr_v1' ORDER BY created_at DESC LIMIT 1
-  `).get(userId);
-  if (!row) return res.json({ ok: true, job: null });
-  return res.json({ ok: true, job: shape(row) });
+
+  try {
+    const row = await db.get(`
+      SELECT * FROM export_job WHERE user_id=? AND type='gdpr_v1' ORDER BY created_at DESC LIMIT 1
+    `, [userId]);
+    if (!row) return res.json({ ok: true, job: null });
+    return res.json({ ok: true, job: shape(row) });
+  } catch (e) {
+    if (e?.code === '42P01') {
+      return res.status(503).json({ ok: false, error: "export_job table not available" });
+    }
+    console.error('[gdpr-export-status] error:', e?.message || e);
+    return res.status(500).json({ ok: false, error: "internal error" });
+  }
 });
 
 // helper to hide paths and expose a download URL token

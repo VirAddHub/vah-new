@@ -1878,7 +1878,15 @@ const downloads = require("../routes/downloads");
 const { scheduleCleanup } = require("../lib/gdpr-export");
 app.use("/api/profile", gdprExport);   // requires auth
 app.use("/api/downloads", downloads);  // token-auth
-scheduleCleanup();
+
+// One-time scheduling guard to prevent duplicate intervals in hot-reload / multi-worker scenarios
+if (!global.__EXPORT_JOBS_SCHEDULED__ && process.env.HOURLY_EXPORTS_ENABLED !== 'false') {
+    scheduleCleanup();
+    global.__EXPORT_JOBS_SCHEDULED__ = true;
+    console.log('[export-jobs] Hourly cleanup scheduled (locked)');
+} else if (process.env.HOURLY_EXPORTS_ENABLED === 'false') {
+    console.log('[export-jobs] Hourly cleanup disabled via HOURLY_EXPORTS_ENABLED=false');
+}
 
 // ===== Notifications Routes =====
 const notifications = require("../routes/notifications");
@@ -1889,6 +1897,14 @@ const { httpMetricsMiddleware } = require("../lib/metrics");
 const metricsRoute = require("../routes/metrics");
 app.use(httpMetricsMiddleware());         // request counters + latency hist
 app.use("/api/metrics", metricsRoute);    // Prometheus scrape endpoint
+
+// Debug routes (gated behind environment variable)
+if (process.env.DEBUG_ROUTES === 'true') {
+    app.use("/api/debug", require("./routes/debug"));
+    console.log('[debug] routes enabled');
+} else {
+    console.log('[debug] routes disabled (set DEBUG_ROUTES=true to enable)');
+}
 
 // ===== OneDrive Webhook Routes =====
 const onedriveWebhook = require("../routes/webhooks-onedrive");

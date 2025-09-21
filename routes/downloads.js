@@ -6,19 +6,27 @@ const { db } = require("../server/db");
 const router = express.Router();
 
 /** GET /api/downloads/export/:token  (no auth; token is the auth) */
-router.get("/export/:token", (req, res) => {
+router.get("/export/:token", async (req, res) => {
     const token = String(req.params.token || "");
     if (!token) return res.status(400).send("Missing token");
 
-    const row = db.prepare(`SELECT * FROM export_job WHERE token=?`).get(token);
-    if (!row || row.status !== "done") return res.status(404).send("Not found");
-    if (!row.expires_at || Date.now() > Number(row.expires_at)) return res.status(410).send("Expired");
-    if (!row.file_path || !fs.existsSync(row.file_path)) return res.status(404).send("File not found");
+    try {
+        const row = await db.get(`SELECT * FROM export_job WHERE token=?`, [token]);
+        if (!row || row.status !== "done") return res.status(404).send("Not found");
+        if (!row.expires_at || Date.now() > Number(row.expires_at)) return res.status(410).send("Expired");
+        if (!row.file_path || !fs.existsSync(row.file_path)) return res.status(404).send("File not found");
 
-    const filename = path.basename(row.file_path);
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    fs.createReadStream(row.file_path).pipe(res);
+        const filename = path.basename(row.file_path);
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        fs.createReadStream(row.file_path).pipe(res);
+    } catch (e) {
+        if (e?.code === '42P01') {
+            return res.status(503).send("export_job table not available");
+        }
+        console.error('[downloads-export] error:', e?.message || e);
+        return res.status(500).send("Internal error");
+    }
 });
 
 module.exports = router;

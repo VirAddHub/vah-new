@@ -170,7 +170,7 @@ const db: DB = ((): DB => {
             return res as T;
           }
         } catch (e) {
-          try { sqlite!.exec('ROLLBACK'); } catch {}
+          try { sqlite!.exec('ROLLBACK'); } catch { }
           throw e;
         }
       },
@@ -271,11 +271,11 @@ async function listTables(): Promise<string[]> {
     return result.map((row: any) => row.name);
   } else {
     // PostgreSQL
-    const { rows } = await withPgClient((c) => 
+    const { rows } = await withPgClient((c) =>
       c.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
     );
     return rows.map((row: any) => row.tablename);
   }
 }
 
-export { db, DB_CLIENT, listTables };
+export { db, DB_CLIENT, listTables, withPgClient };
