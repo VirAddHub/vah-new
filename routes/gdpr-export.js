@@ -71,7 +71,7 @@ function shape(j) {
   if (!j) return null;
   const base = process.env.APP_ORIGIN || "http://localhost:3000";
   // Use dynamic expiry detection - works whether storage_expires_at exists or not
-  const expiresAt = j.storage_expires_at || j.expires_at;
+  const expiresAt = j.expires_at;
   const download = (j.status === "done" && j.token && expiresAt && Date.now() < expiresAt)
     ? `${base}/api/bff/downloads/export/${j.token}` : null;
   return {

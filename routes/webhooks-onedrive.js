@@ -64,7 +64,7 @@ router.post("/", (req, res) => {
      *   userId,            // preferred (VAH user id)
      *   userCrn,           // optional (lookup by company_reg_no if userId missing)
      *   mailItemId,        // optional to link directly
-     *   scanDate           // ISO string or ms (used for storage_expires_at)
+     *   scanDate           // ISO string or ms (used for expires_at)
      * }
      */
     const event = String(b.event || "").toLowerCase();
@@ -118,7 +118,7 @@ router.post("/", (req, res) => {
     if (!mailId) {
         const info = db.prepare(`
       INSERT INTO mail_item (created_at, user_id, subject, sender_name, tag, status, notes,
-                             deleted, file_id, forwarding_status, storage_expires_at)
+                             deleted, file_id, forwarding_status, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'No', ?)
     `).run(
             now,
@@ -135,7 +135,7 @@ router.post("/", (req, res) => {
     } else {
         db.prepare(`
       UPDATE mail_item SET file_id = COALESCE(file_id, ?),
-                           storage_expires_at = COALESCE(storage_expires_at, ?)
+                           expires_at = COALESCE(expires_at, ?)
       WHERE id=?
     `).run(fileRow.id, expiresAt, mailId);
     }

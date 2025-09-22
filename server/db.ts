@@ -91,7 +91,24 @@ if (DB_CLIENT === 'sqlite') {
 
 async function withPgClient<T>(fn: (c: import('pg').PoolClient) => Promise<T>): Promise<T> {
   const c = await pgPool!.connect();
-  try { return await fn(c); } finally { c.release(); }
+
+  // Monkey-patch query to log SQL on error (once per error)
+  const origQuery = c.query.bind(c);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (c as any).query = async (text: string, params?: any[]) => {
+    try {
+      return await origQuery(text, params);
+    } catch (e: any) {
+      console.error('[pg.query] error:', e?.code, e?.message, '\nSQL:', text, '\nParams:', params);
+      throw e;
+    }
+  };
+
+  try {
+    return await fn(c);
+  } finally {
+    c.release();
+  }
 }
 
 // ---------- Public surface ----------
@@ -184,34 +201,64 @@ const db: DB = ((): DB => {
       // Provide a facade so legacy call sites can switch by just adding `await`.
       return {
         get: async (...args: Param[]) => {
-          const { sql: q, params: p } = convertForPg(sql, args);
-          const { rows } = await withPgClient((c) => c.query(q, p));
-          return rows[0];
+          try {
+            const { sql: q, params: p } = convertForPg(sql, args);
+            const { rows } = await withPgClient((c) => c.query(q, p));
+            return rows[0];
+          } catch (e: any) {
+            console.error('[db.prepare.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
+            throw e;
+          }
         },
         all: async (...args: Param[]) => {
-          const { sql: q, params: p } = convertForPg(sql, args);
-          const { rows } = await withPgClient((c) => c.query(q, p));
-          return rows;
+          try {
+            const { sql: q, params: p } = convertForPg(sql, args);
+            const { rows } = await withPgClient((c) => c.query(q, p));
+            return rows;
+          } catch (e: any) {
+            console.error('[db.prepare.all] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
+            throw e;
+          }
         },
         run: async (...args: Param[]) => {
-          const { sql: q, params: p } = convertForPg(sql, args);
-          return withPgClient((c) => c.query(q, p));
+          try {
+            const { sql: q, params: p } = convertForPg(sql, args);
+            return withPgClient((c) => c.query(q, p));
+          } catch (e: any) {
+            console.error('[db.prepare.run] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
+            throw e;
+          }
         },
       };
     },
     async get<T = any>(sql: string, params?: Param[]) {
-      const { sql: q, params: p } = convertForPg(sql, params ?? []);
-      const { rows } = await withPgClient((c) => c.query(q, p));
-      return (rows[0] as T) ?? undefined;
+      try {
+        const { sql: q, params: p } = convertForPg(sql, params ?? []);
+        const { rows } = await withPgClient((c) => c.query(q, p));
+        return (rows[0] as T) ?? undefined;
+      } catch (e: any) {
+        console.error('[db.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+        throw e;
+      }
     },
     async all<T = any>(sql: string, params?: Param[]) {
-      const { sql: q, params: p } = convertForPg(sql, params ?? []);
-      const { rows } = await withPgClient((c) => c.query(q, p));
-      return rows as T[];
+      try {
+        const { sql: q, params: p } = convertForPg(sql, params ?? []);
+        const { rows } = await withPgClient((c) => c.query(q, p));
+        return rows as T[];
+      } catch (e: any) {
+        console.error('[db.all] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+        throw e;
+      }
     },
     async run(sql: string, params?: Param[]) {
-      const { sql: q, params: p } = convertForPg(sql, params ?? []);
-      return withPgClient((c) => c.query(q, p));
+      try {
+        const { sql: q, params: p } = convertForPg(sql, params ?? []);
+        return withPgClient((c) => c.query(q, p));
+      } catch (e: any) {
+        console.error('[db.run] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+        throw e;
+      }
     },
     async transaction<T>(fn: (tx: DB) => Promise<T> | T): Promise<T> {
       return withPgClient(async (c) => {

@@ -1,16 +1,18 @@
 services:
   - type: web
     name: vah-api
-    rootDir: server
+    rootDir: .
     env: node
-    buildCommand: npm ci
-    startCommand: node index.js
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
     healthCheckPath: /api/health
     disk:
       name: vah-data
       mountPath: /var/data
       sizeGB: 5
     envVars:
+      - key: NODE_VERSION
+        value: "20"
       - key: NODE_ENV
         value: production
       - key: APP_ORIGIN

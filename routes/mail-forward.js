@@ -28,11 +28,11 @@ router.post("/forward", async (req, res) => {
     const userId = Number(req.user?.id || 0);
     if (!userId) return res.status(401).json({ ok: false, error: "unauthenticated" });
     const { mail_item_id, recipient, notes, adminOverride } = req.body || {};
-    const m = db.prepare(`SELECT id, user_id, storage_expires_at FROM mail_item WHERE id=?`).get(Number(mail_item_id || 0));
+    const m = db.prepare(`SELECT id, user_id, expires_at FROM mail_item WHERE id=?`).get(Number(mail_item_id || 0));
     if (!m || m.user_id !== userId) return res.status(404).json({ ok: false, error: "not_found" });
 
     // Forwarding is blocked after storage expiry (unlike downloads)
-    const expired = m.storage_expires_at && Date.now() > Number(m.storage_expires_at);
+    const expired = m.expires_at && Date.now() > Number(m.expires_at);
     if (expired && !req.user?.is_admin) {
         auditForward(userId, m.id, "blocked", "expired");
         forwardingCounter.inc({ result: "blocked" });

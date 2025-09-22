@@ -19,8 +19,8 @@ router.post("/backfill-expiry", (req, res) => {
     const tx = db.transaction(() => {
         const updated = db.prepare(`
       UPDATE mail_item
-         SET storage_expires_at = created_at + ?
-       WHERE storage_expires_at IS NULL
+         SET expires_at = created_at + ?
+       WHERE expires_at IS NULL
          AND created_at IS NOT NULL
     `).run(delta).changes;
 

@@ -13,7 +13,7 @@ router.get("/export/:token", async (req, res) => {
     try {
         const row = await db.get(`SELECT *, ${expiryExpr(true)} FROM export_job WHERE token=?`, [token]);
         if (!row || row.status !== "done") return res.status(404).send("Not found");
-        const expiresAt = row.expires_at_ms || row.storage_expires_at || row.expires_at;
+        const expiresAt = row.expires_at_ms || row.expires_at;
         if (!expiresAt || Date.now() > Number(expiresAt)) return res.status(410).send("Expired");
         if (!row.file_path || !fs.existsSync(row.file_path)) return res.status(404).send("File not found");
 

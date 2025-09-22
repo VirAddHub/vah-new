@@ -1881,9 +1881,25 @@ app.use("/api/downloads", downloads);  // token-auth
 
 // One-time scheduling guard to prevent duplicate intervals in hot-reload / multi-worker scenarios
 if (!global.__EXPORT_JOBS_SCHEDULED__ && process.env.HOURLY_EXPORTS_ENABLED !== 'false') {
-    scheduleCleanup();
-    global.__EXPORT_JOBS_SCHEDULED__ = true;
-    console.log('[export-jobs] Hourly cleanup scheduled (locked)');
+    // Ensure schema features are detected before scheduling cleanup - MUST be awaited!
+    // This will be called from the main startup sequence to ensure proper order
+    global.__SCHEDULE_CLEANUP_AFTER_SCHEMA__ = async () => {
+        try {
+            const { detectSchemaFeatures } = require('./db');
+            await detectSchemaFeatures();
+
+            // Only schedule after schema detection completes
+            scheduleCleanup();
+            global.__EXPORT_JOBS_SCHEDULED__ = true;
+            console.log('[export-jobs] Hourly cleanup scheduled (locked)');
+        } catch (e) {
+            console.warn('[export-jobs] Schema detection failed:', e?.message || e);
+            // Still schedule cleanup even if schema detection fails
+            scheduleCleanup();
+            global.__EXPORT_JOBS_SCHEDULED__ = true;
+            console.log('[export-jobs] Hourly cleanup scheduled (locked) - schema detection failed');
+        }
+    };
 } else if (process.env.HOURLY_EXPORTS_ENABLED === 'false') {
     console.log('[export-jobs] Hourly cleanup disabled via HOURLY_EXPORTS_ENABLED=false');
 }
@@ -2827,6 +2843,27 @@ app.use((err, req, res, next) => {
 let server = null;
 
 if (require.main === module) {
+    // Log build metadata
+    try {
+        const fs = require('fs');
+        const buildMeta = JSON.parse(fs.readFileSync('dist/build-meta.json', 'utf8'));
+        console.log('[boot] build:', buildMeta);
+    } catch {
+        console.log('[boot] build: (no meta)');
+    }
+
+    // Monitor for critical database errors
+    const originalConsoleError = console.error;
+    console.error = function (...args) {
+        const message = args.join(' ');
+        if (message.includes('[pg.query] error: 42703') || message.includes('[pg.query] error: 42P01')) {
+            console.error('🚨 CRITICAL DB ERROR DETECTED:', ...args);
+            // In production, you might want to send this to your alerting system
+            // e.g., sendToSlack('Critical DB error: ' + message);
+        }
+        originalConsoleError.apply(console, args);
+    };
+
     // Run one-off maintenance before listening
     (async () => {
         try {
@@ -2835,6 +2872,11 @@ if (require.main === module) {
             console.log('[boot] Cleanup completed successfully');
         } catch (e) {
             console.error('[boot] cleanupExpiredTokens failed:', e?.message || e);
+        }
+
+        // Schedule cleanup jobs AFTER schema detection (if enabled)
+        if (global.__SCHEDULE_CLEANUP_AFTER_SCHEMA__) {
+            await global.__SCHEDULE_CLEANUP_AFTER_SCHEMA__();
         }
     })();
 
@@ -2850,10 +2892,11 @@ if (require.main === module) {
         try {
             const now = Date.now();
             const soon = now + 48 * 60 * 60 * 1000;
+            const { expiryExpr } = require('./db');
             const rows = db.prepare(`
-    SELECT id, user_id, storage_expires_at
+    SELECT id, user_id, ${expiryExpr(true)}
     FROM mail_item
-    WHERE storage_expires_at BETWEEN ? AND ?
+    WHERE ${expiryExpr()} BETWEEN ? AND ?
     AND forwarding_status = 'No'
     `).all(now, soon);
 
@@ -2863,7 +2906,7 @@ if (require.main === module) {
                 type: "mail",
                 title: "Forwarding window ending soon",
                 body: "You have mail that expires in the next 48 hours.",
-                meta: { mail_item_id: r.id, expires_at: r.storage_expires_at }
+                meta: { mail_item_id: r.id, expires_at: r.expires_at_ms }
             }));
         } catch (_) { }
     }, 60 * 60 * 1000); // Run every hour

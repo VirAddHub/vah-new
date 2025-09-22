@@ -52,7 +52,7 @@ router.get("/search", (req, res) => {
         try {
             const sql = `
         SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted,
-               m.file_id, m.forwarding_status, m.storage_expires_at
+               m.file_id, m.forwarding_status, m.expires_at
         FROM mail_item m
         WHERE (m.subject LIKE ? OR m.sender_name LIKE ? OR m.tag LIKE ? OR m.notes LIKE ?) AND ${where.join(" AND ")}
         ORDER BY m.created_at DESC
@@ -74,7 +74,7 @@ router.get("/search", (req, res) => {
     const likeQ = `%${q.replace(/[%_]/g, "")}%`;
     const sql = `
     SELECT m.id, m.created_at, m.subject, m.sender_name, m.tag, m.status, m.scanned, m.deleted,
-           m.file_id, m.forwarding_status, m.storage_expires_at
+           m.file_id, m.forwarding_status, m.expires_at
     FROM mail_item m
     WHERE ${where.join(" AND ")}
       ${q ? "AND (m.subject LIKE ? OR m.sender_name LIKE ? OR m.notes LIKE ? OR m.tag LIKE ?)" : ""}
