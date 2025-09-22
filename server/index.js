@@ -1889,13 +1889,19 @@ if (!global.__EXPORT_JOBS_SCHEDULED__ && process.env.HOURLY_EXPORTS_ENABLED !== 
             await detectSchemaFeatures();
 
             // Only schedule after schema detection completes
-            scheduleCleanup();
+            const { runCleanupOnceLocked } = require('../lib/gdpr-export');
+            if (typeof scheduleCleanup === 'function') {
+                scheduleCleanup(runCleanupOnceLocked);
+            }
             global.__EXPORT_JOBS_SCHEDULED__ = true;
             console.log('[export-jobs] Hourly cleanup scheduled (locked)');
         } catch (e) {
             console.warn('[export-jobs] Schema detection failed:', e?.message || e);
             // Still schedule cleanup even if schema detection fails
-            scheduleCleanup();
+            const { runCleanupOnceLocked } = require('../lib/gdpr-export');
+            if (typeof scheduleCleanup === 'function') {
+                scheduleCleanup(runCleanupOnceLocked);
+            }
             global.__EXPORT_JOBS_SCHEDULED__ = true;
             console.log('[export-jobs] Hourly cleanup scheduled (locked) - schema detection failed');
         }

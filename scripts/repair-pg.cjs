@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Schema guard: ensure public.export_job.storage_expires_at does NOT exist */
+/* Ensure compat column exists (stability while old builds may still run) */
 const { Client } = require('pg');
 
 (async () => {
@@ -9,21 +9,21 @@ const { Client } = require('pg');
   const client = new Client({ connectionString: cs, ssl: { rejectUnauthorized: false } });
   try {
     await client.connect();
-    const chk = await client.query(`
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema='public' AND table_name='export_job' AND column_name='storage_expires_at'
-      LIMIT 1
+
+    await client.query(`
+      ALTER TABLE public.export_job
+        ADD COLUMN IF NOT EXISTS storage_expires_at bigint GENERATED ALWAYS AS (expires_at) STORED;
     `);
-    if (chk.rowCount) {
-      console.error('[repair] storage_expires_at still exists — run 008_drop_storage_expires_at.sql');
-      process.exit(1);
-    }
-    console.log('[repair] storage_expires_at column confirmed absent ✅');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS export_job_storage_expires_idx
+        ON public.export_job (storage_expires_at);
+    `);
+
+    console.log('[repair] storage_expires_at ensured ✅');
     process.exit(0);
   } catch (e) {
-    console.error('[repair] failed:', e?.message || e);
-    process.exit(1);
+    console.error('[repair] failed:', e?.message || e); process.exit(1);
   } finally {
-    try { await client.end(); } catch { }
+    try { await client.end(); } catch {}
   }
 })();

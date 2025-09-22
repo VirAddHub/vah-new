@@ -44,7 +44,7 @@ services:
     rootDir: app
     env: node
     buildCommand: npm ci && npm run build
-    startCommand: npm start
+    startCommand: npm run start
     envVars:
       - key: NODE_ENV
         value: production

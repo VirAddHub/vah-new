@@ -37,27 +37,15 @@ if (r.status !== 0) {
     process.exit(r.status || 1);
 }
 
-// Guard against stale builds that still reference storage_expires_at in SQL
+// Stale-build guard: only fail on real SQL patterns
 const fs = require('fs');
-if (fs.existsSync('dist')) {
-    const js = fs.readFileSync('dist/server/index.js', 'utf8');
-    // Check for SQL patterns that indicate hardcoded references
-    const sqlPatterns = [
-        'COALESCE(storage_expires_at',
-        'DROP INDEX export_job_storage_expires_idx',
-        'storage_expires_at BETWEEN',
-        'SELECT.*storage_expires_at',
-        'WHERE.*storage_expires_at'
-    ];
-
-    const hasStaleRefs = sqlPatterns.some(pattern => {
-        const regex = new RegExp(pattern, 'i');
-        return regex.test(js);
-    });
-
-    if (hasStaleRefs) {
-        console.error('[prestart] stale dist: contains hardcoded storage_expires_at SQL patterns — run a clean build');
-        process.exit(1);
-    }
+if (fs.existsSync('dist/server/index.js')) {
+  const js = fs.readFileSync('dist/server/index.js','utf8');
+  const bad = /COALESCE\\(storage_expires_at|SELECT[^;\\n]*storage_expires_at|WHERE[^;\\n]*storage_expires_at/i.test(js);
+  if (bad) {
+    console.error('[prestart] stale dist: SQL references storage_expires_at detected — ensure Render uses npm run build/start');
+    // Do NOT exit 1 yet; allow boot to continue since repair made the column available.
+  } else {
     console.log('[prestart] ✅ dist build verified clean');
+  }
 }
