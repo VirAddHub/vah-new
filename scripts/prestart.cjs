@@ -37,15 +37,39 @@ if (r.status !== 0) {
     process.exit(r.status || 1);
 }
 
-// Stale-build guard: only fail on real SQL patterns
+// --- stale-build guard (precise patterns, no regex syntax errors) ---
 const fs = require('fs');
-if (fs.existsSync('dist/server/index.js')) {
-  const js = fs.readFileSync('dist/server/index.js','utf8');
-  const bad = /COALESCE\\(storage_expires_at|SELECT[^;\\n]*storage_expires_at|WHERE[^;\\n]*storage_expires_at/i.test(js);
-  if (bad) {
-    console.error('[prestart] stale dist: SQL references storage_expires_at detected — ensure Render uses npm run build/start');
-    // Do NOT exit 1 yet; allow boot to continue since repair made the column available.
-  } else {
-    console.log('[prestart] ✅ dist build verified clean');
+const path = require('path');
+
+function scanDistForOldSQL(distDir = 'dist') {
+  const offenders = [];
+  const patterns = [
+    /COALESCE\(storage_expires_at/i,          // literal "(" must be single-escaped in regex literal
+    /\bSELECT[^\n;]*storage_expires_at/i,
+    /\bWHERE[^\n;]*storage_expires_at/i,
+  ];
+
+  function walk(p) {
+    const stat = fs.statSync(p);
+    if (stat.isDirectory()) {
+      for (const name of fs.readdirSync(p)) walk(path.join(p, name));
+    } else if (stat.isFile() && (p.endsWith('.js') || p.endsWith('.mjs'))) {
+      const src = fs.readFileSync(p, 'utf8');
+      const hit = patterns.find((re) => re.test(src));
+      if (hit) offenders.push(p);
+    }
   }
+
+  if (fs.existsSync(distDir)) walk(distDir);
+  return offenders;
 }
+
+const offenders = scanDistForOldSQL('dist');
+if (offenders.length > 0) {
+  console.error('[prestart] stale dist: SQL references to storage_expires_at detected in:');
+  offenders.slice(0, 10).forEach(f => console.error('  -', f));
+  console.error('[prestart] continuing boot because compat column is ensured; update Render Start Command to `npm run start`.');
+} else {
+  console.log('[prestart] ✅ dist build verified clean');
+}
+// --- end stale-build guard ---
