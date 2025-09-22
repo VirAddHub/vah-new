@@ -242,6 +242,7 @@ app.use('/api/billing', require('./routes/billing'));
 app.use('/api', require('./routes/certificate'));
 // Admin routes are mounted above with middleware chain
 app.use('/api/mail', require('./routes/mail-forward'));
+app.use(require('./routes/address'));
 
 // ===== WEBHOOKS (before auth) =====
 // (moved to after database initialization)
