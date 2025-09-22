@@ -70,7 +70,7 @@ router.get("/export/status", async (req, res) => {
 function shape(j) {
   if (!j) return null;
   const base = process.env.APP_ORIGIN || "http://localhost:3000";
-  const expiresAt = j.storage_expires_at || j.expires_at;
+  const expiresAt = j.expires_at; // Use only expires_at for now
   const download = (j.status === "done" && j.token && expiresAt && Date.now() < expiresAt)
     ? `${base}/api/bff/downloads/export/${j.token}` : null;
   return {
