@@ -298,7 +298,7 @@ export async function detectSchemaFeatures() {
     console.log(
       `[schema] export_job.storage_expires_at present: ${HAS_STORAGE_EXPIRES}`
     );
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[schema] feature detection failed:', e?.message || e);
   }
 }
