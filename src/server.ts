@@ -219,6 +219,15 @@ async function start() {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
         console.log(`DB client: ${process.env.DB_CLIENT || 'sqlite'}`);
+        
+        // Log build metadata
+        try {
+            const fs = require('fs');
+            const meta = JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));
+            console.log('[boot] build:', meta);
+        } catch { 
+            console.log('[boot] build: (no meta)'); 
+        }
     });
 }
 
