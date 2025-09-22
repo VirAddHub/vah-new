@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-const { db } = require("../server/db");
+const { db, expiryExpr } = require("../server/db");
 const { runGdprExport } = require("../lib/gdpr-export");
 
 const router = express.Router();
@@ -70,7 +70,8 @@ router.get("/export/status", async (req, res) => {
 function shape(j) {
   if (!j) return null;
   const base = process.env.APP_ORIGIN || "http://localhost:3000";
-  const expiresAt = j.expires_at; // Use only expires_at for now
+  // Use dynamic expiry detection - works whether storage_expires_at exists or not
+  const expiresAt = j.storage_expires_at || j.expires_at;
   const download = (j.status === "done" && j.token && expiresAt && Date.now() < expiresAt)
     ? `${base}/api/bff/downloads/export/${j.token}` : null;
   return {

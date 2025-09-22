@@ -278,4 +278,39 @@ async function listTables(): Promise<string[]> {
   }
 }
 
+// Schema feature detection
+export let HAS_STORAGE_EXPIRES = false;
+
+// Call this once at boot to detect column presence
+export async function detectSchemaFeatures() {
+  try {
+    const rows = await withPgClient(async (db) =>
+      db.query(
+        `SELECT 1
+           FROM information_schema.columns
+          WHERE table_schema='public'
+            AND table_name='export_job'
+            AND column_name='storage_expires_at'
+          LIMIT 1`
+      )
+    );
+    HAS_STORAGE_EXPIRES = Array.isArray(rows.rows) && rows.rows.length > 0;
+    console.log(
+      `[schema] export_job.storage_expires_at present: ${HAS_STORAGE_EXPIRES}`
+    );
+  } catch (e) {
+    console.warn('[schema] feature detection failed:', e?.message || e);
+  }
+}
+
+// Helper to build the expiry expression string safely
+export function expiryExpr(alias = false) {
+  // If the column exists, use COALESCE(storage_expires_at, expires_at)
+  // If not, use expires_at only (avoid referencing a missing column!)
+  const expr = HAS_STORAGE_EXPIRES
+    ? 'COALESCE(storage_expires_at, expires_at)'
+    : 'expires_at';
+  return alias ? `${expr} AS expires_at_ms` : expr;
+}
+
 export { db, DB_CLIENT, listTables, withPgClient };

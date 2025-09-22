@@ -174,6 +174,23 @@ const ensureColumn = async (table: string, column: string, type: string) => {
 // Initialize database and start server
 async function start() {
     await initializeDatabase();
+    
+    // Detect schema features before mounting routes
+    const { detectSchemaFeatures } = await import('./db');
+    await detectSchemaFeatures();
+    
+    // Dev-only guard to detect stale dist
+    if (process.env.NODE_ENV !== 'production') {
+        try {
+            const fs = require('fs');
+            const has = fs
+                .readFileSync('dist/server/index.js', 'utf8')
+                .includes('storage_expires_at');
+            if (has) console.warn('[warn] dist still references storage_expires_at; rebuild needed');
+        } catch (e) {
+            // Ignore if dist doesn't exist yet
+        }
+    }
 
     // Mount routes
     app.use('/api', require('../routes/profile'));
