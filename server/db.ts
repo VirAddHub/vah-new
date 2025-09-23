@@ -99,7 +99,9 @@ async function withPgClient<T>(fn: (c: import('pg').PoolClient) => Promise<T>): 
     try {
       return await origQuery(text, params);
     } catch (e: any) {
-      console.error('[pg.query] error:', e?.code, e?.message, '\nSQL:', text, '\nParams:', params);
+      // Use safe logger to prevent recursion
+      const { dbError } = require('./lib/safe-logger');
+      dbError(e, text, params);
       throw e;
     }
   };
@@ -247,7 +249,9 @@ const db: DB = ((): DB => {
         const { rows } = await withPgClient((c) => c.query(q, p));
         return rows as T[];
       } catch (e: any) {
-        console.error('[db.all] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+        // Use safe logger to prevent recursion
+        const { dbError } = require('./lib/safe-logger');
+        dbError(e, sql, params);
         throw e;
       }
     },
@@ -256,7 +260,9 @@ const db: DB = ((): DB => {
         const { sql: q, params: p } = convertForPg(sql, params ?? []);
         return withPgClient((c) => c.query(q, p));
       } catch (e: any) {
-        console.error('[db.run] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+        // Use safe logger to prevent recursion
+        const { dbError } = require('./lib/safe-logger');
+        dbError(e, sql, params);
         throw e;
       }
     },

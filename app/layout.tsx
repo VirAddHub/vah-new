@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { AuthProvider } from '@/lib/auth-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/toaster';
+import { DevButtons } from '@/components/DevButtons';
 
 export const metadata = {
   title: 'VirtualAddressHub - Professional Mail Management',
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AuthProvider>
             {children}
             <Toaster />
+            <DevButtons />
           </AuthProvider>
         </ErrorBoundary>
       </body>

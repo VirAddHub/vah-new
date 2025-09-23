@@ -25,21 +25,40 @@ async function findBySession(token) {
 }
 
 async function requireAuth(req, res, next) {
+    console.log('[requireAuth] req.user:', req.user);
+    console.log('[requireAuth] authorization header:', req.headers.authorization);
+
+    // Check if user is already set by test bypass middleware
+    if (req.user) {
+        console.log('[requireAuth] User already set, proceeding');
+        return next();
+    }
+
     // 1) Bearer JWT
     const auth = req.headers.authorization || '';
     if (auth.startsWith('Bearer ')) {
         try {
             const payload = jwt.verify(auth.slice(7).trim(), JWT_SECRET);
             req.user = { id: payload.sub, email: payload.email, role: payload.role || 'user' };
+            console.log('[requireAuth] JWT verified, user:', req.user);
             return next();
-        } catch (_) { }
+        } catch (e) {
+            console.log('[requireAuth] JWT verification failed:', e.message);
+        }
     }
     // 2) vah_session cookie
     const token = req.cookies?.vah_session || '';
     const u = await findBySession(token);
-    if (!u) return res.status(401).json({ error: 'invalid_session' });
-    if (u.expired) return res.status(401).json({ error: 'session_expired' });
+    if (!u) {
+        console.log('[requireAuth] No valid session, returning 401');
+        return res.status(401).json({ error: 'invalid_session' });
+    }
+    if (u.expired) {
+        console.log('[requireAuth] Session expired, returning 401');
+        return res.status(401).json({ error: 'session_expired' });
+    }
     req.user = { id: u.id, email: u.email, role: u.role || 'user' };
+    console.log('[requireAuth] Session verified, user:', req.user);
     return next();
 }
 
