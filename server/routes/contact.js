@@ -4,6 +4,11 @@ const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 const required = ['name', 'email', 'subject', 'message'];
+
+// Environment variables with fallback for future-proofing
+const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || process.env.POSTMARK_SERVER_TOKEN;
+const POSTMARK_FROM = process.env.POSTMARK_FROM;
+const POSTMARK_TO = process.env.POSTMARK_TO;
 const MOCK_EMAIL = process.env.MOCK_EMAIL === '1';
 
 // Rate limiting: 5 requests per 15 minutes per IP
@@ -38,24 +43,18 @@ router.post('/', contactLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
-        // Decide mock vs real at request-time
-        const useMock =
-            String(process.env.MOCK_EMAIL || '') === '1' ||
-            !process.env.POSTMARK_TOKEN ||
-            !process.env.POSTMARK_FROM ||
-            !process.env.POSTMARK_TO;
-
-        if (useMock) {
+        // Short-circuit for mock mode
+        if (MOCK_EMAIL) {
             console.log('[contact] MOCK_EMAIL active. Would send:', {
                 toTeam: {
-                    to: process.env.POSTMARK_TO || 'not-set',
-                    from: process.env.POSTMARK_FROM || 'not-set',
+                    to: POSTMARK_TO || 'not-set',
+                    from: POSTMARK_FROM || 'not-set',
                     subject: `New contact form: ${subject}`,
                     replyTo: email,
                 },
                 toSender: {
                     to: email,
-                    from: process.env.POSTMARK_FROM || 'not-set',
+                    from: POSTMARK_FROM || 'not-set',
                     subject: 'We received your message',
                 },
                 payload: { name, email, subject, message, company, inquiryType }
@@ -63,13 +62,25 @@ router.post('/', contactLimiter, async (req, res) => {
             return res.json({ ok: true, mode: 'mock' });
         }
 
+        // Check for missing configuration in non-mock mode
+        if (!POSTMARK_TOKEN || !POSTMARK_FROM || !POSTMARK_TO) {
+            return res.status(500).json({
+                error: 'Email service misconfigured',
+                missing: {
+                    POSTMARK_TOKEN: !POSTMARK_TOKEN,
+                    POSTMARK_FROM: !POSTMARK_FROM,
+                    POSTMARK_TO: !POSTMARK_TO,
+                },
+            });
+        }
+
         // Send real emails
-        const client = new Postmark.ServerClient(process.env.POSTMARK_TOKEN);
+        const client = new Postmark.ServerClient(POSTMARK_TOKEN);
 
         // Email to support (from your verified Postmark address, with ReplyTo set to the person)
         await client.sendEmail({
-            From: process.env.POSTMARK_FROM,  // ✅ From your verified Postmark address
-            To: process.env.POSTMARK_TO,
+            From: POSTMARK_FROM,  // ✅ From your verified Postmark address
+            To: POSTMARK_TO,
             ReplyTo: email,  // ✅ ReplyTo the person who submitted the form
             MessageStream: 'outbound',
             Subject: `New contact form: ${subject}`,
@@ -85,7 +96,7 @@ ${message}`,
 
         // Auto-reply to the person (from your support address)
         await client.sendEmail({
-            From: process.env.POSTMARK_FROM,  // ✅ From your support address
+            From: POSTMARK_FROM,  // ✅ From your support address
             To: email,
             MessageStream: 'outbound',
             Subject: 'We received your message',
