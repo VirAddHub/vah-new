@@ -41,7 +41,7 @@ router.post('/', contactLimiter, async (req, res) => {
         // Decide mock vs real at request-time
         const useMock =
             String(process.env.MOCK_EMAIL || '') === '1' ||
-            !process.env.POSTMARK_SERVER_TOKEN ||
+            !process.env.POSTMARK_TOKEN ||
             !process.env.POSTMARK_FROM ||
             !process.env.POSTMARK_TO;
 
@@ -64,7 +64,7 @@ router.post('/', contactLimiter, async (req, res) => {
         }
 
         // Send real emails
-        const client = new Postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN);
+        const client = new Postmark.ServerClient(process.env.POSTMARK_TOKEN);
 
         // Email to support (from your verified Postmark address, with ReplyTo set to the person)
         await client.sendEmail({
