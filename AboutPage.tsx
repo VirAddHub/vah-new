@@ -7,12 +7,12 @@ import {
     CardContent,
     CardHeader,
     CardTitle,
-} from "./ui/card";
-import { Button } from "./ui/Button";
-import { Input } from "./ui/Input";
-import { Textarea } from "./ui/textarea";
+} from "./components/ui/card";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
 import { Shield, Users, Mail, Check, MessageCircle, Phone, ArrowRight } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./components/figma/ImageWithFallback";
 import { apiClient, logClientEvent, validateEmail } from '@/lib';
 
 export function AboutPage() {

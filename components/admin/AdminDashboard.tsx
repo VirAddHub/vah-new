@@ -111,7 +111,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             window.location.reload(); // Simple refresh for now
         } catch (err) {
             setError('Failed to refresh dashboard');
-            await logAdminAction('admin_dashboard_refresh_error', { error: err.message });
+            await logAdminAction('admin_dashboard_refresh_error', { error: err instanceof Error ? err.message : String(err) });
         } finally {
             setLoading(false);
         }
@@ -131,7 +131,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             a.click();
         } catch (err) {
             setError('Failed to export data');
-            await logAdminAction('admin_export_error', { error: err.message });
+            await logAdminAction('admin_export_error', { error: err instanceof Error ? err.message : String(err) });
         } finally {
             setLoading(false);
         }

@@ -92,7 +92,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
             await logAdminAction('admin_analytics_refresh', { timeRange });
             await refetchAnalytics();
         } catch (error) {
-            await logAdminAction('admin_analytics_refresh_error', { error: error.message });
+            await logAdminAction('admin_analytics_refresh_error', { error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(false);
         }
@@ -103,21 +103,16 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
         try {
             await logAdminAction('admin_export_analytics', { timeRange, metric: selectedMetric });
 
-            const response = await apiClient.get('/api/admin/analytics/export', {
-                params: {
-                    timeRange,
-                    metric: selectedMetric
-                }
-            });
+            const response = await apiClient.get(`/api/admin/analytics/export?timeRange=${timeRange}&metric=${selectedMetric}`);
 
-            const blob = new Blob([response.data], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(response)], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `analytics-${selectedMetric}-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_analytics_error', { error: error.message });
+            await logAdminAction('admin_export_analytics_error', { error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(false);
         }
@@ -134,14 +129,14 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                 format: 'pdf'
             });
 
-            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const blob = new Blob([response], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `${reportType}-report-${timeRange}-${new Date().toISOString().split('T')[0]}.pdf`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_generate_report_error', { reportType, timeRange, error: error.message });
+            await logAdminAction('admin_generate_report_error', { reportType, timeRange, error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(false);
         }
