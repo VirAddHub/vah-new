@@ -66,11 +66,11 @@ router.post('/', contactLimiter, async (req, res) => {
         // Send real emails
         const client = new Postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN);
 
-        // Email to support
+        // Email to support (from your verified Postmark address, with ReplyTo set to the person)
         await client.sendEmail({
-            From: process.env.POSTMARK_FROM,
+            From: process.env.POSTMARK_FROM,  // ✅ From your verified Postmark address
             To: process.env.POSTMARK_TO,
-            ReplyTo: email,
+            ReplyTo: email,  // ✅ ReplyTo the person who submitted the form
             MessageStream: 'outbound',
             Subject: `New contact form: ${subject}`,
             TextBody:
@@ -83,9 +83,9 @@ Message:
 ${message}`,
         });
 
-        // Optional auto-reply
+        // Auto-reply to the person (from your support address)
         await client.sendEmail({
-            From: process.env.POSTMARK_FROM,
+            From: process.env.POSTMARK_FROM,  // ✅ From your support address
             To: email,
             MessageStream: 'outbound',
             Subject: 'We received your message',
