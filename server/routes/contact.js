@@ -18,9 +18,10 @@ const contactLimiter = rateLimit({
 router.post('/', contactLimiter, async (req, res) => {
     try {
         const body = req.body || {};
+        const { name, email, subject, message, website, company, inquiryType } = body;
 
         // Honeypot check - if website field is filled, it's spam
-        if (body.website && body.website.trim() !== '') {
+        if (website && website.trim() !== '') {
             return res.status(400).json({ error: 'Spam detected' });
         }
 
@@ -33,65 +34,68 @@ router.post('/', contactLimiter, async (req, res) => {
 
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(body.email)) {
+        if (!emailRegex.test(email)) {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
-        if (!MOCK_EMAIL) {
-            // Check if Postmark is configured
-            if (!process.env.POSTMARK_SERVER_TOKEN || !process.env.POSTMARK_FROM || !process.env.POSTMARK_TO) {
-                console.log('[contact] Postmark not configured, treating as mock');
-                console.log('[contact] Would send to support:', {
-                    from: process.env.POSTMARK_FROM || 'not-set',
-                    to: process.env.POSTMARK_TO || 'not-set',
-                    subject: `New contact form: ${body.subject}`,
-                    replyTo: body.email
-                });
-                console.log('[contact] Would send auto-reply to:', body.email);
-            } else {
-                const client = new Postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN);
+        // Decide mock vs real at request-time
+        const useMock =
+            String(process.env.MOCK_EMAIL || '') === '1' ||
+            !process.env.POSTMARK_SERVER_TOKEN ||
+            !process.env.POSTMARK_FROM ||
+            !process.env.POSTMARK_TO;
 
-                // Email to support
-                await client.sendEmail({
-                    From: process.env.POSTMARK_FROM,
-                    To: process.env.POSTMARK_TO,
-                    ReplyTo: body.email,
-                    MessageStream: 'outbound',
-                    Subject: `New contact form: ${body.subject}`,
-                    TextBody:
-                        `Name: ${body.name}
-Email: ${body.email}
-Company: ${body.company ?? '-'}
-Type: ${body.inquiryType ?? 'general'}
+        if (useMock) {
+            console.log('[contact] MOCK_EMAIL active. Would send:', {
+                toTeam: {
+                    to: process.env.POSTMARK_TO || 'not-set',
+                    from: process.env.POSTMARK_FROM || 'not-set',
+                    subject: `New contact form: ${subject}`,
+                    replyTo: email,
+                },
+                toSender: {
+                    to: email,
+                    from: process.env.POSTMARK_FROM || 'not-set',
+                    subject: 'We received your message',
+                },
+                payload: { name, email, subject, message, company, inquiryType }
+            });
+            return res.json({ ok: true, mode: 'mock' });
+        }
+
+        // Send real emails
+        const client = new Postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN);
+
+        // Email to support
+        await client.sendEmail({
+            From: process.env.POSTMARK_FROM,
+            To: process.env.POSTMARK_TO,
+            ReplyTo: email,
+            MessageStream: 'outbound',
+            Subject: `New contact form: ${subject}`,
+            TextBody:
+                `Name: ${name}
+Email: ${email}
+Company: ${company ?? '-'}
+Type: ${inquiryType ?? 'general'}
 
 Message:
-${body.message}`,
-                });
+${message}`,
+        });
 
-                // Optional auto-reply
-                await client.sendEmail({
-                    From: process.env.POSTMARK_FROM,
-                    To: body.email,
-                    MessageStream: 'outbound',
-                    Subject: 'We received your message',
-                    TextBody:
-                        `Hi ${body.name || 'there'},
+        // Optional auto-reply
+        await client.sendEmail({
+            From: process.env.POSTMARK_FROM,
+            To: email,
+            MessageStream: 'outbound',
+            Subject: 'We received your message',
+            TextBody:
+                `Hi ${name || 'there'},
 
 Thanks for contacting VirtualAddressHub. A member of our UK team will reply during business hours.
 
 — VirtualAddressHub Support`,
-                });
-            }
-        } else {
-            console.log('[contact] MOCK_EMAIL on — skipping real sends');
-            console.log('[contact] Would send to support:', {
-                from: process.env.POSTMARK_FROM || 'not-set',
-                to: process.env.POSTMARK_TO || 'not-set',
-                subject: `New contact form: ${body.subject}`,
-                replyTo: body.email
-            });
-            console.log('[contact] Would send auto-reply to:', body.email);
-        }
+        });
 
         return res.json({ ok: true });
     } catch (err) {
