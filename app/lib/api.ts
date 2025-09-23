@@ -24,7 +24,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 // Convenience methods
-export const apiClient = {
+const apiClient = {
     get: <T>(path: string) => api<T>(path, { method: 'GET' }),
     post: <T>(path: string, data?: any) => api<T>(path, {
         method: 'POST',
@@ -37,5 +37,4 @@ export const apiClient = {
     delete: <T>(path: string) => api<T>(path, { method: 'DELETE' }),
 };
 
-// Legacy compatibility - re-export as 'api' for existing code
-export { apiClient as api };
+export { apiClient };
