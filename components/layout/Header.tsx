@@ -19,6 +19,7 @@ export function Header() {
         { label: 'Pricing', href: '/pricing' },
         { label: 'Blog', href: '/blog' },
         { label: 'About Us', href: '/about' },
+        { label: 'Contact', href: '/contact' },
     ];
 
     const handleLogout = async () => {

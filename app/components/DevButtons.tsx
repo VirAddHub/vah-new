@@ -1,5 +1,5 @@
 'use client';
-import { pingContact, pingAuth, pingForwarding } from '@/lib/pingApi';
+import { pingContact, pingAuth, pingForwarding } from '@/app/lib/pingApi';
 
 export function DevButtons() {
     if (process.env.NODE_ENV !== 'development') return null;

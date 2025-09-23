@@ -1,0 +1,68 @@
+{
+    "framework": "nextjs",
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "functions": {
+        "app/api/**/*.ts": {
+            "runtime": "nodejs18.x",
+            "maxDuration": 30
+        }
+    },
+    "headers": [
+        {
+            "source": "/api/(.*)",
+            "headers": [
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                },
+                {
+                    "key": "Access-Control-Allow-Methods",
+                    "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                    "key": "Access-Control-Allow-Headers",
+                    "value": "Content-Type, Authorization, X-CSRF-Token"
+                }
+            ]
+        },
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-XSS-Protection",
+                    "value": "1; mode=block"
+                }
+            ]
+        }
+    ],
+    "redirects": [
+        {
+            "source": "/dashboard",
+            "destination": "/dashboard",
+            "permanent": false
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/bff/:path*",
+            "destination": "/api/bff/:path*"
+        }
+    ],
+    "regions": [
+        "lhr1",
+        "iad1"
+    ],
+    "env": {
+        "NEXT_PUBLIC_VERCEL_ANALYTICS_ID": "@vercel_analytics_id"
+    }
+}

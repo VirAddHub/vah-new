@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import HelpKeyBenefit from './Benefit';
+import { SupportSla } from '@/components/SupportSla';
 
 const faqs = [
     {
@@ -80,6 +81,7 @@ export default function HelpPage() {
                     <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                         Find answers to common questions and get the support you need.
                     </p>
+                    <SupportSla className="mt-3" />
                     <HelpKeyBenefit />
                 </div>
 

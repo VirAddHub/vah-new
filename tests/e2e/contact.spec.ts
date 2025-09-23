@@ -1,57 +1,54 @@
 import { test, expect } from '@playwright/test';
 
 test('contact form happy path', async ({ page }) => {
-    // Set API base for this test
-    await page.goto('http://localhost:3000/support');
-
-    // Fill out the contact form
-    await page.getByLabel('Name').fill('Test User');
-    await page.getByLabel('Email').fill('test@example.com');
-    await page.getByLabel('Subject').fill('Hello');
-    await page.getByLabel('Message').fill('Just testing the contact form');
-
-    // Honeypot should be hidden; do NOT fill it
-    const websiteField = page.getByLabel('Website');
-    await expect(websiteField).toBeHidden();
-
-    // Submit the form
-    await page.getByRole('button', { name: /send/i }).click();
-
-    // Check for success message
-    await expect(page.getByText(/thanks|received/i)).toBeVisible({ timeout: 5000 });
+    await page.goto('/contact');
+    await page.getByLabel('Full name').fill('Test User');
+    await page.getByLabel('Email address').fill('test@example.com');
+    await page.getByLabel('Subject').fill('Website enquiry');
+    await page.getByLabel('Message').fill('Hello from Playwright!');
+    await page.getByRole('button', { name: /send message/i }).click();
+    await expect(page.getByText(/thanks|message sent/i)).toBeVisible();
+    await expect(page.getByText(/as soon as possible/i)).toBeVisible();
 });
 
-test('contact form honeypot protection', async ({ page }) => {
-    await page.goto('http://localhost:3000/support');
-
-    // Fill out the form normally
-    await page.getByLabel('Name').fill('Spam Bot');
-    await page.getByLabel('Email').fill('spam@example.com');
+test('blocks obvious spam via honeypot', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByLabel('Full name').fill('Bot');
+    await page.getByLabel('Email address').fill('bot@example.com');
     await page.getByLabel('Subject').fill('Spam');
-    await page.getByLabel('Message').fill('This is spam');
-
-    // Try to fill the honeypot (this should trigger spam detection)
-    await page.evaluate(() => {
-        const websiteField = document.querySelector('input[name="website"]') as HTMLInputElement;
-        if (websiteField) {
-            websiteField.style.display = 'block';
-            websiteField.value = 'http://spam.com';
-        }
-    });
-
-    await page.getByRole('button', { name: /send/i }).click();
-
-    // Should show spam error
-    await expect(page.getByText(/spam detected/i)).toBeVisible({ timeout: 5000 });
+    await page.getByLabel('Message').fill('Buy now');
+    await page.locator('input[name="website"]').fill('http://spam');
+    await page.getByRole('button', { name: /send message/i }).click();
+    await expect(page.getByText(/something went wrong|spam/i)).toBeVisible();
 });
 
-test('contact form validation', async ({ page }) => {
-    await page.goto('http://localhost:3000/support');
+test('validates required fields', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByRole('button', { name: /send message/i }).click();
+    await expect(page.getByText(/please enter your name/i)).toBeVisible();
+});
 
-    // Try to submit empty form
-    await page.getByRole('button', { name: /send/i }).click();
+test('validates email format', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByLabel('Full name').fill('Test User');
+    await page.getByLabel('Email address').fill('invalid-email');
+    await page.getByLabel('Subject').fill('Test');
+    await page.getByLabel('Message').fill('Test message');
+    await page.getByRole('button', { name: /send message/i }).click();
+    await expect(page.getByText(/valid email address/i)).toBeVisible();
+});
 
-    // Should show validation errors or prevent submission
-    // (exact behavior depends on your validation implementation)
-    await expect(page.getByText(/required|missing/i)).toBeVisible({ timeout: 5000 });
+test('shows status pill with SLA promise', async ({ page }) => {
+    await page.goto('/contact');
+    await page.getByLabel('Full name').fill('Test User');
+    await page.getByLabel('Email address').fill('test@example.com');
+    await page.getByLabel('Subject').fill('Test');
+    await page.getByLabel('Message').fill('Test message');
+    await page.getByRole('button', { name: /send message/i }).click();
+
+    // Wait for success state
+    await expect(page.getByText(/message sent/i)).toBeVisible();
+
+    // Check for status pill with SLA promise
+    await expect(page.getByText(/we'll reply as soon as possible/i)).toBeVisible();
 });
