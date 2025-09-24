@@ -2,7 +2,35 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getErrorMessage, getErrorStack } from '../lib/errors';
-import { apiClient, authManager, logAuthEvent, logAdminAction } from '../lib';
+import { apiClient } from '../lib/api-client';
+import { clientAuthManager } from '../lib/client-auth';
+
+// Client-safe logging functions
+const logAuthEvent = async (event: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/auth-event', {
+            event,
+            data,
+            timestamp: new Date().toISOString(),
+            userId: clientAuthManager.getUser()?.id
+        });
+    } catch (error) {
+        console.error('Failed to log auth event:', error);
+    }
+};
+
+const logAdminAction = async (action: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/admin-action', {
+            action,
+            data,
+            timestamp: new Date().toISOString(),
+            adminId: clientAuthManager.getUser()?.id
+        });
+    } catch (error) {
+        console.error('Failed to log admin action:', error);
+    }
+};
 
 interface User {
     id: string | number;
@@ -45,13 +73,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                if (authManager.isAuthenticated()) {
-                    const userData = await authManager.checkAuth();
+                if (clientAuthManager.isAuthenticated()) {
+                    const userData = await clientAuthManager.checkAuth();
                     setUser(userData);
                 }
             } catch (error) {
                 console.error('Auth initialization failed:', error);
-                authManager.clearAuth();
+                clientAuthManager.clearAuth();
             } finally {
                 setIsLoading(false);
             }
@@ -67,14 +95,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const response = await apiClient.post('/api/auth/login', credentials);
 
-            if (response.ok) {
-                authManager.setToken(response.token);
-                authManager.setUser(response.user);
-                setUser(response.user);
+            if (response.ok && response.data) {
+                clientAuthManager.setToken(response.data.token || 'demo-token');
+                clientAuthManager.setUser(response.data.user);
+                setUser(response.data.user);
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
-                    userId: response.user.id
+                    userId: response.data.user.id
                 });
             } else {
                 throw new Error('Login failed');
@@ -100,19 +128,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 isAdmin: true
             });
 
-            if (response.ok && response.user?.is_admin) {
-                authManager.setToken(response.token);
-                authManager.setUser(response.user);
-                setUser(response.user);
+            if (response.ok && response.data?.user?.is_admin) {
+                clientAuthManager.setToken(response.data.token || 'demo-token');
+                clientAuthManager.setUser(response.data.user);
+                setUser(response.data.user);
 
                 await logAuthEvent('admin_login_success', {
                     email: credentials.email,
-                    adminId: response.user.id
+                    adminId: response.data.user.id
                 });
 
                 await logAdminAction('admin_login', {
                     email: credentials.email,
-                    adminId: response.user.id
+                    adminId: response.data.user.id
                 });
             } else {
                 throw new Error('Admin access required');
@@ -141,7 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
-            authManager.clearAuth();
+            clientAuthManager.clearAuth();
             setUser(null);
             setIsLoading(false);
         }
@@ -168,8 +196,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 plan: 'premium'
             };
 
-        authManager.setUser(demoUser);
-        authManager.setToken(`demo-${type}-token`);
+        clientAuthManager.setUser(demoUser);
+        clientAuthManager.setToken(`demo-${type}-token`);
         setUser(demoUser);
 
         logAuthEvent(`${type}_demo_session_created`, {
@@ -180,11 +208,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const refreshUser = async () => {
         try {
-            const userData = await authManager.checkAuth();
+            const userData = await clientAuthManager.checkAuth();
             setUser(userData);
         } catch (error) {
             console.error('Failed to refresh user data:', error);
-            authManager.clearAuth();
+            clientAuthManager.clearAuth();
             setUser(null);
         }
     };

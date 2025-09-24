@@ -296,35 +296,6 @@ export const storage = {
     }
 };
 
-// Custom hook for API data fetching
-export function useApiData(url: string) {
-    const [data, setData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const fetchData = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            const result = await apiClient.get(url);
-            setData(result);
-        } catch (err) {
-            setError(err as any);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [url]);
-
-    const refetch = () => {
-        fetchData();
-    };
-
-    return { data, isLoading, error, refetch };
-}
-
-// Import React hooks
-import { useState, useEffect } from 'react';
+// Note: React hooks moved to lib/client-hooks.tsx
+// Note: Client auth manager moved to lib/client-auth.ts
+// Note: Server utilities moved to lib/server/session.ts (only for API routes)

@@ -68,7 +68,18 @@ import {
 import { VAHLogo } from "../VAHLogo";
 
 // API Integration utilities
-import { apiClient, logAdminAction, useApiData } from "../../lib";
+const logAdminAction = async (action: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/admin-action', {
+            action,
+            data,
+            timestamp: new Date().toISOString(),
+            adminId: null // Will be set by backend
+        });
+    } catch (error) {
+        console.error('Failed to log admin action:', error);
+    }
+};
 
 // Import section components
 import { OverviewSection } from "./OverviewSection";

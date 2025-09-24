@@ -13,7 +13,27 @@ import { Input } from "./components/ui/input";
 import { Textarea } from "./components/ui/textarea";
 import { Shield, Users, Mail, Check, MessageCircle, Phone, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./components/figma/ImageWithFallback";
-import { apiClient, logClientEvent, validateEmail } from '@/lib';
+import { apiClient } from '@/lib/api-client';
+
+// Client-safe utilities
+const logClientEvent = async (event: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/client-event', {
+            event,
+            data,
+            timestamp: new Date().toISOString(),
+            userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+            url: typeof window !== 'undefined' ? window.location.href : 'server'
+        });
+    } catch (error) {
+        console.error('Failed to log client event:', error);
+    }
+};
+
+const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
 
 export function AboutPage() {
     const router = useRouter();

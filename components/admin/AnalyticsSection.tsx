@@ -16,7 +16,21 @@ import {
     Calendar,
     Activity,
 } from "lucide-react";
-import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { apiClient } from "../../lib/api-client";
+import { useApiData } from "../../lib/client-hooks";
+
+const logAdminAction = async (action: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/admin-action', {
+            action,
+            data,
+            timestamp: new Date().toISOString(),
+            adminId: null // Will be set by backend
+        });
+    } catch (error) {
+        console.error('Failed to log admin action:', error);
+    }
+};
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface AnalyticsData {
@@ -102,7 +116,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                 format: 'pdf'
             });
 
-            const blob = new Blob([response], { type: 'application/pdf' });
+            const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

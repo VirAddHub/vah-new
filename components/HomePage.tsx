@@ -44,8 +44,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     apiClient.getMailItems()
                 ]);
                 
-                if (userResponse.ok) {
-                    setUser(userResponse.user);
+                if (userResponse.ok && userResponse.data?.user) {
+                    setUser(userResponse.data.user);
                 }
                 
                 if (mailResponse.ok) {
