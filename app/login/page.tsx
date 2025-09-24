@@ -5,10 +5,13 @@ import Login from '../../components/Login';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 
 function UserPageContent() {
-    const { isAuthenticated, isAdmin } = useAuth();
+    const { isAuthenticated, isAdmin, isLoading } = useAuth();
     const [showDashboard, setShowDashboard] = useState(false);
 
     useEffect(() => {
+        // Don't check authentication until loading is complete
+        if (isLoading) return;
+        
         if (isAuthenticated) {
             if (isAdmin) {
                 // Redirect admins to admin dashboard
@@ -19,7 +22,7 @@ function UserPageContent() {
         } else {
             setShowDashboard(false);
         }
-    }, [isAuthenticated, isAdmin]);
+    }, [isAuthenticated, isAdmin, isLoading]);
 
     const handleLoginSuccess = (role: 'admin' | 'user') => {
         console.log('Login success, role:', role);
@@ -37,6 +40,18 @@ function UserPageContent() {
             }, 100);
         }
     };
+
+    // Show loading while checking authentication
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (showDashboard) {
         return (
