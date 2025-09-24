@@ -252,7 +252,7 @@ app.get('/_debug/db', async (_req, res, next) => {
 
 // ===== TEMPORARY: PROMOTE USER TO ADMIN =====
 // Temporary endpoint to promote a user to admin (for testing purposes)
-app.post('/api/promote-to-admin', async (req, res) => {
+app.post('/promote-to-admin', async (req, res) => {
     try {
         const { email } = req.body || {};
         if (!email) return res.status(400).json({ error: 'Email required' });
