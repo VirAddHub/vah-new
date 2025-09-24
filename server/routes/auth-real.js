@@ -71,26 +71,22 @@ router.post('/signup', validateSignup, async (req, res) => {
         const now = Date.now();
         const name = `${first_name} ${last_name}`.trim();
 
-        const result = await db.run(`
+        // Insert user and get created user in one query (PostgreSQL style)
+        const user = await db.get(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
         kyc_status, plan_status, plan_start_date, onboarding_step
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
     `, [
             now, now, name, email.toLowerCase(), passwordHash,
             first_name, last_name, 0, 'user', 'active',
             'pending', 'active', now, 'signup'
         ]);
 
-        // Get the created user
-        const userId = result.insertId || result.lastInsertRowid;
-        if (!userId) {
-            throw new Error('Failed to create user - no ID returned from database');
-        }
-        const user = await db.get('SELECT * FROM "user" WHERE id = ?', [userId]);
         if (!user) {
-            throw new Error('Failed to retrieve created user from database');
+            throw new Error('Failed to create user - INSERT did not return user data');
         }
 
         // Set session
