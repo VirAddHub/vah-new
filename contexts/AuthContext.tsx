@@ -72,6 +72,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
+                // Check if this is a fresh login redirect
+                const url = new URL(window.location.href);
+                const firstBoot = url.searchParams.get('logged') === '1' || localStorage.getItem('auth_bootstrap') === '1';
+
+                if (firstBoot) {
+                    // Trust localStorage once; clear the flag
+                    localStorage.removeItem('auth_bootstrap');
+                    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+                    if (userData) {
+                        setUser(userData);
+                    }
+                    setIsLoading(false);
+                    return;
+                }
+
                 if (clientAuthManager.isAuthenticated()) {
                     const userData = await clientAuthManager.checkAuth();
                     setUser(userData);

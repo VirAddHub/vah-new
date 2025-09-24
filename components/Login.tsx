@@ -69,14 +69,19 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         }
       }
 
-      // Determine role from user data (support both response shapes)
+      // Support both response shapes and force hard redirect
       const user = response.data;
-      const role: Role = user?.is_admin ? 'admin' : 'user';
+      const isAdmin = !!user?.is_admin;
+
+      // Optimistic set (helps guard during next paint)
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('auth_bootstrap', '1');
 
       if (onSuccess) {
-        onSuccess(role);
+        onSuccess(isAdmin ? 'admin' : 'user');
       } else {
-        window.location.assign(role === 'admin' ? '/admin/dashboard' : '/dashboard');
+        // Force hard redirect to prevent bounce
+        window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
