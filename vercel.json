@@ -1,0 +1,6 @@
+{
+  "env": {
+    "NEXT_PUBLIC_API_BASE": "https://vah-api-staging.onrender.com",
+    "NEXT_PUBLIC_APP_URL": "https://vah-frontend-final.vercel.app"
+  }
+}
