@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Debug endpoint to test auth routes
 router.get('/ping', (req, res) => {
-    res.json({ ok: true, message: 'Auth routes are working' });
+  res.json({ ok: true, message: 'Auth routes are working' });
 });
 
 // Validation middleware
@@ -63,10 +63,10 @@ router.post('/signup', validateSignup, async (req, res) => {
 
     // Basic validation
     if (typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'Validation failed', details: [{ path: 'email', msg: 'Invalid email' }]});
+      return res.status(400).json({ error: 'Validation failed', details: [{ path: 'email', msg: 'Invalid email' }] });
     }
     if (typeof password !== 'string' || password.length < 8) {
-      return res.status(400).json({ error: 'Validation failed', details: [{ path: 'password', msg: 'Password must be at least 8 characters' }]});
+      return res.status(400).json({ error: 'Validation failed', details: [{ path: 'password', msg: 'Password must be at least 8 characters' }] });
     }
 
     // Hash password
@@ -107,9 +107,9 @@ router.post('/signup', validateSignup, async (req, res) => {
     if (error?.code === '23505') {
       return res.status(409).json({ error: 'Email already in use' });
     }
-    
-    console.error('[signup] error', { 
-      message: error.message, 
+
+    console.error('[signup] error', {
+      message: error.message,
       code: error.code,
       detail: error.detail,
       stack: error.stack,
