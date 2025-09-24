@@ -27,6 +27,7 @@ import {
     Building,
 } from "lucide-react";
 import { apiClient, logAdminAction, validateEmail, validatePassword } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface UserCreationFormProps {
     onSuccess: (user: any) => void;
@@ -219,10 +220,10 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
         } catch (error: any) {
             await logAdminAction('admin_create_user_error', {
                 email: formData.email,
-                error: error.message
+                error_message: getErrorMessage(error), stack: getErrorStack(error)
             });
 
-            setError(error.message || 'Failed to create user');
+            setError(getErrorMessage(error) || 'Failed to create user');
         } finally {
             setLoading(false);
         }

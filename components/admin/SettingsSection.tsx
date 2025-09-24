@@ -27,6 +27,7 @@ import {
     FileText,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface SystemSettings {
     general: {
@@ -111,7 +112,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             await logAdminAction('admin_settings_refresh');
             await refetchSettings();
         } catch (error) {
-            await logAdminAction('admin_settings_refresh_error', { error: error.message });
+            await logAdminAction('admin_settings_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -124,7 +125,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             await apiClient.post(`/api/admin/settings/${section}`, settings[section]);
             await refetchSettings();
         } catch (error) {
-            await logAdminAction('admin_save_settings_error', { section, error: error.message });
+            await logAdminAction('admin_save_settings_error', { section, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setSaving(false);
         }
@@ -137,7 +138,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             const response = await apiClient.post(`/api/admin/integrations/${integration}/test`);
             // Show success/error message
         } catch (error) {
-            await logAdminAction('admin_test_integration_error', { integration, error: error.message });
+            await logAdminAction('admin_test_integration_error', { integration, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -155,7 +156,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             a.download = `database-backup-${new Date().toISOString().split('T')[0]}.sql`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_backup_database_error', { error: error.message });
+            await logAdminAction('admin_backup_database_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -167,7 +168,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             await logAdminAction('admin_clear_cache');
             await apiClient.post('/api/admin/cache/clear');
         } catch (error) {
-            await logAdminAction('admin_clear_cache_error', { error: error.message });
+            await logAdminAction('admin_clear_cache_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }

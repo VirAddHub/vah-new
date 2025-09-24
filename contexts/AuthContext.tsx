@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getErrorMessage, getErrorStack } from '../lib/errors';
 import { apiClient, authManager, logAuthEvent, logAdminAction } from '../lib';
 
 interface User {
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {
                 email: credentials.email,
-                error: error.message
+                error_message: getErrorMessage(error), stack: getErrorStack(error)
             });
             throw error;
         } finally {
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error: any) {
             await logAuthEvent('admin_login_failed', {
                 email: credentials.email,
-                error: error.message
+                error_message: getErrorMessage(error), stack: getErrorStack(error)
             });
             throw error;
         } finally {

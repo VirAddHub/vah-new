@@ -24,6 +24,7 @@ import {
     XCircle,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 import { UserCreationForm } from "./UserCreationForm";
 import { UserEditForm } from "./UserEditForm";
 
@@ -146,7 +147,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             a.download = `users-export-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_users_error', { error: error.message });
+            await logAdminAction('admin_export_users_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -157,7 +158,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             await logAdminAction('admin_add_user_initiated');
             setShowCreateForm(true);
         } catch (error) {
-            await logAdminAction('admin_add_user_error', { error: error.message });
+            await logAdminAction('admin_add_user_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -170,7 +171,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             setShowCreateForm(false);
             refetchUsers(); // Refresh the user list
         } catch (error) {
-            await logAdminAction('admin_user_created_error', { error: error.message });
+            await logAdminAction('admin_user_created_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -187,7 +188,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                 window.open(`/admin/users/${userId}`, '_blank');
             }
         } catch (error) {
-            await logAdminAction('admin_view_user_error', { userId, error: error.message });
+            await logAdminAction('admin_view_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -200,7 +201,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                 setShowEditForm(true);
             }
         } catch (error) {
-            await logAdminAction('admin_edit_user_error', { userId, error: error.message });
+            await logAdminAction('admin_edit_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -214,7 +215,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             setSelectedUser(null);
             refetchUsers(); // Refresh the user list
         } catch (error) {
-            await logAdminAction('admin_user_updated_error', { error: error.message });
+            await logAdminAction('admin_user_updated_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -230,7 +231,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             await apiClient.put(`/api/admin/users/${userId}/kyc-status`, { status: newStatus });
             refetchUsers();
         } catch (error) {
-            await logAdminAction('admin_update_kyc_status_error', { userId, newStatus, error: error.message });
+            await logAdminAction('admin_update_kyc_status_error', { userId, newStatus, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -243,7 +244,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             await apiClient.put(`/api/admin/users/${userId}/suspend`);
             refetchUsers();
         } catch (error) {
-            await logAdminAction('admin_suspend_user_error', { userId, error: error.message });
+            await logAdminAction('admin_suspend_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -256,7 +257,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             await apiClient.put(`/api/admin/users/${userId}/activate`);
             refetchUsers();
         } catch (error) {
-            await logAdminAction('admin_activate_user_error', { userId, error: error.message });
+            await logAdminAction('admin_activate_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -272,7 +273,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             setSelectedUsers([]);
             refetchUsers();
         } catch (error) {
-            await logAdminAction('admin_bulk_action_error', { action, userIds: selectedUsers, error: error.message });
+            await logAdminAction('admin_bulk_action_error', { action, userIds: selectedUsers, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }

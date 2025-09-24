@@ -8,6 +8,7 @@ import { Label } from "../ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Eye, EyeOff, ArrowLeft, Shield, Lock, AlertTriangle, CheckCircle, RefreshCcw } from "lucide-react";
 import { apiClient, authManager, logAuthEvent, logAdminAction } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface AdminLoginProps {
     onLogin: () => void;
@@ -121,7 +122,7 @@ export function AdminLogin({ onLogin, onGoBack }: AdminLoginProps) {
 
             await logAuthEvent('admin_login_failed', {
                 email,
-                error: error.message,
+                error_message: getErrorMessage(error), stack: getErrorStack(error),
                 attempts: newAttempts
             });
 
@@ -134,7 +135,7 @@ export function AdminLogin({ onLogin, onGoBack }: AdminLoginProps) {
                 }));
                 setError('Too many failed attempts. Account locked for 15 minutes.');
             } else {
-                const message = error.message || 'Invalid admin credentials';
+                const message = getErrorMessage(error) || 'Invalid admin credentials';
                 setError(`${message} (${5 - newAttempts} attempts remaining)`);
             }
         } finally {
@@ -169,9 +170,9 @@ export function AdminLogin({ onLogin, onGoBack }: AdminLoginProps) {
         } catch (error: any) {
             await logAuthEvent('admin_password_reset_failed', {
                 email: resetEmail,
-                error: error.message
+                error_message: getErrorMessage(error), stack: getErrorStack(error)
             });
-            setError(error.message || 'Failed to send password reset link');
+            setError(getErrorMessage(error) || 'Failed to send password reset link');
         } finally {
             setIsResetting(false);
         }

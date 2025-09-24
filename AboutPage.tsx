@@ -101,7 +101,7 @@ export function AboutPage() {
         } catch (error: any) {
             console.error('Contact form error:', error);
             setSubmitStatus('error');
-            setErrorMessage(error.message || 'Failed to send message. Please try again.');
+            setErrorMessage(error instanceof Error ? error.message : String(error) || 'Failed to send message. Please try again.');
         } finally {
             setIsSubmitting(false);
         }

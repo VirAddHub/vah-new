@@ -20,6 +20,7 @@ import {
     RefreshCcw,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 export function OverviewSection() {
     const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export function OverviewSection() {
             ]);
             setLastRefresh(new Date());
         } catch (error) {
-            await logAdminAction('admin_overview_refresh_error', { error: error.message });
+            await logAdminAction('admin_overview_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -55,7 +56,7 @@ export function OverviewSection() {
             // Navigate to activity page or open modal
             window.open('/admin/activity', '_blank');
         } catch (error) {
-            await logAdminAction('admin_view_activity_error', { error: error.message });
+            await logAdminAction('admin_view_activity_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -65,7 +66,7 @@ export function OverviewSection() {
             await apiClient.post(`/api/admin/pending/${actionType}/${actionId}/process`);
             refetchPending();
         } catch (error) {
-            await logAdminAction('admin_pending_action_error', { actionType, actionId, error: error.message });
+            await logAdminAction('admin_pending_action_error', { actionType, actionId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 

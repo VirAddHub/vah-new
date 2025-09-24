@@ -27,6 +27,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface MailItem {
     id: number;
@@ -121,7 +122,7 @@ export function MailSection({ }: MailSectionProps) {
             // Open add mail item modal or navigate to add page
             window.open('/admin/mail/add', '_blank');
         } catch (error) {
-            await logAdminAction('admin_add_mail_item_error', { error: error.message });
+            await logAdminAction('admin_add_mail_item_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -130,7 +131,7 @@ export function MailSection({ }: MailSectionProps) {
             await logAdminAction('admin_view_mail_item', { itemId });
             window.open(`/admin/mail/${itemId}`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_view_mail_item_error', { itemId, error: error.message });
+            await logAdminAction('admin_view_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -139,7 +140,7 @@ export function MailSection({ }: MailSectionProps) {
             await logAdminAction('admin_edit_mail_item', { itemId });
             window.open(`/admin/mail/${itemId}/edit`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_edit_mail_item_error', { itemId, error: error.message });
+            await logAdminAction('admin_edit_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
     };
 
@@ -150,7 +151,7 @@ export function MailSection({ }: MailSectionProps) {
             await apiClient.post(`/api/admin/mail-items/${itemId}/process`);
             refetchMail();
         } catch (error) {
-            await logAdminAction('admin_process_mail_item_error', { itemId, error: error.message });
+            await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -163,7 +164,7 @@ export function MailSection({ }: MailSectionProps) {
             await apiClient.post(`/api/admin/mail-items/${itemId}/tag`, { tag });
             refetchMail();
         } catch (error) {
-            await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error: error.message });
+            await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -176,7 +177,7 @@ export function MailSection({ }: MailSectionProps) {
             await apiClient.post(`/api/admin/mail-items/${itemId}/forward`);
             refetchMail();
         } catch (error) {
-            await logAdminAction('admin_forward_mail_item_error', { itemId, error: error.message });
+            await logAdminAction('admin_forward_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -189,7 +190,7 @@ export function MailSection({ }: MailSectionProps) {
             await apiClient.delete(`/api/admin/mail-items/${itemId}`);
             refetchMail();
         } catch (error) {
-            await logAdminAction('admin_delete_mail_item_error', { itemId, error: error.message });
+            await logAdminAction('admin_delete_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -205,7 +206,7 @@ export function MailSection({ }: MailSectionProps) {
             setSelectedItems([]);
             refetchMail();
         } catch (error) {
-            await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error: error.message });
+            await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -234,7 +235,7 @@ export function MailSection({ }: MailSectionProps) {
             a.download = `mail-items-export-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_mail_error', { error: error.message });
+            await logAdminAction('admin_export_mail_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }

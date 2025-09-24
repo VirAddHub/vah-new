@@ -121,7 +121,7 @@ export function BillingSection({ }: BillingSectionProps) {
                 refetchInvoices()
             ]);
         } catch (error) {
-            await logAdminAction('admin_billing_refresh_error', { 
+            await logAdminAction('admin_billing_refresh_error', {
                 error_message: getErrorMessage(error),
                 stack: getErrorStack(error)
             });
@@ -144,7 +144,7 @@ export function BillingSection({ }: BillingSectionProps) {
             a.download = `billing-report-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_billing_reports_error', { 
+            await logAdminAction('admin_export_billing_reports_error', {
                 error_message: getErrorMessage(error),
                 stack: getErrorStack(error)
             });
@@ -158,8 +158,8 @@ export function BillingSection({ }: BillingSectionProps) {
             await logAdminAction('admin_view_invoice', { invoiceId });
             window.open(`/admin/invoices/${invoiceId}`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_view_invoice_error', { 
-                invoiceId, 
+            await logAdminAction('admin_view_invoice_error', {
+                invoiceId,
                 error_message: getErrorMessage(error),
                 stack: getErrorStack(error)
             });
@@ -173,8 +173,8 @@ export function BillingSection({ }: BillingSectionProps) {
             await apiClient.post(`/api/admin/transactions/${transactionId}/process`);
             refetchTransactions();
         } catch (error) {
-            await logAdminAction('admin_process_payment_error', { 
-                transactionId, 
+            await logAdminAction('admin_process_payment_error', {
+                transactionId,
                 error_message: getErrorMessage(error),
                 stack: getErrorStack(error)
             });
@@ -190,8 +190,8 @@ export function BillingSection({ }: BillingSectionProps) {
             await apiClient.post(`/api/admin/transactions/${transactionId}/refund`);
             refetchTransactions();
         } catch (error) {
-            await logAdminAction('admin_refund_transaction_error', { 
-                transactionId, 
+            await logAdminAction('admin_refund_transaction_error', {
+                transactionId,
                 error_message: getErrorMessage(error),
                 stack: getErrorStack(error)
             });

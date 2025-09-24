@@ -26,6 +26,7 @@ import {
     Filter,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface ForwardingRequest {
     id: number;
@@ -129,7 +130,10 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await logAdminAction('admin_forwarding_refresh');
             await refetchRequests();
         } catch (error) {
-            await logAdminAction('admin_forwarding_refresh_error', { error: error.message });
+            await logAdminAction('admin_forwarding_refresh_error', {
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -140,7 +144,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await logAdminAction('admin_view_forwarding_request', { requestId });
             window.open(`/admin/forwarding/${requestId}`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_view_forwarding_request_error', { requestId, error: error.message });
+            await logAdminAction('admin_view_forwarding_request_error', {
+                requestId,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         }
     };
 
@@ -149,7 +157,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await logAdminAction('admin_edit_forwarding_request', { requestId });
             window.open(`/admin/forwarding/${requestId}/edit`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_edit_forwarding_request_error', { requestId, error: error.message });
+            await logAdminAction('admin_edit_forwarding_request_error', {
+                requestId,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         }
     };
 
@@ -160,7 +172,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/process`);
             refetchRequests();
         } catch (error) {
-            await logAdminAction('admin_process_forwarding_request_error', { requestId, error: error.message });
+            await logAdminAction('admin_process_forwarding_request_error', {
+                requestId,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -173,7 +189,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/ship`);
             refetchRequests();
         } catch (error) {
-            await logAdminAction('admin_ship_forwarding_request_error', { requestId, error: error.message });
+            await logAdminAction('admin_ship_forwarding_request_error', {
+                requestId,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -186,7 +206,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/cancel`);
             refetchRequests();
         } catch (error) {
-            await logAdminAction('admin_cancel_forwarding_request_error', { requestId, error: error.message });
+            await logAdminAction('admin_cancel_forwarding_request_error', {
+                requestId,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -202,7 +226,12 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             setSelectedRequests([]);
             refetchRequests();
         } catch (error) {
-            await logAdminAction('admin_bulk_forwarding_action_error', { action, requestIds: selectedRequests, error: error.message });
+            await logAdminAction('admin_bulk_forwarding_action_error', {
+                action,
+                requestIds: selectedRequests,
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -215,13 +244,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 filters: { statusFilter, priorityFilter, searchTerm }
             });
 
-            const response = await apiClient.get('/api/admin/forwarding-requests/export', {
-                params: {
-                    status: statusFilter,
-                    priority: priorityFilter,
-                    search: searchTerm
-                }
-            });
+            const response = await apiClient.get(`/api/admin/forwarding-requests/export?status=${statusFilter}&priority=${priorityFilter}&search=${encodeURIComponent(searchTerm)}`);
 
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
@@ -230,7 +253,10 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             a.download = `forwarding-requests-export-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_forwarding_requests_error', { error: error.message });
+            await logAdminAction('admin_export_forwarding_requests_error', {
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }

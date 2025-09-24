@@ -17,6 +17,7 @@ import {
     Activity,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface AnalyticsData {
     userGrowth: {
@@ -92,7 +93,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
             await logAdminAction('admin_analytics_refresh', { timeRange });
             await refetchAnalytics();
         } catch (error) {
-            await logAdminAction('admin_analytics_refresh_error', { error: error instanceof Error ? error.message : String(error) });
+            await logAdminAction('admin_analytics_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -112,7 +113,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
             a.download = `analytics-${selectedMetric}-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_analytics_error', { error: error instanceof Error ? error.message : String(error) });
+            await logAdminAction('admin_export_analytics_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }
@@ -136,7 +137,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
             a.download = `${reportType}-report-${timeRange}-${new Date().toISOString().split('T')[0]}.pdf`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_generate_report_error', { reportType, timeRange, error: error instanceof Error ? error.message : String(error) });
+            await logAdminAction('admin_generate_report_error', { reportType, timeRange, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
         }

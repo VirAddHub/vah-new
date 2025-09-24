@@ -24,6 +24,7 @@ import {
     RefreshCcw,
 } from "lucide-react";
 import { apiClient, logAdminAction, validateEmail } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface UserEditFormProps {
     user: any;
@@ -195,10 +196,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
             await logAdminAction('admin_edit_user_error', {
                 userId: user.id,
                 email: formData.email,
-                error: error.message
+                error_message: getErrorMessage(error), stack: getErrorStack(error)
             });
 
-            setError(error.message || 'Failed to update user');
+            setError(getErrorMessage(error) || 'Failed to update user');
         } finally {
             setLoading(false);
         }
@@ -214,7 +215,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                 onSuccess({ ...user, status: 'suspended' });
             }, 1500);
         } catch (error: any) {
-            setError(error.message || 'Failed to suspend user');
+            setError(getErrorMessage(error) || 'Failed to suspend user');
         } finally {
             setLoading(false);
         }
@@ -230,7 +231,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                 onSuccess({ ...user, status: 'active' });
             }, 1500);
         } catch (error: any) {
-            setError(error.message || 'Failed to activate user');
+            setError(getErrorMessage(error) || 'Failed to activate user');
         } finally {
             setLoading(false);
         }
