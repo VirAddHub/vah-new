@@ -256,12 +256,15 @@ app.use((req, res, next) => {
     res.status = (code) => {
         if (code === 401) {
             console.warn('[401 DIAGNOSTIC]', req.method, req.originalUrl);
-            console.warn('  user?', !!(req).user, 'csrf?', !!(req).csrfToken);
-            console.warn('  headers:', JSON.stringify(req.headers, null, 2));
+            console.warn('  user?', !!(req).user, 'session?', !!(req).session), 'csrf?', !!(req).csrfToken);
+console.warn('  cookies:', req.cookies);
+console.warn('  authorization header:', req.get('Authorization'));
+console.warn('  user-agent:', req.get('User-Agent'));
+console.warn('  stack trace:', new Error().stack);
         }
-        return origStatus(code);
+return origStatus(code);
     };
-    next();
+next();
 });
 
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---

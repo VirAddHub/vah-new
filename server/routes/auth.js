@@ -83,7 +83,7 @@ router.post('/signup', validateSignup, async (req, res) => {
         first_name, last_name, is_admin, role, status,
         kyc_status, plan_status, plan_start_date, onboarding_step
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING *
+      RETURNING id, email, first_name, last_name, name, role, is_admin, status, kyc_status, plan_status, created_at, updated_at
     `, [
       now, now, name, email.toLowerCase(), passwordHash,
       first_name, last_name, 0, 'user', 'active',
@@ -94,8 +94,9 @@ router.post('/signup', validateSignup, async (req, res) => {
       throw new Error('Failed to create user - INSERT did not return user data');
     }
 
-    // Set session
-    const token = setSession(res, user);
+    // Set session cookie BEFORE sending JSON response
+    const token = createToken(user);
+    res.cookie('vah_session', token, sessionCookieOptions());
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
@@ -147,8 +148,9 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Set session
-    const token = setSession(res, user);
+    // Set session cookie BEFORE sending JSON response
+    const token = createToken(user);
+    res.cookie('vah_session', token, sessionCookieOptions());
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
