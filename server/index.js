@@ -256,7 +256,7 @@ app.use((req, res, next) => {
     res.status = (code) => {
         if (code === 401) {
             console.warn('[401 DIAGNOSTIC]', req.method, req.originalUrl);
-            console.warn('  user?', !!(req).user, 'session?', !!(req).session), 'csrf?', !!(req).csrfToken);
+            console.warn('  user?', !!(req).user, 'session?', !!(req).session, 'csrf?', !!(req).csrfToken);
 console.warn('  cookies:', req.cookies);
 console.warn('  authorization header:', req.get('Authorization'));
 console.warn('  user-agent:', req.get('User-Agent'));
