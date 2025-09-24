@@ -54,6 +54,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const [profile, setProfile] = useState<any>(null);
     const [subscription, setSubscription] = useState<any>(null);
     const [supportTickets, setSupportTickets] = useState<any[]>([]);
+    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
+    const [billing, setBilling] = useState<any>(null);
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [plans, setPlans] = useState<any[]>([]);
+    const [kycStatus, setKycStatus] = useState<any>(null);
+    const [emailPrefs, setEmailPrefs] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -62,17 +68,40 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [mailResponse, profileResponse, subscriptionResponse, ticketsResponse] = await Promise.all([
+                const [
+                    mailResponse, 
+                    profileResponse, 
+                    subscriptionResponse, 
+                    ticketsResponse,
+                    forwardingResponse,
+                    billingResponse,
+                    invoicesResponse,
+                    plansResponse,
+                    kycResponse,
+                    emailPrefsResponse
+                ] = await Promise.all([
                     apiClient.get('/api/mail-items'),
                     apiClient.get('/api/profile'),
-                    apiClient.get('/api/subscription'),
-                    apiClient.get('/api/support/tickets')
+                    apiClient.get('/api/payments/subscriptions/status'),
+                    apiClient.get('/api/support/tickets'),
+                    apiClient.get('/api/forwarding-requests'),
+                    apiClient.get('/api/billing'),
+                    apiClient.get('/api/billing/invoices'),
+                    apiClient.get('/api/plans'),
+                    apiClient.get('/api/kyc/status'),
+                    apiClient.get('/api/email-prefs')
                 ]);
 
                 if (mailResponse.ok) setMailItems(mailResponse.data || []);
                 if (profileResponse.ok) setProfile(profileResponse.data);
                 if (subscriptionResponse.ok) setSubscription(subscriptionResponse.data);
                 if (ticketsResponse.ok) setSupportTickets(ticketsResponse.data || []);
+                if (forwardingResponse.ok) setForwardingRequests(forwardingResponse.data || []);
+                if (billingResponse.ok) setBilling(billingResponse.data);
+                if (invoicesResponse.ok) setInvoices(invoicesResponse.data || []);
+                if (plansResponse.ok) setPlans(plansResponse.data || []);
+                if (kycResponse.ok) setKycStatus(kycResponse.data);
+                if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.data);
             } catch (err) {
                 setError('Failed to load data');
                 console.error('Error loading data:', err);
@@ -86,13 +115,19 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Refetch functions
     const refetchMail = () => apiClient.get('/api/mail-items').then(r => r.ok && setMailItems(r.data || []));
     const refetchProfile = () => apiClient.get('/api/profile').then(r => r.ok && setProfile(r.data));
-    const refetchSubscription = () => apiClient.get('/api/subscription').then(r => r.ok && setSubscription(r.data));
+    const refetchSubscription = () => apiClient.get('/api/payments/subscriptions/status').then(r => r.ok && setSubscription(r.data));
     const refetchTickets = () => apiClient.get('/api/support/tickets').then(r => r.ok && setSupportTickets(r.data || []));
+    const refetchForwarding = () => apiClient.get('/api/forwarding-requests').then(r => r.ok && setForwardingRequests(r.data || []));
+    const refetchBilling = () => apiClient.get('/api/billing').then(r => r.ok && setBilling(r.data));
+    const refetchInvoices = () => apiClient.get('/api/billing/invoices').then(r => r.ok && setInvoices(r.data || []));
+    const refetchPlans = () => apiClient.get('/api/plans').then(r => r.ok && setPlans(r.data || []));
+    const refetchKyc = () => apiClient.get('/api/kyc/status').then(r => r.ok && setKycStatus(r.data));
+    const refetchEmailPrefs = () => apiClient.get('/api/email-prefs').then(r => r.ok && setEmailPrefs(r.data));
 
     // Derived state
-    const kycStatus = profile?.kycStatus || "not_started";
+    const kycStatusValue = kycStatus?.status || profile?.kycStatus || "not_started";
     const hasForwardingAddress = Boolean(profile?.address);
-    const planActive = subscription?.data?.status === "active" || subscription?.data?.plan?.status === "active";
+    const planActive = subscription?.status === "active" || subscription?.plan?.status === "active";
 
     // Menu items
     const menuItems: {
@@ -115,6 +150,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         refetchProfile();
         refetchSubscription();
         refetchTickets();
+        refetchForwarding();
+        refetchBilling();
+        refetchInvoices();
+        refetchPlans();
+        refetchKyc();
+        refetchEmailPrefs();
         toast({ title: "Success", description: "Dashboard refreshed" });
     };
 
@@ -149,6 +190,126 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             }
         } catch {
             toast({ title: "Error", description: "Failed to download PDF.", variant: "destructive" });
+        }
+    };
+
+    // KYC Management
+    const startKyc = async () => {
+        try {
+            const response = await apiClient.post('/api/kyc/start');
+            if (response.ok && response.data?.url) {
+                window.open(response.data.url, '_blank');
+                toast({ title: "KYC Started", description: "Opening KYC verification..." });
+            } else {
+                throw new Error("Failed to start KYC");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to start KYC verification.", variant: "destructive" });
+        }
+    };
+
+    // Forwarding Management
+    const createForwardingRequest = async (mailItemId: string, destinationAddress: string) => {
+        try {
+            const response = await apiClient.post('/api/forwarding-requests', {
+                mailItemId,
+                destinationAddress
+            });
+            if (response.ok) {
+                refetchForwarding();
+                toast({ title: "Success", description: "Forwarding request created" });
+            } else {
+                throw new Error("Failed to create forwarding request");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to create forwarding request.", variant: "destructive" });
+        }
+    };
+
+    // Billing Management
+    const createPaymentRedirect = async (planId: string) => {
+        try {
+            const response = await apiClient.post('/api/payments/redirect-flows', { planId });
+            if (response.ok && response.data?.url) {
+                window.location.href = response.data.url;
+            } else {
+                throw new Error("Failed to create payment redirect");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to start payment process.", variant: "destructive" });
+        }
+    };
+
+    const downloadInvoice = async (invoiceId: string) => {
+        try {
+            const response = await apiClient.get(`/api/billing/invoices/${invoiceId}/link`);
+            if (response.ok && response.data?.url) {
+                window.open(response.data.url, '_blank');
+                toast({ title: "Download", description: "Opening invoice..." });
+            } else {
+                throw new Error("Failed to get invoice link");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to download invoice.", variant: "destructive" });
+        }
+    };
+
+    // Support Ticket Management
+    const createSupportTicket = async (subject: string, message: string) => {
+        try {
+            const response = await apiClient.post('/api/support/tickets', { subject, message });
+            if (response.ok) {
+                refetchTickets();
+                toast({ title: "Success", description: "Support ticket created" });
+            } else {
+                throw new Error("Failed to create support ticket");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to create support ticket.", variant: "destructive" });
+        }
+    };
+
+    const closeSupportTicket = async (ticketId: string) => {
+        try {
+            const response = await apiClient.post(`/api/support/tickets/${ticketId}/close`);
+            if (response.ok) {
+                refetchTickets();
+                toast({ title: "Success", description: "Support ticket closed" });
+            } else {
+                throw new Error("Failed to close support ticket");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to close support ticket.", variant: "destructive" });
+        }
+    };
+
+    // Email Preferences Management
+    const updateEmailPrefs = async (preferences: any) => {
+        try {
+            const response = await apiClient.patch('/api/email-prefs', preferences);
+            if (response.ok) {
+                refetchEmailPrefs();
+                toast({ title: "Success", description: "Email preferences updated" });
+            } else {
+                throw new Error("Failed to update email preferences");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to update email preferences.", variant: "destructive" });
+        }
+    };
+
+    // Profile Management
+    const updateProfile = async (profileData: any) => {
+        try {
+            const response = await apiClient.patch('/api/profile', profileData);
+            if (response.ok) {
+                refetchProfile();
+                toast({ title: "Success", description: "Profile updated" });
+            } else {
+                throw new Error("Failed to update profile");
+            }
+        } catch {
+            toast({ title: "Error", description: "Failed to update profile.", variant: "destructive" });
         }
     };
 
@@ -224,74 +385,559 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
             case "forwarding":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Mail Forwarding</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Forwarding management coming soon.</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Mail Forwarding Requests</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {forwardingRequests.length === 0 ? (
+                                    <p className="text-muted-foreground">No forwarding requests found.</p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Mail Item</TableHead>
+                                                <TableHead>Destination</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Created</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {forwardingRequests.map((request: any) => (
+                                                <TableRow key={request.id}>
+                                                    <TableCell>{request.mailItem?.description || 'Mail Item'}</TableCell>
+                                                    <TableCell>{request.destinationAddress}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={request.status === 'completed' ? 'default' : 'secondary'}>
+                                                            {request.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <Button size="sm" variant="outline">
+                                                            View Details
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+                        
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Create Forwarding Request</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium">Select Mail Item</label>
+                                        <select className="w-full p-2 border rounded">
+                                            <option>Select a mail item to forward...</option>
+                                            {mailItems.map((item: any) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.description || 'Mail Item'} - {new Date(item.createdAt).toLocaleDateString()}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Destination Address</label>
+                                        <input 
+                                            type="text" 
+                                            className="w-full p-2 border rounded" 
+                                            placeholder="Enter destination address..."
+                                        />
+                                    </div>
+                                    <Button onClick={() => toast({ title: "Info", description: "Forwarding request creation form coming soon" })}>
+                                        Create Request
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             case "billing":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Billing & Subscription</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Billing management coming soon.</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Current Subscription</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {subscription ? (
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium">Plan:</span>
+                                            <Badge variant="default">{subscription.plan?.name || 'Basic Plan'}</Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium">Status:</span>
+                                            <Badge variant={subscription.status === 'active' ? 'default' : 'destructive'}>
+                                                {subscription.status || 'Inactive'}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium">Next Billing:</span>
+                                            <span>{subscription.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString() : 'N/A'}</span>
+                                        </div>
+                                        <Button onClick={() => toast({ title: "Info", description: "Plan management coming soon" })}>
+                                            Manage Plan
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted-foreground">No active subscription found.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Available Plans</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {plans.length === 0 ? (
+                                    <p className="text-muted-foreground">No plans available.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {plans.map((plan: any) => (
+                                            <div key={plan.id} className="border rounded-lg p-4">
+                                                <h3 className="font-semibold">{plan.name}</h3>
+                                                <p className="text-2xl font-bold">£{plan.price}</p>
+                                                <p className="text-sm text-muted-foreground">/{plan.interval}</p>
+                                                <p className="text-sm mt-2">{plan.description}</p>
+                                                <Button 
+                                                    className="w-full mt-4" 
+                                                    onClick={() => createPaymentRedirect(plan.id)}
+                                                >
+                                                    Select Plan
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Invoices</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {invoices.length === 0 ? (
+                                    <p className="text-muted-foreground">No invoices found.</p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Invoice #</TableHead>
+                                                <TableHead>Amount</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {invoices.map((invoice: any) => (
+                                                <TableRow key={invoice.id}>
+                                                    <TableCell>{invoice.invoiceNumber || invoice.id}</TableCell>
+                                                    <TableCell>£{invoice.amount || '0.00'}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'}>
+                                                            {invoice.status || 'Pending'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            onClick={() => downloadInvoice(invoice.id)}
+                                                        >
+                                                            Download
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             case "certificates":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Certificates</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Certificate management coming soon.</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Available Certificates</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <p className="text-muted-foreground">
+                                        Download certificates and documents for your virtual address.
+                                    </p>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="border rounded-lg p-4">
+                                            <h3 className="font-semibold mb-2">Address Certificate</h3>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Official certificate proving your virtual address
+                                            </p>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => toast({ title: "Info", description: "Certificate download coming soon" })}
+                                            >
+                                                <FileDown className="h-4 w-4 mr-2" />
+                                                Download PDF
+                                            </Button>
+                                        </div>
+                                        
+                                        <div className="border rounded-lg p-4">
+                                            <h3 className="font-semibold mb-2">Business Certificate</h3>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Certificate for business registration purposes
+                                            </p>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => toast({ title: "Info", description: "Business certificate download coming soon" })}
+                                            >
+                                                <FileDown className="h-4 w-4 mr-2" />
+                                                Download PDF
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Mail Item Scans</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {mailItems.length === 0 ? (
+                                    <p className="text-muted-foreground">No mail items available for download.</p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {mailItems.map((item: any) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell>{item.description || 'Mail Item'}</TableCell>
+                                                    <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={item.isRead ? 'secondary' : 'default'}>
+                                                            {item.isRead ? 'Scanned' : 'New'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            onClick={() => downloadMailPdf(item.id)}
+                                                        >
+                                                            <FileDown className="h-4 w-4 mr-1" />
+                                                            Download Scan
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             case "kyc":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>KYC Verification</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">KYC status: {kycStatus}</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>KYC Verification Status</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">Status:</span>
+                                        <Badge 
+                                            variant={
+                                                kycStatusValue === 'approved' ? 'default' : 
+                                                kycStatusValue === 'pending' ? 'secondary' : 
+                                                kycStatusValue === 'rejected' ? 'destructive' : 'outline'
+                                            }
+                                        >
+                                            {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
+                                        </Badge>
+                                    </div>
+                                    
+                                    {kycStatusValue === 'not_started' && (
+                                        <div className="space-y-4">
+                                            <p className="text-muted-foreground">
+                                                Complete your KYC verification to access all features and services.
+                                            </p>
+                                            <Button onClick={startKyc} className="w-full">
+                                                <ShieldCheck className="h-4 w-4 mr-2" />
+                                                Start KYC Verification
+                                            </Button>
+                                        </div>
+                                    )}
+                                    
+                                    {kycStatusValue === 'pending' && (
+                                        <div className="space-y-4">
+                                            <p className="text-muted-foreground">
+                                                Your KYC verification is being reviewed. This usually takes 1-2 business days.
+                                            </p>
+                                            <Button variant="outline" onClick={() => refetchKyc()}>
+                                                <RefreshCw className="h-4 w-4 mr-2" />
+                                                Check Status
+                                            </Button>
+                                        </div>
+                                    )}
+                                    
+                                    {kycStatusValue === 'approved' && (
+                                        <div className="space-y-4">
+                                            <p className="text-green-600 font-medium">
+                                                ✅ Your identity has been verified successfully!
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                You now have access to all features and services.
+                                            </p>
+                                        </div>
+                                    )}
+                                    
+                                    {kycStatusValue === 'rejected' && (
+                                        <div className="space-y-4">
+                                            <p className="text-red-600 font-medium">
+                                                ❌ Your KYC verification was rejected.
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Please contact support for assistance or try again.
+                                            </p>
+                                            <Button onClick={startKyc} variant="outline">
+                                                <ShieldCheck className="h-4 w-4 mr-2" />
+                                                Try Again
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Required Documents</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                            <span className="text-xs">1</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Government ID</p>
+                                            <p className="text-sm text-muted-foreground">Passport, driving license, or national ID</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                            <span className="text-xs">2</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Proof of Address</p>
+                                            <p className="text-sm text-muted-foreground">Utility bill or bank statement (less than 3 months old)</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                            <span className="text-xs">3</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">Selfie Verification</p>
+                                            <p className="text-sm text-muted-foreground">Take a selfie holding your ID document</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             case "settings":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Settings</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Settings management coming soon.</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Profile Settings</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium">Email Address</label>
+                                        <input 
+                                            type="email" 
+                                            className="w-full p-2 border rounded" 
+                                            value={profile?.email || ''}
+                                            readOnly
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Full Name</label>
+                                        <input 
+                                            type="text" 
+                                            className="w-full p-2 border rounded" 
+                                            placeholder="Enter your full name..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Phone Number</label>
+                                        <input 
+                                            type="tel" 
+                                            className="w-full p-2 border rounded" 
+                                            placeholder="Enter your phone number..."
+                                        />
+                                    </div>
+                                    <Button onClick={() => toast({ title: "Info", description: "Profile update form coming soon" })}>
+                                        Update Profile
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Email Preferences</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">Mail Notifications</p>
+                                            <p className="text-sm text-muted-foreground">Get notified when new mail arrives</p>
+                                        </div>
+                                        <input type="checkbox" defaultChecked />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">Forwarding Updates</p>
+                                            <p className="text-sm text-muted-foreground">Get notified about forwarding status</p>
+                                        </div>
+                                        <input type="checkbox" defaultChecked />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">Billing Notifications</p>
+                                            <p className="text-sm text-muted-foreground">Get notified about billing and payments</p>
+                                        </div>
+                                        <input type="checkbox" defaultChecked />
+                                    </div>
+                                    <Button onClick={() => toast({ title: "Info", description: "Email preferences update coming soon" })}>
+                                        Save Preferences
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             case "support":
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Support</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Support tickets: {supportTickets.length}</p>
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Support Tickets</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {supportTickets.length === 0 ? (
+                                    <p className="text-muted-foreground">No support tickets found.</p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Subject</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Created</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {supportTickets.map((ticket: any) => (
+                                                <TableRow key={ticket.id}>
+                                                    <TableCell>{ticket.subject}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={ticket.status === 'closed' ? 'secondary' : 'default'}>
+                                                            {ticket.status || 'Open'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>{new Date(ticket.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            <Button size="sm" variant="outline">
+                                                                View
+                                                            </Button>
+                                                            {ticket.status !== 'closed' && (
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="outline"
+                                                                    onClick={() => closeSupportTicket(ticket.id)}
+                                                                >
+                                                                    Close
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Create Support Ticket</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium">Subject</label>
+                                        <input 
+                                            type="text" 
+                                            className="w-full p-2 border rounded" 
+                                            placeholder="Brief description of your issue..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Message</label>
+                                        <textarea 
+                                            className="w-full p-2 border rounded h-24" 
+                                            placeholder="Please describe your issue in detail..."
+                                        />
+                                    </div>
+                                    <Button onClick={() => toast({ title: "Info", description: "Support ticket creation form coming soon" })}>
+                                        Create Ticket
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 );
 
             default:
