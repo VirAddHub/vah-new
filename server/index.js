@@ -236,6 +236,39 @@ app.get('/api/csrf', maybeCsrf, (req, res) => {
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// ===== DEBUG ROUTES (BEFORE ANY AUTH/CORS/LIMITERS) =====
+const debugRouter = require('express').Router();
+
+debugRouter.get('/ping', (_req, res) => {
+    res.json({ ok: true, who: 'debug', timestamp: Date.now() });
+});
+
+debugRouter.get('/db-test', async (_req, res) => {
+    try {
+        const result = await db.get('SELECT 1 as ok');
+        res.json({ db: result, ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message, code: error.code });
+    }
+});
+
+// Mount debug routes BEFORE any auth middleware
+app.use('/_debug', debugRouter);
+
+// ===== TEMPORARY 401 DIAGNOSTIC MIDDLEWARE =====
+app.use((req, res, next) => {
+    const origStatus = res.status.bind(res);
+    res.status = (code) => {
+        if (code === 401) {
+            console.warn('[401 DIAGNOSTIC]', req.method, req.originalUrl);
+            console.warn('  user?', !!(req).user, 'csrf?', !!(req).csrfToken);
+            console.warn('  headers:', JSON.stringify(req.headers, null, 2));
+        }
+        return origStatus(code);
+    };
+    next();
+});
+
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);      // /api/auth/*
