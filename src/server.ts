@@ -37,6 +37,7 @@ app.use(helmet());
 
 // Strict CORS allowlisting
 app.use(corsMiddleware);
+app.options('*', corsMiddleware); // Handle OPTIONS preflights
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
