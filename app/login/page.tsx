@@ -15,9 +15,10 @@ function UserPageContent() {
         if (isAuthenticated) {
             if (isAdmin) {
                 // Redirect admins to admin dashboard
-                window.location.href = '/admin/login';
+                window.location.href = '/admin/dashboard';
             } else {
-                setShowDashboard(true);
+                // Redirect users to their dashboard
+                window.location.href = '/dashboard';
             }
         } else {
             setShowDashboard(false);
@@ -27,16 +28,16 @@ function UserPageContent() {
     const handleLoginSuccess = (role: 'admin' | 'user') => {
         console.log('Login success, role:', role);
         if (role === 'admin') {
-            console.log('Redirecting admin to /admin/login');
+            console.log('Redirecting admin to /admin/dashboard');
             // Use setTimeout to ensure state updates are processed
             setTimeout(() => {
-                window.location.href = '/admin/login';
+                window.location.href = '/admin/dashboard';
             }, 100);
         } else {
-            console.log('Setting user dashboard to show');
+            console.log('Redirecting user to /dashboard');
             // Use setTimeout to ensure state updates are processed
             setTimeout(() => {
-                setShowDashboard(true);
+                window.location.href = '/dashboard';
             }, 100);
         }
     };
