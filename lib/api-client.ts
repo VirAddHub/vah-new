@@ -3,6 +3,11 @@
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
 
+// Improved API Response types
+type ApiOk<T> = { ok: true; data: T }
+type ApiErr = { ok: false; error: string; status: number }
+export type ApiResponse<T> = ApiOk<T> | ApiErr
+
 // Example usage function
 export async function whoAmI() {
   const r = await fetch(`${API_BASE}/auth/whoami`, { credentials: 'include' });
@@ -41,12 +46,6 @@ function sanitizeObject(obj: any): any {
   return sanitized;
 }
 
-interface ApiResponse<T = any> {
-  ok: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
 
 interface User {
   id: number;
@@ -104,27 +103,31 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-
-    const defaultOptions: RequestInit = {
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    };
-
+    
     try {
-      const response = await fetch(url, { ...defaultOptions, ...options });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return { ok: false, error: data.error || `HTTP ${response.status}` };
+      const res = await fetch(url, {
+        credentials: 'include', // keep if you use cookies
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options,
+      });
+
+      let body: any = null;
+      try { 
+        body = await res.json(); 
+      } catch { 
+        /* no body / not JSON */ 
       }
-      
-      return { ok: true, data };
-    } catch (error) {
-      console.error(`API Error (${endpoint}):`, error);
-      return { ok: false, error: error instanceof Error ? error.message : 'Network error' };
+
+      if (!res.ok) {
+        const msg = (body && (body.error || body.message)) || res.statusText || 'Request failed';
+        return { ok: false, error: msg, status: res.status };
+      }
+
+      return { ok: true, data: body as T };
+    } catch (e: any) {
+      // true network error, CORS blockage, DNS, etc.
+      console.error(`API Error (${endpoint}):`, e);
+      return { ok: false, error: e?.message || 'Network error', status: 0 };
     }
   }
 
@@ -166,11 +169,11 @@ class ApiClient {
   async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
     // Validate inputs
     if (!validateEmail(email)) {
-      return { ok: false, error: 'Invalid email format' };
+      return { ok: false, error: 'Invalid email format', status: 400 };
     }
 
     if (!validatePassword(password)) {
-      return { ok: false, error: 'Password must be at least 6 characters' };
+      return { ok: false, error: 'Password must be at least 6 characters', status: 400 };
     }
 
     // Sanitize inputs
@@ -189,15 +192,15 @@ class ApiClient {
   async signup(email: string, password: string, firstName: string, lastName: string): Promise<ApiResponse<{ user: User }>> {
     // Validate inputs
     if (!validateEmail(email)) {
-      return { ok: false, error: 'Invalid email format' };
+      return { ok: false, error: 'Invalid email format', status: 400 };
     }
 
     if (!validatePassword(password)) {
-      return { ok: false, error: 'Password must be at least 6 characters' };
+      return { ok: false, error: 'Password must be at least 6 characters', status: 400 };
     }
 
     if (!firstName || !lastName) {
-      return { ok: false, error: 'First name and last name are required' };
+      return { ok: false, error: 'First name and last name are required', status: 400 };
     }
 
     // Sanitize inputs
@@ -217,7 +220,7 @@ class ApiClient {
     });
   }
 
-  async logout(): Promise<ApiResponse> {
+  async logout(): Promise<ApiResponse<any>> {
     return this.request('/api/auth/logout', {
       method: 'POST',
     });
@@ -242,7 +245,7 @@ class ApiClient {
     });
   }
 
-  async logoutAll(): Promise<ApiResponse> {
+  async logoutAll(): Promise<ApiResponse<any>> {
     return this.request('/api/auth/logout-all', {
       method: 'POST',
     });
@@ -281,14 +284,14 @@ class ApiClient {
     return this.request('/api/mail-items');
   }
 
-  async updateMailItem(id: string, data: Partial<MailItem>): Promise<ApiResponse> {
+  async updateMailItem(id: string, data: Partial<MailItem>): Promise<ApiResponse<any>> {
     return this.request(`/api/mail-items/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async forwardMail(data: any): Promise<ApiResponse> {
+  async forwardMail(data: any): Promise<ApiResponse<any>> {
     return this.request('/api/mail/forward', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -333,7 +336,7 @@ class ApiClient {
 
   // ==================== BILLING APIs ====================
 
-  async getBilling(): Promise<ApiResponse> {
+  async getBilling(): Promise<ApiResponse<any>> {
     return this.request('/api/billing');
   }
 
@@ -354,7 +357,7 @@ class ApiClient {
     return this.request('/api/payments/subscriptions/status');
   }
 
-  async manageSubscription(action: string): Promise<ApiResponse> {
+  async manageSubscription(action: string): Promise<ApiResponse<any>> {
     return this.request('/api/payments/subscriptions', {
       method: 'POST',
       body: JSON.stringify({ action }),
@@ -395,7 +398,7 @@ class ApiClient {
     });
   }
 
-  async closeSupportTicket(id: number): Promise<ApiResponse> {
+  async closeSupportTicket(id: number): Promise<ApiResponse<any>> {
     return this.request(`/api/support/tickets/${id}/close`, {
       method: 'POST',
     });
@@ -407,14 +410,14 @@ class ApiClient {
     return this.request('/api/email-prefs');
   }
 
-  async createEmailPrefs(data: any): Promise<ApiResponse> {
+  async createEmailPrefs(data: any): Promise<ApiResponse<any>> {
     return this.request('/api/email-prefs', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateEmailPrefs(data: any): Promise<ApiResponse> {
+  async updateEmailPrefs(data: any): Promise<ApiResponse<any>> {
     return this.request('/api/email-prefs', {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -433,7 +436,7 @@ class ApiClient {
     postcode: string;
     phone: string;
     email: string;
-  }): Promise<ApiResponse> {
+  }): Promise<ApiResponse<any>> {
     return this.request('/api/onboarding/business', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -450,15 +453,15 @@ class ApiClient {
     company?: string;
     inquiryType?: string;
     website?: string;
-  }): Promise<ApiResponse> {
+  }): Promise<ApiResponse<any>> {
     // Validate required fields
     if (!data.name || !data.email || !data.subject || !data.message) {
-      return { ok: false, error: 'All required fields must be provided' };
+      return { ok: false, error: 'All required fields must be provided', status: 400 };
     }
 
     // Validate email format
     if (!validateEmail(data.email)) {
-      return { ok: false, error: 'Invalid email format' };
+      return { ok: false, error: 'Invalid email format', status: 400 };
     }
 
     // Sanitize all string inputs
@@ -490,14 +493,14 @@ class ApiClient {
     return this.request('/api/admin/users');
   }
 
-  async updateAdminUser(id: number, data: any): Promise<ApiResponse> {
+  async updateAdminUser(id: number, data: any): Promise<ApiResponse<any>> {
     return this.request(`/api/admin/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async updateUserKycStatus(id: number, status: string): Promise<ApiResponse> {
+  async updateUserKycStatus(id: number, status: string): Promise<ApiResponse<any>> {
     return this.request(`/api/admin/users/${id}/kyc-status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
@@ -508,7 +511,7 @@ class ApiClient {
     return this.request('/api/admin/plans');
   }
 
-  async updateAdminPlan(id: number, data: any): Promise<ApiResponse> {
+  async updateAdminPlan(id: number, data: any): Promise<ApiResponse<any>> {
     return this.request(`/api/admin/plans/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -519,14 +522,14 @@ class ApiClient {
     return this.request(`/api/admin/mail-items/${id}`);
   }
 
-  async updateAdminMailItem(id: string, data: any): Promise<ApiResponse> {
+  async updateAdminMailItem(id: string, data: any): Promise<ApiResponse<any>> {
     return this.request(`/api/admin/mail-items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async logPhysicalDispatch(id: string, data: any): Promise<ApiResponse> {
+  async logPhysicalDispatch(id: string, data: any): Promise<ApiResponse<any>> {
     return this.request(`/api/admin/mail-items/${id}/log-physical-dispatch`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -582,5 +585,5 @@ class ApiClient {
 // Export singleton instance
 export const apiClient = new ApiClient();
 
-// Export types
-export type { User, MailItem, ForwardingRequest, ApiResponse };
+// Export types 
+export type { User, MailItem, ForwardingRequest };

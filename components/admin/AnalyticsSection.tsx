@@ -116,6 +116,9 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                 format: 'pdf'
             });
 
+            if (!response.ok) {
+                throw new Error(response.error);
+            }
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

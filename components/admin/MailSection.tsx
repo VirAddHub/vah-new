@@ -191,6 +191,9 @@ export function MailSection({ }: MailSectionProps) {
 
             const response = await apiClient.get(`/api/admin/mail-items/export?status=${statusFilter}&tag=${tagFilter}&search=${searchTerm}&tab=${selectedTab}`);
 
+            if (!response.ok) {
+                throw new Error(response.error);
+            }
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

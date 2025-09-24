@@ -99,6 +99,9 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
 
             const response = await apiClient.get(`/api/admin/users/export?status=${statusFilter}&plan=${planFilter}&kyc=${kycFilter}&search=${searchTerm}`);
 
+            if (!response.ok) {
+                throw new Error(response.error);
+            }
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

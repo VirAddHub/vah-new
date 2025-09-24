@@ -100,6 +100,9 @@ export function BillingSection({ }: BillingSectionProps) {
 
             const response = await apiClient.get(`/api/admin/billing/export?timeRange=${timeRange}`);
 
+            if (!response.ok) {
+                throw new Error(response.error);
+            }
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

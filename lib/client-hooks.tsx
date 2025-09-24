@@ -5,16 +5,20 @@ import { apiClient } from './api-client';
 
 // Custom hook for API data fetching
 export function useApiData(url: string) {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const result = await apiClient.get(url);
-      setData(result.data);
+      if (result.ok) {
+        setData(result.data);
+      } else {
+        setError(result.error);
+      }
     } catch (err) {
       setError(err as any);
     } finally {

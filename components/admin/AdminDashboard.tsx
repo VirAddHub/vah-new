@@ -187,6 +187,9 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             await logAdminAction('admin_export_data', { section: activeSection });
             // Implement export functionality based on active section
             const response = await apiClient.get(`/api/admin/export/${activeSection}`);
+            if (!response.ok) {
+                throw new Error(response.error);
+            }
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
