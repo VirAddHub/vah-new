@@ -1326,10 +1326,10 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
 // ===== ADMIN SETUP (ONE-TIME) =====
 // Only mount the setup route if explicitly enabled
 if (SETUP_ENABLED) {
-    app.post('/api/create-admin-user', setupLimiter, (req, res) => {
+    app.post('/api/create-admin-user', setupLimiter, async (req, res) => {
         try {
-            // Check header-based authentication (more secure than body)
-            const provided = req.get('x-setup-secret');
+            // Check header-based authentication (more secure than body) - case insensitive
+            const provided = req.get('x-setup-secret') ?? req.get('X-Setup-Secret') ?? req.headers['x-setup-secret'];
             if (!ADMIN_SETUP_SECRET || provided !== ADMIN_SETUP_SECRET) {
                 return res.status(401).json({ error: 'Unauthorized' });
             }
@@ -1337,19 +1337,19 @@ if (SETUP_ENABLED) {
             const { email, password, first_name, last_name } = req.body || {};
             if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
-            const exists = db.prepare('SELECT id FROM user WHERE is_admin=1').get();
+            // Check if admin already exists (PostgreSQL compatible)
+            const exists = await db.get('SELECT id FROM "user" WHERE is_admin=1');
             if (exists) return res.status(409).json({ error: 'Admin user already exists' });
 
             const hash = hashPasswordSync(password);
             const now = Date.now();
             const name = `${first_name || ''} ${last_name || ''}`.trim();
-            const info = db
-                .prepare(
-                    `INSERT INTO user (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
-           VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`
-                )
-                .run(now, name, email, hash, first_name || '', last_name || '', now);
-            res.json({ ok: true, data: { user_id: info.lastInsertRowid }, message: 'Admin user created successfully.' });
+            const info = await db.run(
+                `INSERT INTO "user" (created_at,name,email,password,first_name,last_name,is_admin,kyc_status,plan_status,plan_start_date,onboarding_step)
+           VALUES (?,?,?,?,?,?,1,'verified','active',?,'completed')`,
+                [now, name, email, hash, first_name || '', last_name || '', now]
+            );
+            res.json({ ok: true, data: { user_id: info.insertId || info.lastInsertRowid }, message: 'Admin user created successfully.' });
         } catch (e) {
             if (String(e).includes('UNIQUE')) return res.status(409).json({ error: 'Email already registered' });
             logger.error('admin create failed', e);

@@ -56,10 +56,12 @@ router.post('/signup', validateSignup, async (req, res) => {
 
         const { email, password, first_name = '', last_name = '' } = req.body;
 
-        // Check if user already exists
-        const existingUser = await db.get('SELECT id FROM "user" WHERE email = ?', [email]);
-        if (existingUser) {
-            return res.status(409).json({ error: 'Email already registered' });
+        // Basic validation
+        if (typeof email !== 'string' || !email.includes('@')) {
+            return res.status(400).json({ error: 'Validation failed', details: [{ path: 'email', msg: 'Invalid email' }]});
+        }
+        if (typeof password !== 'string' || password.length < 8) {
+            return res.status(400).json({ error: 'Validation failed', details: [{ path: 'password', msg: 'Password must be at least 8 characters' }]});
         }
 
         // Hash password
@@ -76,7 +78,7 @@ router.post('/signup', validateSignup, async (req, res) => {
         kyc_status, plan_status, plan_start_date, onboarding_step
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-            now, now, name, email, passwordHash,
+            now, now, name, email.toLowerCase(), passwordHash,
             first_name, last_name, 0, 'user', 'active',
             'pending', 'active', now, 'signup'
         ]);
@@ -96,11 +98,17 @@ router.post('/signup', validateSignup, async (req, res) => {
         });
 
     } catch (error) {
+        // PostgreSQL duplicate email error
+        if (error?.code === '23505') {
+            return res.status(409).json({ error: 'Email already in use' });
+        }
+        
         console.error('[signup] error', { 
             message: error.message, 
+            code: error.code,
+            detail: error.detail,
             stack: error.stack,
-            name: error.name,
-            code: error.code
+            name: error.name
         });
         res.status(500).json({ error: 'Signup failed', details: error.message });
     }

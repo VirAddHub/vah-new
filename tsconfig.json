@@ -29,8 +29,7 @@
       }
     ],
     "types": [
-      "node",
-      "@playwright/test"
+      "node"
     ]
   },
   "include": [
