@@ -168,14 +168,18 @@ const corsMiddleware = cors({
         // allow ONLY this project's vercel preview URLs
         if (allowVercelPreviews) {
             try {
-                const host = new URL(origin).host.toLowerCase();
-                const isVercel = host.endsWith('.vercel.app');
-                const isProject =
-                    host === `${vercelPrefix}.vercel.app` ||
-                    host.startsWith(`${vercelPrefix}-git-`);
-                if (isVercel && isProject) {
-                    console.log('[CORS] Origin allowed by Vercel preview');
-                    return cb(null, true);
+                // Simple string parsing to avoid URL constructor issues
+                const match = origin.match(/^https?:\/\/([^\/]+)/);
+                if (match) {
+                    const host = match[1].toLowerCase();
+                    const isVercel = host.endsWith('.vercel.app');
+                    const isProject =
+                        host === `${vercelPrefix}.vercel.app` ||
+                        host.startsWith(`${vercelPrefix}-git-`);
+                    if (isVercel && isProject) {
+                        console.log('[CORS] Origin allowed by Vercel preview');
+                        return cb(null, true);
+                    }
                 }
             } catch (e) {
                 console.log('[CORS] Error parsing Vercel origin:', e.message);
