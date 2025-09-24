@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -26,7 +25,11 @@ type BlogPost = {
     imageUrl: string;
 };
 
-export function BlogPage() {
+interface BlogPageProps {
+    onNavigate?: (page: string, data?: any) => void;
+}
+
+export function BlogPage({ onNavigate }: BlogPageProps) {
 
     const blogPosts: BlogPost[] = [
         {
@@ -142,15 +145,13 @@ export function BlogPage() {
                                     </div>
                                 </div>
                                 <Button
-                                    asChild
                                     variant="outline"
                                     className="w-fit px-6 py-2"
                                     aria-label={`Read article: ${featuredPost.title}`}
+                                    onClick={() => onNavigate?.('blog-post', { slug: featuredPost.slug })}
                                 >
-                                    <Link href={`/blog/${featuredPost.slug}`}>
-                                        Read Article
-                                        <ArrowRight className="h-4 w-4 ml-2" />
-                                    </Link>
+                                    Read Article
+                                    <ArrowRight className="h-4 w-4 ml-2" />
                                 </Button>
                             </div>
                         </div>
@@ -202,15 +203,13 @@ export function BlogPage() {
                                         </div>
                                     </div>
                                     <Button
-                                        asChild
                                         variant="outline"
                                         size="sm"
                                         className="w-full"
                                         aria-label={`Read article: ${post.title}`}
+                                        onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
                                     >
-                                        <Link href={`/blog/${post.slug}`}>
-                                            Read More
-                                        </Link>
+                                        Read More
                                     </Button>
                                 </CardContent>
                             </Card>

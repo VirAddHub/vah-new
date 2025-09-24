@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { HomePage } from './HomePage';
 import { AboutPage } from './AboutPage';
@@ -10,20 +11,30 @@ import { TermsPage } from './TermsPage';
 import { PrivacyPolicyPage } from './PrivacyPolicyPage';
 import { KYCPolicyPage } from './KYCPolicyPage';
 import { HelpPage } from './HelpPage';
+import { ContactPage } from './ContactPage';
+import { SignupPage } from './SignupPage';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 
 export function App() {
   const { currentPage, navigate, goBack } = useNavigation();
+  const [signupData, setSignupData] = useState<any>(null);
+
+  const handleNavigate = (page: string, data?: any) => {
+    if (page === 'signup' && data) {
+      setSignupData(data);
+    }
+    navigate(page);
+  };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage onNavigate={navigate} />;
+        return <HomePage onNavigate={handleNavigate} />;
       case 'about':
         return <AboutPage />;
       case 'blog':
-        return <BlogPage />;
+        return <BlogPage onNavigate={navigate} />;
       case 'blog-post':
         // Extract slug from URL hash if available
         const hash = window.location.hash.slice(1);
@@ -47,6 +58,8 @@ export function App() {
         return <KYCPolicyPage onNavigate={navigate} />;
       case 'help':
         return <HelpPage onNavigate={navigate} onGoBack={goBack} />;
+      case 'contact':
+        return <ContactPage onNavigate={navigate} />;
       case 'login':
         // Placeholder for login page
         return (
@@ -64,21 +77,7 @@ export function App() {
           </div>
         );
       case 'signup':
-        // Placeholder for signup page
-        return (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
-              <p className="text-muted-foreground mb-4">Sign up functionality coming soon</p>
-              <button
-                onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
-        );
+        return <SignupPage onNavigate={navigate} initialBilling={signupData?.initialBilling} />;
       case 'dashboard':
         // Placeholder for dashboard page
         return (

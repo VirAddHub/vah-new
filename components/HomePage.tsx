@@ -14,11 +14,11 @@ import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface HomePageProps {
-    onNavigate?: (page: string) => void;
+    onNavigate?: (page: string, data?: any) => void;
 }
 
 export function HomePage({ onNavigate }: HomePageProps) {
-    const handleNavClick = (page: string) => onNavigate?.(page);
+    const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
     const [billing, setBilling] = useState<"monthly" | "annual">(
         "monthly",
     );
@@ -84,7 +84,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </p>
                         <div className="mt-10">
                             <Button
-                                onClick={() => handleNavClick?.("signup")}
+                                onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
                                 className="h-12 px-8 rounded-[16px] bg-primary text-primary-foreground hover:bg-primary/90"
                             >
@@ -402,7 +402,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
 
                                     <Button
-                                        onClick={() => handleNavClick?.("signup")}
+                                        onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                         className="w-full h-11 rounded-[14px] bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                                     >
                                         {ctaText}
@@ -488,7 +488,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     <div className="mt-8 text-center">
                         <Button
-                            onClick={() => handleNavClick?.("signup")}
+                            onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                             className="h-11 rounded-[14px] bg-primary px-6 text-primary-foreground hover:bg-primary/90"
                         >
                             Get Started — Secure My London Address
