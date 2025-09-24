@@ -140,13 +140,13 @@ app.get('/api/auth/whoami', (req, res) => res.json({ ok: true, user: req.user })
 
 
 // CORS configuration - use environment variables
-const staticList = (process.env.FRONTEND_ORIGINS ?? '')
+const ALLOWLIST = (process.env.FRONTEND_ORIGINS || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
 
-const allowVercelPreviews = (process.env.ALLOW_VERCEL_PREVIEWS ?? '').toLowerCase() === 'true';
-const vercelPrefix = (process.env.VERCEL_PROJECT_PREFIX ?? '').toLowerCase();
+const allowVercelPreviews = (process.env.ALLOW_VERCEL_PREVIEWS || '').toLowerCase() === 'true';
+const vercelPrefix = (process.env.VERCEL_PROJECT_PREFIX || '').toLowerCase();
 
 const corsMiddleware = cors({
     origin(origin, cb) {
@@ -154,12 +154,12 @@ const corsMiddleware = cors({
         if (!origin) return cb(null, true);
 
         // exact allowlist match
-        if (staticList.includes(origin)) {
+        if (ALLOWLIST.includes(origin)) {
             return cb(null, true);
         }
 
         // allow ONLY this project's vercel preview URLs
-        if (allowVercelPreviews) {
+        if (allowVercelPreviews && vercelPrefix) {
             try {
                 // Simple string parsing to avoid URL constructor issues
                 const match = origin.match(/^https?:\/\/([^\/]+)/);
@@ -178,7 +178,7 @@ const corsMiddleware = cors({
             }
         }
 
-        return cb(new Error('CORS blocked'));
+        return cb(null, false); // deny without throwing
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -186,7 +186,7 @@ const corsMiddleware = cors({
 });
 
 app.use(corsMiddleware);
-app.options('*', corsMiddleware); // Handle OPTIONS preflights
+app.options('(.*)', corsMiddleware); // Handle OPTIONS preflights (Express 5 compatible)
 
 // Webhooks BEFORE csurf (raw body)
 app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
