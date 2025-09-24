@@ -17,6 +17,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
         { label: 'Blog', page: 'blog' },
         { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
+        { label: 'Sign Up', page: 'signup' },
         { label: 'Login', page: 'dashboard' },
         { label: 'Admin', page: 'admin' },
     ];
@@ -24,6 +25,8 @@ export function Navigation({ onNavigate }: NavigationProps) {
     const handleNavClick = (page: string) => {
         if (page === 'dashboard' || page === 'admin') {
             window.location.href = '/login';
+        } else if (page === 'signup') {
+            window.location.href = '/signup';
         } else {
             onNavigate(page);
         }

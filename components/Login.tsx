@@ -60,7 +60,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
       // Determine role from user data
       const role: Role = response.data?.user?.is_admin ? 'admin' : 'user';
-      
+
       if (onSuccess) {
         onSuccess(role);
       } else {

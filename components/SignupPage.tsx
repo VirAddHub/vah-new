@@ -16,6 +16,8 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
         step1Data,
         step2Data,
         isComplete,
+        isLoading,
+        error,
         goToStep1,
         goToStep2,
         goToStep3,
@@ -86,6 +88,8 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                     billing={step1Data?.billing || 'monthly'}
                     price={step1Data?.price || '9.99'}
                     step2Data={step2Data}
+                    isLoading={isLoading}
+                    error={error}
                 />
             );
         default:

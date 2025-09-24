@@ -186,6 +186,37 @@ class ApiClient {
     });
   }
 
+  async signup(email: string, password: string, firstName: string, lastName: string): Promise<ApiResponse<{ user: User }>> {
+    // Validate inputs
+    if (!validateEmail(email)) {
+      return { ok: false, error: 'Invalid email format' };
+    }
+    
+    if (!validatePassword(password)) {
+      return { ok: false, error: 'Password must be at least 6 characters' };
+    }
+
+    if (!firstName || !lastName) {
+      return { ok: false, error: 'First name and last name are required' };
+    }
+
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeString(email);
+    const sanitizedPassword = sanitizeString(password);
+    const sanitizedFirstName = sanitizeString(firstName);
+    const sanitizedLastName = sanitizeString(lastName);
+
+    return this.request('/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        email: sanitizedEmail, 
+        password: sanitizedPassword,
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName
+      }),
+    });
+  }
+
   async logout(): Promise<ApiResponse> {
     return this.request('/api/auth/logout', {
       method: 'POST',

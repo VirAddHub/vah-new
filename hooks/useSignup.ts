@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { apiClient } from '../lib/api-client';
 
 export interface SignupStep1Data {
     billing: 'monthly' | 'annual';
@@ -42,6 +43,8 @@ export function useSignup() {
     const [step1Data, setStep1Data] = useState<SignupStep1Data | null>(null);
     const [step2Data, setStep2Data] = useState<SignupStep2Data | null>(null);
     const [isComplete, setIsComplete] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const goToStep1 = useCallback(() => {
         setCurrentStep(1);
@@ -66,20 +69,46 @@ export function useSignup() {
         }
     }, [currentStep]);
 
-    const completeSignup = useCallback(() => {
-        setIsComplete(true);
-        // Here you would typically send the data to your API
-        console.log('Signup completed with data:', {
-            step1: step1Data,
-            step2: step2Data,
-        });
-    }, [step1Data, step2Data]);
+    const completeSignup = useCallback(async () => {
+        if (!step2Data) {
+            setError('Missing signup data');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Call the real API signup
+            const response = await apiClient.signup(
+                step2Data.email,
+                step2Data.password,
+                step2Data.first_name,
+                step2Data.last_name
+            );
+
+            if (response.ok) {
+                setIsComplete(true);
+                console.log('Signup successful:', response.data);
+            } else {
+                throw new Error(response.error || 'Signup failed');
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Signup failed';
+            setError(errorMessage);
+            console.error('Signup error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [step2Data]);
 
     const resetSignup = useCallback(() => {
         setCurrentStep(1);
         setStep1Data(null);
         setStep2Data(null);
         setIsComplete(false);
+        setIsLoading(false);
+        setError(null);
     }, []);
 
     return {
@@ -87,6 +116,8 @@ export function useSignup() {
         step1Data,
         step2Data,
         isComplete,
+        isLoading,
+        error,
         goToStep1,
         goToStep2,
         goToStep3,

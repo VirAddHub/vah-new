@@ -11,9 +11,11 @@ interface SignupStep3Props {
     billing: 'monthly' | 'annual';
     price: string;
     step2Data?: any;
+    isLoading?: boolean;
+    error?: string | null;
 }
 
-export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: SignupStep3Props) {
+export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error }: SignupStep3Props) {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'direct_debit' | 'card'>('direct_debit');
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -31,12 +33,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
 
     const handlePayment = async () => {
         setIsProcessing(true);
-
-        // Simulate payment processing
-        setTimeout(() => {
-            setIsProcessing(false);
-            onComplete();
-        }, 2000);
+        // Call the real signup completion (which calls the API)
+        onComplete();
     };
 
     const nextSteps = [
@@ -226,15 +224,23 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
                         </AlertDescription>
                     </Alert>
 
+                    {/* Error Display */}
+                    {error && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+
                     {/* Payment Button */}
                     <div className="text-center">
                         <ScrollToTopButton
                             onClick={handlePayment}
-                            disabled={isProcessing}
+                            disabled={isProcessing || isLoading}
                             className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                         >
                             <CreditCard className="h-4 w-4 mr-2" />
-                            {isProcessing ? 'Processing...' : `Complete Payment – ${displayPrice}`}
+                            {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
                         </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground">
                             You'll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
