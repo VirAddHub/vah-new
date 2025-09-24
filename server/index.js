@@ -186,7 +186,7 @@ const corsMiddleware = cors({
 });
 
 app.use(corsMiddleware);
-app.options('(.*)', corsMiddleware); // Handle OPTIONS preflights (Express 5 compatible)
+app.options('/:path(.*)', corsMiddleware); // Handle OPTIONS preflights (Express 5 compatible)
 
 // Webhooks BEFORE csurf (raw body)
 app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks

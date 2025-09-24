@@ -11,7 +11,7 @@
     },
     "headers": [
         {
-            "source": "/api/(.*)",
+            "source": "/api/:path(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
@@ -28,7 +28,7 @@
             ]
         },
         {
-            "source": "/(.*)",
+            "source": "/:path(.*)",
             "headers": [
                 {
                     "key": "X-Content-Type-Options",
