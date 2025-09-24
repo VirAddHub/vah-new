@@ -8,6 +8,11 @@ const { sessionCookieOptions } = require('../../lib/cookies');
 
 const router = express.Router();
 
+// Debug endpoint to test auth routes
+router.get('/ping', (req, res) => {
+    res.json({ ok: true, message: 'Auth routes are working' });
+});
+
 // Validation middleware
 const validateSignup = [
   body('email').isEmail().normalizeEmail(),

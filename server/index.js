@@ -1323,6 +1323,16 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
     }
 });
 
+// ===== DEBUG ENDPOINT =====
+app.get('/api/debug/db-test', async (req, res) => {
+    try {
+        const result = await db.get('SELECT 1 as test');
+        res.json({ ok: true, db: 'connected', result });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message, code: error.code });
+    }
+});
+
 // ===== ADMIN SETUP (ONE-TIME) =====
 // Only mount the setup route if explicitly enabled
 if (SETUP_ENABLED) {
