@@ -12,7 +12,7 @@ function UserPageContent() {
         if (isAuthenticated) {
             if (isAdmin) {
                 // Redirect admins to admin dashboard
-                window.location.href = '/admin';
+                window.location.href = '/admin/login';
             } else {
                 setShowDashboard(true);
             }
@@ -22,9 +22,12 @@ function UserPageContent() {
     }, [isAuthenticated, isAdmin]);
 
     const handleLoginSuccess = (role: 'admin' | 'user') => {
+        console.log('Login success, role:', role);
         if (role === 'admin') {
+            console.log('Redirecting admin to /admin/login');
             window.location.href = '/admin/login';
         } else {
+            console.log('Setting user dashboard to show');
             setShowDashboard(true);
         }
     };

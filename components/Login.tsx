@@ -53,14 +53,18 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     try {
       // DEMO handy paths (keep if you still want them)
       if (email === 'demo@example.com' && password === 'demo123') {
+        console.log('Demo user login');
         createDemoSession('user');
         const role: Role = 'user';
+        console.log('Calling onSuccess with role:', role);
         onSuccess ? onSuccess(role) : window.location.assign('/dashboard');
         return;
       }
       if (email === 'admin@virtualaddresshub.co.uk' && password === 'admin123') {
+        console.log('Demo admin login');
         createDemoSession('admin');
         const role: Role = 'admin';
+        console.log('Calling onSuccess with role:', role);
         onSuccess ? onSuccess(role) : window.location.assign('/admin');
         return;
       }
