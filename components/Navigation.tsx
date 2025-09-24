@@ -22,7 +22,13 @@ export function Navigation({ onNavigate }: NavigationProps) {
     ];
 
     const handleNavClick = (page: string) => {
-        onNavigate(page);
+        if (page === 'dashboard') {
+            window.location.href = '/login';
+        } else if (page === 'admin') {
+            window.location.href = '/admin/login';
+        } else {
+            onNavigate(page);
+        }
         setIsMenuOpen(false);
     };
 
