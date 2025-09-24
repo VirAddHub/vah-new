@@ -257,14 +257,14 @@ app.use((req, res, next) => {
         if (code === 401) {
             console.warn('[401 DIAGNOSTIC]', req.method, req.originalUrl);
             console.warn('  user?', !!(req).user, 'session?', !!(req).session, 'csrf?', !!(req).csrfToken);
-console.warn('  cookies:', req.cookies);
-console.warn('  authorization header:', req.get('Authorization'));
-console.warn('  user-agent:', req.get('User-Agent'));
-console.warn('  stack trace:', new Error().stack);
+            console.warn('  cookies:', req.cookies);
+            console.warn('  authorization header:', req.get('Authorization'));
+            console.warn('  user-agent:', req.get('User-Agent'));
+            console.warn('  stack trace:', new Error().stack);
         }
-return origStatus(code);
+        return origStatus(code);
     };
-next();
+    next();
 });
 
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---
@@ -1388,6 +1388,30 @@ if (SETUP_ENABLED) {
         }
     });
 }
+
+// ===== TEMPORARY: PROMOTE USER TO ADMIN =====
+// Temporary endpoint to promote a user to admin (for testing purposes)
+app.post('/api/promote-to-admin', async (req, res) => {
+    try {
+        const { email } = req.body || {};
+        if (!email) return res.status(400).json({ error: 'Email required' });
+
+        // Update user to admin
+        const result = await db.run(
+            'UPDATE "user" SET is_admin = 1, role = \'admin\', updated_at = ? WHERE email = ?',
+            [Date.now(), email.toLowerCase()]
+        );
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ ok: true, message: `User ${email} promoted to admin successfully` });
+    } catch (e) {
+        logger.error('promote to admin failed', e);
+        res.status(500).json({ error: 'Failed to promote user to admin' });
+    }
+});
 
 // ===== AUTH — SIGNUP =====
 // Auth signup is now handled by the auth router
