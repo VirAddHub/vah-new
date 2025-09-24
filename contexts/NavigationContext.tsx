@@ -42,8 +42,8 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
     
-    // Smooth scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   };
 
   const goBack = () => {
@@ -57,8 +57,8 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
       const hash = `#${previousPage}`;
       window.history.pushState({ page: previousPage }, '', hash);
       
-      // Smooth scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to top
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
   };
 
