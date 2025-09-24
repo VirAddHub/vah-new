@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "@/lib/api-client";
 
@@ -92,6 +92,18 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Go Back
+            </Button>
+            <div className="flex-1" />
+          </div>
           <CardTitle className="flex items-center gap-2 justify-center">
             <Shield className="h-5 w-5 text-primary" />
             Sign in
