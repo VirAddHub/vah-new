@@ -177,7 +177,7 @@ class ApiClient {
 
   // ==================== AUTHENTICATION APIs ====================
 
-  async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
+  async login(email: string, password: string): Promise<ApiResponse<User>> {
     // Validate inputs
     if (!validateEmail(email)) {
       return { ok: false, error: 'Invalid email format', status: 400 };

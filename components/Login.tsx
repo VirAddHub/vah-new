@@ -55,11 +55,19 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       const response = await apiClient.login(email, password);
 
       if (!response.ok) {
-        throw new Error(response.error || 'Login failed');
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('Invalid email or password');
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again.');
+        } else {
+          throw new Error(response.error || 'Login failed');
+        }
       }
 
       // Determine role from user data
-      const role: Role = response.data?.user?.is_admin ? 'admin' : 'user';
+      const user = response.data;
+      const role: Role = user?.is_admin ? 'admin' : 'user';
 
       if (onSuccess) {
         onSuccess(role);
