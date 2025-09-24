@@ -1,4 +1,4 @@
-import { ContactPage } from '@/components/ContactPage';
+import ContactPage from '@/components/ContactPage';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
@@ -20,7 +20,7 @@ export default function Contact() {
         <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-1">
-                <ContactPage onNavigate={handleNavigate} />
+                <ContactPage />
             </main>
             <Footer />
         </div>

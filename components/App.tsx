@@ -11,7 +11,7 @@ import { TermsPage } from './TermsPage';
 import { PrivacyPolicyPage } from './PrivacyPolicyPage';
 import { KYCPolicyPage } from './KYCPolicyPage';
 import { HelpPage } from './HelpPage';
-import { ContactPage } from './ContactPage';
+import ContactPage from './ContactPage';
 import { SignupPage } from './SignupPage';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
@@ -59,7 +59,7 @@ export function App() {
       case 'help':
         return <HelpPage onNavigate={navigate} onGoBack={goBack} />;
       case 'contact':
-        return <ContactPage onNavigate={navigate} />;
+        return <ContactPage />;
       case 'login':
         // Placeholder for login page
         return (
