@@ -5,6 +5,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
+import { ScrollToTopButton } from '../ScrollToTopButton';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -546,12 +547,16 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
                     {/* Submit Button */}
                     <div className="text-center">
-                        <Button
-                            type="submit"
-                            className="h-10 px-6 min-w-48"
+                        <ScrollToTopButton
+                            onClick={() => {
+                                if (validateForm()) {
+                                    onNext(formData);
+                                }
+                            }}
+                            className="h-10 px-6 min-w-48 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
                         >
                             Continue to Payment
-                        </Button>
+                        </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground mt-4">
                             Your information is encrypted and secure. We'll create your account in the next step.
                         </p>

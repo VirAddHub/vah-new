@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Check, Shield, Mail, Truck, FileText } from 'lucide-react';
+import { ScrollToTopButton } from '../ScrollToTopButton';
 
 interface SignupStep1Props {
     onNext: (selectedPlan: { billing: 'monthly' | 'annual'; price: string }) => void;
@@ -195,12 +196,12 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                     {/* Continue button */}
                     <div className="text-center">
-                        <button
+                        <ScrollToTopButton
                             onClick={handleContinue}
                             className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-md px-6"
                         >
                             Create Account - £{billing === 'monthly' ? '9.99/mo' : '89.99/year'}
-                        </button>
+                        </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground mt-4">
                             No payment required yet. Complete your information first.
                         </p>

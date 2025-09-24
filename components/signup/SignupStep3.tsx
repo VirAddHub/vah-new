@@ -3,6 +3,7 @@ import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-reac
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
+import { ScrollToTopButton } from '../ScrollToTopButton';
 
 interface SignupStep3Props {
     onComplete: () => void;
@@ -227,14 +228,14 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
 
                     {/* Payment Button */}
                     <div className="text-center">
-                        <Button
+                        <ScrollToTopButton
                             onClick={handlePayment}
                             disabled={isProcessing}
-                            className="h-10 px-6 min-w-64 mb-4"
+                            className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                         >
                             <CreditCard className="h-4 w-4 mr-2" />
                             {isProcessing ? 'Processing...' : `Complete Payment – ${displayPrice}`}
-                        </Button>
+                        </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground">
                             You'll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
                         </p>
