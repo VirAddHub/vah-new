@@ -161,11 +161,11 @@ const ensureColumn = async (table: string, column: string, type: string) => {
 // Initialize database and start server
 async function start() {
     await initializeDatabase();
-    
+
     // Detect schema features before mounting routes
     const { detectSchemaFeatures } = await import('./db');
     await detectSchemaFeatures();
-    
+
     // Dev-only guard to detect stale dist
     if (process.env.NODE_ENV !== 'production') {
         try {
@@ -206,14 +206,14 @@ async function start() {
         console.log(`VAH backend listening on http://localhost:${PORT}`);
         console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
         console.log(`DB client: ${process.env.DB_CLIENT || 'sqlite'}`);
-        
+
         // Log build metadata
         try {
             const fs = require('fs');
-            const meta = JSON.parse(fs.readFileSync('dist/build-meta.json','utf8'));
+            const meta = JSON.parse(fs.readFileSync('dist/build-meta.json', 'utf8'));
             console.log('[boot] build:', meta);
-        } catch { 
-            console.log('[boot] build: (no meta)'); 
+        } catch {
+            console.log('[boot] build: (no meta)');
         }
     });
 }
