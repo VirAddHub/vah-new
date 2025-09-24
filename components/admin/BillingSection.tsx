@@ -21,6 +21,7 @@ import {
     RefreshCcw,
 } from "lucide-react";
 import { apiClient, logAdminAction, useApiData } from "../../lib";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface BillingData {
     monthlyRevenue: number;
@@ -120,7 +121,10 @@ export function BillingSection({ }: BillingSectionProps) {
                 refetchInvoices()
             ]);
         } catch (error) {
-            await logAdminAction('admin_billing_refresh_error', { error: error.message });
+            await logAdminAction('admin_billing_refresh_error', { 
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -131,9 +135,7 @@ export function BillingSection({ }: BillingSectionProps) {
         try {
             await logAdminAction('admin_export_billing_reports', { timeRange });
 
-            const response = await apiClient.get('/api/admin/billing/export', {
-                params: { timeRange }
-            });
+            const response = await apiClient.get(`/api/admin/billing/export?timeRange=${timeRange}`);
 
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
@@ -142,7 +144,10 @@ export function BillingSection({ }: BillingSectionProps) {
             a.download = `billing-report-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
         } catch (error) {
-            await logAdminAction('admin_export_billing_reports_error', { error: error.message });
+            await logAdminAction('admin_export_billing_reports_error', { 
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -153,7 +158,11 @@ export function BillingSection({ }: BillingSectionProps) {
             await logAdminAction('admin_view_invoice', { invoiceId });
             window.open(`/admin/invoices/${invoiceId}`, '_blank');
         } catch (error) {
-            await logAdminAction('admin_view_invoice_error', { invoiceId, error: error.message });
+            await logAdminAction('admin_view_invoice_error', { 
+                invoiceId, 
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         }
     };
 
@@ -164,7 +173,11 @@ export function BillingSection({ }: BillingSectionProps) {
             await apiClient.post(`/api/admin/transactions/${transactionId}/process`);
             refetchTransactions();
         } catch (error) {
-            await logAdminAction('admin_process_payment_error', { transactionId, error: error.message });
+            await logAdminAction('admin_process_payment_error', { 
+                transactionId, 
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -177,7 +190,11 @@ export function BillingSection({ }: BillingSectionProps) {
             await apiClient.post(`/api/admin/transactions/${transactionId}/refund`);
             refetchTransactions();
         } catch (error) {
-            await logAdminAction('admin_refund_transaction_error', { transactionId, error: error.message });
+            await logAdminAction('admin_refund_transaction_error', { 
+                transactionId, 
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
+            });
         } finally {
             setLoading(false);
         }
