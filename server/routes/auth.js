@@ -1,6 +1,6 @@
 // server/routes/auth.js - Real database authentication
 const express = require('express');
-const bcrypt = require('bcrypt');
+const { hashPasswordSync, comparePasswordSync } = require('../lib/password');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { db } = require('../db');
@@ -63,13 +63,12 @@ router.post('/signup', validateSignup, async (req, res) => {
     }
 
     // Hash password
-    const saltRounds = 12;
-    const passwordHash = bcrypt.hashSync(password, saltRounds);
+    const passwordHash = hashPasswordSync(password);
 
     // Create user
     const now = Date.now();
     const name = `${first_name} ${last_name}`.trim();
-    
+
     const result = db.prepare(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
@@ -84,16 +83,16 @@ router.post('/signup', validateSignup, async (req, res) => {
 
     // Get the created user
     const user = db.prepare('SELECT * FROM "user" WHERE id = ?').get(result.lastInsertRowid);
-    
+
     // Set session
     const token = setSession(res, user);
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
-    res.status(201).json({ 
-      ok: true, 
-      token, 
-      data: userData 
+    res.status(201).json({
+      ok: true,
+      token,
+      data: userData
     });
 
   } catch (error) {
@@ -119,7 +118,7 @@ router.post('/login', validateLogin, async (req, res) => {
     }
 
     // Check password
-    const isValidPassword = bcrypt.compareSync(password, user.password);
+    const isValidPassword = comparePasswordSync(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -129,10 +128,10 @@ router.post('/login', validateLogin, async (req, res) => {
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
-    res.json({ 
-      ok: true, 
-      token, 
-      data: userData 
+    res.json({
+      ok: true,
+      token,
+      data: userData
     });
 
   } catch (error) {
@@ -152,7 +151,7 @@ router.get('/whoami', (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
-  
+
   const { password: _, ...userData } = req.user;
   res.json({ ok: true, data: userData });
 });

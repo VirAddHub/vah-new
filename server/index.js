@@ -73,7 +73,7 @@ function tableExists(name) {
 function logSkip(what, table) {
     console.log(`[boot] ${what} skipped: table "${table}" missing`);
 }
-const bcrypt = require('bcryptjs');
+const { hashPasswordSync, comparePasswordSync } = require('./lib/password');
 const crypto = require('crypto');
 const devBypass = require('../middleware/devBypass');
 const forwardingGuard = require('./middleware/forwarding-guard');
@@ -1141,7 +1141,7 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
             return res.status(400).json({ success: false, message: 'Password must contain at least one number' });
         }
 
-        const hashed = bcrypt.hashSync(new_password, 10);
+        const hashed = hashPasswordSync(new_password);
 
         const tx = db.transaction(() => {
             db.prepare(`
@@ -1305,9 +1305,9 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
     const { current_password, new_password } = req.body;
     try {
         const user = db.prepare('SELECT * FROM user WHERE id=?').get(req.user.id);
-        if (!user || !bcrypt.compareSync(current_password, user.password_hash))
+        if (!user || !comparePasswordSync(current_password, user.password_hash))
             return res.status(400).json({ error: 'Current password is incorrect' });
-        const hash = bcrypt.hashSync(new_password, 12);
+        const hash = hashPasswordSync(new_password);
         db.prepare('UPDATE user SET password=? WHERE id=?').run(hash, req.user.id);
         logActivity(req.user.id, 'password_changed', null, null, req);
 
@@ -1340,7 +1340,7 @@ if (SETUP_ENABLED) {
             const exists = db.prepare('SELECT id FROM user WHERE is_admin=1').get();
             if (exists) return res.status(409).json({ error: 'Admin user already exists' });
 
-            const hash = bcrypt.hashSync(password, 12);
+            const hash = hashPasswordSync(password);
             const now = Date.now();
             const name = `${first_name || ''} ${last_name || ''}`.trim();
             const info = db
@@ -1504,7 +1504,7 @@ app.get('/api/auth/db-check', async (_req, res) => {
 app.post('/api/auth/hash-check', (req, res) => {
     const { password, hash } = req.body || {};
     try {
-        const ok = bcrypt.compareSync(String(password || ''), String(hash || ''));
+        const ok = comparePasswordSync(String(password || ''), String(hash || ''));
         res.json({ ok });
     } catch (e) {
         res.status(500).json({ ok: false, code: 'E_HASH_CHECK', message: e.message });
@@ -1802,7 +1802,7 @@ runIfLive(async () => {
         const cols = new Set(colRows.map(r => r.name));
         const has = c => cols.has(c);
 
-        const passHash = bcrypt.hashSync(rawPassword, 12);
+        const passHash = hashPasswordSync(rawPassword);
         const adminSetSql = has('role') ? 'role = ?' : 'is_admin = ?';
         const adminSetVal = has('role') ? 'admin' : 1;
 
