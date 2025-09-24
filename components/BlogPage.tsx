@@ -4,10 +4,10 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
@@ -146,17 +146,17 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                         {featuredPost.readTime}
                                     </div>
                                 </div>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-fit px-6 py-2"
-                  aria-label={`Read article: ${featuredPost.title}`}
-                >
-                  <Link href={`/blog/${featuredPost.slug}`}>
-                    Read Article
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="w-fit px-6 py-2"
+                                    aria-label={`Read article: ${featuredPost.title}`}
+                                >
+                                    <Link href={`/blog/${featuredPost.slug}`}>
+                                        Read Article
+                                        <ArrowRight className="h-4 w-4 ml-2" />
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </Card>
@@ -206,17 +206,17 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                             {post.readTime}
                                         </div>
                                     </div>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    aria-label={`Read article: ${post.title}`}
-                  >
-                    <Link href={`/blog/${post.slug}`}>
-                      Read More
-                    </Link>
-                  </Button>
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full"
+                                        aria-label={`Read article: ${post.title}`}
+                                    >
+                                        <Link href={`/blog/${post.slug}`}>
+                                            Read More
+                                        </Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))}
