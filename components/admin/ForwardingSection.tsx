@@ -46,6 +46,14 @@ interface ForwardingRequest {
     updatedAt: string;
 }
 
+interface ForwardingStats {
+    total: number;
+    pending: number;
+    processing: number;
+    shipped: number;
+    delivered: number;
+}
+
 interface ForwardingSectionProps { }
 
 export function ForwardingSection({ }: ForwardingSectionProps) {
@@ -57,7 +65,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
 
     // API Data fetching
     const { data: forwardingRequests, isLoading: requestsLoading, refetch: refetchRequests } = useApiData('/api/admin/forwarding-requests');
-    const { data: forwardingStats, isLoading: statsLoading } = useApiData('/api/admin/forwarding-requests/stats');
+    const { data: forwardingStats, isLoading: statsLoading } = useApiData<ForwardingStats>('/api/admin/forwarding-requests/stats');
 
     // Default data if API is not available
     const defaultRequests: ForwardingRequest[] = [
