@@ -25,7 +25,8 @@ const cors = require('cors');
 
 const allowlist = [
   'http://localhost:3000',
-  process.env.FRONTEND_ORIGIN || '',
+  'https://vah-frontend-final.vercel.app',
+  ...(process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(',') : []),
 ];
 
 const corsMiddleware = cors({
@@ -92,7 +93,7 @@ export function requireAuth(req, res, next) {
 ### Staging
 ```
 NODE_ENV=production
-FRONTEND_ORIGIN=http://localhost:3000
+FRONTEND_ORIGIN=http://localhost:3000,https://vah-frontend-final.vercel.app
 SESSION_SECRET=<long-random>
 GOCARDLESS_WEBHOOK_SECRET=<sandbox>
 SUMSUB_WEBHOOK_SECRET=<staging>
@@ -101,7 +102,7 @@ SUMSUB_WEBHOOK_SECRET=<staging>
 ### Production
 ```
 NODE_ENV=production
-FRONTEND_ORIGIN=https://your-vercel-domain.vercel.app
+FRONTEND_ORIGIN=https://vah-frontend-final.vercel.app
 SESSION_SECRET=<long-random>
 GOCARDLESS_WEBHOOK_SECRET=<production>
 SUMSUB_WEBHOOK_SECRET=<production>

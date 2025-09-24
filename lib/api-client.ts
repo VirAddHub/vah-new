@@ -1,7 +1,14 @@
 // Comprehensive API Client for VirtualAddressHub
 // Based on server-reference.md with all 67+ endpoints
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
+
+// Example usage function
+export async function whoAmI() {
+  const r = await fetch(`${API_BASE}/auth/whoami`, { credentials: 'include' });
+  if (!r.ok) throw new Error('whoami failed');
+  return r.json();
+}
 
 // Input validation and sanitization utilities
 function sanitizeString(input: any): string {
