@@ -1,8 +1,8 @@
 "use client";
 
-import { Navigation } from './Navigation';
+import { Footer } from './Footer';
 
-export function NavigationWrapper() {
+export function FooterWrapper() {
     const handleNavigate = (page: string) => {
         // Handle navigation based on your actual page structure
         switch (page) {
@@ -51,5 +51,5 @@ export function NavigationWrapper() {
         }
     };
 
-    return <Navigation onNavigate={handleNavigate} />;
+    return <Footer onNavigate={handleNavigate} />;
 }

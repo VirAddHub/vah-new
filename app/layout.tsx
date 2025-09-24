@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { NavigationWrapper } from '@/components/NavigationWrapper'
+import { FooterWrapper } from '@/components/FooterWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
                 <main className="flex-1">
                     {children}
                 </main>
+                <FooterWrapper />
             </body>
         </html>
     )
