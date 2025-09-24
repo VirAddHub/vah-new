@@ -6,6 +6,9 @@ import {
   ShieldCheck,
   HelpCircle,
 } from "lucide-react";
+
+'use client';
+
 import { useMemo } from "react";
 import {
   Accordion,
