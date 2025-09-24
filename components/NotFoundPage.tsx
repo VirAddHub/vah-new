@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
+// Separator component not available, using div instead
 import { ArrowLeft, Home, Mail, Search, Check } from "lucide-react";
 
 interface NotFoundPageProps {
@@ -49,7 +49,7 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                                 ))}
                             </ul>
 
-                            <Separator />
+                            <div className="border-t border-border my-4" />
 
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <Button

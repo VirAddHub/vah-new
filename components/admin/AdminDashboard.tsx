@@ -141,7 +141,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
                 if (forwardingResponse.ok) {
                     const requests = forwardingResponse.data || [];
                     setForwardingRequests(requests);
-                    const pending = requests.filter(r => r.status === 'pending').length;
+                    const pending = requests.filter((r: any) => r.status === 'pending').length;
                     setStats(prev => ({ ...prev, pendingForwarding: pending }));
                 }
 
