@@ -16,6 +16,9 @@ import { body, query, param, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 
+// CORS middleware
+import { corsMiddleware } from './cors';
+
 // Database adapters
 import { ensureSchema, selectOne, selectMany, execute, insertReturningId } from './db';
 
@@ -32,24 +35,8 @@ app.set("trust proxy", 1);
 // security + CORS (must be before routes)
 app.use(helmet());
 
-// Normalize APP_ORIGIN into a clean string array
-const ALLOWED_ORIGINS: string[] = (process.env.APP_ORIGIN ?? '')
-    .split(',')
-    .map(s => s.trim())
-    .filter((s): s is string => s.length > 0);
-
-app.use(
-    cors({
-        // Use function form to avoid TS complaints and support no-Origin requests (curl, healthchecks)
-        origin(origin, cb) {
-            const allowed = !origin || ALLOWED_ORIGINS.includes(origin);
-            cb(allowed ? null : new Error('Not allowed by CORS'), allowed);
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-    })
-);
+// Strict CORS allowlisting
+app.use(corsMiddleware);
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());

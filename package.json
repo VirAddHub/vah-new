@@ -54,6 +54,7 @@
     "test:endpoints": "node test/test-endpoints.mjs",
     "test:webhook": "node test/test-webhook.mjs",
     "test:production": "node test/test-production-ready.mjs",
+    "verify:cors": "bash scripts/verify-cors.sh",
     "api:list": "node scripts/api-coverage/list-routes.cjs",
     "api:testlist": "node scripts/api-coverage/list-tested.cjs",
     "api:diff": "node scripts/api-coverage/diff.cjs",
