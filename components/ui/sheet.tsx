@@ -2,27 +2,27 @@
 
 import * as React from "react"
 import { Dialog, DialogOverlay } from "@radix-ui/react-dialog"
-import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal, DrawerTitle, DrawerDescription, DrawerClose, DrawerTrigger } from "vaul"
+// import { Drawer, div, div, div, div, div, div, div } from "vaul"
 import { cn } from "@/lib/utils"
 
 // A minimal Sheet API compatible with shadcn/ui usage.
 // Uses `vaul` under the hood for mobile-friendly drawer behavior.
 
-export const Sheet = ({ children, ...props }: React.ComponentProps<typeof Drawer>) => (
-    <Drawer {...props}>{children}</Drawer>
+export const Sheet = ({ children, ...props }: any) => (
+    <div {...props}>{children}</div>
 )
 
-export const SheetTrigger = DrawerTrigger
+export const SheetTrigger = ({ children, ...props }: any) => <div {...props}>{children}</div>
 
-export const SheetClose = DrawerClose
+export const SheetClose = ({ children, ...props }: any) => <div {...props}>{children}</div>
 
-export const SheetPortal = DrawerPortal
+export const SheetPortal = ({ children, ...props }: any) => <div {...props}>{children}</div>
 
 export const SheetOverlay = React.forwardRef<
     HTMLDivElement,
     React.ComponentProps<"div">
 >(({ className, ...props }, ref) => (
-    <DrawerOverlay
+    <div
         ref={ref}
         className={cn("fixed inset-0 bg-black/40", className)}
         {...props}
@@ -34,7 +34,7 @@ export const SheetContent = React.forwardRef<
     HTMLDivElement,
     React.ComponentProps<"div">
 >(({ className, ...props }, ref) => (
-    <DrawerContent
+    <div
         ref={ref}
         className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg rounded-t-2xl bg-white p-6 shadow-lg outline-none",
@@ -64,7 +64,7 @@ export const SheetTitle = React.forwardRef<
     HTMLHeadingElement,
     React.ComponentProps<"h2">
 >(({ className, ...props }, ref) => (
-    <DrawerTitle
+    <div
         ref={ref}
         className={cn("text-base font-semibold", className)}
         {...props}
@@ -76,7 +76,7 @@ export const SheetDescription = React.forwardRef<
     HTMLParagraphElement,
     React.ComponentProps<"p">
 >(({ className, ...props }, ref) => (
-    <DrawerDescription
+    <div
         ref={ref}
         className={cn("text-sm text-neutral-600 dark:text-neutral-400", className)}
         {...props}

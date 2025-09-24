@@ -309,7 +309,7 @@ export function useApiData(url: string) {
             const result = await apiClient.get(url);
             setData(result);
         } catch (err) {
-            setError(err);
+            setError(err as any);
         } finally {
             setIsLoading(false);
         }

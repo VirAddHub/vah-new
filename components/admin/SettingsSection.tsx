@@ -99,6 +99,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
     // API Data fetching
     const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useApiData('/api/admin/settings');
     const { data: systemHealth, isLoading: healthLoading } = useApiData('/api/admin/system/health');
+    const health = systemHealth as any;
 
     useEffect(() => {
         if (systemSettings) {
@@ -121,8 +122,8 @@ export function SettingsSection({ }: SettingsSectionProps) {
     const handleSaveSettings = async (section: string) => {
         setSaving(true);
         try {
-            await logAdminAction('admin_save_settings', { section, settings: settings[section] });
-            await apiClient.post(`/api/admin/settings/${section}`, settings[section]);
+            await logAdminAction('admin_save_settings', { section, settings: (settings as any)[section] });
+            await apiClient.post(`/api/admin/settings/${section}`, (settings as any)[section]);
             await refetchSettings();
         } catch (error) {
             await logAdminAction('admin_save_settings_error', { section, error_message: getErrorMessage(error), stack: getErrorStack(error) });
@@ -520,15 +521,15 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="flex items-center gap-2">
                                             <Server className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">Database: {systemHealth.database ? 'Healthy' : 'Unhealthy'}</span>
+                                            <span className="text-sm">Database: {health.database ? 'Healthy' : 'Unhealthy'}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Key className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">API Keys: {systemHealth.apiKeys ? 'Valid' : 'Invalid'}</span>
+                                            <span className="text-sm">API Keys: {health.apiKeys ? 'Valid' : 'Invalid'}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Users className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">Users: {systemHealth.users}</span>
+                                            <span className="text-sm">Users: {health.users}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -57,8 +57,8 @@ export function BillingSection({ }: BillingSectionProps) {
     const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useApiData('/api/admin/transactions');
     const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useApiData('/api/admin/invoices');
 
-    const billing = billingData || null;
-    const transactionsData = transactions || [];
+    const billing = billingData as any;
+    const transactionsData = (transactions as any) || [];
 
     const handleRefresh = async () => {
         setLoading(true);
@@ -230,52 +230,52 @@ export function BillingSection({ }: BillingSectionProps) {
                     </Card>
                 </div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                <p className="text-2xl font-bold">£{billing?.monthlyRevenue?.toLocaleString() || "0"}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowUp className="h-3 w-3" />
-                                    +{billing?.revenueGrowth || 0}% from last month
-                                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                                    <p className="text-2xl font-bold">£{billing?.monthlyRevenue?.toLocaleString() || "0"}</p>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <ArrowUp className="h-3 w-3" />
+                                        +{billing?.revenueGrowth || 0}% from last month
+                                    </p>
+                                </div>
+                                <DollarSign className="h-8 w-8 text-green-500" />
                             </div>
-                            <DollarSign className="h-8 w-8 text-green-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
-                                <p className="text-2xl font-bold">£{billing?.outstandingInvoices || 0.toLocaleString()}</p>
-                                <p className="text-xs text-orange-600">{billing?.pendingPayments || 0} pending payments</p>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
+                                    <p className="text-2xl font-bold">£{(billing?.outstandingInvoices || 0).toLocaleString()}</p>
+                                    <p className="text-xs text-orange-600">{billing?.pendingPayments || 0} pending payments</p>
+                                </div>
+                                <FileText className="h-8 w-8 text-orange-500" />
                             </div>
-                            <FileText className="h-8 w-8 text-orange-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Churn Rate</p>
-                                <p className="text-2xl font-bold">{billing?.churnRate || 0}%</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowDown className="h-3 w-3" />
-                                    {billing?.churnChange || 0}% from last month
-                                </p>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Churn Rate</p>
+                                    <p className="text-2xl font-bold">{billing?.churnRate || 0}%</p>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <ArrowDown className="h-3 w-3" />
+                                        {billing?.churnChange || 0}% from last month
+                                    </p>
+                                </div>
+                                <TrendingDown className="h-8 w-8 text-red-500" />
                             </div>
-                            <TrendingDown className="h-8 w-8 text-red-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Recent Transactions */}
@@ -306,75 +306,75 @@ export function BillingSection({ }: BillingSectionProps) {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                transactionsData.map((transaction) => (
-                                <TableRow key={transaction.id}>
-                                    <TableCell>#{transaction.id}</TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{transaction.userName}</div>
-                                            <div className="text-sm text-muted-foreground">ID: {transaction.userId}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge className={getTypeColor(transaction.type)} variant="secondary">
-                                            {transaction.type}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">
-                                            {transaction.currency} {transaction.amount.toFixed(2)}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {getStatusIcon(transaction.status)}
-                                            <Badge className={getStatusColor(transaction.status)} variant="secondary">
-                                                {transaction.status}
+                                transactionsData.map((transaction: any) => (
+                                    <TableRow key={transaction.id}>
+                                        <TableCell>#{transaction.id}</TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <div className="font-medium">{transaction.userName}</div>
+                                                <div className="text-sm text-muted-foreground">ID: {transaction.userId}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={getTypeColor(transaction.type)} variant="secondary">
+                                                {transaction.type}
                                             </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{transaction.description}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {transaction.paymentMethod}
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {transaction.createdAt}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {transaction.invoiceId && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleViewInvoice(transaction.invoiceId!)}
-                                                >
-                                                    <Receipt className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            {transaction.status === "pending" && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleProcessPayment(transaction.id)}
-                                                    disabled={loading}
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            {transaction.status === "completed" && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleRefundTransaction(transaction.id)}
-                                                    disabled={loading}
-                                                >
-                                                    <RefreshCcw className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">
+                                                {transaction.currency} {transaction.amount.toFixed(2)}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                {getStatusIcon(transaction.status)}
+                                                <Badge className={getStatusColor(transaction.status)} variant="secondary">
+                                                    {transaction.status}
+                                                </Badge>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{transaction.description}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {transaction.paymentMethod}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {transaction.createdAt}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                {transaction.invoiceId && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleViewInvoice(transaction.invoiceId!)}
+                                                    >
+                                                        <Receipt className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                {transaction.status === "pending" && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleProcessPayment(transaction.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <CheckCircle className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                {transaction.status === "completed" && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleRefundTransaction(transaction.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <RefreshCcw className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             )}
                         </TableBody>
                     </Table>

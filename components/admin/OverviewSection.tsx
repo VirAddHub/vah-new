@@ -133,71 +133,71 @@ export function OverviewSection() {
                     </Card>
                 </div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Total Users</p>
-                                <p className="text-2xl font-bold">{stats.totalUsers || 0}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowUp className="h-3 w-3" />
-                                    +{stats.userGrowth || 0}%
-                                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Users</p>
+                                    <p className="text-2xl font-bold">{stats.totalUsers || 0}</p>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <ArrowUp className="h-3 w-3" />
+                                        +{stats.userGrowth || 0}%
+                                    </p>
+                                </div>
+                                <Users2 className="h-8 w-8 text-blue-500" />
                             </div>
-                            <Users2 className="h-8 w-8 text-blue-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                <p className="text-2xl font-bold">£{stats.monthlyRevenue?.toLocaleString() || "0"}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowUp className="h-3 w-3" />
-                                    +{stats.revenueGrowth || 0}%
-                                </p>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                                    <p className="text-2xl font-bold">£{stats.monthlyRevenue?.toLocaleString() || "0"}</p>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <ArrowUp className="h-3 w-3" />
+                                        +{stats.revenueGrowth || 0}%
+                                    </p>
+                                </div>
+                                <DollarSign className="h-8 w-8 text-green-500" />
                             </div>
-                            <DollarSign className="h-8 w-8 text-green-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Mail Processed</p>
-                                <p className="text-2xl font-bold">{stats.mailProcessed?.toLocaleString() || "0"}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowUp className="h-3 w-3" />
-                                    +{stats.mailGrowth || 0}%
-                                </p>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Mail Processed</p>
+                                    <p className="text-2xl font-bold">{stats.mailProcessed?.toLocaleString() || "0"}</p>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <ArrowUp className="h-3 w-3" />
+                                        +{stats.mailGrowth || 0}%
+                                    </p>
+                                </div>
+                                <Mail className="h-8 w-8 text-purple-500" />
                             </div>
-                            <Mail className="h-8 w-8 text-purple-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Active Forwards</p>
-                                <p className="text-2xl font-bold">{stats.activeForwards || 0}</p>
-                                <p className="text-xs text-red-600 flex items-center gap-1">
-                                    <ArrowDown className="h-3 w-3" />
-                                    {stats.forwardGrowth || 0}%
-                                </p>
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Active Forwards</p>
+                                    <p className="text-2xl font-bold">{stats.activeForwards || 0}</p>
+                                    <p className="text-xs text-red-600 flex items-center gap-1">
+                                        <ArrowDown className="h-3 w-3" />
+                                        {stats.forwardGrowth || 0}%
+                                    </p>
+                                </div>
+                                <Truck className="h-8 w-8 text-orange-500" />
                             </div>
-                            <Truck className="h-8 w-8 text-orange-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* System Status */}

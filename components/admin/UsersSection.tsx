@@ -64,6 +64,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     const { data: userStats, isLoading: statsLoading } = useApiData('/api/admin/users/stats');
 
     const userData = users || [];
+    const stats = userStats as any;
 
     const filteredUsers = userData.filter((user: User) => {
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,14 +83,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                 filters: { statusFilter, planFilter, kycFilter, searchTerm }
             });
 
-            const response = await apiClient.get('/api/admin/users/export', {
-                params: {
-                    status: statusFilter,
-                    plan: planFilter,
-                    kyc: kycFilter,
-                    search: searchTerm
-                }
-            });
+            const response = await apiClient.get(`/api/admin/users/export?status=${statusFilter}&plan=${planFilter}&kyc=${kycFilter}&search=${searchTerm}`);
 
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
@@ -269,9 +263,9 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                     <p className="text-muted-foreground">Manage user accounts, KYC status, and subscriptions</p>
                     {userStats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {userStats.total}</span>
-                            <span>Active: {userStats.active}</span>
-                            <span>Pending KYC: {userStats.pendingKyc}</span>
+                            <span>Total: {stats?.total || 0}</span>
+                            <span>Active: {stats?.active || 0}</span>
+                            <span>Pending KYC: {stats?.pendingKyc || 0}</span>
                         </div>
                     )}
                 </div>
@@ -428,99 +422,99 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                 </TableRow>
                             ) : (
                                 filteredUsers.map((user: User) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedUsers.includes(user.id)}
-                                            onChange={() => toggleUserSelection(user.id)}
-                                            className="rounded"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{user.name}</div>
-                                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                                            {user.companyName && (
-                                                <div className="text-xs text-muted-foreground">{user.companyName}</div>
-                                            )}
-                                            <div className="text-xs text-muted-foreground">Joined {user.joined}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={user.kyc === "approved" ? "default" : user.kyc === "pending" ? "secondary" : "destructive"}>
-                                                {user.kyc}
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedUsers.includes(user.id)}
+                                                onChange={() => toggleUserSelection(user.id)}
+                                                className="rounded"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <div className="font-medium">{user.name}</div>
+                                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                                                {user.companyName && (
+                                                    <div className="text-xs text-muted-foreground">{user.companyName}</div>
+                                                )}
+                                                <div className="text-xs text-muted-foreground">Joined {user.joined}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={user.kyc === "approved" ? "default" : user.kyc === "pending" ? "secondary" : "destructive"}>
+                                                    {user.kyc}
+                                                </Badge>
+                                                {user.kyc === "pending" && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleUpdateKycStatus(user.id, "approved")}
+                                                        disabled={loading}
+                                                    >
+                                                        <CheckCircle className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="capitalize">
+                                                {user.plan}
                                             </Badge>
-                                            {user.kyc === "pending" && (
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={user.status === "active" ? "default" : "destructive"}>
+                                                    {user.status}
+                                                </Badge>
+                                                {user.status === "suspended" ? (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleActivateUser(user.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <UserCheck className="h-3 w-3" />
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleSuspendUser(user.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <UserX className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{user.mailCount}</TableCell>
+                                        <TableCell>{user.totalSpent}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{user.lastLogin}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => handleUpdateKycStatus(user.id, "approved")}
-                                                    disabled={loading}
+                                                    onClick={() => handleViewUser(user.id)}
                                                 >
-                                                    <CheckCircle className="h-3 w-3" />
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="capitalize">
-                                            {user.plan}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                                                {user.status}
-                                            </Badge>
-                                            {user.status === "suspended" ? (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => handleActivateUser(user.id)}
-                                                    disabled={loading}
+                                                    onClick={() => handleEditUser(user.id)}
                                                 >
-                                                    <UserCheck className="h-3 w-3" />
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
-                                            ) : (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleSuspendUser(user.id)}
-                                                    disabled={loading}
-                                                >
-                                                    <UserX className="h-3 w-3" />
+                                                <Button size="sm" variant="outline">
+                                                    <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{user.mailCount}</TableCell>
-                                    <TableCell>{user.totalSpent}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{user.lastLogin}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => handleViewUser(user.id)}
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => handleEditUser(user.id)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="outline">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             )}
                         </TableBody>
                     </Table>

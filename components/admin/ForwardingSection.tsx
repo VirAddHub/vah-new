@@ -65,9 +65,10 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
 
     // API Data fetching
     const { data: forwardingRequests, isLoading: requestsLoading, refetch: refetchRequests } = useApiData('/api/admin/forwarding-requests');
-    const { data: forwardingStats, isLoading: statsLoading } = useApiData<ForwardingStats>('/api/admin/forwarding-requests/stats');
+    const { data: forwardingStats, isLoading: statsLoading } = useApiData('/api/admin/forwarding-requests/stats');
 
     const requestsData = forwardingRequests || [];
+    const stats = forwardingStats as ForwardingStats | null;
 
     const filteredRequests = requestsData.filter((request: ForwardingRequest) => {
         const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,11 +262,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                     <p className="text-muted-foreground">Track and manage mail forwarding requests</p>
                     {forwardingStats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {forwardingStats.total}</span>
-                            <span>Pending: {forwardingStats.pending}</span>
-                            <span>Processing: {forwardingStats.processing}</span>
-                            <span>Shipped: {forwardingStats.shipped}</span>
-                            <span>Delivered: {forwardingStats.delivered}</span>
+                            <span>Total: {stats?.total || 0}</span>
+                            <span>Pending: {stats?.pending || 0}</span>
+                            <span>Processing: {stats?.processing || 0}</span>
+                            <span>Shipped: {stats?.shipped || 0}</span>
+                            <span>Delivered: {stats?.delivered || 0}</span>
                         </div>
                     )}
                 </div>
@@ -415,84 +416,84 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                             </TableRow>
                         ) : (
                             filteredRequests.map((request: ForwardingRequest) => (
-                            <TableRow key={request.id}>
-                                <TableCell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedRequests.includes(request.id)}
-                                        onChange={() => toggleRequestSelection(request.id)}
-                                        className="rounded"
-                                    />
-                                </TableCell>
-                                <TableCell>#{request.id}</TableCell>
-                                <TableCell>
-                                    <div>
-                                        <div className="font-medium">{request.userName}</div>
-                                        <div className="text-sm text-muted-foreground">ID: {request.userId}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div>
-                                        <div className="font-medium">#{request.mailItemId}</div>
-                                        <div className="text-sm text-muted-foreground">{request.mailSubject}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="max-w-xs">
-                                        <div className="text-sm font-medium">{request.destination}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge className={getPriorityColor(request.priority)} variant="secondary">
-                                        {request.priority}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(request.status)}
-                                        <Badge variant="outline" className="capitalize">
-                                            {request.status}
-                                        </Badge>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    {request.trackingNumber ? (
+                                <TableRow key={request.id}>
+                                    <TableCell>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRequests.includes(request.id)}
+                                            onChange={() => toggleRequestSelection(request.id)}
+                                            className="rounded"
+                                        />
+                                    </TableCell>
+                                    <TableCell>#{request.id}</TableCell>
+                                    <TableCell>
                                         <div>
-                                            <div className="text-sm font-medium">{request.trackingNumber}</div>
-                                            <div className="text-xs text-muted-foreground">{request.carrier}</div>
+                                            <div className="font-medium">{request.userName}</div>
+                                            <div className="text-sm text-muted-foreground">ID: {request.userId}</div>
                                         </div>
-                                    ) : (
-                                        <span className="text-muted-foreground">-</span>
-                                    )}
-                                </TableCell>
-                                <TableCell>{request.cost}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground">{request.createdAt}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleViewRequest(request.id)}>
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" onClick={() => handleEditRequest(request.id)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        {request.status === "pending" && (
-                                            <Button size="sm" variant="outline" onClick={() => handleProcessRequest(request.id)} disabled={loading}>
-                                                <Play className="h-4 w-4" />
-                                            </Button>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div>
+                                            <div className="font-medium">#{request.mailItemId}</div>
+                                            <div className="text-sm text-muted-foreground">{request.mailSubject}</div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="max-w-xs">
+                                            <div className="text-sm font-medium">{request.destination}</div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge className={getPriorityColor(request.priority)} variant="secondary">
+                                            {request.priority}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            {getStatusIcon(request.status)}
+                                            <Badge variant="outline" className="capitalize">
+                                                {request.status}
+                                            </Badge>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {request.trackingNumber ? (
+                                            <div>
+                                                <div className="text-sm font-medium">{request.trackingNumber}</div>
+                                                <div className="text-xs text-muted-foreground">{request.carrier}</div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground">-</span>
                                         )}
-                                        {request.status === "processing" && (
-                                            <Button size="sm" variant="outline" onClick={() => handleShipRequest(request.id)} disabled={loading}>
-                                                <Truck className="h-4 w-4" />
+                                    </TableCell>
+                                    <TableCell>{request.cost}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{request.createdAt}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => handleViewRequest(request.id)}>
+                                                <Eye className="h-4 w-4" />
                                             </Button>
-                                        )}
-                                        {request.status !== "delivered" && request.status !== "cancelled" && (
-                                            <Button size="sm" variant="outline" onClick={() => handleCancelRequest(request.id)} disabled={loading}>
-                                                <XCircle className="h-4 w-4" />
+                                            <Button size="sm" variant="outline" onClick={() => handleEditRequest(request.id)}>
+                                                <Edit className="h-4 w-4" />
                                             </Button>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                                            {request.status === "pending" && (
+                                                <Button size="sm" variant="outline" onClick={() => handleProcessRequest(request.id)} disabled={loading}>
+                                                    <Play className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            {request.status === "processing" && (
+                                                <Button size="sm" variant="outline" onClick={() => handleShipRequest(request.id)} disabled={loading}>
+                                                    <Truck className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            {request.status !== "delivered" && request.status !== "cancelled" && (
+                                                <Button size="sm" variant="outline" onClick={() => handleCancelRequest(request.id)} disabled={loading}>
+                                                    <XCircle className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
                             ))
                         )}
                     </TableBody>

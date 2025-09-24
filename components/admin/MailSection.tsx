@@ -60,6 +60,7 @@ export function MailSection({ }: MailSectionProps) {
     const { data: mailStats, isLoading: statsLoading } = useApiData('/api/admin/mail-items/stats');
 
     const mailData = mailItems || [];
+    const stats = mailStats as any;
 
     const filteredItems = mailData.filter((item: MailItem) => {
         const matchesSearch = item.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,14 +175,7 @@ export function MailSection({ }: MailSectionProps) {
                 filters: { statusFilter, tagFilter, searchTerm, tab: selectedTab }
             });
 
-            const response = await apiClient.get('/api/admin/mail-items/export', {
-                params: {
-                    status: statusFilter,
-                    tag: tagFilter,
-                    search: searchTerm,
-                    tab: selectedTab
-                }
-            });
+            const response = await apiClient.get(`/api/admin/mail-items/export?status=${statusFilter}&tag=${tagFilter}&search=${searchTerm}&tab=${selectedTab}`);
 
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
@@ -230,10 +224,10 @@ export function MailSection({ }: MailSectionProps) {
                     <p className="text-muted-foreground">Process and manage incoming mail and packages</p>
                     {mailStats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {mailStats.total}</span>
-                            <span>Received: {mailStats.received}</span>
-                            <span>Pending: {mailStats.pending}</span>
-                            <span>Processed: {mailStats.processed}</span>
+                            <span>Total: {stats?.total || 0}</span>
+                            <span>Received: {stats?.received || 0}</span>
+                            <span>Pending: {stats?.pending || 0}</span>
+                            <span>Processed: {stats?.processed || 0}</span>
                         </div>
                     )}
                 </div>
@@ -512,61 +506,61 @@ function MailTable({
                         </TableRow>
                     ) : (
                         items.map((item) => (
-                        <TableRow key={item.id}>
-                            <TableCell>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedItems.includes(item.id)}
-                                    onChange={() => onSelect(item.id)}
-                                    className="rounded"
-                                />
-                            </TableCell>
-                            <TableCell>#{item.id}</TableCell>
-                            <TableCell>
-                                <div>
-                                    <div className="font-medium">{item.userName}</div>
-                                    <div className="text-sm text-muted-foreground">ID: {item.userId}</div>
-                                </div>
-                            </TableCell>
-                            <TableCell>{item.sender}</TableCell>
-                            <TableCell>{item.subject}</TableCell>
-                            <TableCell>
-                                <Badge variant="outline">{item.tag}</Badge>
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    {getStatusIcon(item.status)}
-                                    <Badge variant="outline" className="capitalize">
-                                        {item.status}
-                                    </Badge>
-                                </div>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{item.received}</TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => onView(item.id)}>
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="outline" onClick={() => onEdit(item.id)}>
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    {item.status === "received" && (
-                                        <Button size="sm" variant="outline" onClick={() => onProcess(item.id)} disabled={loading}>
-                                            <CheckCircle className="h-4 w-4" />
+                            <TableRow key={item.id}>
+                                <TableCell>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedItems.includes(item.id)}
+                                        onChange={() => onSelect(item.id)}
+                                        className="rounded"
+                                    />
+                                </TableCell>
+                                <TableCell>#{item.id}</TableCell>
+                                <TableCell>
+                                    <div>
+                                        <div className="font-medium">{item.userName}</div>
+                                        <div className="text-sm text-muted-foreground">ID: {item.userId}</div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>{item.sender}</TableCell>
+                                <TableCell>{item.subject}</TableCell>
+                                <TableCell>
+                                    <Badge variant="outline">{item.tag}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        {getStatusIcon(item.status)}
+                                        <Badge variant="outline" className="capitalize">
+                                            {item.status}
+                                        </Badge>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">{item.received}</TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => onView(item.id)}>
+                                            <Eye className="h-4 w-4" />
                                         </Button>
-                                    )}
-                                    {item.status === "processed" && (
-                                        <Button size="sm" variant="outline" onClick={() => onForward(item.id)} disabled={loading}>
-                                            <Truck className="h-4 w-4" />
+                                        <Button size="sm" variant="outline" onClick={() => onEdit(item.id)}>
+                                            <Edit className="h-4 w-4" />
                                         </Button>
-                                    )}
-                                    <Button size="sm" variant="outline" onClick={() => onDelete(item.id)} disabled={loading}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))
+                                        {item.status === "received" && (
+                                            <Button size="sm" variant="outline" onClick={() => onProcess(item.id)} disabled={loading}>
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        {item.status === "processed" && (
+                                            <Button size="sm" variant="outline" onClick={() => onForward(item.id)} disabled={loading}>
+                                                <Truck className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        <Button size="sm" variant="outline" onClick={() => onDelete(item.id)} disabled={loading}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))
                     )}
                 </TableBody>
             </Table>
