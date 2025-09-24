@@ -32,7 +32,8 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       const data = await res.json();
       const role = (data?.role || data?.user?.role || 'user') as Role;
       return role === 'admin' ? 'admin' : 'user';
-    } catch {
+    } catch (error) {
+      console.warn('Whoami endpoint not available, defaulting to user role:', error);
       // default to user if unknown
       return 'user';
     }
@@ -63,11 +64,25 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         return;
       }
 
-      // Real auth
-      await login({ email, password });
+      // Real auth - call your actual API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Resolve role after login
-      const role = await fetchRole();
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Determine role from user data
+      const role: Role = data.user?.is_admin ? 'admin' : 'user';
+      
       if (onSuccess) {
         onSuccess(role);
       } else {

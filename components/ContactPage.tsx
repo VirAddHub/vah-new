@@ -70,80 +70,49 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         if (!formData.message.trim())
             return setErrorMsg("Please enter your message");
 
-        setIsSubmitting(true);
-        try {
-            // Demo path (no API_BASE): simulate success
-            if (!API_BASE) {
-                await new Promise((resolve) =>
-                    setTimeout(resolve, 1500),
-                );
-                setIsSubmitted(true);
-                setFormData({
-                    name: "",
-                    email: "",
-                    company: "",
-                    subject: "",
-                    message: "",
-                    inquiryType: "general",
-                    website: "",
-                });
-                return;
-            }
+    setIsSubmitting(true);
+    try {
+      // Call your actual contact API
+      const res = await fetch('/api/contact', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(formData),
+      });
 
-            // Real API call
-            const res = await fetch(CONTACT_ENDPOINT, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(formData),
-            });
+      const data = await res.json();
 
-            // Handle rate limiting gracefully
-            if (res.status === 429) {
-                const resetSec = Number(
-                    res.headers.get("RateLimit-Reset") || "60",
-                );
-                return setErrorMsg(
-                    `Too many messages. Please wait ${Math.ceil(resetSec)} seconds and try again.`,
-                );
-            }
-
-            const data = await res.json().catch(() => ({}) as any);
-
-            if (!res.ok) {
-                if (data?.missing) {
-                    return setErrorMsg(
-                        `Email service not configured. Missing: ${Object.keys(
-                            data.missing,
-                        )
-                            .filter((k) => data.missing[k])
-                            .join(", ")}`,
-                    );
-                }
-                return setErrorMsg(
-                    data?.error ||
-                    "Unable to send message. Please try again.",
-                );
-            }
-
-            setIsSubmitted(true);
-            setFormData({
-                name: "",
-                email: "",
-                company: "",
-                subject: "",
-                message: "",
-                inquiryType: "general",
-                website: "",
-            });
-        } catch (err: any) {
-            setErrorMsg(
-                err?.message ||
-                "Unable to send message. Please try again.",
-            );
-        } finally {
-            setIsSubmitting(false);
+      if (!res.ok) {
+        if (data?.error === 'Spam detected') {
+          return setErrorMsg('Spam detected. Please try again.');
         }
+        if (data?.error?.includes('Missing field')) {
+          return setErrorMsg(data.error);
+        }
+        if (data?.error === 'Email service not configured') {
+          return setErrorMsg('Email service is temporarily unavailable. Please try again later.');
+        }
+        return setErrorMsg(data?.error || "Unable to send message. Please try again.");
+      }
+
+      setIsSubmitted(true);
+      setFormData({
+        name: "",
+        email: "",
+        company: "",
+        subject: "",
+        message: "",
+        inquiryType: "general",
+        website: "",
+      });
+    } catch (err: any) {
+      setErrorMsg(
+        err?.message ||
+          "Unable to send message. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
     }
 
     function handleInputChange(
