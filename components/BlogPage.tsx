@@ -13,10 +13,6 @@ import { Badge } from "./ui/badge";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
-interface BlogPageProps {
-    onNavigate?: (page: string, data?: any) => void;
-}
-
 type BlogPost = {
     id: number;
     slug: string;
@@ -30,8 +26,7 @@ type BlogPost = {
     imageUrl: string;
 };
 
-export function BlogPage({ onNavigate }: BlogPageProps) {
-    const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
+export function BlogPage() {
 
     const blogPosts: BlogPost[] = [
         {
