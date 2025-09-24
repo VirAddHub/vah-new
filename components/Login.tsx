@@ -51,8 +51,12 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
     setIsLoading(true);
     try {
+      // Debug logs to trace the flow
+      console.log('[Login] submitting', { email, passLen: password.length });
+      
       // Real authentication - call your actual API
       const response = await apiClient.login(email, password);
+      console.log('[Login] api login result', response);
 
       if (!response.ok) {
         // Handle specific error cases
@@ -65,7 +69,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         }
       }
 
-      // Determine role from user data
+      // Determine role from user data (support both response shapes)
       const user = response.data;
       const role: Role = user?.is_admin ? 'admin' : 'user';
 

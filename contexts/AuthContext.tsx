@@ -103,8 +103,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const response = await apiClient.login(credentials.email, credentials.password);
 
             if (response.ok && response.data) {
-                // Set user data from the response
-                const userData = response.data;
+                // Set user data from the response (support both shapes)
+                const userData = (response.data?.user) ?? response.data;
                 clientAuthManager.setUser(userData);
                 setUser(userData);
 
@@ -133,20 +133,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const response = await apiClient.login(credentials.email, credentials.password);
 
-            if (response.ok && response.data?.is_admin) {
-                const userData = response.data;
-                clientAuthManager.setUser(userData);
-                setUser(userData);
+            if (response.ok && response.data) {
+                const userData = (response.data?.user) ?? response.data;
+                if (userData?.is_admin) {
+                    clientAuthManager.setUser(userData);
+                    setUser(userData);
 
-                await logAuthEvent('admin_login_success', {
-                    email: credentials.email,
-                    adminId: userData.id
-                });
+                    await logAuthEvent('admin_login_success', {
+                        email: credentials.email,
+                        adminId: userData.id
+                    });
 
-                await logAdminAction('admin_login', {
-                    email: credentials.email,
-                    adminId: userData.id
-                });
+                    await logAdminAction('admin_login', {
+                        email: credentials.email,
+                        adminId: userData.id
+                    });
+                } else {
+                    throw new Error('Admin access required');
+                }
             } else {
                 throw new Error('Admin access required');
             }

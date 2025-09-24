@@ -183,12 +183,16 @@ class ApiClient {
   // ==================== AUTHENTICATION APIs ====================
 
   async login(email: string, password: string): Promise<ApiResponse<User>> {
+    console.log('[API Client] login called with:', { email, passLen: password.length });
+    
     // Validate inputs
     if (!validateEmail(email)) {
+      console.log('[API Client] email validation failed');
       return { ok: false, error: 'Invalid email format', status: 400 };
     }
 
     if (!validatePassword(password)) {
+      console.log('[API Client] password validation failed');
       return { ok: false, error: 'Password must be at least 6 characters', status: 400 };
     }
 
@@ -196,6 +200,8 @@ class ApiClient {
     const sanitizedEmail = sanitizeString(email);
     const sanitizedPassword = sanitizeString(password);
 
+    console.log('[API Client] making request to:', `${this.baseUrl}/api/auth/login`);
+    
     return this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
