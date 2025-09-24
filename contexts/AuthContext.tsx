@@ -84,7 +84,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
         };
 
-        initializeAuth();
+        // Add a timeout to prevent infinite loading
+        const timeout = setTimeout(() => {
+            console.warn('Auth initialization timeout, setting loading to false');
+            setIsLoading(false);
+        }, 5000);
+
+        initializeAuth().finally(() => {
+            clearTimeout(timeout);
+        });
     }, []);
 
     const login = async (credentials: { email: string; password: string }) => {

@@ -1,7 +1,7 @@
 // Comprehensive API Client for VirtualAddressHub
 // Based on server-reference.md with all 67+ endpoints
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
 
 // Improved API Response types
 type ApiOk<T> = { ok: true; data: T }
@@ -96,6 +96,7 @@ class ApiClient {
 
   constructor() {
     this.baseUrl = API_BASE;
+    console.log('API Client initialized with base URL:', this.baseUrl);
   }
 
   private async request<T>(
@@ -103,7 +104,8 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+    console.log(`Making API request to: ${url}`);
+
     try {
       const res = await fetch(url, {
         credentials: 'include', // keep if you use cookies
@@ -111,15 +113,18 @@ class ApiClient {
         ...options,
       });
 
+      console.log(`API response status: ${res.status} for ${url}`);
+
       let body: any = null;
-      try { 
-        body = await res.json(); 
-      } catch { 
-        /* no body / not JSON */ 
+      try {
+        body = await res.json();
+      } catch {
+        /* no body / not JSON */
       }
 
       if (!res.ok) {
         const msg = (body && (body.error || body.message)) || res.statusText || 'Request failed';
+        console.error(`API Error (${endpoint}):`, { status: res.status, message: msg, body });
         return { ok: false, error: msg, status: res.status };
       }
 
@@ -127,6 +132,12 @@ class ApiClient {
     } catch (e: any) {
       // true network error, CORS blockage, DNS, etc.
       console.error(`API Error (${endpoint}):`, e);
+      console.error(`Failed URL: ${url}`);
+      console.error(`Error details:`, {
+        name: e?.name,
+        message: e?.message,
+        stack: e?.stack
+      });
       return { ok: false, error: e?.message || 'Network error', status: 0 };
     }
   }
