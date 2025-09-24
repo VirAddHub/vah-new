@@ -135,7 +135,7 @@ export function App() {
       <main className="flex-1">
         {renderPage()}
       </main>
-      <Footer />
+      <Footer onNavigate={navigate} />
     </div>
   );
 }

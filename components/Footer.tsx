@@ -54,7 +54,7 @@ export function Footer({ onNavigate }: FooterProps) {
     const legal: NavItem[] = [
         { label: "Privacy Policy", page: "privacy" },
         { label: "Terms of Service", page: "terms" },
-        { label: "KYC Policy", page: "kyc-policy" },
+        { label: "KYC Policy", page: "kyc" },
         { label: "About Us", page: "about" },
     ];
 
