@@ -15,7 +15,8 @@ Write-Host "1. Health Check..." -ForegroundColor Yellow
 try {
     $health = Invoke-WebRequest "$api/healthz"
     Write-Host "✅ Health: $($health.StatusCode)" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "❌ Health Failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 
@@ -23,14 +24,14 @@ Write-Host ""
 
 # Test 2: Fresh User Signup
 Write-Host "2. Fresh User Signup..." -ForegroundColor Yellow
-$email = "user+" + ([Guid]::NewGuid().ToString('N').Substring(0,6)) + "@example.com"
+$email = "user+" + ([Guid]::NewGuid().ToString('N').Substring(0, 6)) + "@example.com"
 Write-Host "Using email: $email" -ForegroundColor Cyan
 
 $signup = PostJson "$api/api/auth/signup" @{
-    email = $email
-    password = "TestPass123!A"
+    email      = $email
+    password   = "TestPass123!A"
     first_name = "Test"
-    last_name = "User"
+    last_name  = "User"
 }
 
 Write-Host "Signup Response:" -ForegroundColor Cyan
@@ -41,7 +42,7 @@ Write-Host ""
 # Test 3: Bad Login (should fail)
 Write-Host "3. Bad Login Test..." -ForegroundColor Yellow
 $loginBad = PostJson "$api/api/auth/login" @{
-    email = $email
+    email    = $email
     password = "WrongPass123!"
 }
 Write-Host "Bad Login Response:" -ForegroundColor Cyan
@@ -52,7 +53,7 @@ Write-Host ""
 # Test 4: Good Login (should succeed)
 Write-Host "4. Good Login Test..." -ForegroundColor Yellow
 $loginOk = PostJson "$api/api/auth/login" @{
-    email = $email
+    email    = $email
     password = "TestPass123!A"
 }
 Write-Host "Good Login Response:" -ForegroundColor Cyan
@@ -63,10 +64,10 @@ Write-Host ""
 # Test 5: Duplicate Signup (should fail with 409)
 Write-Host "5. Duplicate Signup Test..." -ForegroundColor Yellow
 $duplicate = PostJson "$api/api/auth/signup" @{
-    email = $email
-    password = "AnotherPass123!"
+    email      = $email
+    password   = "AnotherPass123!"
     first_name = "X"
-    last_name = "Y"
+    last_name  = "Y"
 }
 Write-Host "Duplicate Signup Response:" -ForegroundColor Cyan
 $duplicate | ConvertTo-Json -Depth 6

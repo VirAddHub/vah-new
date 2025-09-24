@@ -2,9 +2,9 @@
 const path = require('path');
 
 // Check if we should use PostgreSQL or SQLite
-const isPg = process.env.DB_CLIENT === 'pg' || 
-            process.env.DATABASE_URL?.startsWith('postgres://') || 
-            process.env.DATABASE_URL?.startsWith('postgresql://');
+const isPg = process.env.DB_CLIENT === 'pg' ||
+  process.env.DATABASE_URL?.startsWith('postgres://') ||
+  process.env.DATABASE_URL?.startsWith('postgresql://');
 
 let db;
 
@@ -24,7 +24,7 @@ if (isPg) {
     let n = 0, s = false, d = false;
     for (let i = 0; i < sql.length; i++) {
       const c = sql[i];
-      if (c === "'" && !d) { if (s && sql[i+1] === "'") { i++; continue; } s = !s; continue; }
+      if (c === "'" && !d) { if (s && sql[i + 1] === "'") { i++; continue; } s = !s; continue; }
       if (c === '"' && !s) { d = !d; continue; }
       if (!s && !d && c === '?') n++;
     }
@@ -46,7 +46,7 @@ if (isPg) {
     let i = 0, out = '', s = false, d = false;
     for (let k = 0; k < sql.length; k++) {
       const c = sql[k];
-      if (c === "'" && !d) { if (s && sql[k+1] === "'") { out += "''"; k++; continue; } s = !s; out += c; continue; }
+      if (c === "'" && !d) { if (s && sql[k + 1] === "'") { out += "''"; k++; continue; } s = !s; out += c; continue; }
       if (c === '"' && !s) { d = !d; out += c; continue; }
       if (!s && !d && c === '?') { i++; out += `$${i}`; continue; }
       out += c;
@@ -55,11 +55,11 @@ if (isPg) {
   }
 
   async function withClient(fn) {
-    const c = await pool.connect(); 
-    try { 
-      return await fn(c); 
-    } finally { 
-      c.release(); 
+    const c = await pool.connect();
+    try {
+      return await fn(c);
+    } finally {
+      c.release();
     }
   }
 
@@ -93,8 +93,8 @@ if (isPg) {
         try {
           const txDb = {
             kind: 'pg',
-            run: async (sql, params) => { 
-              const { sql: q, params: p } = convert(sql, params ?? []); 
+            run: async (sql, params) => {
+              const { sql: q, params: p } = convert(sql, params ?? []);
               const result = await c.query(q, p);
               return {
                 insertId: result.rows?.[0]?.id,
@@ -111,7 +111,7 @@ if (isPg) {
           await c.query('COMMIT');
           return res;
         } catch (e) {
-          await c.query('ROLLBACK'); 
+          await c.query('ROLLBACK');
           throw e;
         }
       });
@@ -123,7 +123,7 @@ if (isPg) {
     prepare(sql) {
       console.warn('WARNING: Using db.prepare() with PostgreSQL. This is a compatibility layer and should be refactored to use async/await.');
       console.warn('Consider refactoring this code to use db.run(), db.get(), or db.all() with await.');
-      
+
       return {
         run: (...params) => {
           throw new Error('db.prepare().run() is not supported with PostgreSQL. Use db.run() with await instead.');
@@ -141,17 +141,17 @@ if (isPg) {
   // SQLite adapter
   const Database = require('better-sqlite3');
   const { resolveDataDir } = require('./storage-paths');
-  
+
   const DATA_DIR = resolveDataDir();
   const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
-  
+
   const sqliteDb = new Database(DB_FILE, { fileMustExist: false });
   sqliteDb.pragma('journal_mode = WAL');
   sqliteDb.pragma('foreign_keys = ON');
 
   db = {
     kind: 'sqlite',
-    
+
     run: (sql, params) => sqliteDb.prepare(sql).run(params),
     get: (sql, params) => sqliteDb.prepare(sql).get(params),
     all: (sql, params) => sqliteDb.prepare(sql).all(params),

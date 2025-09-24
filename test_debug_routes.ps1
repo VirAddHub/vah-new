@@ -11,7 +11,8 @@ try {
     $ping = Invoke-WebRequest "$api/_debug/ping"
     Write-Host "✅ Debug Ping: $($ping.StatusCode)" -ForegroundColor Green
     Write-Host "Response: $($ping.Content)" -ForegroundColor Cyan
-} catch {
+}
+catch {
     Write-Host "❌ Debug Ping Failed: $($_.Exception.Message)" -ForegroundColor Red
     if ($_.Exception.Response) {
         Write-Host "Status: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
@@ -26,7 +27,8 @@ try {
     $dbTest = Invoke-WebRequest "$api/_debug/db-test"
     Write-Host "✅ Debug DB Test: $($dbTest.StatusCode)" -ForegroundColor Green
     Write-Host "Response: $($dbTest.Content)" -ForegroundColor Cyan
-} catch {
+}
+catch {
     Write-Host "❌ Debug DB Test Failed: $($_.Exception.Message)" -ForegroundColor Red
     if ($_.Exception.Response) {
         Write-Host "Status: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
@@ -41,7 +43,8 @@ try {
     $oldDebug = Invoke-WebRequest "$api/api/debug/simple"
     Write-Host "✅ Old Debug Route: $($oldDebug.StatusCode)" -ForegroundColor Green
     Write-Host "Response: $($oldDebug.Content)" -ForegroundColor Cyan
-} catch {
+}
+catch {
     Write-Host "❌ Old Debug Route Failed: $($_.Exception.Message)" -ForegroundColor Red
     if ($_.Exception.Response) {
         Write-Host "Status: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
@@ -56,7 +59,8 @@ try {
     $health = Invoke-WebRequest "$api/healthz"
     Write-Host "✅ Health: $($health.StatusCode)" -ForegroundColor Green
     Write-Host "Response: $($health.Content)" -ForegroundColor Cyan
-} catch {
+}
+catch {
     Write-Host "❌ Health Failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 
