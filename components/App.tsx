@@ -59,7 +59,7 @@ export function App() {
       case 'help':
         return <HelpPage onNavigate={navigate} onGoBack={goBack} />;
       case 'contact':
-        return <ContactPage />;
+        return <ContactPage onNavigate={navigate} />;
       case 'login':
         // Placeholder for login page
         return (
