@@ -57,59 +57,8 @@ export function BillingSection({ }: BillingSectionProps) {
     const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useApiData('/api/admin/transactions');
     const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useApiData('/api/admin/invoices');
 
-    // Default data if API is not available
-    const defaultBillingData: BillingData = {
-        monthlyRevenue: 47329,
-        outstandingInvoices: 2847,
-        churnRate: 2.3,
-        revenueGrowth: 8.1,
-        churnChange: -0.5,
-        pendingPayments: 12
-    };
-
-    const defaultTransactions: Transaction[] = [
-        {
-            id: 2001,
-            userId: 1,
-            userName: "Jane Doe",
-            type: "subscription",
-            amount: 39.99,
-            currency: "GBP",
-            status: "completed",
-            description: "Premium Plan - Monthly",
-            createdAt: "2024-01-12",
-            invoiceId: "INV-1045",
-            paymentMethod: "Card ending in 4242"
-        },
-        {
-            id: 2002,
-            userId: 2,
-            userName: "John Smith",
-            type: "subscription",
-            amount: 19.99,
-            currency: "GBP",
-            status: "pending",
-            description: "Basic Plan - Monthly",
-            createdAt: "2024-01-11",
-            invoiceId: "INV-1046",
-            paymentMethod: "Card ending in 1234"
-        },
-        {
-            id: 2003,
-            userId: 3,
-            userName: "Alice Johnson",
-            type: "one_time",
-            amount: 24.99,
-            currency: "GBP",
-            status: "completed",
-            description: "Express Forwarding Fee",
-            createdAt: "2024-01-10",
-            paymentMethod: "Card ending in 5678"
-        }
-    ];
-
-    const billing = billingData || defaultBillingData;
-    const transactionsData = transactions || defaultTransactions;
+    const billing = billingData || null;
+    const transactionsData = transactions || [];
 
     const handleRefresh = async () => {
         setLoading(true);
@@ -270,16 +219,27 @@ export function BillingSection({ }: BillingSectionProps) {
             </div>
 
             {/* Revenue Metrics */}
+            {!billing ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="text-center text-muted-foreground">
+                                No billing data available
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                <p className="text-2xl font-bold">£{billing.monthlyRevenue.toLocaleString()}</p>
+                                <p className="text-2xl font-bold">£{billing?.monthlyRevenue?.toLocaleString() || "0"}</p>
                                 <p className="text-xs text-green-600 flex items-center gap-1">
                                     <ArrowUp className="h-3 w-3" />
-                                    +{billing.revenueGrowth}% from last month
+                                    +{billing?.revenueGrowth || 0}% from last month
                                 </p>
                             </div>
                             <DollarSign className="h-8 w-8 text-green-500" />
@@ -292,8 +252,8 @@ export function BillingSection({ }: BillingSectionProps) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
-                                <p className="text-2xl font-bold">£{billing.outstandingInvoices.toLocaleString()}</p>
-                                <p className="text-xs text-orange-600">{billing.pendingPayments} pending payments</p>
+                                <p className="text-2xl font-bold">£{billing?.outstandingInvoices || 0.toLocaleString()}</p>
+                                <p className="text-xs text-orange-600">{billing?.pendingPayments || 0} pending payments</p>
                             </div>
                             <FileText className="h-8 w-8 text-orange-500" />
                         </div>
@@ -305,10 +265,10 @@ export function BillingSection({ }: BillingSectionProps) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Churn Rate</p>
-                                <p className="text-2xl font-bold">{billing.churnRate}%</p>
+                                <p className="text-2xl font-bold">{billing?.churnRate || 0}%</p>
                                 <p className="text-xs text-green-600 flex items-center gap-1">
                                     <ArrowDown className="h-3 w-3" />
-                                    {billing.churnChange}% from last month
+                                    {billing?.churnChange || 0}% from last month
                                 </p>
                             </div>
                             <TrendingDown className="h-8 w-8 text-red-500" />
@@ -316,6 +276,7 @@ export function BillingSection({ }: BillingSectionProps) {
                     </CardContent>
                 </Card>
             </div>
+            )}
 
             {/* Recent Transactions */}
             <Card>
@@ -338,7 +299,14 @@ export function BillingSection({ }: BillingSectionProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactionsData.map((transaction) => (
+                            {transactionsData.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                        No transactions found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                transactionsData.map((transaction) => (
                                 <TableRow key={transaction.id}>
                                     <TableCell>#{transaction.id}</TableCell>
                                     <TableCell>
@@ -406,7 +374,8 @@ export function BillingSection({ }: BillingSectionProps) {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

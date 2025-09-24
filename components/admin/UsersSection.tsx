@@ -63,56 +63,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useApiData('/api/admin/users');
     const { data: userStats, isLoading: statsLoading } = useApiData('/api/admin/users/stats');
 
-    // Default data if API is not available
-    const defaultUsers: User[] = [
-        {
-            id: 1,
-            name: "Jane Doe",
-            email: "jane@example.com",
-            kyc: "approved",
-            plan: "premium",
-            status: "active",
-            joined: "2023-08-15",
-            lastLogin: "2 hours ago",
-            mailCount: 23,
-            totalSpent: "£299.88",
-            companyName: "Doe Enterprises Ltd",
-            address: "123 Business St, London",
-            phone: "+44 20 7123 4567"
-        },
-        {
-            id: 2,
-            name: "John Smith",
-            email: "john@example.com",
-            kyc: "pending",
-            plan: "basic",
-            status: "active",
-            joined: "2023-09-02",
-            lastLogin: "1 day ago",
-            mailCount: 8,
-            totalSpent: "£39.99",
-            companyName: "Smith Consulting",
-            address: "456 High St, Manchester",
-            phone: "+44 161 234 5678"
-        },
-        {
-            id: 3,
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            kyc: "approved",
-            plan: "professional",
-            status: "suspended",
-            joined: "2023-07-20",
-            lastLogin: "5 days ago",
-            mailCount: 156,
-            totalSpent: "£1,247.50",
-            companyName: "Johnson & Associates",
-            address: "789 Corporate Ave, Birmingham",
-            phone: "+44 121 345 6789"
-        },
-    ];
-
-    const userData = users || defaultUsers;
+    const userData = users || [];
 
     const filteredUsers = userData.filter((user: User) => {
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -469,7 +420,14 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.map((user: User) => (
+                            {filteredUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                        No users found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredUsers.map((user: User) => (
                                 <TableRow key={user.id}>
                                     <TableCell>
                                         <input
@@ -562,7 +520,8 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ))
+                            )}
                         </TableBody>
                     </Table>
                 </Card>

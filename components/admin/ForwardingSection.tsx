@@ -67,60 +67,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const { data: forwardingRequests, isLoading: requestsLoading, refetch: refetchRequests } = useApiData('/api/admin/forwarding-requests');
     const { data: forwardingStats, isLoading: statsLoading } = useApiData<ForwardingStats>('/api/admin/forwarding-requests/stats');
 
-    // Default data if API is not available
-    const defaultRequests: ForwardingRequest[] = [
-        {
-            id: 1001,
-            userId: 1,
-            userName: "Jane Doe",
-            mailItemId: 101,
-            mailSubject: "Tax Notice",
-            destination: "123 Business St, London, SW1A 1AA",
-            status: "processing",
-            priority: "standard",
-            trackingNumber: "FR-2847",
-            carrier: "Royal Mail",
-            estimatedDelivery: "2024-01-15",
-            cost: "£12.99",
-            createdAt: "2024-01-10",
-            updatedAt: "2024-01-12"
-        },
-        {
-            id: 1002,
-            userId: 2,
-            userName: "John Smith",
-            mailItemId: 102,
-            mailSubject: "Account Statement",
-            destination: "456 High St, Manchester, M1 1AA",
-            status: "shipped",
-            priority: "express",
-            trackingNumber: "FR-2848",
-            carrier: "DPD",
-            estimatedDelivery: "2024-01-14",
-            cost: "£18.99",
-            createdAt: "2024-01-09",
-            updatedAt: "2024-01-13"
-        },
-        {
-            id: 1003,
-            userId: 3,
-            userName: "Alice Johnson",
-            mailItemId: 103,
-            mailSubject: "Delivery Notification",
-            destination: "789 Corporate Ave, Birmingham, B1 1AA",
-            status: "delivered",
-            priority: "urgent",
-            trackingNumber: "FR-2849",
-            carrier: "UPS",
-            estimatedDelivery: "2024-01-12",
-            actualDelivery: "2024-01-12",
-            cost: "£24.99",
-            createdAt: "2024-01-08",
-            updatedAt: "2024-01-12"
-        }
-    ];
-
-    const requestsData = forwardingRequests || defaultRequests;
+    const requestsData = forwardingRequests || [];
 
     const filteredRequests = requestsData.filter((request: ForwardingRequest) => {
         const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -460,7 +407,14 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredRequests.map((request: ForwardingRequest) => (
+                        {filteredRequests.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                                    No forwarding requests found
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredRequests.map((request: ForwardingRequest) => (
                             <TableRow key={request.id}>
                                 <TableCell>
                                     <input
@@ -539,7 +493,8 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                     </div>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </Card>

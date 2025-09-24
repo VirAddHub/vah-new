@@ -58,35 +58,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
     const { data: revenueMetrics, isLoading: revenueMetricsLoading } = useApiData('/api/admin/analytics/revenue');
     const { data: mailMetrics, isLoading: mailMetricsLoading } = useApiData('/api/admin/analytics/mail');
 
-    // Default data if API is not available
-    const defaultAnalyticsData: AnalyticsData = {
-        userGrowth: {
-            total: 2847,
-            growth: 12.3,
-            newUsers: 156,
-            activeUsers: 2634
-        },
-        revenue: {
-            total: 47329,
-            growth: 8.1,
-            monthly: 47329,
-            yearly: 567948
-        },
-        mailVolume: {
-            total: 18492,
-            growth: 23.4,
-            monthly: 18492,
-            processed: 18234
-        },
-        planDistribution: {
-            basic: 45,
-            premium: 35,
-            professional: 20
-        }
-    };
-
-    const analytics = analyticsData || defaultAnalyticsData;
-
+    const analytics = analyticsData;
     const handleRefresh = async () => {
         setLoading(true);
         try {

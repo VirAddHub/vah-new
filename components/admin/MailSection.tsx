@@ -59,52 +59,7 @@ export function MailSection({ }: MailSectionProps) {
     const { data: mailItems, isLoading: mailLoading, refetch: refetchMail } = useApiData('/api/admin/mail-items');
     const { data: mailStats, isLoading: statsLoading } = useApiData('/api/admin/mail-items/stats');
 
-    // Default data if API is not available
-    const defaultMailItems: MailItem[] = [
-        {
-            id: 101,
-            userId: 1,
-            userName: "Jane Doe",
-            sender: "HMRC",
-            subject: "Tax Notice",
-            tag: "Government",
-            status: "received",
-            received: "2 hours ago",
-            scanned: true,
-            weight: "0.2kg",
-            dimensions: "A4"
-        },
-        {
-            id: 102,
-            userId: 2,
-            userName: "John Smith",
-            sender: "Lloyds Bank",
-            subject: "Account Statement",
-            tag: "Financial",
-            status: "pending",
-            received: "4 hours ago",
-            scanned: false,
-            weight: "0.1kg",
-            dimensions: "A4"
-        },
-        {
-            id: 103,
-            userId: 3,
-            userName: "Alice Johnson",
-            sender: "Royal Mail",
-            subject: "Delivery Notification",
-            tag: "Logistics",
-            status: "processed",
-            received: "6 hours ago",
-            scanned: true,
-            forwarded: true,
-            trackingNumber: "FR-2847",
-            weight: "0.5kg",
-            dimensions: "Small Package"
-        },
-    ];
-
-    const mailData = mailItems || defaultMailItems;
+    const mailData = mailItems || [];
 
     const filteredItems = mailData.filter((item: MailItem) => {
         const matchesSearch = item.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -549,7 +504,14 @@ function MailTable({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {items.map((item) => (
+                    {items.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                No mail items found
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        items.map((item) => (
                         <TableRow key={item.id}>
                             <TableCell>
                                 <input
@@ -604,7 +566,8 @@ function MailTable({
                                 </div>
                             </TableCell>
                         </TableRow>
-                    ))}
+                    ))
+                    )}
                 </TableBody>
             </Table>
         </Card>
