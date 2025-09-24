@@ -1,7 +1,12 @@
 // Comprehensive API Client for VirtualAddressHub
 // Based on server-reference.md with all 67+ endpoints
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://vah-api-staging.onrender.com' 
+    : 'https://vah-api-staging.onrender.com');
+
+export const API_BASE = BASE_URL;
 
 // Improved API Response types
 type ApiOk<T> = { ok: true; data: T }
@@ -95,7 +100,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = API_BASE;
+    this.baseUrl = BASE_URL;
     console.log('API Client initialized with base URL:', this.baseUrl);
   }
 
