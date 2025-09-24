@@ -139,13 +139,59 @@ app.get('/api/auth/whoami', (req, res) => res.json({ ok: true, user: req.user })
 // admin routes are mounted below with proper middleware chain
 
 
-const ALLOWED_ORIGINS = ['http://localhost:3000', 'https://www.virtualaddresshub.co.uk'];
-app.use(cors({
-    origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)),
+// CORS configuration - use environment variables
+const staticList = (process.env.FRONTEND_ORIGINS ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+const allowVercelPreviews = (process.env.ALLOW_VERCEL_PREVIEWS ?? '').toLowerCase() === 'true';
+const vercelPrefix = (process.env.VERCEL_PROJECT_PREFIX ?? '').toLowerCase();
+
+const corsMiddleware = cors({
+    origin(origin, cb) {
+        // Debug logging
+        console.log('[CORS] Checking origin:', origin);
+        console.log('[CORS] Allowed origins:', staticList);
+        console.log('[CORS] Allow Vercel previews:', allowVercelPreviews);
+        console.log('[CORS] Vercel prefix:', vercelPrefix);
+
+        // allow server-to-server / curl / health checks
+        if (!origin) return cb(null, true);
+
+        // exact allowlist match
+        if (staticList.includes(origin)) {
+            console.log('[CORS] Origin allowed by static list');
+            return cb(null, true);
+        }
+
+        // allow ONLY this project's vercel preview URLs
+        if (allowVercelPreviews) {
+            try {
+                const host = new URL(origin).host.toLowerCase();
+                const isVercel = host.endsWith('.vercel.app');
+                const isProject =
+                    host === `${vercelPrefix}.vercel.app` ||
+                    host.startsWith(`${vercelPrefix}-git-`);
+                if (isVercel && isProject) {
+                    console.log('[CORS] Origin allowed by Vercel preview');
+                    return cb(null, true);
+                }
+            } catch (e) {
+                console.log('[CORS] Error parsing Vercel origin:', e.message);
+            }
+        }
+
+        console.log('[CORS] Origin blocked');
+        return cb(new Error('CORS blocked'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-}));
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+});
+
+app.use(corsMiddleware);
+app.options('*', corsMiddleware); // Handle OPTIONS preflights
 
 // Webhooks BEFORE csurf (raw body)
 app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
