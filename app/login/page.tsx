@@ -12,7 +12,7 @@ function UserPageContent() {
         console.log('Auth state changed:', { isAuthenticated, isAdmin, isLoading });
         // Don't check authentication until loading is complete
         if (isLoading) return;
-        
+
         if (isAuthenticated) {
             console.log('User is authenticated, redirecting...');
             if (isAdmin) {
@@ -34,16 +34,10 @@ function UserPageContent() {
         console.log('Login success, role:', role);
         if (role === 'admin') {
             console.log('Redirecting admin to /admin/dashboard');
-            // Use setTimeout to ensure state updates are processed
-            setTimeout(() => {
-                window.location.href = '/admin/dashboard';
-            }, 100);
+            window.location.href = '/admin/dashboard';
         } else {
             console.log('Redirecting user to /dashboard');
-            // Use setTimeout to ensure state updates are processed
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 100);
+            window.location.href = '/dashboard';
         }
     };
 
@@ -65,7 +59,7 @@ function UserPageContent() {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">Welcome to your Dashboard</h1>
                     <p className="text-muted-foreground">User dashboard coming soon...</p>
-                    <button 
+                    <button
                         onClick={() => window.location.href = '/'}
                         className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                     >

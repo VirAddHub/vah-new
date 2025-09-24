@@ -23,7 +23,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, createDemoSession } = useAuth();
+  const { login } = useAuth();
 
   // Helper to discover role after login (via whoami)
   const fetchRole = async (): Promise<Role> => {
@@ -51,39 +51,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
     setIsLoading(true);
     try {
-      // DEMO handy paths (keep if you still want them)
-      if (email === 'demo@example.com' && password === 'demo123') {
-        console.log('Demo user login');
-        createDemoSession('user');
-        const role: Role = 'user';
-        console.log('Calling onSuccess with role:', role);
-        // Force a small delay to ensure state updates
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess(role);
-          } else {
-            window.location.assign('/dashboard');
-          }
-        }, 100);
-        return;
-      }
-      if (email === 'admin@virtualaddresshub.co.uk' && password === 'admin123') {
-        console.log('Demo admin login');
-        createDemoSession('admin');
-        const role: Role = 'admin';
-        console.log('Calling onSuccess with role:', role);
-        // Force a small delay to ensure state updates
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess(role);
-          } else {
-            window.location.assign('/admin/dashboard');
-          }
-        }, 100);
-        return;
-      }
-
-      // Real auth - call your actual API
+      // Real authentication - call your actual API
       const response = await apiClient.login(email, password);
 
       if (!response.ok) {
@@ -96,7 +64,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       if (onSuccess) {
         onSuccess(role);
       } else {
-        window.location.assign(role === 'admin' ? '/admin' : '/dashboard');
+        window.location.assign(role === 'admin' ? '/admin/dashboard' : '/dashboard');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';

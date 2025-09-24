@@ -35,8 +35,8 @@ const logAdminAction = async (action: string, data?: any) => {
 interface User {
     id: string | number;
     email: string;
-    name: string;
-    is_admin?: boolean;
+    name?: string;
+    is_admin?: boolean | 0 | 1;
     role?: string;
     kyc_status?: string;
     plan?: string;
@@ -52,7 +52,6 @@ interface AuthContextType {
     login: (credentials: { email: string; password: string }) => Promise<void>;
     adminLogin: (credentials: { email: string; password: string }) => Promise<void>;
     logout: () => Promise<void>;
-    createDemoSession: (type: 'user' | 'admin') => void;
     refreshUser: () => Promise<void>;
 }
 
@@ -67,7 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const isAuthenticated = !!user;
-    const isAdmin = user?.is_admin || false;
+    const isAdmin = Boolean(user?.is_admin);
 
     // Initialize auth state on mount
     useEffect(() => {
@@ -93,19 +92,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             await logAuthEvent('user_login_attempt', { email: credentials.email });
 
-            const response = await apiClient.post('/api/auth/login', credentials);
+            const response = await apiClient.login(credentials.email, credentials.password);
 
             if (response.ok && response.data) {
-                clientAuthManager.setToken(response.data.token || 'demo-token');
-                clientAuthManager.setUser(response.data.user);
-                setUser(response.data.user);
+                // Set user data from the response
+                const userData = response.data.user;
+                clientAuthManager.setUser(userData);
+                setUser(userData);
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
-                    userId: response.data.user.id
+                    userId: userData.id
                 });
             } else {
-                throw new Error('Login failed');
+                throw new Error(response.error || 'Login failed');
             }
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {
@@ -123,24 +123,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             await logAuthEvent('admin_login_attempt', { email: credentials.email });
 
-            const response = await apiClient.post('/api/auth/login', {
-                ...credentials,
-                isAdmin: true
-            });
+            const response = await apiClient.login(credentials.email, credentials.password);
 
             if (response.ok && response.data?.user?.is_admin) {
-                clientAuthManager.setToken(response.data.token || 'demo-token');
-                clientAuthManager.setUser(response.data.user);
-                setUser(response.data.user);
+                const userData = response.data.user;
+                clientAuthManager.setUser(userData);
+                setUser(userData);
 
                 await logAuthEvent('admin_login_success', {
                     email: credentials.email,
-                    adminId: response.data.user.id
+                    adminId: userData.id
                 });
 
                 await logAdminAction('admin_login', {
                     email: credentials.email,
-                    adminId: response.data.user.id
+                    adminId: userData.id
                 });
             } else {
                 throw new Error('Admin access required');
@@ -175,39 +172,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
-    const createDemoSession = (type: 'user' | 'admin') => {
-        console.log('Creating demo session for:', type);
-        const demoUser: User = type === 'admin'
-            ? {
-                id: 'demo-admin',
-                email: 'admin@virtualaddresshub.co.uk',
-                name: 'Demo Admin',
-                is_admin: true,
-                role: 'super_admin',
-                kyc_status: 'approved',
-                plan: 'professional'
-            }
-            : {
-                id: 'demo-user',
-                email: 'demo@example.com',
-                name: 'Demo User',
-                is_admin: false,
-                role: 'user',
-                kyc_status: 'approved',
-                plan: 'premium'
-            };
-
-        console.log('Setting demo user:', demoUser);
-        clientAuthManager.setUser(demoUser);
-        clientAuthManager.setToken(`demo-${type}-token`);
-        setUser(demoUser);
-        console.log('Demo user set, isAuthenticated should be:', !!demoUser);
-
-        logAuthEvent(`${type}_demo_session_created`, {
-            email: demoUser.email,
-            userId: demoUser.id
-        });
-    };
 
     const refreshUser = async () => {
         try {
@@ -228,7 +192,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         login,
         adminLogin,
         logout,
-        createDemoSession,
         refreshUser
     };
 
