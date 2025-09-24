@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
     title: 'VirtualAddressHub - Professional Virtual Address Service',
-    description: 'Get a professional virtual address for your business with mail forwarding, package handling, and premium business services.',
+    description: 'Get a professional virtual address for your business with secure mail forwarding and premium compliance-focused services.',
 }
 
 export default function RootLayout({
