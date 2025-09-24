@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Search, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Search, AlertTriangle } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -423,7 +423,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                         </div>
                         <div className="px-6 pb-6 space-y-4">
                             <Alert>
-                                <TriangleAlert className="h-4 w-4" />
+                                <AlertTriangle className="h-4 w-4" />
                                 <AlertDescription>
                                     <strong>Letters only.</strong> HMRC & Companies House letters are forwarded free of charge. All other mail is £2 per item and added to your monthly bill.
                                 </AlertDescription>

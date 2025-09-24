@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, CreditCard, Shield, TriangleAlert, Check } from 'lucide-react';
+import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
@@ -211,7 +211,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
 
                     {/* Terms Alert */}
                     <Alert className="mb-8">
-                        <TriangleAlert className="h-4 w-4" />
+                        <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
                             By continuing, you agree to our{' '}
                             <button className="text-primary hover:underline font-medium">
