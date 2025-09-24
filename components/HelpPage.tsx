@@ -221,110 +221,110 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-6 py-12 space-y-12">
-      {/* JSON-LD for SEO */}
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqJsonLd),
-        }}
-      />
+        {/* JSON-LD for SEO */}
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqJsonLd),
+          }}
+        />
 
-      {/* Hero */}
-      <section className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">
-          Help Centre & FAQs
-        </h1>
-        <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-          Fast answers. Friendly support. Everything you need to
-          know about VirtualAddressHub — all in one place.
-        </p>
-      </section>
+        {/* Hero */}
+        <section className="text-center space-y-4">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">
+            Help Centre & FAQs
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+            Fast answers. Friendly support. Everything you need to
+            know about VirtualAddressHub — all in one place.
+          </p>
+        </section>
 
-      {/* Trust Highlights */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
-        <div className="space-y-2">
-          <ShieldCheck className="mx-auto text-primary w-6 h-6" />
-          <p className="text-sm font-medium">
-            HMRC AML supervised
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Meets UK TCSP / KYC obligations
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Mail className="mx-auto text-primary w-6 h-6" />
-          <p className="text-sm font-medium">
-            Unlimited mail scanning
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Same working day (Mon–Fri)
-          </p>
-        </div>
-        <div className="space-y-2">
-          <CreditCard className="mx-auto text-primary w-6 h-6" />
-          <p className="text-sm font-medium">
-            £9.99 flat monthly plan
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Transparent forwarding
-          </p>
-        </div>
-      </section>
-
-      {/* Grouped FAQs */}
-      <section className="space-y-10">
-        {grouped.map(({ category, items }) => (
-          <div key={category} className="space-y-4">
-            <h2 className="text-lg md:text-xl font-semibold tracking-tight text-primary">
-              {category}
-            </h2>
-            <Accordion type="multiple" className="space-y-2">
-              {items.map((f) => (
-                <AccordionItem
-                  key={f.id}
-                  value={f.id}
-                  className="border border-border rounded-xl bg-card"
-                >
-                  <AccordionTrigger className="text-left px-4">
-                    <span className="leading-tight">{f.q}</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 whitespace-pre-line text-sm text-muted-foreground">
-                    {f.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+        {/* Trust Highlights */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
+          <div className="space-y-2">
+            <ShieldCheck className="mx-auto text-primary w-6 h-6" />
+            <p className="text-sm font-medium">
+              HMRC AML supervised
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Meets UK TCSP / KYC obligations
+            </p>
           </div>
-        ))}
-
-        {/* No results fallback (should never hit) */}
-        {grouped.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <HelpCircle className="w-6 h-6 mx-auto mb-2" />
-            Nothing here yet. Check back soon.
+          <div className="space-y-2">
+            <Mail className="mx-auto text-primary w-6 h-6" />
+            <p className="text-sm font-medium">
+              Unlimited mail scanning
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Same working day (Mon–Fri)
+            </p>
           </div>
-        )}
-      </section>
+          <div className="space-y-2">
+            <CreditCard className="mx-auto text-primary w-6 h-6" />
+            <p className="text-sm font-medium">
+              £9.99 flat monthly plan
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Transparent forwarding
+            </p>
+          </div>
+        </section>
 
-      {/* Contact CTA */}
-      <section className="text-center space-y-3 pt-4">
-        <h3 className="text-lg font-semibold text-primary">
-          Still need help?
-        </h3>
-        <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-          Message us via WhatsApp or email. We reply promptly
-          during UK working hours.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button
-            variant="default"
-            onClick={() => onNavigate?.("contact")}
-          >
-            Contact Support
-          </Button>
-        </div>
-      </section>
+        {/* Grouped FAQs */}
+        <section className="space-y-10">
+          {grouped.map(({ category, items }) => (
+            <div key={category} className="space-y-4">
+              <h2 className="text-lg md:text-xl font-semibold tracking-tight text-primary">
+                {category}
+              </h2>
+              <Accordion type="multiple" className="space-y-2">
+                {items.map((f) => (
+                  <AccordionItem
+                    key={f.id}
+                    value={f.id}
+                    className="border border-border rounded-xl bg-card"
+                  >
+                    <AccordionTrigger className="text-left px-4">
+                      <span className="leading-tight">{f.q}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 whitespace-pre-line text-sm text-muted-foreground">
+                      {f.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          ))}
+
+          {/* No results fallback (should never hit) */}
+          {grouped.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <HelpCircle className="w-6 h-6 mx-auto mb-2" />
+              Nothing here yet. Check back soon.
+            </div>
+          )}
+        </section>
+
+        {/* Contact CTA */}
+        <section className="text-center space-y-3 pt-4">
+          <h3 className="text-lg font-semibold text-primary">
+            Still need help?
+          </h3>
+          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+            Message us via WhatsApp or email. We reply promptly
+            during UK working hours.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              variant="default"
+              onClick={() => onNavigate?.("contact")}
+            >
+              Contact Support
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   );
