@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import ScrollToTopOnRouteChange from './ScrollToTopOnRouteChange'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,6 +18,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${inter.className} min-h-screen bg-background text-foreground`}>
+                <ScrollToTopOnRouteChange />
                 {children}
             </body>
         </html>
