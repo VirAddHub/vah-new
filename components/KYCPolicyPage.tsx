@@ -134,7 +134,7 @@ Our UK-based support team is here to help.`,
               </section>
             );
           }
-          
+
           // Default rendering for other sections
           return (
             <section key={index} className="space-y-2">
@@ -145,7 +145,7 @@ Our UK-based support team is here to help.`,
                 {section.body.split('\n').map((paragraph, pIndex) => {
                   if (paragraph.trim().startsWith('•')) {
                     // Handle bullet points
-                    const lines = section.body.split('\n').filter(line => 
+                    const lines = section.body.split('\n').filter(line =>
                       line.trim().startsWith('•')
                     );
                     if (pIndex === 0) {

@@ -259,7 +259,7 @@ Our UK-based support team is available during business hours to help with any qu
               </section>
             );
           }
-          
+
           // Default rendering for other sections
           return (
             <section key={index} className="space-y-2">
@@ -270,7 +270,7 @@ Our UK-based support team is available during business hours to help with any qu
                 {section.body.split('\n').map((paragraph, pIndex) => {
                   if (paragraph.trim().startsWith('•') || paragraph.trim().startsWith('✅') || paragraph.trim().startsWith('❌')) {
                     // Handle bullet points
-                    const lines = section.body.split('\n').filter(line => 
+                    const lines = section.body.split('\n').filter(line =>
                       line.trim().startsWith('•') || line.trim().startsWith('✅') || line.trim().startsWith('❌')
                     );
                     if (pIndex === 0) {

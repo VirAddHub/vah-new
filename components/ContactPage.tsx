@@ -37,7 +37,7 @@ const CONTACT_ENDPOINT = API_BASE
     ? `${API_BASE}/api/contact`
     : "/api/contact";
 
-export function ContactPage({ onNavigate }: ContactPageProps) {
+export default function ContactPage({ onNavigate }: ContactPageProps) {
     const [formData, setFormData] = useState({
         name: "",
         email: "",

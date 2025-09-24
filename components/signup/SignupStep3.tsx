@@ -132,8 +132,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
                             {/* Direct Debit Option */}
                             <div
                                 className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'direct_debit'
-                                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                                        : 'border-border hover:border-primary/50'
+                                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
                                     }`}
                                 role="button"
                                 aria-pressed={selectedPaymentMethod === 'direct_debit'}
@@ -142,8 +142,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPaymentMethod === 'direct_debit'
-                                                ? 'border-primary bg-primary'
-                                                : 'border-muted-foreground'
+                                            ? 'border-primary bg-primary'
+                                            : 'border-muted-foreground'
                                             }`}>
                                             {selectedPaymentMethod === 'direct_debit' && (
                                                 <div className="w-2 h-2 rounded-full bg-white"></div>
@@ -177,8 +177,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
                             {/* Credit/Debit Card Option */}
                             <div
                                 className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'card'
-                                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                                        : 'border-border hover:border-primary/50'
+                                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
                                     }`}
                                 role="button"
                                 aria-pressed={selectedPaymentMethod === 'card'}
@@ -186,8 +186,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data }: S
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPaymentMethod === 'card'
-                                            ? 'border-primary bg-primary'
-                                            : 'border-muted-foreground'
+                                        ? 'border-primary bg-primary'
+                                        : 'border-muted-foreground'
                                         }`}>
                                         {selectedPaymentMethod === 'card' && (
                                             <div className="w-2 h-2 rounded-full bg-white"></div>

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Mail,
@@ -6,8 +6,6 @@ import {
   ShieldCheck,
   HelpCircle,
 } from "lucide-react";
-
-'use client';
 
 import { useMemo } from "react";
 import {

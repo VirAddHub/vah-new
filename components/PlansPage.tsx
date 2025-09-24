@@ -57,8 +57,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <button
                                         onClick={() => setIsAnnual(false)}
                                         className={`h-full rounded-md px-5 font-semibold transition-all ${!isAnnual
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'text-muted-foreground hover:text-foreground'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
                                             }`}
                                     >
                                         Monthly
@@ -66,8 +66,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <button
                                         onClick={() => setIsAnnual(true)}
                                         className={`h-full rounded-md px-5 font-semibold transition-all flex items-center justify-center gap-2 ${isAnnual
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'text-muted-foreground hover:text-foreground'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
                                             }`}
                                     >
                                         Annual

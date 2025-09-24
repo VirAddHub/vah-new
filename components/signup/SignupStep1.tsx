@@ -92,8 +92,8 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                                 <button
                                     onClick={() => setBilling('monthly')}
                                     className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'monthly'
-                                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                                         }`}
                                 >
                                     Monthly
@@ -101,8 +101,8 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                                 <button
                                     onClick={() => setBilling('annual')}
                                     className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'annual'
-                                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                                         }`}
                                 >
                                     Annual
