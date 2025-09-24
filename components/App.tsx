@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@/contexts/NavigationContext';
@@ -27,8 +27,8 @@ export function App() {
     link.rel = 'preload';
     link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap';
     link.as = 'style';
-    link.onload = function() { 
-      (this as any).rel = 'stylesheet'; 
+    link.onload = function () {
+      (this as any).rel = 'stylesheet';
     };
     document.head.appendChild(link);
   }, []);

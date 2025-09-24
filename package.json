@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "description": "VirtualAddressHub - Professional Virtual Address Service Frontend",
     "private": true,
+    "engines": {
+        "node": "20.x"
+    },
     "scripts": {
         "dev": "next dev",
         "build": "next build",
