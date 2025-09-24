@@ -25,10 +25,16 @@ function UserPageContent() {
         console.log('Login success, role:', role);
         if (role === 'admin') {
             console.log('Redirecting admin to /admin/login');
-            window.location.href = '/admin/login';
+            // Use setTimeout to ensure state updates are processed
+            setTimeout(() => {
+                window.location.href = '/admin/login';
+            }, 100);
         } else {
             console.log('Setting user dashboard to show');
-            setShowDashboard(true);
+            // Use setTimeout to ensure state updates are processed
+            setTimeout(() => {
+                setShowDashboard(true);
+            }, 100);
         }
     };
 
