@@ -238,7 +238,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---
 const authRouter = require('./routes/auth');
-app.use('/api/auth', authRouter);      // /api/auth/*
+// Temporarily commented out to debug 502 error
+// app.use('/api/auth', authRouter);      // /api/auth/*
 
 // --- Public endpoints: DO NOT enforce CSRF ---
 app.use('/api/contact', require('./routes/contact'));
@@ -1331,6 +1332,11 @@ app.get('/api/debug/db-test', async (req, res) => {
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message, code: error.code });
     }
+});
+
+// ===== SIMPLE TEST ENDPOINT =====
+app.get('/api/debug/simple', (req, res) => {
+    res.json({ ok: true, message: 'Simple endpoint working', timestamp: Date.now() });
 });
 
 // ===== ADMIN SETUP (ONE-TIME) =====
