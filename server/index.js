@@ -150,18 +150,11 @@ const vercelPrefix = (process.env.VERCEL_PROJECT_PREFIX ?? '').toLowerCase();
 
 const corsMiddleware = cors({
     origin(origin, cb) {
-        // Debug logging
-        console.log('[CORS] Checking origin:', origin);
-        console.log('[CORS] Allowed origins:', staticList);
-        console.log('[CORS] Allow Vercel previews:', allowVercelPreviews);
-        console.log('[CORS] Vercel prefix:', vercelPrefix);
-
         // allow server-to-server / curl / health checks
         if (!origin) return cb(null, true);
 
         // exact allowlist match
         if (staticList.includes(origin)) {
-            console.log('[CORS] Origin allowed by static list');
             return cb(null, true);
         }
 
@@ -177,16 +170,14 @@ const corsMiddleware = cors({
                         host === `${vercelPrefix}.vercel.app` ||
                         host.startsWith(`${vercelPrefix}-git-`);
                     if (isVercel && isProject) {
-                        console.log('[CORS] Origin allowed by Vercel preview');
                         return cb(null, true);
                     }
                 }
             } catch (e) {
-                console.log('[CORS] Error parsing Vercel origin:', e.message);
+                // Silent fail for malformed URLs
             }
         }
 
-        console.log('[CORS] Origin blocked');
         return cb(new Error('CORS blocked'));
     },
     credentials: true,
