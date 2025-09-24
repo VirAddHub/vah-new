@@ -57,11 +57,14 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         createDemoSession('user');
         const role: Role = 'user';
         console.log('Calling onSuccess with role:', role);
-        if (onSuccess) {
-          onSuccess(role);
-        } else {
-          window.location.assign('/dashboard');
-        }
+        // Force a small delay to ensure state updates
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess(role);
+          } else {
+            window.location.assign('/dashboard');
+          }
+        }, 100);
         return;
       }
       if (email === 'admin@virtualaddresshub.co.uk' && password === 'admin123') {
@@ -69,11 +72,14 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         createDemoSession('admin');
         const role: Role = 'admin';
         console.log('Calling onSuccess with role:', role);
-        if (onSuccess) {
-          onSuccess(role);
-        } else {
-          window.location.assign('/admin');
-        }
+        // Force a small delay to ensure state updates
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess(role);
+          } else {
+            window.location.assign('/admin/dashboard');
+          }
+        }, 100);
         return;
       }
 

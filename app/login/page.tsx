@@ -9,18 +9,23 @@ function UserPageContent() {
     const [showDashboard, setShowDashboard] = useState(false);
 
     useEffect(() => {
+        console.log('Auth state changed:', { isAuthenticated, isAdmin, isLoading });
         // Don't check authentication until loading is complete
         if (isLoading) return;
         
         if (isAuthenticated) {
+            console.log('User is authenticated, redirecting...');
             if (isAdmin) {
                 // Redirect admins to admin dashboard
+                console.log('Redirecting admin to /admin/dashboard');
                 window.location.href = '/admin/dashboard';
             } else {
                 // Redirect users to their dashboard
+                console.log('Redirecting user to /dashboard');
                 window.location.href = '/dashboard';
             }
         } else {
+            console.log('User not authenticated, showing login form');
             setShowDashboard(false);
         }
     }, [isAuthenticated, isAdmin, isLoading]);

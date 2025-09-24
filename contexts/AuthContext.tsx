@@ -176,6 +176,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const createDemoSession = (type: 'user' | 'admin') => {
+        console.log('Creating demo session for:', type);
         const demoUser: User = type === 'admin'
             ? {
                 id: 'demo-admin',
@@ -188,7 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
             : {
                 id: 'demo-user',
-                email: 'demo@virtualaddresshub.co.uk',
+                email: 'demo@example.com',
                 name: 'Demo User',
                 is_admin: false,
                 role: 'user',
@@ -196,9 +197,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 plan: 'premium'
             };
 
+        console.log('Setting demo user:', demoUser);
         clientAuthManager.setUser(demoUser);
         clientAuthManager.setToken(`demo-${type}-token`);
         setUser(demoUser);
+        console.log('Demo user set, isAuthenticated should be:', !!demoUser);
 
         logAuthEvent(`${type}_demo_session_created`, {
             email: demoUser.email,

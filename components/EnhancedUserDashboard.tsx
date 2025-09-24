@@ -69,9 +69,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             try {
                 setLoading(true);
                 const [
-                    mailResponse, 
-                    profileResponse, 
-                    subscriptionResponse, 
+                    mailResponse,
+                    profileResponse,
+                    subscriptionResponse,
                     ticketsResponse,
                     forwardingResponse,
                     billingResponse,
@@ -135,14 +135,14 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         label: string;
         icon: React.ReactNode;
     }[] = [
-        { id: "inbox", label: "Inbox", icon: <Inbox className="h-4 w-4" /> },
-        { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
-        { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
-        { id: "certificates", label: "Certificates", icon: <FileDown className="h-4 w-4" /> },
-        { id: "kyc", label: "KYC", icon: <ShieldCheck className="h-4 w-4" /> },
-        { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
-        { id: "support", label: "Support", icon: <HelpCircle className="h-4 w-4" /> },
-    ];
+            { id: "inbox", label: "Inbox", icon: <Inbox className="h-4 w-4" /> },
+            { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
+            { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
+            { id: "certificates", label: "Certificates", icon: <FileDown className="h-4 w-4" /> },
+            { id: "kyc", label: "KYC", icon: <ShieldCheck className="h-4 w-4" /> },
+            { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+            { id: "support", label: "Support", icon: <HelpCircle className="h-4 w-4" /> },
+        ];
 
     // Actions
     const handleRefresh = () => {
@@ -427,7 +427,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 )}
                             </CardContent>
                         </Card>
-                        
+
                         <Card>
                             <CardHeader>
                                 <CardTitle>Create Forwarding Request</CardTitle>
@@ -447,9 +447,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium">Destination Address</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full p-2 border rounded" 
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border rounded"
                                             placeholder="Enter destination address..."
                                         />
                                     </div>
@@ -511,8 +511,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                 <p className="text-2xl font-bold">£{plan.price}</p>
                                                 <p className="text-sm text-muted-foreground">/{plan.interval}</p>
                                                 <p className="text-sm mt-2">{plan.description}</p>
-                                                <Button 
-                                                    className="w-full mt-4" 
+                                                <Button
+                                                    className="w-full mt-4"
                                                     onClick={() => createPaymentRedirect(plan.id)}
                                                 >
                                                     Select Plan
@@ -554,8 +554,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                     </TableCell>
                                                     <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
                                                     <TableCell>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="outline"
                                                             onClick={() => downloadInvoice(invoice.id)}
                                                         >
@@ -584,29 +584,29 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                     <p className="text-muted-foreground">
                                         Download certificates and documents for your virtual address.
                                     </p>
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="border rounded-lg p-4">
                                             <h3 className="font-semibold mb-2">Address Certificate</h3>
                                             <p className="text-sm text-muted-foreground mb-4">
                                                 Official certificate proving your virtual address
                                             </p>
-                                            <Button 
-                                                variant="outline" 
+                                            <Button
+                                                variant="outline"
                                                 onClick={() => toast({ title: "Info", description: "Certificate download coming soon" })}
                                             >
                                                 <FileDown className="h-4 w-4 mr-2" />
                                                 Download PDF
                                             </Button>
                                         </div>
-                                        
+
                                         <div className="border rounded-lg p-4">
                                             <h3 className="font-semibold mb-2">Business Certificate</h3>
                                             <p className="text-sm text-muted-foreground mb-4">
                                                 Certificate for business registration purposes
                                             </p>
-                                            <Button 
-                                                variant="outline" 
+                                            <Button
+                                                variant="outline"
                                                 onClick={() => toast({ title: "Info", description: "Business certificate download coming soon" })}
                                             >
                                                 <FileDown className="h-4 w-4 mr-2" />
@@ -646,8 +646,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="outline"
                                                             onClick={() => downloadMailPdf(item.id)}
                                                         >
@@ -676,17 +676,17 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">Status:</span>
-                                        <Badge 
+                                        <Badge
                                             variant={
-                                                kycStatusValue === 'approved' ? 'default' : 
-                                                kycStatusValue === 'pending' ? 'secondary' : 
-                                                kycStatusValue === 'rejected' ? 'destructive' : 'outline'
+                                                kycStatusValue === 'approved' ? 'default' :
+                                                    kycStatusValue === 'pending' ? 'secondary' :
+                                                        kycStatusValue === 'rejected' ? 'destructive' : 'outline'
                                             }
                                         >
                                             {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
                                         </Badge>
                                     </div>
-                                    
+
                                     {kycStatusValue === 'not_started' && (
                                         <div className="space-y-4">
                                             <p className="text-muted-foreground">
@@ -698,7 +698,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </Button>
                                         </div>
                                     )}
-                                    
+
                                     {kycStatusValue === 'pending' && (
                                         <div className="space-y-4">
                                             <p className="text-muted-foreground">
@@ -710,7 +710,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </Button>
                                         </div>
                                     )}
-                                    
+
                                     {kycStatusValue === 'approved' && (
                                         <div className="space-y-4">
                                             <p className="text-green-600 font-medium">
@@ -721,7 +721,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </p>
                                         </div>
                                     )}
-                                    
+
                                     {kycStatusValue === 'rejected' && (
                                         <div className="space-y-4">
                                             <p className="text-red-600 font-medium">
@@ -790,26 +790,26 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-sm font-medium">Email Address</label>
-                                        <input 
-                                            type="email" 
-                                            className="w-full p-2 border rounded" 
+                                        <input
+                                            type="email"
+                                            className="w-full p-2 border rounded"
                                             value={profile?.email || ''}
                                             readOnly
                                         />
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium">Full Name</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full p-2 border rounded" 
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border rounded"
                                             placeholder="Enter your full name..."
                                         />
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium">Phone Number</label>
-                                        <input 
-                                            type="tel" 
-                                            className="w-full p-2 border rounded" 
+                                        <input
+                                            type="tel"
+                                            className="w-full p-2 border rounded"
                                             placeholder="Enter your phone number..."
                                         />
                                     </div>
@@ -892,8 +892,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                                 View
                                                             </Button>
                                                             {ticket.status !== 'closed' && (
-                                                                <Button 
-                                                                    size="sm" 
+                                                                <Button
+                                                                    size="sm"
                                                                     variant="outline"
                                                                     onClick={() => closeSupportTicket(ticket.id)}
                                                                 >
@@ -918,16 +918,16 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-sm font-medium">Subject</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full p-2 border rounded" 
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border rounded"
                                             placeholder="Brief description of your issue..."
                                         />
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium">Message</label>
-                                        <textarea 
-                                            className="w-full p-2 border rounded h-24" 
+                                        <textarea
+                                            className="w-full p-2 border rounded h-24"
                                             placeholder="Please describe your issue in detail..."
                                         />
                                     </div>
