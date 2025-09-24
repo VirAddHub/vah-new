@@ -97,7 +97,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
             Sign in
           </CardTitle>
           <p className="text-muted-foreground">
-            Access your account {`(admins are routed automatically)`}
+            Sign in to your VirtualAddressHub account
           </p>
         </CardHeader>
         <CardContent>
