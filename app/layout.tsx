@@ -1,25 +1,21 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+// app/layout.tsx
+import type { Metadata } from 'next';
+import './globals.css';
+import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'VirtualAddressHub - Professional Virtual Address Service',
-    description: 'Get a professional virtual address for your business with secure mail forwarding and premium compliance-focused services.',
-}
+  title: 'VirtualAddressHub',
+  description: 'Your professional London business address with secure digital mail.',
+};
 
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    return (
-        <html lang="en">
-            <body className={`${inter.className} min-h-screen bg-background text-foreground`}>
-                <ScrollToTopOnRouteChange />
-                {children}
-            </body>
-        </html>
-    )
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} min-h-screen bg-background text-foreground`}>
+        {children}
+      </body>
+    </html>
+  );
 }
