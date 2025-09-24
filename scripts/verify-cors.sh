@@ -2,6 +2,10 @@
 set -e
 API="${1:-https://vah-api.onrender.com}"
 
+echo "Testing API at: $API"
+echo "Note: If this fails, check your Render dashboard for the exact URL"
+echo
+
 echo "Preflight from localhost:"
 curl -si -X OPTIONS "$API/api/auth/whoami" \
   -H "Origin: http://localhost:3000" \
