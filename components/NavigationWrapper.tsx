@@ -3,7 +3,7 @@
 import { Navigation } from './Navigation';
 
 export function NavigationWrapper() {
-    const handleNavigate = (page: string) => {
+    const handleNavigate = (page: string, data?: any) => {
         // Handle navigation based on your actual page structure
         switch (page) {
             case 'home':
@@ -44,6 +44,14 @@ export function NavigationWrapper() {
                 break;
             case 'kyc-policy':
                 window.location.href = '/kyc';
+                break;
+            case 'blog-post':
+                // Handle blog post navigation with slug
+                if (data?.slug) {
+                    window.location.href = `/blog/${data.slug}`;
+                } else {
+                    window.location.href = '/blog';
+                }
                 break;
             default:
                 // Fallback for any other pages
