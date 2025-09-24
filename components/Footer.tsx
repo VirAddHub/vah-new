@@ -33,7 +33,10 @@ export function Footer({ onNavigate }: FooterProps) {
         href?: string,
         external?: boolean,
     ) => {
-        if (page && onNavigate) return onNavigate(page);
+        if (page && onNavigate) {
+            onNavigate(page);
+            return;
+        }
         if (href) {
             if (external)
                 window.open(href, "_blank", "noopener,noreferrer");
