@@ -7,22 +7,22 @@ import { ArrowLeft, Calendar, Clock, Share2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface BlogPostPageProps {
-  slug: string;
-  onNavigate?: (page: string, data?: any) => void;
-  onBack?: () => void;
+    slug: string;
+    onNavigate?: (page: string, data?: any) => void;
+    onBack?: () => void;
 }
 
 export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
-  // Mock blog post data - in real app would fetch based on slug
-  const blogPosts: Record<string, any> = {
-    "what-is-a-registered-office-address": {
-      title: "What is a Registered Office Address and Why Your UK Company Needs One",
-      excerpt: "Every UK company must have a registered office address. Learn what it is, why it's required, and how to choose the right one for your business.",
-      date: "2024-01-15",
-      readTime: "5 min read",
-      category: "Company Formation",
-      imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      content: `
+    // Mock blog post data - in real app would fetch based on slug
+    const blogPosts: Record<string, any> = {
+        "what-is-a-registered-office-address": {
+            title: "What is a Registered Office Address and Why Your UK Company Needs One",
+            excerpt: "Every UK company must have a registered office address. Learn what it is, why it's required, and how to choose the right one for your business.",
+            date: "2024-01-15",
+            readTime: "5 min read",
+            category: "Company Formation",
+            imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+            content: `
         <p>When starting a UK company, one of the fundamental requirements is having a registered office address. This isn't just a formality – it's a legal requirement that serves several important purposes for your business.</p>
         
         <h2>What is a Registered Office Address?</h2>
@@ -81,15 +81,15 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         
         <p>For businesses looking to establish a professional presence in London while maintaining privacy and compliance, a virtual address service can provide the perfect solution.</p>
       `
-    },
-    "uk-company-formation-complete-guide": {
-      title: "UK Company Formation: A Complete Guide for 2024",
-      excerpt: "Step-by-step guide to forming a UK company, including required documents, costs, and timeline. Everything you need to know to get started.",
-      date: "2024-01-10",
-      readTime: "8 min read",
-      category: "Business Setup",
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHBsYW5uaW5nJTIwaWxsdXN0cmF0aW9ufGVufDF8fHx8MTc1NzQxMTY1NXww&ixlib=rb-4.1.0&q=80&w=1080",
-      content: `
+        },
+        "uk-company-formation-complete-guide": {
+            title: "UK Company Formation: A Complete Guide for 2024",
+            excerpt: "Step-by-step guide to forming a UK company, including required documents, costs, and timeline. Everything you need to know to get started.",
+            date: "2024-01-10",
+            readTime: "8 min read",
+            category: "Business Setup",
+            imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHBsYW5uaW5nJTIwaWxsdXN0cmF0aW9ufGVufDF8fHx8MTc1NzQxMTY1NXww&ixlib=rb-4.1.0&q=80&w=1080",
+            content: `
         <p>Starting a UK company has never been easier, but understanding the process and requirements is crucial for success. This comprehensive guide covers everything you need to know about UK company formation in 2024.</p>
         
         <h2>Types of UK Companies</h2>
@@ -209,131 +209,131 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         
         <p>With proper planning and understanding of the requirements, UK company formation is straightforward and can be completed quickly and affordably.</p>
       `
+        }
+    };
+
+    const post = blogPosts[slug];
+
+    if (!post) {
+        return (
+            <div className="min-h-screen bg-background py-24">
+                <div className="container mx-auto px-4 text-center">
+                    <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6">Blog Post Not Found</h1>
+                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">The blog post you're looking for doesn't exist.</p>
+                    <Button onClick={onBack} variant="outline" className="px-6 py-3">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Blog
+                    </Button>
+                </div>
+            </div>
+        );
     }
-  };
 
-  const post = blogPosts[slug];
-
-  if (!post) {
     return (
-      <div className="min-h-screen bg-background py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6">Blog Post Not Found</h1>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">The blog post you're looking for doesn't exist.</p>
-          <Button onClick={onBack} variant="outline" className="px-6 py-3">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Blog
-          </Button>
-        </div>
-      </div>
-    );
-  }
+        <div className="min-h-screen bg-background">
+            <div className="container mx-auto px-4 py-8">
+                {/* Back Button */}
+                <div className="mb-12">
+                    <Button variant="outline" onClick={onBack} className="px-6 py-2">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Blog
+                    </Button>
+                </div>
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <div className="mb-12">
-          <Button variant="outline" onClick={onBack} className="px-6 py-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Blog
-          </Button>
-        </div>
+                {/* Article Header */}
+                <article className="max-w-4xl mx-auto">
+                    <header className="mb-16">
+                        <Badge variant="secondary" className="mb-6 px-3 py-1">{post.category}</Badge>
+                        <h1 className="font-serif text-4xl lg:text-6xl tracking-tight mb-8 text-foreground leading-tight">
+                            {post.title}
+                        </h1>
 
-        {/* Article Header */}
-        <article className="max-w-4xl mx-auto">
-          <header className="mb-16">
-            <Badge variant="secondary" className="mb-6 px-3 py-1">{post.category}</Badge>
-            <h1 className="font-serif text-4xl lg:text-6xl tracking-tight mb-8 text-foreground leading-tight">
-              {post.title}
-            </h1>
-            
-            <div className="flex items-center gap-6 text-muted-foreground mb-12">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                <span className="text-base">
-                  {new Date(post.date).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <span className="text-base">{post.readTime}</span>
-              </div>
-              <Button variant="ghost" size="sm" className="ml-auto">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-            </div>
+                        <div className="flex items-center gap-6 text-muted-foreground mb-12">
+                            <div className="flex items-center gap-2">
+                                <Calendar className="h-5 w-5" />
+                                <span className="text-base">
+                                    {new Date(post.date).toLocaleDateString('en-GB', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock className="h-5 w-5" />
+                                <span className="text-base">{post.readTime}</span>
+                            </div>
+                            <Button variant="ghost" size="sm" className="ml-auto">
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share
+                            </Button>
+                        </div>
 
-            {/* Featured Image */}
-            <div className="relative rounded-xl overflow-hidden shadow-lg mb-16">
-              <ImageWithFallback 
-                src={post.imageUrl}
-                alt={post.title}
-                className="w-full h-80 lg:h-96 object-cover"
-              />
-            </div>
-          </header>
+                        {/* Featured Image */}
+                        <div className="relative rounded-xl overflow-hidden shadow-lg mb-16">
+                            <ImageWithFallback
+                                src={post.imageUrl}
+                                alt={post.title}
+                                className="w-full h-80 lg:h-96 object-cover"
+                            />
+                        </div>
+                    </header>
 
-          {/* Article Content */}
-          <div className="prose prose-xl max-w-none mb-16" style={{
-            color: 'hsl(var(--foreground))',
-            maxWidth: 'none'
-          }}>
-            <div 
-              dangerouslySetInnerHTML={{ __html: post.content }} 
-              style={{
-                fontSize: '1.125rem',
-                lineHeight: '1.8',
-                color: 'hsl(var(--foreground))'
-              }}
-            />
-          </div>
-
-          {/* Call to Action */}
-          <Card className="mb-16 bg-primary text-primary-foreground border-0 shadow-lg">
-            <CardContent className="p-12 text-center">
-              <h3 className="font-serif text-3xl lg:text-4xl tracking-tight mb-6">Ready to Get Started?</h3>
-              <p className="text-lg mb-8 text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
-                Get your professional London business address and start building your UK company today.
-              </p>
-              <Button variant="secondary" size="lg" onClick={() => onNavigate?.('signup')} className="px-8 py-3">
-                Secure My London Address
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Related Articles */}
-          <section>
-            <h3 className="font-serif text-3xl lg:text-4xl tracking-tight mb-10 text-foreground">Related Articles</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {Object.entries(blogPosts)
-                .filter(([key]) => key !== slug)
-                .slice(0, 2)
-                .map(([key, relatedPost]) => (
-                  <Card key={key} className="hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-card" onClick={() => onNavigate?.('blog-post', { slug: key })}>
-                    <div className="relative h-56">
-                      <ImageWithFallback 
-                        src={relatedPost.imageUrl}
-                        alt={relatedPost.title}
-                        className="w-full h-full object-cover rounded-t-lg"
-                      />
+                    {/* Article Content */}
+                    <div className="prose prose-xl max-w-none mb-16" style={{
+                        color: 'hsl(var(--foreground))',
+                        maxWidth: 'none'
+                    }}>
+                        <div
+                            dangerouslySetInnerHTML={{ __html: post.content }}
+                            style={{
+                                fontSize: '1.125rem',
+                                lineHeight: '1.8',
+                                color: 'hsl(var(--foreground))'
+                            }}
+                        />
                     </div>
-                    <CardContent className="p-8">
-                      <Badge variant="secondary" className="mb-4 px-3 py-1">{relatedPost.category}</Badge>
-                      <h4 className="font-serif text-xl lg:text-2xl tracking-tight mb-4 line-clamp-2 leading-tight">{relatedPost.title}</h4>
-                      <p className="text-muted-foreground line-clamp-3 leading-relaxed">{relatedPost.excerpt}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                    {/* Call to Action */}
+                    <Card className="mb-16 bg-primary text-primary-foreground border-0 shadow-lg">
+                        <CardContent className="p-12 text-center">
+                            <h3 className="font-serif text-3xl lg:text-4xl tracking-tight mb-6">Ready to Get Started?</h3>
+                            <p className="text-lg mb-8 text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
+                                Get your professional London business address and start building your UK company today.
+                            </p>
+                            <Button variant="secondary" size="lg" onClick={() => onNavigate?.('signup')} className="px-8 py-3">
+                                Secure My London Address
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Related Articles */}
+                    <section>
+                        <h3 className="font-serif text-3xl lg:text-4xl tracking-tight mb-10 text-foreground">Related Articles</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {Object.entries(blogPosts)
+                                .filter(([key]) => key !== slug)
+                                .slice(0, 2)
+                                .map(([key, relatedPost]) => (
+                                    <Card key={key} className="hover:shadow-lg transition-all duration-300 cursor-pointer border-0 bg-card" onClick={() => onNavigate?.('blog-post', { slug: key })}>
+                                        <div className="relative h-56">
+                                            <ImageWithFallback
+                                                src={relatedPost.imageUrl}
+                                                alt={relatedPost.title}
+                                                className="w-full h-full object-cover rounded-t-lg"
+                                            />
+                                        </div>
+                                        <CardContent className="p-8">
+                                            <Badge variant="secondary" className="mb-4 px-3 py-1">{relatedPost.category}</Badge>
+                                            <h4 className="font-serif text-xl lg:text-2xl tracking-tight mb-4 line-clamp-2 leading-tight">{relatedPost.title}</h4>
+                                            <p className="text-muted-foreground line-clamp-3 leading-relaxed">{relatedPost.excerpt}</p>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                        </div>
+                    </section>
+                </article>
             </div>
-          </section>
-        </article>
-      </div>
-    </div>
-  );
+        </div>
+    );
 }
