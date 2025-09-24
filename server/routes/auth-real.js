@@ -57,7 +57,7 @@ router.post('/signup', validateSignup, async (req, res) => {
         const { email, password, first_name = '', last_name = '' } = req.body;
 
         // Check if user already exists
-        const existingUser = db.prepare('SELECT id FROM "user" WHERE email = ?').get(email);
+        const existingUser = await db.get('SELECT id FROM "user" WHERE email = ?', [email]);
         if (existingUser) {
             return res.status(409).json({ error: 'Email already registered' });
         }
@@ -69,20 +69,20 @@ router.post('/signup', validateSignup, async (req, res) => {
         const now = Date.now();
         const name = `${first_name} ${last_name}`.trim();
 
-        const result = db.prepare(`
+        const result = await db.run(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
         kyc_status, plan_status, plan_start_date, onboarding_step
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, [
             now, now, name, email, passwordHash,
             first_name, last_name, 0, 'user', 'active',
             'pending', 'active', now, 'signup'
-        );
+        ]);
 
         // Get the created user
-        const user = db.prepare('SELECT * FROM "user" WHERE id = ?').get(result.lastInsertRowid);
+        const user = await db.get('SELECT * FROM "user" WHERE id = ?', [result.insertId || result.lastInsertRowid]);
 
         // Set session
         const token = setSession(res, user);
@@ -112,7 +112,7 @@ router.post('/login', validateLogin, async (req, res) => {
         const { email, password } = req.body;
 
         // Find user by email
-        const user = db.prepare('SELECT * FROM "user" WHERE email = ?').get(email);
+        const user = await db.get('SELECT * FROM "user" WHERE email = ?', [email]);
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
