@@ -3,6 +3,37 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
 
+// Input validation and sanitization utilities
+function sanitizeString(input: any): string {
+  if (typeof input !== 'string') return '';
+  return input.trim().replace(/[<>]/g, '');
+}
+
+function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function validatePassword(password: string): boolean {
+  return Boolean(password && password.length >= 6);
+}
+
+function sanitizeObject(obj: any): any {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      sanitized[key] = sanitizeString(value);
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeObject(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
 interface ApiResponse<T = any> {
   ok: boolean;
   data?: T;
@@ -126,9 +157,25 @@ class ApiClient {
   // ==================== AUTHENTICATION APIs ====================
   
   async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
+    // Validate inputs
+    if (!validateEmail(email)) {
+      return { ok: false, error: 'Invalid email format' };
+    }
+    
+    if (!validatePassword(password)) {
+      return { ok: false, error: 'Password must be at least 6 characters' };
+    }
+
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeString(email);
+    const sanitizedPassword = sanitizeString(password);
+
     return this.request('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ 
+        email: sanitizedEmail, 
+        password: sanitizedPassword 
+      }),
     });
   }
 
@@ -366,9 +413,22 @@ class ApiClient {
     inquiryType?: string;
     website?: string;
   }): Promise<ApiResponse> {
+    // Validate required fields
+    if (!data.name || !data.email || !data.subject || !data.message) {
+      return { ok: false, error: 'All required fields must be provided' };
+    }
+
+    // Validate email format
+    if (!validateEmail(data.email)) {
+      return { ok: false, error: 'Invalid email format' };
+    }
+
+    // Sanitize all string inputs
+    const sanitizedData = sanitizeObject(data);
+
     return this.request('/api/contact', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(sanitizedData),
     });
   }
 
