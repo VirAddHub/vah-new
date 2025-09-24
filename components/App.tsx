@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { HomePage } from './HomePage';
 import { AboutPage } from './AboutPage';
@@ -13,12 +13,25 @@ import { KYCPolicyPage } from './KYCPolicyPage';
 import { HelpPage } from './HelpPage';
 import ContactPage from './ContactPage';
 import { SignupPage } from './SignupPage';
+import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 
 export function App() {
   const { currentPage, navigate, goBack } = useNavigation();
   const [signupData, setSignupData] = useState<any>(null);
+
+  // Layer 2: HTML Preload for Montserrat fonts
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap';
+    link.as = 'style';
+    link.onload = function() { 
+      (this as any).rel = 'stylesheet'; 
+    };
+    document.head.appendChild(link);
+  }, []);
 
   const handleNavigate = (page: string, data?: any) => {
     if (page === 'signup' && data) {
@@ -130,6 +143,7 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <FontLoader />
       <Navigation onNavigate={navigate} />
       <main className="flex-1">
         {renderPage()}

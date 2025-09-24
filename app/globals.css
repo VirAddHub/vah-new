@@ -2,8 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Montserrat for Corporate/Tech Aesthetic - Preload for performance */
+/* Montserrat for Corporate/Tech Aesthetic - Multi-layer font loading strategy */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* FontLoader integration - ensures Montserrat is applied when loaded */
+html.fonts-loaded *,
+html.fonts-loaded *:before,
+html.fonts-loaded *:after {
+  font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
 
 /* ========================================
    RESPONSIVE FOUNDATION - NO OVERLAP SETUP
