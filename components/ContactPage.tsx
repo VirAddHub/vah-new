@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Mail,
     Phone,
     Clock,
     Send,
     CheckCircle,
+    Loader2,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -39,6 +40,10 @@ const CONTACT_ENDPOINT = API_BASE
     : "/api/contact";
 
 export default function ContactPage({ onNavigate }: ContactPageProps) {
+    // Support information state
+    const [supportInfo, setSupportInfo] = useState<any>(null);
+    const [loadingSupport, setLoadingSupport] = useState(true);
+
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -51,6 +56,25 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    // Load support information
+    useEffect(() => {
+        const loadSupportInfo = async () => {
+            try {
+                setLoadingSupport(true);
+                const response = await apiClient.get('/api/support');
+                if (response.ok) {
+                    setSupportInfo(response.data);
+                }
+            } catch (error) {
+                console.error('Failed to load support information:', error);
+            } finally {
+                setLoadingSupport(false);
+            }
+        };
+
+        loadSupportInfo();
+    }, []);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -71,33 +95,33 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         if (!formData.message.trim())
             return setErrorMsg("Please enter your message");
 
-    setIsSubmitting(true);
-    try {
-      // Call the contact API using the API client
-      const response = await apiClient.submitContactForm(formData);
+        setIsSubmitting(true);
+        try {
+            // Call the contact API using the correct endpoint
+            const response = await apiClient.post('/api/contact', formData);
 
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({
-          name: "",
-          email: "",
-          company: "",
-          subject: "",
-          message: "",
-          inquiryType: "general",
-          website: "",
-        });
-      } else {
-        setErrorMsg(response.error || "Unable to send message. Please try again.");
-      }
-    } catch (err: any) {
-      setErrorMsg(
-        err?.message ||
-          "Unable to send message. Please try again.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+            if (response.ok) {
+                setIsSubmitted(true);
+                setFormData({
+                    name: "",
+                    email: "",
+                    company: "",
+                    subject: "",
+                    message: "",
+                    inquiryType: "general",
+                    website: "",
+                });
+            } else {
+                setErrorMsg(response.error || "Unable to send message. Please try again.");
+            }
+        } catch (err: any) {
+            setErrorMsg(
+                err?.message ||
+                "Unable to send message. Please try again.",
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     function handleInputChange(
@@ -411,7 +435,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         >
                                             {isSubmitting ? (
                                                 <>
-                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
                                                     Sending…
                                                 </>
                                             ) : (

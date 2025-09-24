@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Check, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Info, Loader2, CreditCard } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
+import { Button } from './ui/button';
 
 interface PlansPageProps {
     onNavigate: (page: string) => void;
@@ -9,6 +11,58 @@ interface PlansPageProps {
 
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
+    const [plans, setPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [processingPayment, setProcessingPayment] = useState(false);
+
+    // Load plans from API
+    useEffect(() => {
+        const loadPlans = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await apiClient.get('/api/plans');
+                if (response.ok) {
+                    setPlans(response.data || []);
+                } else {
+                    setError('Failed to load pricing plans');
+                }
+            } catch (err) {
+                console.error('Failed to load plans:', err);
+                setError('Failed to load pricing plans');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPlans();
+    }, []);
+
+    // Handle plan selection and payment flow
+    const handleSelectPlan = async (planId?: string) => {
+        try {
+            setProcessingPayment(true);
+            setError(null);
+
+            const response = await apiClient.post('/api/payments/redirect-flows', {
+                plan_id: planId || 'default',
+                billing_period: isAnnual ? 'annual' : 'monthly'
+            });
+
+            if (response.ok && response.data?.redirect_url) {
+                // Redirect to payment
+                window.location.href = response.data.redirect_url;
+            } else {
+                setError('Failed to start payment process');
+            }
+        } catch (err) {
+            console.error('Payment flow error:', err);
+            setError('Failed to start payment process');
+        } finally {
+            setProcessingPayment(false);
+        }
+    };
 
     const includedFeatures = [
         'Use as Registered Office & Director\'s Service Address (Companies House + HMRC).',
@@ -34,6 +88,25 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         'Digital delivery same business day.',
         'Forwarding billed to your subscription.'
     ];
+
+    if (loading) {
+        return (
+            <div className="bg-background">
+                <section className="py-12 bg-background text-foreground">
+                    <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+                        <div className="mx-auto max-w-7xl">
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                                    <p className="text-muted-foreground">Loading pricing plans...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-background">
@@ -156,28 +229,48 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         </div>
                                     </div>
 
+                                    {/* Error Display */}
+                                    {error && (
+                                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
+                                            {error}
+                                        </div>
+                                    )}
+
                                     {/* Action buttons */}
                                     <div className="mt-6 flex flex-col gap-3">
-                                        <button
-                                            onClick={() => onNavigate('signup')}
-                                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 w-full sm:w-auto sm:min-w-48 font-medium transition-colors"
+                                        <Button
+                                            onClick={() => handleSelectPlan()}
+                                            disabled={processingPayment || loading}
+                                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 w-full sm:w-auto sm:min-w-48 font-medium"
                                         >
-                                            Create account — £{isAnnual ? '89.99' : '9.99'}{isAnnual ? '/yr' : '/mo'}
-                                        </button>
+                                            {processingPayment ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <CreditCard className="h-4 w-4 mr-2" />
+                                                    Choose Plan — £{isAnnual ? '89.99' : '9.99'}{isAnnual ? '/yr' : '/mo'}
+                                                </>
+                                            )}
+                                        </Button>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-                                            <button
+                                            <Button
+                                                variant="outline"
                                                 onClick={() => onNavigate('terms')}
-                                                className="border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-10 rounded-md px-6 w-full font-medium transition-colors"
+                                                className="h-10 px-6 w-full font-medium"
                                             >
                                                 View Terms
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
+                                                variant="outline"
                                                 onClick={() => onNavigate('privacy')}
-                                                className="border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-10 rounded-md px-6 w-full font-medium transition-colors"
+                                                className="h-10 px-6 w-full font-medium"
                                             >
                                                 View Privacy Policy
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
 

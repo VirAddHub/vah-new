@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { apiClient, type MailItem, type User } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 import {
     ArrowRight,
     Mail,
@@ -21,8 +21,6 @@ interface HomePageProps {
 export function HomePage({ onNavigate }: HomePageProps) {
     const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
     const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-    const [user, setUser] = useState<User | null>(null);
-    const [mailItems, setMailItems] = useState<MailItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     const isAnnual = billing === "annual";
@@ -34,25 +32,27 @@ export function HomePage({ onNavigate }: HomePageProps) {
         return Math.round(pct);
     }, []);
 
-    // Load user data and mail items
+    // Load marketing data (plans and health status)
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [userResponse, mailResponse] = await Promise.all([
-                    apiClient.whoami(),
-                    apiClient.getMailItems()
+                const [plansResponse, healthResponse] = await Promise.all([
+                    apiClient.get('/api/plans'),
+                    apiClient.get('/api/health')
                 ]);
-                
-                if (userResponse.ok && userResponse.data?.user) {
-                    setUser(userResponse.data.user);
+
+                if (plansResponse.ok) {
+                    // Store plans data for potential use
+                    console.log('Plans loaded:', plansResponse.data);
                 }
-                
-                if (mailResponse.ok) {
-                    setMailItems(mailResponse.data || []);
+
+                if (healthResponse.ok) {
+                    // Store health data for potential use
+                    console.log('Health status:', healthResponse.data);
                 }
             } catch (error) {
-                console.error('Failed to load data:', error);
+                console.error('Failed to load marketing data:', error);
             } finally {
                 setLoading(false);
             }
@@ -111,38 +111,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             Companies House mail. Flat £9.99/month — one plan,
                             no tiers or surprises.
                         </p>
-                        
-                        {/* Mail Preview for logged-in users */}
-                        {user && !loading && (
-                            <div className="mt-8 bg-muted/50 rounded-lg p-6 max-w-2xl">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Mail className="h-5 w-5 text-primary" />
-                                    <h3 className="text-lg font-semibold">Recent Mail</h3>
-                                </div>
-                                {mailItems.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {mailItems.slice(0, 3).map((item) => (
-                                            <div key={item.id} className="flex justify-between items-center p-3 bg-background rounded border">
-                                                <div>
-                                                    <p className="font-medium text-sm">{item.sender_name}</p>
-                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {new Date(item.received_date).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        ))}
-                                        {mailItems.length > 3 && (
-                                            <p className="text-sm text-muted-foreground text-center">
-                                                +{mailItems.length - 3} more items
-                                            </p>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">No mail received yet</p>
-                                )}
-                            </div>
-                        )}
+
                         <div className="mt-10">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
@@ -558,8 +527,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FAQ TEASER */}
-            <section id="faq" className="py-14 bg-primary/5 border-t border-border">
+            {/* CONTACT SECTION */}
+            <section id="contact" className="py-14 bg-primary/5 border-t border-border">
                 <div className="mx-auto max-w-3xl px-6 text-center">
                     <h2 className="text-3xl font-bold text-primary">
                         Questions? We've Got Answers.
@@ -568,12 +537,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         From scanning speed to forwarding and billing —
                         see our most asked questions.
                     </p>
-                    <button
-                        onClick={() => handleNavClick?.("help")}
-                        className="mt-6 inline-block text-primary font-medium"
-                    >
-                        Visit Help Centre ↗
-                    </button>
+                    <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                        <button
+                            onClick={() => handleNavClick?.("help")}
+                            className="inline-block text-primary font-medium hover:text-primary/80 transition-colors"
+                        >
+                            Visit Help Centre ↗
+                        </button>
+                        <button
+                            onClick={() => handleNavClick?.("contact")}
+                            className="inline-block text-primary font-medium hover:text-primary/80 transition-colors"
+                        >
+                            Contact Us Directly ↗
+                        </button>
+                    </div>
                 </div>
             </section>
 

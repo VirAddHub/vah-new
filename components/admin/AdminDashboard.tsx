@@ -103,7 +103,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     // API Data State
     const [users, setUsers] = useState<User[]>([]);
     const [mailItems, setMailItems] = useState<MailItem[]>([]);
@@ -121,30 +121,30 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 const [usersResponse, mailResponse, forwardingResponse] = await Promise.all([
-                    apiClient.getAdminUsers(),
-                    apiClient.getMailItems(),
-                    apiClient.getForwardingRequests()
+                    apiClient.get('/api/admin/users'),
+                    apiClient.get('/api/admin/mail-items'),
+                    apiClient.get('/api/admin/forwarding-requests')
                 ]);
-                
+
                 if (usersResponse.ok) {
                     setUsers(usersResponse.data || []);
                     setStats(prev => ({ ...prev, totalUsers: usersResponse.data?.length || 0 }));
                 }
-                
+
                 if (mailResponse.ok) {
                     setMailItems(mailResponse.data || []);
                     setStats(prev => ({ ...prev, totalMail: mailResponse.data?.length || 0 }));
                 }
-                
+
                 if (forwardingResponse.ok) {
                     const requests = forwardingResponse.data || [];
                     setForwardingRequests(requests);
                     const pending = requests.filter(r => r.status === 'pending').length;
                     setStats(prev => ({ ...prev, pendingForwarding: pending }));
                 }
-                
+
             } catch (err) {
                 console.error('Failed to load admin data:', err);
                 setError('Failed to load admin data');
@@ -152,7 +152,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
                 setLoading(false);
             }
         };
-        
+
         loadAdminData();
     }, []);
 
