@@ -4,7 +4,7 @@ import {
   Mail,
   CreditCard,
   ShieldCheck,
-  CircleHelp,
+  HelpCircle,
 } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -301,7 +301,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         {/* No results fallback (should never hit) */}
         {grouped.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            <CircleHelp className="w-6 h-6 mx-auto mb-2" />
+            <HelpCircle className="w-6 h-6 mx-auto mb-2" />
             Nothing here yet. Check back soon.
           </div>
         )}
