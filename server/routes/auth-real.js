@@ -96,8 +96,13 @@ router.post('/signup', validateSignup, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Signup error:', error);
-        res.status(500).json({ error: 'Signup failed' });
+        console.error('[signup] error', { 
+            message: error.message, 
+            stack: error.stack,
+            name: error.name,
+            code: error.code
+        });
+        res.status(500).json({ error: 'Signup failed', details: error.message });
     }
 });
 
