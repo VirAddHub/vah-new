@@ -1,13 +1,12 @@
 import { PlansPage } from '@/components/PlansPage';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
+
 export default function Pricing() {
     const handleNavigate = (page: string) => {
-        // Handle navigation - you can enhance this with Next.js router later
-        if (page === 'home') {
-            window.location.href = '/';
-        } else {
-            window.location.href = `/${page}`;
-        }
+        // Handle navigation - in a real app this would use Next.js router
+        console.log('Navigate to:', page);
     };
 
     return <PlansPage onNavigate={handleNavigate} />;
