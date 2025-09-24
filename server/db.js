@@ -68,7 +68,14 @@ if (isPg) {
 
     async run(sql, params) {
       const { sql: q, params: p } = convert(sql, params ?? []);
-      return withClient((c) => c.query(q, p));
+      const result = await withClient((c) => c.query(q, p));
+      // For PostgreSQL, return a compatible result object
+      return {
+        insertId: result.rows?.[0]?.id,
+        lastInsertRowid: result.rows?.[0]?.id,
+        rows: result.rows,
+        rowCount: result.rowCount
+      };
     },
     async get(sql, params) {
       const { sql: q, params: p } = convert(sql, params ?? []);
@@ -86,7 +93,16 @@ if (isPg) {
         try {
           const txDb = {
             kind: 'pg',
-            run: (sql, params) => { const { sql: q, params: p } = convert(sql, params ?? []); return c.query(q, p); },
+            run: async (sql, params) => { 
+              const { sql: q, params: p } = convert(sql, params ?? []); 
+              const result = await c.query(q, p);
+              return {
+                insertId: result.rows?.[0]?.id,
+                lastInsertRowid: result.rows?.[0]?.id,
+                rows: result.rows,
+                rowCount: result.rowCount
+              };
+            },
             get: async (sql, params) => { const { sql: q, params: p } = convert(sql, params ?? []); const r = await c.query(q, p); return r.rows[0] ?? undefined; },
             all: async (sql, params) => { const { sql: q, params: p } = convert(sql, params ?? []); const r = await c.query(q, p); return r.rows; },
             transaction: async (inner) => inner(txDb),
