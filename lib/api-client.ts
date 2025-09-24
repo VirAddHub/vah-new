@@ -27,7 +27,7 @@ function validatePassword(password: string): boolean {
 
 function sanitizeObject(obj: any): any {
   if (typeof obj !== 'object' || obj === null) return obj;
-  
+
   const sanitized: any = {};
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
@@ -104,7 +104,7 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const defaultOptions: RequestInit = {
       credentials: 'include',
       headers: {
@@ -118,13 +118,13 @@ class ApiClient {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+        return { ok: false, error: data.error || `HTTP ${response.status}` };
       }
       
-      return data;
+      return { ok: true, data };
     } catch (error) {
       console.error(`API Error (${endpoint}):`, error);
-      throw error;
+      return { ok: false, error: error instanceof Error ? error.message : 'Network error' };
     }
   }
 
@@ -162,13 +162,13 @@ class ApiClient {
   }
 
   // ==================== AUTHENTICATION APIs ====================
-  
+
   async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
     // Validate inputs
     if (!validateEmail(email)) {
       return { ok: false, error: 'Invalid email format' };
     }
-    
+
     if (!validatePassword(password)) {
       return { ok: false, error: 'Password must be at least 6 characters' };
     }
@@ -179,9 +179,9 @@ class ApiClient {
 
     return this.request('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ 
-        email: sanitizedEmail, 
-        password: sanitizedPassword 
+      body: JSON.stringify({
+        email: sanitizedEmail,
+        password: sanitizedPassword
       }),
     });
   }
@@ -191,7 +191,7 @@ class ApiClient {
     if (!validateEmail(email)) {
       return { ok: false, error: 'Invalid email format' };
     }
-    
+
     if (!validatePassword(password)) {
       return { ok: false, error: 'Password must be at least 6 characters' };
     }
@@ -208,8 +208,8 @@ class ApiClient {
 
     return this.request('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ 
-        email: sanitizedEmail, 
+      body: JSON.stringify({
+        email: sanitizedEmail,
         password: sanitizedPassword,
         first_name: sanitizedFirstName,
         last_name: sanitizedLastName
@@ -249,7 +249,7 @@ class ApiClient {
   }
 
   // ==================== PROFILE APIs ====================
-  
+
   async getProfile(): Promise<ApiResponse<{ profile: any }>> {
     return this.request('/api/profile');
   }
@@ -276,7 +276,7 @@ class ApiClient {
   }
 
   // ==================== MAIL APIs ====================
-  
+
   async getMailItems(): Promise<ApiResponse<MailItem[]>> {
     return this.request('/api/mail-items');
   }
@@ -315,7 +315,7 @@ class ApiClient {
   }
 
   // ==================== FORWARDING APIs ====================
-  
+
   async getForwardingRequests(): Promise<ApiResponse<ForwardingRequest[]>> {
     return this.request('/api/forwarding-requests');
   }
@@ -332,7 +332,7 @@ class ApiClient {
   }
 
   // ==================== BILLING APIs ====================
-  
+
   async getBilling(): Promise<ApiResponse> {
     return this.request('/api/billing');
   }
@@ -343,7 +343,7 @@ class ApiClient {
 
 
   // ==================== PAYMENTS APIs ====================
-  
+
   async createRedirectFlow(): Promise<ApiResponse<{ redirect_flow_id: string; redirect_url: string }>> {
     return this.request('/api/payments/redirect-flows', {
       method: 'POST',
@@ -362,13 +362,13 @@ class ApiClient {
   }
 
   // ==================== PLANS APIs ====================
-  
+
   async getPlans(): Promise<ApiResponse<any[]>> {
     return this.request('/api/plans');
   }
 
   // ==================== KYC APIs ====================
-  
+
   async startKyc(): Promise<ApiResponse<{ token: string; applicantId: string }>> {
     return this.request('/api/kyc/start', {
       method: 'POST',
@@ -387,7 +387,7 @@ class ApiClient {
   }
 
   // ==================== SUPPORT APIs ====================
-  
+
   async createSupportTicket(data: any): Promise<ApiResponse<{ id: number; status: string }>> {
     return this.request('/api/support/tickets', {
       method: 'POST',
@@ -402,7 +402,7 @@ class ApiClient {
   }
 
   // ==================== EMAIL PREFERENCES APIs ====================
-  
+
   async getEmailPrefs(): Promise<ApiResponse<{ prefs: any }>> {
     return this.request('/api/email-prefs');
   }
@@ -422,7 +422,7 @@ class ApiClient {
   }
 
   // ==================== ONBOARDING APIs ====================
-  
+
   async submitBusinessInfo(data: {
     business_name: string;
     trading_name?: string;
@@ -441,7 +441,7 @@ class ApiClient {
   }
 
   // ==================== CONTACT APIs ====================
-  
+
   async submitContactForm(data: {
     name: string;
     email: string;
@@ -471,7 +471,7 @@ class ApiClient {
   }
 
   // ==================== HEALTH APIs ====================
-  
+
   async getHealth(): Promise<ApiResponse<{ status: string; timestamp: string; uptime: number; version: string }>> {
     return this.request('/api/health');
   }
@@ -485,7 +485,7 @@ class ApiClient {
   }
 
   // ==================== ADMIN APIs ====================
-  
+
   async getAdminUsers(): Promise<ApiResponse<any[]>> {
     return this.request('/api/admin/users');
   }
