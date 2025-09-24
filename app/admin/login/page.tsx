@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { AdminLogin } from '../../../components/auth/AdminLogin';
+import Login from '../../../components/Login';
 import { AdminDashboard } from '../../../components/admin/AdminDashboard';
 import { AuthProvider, useAuth } from '../../../contexts/AuthContext';
 
@@ -17,8 +17,13 @@ function AdminPageContent() {
         }
     }, [isAuthenticated, isAdmin]);
 
-    const handleLogin = () => {
-        setShowDashboard(true);
+    const handleLoginSuccess = (role: 'admin' | 'user') => {
+        if (role === 'admin') {
+            setShowDashboard(true);
+        } else {
+            // Redirect regular users to their dashboard
+            window.location.href = '/dashboard';
+        }
     };
 
     const handleLogout = async () => {
@@ -44,9 +49,16 @@ function AdminPageContent() {
     }
 
     return (
-        <AdminLogin
-            onLogin={handleLogin}
-            onGoBack={handleGoBack}
+        <Login
+            onSuccess={handleLoginSuccess}
+            onNavigate={(page: string) => {
+                if (page === 'signup') {
+                    window.location.href = '/signup';
+                } else if (page === 'reset-password') {
+                    // Handle password reset
+                    console.log('Password reset requested');
+                }
+            }}
         />
     );
 }
