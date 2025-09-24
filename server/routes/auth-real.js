@@ -42,7 +42,7 @@ function createToken(user) {
 // Helper function to set session cookie
 function setSession(res, user) {
     const token = createToken(user);
-    res.cookie('vah_session', token, sessionCookieOptions);
+    res.cookie('vah_session', token, sessionCookieOptions());
     return token;
 }
 

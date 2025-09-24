@@ -47,7 +47,7 @@ function createToken(user) {
 // Helper function to set session cookie
 function setSession(res, user) {
   const token = createToken(user);
-  res.cookie('vah_session', token, sessionCookieOptions);
+  res.cookie('vah_session', token, sessionCookieOptions());
   return token;
 }
 
@@ -103,6 +103,9 @@ router.post('/signup', validateSignup, async (req, res) => {
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
+    
+    console.log('[signup] success', { userId: user.id, email: user.email, tokenLength: token?.length });
+    
     res.status(201).json({
       ok: true,
       token,
