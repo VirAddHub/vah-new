@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiClient, type User, type MailItem, type ForwardingRequest } from "@/lib/api-client";
 import { Button } from "../ui/button";
 import {
     Card,
@@ -91,6 +92,58 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    
+    // API Data State
+    const [users, setUsers] = useState<User[]>([]);
+    const [mailItems, setMailItems] = useState<MailItem[]>([]);
+    const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalMail: 0,
+        pendingForwarding: 0,
+        totalRevenue: 0
+    });
+
+    // Load admin data
+    useEffect(() => {
+        const loadAdminData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                
+                const [usersResponse, mailResponse, forwardingResponse] = await Promise.all([
+                    apiClient.getAdminUsers(),
+                    apiClient.getMailItems(),
+                    apiClient.getForwardingRequests()
+                ]);
+                
+                if (usersResponse.ok) {
+                    setUsers(usersResponse.data || []);
+                    setStats(prev => ({ ...prev, totalUsers: usersResponse.data?.length || 0 }));
+                }
+                
+                if (mailResponse.ok) {
+                    setMailItems(mailResponse.data || []);
+                    setStats(prev => ({ ...prev, totalMail: mailResponse.data?.length || 0 }));
+                }
+                
+                if (forwardingResponse.ok) {
+                    const requests = forwardingResponse.data || [];
+                    setForwardingRequests(requests);
+                    const pending = requests.filter(r => r.status === 'pending').length;
+                    setStats(prev => ({ ...prev, pendingForwarding: pending }));
+                }
+                
+            } catch (err) {
+                console.error('Failed to load admin data:', err);
+                setError('Failed to load admin data');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        loadAdminData();
+    }, []);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },

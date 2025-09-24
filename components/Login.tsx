@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { apiClient } from "@/lib/api-client";
 
 type Role = 'admin' | 'user';
 
@@ -64,24 +65,15 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         return;
       }
 
-      // Real auth - call your actual API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
+            // Real auth - call your actual API
+            const response = await apiClient.login(email, password);
 
-      const data = await response.json();
+            if (!response.ok) {
+              throw new Error(response.error || 'Login failed');
+            }
 
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      // Determine role from user data
-      const role: Role = data.user?.is_admin ? 'admin' : 'user';
+            // Determine role from user data
+            const role: Role = response.data?.user?.is_admin ? 'admin' : 'user';
       
       if (onSuccess) {
         onSuccess(role);

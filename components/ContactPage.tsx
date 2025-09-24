@@ -19,6 +19,7 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
+import { apiClient } from "@/lib/api-client";
 
 interface ContactPageProps {
     onNavigate?: (page: string) => void;
@@ -72,39 +73,23 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
     setIsSubmitting(true);
     try {
-      // Call your actual contact API
-      const res = await fetch('/api/contact', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
+      // Call the contact API using the API client
+      const response = await apiClient.submitContactForm(formData);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data?.error === 'Spam detected') {
-          return setErrorMsg('Spam detected. Please try again.');
-        }
-        if (data?.error?.includes('Missing field')) {
-          return setErrorMsg(data.error);
-        }
-        if (data?.error === 'Email service not configured') {
-          return setErrorMsg('Email service is temporarily unavailable. Please try again later.');
-        }
-        return setErrorMsg(data?.error || "Unable to send message. Please try again.");
+      if (response.ok) {
+        setIsSubmitted(true);
+        setFormData({
+          name: "",
+          email: "",
+          company: "",
+          subject: "",
+          message: "",
+          inquiryType: "general",
+          website: "",
+        });
+      } else {
+        setErrorMsg(response.error || "Unable to send message. Please try again.");
       }
-
-      setIsSubmitted(true);
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        subject: "",
-        message: "",
-        inquiryType: "general",
-        website: "",
-      });
     } catch (err: any) {
       setErrorMsg(
         err?.message ||

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { apiClient, type MailItem, type User } from "@/lib/api-client";
 import {
     ArrowRight,
     Mail,
@@ -19,9 +20,10 @@ interface HomePageProps {
 
 export function HomePage({ onNavigate }: HomePageProps) {
     const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
-    const [billing, setBilling] = useState<"monthly" | "annual">(
-        "monthly",
-    );
+    const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+    const [user, setUser] = useState<User | null>(null);
+    const [mailItems, setMailItems] = useState<MailItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const isAnnual = billing === "annual";
     const monthlyPrice = 9.99;
@@ -30,6 +32,33 @@ export function HomePage({ onNavigate }: HomePageProps) {
         const saved = monthlyPrice * 12 - annualPrice;
         const pct = (saved / (monthlyPrice * 12)) * 100;
         return Math.round(pct);
+    }, []);
+
+    // Load user data and mail items
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                const [userResponse, mailResponse] = await Promise.all([
+                    apiClient.whoami(),
+                    apiClient.getMailItems()
+                ]);
+                
+                if (userResponse.ok) {
+                    setUser(userResponse.user);
+                }
+                
+                if (mailResponse.ok) {
+                    setMailItems(mailResponse.data || []);
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
     }, []);
 
     const priceLabel = isAnnual
@@ -82,6 +111,38 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             Companies House mail. Flat £9.99/month — one plan,
                             no tiers or surprises.
                         </p>
+                        
+                        {/* Mail Preview for logged-in users */}
+                        {user && !loading && (
+                            <div className="mt-8 bg-muted/50 rounded-lg p-6 max-w-2xl">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Mail className="h-5 w-5 text-primary" />
+                                    <h3 className="text-lg font-semibold">Recent Mail</h3>
+                                </div>
+                                {mailItems.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {mailItems.slice(0, 3).map((item) => (
+                                            <div key={item.id} className="flex justify-between items-center p-3 bg-background rounded border">
+                                                <div>
+                                                    <p className="font-medium text-sm">{item.sender_name}</p>
+                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {new Date(item.received_date).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        ))}
+                                        {mailItems.length > 3 && (
+                                            <p className="text-sm text-muted-foreground text-center">
+                                                +{mailItems.length - 3} more items
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-muted-foreground text-sm">No mail received yet</p>
+                                )}
+                            </div>
+                        )}
                         <div className="mt-10">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
