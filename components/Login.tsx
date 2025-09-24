@@ -78,31 +78,19 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       }
 
       // Real auth - call your actual API
-      try {
-        const response = await apiClient.login(email, password);
+      const response = await apiClient.login(email, password);
 
-        if (!response.ok) {
-          throw new Error(response.error || 'Login failed');
-        }
+      if (!response.ok) {
+        throw new Error(response.error || 'Login failed');
+      }
 
-        // Determine role from user data
-        const role: Role = response.data?.user?.is_admin ? 'admin' : 'user';
-        
-        if (onSuccess) {
-          onSuccess(role);
-        } else {
-          window.location.assign(role === 'admin' ? '/admin' : '/dashboard');
-        }
-      } catch (apiError) {
-        console.warn('API login failed, falling back to demo mode:', apiError);
-        // Fallback to demo mode for development
-        createDemoSession('user');
-        const role: Role = 'user';
-        if (onSuccess) {
-          onSuccess(role);
-        } else {
-          window.location.assign('/dashboard');
-        }
+      // Determine role from user data
+      const role: Role = response.data?.user?.is_admin ? 'admin' : 'user';
+      
+      if (onSuccess) {
+        onSuccess(role);
+      } else {
+        window.location.assign(role === 'admin' ? '/admin' : '/dashboard');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
