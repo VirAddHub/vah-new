@@ -88,8 +88,9 @@ router.post('/signup', validateSignup, async (req, res) => {
       'pending', 'active', now, 'signup'
     ]);
 
-    // Get the created user
-    const user = await db.get('SELECT * FROM "user" WHERE id = ?', [result.insertId || result.lastInsertRowid]);
+    // Get the created user (PostgreSQL returns different result structure)
+    const userId = result.insertId || result.lastInsertRowid || result.rows?.[0]?.id;
+    const user = await db.get('SELECT * FROM "user" WHERE id = ?', [userId]);
 
     // Set session
     const token = setSession(res, user);
