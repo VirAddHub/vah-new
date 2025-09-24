@@ -17,15 +17,13 @@ export function Navigation({ onNavigate }: NavigationProps) {
         { label: 'Blog', page: 'blog' },
         { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
-        { label: 'User Dashboard', page: 'dashboard' },
-        { label: 'Admin Portal', page: 'admin' },
+        { label: 'Login', page: 'dashboard' },
+        { label: 'Admin', page: 'admin' },
     ];
 
     const handleNavClick = (page: string) => {
-        if (page === 'dashboard') {
+        if (page === 'dashboard' || page === 'admin') {
             window.location.href = '/login';
-        } else if (page === 'admin') {
-            window.location.href = '/admin/login';
         } else {
             onNavigate(page);
         }

@@ -23,7 +23,7 @@ function UserPageContent() {
 
     const handleLoginSuccess = (role: 'admin' | 'user') => {
         if (role === 'admin') {
-            window.location.href = '/admin';
+            window.location.href = '/admin/login';
         } else {
             setShowDashboard(true);
         }

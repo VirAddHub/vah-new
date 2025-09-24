@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Login from '../../../components/Login';
 import { AdminDashboard } from '../../../components/admin/AdminDashboard';
 import { AuthProvider, useAuth } from '../../../contexts/AuthContext';
 
@@ -12,23 +11,18 @@ function AdminPageContent() {
     useEffect(() => {
         if (isAuthenticated && isAdmin) {
             setShowDashboard(true);
+        } else if (isAuthenticated && !isAdmin) {
+            // Redirect regular users to their dashboard
+            window.location.href = '/login';
         } else {
-            setShowDashboard(false);
+            // Redirect unauthenticated users to login
+            window.location.href = '/login';
         }
     }, [isAuthenticated, isAdmin]);
 
-    const handleLoginSuccess = (role: 'admin' | 'user') => {
-        if (role === 'admin') {
-            setShowDashboard(true);
-        } else {
-            // Redirect regular users to their dashboard
-            window.location.href = '/dashboard';
-        }
-    };
-
     const handleLogout = async () => {
         await logout();
-        setShowDashboard(false);
+        window.location.href = '/login';
     };
 
     const handleGoBack = () => {
@@ -48,18 +42,14 @@ function AdminPageContent() {
         );
     }
 
+    // Show loading while redirecting
     return (
-        <Login
-            onSuccess={handleLoginSuccess}
-            onNavigate={(page: string) => {
-                if (page === 'signup') {
-                    window.location.href = '/signup';
-                } else if (page === 'reset-password') {
-                    // Handle password reset
-                    console.log('Password reset requested');
-                }
-            }}
-        />
+        <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Redirecting to login...</p>
+            </div>
+        </div>
     );
 }
 
