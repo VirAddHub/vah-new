@@ -44,6 +44,7 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 // const csrf = require("csurf"); // Replaced with custom middleware
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
@@ -133,8 +134,8 @@ const sessionToJwtBridge = require('./middleware/sessionToJwtBridge');
 const { ensureAdmin } = require('./middleware/ensureAdmin');
 // requireAuth is now defined inline below
 
-// whoami endpoint (now handled by global middleware)
-app.get('/api/auth/whoami', (req, res) => res.json({ ok: true, user: req.user }));
+// whoami endpoint (now handled by auth routes)
+// app.get('/api/auth/whoami', (req, res) => res.json({ ok: true, user: req.user }));
 
 // admin routes are mounted below with proper middleware chain
 
@@ -195,6 +196,20 @@ app.use((req, res, next) => {
     next();
 });
 
+// Session middleware for cross-site authentication
+app.use(session({
+    name: 'sid',
+    secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true,           // requires HTTPS + trust proxy
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    }
+}));
+
 // Webhooks BEFORE csurf (raw body)
 app.use('/api/webhooks', express.raw({ type: '*/*' })); // keep your webhook handlers under /api/webhooks
 
@@ -216,12 +231,13 @@ const { csrfAfterAuth, maybeCsrf } = require('./middleware/csrf');
 // --- Auth guards (centralized) ---
 function requireAuth(req, res, next) {
     if (!req.user && !req.session?.user) return res.status(401).json({ error: 'unauthorized' });
-    if (!req.user) req.user = req.session.user;
+    if (!req.user && req.session?.user) req.user = req.session.user;
     next();
 }
 
 function requireAdmin(req, res, next) {
     if (!req.user && !req.session?.user) return res.status(401).json({ error: 'unauthorized' });
+    if (!req.user && req.session?.user) req.user = req.session.user;
     const role = req.user?.role || req.session?.user?.role;
     if (role !== 'admin') return res.status(403).json({ error: 'forbidden' });
     next();
@@ -239,6 +255,11 @@ app.use(express.urlencoded({ extended: true }));
 // ===== PUBLIC DEBUG ROUTES (INLINE, MUST BE FIRST) =====
 app.get('/_debug/ping', (_req, res) => {
     res.json({ ok: true, at: 'inline', timestamp: Date.now() });
+});
+
+// Public auth ping endpoint
+app.get('/api/auth/ping', (_req, res) => {
+    res.json({ ok: true, message: 'Auth routes are working' });
 });
 
 app.get('/_debug/db', async (_req, res, next) => {
@@ -1520,10 +1541,7 @@ runIfLive(async () => {
     }
 });
 
-app.get('/api/auth/ping', (_req, res) => {
-    // Change this string anytime you update the handler to prove it deployed
-    res.json({ ok: true, handler: 'login-v3.1-micro-instrumented' });
-});
+// Moved to public debug routes section above
 
 // Debug: confirm active handler + session state - moved to middleware chain above
 

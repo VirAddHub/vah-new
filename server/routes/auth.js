@@ -94,19 +94,21 @@ router.post('/signup', validateSignup, async (req, res) => {
       throw new Error('Failed to create user - INSERT did not return user data');
     }
 
-    // Set session cookie BEFORE sending JSON response
-    const token = createToken(user);
-    res.cookie('vah_session', token, sessionCookieOptions());
+    // Set session user for cross-site authentication
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      is_admin: !!user.is_admin,
+      role: user.role || 'user'
+    };
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
 
-    console.log('[signup] success', { userId: user.id, email: user.email, tokenLength: token?.length });
+    console.log('[signup] success', { userId: user.id, email: user.email });
 
     res.status(201).json({
-      ok: true,
-      token,
-      data: userData
+      user: req.session.user
     });
 
   } catch (error) {
@@ -148,38 +150,41 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Set session cookie BEFORE sending JSON response
-    const token = createToken(user);
-    res.cookie('vah_session', token, sessionCookieOptions());
+    // Set session user for cross-site authentication
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      is_admin: !!user.is_admin,
+      role: user.role || 'user'
+    };
 
     // Return user data (without password)
     const { password: _, ...userData } = user;
     res.json({
-      ok: true,
-      token,
-      data: userData
+      user: req.session.user
     });
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('vah_session', { path: '/' });
-  res.json({ ok: true });
+  req.session.destroy(() => {
+    res.clearCookie('sid', { path: '/' });
+    res.json({ ok: true });
+  });
 });
 
 // GET /api/auth/whoami
 router.get('/whoami', (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
+  if (!req.session?.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { password: _, ...userData } = req.user;
-  res.json({ ok: true, data: userData });
+  res.json({ user: req.session.user });
 });
 
 module.exports = router;
