@@ -27,7 +27,7 @@ export default function UsersSection() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [isFetching, setIsFetching] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
   const [items, setItems] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -52,23 +52,12 @@ export default function UsersSection() {
   });
 
   // Mutation state
-  const [isMutating, setIsMutating] = useState(false);
+    const [isMutating, setIsMutating] = useState(false);
 
   // Debounce and abort handling
-  const debouncedQ = useRef(q);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Debounce the query (300ms)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      debouncedQ.current = q;
-      setPage(1); // only reset page AFTER debounce, not on each key stroke
-      void load();
-    }, 300);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  const load = useCallback(async () => {
+  const load = useCallback(async (searchQuery?: string) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -77,7 +66,7 @@ export default function UsersSection() {
     
     try {
       const params = new URLSearchParams([
-        ["q", debouncedQ.current],
+        ["q", searchQuery ?? q],
         ["page", String(page)],
         ["page_size", String(pageSize)],
       ]);
@@ -98,18 +87,28 @@ export default function UsersSection() {
         console.error(e);
         setError("Network error while fetching users");
       }
-    } finally {
+        } finally {
       if (abortRef.current === controller) setIsFetching(false);
     }
-  }, [page, pageSize, showDeleted]);
+  }, [q, page, pageSize, showDeleted]);
 
-  useEffect(() => { void load(); }, [page, load]);
+  // Debounce the query (300ms)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(1); // only reset page AFTER debounce, not on each key stroke
+      void load(q);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q, load]);
 
-  // Load user stats
+  // Initial load and when page/deleted status changes
+  useEffect(() => { void load(); }, [page, showDeleted]);
+
+    // Load user stats
   const loadUserStats = useCallback(async () => {
     const res = await adminApi.userStats();
     if (res.ok) setStats(res.data);
-  }, []);
+    }, []);
 
   useEffect(() => { loadUserStats(); }, [loadUserStats]);
 
@@ -152,8 +151,8 @@ export default function UsersSection() {
         setTotal(prev => prev + 1);
       }
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
-    } finally { 
-      setIsMutating(false); 
+        } finally {
+            setIsMutating(false);
       setDeleteModal(null); 
       setDeleteConfirm(''); 
     }
@@ -166,16 +165,16 @@ export default function UsersSection() {
       toast({ title: 'Email required', variant: 'destructive' });
       return;
     }
-    setIsMutating(true);
-    try {
+        setIsMutating(true);
+        try {
       const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
       if (!res.ok) throw new Error(res.error || 'restore_failed');
       toast({ title: 'User restored' });
       await Promise.all([load(), loadUserStats()]);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Restore failed', variant: 'destructive' });
-    } finally { 
-      setIsMutating(false); 
+        } finally {
+            setIsMutating(false);
       setRestoreModal(null); 
     }
   }
@@ -184,7 +183,7 @@ export default function UsersSection() {
   const hasNext = useMemo(() => page * pageSize < total, [page, pageSize, total]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
-  return (
+    return (
     <div className="space-y-4">
       {/* User stats badges */}
       {stats && (
@@ -198,15 +197,15 @@ export default function UsersSection() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+            <div className="flex items-center justify-between">
+                <div>
           <h2 className="text-xl font-semibold">Users</h2>
           <p className="text-sm text-muted-foreground">Total: {total}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
             variant={showDeleted ? "default" : "outline"}
-            size="sm"
+                                    size="sm"
             onClick={() => {
               setShowDeleted(!showDeleted);
               setPage(1);
@@ -214,7 +213,7 @@ export default function UsersSection() {
             }}
           >
             {showDeleted ? 'Hide deleted' : 'Show deleted'}
-          </Button>
+                                </Button>
           <Input
             placeholder="Search name or email…"
             value={q}
@@ -223,95 +222,95 @@ export default function UsersSection() {
           />
           <Button variant="outline" onClick={() => load()} disabled={isFetching}>
             Search
-          </Button>
-        </div>
-      </div>
+                                </Button>
+                            </div>
+                        </div>
 
       {/* Users table */}
-      <div className="relative">
+                            <div className="relative">
         <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
+                                <TableHead>Plan</TableHead>
                 <TableHead>KYC</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
               {items.length === 0 ? (
-                <TableRow>
+                                <TableRow>
                   <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
-                  </TableCell>
-                </TableRow>
-              ) : (
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
                 items.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell>{u.email}</TableCell>
-                    <TableCell>
+                                        <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    </TableCell>
-                    <TableCell>
+                                        </TableCell>
+                                        <TableCell>
                       <Badge variant={u.status === "active" ? "default" : "secondary"}>
                         {u.status || "active"}
                       </Badge>
-                    </TableCell>
+                                        </TableCell>
                     <TableCell>{u.plan || "—"}</TableCell>
-                    <TableCell>
+                                        <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
-                    </TableCell>
-                    <TableCell>
+                                        </TableCell>
+                                        <TableCell>
                       {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
-                    </TableCell>
-                    <TableCell>
+                                        </TableCell>
+                                        <TableCell>
                       {u.deleted_at ? (
-                        <Button
+                                                    <Button
                           variant="outline"
-                          size="sm"
+                                                        size="sm"
                           onClick={() => setRestoreModal({ id: u.id })}
-                          disabled={isMutating}
-                        >
+                                                        disabled={isMutating}
+                                                    >
                           Restore
-                        </Button>
-                      ) : (
-                        <Button
+                                                    </Button>
+                                                ) : (
+                                                    <Button
                           variant="destructive"
-                          size="sm"
+                                                        size="sm"
                           onClick={() => setDeleteModal({ id: u.id, email: u.email })}
-                          disabled={isMutating}
-                        >
+                                                        disabled={isMutating}
+                                                    >
                           Delete
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
+                                                    </Button>
+                                                )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+            </div>
+
         {/* Loading overlay */}
         {isFetching && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
             <span className="text-sm">Loading…</span>
           </div>
         )}
-      </div>
+                                    </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Page {page} • {total} total
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
             disabled={!hasPrev || isFetching}
             onClick={() => {
               const next = Math.max(1, page - 1);
@@ -319,9 +318,9 @@ export default function UsersSection() {
             }}
           >
             Previous
-          </Button>
-          <Button
-            variant="outline"
+                                </Button>
+                                <Button
+                                    variant="outline"
             disabled={!hasNext || isFetching}
             onClick={() => {
               const next = page + 1;
@@ -352,15 +351,15 @@ export default function UsersSection() {
             <div className="flex justify-end gap-2 mt-5">
               <Button variant="outline" onClick={() => setDeleteModal(null)} disabled={isMutating}>
                 Cancel
-              </Button>
+                                </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteConfirm.trim().toLowerCase() === deleteModal.email.toLowerCase() && handleDeleteUser(deleteModal.id)}
                 disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
               >
                 {isMutating ? 'Deleting…' : 'Confirm delete'}
-              </Button>
-            </div>
+                                </Button>
+                            </div>
           </div>
         </div>
       )}
@@ -409,9 +408,9 @@ export default function UsersSection() {
                 {isMutating ? 'Restoring…' : 'Restore'}
               </Button>
             </div>
-          </div>
+            </div>
         </div>
       )}
-    </div>
-  );
+        </div>
+    );
 }
