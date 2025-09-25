@@ -45,7 +45,7 @@ export function Footer({ onNavigate }: FooterProps) {
     };
 
     const linkBtnClass =
-        "block w-full text-left text-sm font-medium text-muted-foreground hover:text-primary hover:translate-x-0.5 transition-all p-1 rounded hover:bg-primary/5";
+        "block w-full text-left text-sm md:text-base leading-relaxed font-medium text-muted-foreground hover:text-primary hover:translate-x-0.5 transition-all p-1 rounded hover:bg-primary/5";
 
     const navigation: NavItem[] = [
         { label: "Pricing", page: "pricing" },
@@ -85,7 +85,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 {item.label}
             </button>
         ) : (
-            <span className="block text-sm text-muted-foreground p-1">
+            <span className="block text-sm md:text-base leading-relaxed text-muted-foreground p-1">
                 {item.label}
             </span>
         );
@@ -131,15 +131,15 @@ export function Footer({ onNavigate }: FooterProps) {
                         >
                             <VAHLogo size="sm" showText={true} textClass="text-sm" />
                         </button>
-                        <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                        <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-prose mb-2">
                             Professional virtual address for UK business. Fully compliant.
                         </p>
                         <div className="space-y-0.5">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
                                 <span>London, UK</span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="h-3 w-3 text-primary flex-shrink-0" />
                                 <span>Mon–Fri, 9AM–6PM</span>
                             </div>
@@ -148,7 +148,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                     {/* Contact & Support */}
                     <div>
-                        <h3 className="mb-2 text-sm font-semibold text-primary">
+                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
                             Contact & Support
                         </h3>
                         <div className="space-y-0.5">
@@ -160,7 +160,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                     {/* Navigation */}
                     <div>
-                        <h3 className="mb-2 text-sm font-semibold text-primary">
+                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
                             Navigation
                         </h3>
                         <div className="space-y-0.5">
@@ -172,7 +172,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                     {/* Legal & Compliance */}
                     <div>
-                        <h3 className="mb-2 text-sm font-semibold text-primary">
+                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
                             Legal & Compliance
                         </h3>
                         <div className="space-y-0.5">
@@ -184,7 +184,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                     {/* Regulatory Info - Dedicated Section */}
                     <div>
-                        <h3 className="mb-2 text-sm font-semibold text-primary">
+                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
                             Regulatory Info
                         </h3>
                         <div className="space-y-1 text-xs text-muted-foreground leading-tight">
