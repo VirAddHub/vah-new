@@ -152,8 +152,14 @@ app.post('/api/create-test-users', async (req, res) => {
         const adminPassword = await bcrypt.hash('AdminPass123!', 12);
         const userPassword = await bcrypt.hash('UserPass123!', 12);
 
-        // Create admin user
-        const adminResult = await db.run(`
+    // Create admin user using direct PostgreSQL pool
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+    
+    const adminResult = await pool.query(`
       INSERT INTO "user" (
         email, password, first_name, last_name, name,
         is_admin, role, status, kyc_status, plan_status,
@@ -168,24 +174,24 @@ app.post('/api/create-test-users', async (req, res) => {
         updated_at = EXCLUDED.updated_at
       RETURNING id, email, first_name, last_name, is_admin, role
     `, [
-            'admin@virtualaddresshub.co.uk',
-            adminPassword,
-            'Admin',
-            'User',
-            'Admin User',
-            true,
-            'admin',
-            'active',
-            'verified',
-            'active',
-            now,
-            'completed',
-            now,
-            now
-        ]);
-
-        // Create regular user
-        const userResult = await db.run(`
+      'admin@virtualaddresshub.co.uk',
+      adminPassword,
+      'Admin',
+      'User',
+      'Admin User',
+      true,
+      'admin',
+      'active',
+      'verified',
+      'active',
+      now,
+      'completed',
+      now,
+      now
+    ]);
+    
+    // Create regular user
+    const userResult = await pool.query(`
       INSERT INTO "user" (
         email, password, first_name, last_name, name,
         is_admin, role, status, kyc_status, plan_status,
@@ -200,21 +206,23 @@ app.post('/api/create-test-users', async (req, res) => {
         updated_at = EXCLUDED.updated_at
       RETURNING id, email, first_name, last_name, is_admin, role
     `, [
-            'user@virtualaddresshub.co.uk',
-            userPassword,
-            'Regular',
-            'User',
-            'Regular User',
-            false,
-            'user',
-            'active',
-            'verified',
-            'active',
-            now,
-            'completed',
-            now,
-            now
-        ]);
+      'user@virtualaddresshub.co.uk',
+      userPassword,
+      'Regular',
+      'User',
+      'Regular User',
+      false,
+      'user',
+      'active',
+      'verified',
+      'active',
+      now,
+      'completed',
+      now,
+      now
+    ]);
+    
+    await pool.end();
 
         res.json({
             success: true,
