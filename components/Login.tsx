@@ -82,6 +82,11 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       // Support both response shapes and force hard redirect
       const user = response.data;
       const isAdmin = !!user?.is_admin;
+      
+      // Debug logging to see what we're getting
+      console.log('[Login] User data:', user);
+      console.log('[Login] isAdmin:', isAdmin);
+      console.log('[Login] user.is_admin:', user?.is_admin);
 
       // Optimistic set (helps guard during next paint)
       localStorage.setItem('user', JSON.stringify(user));
