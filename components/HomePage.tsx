@@ -93,7 +93,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-6 pt-20 pb-12 grid lg:grid-cols-12 gap-12 items-center">
                     <div className="lg:col-span-7">
                         <h1
-                            className="text-[56px] md:text-[72px] lg:text-[80px] font-bold leading-[0.9] tracking-tight"
+                            className="font-serif tracking-tight leading-[1.05] text-[clamp(2rem,6vw,5rem)] font-bold"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Your Official London Business Address.
@@ -101,7 +101,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mt-6 text-lg lg:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                             Establish your professional London presence and
                             ensure full UK compliance. A prestigious business
                             address for HMRC, Companies House and the
@@ -155,12 +155,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-6xl px-6">
                     <header className="text-center mb-10">
                         <h2
-                            className="text-4xl md:text-5xl font-bold tracking-tight text-primary"
+                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             How It Works — Clear, Compliant, No Surprises
                         </h2>
-                        <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+                        <p className="mt-3 text-lg leading-relaxed text-muted-foreground max-w-prose mx-auto">
                             Understand the process before you pay.
                             Verification first, address issued next, then
                             professional mail handling.
@@ -174,14 +174,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <ShieldCheck className="h-5 w-5" />
                             </div>
                             <h3
-                                className="text-xl font-semibold mb-2 text-primary"
+                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
                                 style={{
                                     fontFamily: "Playfair Display, serif",
                                 }}
                             >
                                 1) Verify Your Account
                             </h3>
-                            <ul className="text-muted-foreground space-y-2 text-sm">
+                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
                                 <li>
                                     • Create your account and upload ID and proof
                                     of address (KYC/AML).
@@ -204,14 +204,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Building2 className="h-5 w-5" />
                             </div>
                             <h3
-                                className="text-xl font-semibold mb-2 text-primary"
+                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
                                 style={{
                                     fontFamily: "Playfair Display, serif",
                                 }}
                             >
                                 2) Use Your Address Everywhere
                             </h3>
-                            <ul className="text-muted-foreground space-y-2 text-sm">
+                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
                                 <li>
                                     • Update Companies House (Registered Office &
                                     Director's Service Address).
@@ -232,14 +232,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <ScanLine className="h-5 w-5" />
                             </div>
                             <h3
-                                className="text-xl font-semibold mb-2 text-primary"
+                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
                                 style={{
                                     fontFamily: "Playfair Display, serif",
                                 }}
                             >
                                 3) We Handle Your Mail
                             </h3>
-                            <ul className="text-muted-foreground space-y-2 text-sm">
+                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
                                 <li>
                                     • Same-day letter scanning on business days to
                                     your secure dashboard.
@@ -297,7 +297,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="text-center mb-8">
                         <h2
-                            className="text-4xl md:text-5xl font-bold text-primary"
+                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Simple Pricing, Everything Included
@@ -384,7 +384,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                                 <path d="M20 6L9 17l-5-5" />
                                             </svg>
                                         </span>
-                                        <span className="leading-relaxed">
+                                        <span className="text-base md:text-lg leading-relaxed">
                                             {bullet}
                                         </span>
                                     </div>
@@ -406,7 +406,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                 <div className="rounded-[20px] bg-card p-8 shadow-sm border border-border text-center">
                                     <h3
-                                        className="mb-4 text-2xl font-semibold"
+                                        className="mb-4 font-serif text-2xl md:text-3xl font-semibold leading-tight"
                                         style={{
                                             fontFamily: "Playfair Display, serif",
                                         }}
@@ -416,7 +416,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                     <div className="mb-6">
                                         <div className="flex items-baseline justify-center gap-2">
-                                            <span className="text-5xl font-extrabold tracking-tight text-primary">
+                                            <span className="font-extrabold tracking-tight leading-none text-[clamp(2rem,6.5vw,3rem)] text-primary">
                                                 {priceLabel}
                                             </span>
                                             <span className="text-base font-medium text-muted-foreground">
@@ -459,20 +459,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="py-14 md:py-16 bg-primary/5 border-t border-border">
                 <div className="mx-auto max-w-3xl px-6">
                     <h2
-                        className="text-3xl md:text-4xl font-bold mb-3 text-center text-primary"
+                        className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold mb-3 text-center text-primary"
                         style={{ fontFamily: "Playfair Display, serif" }}
                     >
                         🏢 Built for Modern UK Businesses
                     </h2>
 
-                    <p className="text-center text-base text-muted-foreground font-medium mb-6">
+                    <p className="text-center text-lg leading-relaxed text-muted-foreground font-medium mb-6 max-w-prose mx-auto">
                         <strong>
                             From solo founders to established teams — we
                             support all kinds of companies.
                         </strong>
                     </p>
 
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-lg leading-relaxed text-muted-foreground mb-4 max-w-prose">
                         Whether you're a remote freelancer, a fast-growing
                         startup, or an international firm entering the UK
                         market, VirtualAddressHub gives you the London
@@ -480,13 +480,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         admin headache.
                     </p>
 
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-lg leading-relaxed text-muted-foreground max-w-prose">
                         We're a fully compliant digital mailroom, designed
                         to streamline your back-office operations so you can
                         focus on running your business.
                     </p>
 
-                    <ul className="mt-6 space-y-2 text-sm">
+                    <ul className="mt-6 space-y-2 text-base md:text-lg leading-relaxed">
                         <li>
                             ✅ Registered Office, Director & Business
                             Address
@@ -530,10 +530,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* CONTACT SECTION */}
             <section id="contact" className="py-14 bg-primary/5 border-t border-border">
                 <div className="mx-auto max-w-3xl px-6 text-center">
-                    <h2 className="text-3xl font-bold text-primary">
+                    <h2 className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary">
                         Questions? We've Got Answers.
                     </h2>
-                    <p className="mt-3 text-muted-foreground">
+                    <p className="mt-3 text-lg leading-relaxed text-muted-foreground max-w-prose mx-auto">
                         From scanning speed to forwarding and billing —
                         see our most asked questions.
                     </p>
