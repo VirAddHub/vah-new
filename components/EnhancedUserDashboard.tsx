@@ -952,13 +952,16 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 {/* Mobile Header */}
                 <div className="lg:hidden bg-card border-b border-border p-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => onNavigate?.('home')}
+                            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        >
                             <VAHLogo size="sm" showText={false} />
                             <div>
                                 <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
                                 <p className="text-xs text-muted-foreground">Dashboard</p>
                             </div>
-                        </div>
+                        </button>
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="ghost"
@@ -1004,13 +1007,16 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 {/* Desktop Sidebar */}
                 <div className="hidden lg:flex w-64 shrink-0 bg-card border-r border-border">
                     <div className="w-full p-6">
-                        <div className="flex items-center gap-3 mb-6">
+                        <button
+                            onClick={() => onNavigate?.('home')}
+                            className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
+                        >
                             <VAHLogo size="sm" showText={false} />
                             <div>
                                 <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
                                 <p className="text-xs text-muted-foreground">Dashboard</p>
                             </div>
-                        </div>
+                        </button>
                         <div className="space-y-2">
                             {menuItems.map((item) => (
                                 <Button
