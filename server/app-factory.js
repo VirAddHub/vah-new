@@ -34,41 +34,45 @@ function createApp(opts = {}) {
     const { ensureAdmin } = require('./middleware/ensureAdmin');
 
     // CORS configuration
-    const corsOptions = {
-        origin: function (origin, callback) {
-            // Allow requests with no origin (like mobile apps or curl requests)
-            if (!origin) return callback(null, true);
+    const allowlist = [
+        'https://vah-frontend-final.vercel.app',
+        'http://localhost:3000',
+    ];
 
-            const allowedOrigins = [
-                'https://vah-frontend-final.vercel.app',
-                'http://localhost:3000',
-                'http://localhost:3001',
-                'https://virtualaddresshub.com',
-                'https://www.virtualaddresshub.com',
-                'https://staging.virtualaddresshub.com',
-                'https://dev.virtualaddresshub.com'
-            ];
+    // Allow preview URLs (startsWith)
+    function isAllowed(origin) {
+        if (!origin) return true;
+        if (allowlist.includes(origin)) return true;
+        if (origin.startsWith('https://vah-frontend-final-') && origin.includes('.vercel.app')) return true;
+        return false;
+    }
 
-            if (allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
+    // Add environment variable support for additional origins
+    if (process.env.ALLOWED_ORIGINS) {
+        const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+        allowlist.push(...additionalOrigins);
+    }
+
+    app.use((req, res, next) => {
+        res.header('Vary', 'Origin');
+        next();
+    });
+
+    app.use(cors({
+        origin(origin, cb) {
+            if (isAllowed(origin)) {
+                return cb(null, true);
             }
+            return cb(new Error('Not allowed by CORS'));
         },
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-        allowedHeaders: [
-            'Content-Type',
-            'Accept',
-            'X-CSRF-Token',
-            'X-Requested-With',
-            'Authorization',
-            'Cache-Control',   // add
-            'Pragma',          // add
-            'x-test-bypass'
-        ]
-    };
-    app.use(cors(corsOptions));
+        methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+        allowedHeaders: ['Content-Type','Accept','Authorization','X-CSRF-Token','X-Requested-With','Cache-Control','Pragma'],
+        exposedHeaders: ['Content-Disposition'],
+    }));
+
+    // Ensure OPTIONS handled
+    app.options('*', cors());
 
     // Rate limiting
     const globalLimiter = rateLimit({

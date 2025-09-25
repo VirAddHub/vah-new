@@ -1,60 +1,37 @@
 import * as cors from 'cors';
 import { URL } from 'node:url';
 
-const staticList = (process.env.FRONTEND_ORIGINS ?? '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
+const allowlist = [
+    'https://vah-frontend-final.vercel.app',
+    'http://localhost:3000',
+];
 
-const allowVercelPreviews = (process.env.ALLOW_VERCEL_PREVIEWS ?? '').toLowerCase() === 'true';
-const vercelPrefix = (process.env.VERCEL_PROJECT_PREFIX ?? '').toLowerCase();
+// Allow preview URLs (startsWith)
+function isAllowed(origin: string | undefined): boolean {
+    if (!origin) return true;
+    if (allowlist.includes(origin)) return true;
+    if (origin.startsWith('https://vah-frontend-final-') && origin.includes('.vercel.app')) return true;
+    return false;
+}
+
+// Add environment variable support for additional origins
+if (process.env.ALLOWED_ORIGINS) {
+    const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+    allowlist.push(...additionalOrigins);
+}
 
 export const corsMiddleware = cors({
     origin(origin, cb) {
-        // Debug logging
         console.log('[CORS] Checking origin:', origin);
-        console.log('[CORS] Allowed origins:', staticList);
-        console.log('[CORS] Allow Vercel previews:', allowVercelPreviews);
-        console.log('[CORS] Vercel prefix:', vercelPrefix);
-
-        // allow server-to-server / curl / health
-        if (!origin) return cb(null, true);
-
-        // exact allowlist match
-        if (staticList.includes(origin)) {
-            console.log('[CORS] Origin allowed by static list');
+        if (isAllowed(origin)) {
+            console.log('[CORS] Origin allowed:', origin);
             return cb(null, true);
         }
-
-        // allow ONLY this project's vercel preview URLs
-        if (allowVercelPreviews) {
-            try {
-                const host = new URL(origin).host.toLowerCase();
-                const isVercel = host.endsWith('.vercel.app');
-                const isProject =
-                    host === `${vercelPrefix}.vercel.app` ||
-                    host.startsWith(`${vercelPrefix}-git-`);
-                if (isVercel && isProject) {
-                    console.log('[CORS] Origin allowed by Vercel preview');
-                    return cb(null, true);
-                }
-            } catch (e) {
-                console.log('[CORS] Error parsing Vercel origin:', e.message);
-            }
-        }
-
-        console.log('[CORS] Origin blocked');
-        return cb(new Error('CORS blocked'));
+        console.log('[CORS] Origin rejected:', origin);
+        return cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-        'Content-Type',
-        'Accept',
-        'X-CSRF-Token',
-        'X-Requested-With',
-        'Authorization',
-        'Cache-Control',   // add
-        'Pragma',          // add
-    ],
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Accept','Authorization','X-CSRF-Token','X-Requested-With','Cache-Control','Pragma'],
+    exposedHeaders: ['Content-Disposition'],
 });

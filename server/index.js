@@ -50,75 +50,65 @@ function logSkip(what, table) {
 
 // --- init
 const app = express();
-app.set('trust proxy', 1); // required for secure cookies behind Render
+app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // CORS configuration - MUST be at the very top before any other middleware
-const ALLOWED_ORIGINS = new Set([
+const allowlist = [
     'https://vah-frontend-final.vercel.app',
     'http://localhost:3000',
-]);
+];
 
-function resolveOrigin(origin) {
-    if (!origin) return false;
-    return ALLOWED_ORIGINS.has(origin) ? origin : false;
+// Allow preview URLs (startsWith)
+function isAllowed(origin) {
+    if (!origin) return true;
+    if (allowlist.includes(origin)) return true;
+    if (origin.startsWith('https://vah-frontend-final-') && origin.includes('.vercel.app')) return true;
+    return false;
 }
 
-const corsOptions = {
-    origin: (origin, cb) => {
-        console.log('[CORS] Checking origin:', origin);
-        const allowed = resolveOrigin(origin);
-        console.log('[CORS] Resolved to:', allowed);
-        if (!origin || allowed) {
-            cb(null, true);
-        } else {
-            console.log('[CORS] Rejecting origin:', origin);
-            cb(null, false);
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-        'Content-Type',
-        'Accept',
-        'X-CSRF-Token',
-        'X-Requested-With',
-        'Authorization',
-        'Cache-Control',   // add
-        'Pragma',          // add
-    ],
-    exposedHeaders: ['Content-Disposition'],
-};
+// Add environment variable support for additional origins
+if (process.env.ALLOWED_ORIGINS) {
+    const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+    allowlist.push(...additionalOrigins);
+}
 
-// Add a tiny logger so you can see preflights clearly
 app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        console.log('[OPTIONS]', req.headers.origin, req.path);
-    }
+    res.header('Vary', 'Origin');
     next();
 });
 
-// CORS must be before anything else:
-app.use(cors(corsOptions));
+app.use(cors({
+    origin(origin, cb) {
+        console.log('[CORS] Checking origin:', origin);
+        if (isAllowed(origin)) {
+            console.log('[CORS] Origin allowed:', origin);
+            return cb(null, true);
+        }
+        console.log('[CORS] Origin rejected:', origin);
+        return cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Accept','Authorization','X-CSRF-Token','X-Requested-With','Cache-Control','Pragma'],
+    exposedHeaders: ['Content-Disposition'],
+}));
 
-// IMPORTANT: handle *all* OPTIONS with CORS and end with 204
-app.options(/^\/.*/, cors(corsOptions), (req, res) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers',
-        'Content-Type,Accept,X-CSRF-Token,X-Requested-With,Authorization,Cache-Control,Pragma'
-    );
-    res.header('Vary', 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
-    res.sendStatus(204);
-});
+// Ensure OPTIONS handled
+app.options('*', cors());
 
 // Health / readiness probe for CI and Render
 app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
     res.json({ ok: true, service: 'vah-backend' });
 });
 
-// Security first (after CORS)
-app.use(helmet());
+// Security first (after CORS) - configure helmet to not block cross-origin requests
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            connectSrc: ["'self'", "https:"], // allow frontend to call backend
+        },
+    },
+}));
 
 // Cookies after CORS
 app.use(cookieParser());
@@ -168,11 +158,11 @@ app.post('/api/create-test-users', async (req, res) => {
         const userPassword = await bcrypt.hash('UserPass123!', 12);
 
         // Create admin user using direct PostgreSQL pool
-            const { Pool } = require('pg');
-            const pool = new Pool({
-                connectionString: process.env.DATABASE_URL,
-                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-            });
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
 
         const adminResult = await pool.query(`
       INSERT INTO "user" (
@@ -237,9 +227,9 @@ app.post('/api/create-test-users', async (req, res) => {
             now
         ]);
 
-                await pool.end();
+        await pool.end();
 
-    res.json({
+        res.json({
             success: true,
             message: 'Test users created successfully',
             admin: adminResult.rows[0],
