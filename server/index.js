@@ -45,6 +45,8 @@ const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const createMemoryStore = require("memorystore");
+const MemoryStore = createMemoryStore(session);
 // const csrf = require("csurf"); // Replaced with custom middleware
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
@@ -199,7 +201,8 @@ app.use((req, res, next) => {
 // Session middleware for cross-site authentication
 app.use(session({
     name: 'sid',
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+    secret: process.env.SESSION_SECRET || 'dev_fallback_secret_change_me',
+    store: new MemoryStore({ checkPeriod: 86400000 }),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -315,6 +318,20 @@ app.use((req, res, next) => {
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);      // /api/auth/*
+
+// Safe endpoints to prevent UI crashes
+app.get('/api/profile', (req, res) => {
+  if (!req.session?.user) return res.status(401).json({ error: 'unauthorized' });
+  res.json({ user: req.session.user });
+});
+
+// temporary stubs
+app.get('/api/tickets', (_req, res) => res.json({ items: [] }));
+app.get('/api/forwarding-requests', (_req, res) => res.json({ items: [] }));
+app.get('/api/billing', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/plans', (_req, res) => res.json({ plans: [] }));
+app.get('/api/status', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/mail-items', (_req, res) => res.json({ items: [] }));
 
 // --- Public endpoints: DO NOT enforce CSRF ---
 app.use('/api/contact', require('./routes/contact'));
