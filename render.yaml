@@ -1,18 +1,22 @@
 services:
   - type: web
-    name: vah-api
+    name: vah-api-staging
     rootDir: .
     env: node
-    buildCommand: npm ci && npm run build
+    plan: starter
+    autoDeploy: true
+    buildCommand: |
+      npm ci
+      npm run build
     startCommand: npm run start
-    healthCheckPath: /api/health
+    healthCheckPath: /healthz
     disk:
       name: vah-data
       mountPath: /var/data
       sizeGB: 5
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "20.19.0"
       - key: NODE_ENV
         value: production
       - key: APP_ORIGIN
@@ -27,6 +31,8 @@ services:
         value: "30"
       - key: INVOICE_LINK_TTL_ADMIN_MIN
         value: "60"
+      - key: ALLOWED_ORIGINS
+        value: "https://vah-frontend-final.vercel.app,http://localhost:3000"
       # Set these in Render Dashboard (leave unsynced here if you prefer):
       - key: POSTMARK_API_TOKEN
         sync: false

@@ -131,6 +131,9 @@ app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
     res.json({ ok: true, service: 'vah-backend' });
 });
 
+// Simple health endpoint for Render
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
 // Security first (after CORS) - configure helmet to not block cross-origin requests
 app.use(helmet({
     // API returns JSON; avoid strict CORP that can interfere with credentialed CORS
@@ -368,12 +371,23 @@ app.use((err, _req, res, _next) => {
     res.status(500).json({ error: "server_error" });
 });
 
+// Process guards for better error handling
+process.on('uncaughtException', (err) => {
+    console.error('[fatal] uncaughtException', err);
+    process.exit(1);
+});
+process.on('unhandledRejection', (err) => {
+    console.error('[fatal] unhandledRejection', err);
+    process.exit(1);
+});
+
 // Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`VAH backend listening on http://0.0.0.0:${PORT}`);
-    console.log(`CORS origins: ${Array.from(allowlist).join(', ')}`);
-    console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
+const HOST = '0.0.0.0';
+const PORT = Number(process.env.PORT || 8080);
+app.listen(PORT, HOST, () => {
+    console.log(`[boot] listening on http://${HOST}:${PORT}`);
+    console.log(`[boot] CORS origins: ${Array.from(allowlist).join(', ')}`);
+    console.log(`[boot] DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
 });
 
 module.exports = app;
