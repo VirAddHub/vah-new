@@ -53,7 +53,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     try {
       // Debug logs to trace the flow
       console.log('[Login] submitting', { email, passLen: password.length });
-      
+
       // Real authentication - call your actual API
       const response = await apiClient.login(email, password);
       console.log('[Login] api login result', response);
