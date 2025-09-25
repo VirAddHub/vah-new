@@ -390,10 +390,18 @@ export const apiClient = {
 // Core request function with consistent error handling and cookies
 async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<ApiResponse<T>> {
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    // Use relative path for Next.js API routes, absolute for direct backend calls
+    const url = path.startsWith('/api/') ? path : `${BASE_URL}${path}`;
+    const res = await fetch(url, {
       ...init,
       credentials: 'include', // IMPORTANT for cookies
-      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        ...(init?.headers || {}) 
+      },
+      cache: 'no-store', // Critical to bypass ETag/304
       signal: init?.signal,
     });
 
