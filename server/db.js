@@ -1,18 +1,9 @@
-// server/db.js — Database adapter that supports both SQLite and PostgreSQL
-const path = require('path');
+// server/db.js — PostgreSQL-only database adapter
+const { Pool } = require('pg');
 
-// Check if we should use PostgreSQL or SQLite
-const isPg = process.env.DB_CLIENT === 'pg' ||
-  process.env.DATABASE_URL?.startsWith('postgres://') ||
-  process.env.DATABASE_URL?.startsWith('postgresql://');
-
-let db;
-
-if (isPg) {
-  // PostgreSQL adapter
-  const { Pool } = require('pg');
-  const DATABASE_URL = process.env.DATABASE_URL;
-  if (!DATABASE_URL) throw new Error('DATABASE_URL is required for PostgreSQL mode.');
+// PostgreSQL adapter (production only)
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) throw new Error('DATABASE_URL is required for PostgreSQL mode.');
 
   const pool = new Pool({
     connectionString: DATABASE_URL,
@@ -137,30 +128,5 @@ if (isPg) {
       };
     },
   };
-} else {
-  // SQLite adapter
-  const Database = require('better-sqlite3');
-  const { resolveDataDir } = require('./storage-paths');
 
-  const DATA_DIR = resolveDataDir();
-  const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'app.db');
-
-  const sqliteDb = new Database(DB_FILE, { fileMustExist: false });
-  sqliteDb.pragma('journal_mode = WAL');
-  sqliteDb.pragma('foreign_keys = ON');
-
-  db = {
-    kind: 'sqlite',
-
-    run: (sql, params) => sqliteDb.prepare(sql).run(params),
-    get: (sql, params) => sqliteDb.prepare(sql).get(params),
-    all: (sql, params) => sqliteDb.prepare(sql).all(params),
-    transaction: (fn) => {
-      const transaction = sqliteDb.transaction(fn);
-      return transaction();
-    },
-    prepare: (sql) => sqliteDb.prepare(sql),
-  };
-}
-
-module.exports = { db, DB_KIND: isPg ? 'pg' : 'sqlite' };
+module.exports = { db, DB_KIND: 'pg' };

@@ -57,15 +57,14 @@ const { resolveDataDir, resolveInvoicesDir } = require('./storage-paths');
 
 // --- safe table helpers (dev-friendly) ---
 
-function tableExists(name) {
+async function tableExists(name) {
     try {
-        // Works in SQLite & Postgres: if table is missing, it throws.
-        db.prepare(`SELECT 1 FROM ${name} LIMIT 1`).get();
+        // PostgreSQL: check if table exists
+        await db.get(`SELECT 1 FROM ${name} LIMIT 1`);
         return true;
     } catch (e) {
         const msg = String(e && e.message).toLowerCase();
         if (
-            msg.includes('no such table') ||         // SQLite
             msg.includes('does not exist') ||        // Postgres
             msg.includes('undefined table')          // Postgres variant
         ) return false;
@@ -265,11 +264,6 @@ app.get('/_debug/ping', (_req, res) => {
     res.json({ ok: true, at: 'inline', timestamp: Date.now() });
 });
 
-// Public auth ping endpoint
-app.get('/api/auth/ping', (_req, res) => {
-    res.json({ ok: true, message: 'Auth routes are working' });
-});
-
 app.get('/_debug/db', async (_req, res, next) => {
     try {
         const result = await db.get('SELECT 1 as ok');
@@ -318,6 +312,11 @@ app.use((req, res, next) => {
         return origStatus(code);
     };
     next();
+});
+
+// Public auth ping endpoint (before auth router)
+app.get('/api/auth/ping', (_req, res) => {
+    res.json({ ok: true, message: 'Auth routes are working' });
 });
 
 // --- Public auth endpoints: DO NOT enforce CSRF (or use maybeCsrf) ---
@@ -652,13 +651,8 @@ app.get('/__status', (req, res) => {
 runIfLive(() => {
     try {
         // Initialize database based on DB_CLIENT environment variable
-        if (process.env.DB_CLIENT === 'pg') {
-            // PostgreSQL - schema will be ensured by the adapter
-            logger.info('Using PostgreSQL database');
-        } else {
-            // SQLite - using centralized db connection from server/db.ts
-            logger.info('Using SQLite database');
-        }
+        // PostgreSQL - schema will be ensured by the adapter
+        logger.info('Using PostgreSQL database');
         logger.info('DB connected');
     } catch (e) {
         logger.error('DB connect failed', e);
@@ -692,7 +686,7 @@ runIfLive(async () => {
                 //     console.error("Run: npm run db:init");
                 //     process.exit(1);
                 // }
-                logger.info('SQLite schema check passed (skipped table validation)');
+                logger.info('PostgreSQL schema check passed');
             } catch (e) {
                 console.error("❌ DB check failed:", e);
                 process.exit(1);
@@ -936,7 +930,7 @@ function hasAdminish(req) {
     return r === 'staff' || r === 'admin' || r === 'owner';
 }
 
-// Safety: make sure tables exist (no-op if already created, SQLite only)
+// Safety: make sure tables exist (no-op if already created)
 const isPg =
     (process.env.DB_CLIENT || '').toLowerCase().startsWith('pg') ||
     (process.env.DATABASE_URL || '').startsWith('postgres://') ||
@@ -982,11 +976,11 @@ async function cleanupExpiredInvoiceTokens() {
         console.log('[boot] invoice cleanup disabled via env');
         return;
     }
-    if (!tableExists('invoice_token')) return logSkip('cleanupExpiredInvoiceTokens', 'invoice_token');
+    if (!(await tableExists('invoice_token'))) return logSkip('cleanupExpiredInvoiceTokens', 'invoice_token');
 
     try {
         // Expire anything older than now
-        run(`DELETE FROM invoice_token WHERE expires_at IS NOT NULL AND expires_at < CURRENT_TIMESTAMP`);
+        await db.run(`DELETE FROM invoice_token WHERE expires_at IS NOT NULL AND expires_at < CURRENT_TIMESTAMP`);
         console.log('[cleanup] invoice_token expired rows removed');
     } catch (e) {
         console.log('[cleanup] failed:', e);
@@ -1514,7 +1508,7 @@ if (SETUP_ENABLED) {
 
 // Auto-ensure session columns at startup
 runIfLive(async () => {
-    if (!tableExists('user')) return logSkip('ensureSessionColumns', 'user');
+    if (!(await tableExists('user'))) return logSkip('ensureSessionColumns', 'user');
 
     try {
         const { DB_CLIENT } = require('./db');
@@ -1554,13 +1548,8 @@ runIfLive(async () => {
             } finally {
                 await pool.end();
             }
-        } else {
-            // SQLite: Use PRAGMA
-            const cols = await db.all('PRAGMA table_info("user")');
-            const colNames = cols.map(c => c.name);
-            if (!colNames.includes('session_token')) await db.run('ALTER TABLE "user" ADD COLUMN session_token TEXT');
-            if (!colNames.includes('session_created_at')) await db.run('ALTER TABLE "user" ADD COLUMN session_created_at INTEGER');
         }
+        // PostgreSQL: session columns are handled by migrations
     } catch (error) {
         console.warn('Failed to ensure session columns:', error.message);
     }

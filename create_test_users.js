@@ -4,8 +4,8 @@ const { hashPasswordSync } = require('./server/lib/password');
 
 // PostgreSQL connection pool
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 async function createTestUsers() {
@@ -14,9 +14,9 @@ async function createTestUsers() {
 
         const now = Date.now();
 
-    // Create regular user
-    const userPassword = hashPasswordSync('UserPass123!');
-    const userResult = await pool.query(`
+        // Create regular user
+        const userPassword = hashPasswordSync('UserPass123!');
+        const userResult = await pool.query(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
@@ -24,17 +24,17 @@ async function createTestUsers() {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, email, first_name, last_name, name, role, is_admin, status, kyc_status, plan_status, created_at, updated_at
     `, [
-      now, now, 'Regular User', 'user@example.com', userPassword,
-      'Regular', 'User', false, 'user', 'active',
-      'pending', 'active', now, 'signup'
-    ]);
-    const user = userResult.rows[0];
+            now, now, 'Regular User', 'user@example.com', userPassword,
+            'Regular', 'User', false, 'user', 'active',
+            'pending', 'active', now, 'signup'
+        ]);
+        const user = userResult.rows[0];
 
         console.log('✅ Created regular user:', user.email);
 
-    // Create admin user
-    const adminPassword = hashPasswordSync('AdminPass123!');
-    const adminResult = await pool.query(`
+        // Create admin user
+        const adminPassword = hashPasswordSync('AdminPass123!');
+        const adminResult = await pool.query(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
@@ -42,16 +42,16 @@ async function createTestUsers() {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, email, first_name, last_name, name, role, is_admin, status, kyc_status, plan_status, created_at, updated_at
     `, [
-      now, now, 'Admin User', 'admin@example.com', adminPassword,
-      'Admin', 'User', true, 'admin', 'active',
-      'approved', 'active', now, 'complete'
-    ]);
-    const admin = adminResult.rows[0];
+            now, now, 'Admin User', 'admin@example.com', adminPassword,
+            'Admin', 'User', true, 'admin', 'active',
+            'approved', 'active', now, 'complete'
+        ]);
+        const admin = adminResult.rows[0];
 
         console.log('✅ Created admin user:', admin.email);
 
-    // Create some sample plans
-    await pool.query(`
+        // Create some sample plans
+        await pool.query(`
       INSERT INTO plans (name, slug, description, price_pence, interval, currency, features_json, active, sort)
       VALUES 
         ('Basic', 'basic', 'Basic plan for individuals', 1999, 'month', 'GBP', '["Mail forwarding", "Basic support"]', true, 1),
@@ -87,17 +87,17 @@ async function createTestUsers() {
             }
         ];
 
-    for (const item of sampleMailItems) {
-      await pool.query(`
+        for (const item of sampleMailItems) {
+            await pool.query(`
         INSERT INTO mail_item (user_id, subject, sender_name, received_date, status, tag, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [user.id, item.subject, item.sender_name, item.received_date, item.status, item.tag, now]);
-    }
+        }
 
         console.log('✅ Created sample mail items');
 
-    // Create some sample support tickets
-    await pool.query(`
+        // Create some sample support tickets
+        await pool.query(`
       INSERT INTO support_ticket (user_id, subject, message, status, created_at)
       VALUES ($1, $2, $3, $4, $5)
     `, [user.id, 'How do I forward mail?', 'I need help understanding how to forward my mail items.', 'open', now]);
