@@ -52,14 +52,8 @@ export function Header({ onNavigate }: HeaderProps) {
 
                 {/* Auth Buttons */}
                 <div className="hidden md:flex items-center gap-3">
-                    <button
-                        onClick={() => handleNavClick('login')}
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Log in
-                    </button>
                     <Button
-                        onClick={() => handleNavClick('signup')}
+                        onClick={() => handleNavClick('login')}
                         className="rounded-xl bg-primary px-4 py-2 text-white text-sm font-medium hover:bg-primary/90 shadow-soft"
                     >
                         Get started
@@ -91,15 +85,9 @@ export function Header({ onNavigate }: HeaderProps) {
                                 {item.label}
                             </button>
                         ))}
-                        <div className="pt-4 space-y-3">
-                            <button
-                                onClick={() => handleNavClick('login')}
-                                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
-                            >
-                                Log in
-                            </button>
+                        <div className="pt-4">
                             <Button
-                                onClick={() => handleNavClick('signup')}
+                                onClick={() => handleNavClick('login')}
                                 className="w-full rounded-xl bg-primary text-white font-medium hover:bg-primary/90 shadow-soft"
                             >
                                 Get started

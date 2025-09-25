@@ -94,7 +94,7 @@ export function BillingSection({ }: BillingSectionProps) {
                 page_size: String(pageSize),
             });
 
-            const resp = await apiClient.getAdminTransactions({ limit: pageSize, offset: (page - 1) * pageSize });
+            const resp = await apiClient.getAdminTransactions({ page: page, page_size: pageSize });
             if (resp.ok) {
                 setTransactions(resp.data?.items ?? []);
             } else {

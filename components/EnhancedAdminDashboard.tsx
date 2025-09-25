@@ -91,7 +91,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             try {
                 setLoading(true);
                 const [usersResponse, metricsResponse] = await Promise.all([
-                    apiClient.get('/api/admin/users'),
+                    apiClient.get('/api/admin/users?page=1&page_size=20'),
                     apiClient.get('/api/admin/metrics')
                 ]);
 
