@@ -25,7 +25,7 @@ import {
     Search,
     Filter,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient, safe } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -76,13 +76,58 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const [priorityFilter, setPriorityFilter] = useState("all");
     const [loading, setLoading] = useState(false);
     const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
+    const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
+    const [stats, setStats] = useState<ForwardingStats | null>(null);
+    const [offset, setOffset] = useState(0);
+    const [limit] = useState(20);
+    const [hasMore, setHasMore] = useState(true);
 
-    // API Data fetching
-    const { data: forwardingRequests, isLoading: requestsLoading, refetch: refetchRequests } = useApiData('/api/admin/forwarding-requests');
-    const { data: forwardingStats, isLoading: statsLoading } = useApiData('/api/admin/forwarding-requests/stats');
+    // Load forwarding requests
+    const loadForwardingRequests = async () => {
+        try {
+            setLoading(true);
+            const params = {
+                status: statusFilter === "all" ? undefined : statusFilter,
+                search: searchTerm || undefined,
+                priority: priorityFilter === "all" ? undefined : priorityFilter,
+                limit,
+                offset
+            };
 
-    const requestsData = forwardingRequests || [];
-    const stats = forwardingStats as ForwardingStats | null;
+            const response = await apiClient.getAdminForwardingQueue(params);
+            if (response.ok) {
+                const requests = safe(response.data?.items, []);
+                setForwardingRequests(requests);
+                setHasMore(requests.length === limit);
+            }
+        } catch (error) {
+            console.error('Failed to load forwarding requests:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load stats
+    const loadStats = async () => {
+        try {
+            const response = await apiClient.get('/api/admin/forwarding-requests/stats');
+            if (response.ok) {
+                setStats(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load forwarding stats:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadForwardingRequests();
+    }, [searchTerm, statusFilter, priorityFilter, offset]);
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const requestsData = forwardingRequests;
 
     const filteredRequests = requestsData.filter((request: ForwardingRequest) => {
         const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,7 +185,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         try {
             await logAdminAction('admin_process_forwarding_request', { requestId });
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/process`);
-            refetchRequests();
+            loadForwardingRequests(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_process_forwarding_request_error', {
                 requestId,
@@ -157,7 +202,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         try {
             await logAdminAction('admin_ship_forwarding_request', { requestId });
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/ship`);
-            refetchRequests();
+            loadForwardingRequests(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_ship_forwarding_request_error', {
                 requestId,
@@ -173,8 +218,8 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_cancel_forwarding_request', { requestId });
-            await apiClient.post(`/api/admin/forwarding-requests/${requestId}/cancel`);
-            refetchRequests();
+            await apiClient.cancelForwarding(requestId.toString());
+            loadForwardingRequests(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_cancel_forwarding_request_error', {
                 requestId,
@@ -194,7 +239,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
             await logAdminAction('admin_bulk_forwarding_action', { action, requestIds: selectedRequests });
             await apiClient.post(`/api/admin/forwarding-requests/bulk/${action}`, { requestIds: selectedRequests });
             setSelectedRequests([]);
-            refetchRequests();
+            loadForwardingRequests(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_bulk_forwarding_action_error', {
                 action,

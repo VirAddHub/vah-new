@@ -23,7 +23,7 @@ import {
     CheckCircle,
     XCircle,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient, safe } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -74,11 +74,60 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     // API Data fetching
-    const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useApiData('/api/admin/users');
-    const { data: userStats, isLoading: statsLoading } = useApiData('/api/admin/users/stats');
+    const [users, setUsers] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const [limit] = useState(20);
+    const [hasMore, setHasMore] = useState(true);
 
-    const userData = users || [];
-    const stats = userStats as any;
+    // Load users with filters
+    const loadUsers = async () => {
+        try {
+            setLoading(true);
+            const params = {
+                search: searchTerm || undefined,
+                status: statusFilter === "all" ? undefined : statusFilter,
+                plan: planFilter === "all" ? undefined : planFilter,
+                kyc: kycFilter === "all" ? undefined : kycFilter,
+                limit,
+                offset
+            };
+
+            const response = await apiClient.getAdminUsers(params);
+            if (response.ok) {
+                const userData = safe(response.data?.users, []);
+                setUsers(userData);
+                setHasMore(userData.length === limit);
+            }
+        } catch (error) {
+            console.error('Failed to load users:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load user stats
+    const loadUserStats = async () => {
+        try {
+            const response = await apiClient.getAdminUserStats();
+            if (response.ok) {
+                setStats(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load user stats:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadUsers();
+    }, [searchTerm, statusFilter, planFilter, kycFilter, offset]);
+
+    useEffect(() => {
+        loadUserStats();
+    }, []);
+
+    const userData = users;
 
     const filteredUsers = userData.filter((user: User) => {
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -190,8 +239,8 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_update_kyc_status', { userId, newStatus });
-            await apiClient.put(`/api/admin/users/${userId}/kyc-status`, { status: newStatus });
-            refetchUsers();
+            await apiClient.updateUserKycStatus(userId.toString(), newStatus);
+            loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_update_kyc_status_error', { userId, newStatus, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -203,8 +252,8 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_suspend_user', { userId });
-            await apiClient.put(`/api/admin/users/${userId}/suspend`);
-            refetchUsers();
+            await apiClient.suspendAdminUser(userId.toString());
+            loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_suspend_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -216,8 +265,8 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_activate_user', { userId });
-            await apiClient.put(`/api/admin/users/${userId}/activate`);
-            refetchUsers();
+            await apiClient.activateAdminUser(userId.toString());
+            loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_activate_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -233,7 +282,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             await logAdminAction('admin_bulk_action', { action, userIds: selectedUsers });
             await apiClient.post(`/api/admin/users/bulk/${action}`, { userIds: selectedUsers });
             setSelectedUsers([]);
-            refetchUsers();
+            loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_bulk_action_error', { action, userIds: selectedUsers, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {

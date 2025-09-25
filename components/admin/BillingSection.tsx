@@ -20,7 +20,7 @@ import {
     Clock,
     RefreshCcw,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient, safe } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -65,23 +65,63 @@ interface BillingSectionProps { }
 export function BillingSection({ }: BillingSectionProps) {
     const [loading, setLoading] = useState(false);
     const [timeRange, setTimeRange] = useState("30d");
+    const [billingMetrics, setBillingMetrics] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [invoices, setInvoices] = useState<any[]>([]);
 
-    // API Data fetching
-    const { data: billingData, isLoading: billingLoading, refetch: refetchBilling } = useApiData('/api/admin/billing');
-    const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useApiData('/api/admin/transactions');
-    const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useApiData('/api/admin/invoices');
+    // Load billing metrics
+    const loadBillingMetrics = async () => {
+        try {
+            const response = await apiClient.getAdminBillingMetrics();
+            if (response.ok) {
+                setBillingMetrics(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load billing metrics:', error);
+        }
+    };
 
-    const billing = billingData as any;
-    const transactionsData = (transactions as any) || [];
+    // Load transactions
+    const loadTransactions = async () => {
+        try {
+            const response = await apiClient.getAdminTransactions({ limit: 10, offset: 0 });
+            if (response.ok) {
+                setTransactions(safe(response.data?.items, []));
+            }
+        } catch (error) {
+            console.error('Failed to load transactions:', error);
+        }
+    };
+
+    // Load invoices
+    const loadInvoices = async () => {
+        try {
+            const response = await apiClient.get('/api/admin/invoices');
+            if (response.ok) {
+                setInvoices(safe(response.data?.items, []));
+            }
+        } catch (error) {
+            console.error('Failed to load invoices:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadBillingMetrics();
+        loadTransactions();
+        loadInvoices();
+    }, []);
+
+    const billing = billingMetrics;
+    const transactionsData = transactions;
 
     const handleRefresh = async () => {
         setLoading(true);
         try {
             await logAdminAction('admin_billing_refresh');
             await Promise.all([
-                refetchBilling(),
-                refetchTransactions(),
-                refetchInvoices()
+                loadBillingMetrics(),
+                loadTransactions(),
+                loadInvoices()
             ]);
         } catch (error) {
             await logAdminAction('admin_billing_refresh_error', {
@@ -253,10 +293,12 @@ export function BillingSection({ }: BillingSectionProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                    <p className="text-2xl font-bold">£{billing?.monthlyRevenue?.toLocaleString() || "0"}</p>
+                                    <p className="text-2xl font-bold">
+                                        £{safe(billing?.monthly_revenue_pence, 0) / 100}
+                                    </p>
                                     <p className="text-xs text-green-600 flex items-center gap-1">
                                         <ArrowUp className="h-3 w-3" />
-                                        +{billing?.revenueGrowth || 0}% from last month
+                                        +{safe(billing?.revenue_growth, 0)}% from last month
                                     </p>
                                 </div>
                                 <DollarSign className="h-8 w-8 text-green-500" />
@@ -269,8 +311,12 @@ export function BillingSection({ }: BillingSectionProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
-                                    <p className="text-2xl font-bold">£{(billing?.outstandingInvoices || 0).toLocaleString()}</p>
-                                    <p className="text-xs text-orange-600">{billing?.pendingPayments || 0} pending payments</p>
+                                    <p className="text-2xl font-bold">
+                                        £{safe(billing?.outstanding_amount_pence, 0) / 100}
+                                    </p>
+                                    <p className="text-xs text-orange-600">
+                                        {safe(billing?.pending_count, 0)} pending payments
+                                    </p>
                                 </div>
                                 <FileText className="h-8 w-8 text-orange-500" />
                             </div>
@@ -282,10 +328,10 @@ export function BillingSection({ }: BillingSectionProps) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Churn Rate</p>
-                                    <p className="text-2xl font-bold">{billing?.churnRate || 0}%</p>
+                                    <p className="text-2xl font-bold">{safe(billing?.churn_rate, 0)}%</p>
                                     <p className="text-xs text-green-600 flex items-center gap-1">
                                         <ArrowDown className="h-3 w-3" />
-                                        {billing?.churnChange || 0}% from last month
+                                        {safe(billing?.churn_change, 0)}% from last month
                                     </p>
                                 </div>
                                 <TrendingDown className="h-8 w-8 text-red-500" />

@@ -26,7 +26,7 @@ import {
     CheckCircle,
     AlertCircle,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient, safe } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -68,23 +68,68 @@ export function MailSection({ }: MailSectionProps) {
     const [tagFilter, setTagFilter] = useState("all");
     const [loading, setLoading] = useState(false);
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
+    const [mailItems, setMailItems] = useState<MailItem[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [offset, setOffset] = useState(0);
+    const [limit] = useState(20);
+    const [hasMore, setHasMore] = useState(true);
 
-    // API Data fetching
-    const { data: mailItems, isLoading: mailLoading, refetch: refetchMail } = useApiData('/api/admin/mail-items');
-    const { data: mailStats, isLoading: statsLoading } = useApiData('/api/admin/mail-items/stats');
+    // Debounced search
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+    
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
-    const mailData = mailItems || [];
-    const stats = mailStats as any;
+    // Load mail items based on current tab and filters
+    const loadMailItems = async () => {
+        try {
+            setLoading(true);
+            const params = {
+                status: selectedTab === "all" ? undefined : selectedTab,
+                search: debouncedSearchTerm || undefined,
+                tag: tagFilter === "all" ? undefined : tagFilter,
+                limit,
+                offset
+            };
 
-    const filteredItems = mailData.filter((item: MailItem) => {
-        const matchesSearch = item.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-        const matchesTag = tagFilter === "all" || item.tag === tagFilter;
-        const matchesTab = selectedTab === "all" || item.status === selectedTab;
-        return matchesSearch && matchesStatus && matchesTag && matchesTab;
-    });
+            const response = await apiClient.getAdminMailItems(params);
+            if (response.ok) {
+                const items = safe(response.data?.items, []);
+                setMailItems(items);
+                setHasMore(items.length === limit);
+            }
+        } catch (error) {
+            console.error('Failed to load mail items:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load stats
+    const loadStats = async () => {
+        try {
+            const response = await apiClient.get('/api/admin/mail-items/stats');
+            if (response.ok) {
+                setStats(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load mail stats:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadMailItems();
+    }, [selectedTab, debouncedSearchTerm, tagFilter, offset]);
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const filteredItems = mailItems;
 
     const handleAddItem = async () => {
         try {
@@ -99,7 +144,13 @@ export function MailSection({ }: MailSectionProps) {
     const handleViewItem = async (itemId: number) => {
         try {
             await logAdminAction('admin_view_mail_item', { itemId });
-            window.open(`/admin/mail/${itemId}`, '_blank');
+            // Try to get scan URL first, fallback to detail page
+            const response = await apiClient.get(`/api/mail-items/${itemId}/scan-url`);
+            if (response.ok && response.data?.url) {
+                window.open(response.data.url, '_blank');
+            } else {
+                window.open(`/admin/mail/${itemId}`, '_blank');
+            }
         } catch (error) {
             await logAdminAction('admin_view_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
@@ -119,7 +170,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_process_mail_item', { itemId });
             await apiClient.post(`/api/admin/mail-items/${itemId}/process`);
-            refetchMail();
+            loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -131,8 +182,8 @@ export function MailSection({ }: MailSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_tag_mail_item', { itemId, tag });
-            await apiClient.post(`/api/admin/mail-items/${itemId}/tag`, { tag });
-            refetchMail();
+            await apiClient.updateAdminMailItem(itemId.toString(), { tag });
+            loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -145,7 +196,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_forward_mail_item', { itemId });
             await apiClient.post(`/api/admin/mail-items/${itemId}/forward`);
-            refetchMail();
+            loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_forward_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -158,7 +209,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_delete_mail_item', { itemId });
             await apiClient.delete(`/api/admin/mail-items/${itemId}`);
-            refetchMail();
+            loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_delete_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -174,11 +225,24 @@ export function MailSection({ }: MailSectionProps) {
             await logAdminAction('admin_bulk_mail_action', { action, itemIds: selectedItems });
             await apiClient.post(`/api/admin/mail-items/bulk/${action}`, { itemIds: selectedItems });
             setSelectedItems([]);
-            refetchMail();
+            loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Pagination handlers
+    const handleNextPage = () => {
+        if (hasMore) {
+            setOffset(prev => prev + limit);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (offset > 0) {
+            setOffset(prev => Math.max(0, prev - limit));
         }
     };
 

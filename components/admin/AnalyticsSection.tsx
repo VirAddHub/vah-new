@@ -16,7 +16,7 @@ import {
     Calendar,
     Activity,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient, safe } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -65,19 +65,31 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
     const [loading, setLoading] = useState(false);
     const [timeRange, setTimeRange] = useState("30d");
     const [selectedMetric, setSelectedMetric] = useState("overview");
+    const [analytics, setAnalytics] = useState<any>(null);
 
-    // API Data fetching
-    const { data: analyticsData, isLoading: analyticsLoading, refetch: refetchAnalytics } = useApiData('/api/admin/analytics');
-    const { data: userMetrics, isLoading: userMetricsLoading } = useApiData('/api/admin/analytics/users');
-    const { data: revenueMetrics, isLoading: revenueMetricsLoading } = useApiData('/api/admin/analytics/revenue');
-    const { data: mailMetrics, isLoading: mailMetricsLoading } = useApiData('/api/admin/analytics/mail');
+    // Load analytics data
+    const loadAnalytics = async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.getAdminAnalytics(timeRange);
+            if (response.ok) {
+                setAnalytics(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load analytics:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const analytics = analyticsData as any;
+    useEffect(() => {
+        loadAnalytics();
+    }, [timeRange]);
     const handleRefresh = async () => {
         setLoading(true);
         try {
             await logAdminAction('admin_analytics_refresh', { timeRange });
-            await refetchAnalytics();
+            await loadAnalytics();
         } catch (error) {
             await logAdminAction('admin_analytics_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {

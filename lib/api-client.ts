@@ -304,6 +304,79 @@ export const apiClient = {
   async manageSubscription(action: string): Promise<ApiResponse<any>> {
     return this.post('/api/payments/subscriptions/manage', { action });
   },
+
+  // Admin Mail Management
+  async getAdminMailItems(params: any = {}): Promise<ApiResponse<any>> {
+    const queryString = new URLSearchParams(params).toString();
+    return this.get(`/api/admin/mail-items${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async createAdminMailItem(payload: any): Promise<ApiResponse<any>> {
+    return this.post('/api/admin/mail-items', payload);
+  },
+
+  async updateAdminMailItem(id: string, payload: any): Promise<ApiResponse<any>> {
+    return this.patch(`/api/admin/mail-items/${id}`, payload);
+  },
+
+  // Admin Billing
+  async getAdminBillingMetrics(): Promise<ApiResponse<any>> {
+    return this.get('/api/admin/billing/metrics');
+  },
+
+  async getAdminTransactions(params: any = {}): Promise<ApiResponse<any>> {
+    const queryString = new URLSearchParams(params).toString();
+    return this.get(`/api/admin/transactions${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Admin Users
+  async getAdminUsers(params: any = {}): Promise<ApiResponse<any>> {
+    const queryString = new URLSearchParams(params).toString();
+    return this.get(`/api/admin/users${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async createAdminUser(payload: any): Promise<ApiResponse<any>> {
+    return this.post('/api/admin/users', payload);
+  },
+
+  async updateAdminUser(id: string, payload: any): Promise<ApiResponse<any>> {
+    return this.put(`/api/admin/users/${id}`, payload);
+  },
+
+  async suspendAdminUser(id: string): Promise<ApiResponse<any>> {
+    return this.put(`/api/admin/users/${id}/suspend`);
+  },
+
+  async activateAdminUser(id: string): Promise<ApiResponse<any>> {
+    return this.put(`/api/admin/users/${id}/activate`);
+  },
+
+  async updateUserKycStatus(id: string, status: string): Promise<ApiResponse<any>> {
+    return this.put(`/api/admin/users/${id}/kyc-status`, { status });
+  },
+
+  async getAdminUserStats(): Promise<ApiResponse<any>> {
+    return this.get('/api/admin/users/stats');
+  },
+
+  // Admin Forwarding
+  async getAdminForwardingQueue(params: any = {}): Promise<ApiResponse<any>> {
+    const queryString = new URLSearchParams(params).toString();
+    return this.get(`/api/admin/forwarding/queue${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async fulfillForwarding(id: string, payload: any): Promise<ApiResponse<any>> {
+    return this.post(`/api/admin/forwarding/requests/${id}/fulfill`, payload);
+  },
+
+  async cancelForwarding(id: string): Promise<ApiResponse<any>> {
+    return this.post(`/api/admin/forwarding/requests/${id}/cancel`);
+  },
+
+  // Admin Analytics
+  async getAdminAnalytics(range: string = '30d'): Promise<ApiResponse<any>> {
+    return this.get(`/api/admin/analytics?range=${range}`);
+  },
 };
 
 // Legacy exports for backward compatibility

@@ -251,9 +251,8 @@ function OverviewSection({ metrics }: { metrics: any }) {
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline" className="gap-2">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${
-                            (systemHealth as any)?.status === 'operational' ? 'bg-green-500' : 'bg-red-500'
-                        }`} />
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${(systemHealth as any)?.status === 'operational' ? 'bg-green-500' : 'bg-red-500'
+                            }`} />
                         {(systemHealth as any)?.status === 'operational' ? 'System Operational' : 'System Issues'}
                     </Badge>
                 </div>
