@@ -4,6 +4,13 @@ const { hashPasswordSync, comparePasswordSync } = require('../lib/password');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { db } = require('../db');
+const { Pool } = require('pg');
+
+// Create a direct PostgreSQL pool for auth routes
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 const { sessionCookieOptions } = require('../../lib/cookies');
 
 const router = express.Router();
@@ -77,7 +84,7 @@ router.post('/signup', validateSignup, async (req, res) => {
     const name = `${first_name} ${last_name}`.trim();
 
     // Insert user and get created user in one query (PostgreSQL style)
-    const user = await db.get(`
+    const { rows } = await pool.query(`
       INSERT INTO "user" (
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
@@ -89,6 +96,7 @@ router.post('/signup', validateSignup, async (req, res) => {
       first_name, last_name, false, 'user', 'active',
       'pending', 'active', now, 'signup'
     ]);
+    const user = rows[0];
 
     if (!user) {
       throw new Error('Failed to create user - INSERT did not return user data');
@@ -141,7 +149,8 @@ router.post('/login', validateLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await db.get('SELECT * FROM "user" WHERE email = $1', [email]);
+    const { rows } = await pool.query('SELECT * FROM "user" WHERE email = $1', [email]);
+    const user = rows[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
