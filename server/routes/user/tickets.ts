@@ -13,7 +13,7 @@ const pool = new Pool({
 
 router.get("/api/tickets", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
-    
+
     const { rows } = await pool.query(
         `SELECT id, subject, status, created_at
          FROM mail_item
@@ -22,7 +22,7 @@ router.get("/api/tickets", requireAuth, asyncHandler(async (req: any, res: any) 
          LIMIT 100`,
         [userId]
     );
-    
+
     ok(res, listResult(rows)); // Always 200 with { items: [] } if empty
 }));
 

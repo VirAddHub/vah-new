@@ -251,6 +251,16 @@ app.use(require('./routes/user/billing').default);
 app.use(require('./routes/user/invoices').default);
 app.use(require('./routes/user/email-prefs').default);
 
+// Core user routes
+app.use(require('./routes/profile').default);
+app.use(require('./routes/mail-items').default);
+app.use(require('./routes/forwarding-requests').default);
+app.use(require('./routes/billing').default);
+app.use(require('./routes/email-prefs').default);
+
+// Admin routes
+app.use(require('./routes/admin.metrics').default);
+
 // Public routes
 app.use(require('./routes/public/plans').default);
 
