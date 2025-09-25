@@ -214,13 +214,16 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             <header className="bg-card border-b border-border">
                 <div className="flex items-center justify-between h-14 px-4">
                     {/* Logo and Branding */}
-                    <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => onNavigate?.('home')}
+                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    >
                         <VAHLogo size="sm" showText={false} />
                         <div>
                             <h2 className="font-semibold text-sm text-primary">Admin Portal</h2>
                             <p className="text-xs text-muted-foreground hidden sm:block">VirtualAddressHub</p>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center gap-1">
