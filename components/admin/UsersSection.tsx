@@ -141,6 +141,11 @@ export default function UsersSection() {
       
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
       
+      // If we deleted the last item on the last page, go back a page
+      if (items.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
+      
       // Force reload with cache-buster to ensure fresh data
       await Promise.all([load(), loadUserStats()]);
     } catch (e: any) {
@@ -164,17 +169,25 @@ export default function UsersSection() {
       toast({ title: 'Email required', variant: 'destructive' });
       return;
     }
-        setIsMutating(true);
-        try {
+    
+    setIsMutating(true);
+    
+    try {
       const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
       if (!res.ok) throw new Error(res.error || 'restore_failed');
-      toast({ title: 'User restored' });
+      
+      toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
+      
+      // Reload to refresh the list
       await Promise.all([load(), loadUserStats()]);
+      
+      // Close modal
+      setRestoreModal(null);
+      setRestoreForm({ email: '', first_name: '', last_name: '', reactivate: true });
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Restore failed', variant: 'destructive' });
-        } finally {
-            setIsMutating(false);
-      setRestoreModal(null); 
+    } finally {
+      setIsMutating(false);
     }
   }
 
