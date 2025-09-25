@@ -63,9 +63,8 @@ interface ForwardingRequest {
 interface ForwardingStats {
     total: number;
     pending: number;
-    processing: number;
-    shipped: number;
-    delivered: number;
+    fulfilled: number;
+    canceled: number;
 }
 
 interface ForwardingSectionProps { }
@@ -97,17 +96,29 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
 
             const resp = await adminApi.forwardingQueue(params);
             if (resp.ok) {
-                setRequests(resp.data.items ?? []);
-                setTotal(resp.data.total ?? 0);
+                const items = resp.data.items ?? [];
+                setRequests(items);
+                setTotal(resp.data.total ?? items.length);
+
+                // Compute stats from items
+                const counts = {
+                    total: resp.data.total ?? items.length,
+                    pending: items.filter(i => i.status === 'pending').length,
+                    fulfilled: items.filter(i => i.status === 'fulfilled').length,
+                    canceled: items.filter(i => i.status === 'canceled').length,
+                };
+                setStats(counts);
             } else {
                 console.error("forwardingQueue failed:", resp.error);
                 setRequests([]);
                 setTotal(0);
+                setStats(null);
             }
         } catch (err) {
             console.error("loadRequests error:", err);
             setRequests([]);
             setTotal(0);
+            setStats(null);
         } finally {
             setIsFetchingRequests(false);
         }
@@ -317,13 +328,12 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 <div>
                     <h1 className="text-3xl font-bold">Forwarding Management</h1>
                     <p className="text-muted-foreground">Track and manage mail forwarding requests</p>
-                    {forwardingStats && (
+                    {stats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {stats?.total || 0}</span>
-                            <span>Pending: {stats?.pending || 0}</span>
-                            <span>Processing: {stats?.processing || 0}</span>
-                            <span>Shipped: {stats?.shipped || 0}</span>
-                            <span>Delivered: {stats?.delivered || 0}</span>
+                            <span>Total: {stats.total}</span>
+                            <span>Pending: {stats.pending}</span>
+                            <span>Fulfilled: {stats.fulfilled}</span>
+                            <span>Canceled: {stats.canceled}</span>
                         </div>
                     )}
                 </div>
