@@ -326,19 +326,7 @@ app.use('/api/auth', authRouter);      // /api/auth/*
 // Dashboard routes with real data
 app.use('/api', require('./routes/dashboard'));
 
-// Safe endpoints to prevent UI crashes
-app.get('/api/profile', (req, res) => {
-    if (!req.session?.user) return res.status(401).json({ error: 'unauthorized' });
-    res.json({ user: req.session.user });
-});
-
-// temporary stubs
-app.get('/api/tickets', (_req, res) => res.json({ items: [] }));
-app.get('/api/forwarding-requests', (_req, res) => res.json({ items: [] }));
-app.get('/api/billing', (_req, res) => res.json({ status: 'ok' }));
-app.get('/api/plans', (_req, res) => res.json({ plans: [] }));
-app.get('/api/status', (_req, res) => res.json({ status: 'ok' }));
-app.get('/api/mail-items', (_req, res) => res.json({ items: [] }));
+// Dashboard routes now handle all /api/* endpoints above
 
 // --- Public endpoints: DO NOT enforce CSRF ---
 app.use('/api/contact', require('./routes/contact'));

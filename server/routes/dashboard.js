@@ -44,10 +44,10 @@ router.get('/profile', async (req, res) => {
 router.get('/plans', async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT id, name, slug, description, price_pence, interval, currency, features_json, active
-       FROM plans 
-       WHERE active = true 
-       ORDER BY price_pence ASC`
+            `SELECT id, name, price_usd, features, sort_order
+             FROM plans
+             WHERE active = true
+             ORDER BY sort_order NULLS LAST, price_usd ASC`
         );
 
         res.json({ items: result.rows });
@@ -62,24 +62,26 @@ router.get('/billing', async (req, res) => {
     try {
         const uid = req.session.user.id;
 
-        // Get user's current plan status
+        // Check if user has a subscription
         const result = await pool.query(
-            `SELECT plan_status, plan_start_date, gocardless_subscription_id, mandate_id 
-       FROM "user" WHERE id = $1`,
+            `SELECT plan_id, status, current_period_end
+             FROM subscriptions
+             WHERE user_id = $1
+             ORDER BY created_at DESC
+             LIMIT 1`,
             [uid]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.json({ subscription: null });
         }
 
-        const user = result.rows[0];
+        const subscription = result.rows[0];
         res.json({
             subscription: {
-                status: user.plan_status || 'none',
-                start_date: user.plan_start_date,
-                subscription_id: user.gocardless_subscription_id,
-                mandate_id: user.mandate_id
+                plan_id: subscription.plan_id,
+                status: subscription.status,
+                renews_at: subscription.current_period_end
             }
         });
     } catch (error) {
@@ -93,10 +95,11 @@ router.get('/invoices', async (req, res) => {
     try {
         const uid = req.session.user.id;
         const result = await pool.query(
-            `SELECT id, invoice_number, amount_pence, currency, status, period_start, period_end, created_at
-       FROM invoice 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+            `SELECT id, number, amount, currency, status, issued_at
+             FROM invoices
+             WHERE user_id = $1
+             ORDER BY issued_at DESC
+             LIMIT 100`,
             [uid]
         );
 
@@ -112,10 +115,11 @@ router.get('/tickets', async (req, res) => {
     try {
         const uid = req.session.user.id;
         const result = await pool.query(
-            `SELECT id, subject, status, created_at, updated_at
-       FROM support_ticket 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+            `SELECT id, subject, status, created_at
+             FROM support_tickets
+             WHERE user_id = $1
+             ORDER BY created_at DESC
+             LIMIT 100`,
             [uid]
         );
 
@@ -131,16 +135,41 @@ router.get('/forwarding-requests', async (req, res) => {
     try {
         const uid = req.session.user.id;
         const result = await pool.query(
-            `SELECT fr.id, fr.destination_name, fr.destination_address, fr.status, fr.created_at, fr.requested_at
-       FROM forwarding_request fr
-       WHERE fr.user = $1 
-       ORDER BY fr.created_at DESC`,
+            `SELECT id, status, created_at
+       FROM forwarding_requests
+       WHERE user_id = $1 
+       ORDER BY created_at DESC
+       LIMIT 100`,
             [uid]
         );
 
         res.json({ items: result.rows });
     } catch (error) {
         console.error('Forwarding requests error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Email preferences endpoint
+router.get('/email-prefs', async (req, res) => {
+    try {
+        const uid = req.session.user.id;
+        const result = await pool.query(
+            `SELECT marketing, product, billing
+             FROM email_prefs
+             WHERE user_id = $1`,
+            [uid]
+        );
+
+        if (result.rows.length === 0) {
+            // Return defaults if no preferences exist
+            const defaults = { marketing: false, product: true, billing: true };
+            res.json({ prefs: defaults });
+        } else {
+            res.json({ prefs: result.rows[0] });
+        }
+    } catch (error) {
+        console.error('Email prefs error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
