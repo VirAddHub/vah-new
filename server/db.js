@@ -164,8 +164,8 @@ db = {
   // Use db.run(), db.get(), db.all() with await instead of db.prepare()
 };
 
-module.exports = { 
-  db, 
+module.exports = {
+  db,
   DB_KIND: 'pg',
   query,
   one,

@@ -11,14 +11,14 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-router.get("/api/forwarding-requests", requireAuth, asyncHandler(async (req: any, res: any) => {
+router.get("/api/invoices", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
     
     const { rows } = await pool.query(
-        `SELECT id, status, created_at, updated_at
-         FROM forwarding_requests
+        `SELECT id, invoice_number, total_pence, status, issued_at
+         FROM invoices
          WHERE user_id = $1
-         ORDER BY created_at DESC
+         ORDER BY issued_at DESC
          LIMIT 100`,
         [userId]
     );

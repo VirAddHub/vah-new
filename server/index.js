@@ -76,8 +76,8 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','X-CSRF-Token','X-Requested-With','Accept'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Disposition'],
 };
 
@@ -152,79 +152,79 @@ app.post('/api/create-test-users', async (req, res) => {
         const adminPassword = await bcrypt.hash('AdminPass123!', 12);
         const userPassword = await bcrypt.hash('UserPass123!', 12);
 
-    // Create admin user using direct PostgreSQL pool
-    const { Pool } = require('pg');
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    
-    const adminResult = await pool.query(`
-      INSERT INTO "user" (
-        email, password, first_name, last_name, name,
-        is_admin, role, status, kyc_status, plan_status,
-        plan_start_date, onboarding_step, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-      ) ON CONFLICT (email) DO UPDATE SET
-        is_admin = EXCLUDED.is_admin,
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        password = EXCLUDED.password,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, email, first_name, last_name, is_admin, role
-    `, [
-      'admin@virtualaddresshub.co.uk',
-      adminPassword,
-      'Admin',
-      'User',
-      'Admin User',
-      true,
-      'admin',
-      'active',
-      'verified',
-      'active',
-      now,
-      'completed',
-      now,
-      now
-    ]);
-    
-    // Create regular user
-    const userResult = await pool.query(`
-      INSERT INTO "user" (
-        email, password, first_name, last_name, name,
-        is_admin, role, status, kyc_status, plan_status,
-        plan_start_date, onboarding_step, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-      ) ON CONFLICT (email) DO UPDATE SET
-        is_admin = EXCLUDED.is_admin,
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        password = EXCLUDED.password,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, email, first_name, last_name, is_admin, role
-    `, [
-      'user@virtualaddresshub.co.uk',
-      userPassword,
-      'Regular',
-      'User',
-      'Regular User',
-      false,
-      'user',
-      'active',
-      'verified',
-      'active',
-      now,
-      'completed',
-      now,
-      now
-    ]);
-    
-    await pool.end();
+        // Create admin user using direct PostgreSQL pool
+            const { Pool } = require('pg');
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+            });
 
-        res.json({
+        const adminResult = await pool.query(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+            'admin@virtualaddresshub.co.uk',
+            adminPassword,
+            'Admin',
+            'User',
+            'Admin User',
+            true,
+            'admin',
+            'active',
+            'verified',
+            'active',
+            now,
+            'completed',
+            now,
+            now
+        ]);
+
+        // Create regular user
+        const userResult = await pool.query(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+            'user@virtualaddresshub.co.uk',
+            userPassword,
+            'Regular',
+            'User',
+            'Regular User',
+            false,
+            'user',
+            'active',
+            'verified',
+            'active',
+            now,
+            'completed',
+            now,
+            now
+        ]);
+
+                await pool.end();
+
+    res.json({
             success: true,
             message: 'Test users created successfully',
             admin: adminResult.rows[0],
@@ -248,6 +248,7 @@ app.use('/api/auth', authRouter);
 app.use(require('./routes/user/tickets').default);
 app.use(require('./routes/user/forwarding').default);
 app.use(require('./routes/user/billing').default);
+app.use(require('./routes/user/invoices').default);
 app.use(require('./routes/user/email-prefs').default);
 
 // Public routes
@@ -265,6 +266,13 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler - must be after all routes
+app.use((err, _req, res, _next) => {
+    console.error("[UNCAUGHT]", err);
+    // Only treat truly unexpected conditions as 5xx
+    res.status(500).json({ error: "server_error" });
 });
 
 // Start server
