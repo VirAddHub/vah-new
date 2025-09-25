@@ -87,9 +87,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     return;
                 }
 
-                if (clientAuthManager.isAuthenticated()) {
+                // Always try to check auth, even if localStorage says we're not authenticated
+                // This handles cases where the session cookie is still valid
+                try {
                     const userData = await clientAuthManager.checkAuth();
                     setUser(userData);
+                } catch (error) {
+                    // Only clear auth if we're sure there's no valid session
+                    console.log('No valid session found, user will need to login again');
                 }
             } catch (error) {
                 console.error('Auth initialization failed:', error);

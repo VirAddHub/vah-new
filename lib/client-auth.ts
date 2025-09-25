@@ -54,9 +54,10 @@ export class ClientAuthManager {
       console.log('Checking auth with API client...');
       const response = await apiClient.get('/api/auth/whoami');
       console.log('Auth check response:', response);
-      if (response.ok && response.data?.user) {
-        this.setUser(response.data.user);
-        return response.data.user;
+      if (response.ok && response.data) {
+        const userData = response.data?.user || response.data;
+        this.setUser(userData);
+        return userData;
       }
       throw new Error('No user data received');
     } catch (error) {

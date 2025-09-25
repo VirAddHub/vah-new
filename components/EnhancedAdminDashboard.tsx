@@ -78,7 +78,7 @@ type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
+
     // Data loading state
     const [users, setUsers] = useState<any[]>([]);
     const [analytics, setAnalytics] = useState<any>(null);
