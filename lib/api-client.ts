@@ -388,9 +388,9 @@ export const apiClient = {
 // Core request function with comprehensive error handling, credentials, and cache busting
 async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<ApiResponse<T>> {
   try {
-    // Determine URL: Next.js API routes vs direct backend calls
+    // For browser calls, always hit relative /api/* (Next.js proxy)
     const isNextApi = path.startsWith('/api/');
-    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_BACKEND_BASE || BASE_URL}${path}`;
+    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_BACKEND_BASE}${path}`;
     const method = (init?.method || 'GET').toUpperCase();
 
     // Add cache-buster for GET requests

@@ -8,41 +8,31 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const qs = url.searchParams.toString();
-    const target = `${API_BASE}/api/admin/users${qs ? `?${qs}` : ''}`;
+    const target = `${process.env.NEXT_PUBLIC_BACKEND_BASE}/api/admin/users${qs ? `?${qs}` : ''}`;
 
     const res = await fetch(target, {
       method: 'GET',
       headers: {
-        // Pass Origin to satisfy backend CORS rules
-        Origin: process.env.NEXT_PUBLIC_FRONTEND_ORIGIN || 'https://vah-frontend-final.vercel.app',
-        // Pass cookies through so the admin session is honored
-        Cookie: req.headers.get('cookie') || '',
-        'Content-Type': 'application/json',
+        'content-type': req.headers.get('content-type') || 'application/json',
+        'Cookie': req.headers.get('cookie') || '',
+        'Authorization': req.headers.get('authorization') || '',
       },
-      // Never cache admin data
+      credentials: 'include',
       cache: 'no-store',
     });
 
-    const body = await res.text(); // stream-safe
-    const out = new NextResponse(body, {
-      status: res.status,
-      headers: {
-        'content-type': res.headers.get('content-type') ?? 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    const text = await res.text();
+    const out = new NextResponse(text, { status: res.status });
+    const ct = res.headers.get('content-type');
+    if (ct) out.headers.set('content-type', ct);
 
-    // Pass through Set-Cookie headers if any
+    // Copy ALL cookies (split combined header safely)
     const setCookie = res.headers.get('set-cookie');
     if (setCookie) {
-      const cookies = setCookie.split(/,(?=\s*\w+=)/);
-      cookies.forEach(cookie => {
-        out.headers.append('set-cookie', cookie.trim());
-      });
+      for (const c of setCookie.split(/,(?=\s*[A-Za-z0-9_\-]+=)/)) {
+        out.headers.append('set-cookie', c);
+      }
     }
-
     return out;
   } catch (error) {
     console.error('Error proxying to backend:', error);
@@ -53,39 +43,32 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
-    const target = `${API_BASE}/api/admin/users`;
+    const target = `${process.env.NEXT_PUBLIC_BACKEND_BASE}/api/admin/users`;
 
     const res = await fetch(target, {
       method: 'POST',
       headers: {
-        Origin: process.env.NEXT_PUBLIC_FRONTEND_ORIGIN || 'https://vah-frontend-final.vercel.app',
-        Cookie: req.headers.get('cookie') || '',
-        'Content-Type': 'application/json',
+        'content-type': req.headers.get('content-type') || 'application/json',
+        'Cookie': req.headers.get('cookie') || '',
+        'Authorization': req.headers.get('authorization') || '',
       },
       body,
+      credentials: 'include',
       cache: 'no-store',
     });
 
-    const responseBody = await res.text();
-    const out = new NextResponse(responseBody, {
-      status: res.status,
-      headers: {
-        'content-type': res.headers.get('content-type') ?? 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    const text = await res.text();
+    const out = new NextResponse(text, { status: res.status });
+    const ct = res.headers.get('content-type');
+    if (ct) out.headers.set('content-type', ct);
 
-    // Pass through Set-Cookie headers if any
+    // Copy ALL cookies (split combined header safely)
     const setCookie = res.headers.get('set-cookie');
     if (setCookie) {
-      const cookies = setCookie.split(/,(?=\s*\w+=)/);
-      cookies.forEach(cookie => {
-        out.headers.append('set-cookie', cookie.trim());
-      });
+      for (const c of setCookie.split(/,(?=\s*[A-Za-z0-9_\-]+=)/)) {
+        out.headers.append('set-cookie', c);
+      }
     }
-
     return out;
   } catch (error) {
     console.error('Error proxying POST to backend:', error);
