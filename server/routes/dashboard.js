@@ -181,7 +181,7 @@ router.get('/mail-items', async (req, res) => {
         const result = await pool.query(
             `SELECT id, subject, sender_name, status, tag, scanned, created_at, received_date
        FROM mail_item 
-       WHERE user_id = $1 AND deleted = false
+       WHERE user_id = $1
        ORDER BY created_at DESC`,
             [uid]
         );
