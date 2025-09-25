@@ -4,17 +4,18 @@ const BACKEND_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-stagin
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const backend = `${BACKEND_BASE}/api/auth/whoami`;
+    const body = await req.text();
+    const backend = `${BACKEND_BASE}/api/auth/login`;
     
     const resp = await fetch(backend, {
-      method: 'GET',
+      method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'Origin': process.env.NEXT_PUBLIC_FRONTEND_ORIGIN || 'https://vah-frontend-final.vercel.app',
-        'Cookie': req.headers.get('cookie') || '',
       },
+      body,
       // Server-to-server call, no credentials needed
     });
 
@@ -29,11 +30,17 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Pass Set-Cookie to the browser
+    const setCookie = resp.headers.get('set-cookie');
+    if (setCookie) {
+      out.headers.set('set-cookie', setCookie);
+    }
+
     return out;
   } catch (error) {
-    console.error('Whoami proxy error:', error);
+    console.error('Login proxy error:', error);
     return NextResponse.json(
-      { ok: false, error: 'Authentication service unavailable' },
+      { ok: false, error: 'Login service unavailable' },
       { status: 500 }
     );
   }

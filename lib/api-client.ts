@@ -385,19 +385,29 @@ export const apiClient = {
 
 // ---- New Typed Admin API Client ----
 
-// Core request function with consistent error handling and cookies
+// Core request function with comprehensive error handling, credentials, and cache busting
 async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<ApiResponse<T>> {
   try {
-    // Use relative path for Next.js API routes, absolute for direct backend calls
-    const url = path.startsWith('/api/') ? path : `${BASE_URL}${path}`;
-    const res = await fetch(url, {
+    // Determine URL: Next.js API routes vs direct backend calls
+    const isNextApi = path.startsWith('/api/');
+    const url = isNextApi ? path : `${BASE_URL}${path}`;
+    const method = (init?.method || 'GET').toUpperCase();
+
+    // Add cache-buster for GET requests
+    const finalUrl = (method === 'GET')
+      ? url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()
+      : url;
+
+    const res = await fetch(finalUrl, {
       ...init,
-      credentials: 'include', // IMPORTANT for cookies
-      headers: { 
-        'Content-Type': 'application/json', 
-        ...(init?.headers || {}) 
+      credentials: 'include', // ALWAYS include credentials for session cookies
+      cache: 'no-store', // ALWAYS bypass browser cache
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        ...(init?.headers || {}),
       },
-      cache: 'no-store', // Critical to bypass ETag/304
       signal: init?.signal,
     });
 
@@ -409,6 +419,15 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
 
     return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
   } catch (error: any) {
+    // Enhanced error logging for diagnostics
+    console.error('API Request Error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      path,
+      method: init?.method || 'GET'
+    });
+    
     if (error.name === 'AbortError') return { ok: false, error: 'aborted' };
     return { ok: false, error: error?.message || 'network_error' };
   }
