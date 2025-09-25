@@ -153,11 +153,11 @@ app.post('/api/create-test-users', async (req, res) => {
         const userPassword = await bcrypt.hash('UserPass123!', 12);
 
         // Create admin user using direct PostgreSQL pool
-            const { Pool } = require('pg');
-            const pool = new Pool({
-                connectionString: process.env.DATABASE_URL,
-                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-            });
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
 
         const adminResult = await pool.query(`
       INSERT INTO "user" (
@@ -222,9 +222,9 @@ app.post('/api/create-test-users', async (req, res) => {
             now
         ]);
 
-                await pool.end();
+        await pool.end();
 
-    res.json({
+        res.json({
             success: true,
             message: 'Test users created successfully',
             admin: adminResult.rows[0],
@@ -276,6 +276,31 @@ app.use(emailPrefsRouter);
 const adminMetricsModule = require('./routes/admin.metrics');
 const adminMetricsRouter = adminMetricsModule.default || adminMetricsModule;
 app.use('/api/admin/metrics', adminMetricsRouter);
+
+// Admin mail management
+const adminMailModule = require('./routes/admin/mail-items');
+const adminMailRouter = adminMailModule.default || adminMailModule;
+app.use(adminMailRouter);
+
+// Admin billing management
+const adminBillingModule = require('./routes/admin/billing');
+const adminBillingRouter = adminBillingModule.default || adminBillingModule;
+app.use(adminBillingRouter);
+
+// Admin user management
+const adminUsersModule = require('./routes/admin/users');
+const adminUsersRouter = adminUsersModule.default || adminUsersModule;
+app.use(adminUsersRouter);
+
+// Admin forwarding management
+const adminForwardingModule = require('./routes/admin/forwarding');
+const adminForwardingRouter = adminForwardingModule.default || adminForwardingModule;
+app.use(adminForwardingRouter);
+
+// Admin analytics
+const adminAnalyticsModule = require('./routes/admin/analytics');
+const adminAnalyticsRouter = adminAnalyticsModule.default || adminAnalyticsModule;
+app.use(adminAnalyticsRouter);
 
 // Public routes
 app.use(require('./routes/public/plans').default);
