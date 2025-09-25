@@ -125,6 +125,96 @@ app.use(limiter);
 // Public debug routes (before any auth middleware)
 app.get('/api/auth/ping', (req, res) => res.json({ ok: true }));
 
+// Temporary endpoint to create test users (remove in production)
+app.post('/api/create-test-users', async (req, res) => {
+  try {
+    const bcrypt = require('bcrypt');
+    const now = Date.now();
+    
+    // Hash passwords
+    const adminPassword = await bcrypt.hash('AdminPass123!', 12);
+    const userPassword = await bcrypt.hash('UserPass123!', 12);
+    
+    // Create admin user
+    const adminResult = await db.run(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+      'admin@virtualaddresshub.co.uk',
+      adminPassword,
+      'Admin',
+      'User',
+      'Admin User',
+      true,
+      'admin',
+      'active',
+      'verified',
+      'active',
+      now,
+      'completed',
+      now,
+      now
+    ]);
+    
+    // Create regular user
+    const userResult = await db.run(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+      'user@virtualaddresshub.co.uk',
+      userPassword,
+      'Regular',
+      'User',
+      'Regular User',
+      false,
+      'user',
+      'active',
+      'verified',
+      'active',
+      now,
+      'completed',
+      now,
+      now
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Test users created successfully',
+      admin: adminResult.rows[0],
+      user: userResult.rows[0],
+      credentials: {
+        admin: { email: 'admin@virtualaddresshub.co.uk', password: 'AdminPass123!' },
+        user: { email: 'user@virtualaddresshub.co.uk', password: 'UserPass123!' }
+      }
+    });
+    } catch (error) {
+    console.error('Error creating test users:', error);
+    res.status(500).json({ error: 'Failed to create test users', details: error.message });
+  }
+});
+
 // Auth routes (import existing handlers)
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);
