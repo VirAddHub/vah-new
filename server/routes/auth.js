@@ -148,11 +148,16 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user by email
-    const { rows } = await pool.query('SELECT * FROM "user" WHERE email = $1', [email]);
+    // Find user by email (exclude deleted users)
+    const { rows } = await pool.query('SELECT * FROM "user" WHERE email = $1 AND deleted_at IS NULL', [email]);
     const user = rows[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Check if user is suspended
+    if (user.status === 'suspended') {
+      return res.status(403).json({ ok: false, error: 'account_suspended' });
     }
 
     // Check password
