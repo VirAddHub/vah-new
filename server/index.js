@@ -52,36 +52,51 @@ function logSkip(what, table) {
 const app = express();
 app.set('trust proxy', 1); // required for secure cookies behind Render
 
+// CORS configuration - MUST be at the very top before any other middleware
+const ALLOWED_ORIGINS = new Set([
+    'https://vah-frontend-final.vercel.app',
+    'http://localhost:3000',
+]);
+
+function resolveOrigin(origin) {
+    if (!origin) return false;
+    return ALLOWED_ORIGINS.has(origin) ? origin : false;
+}
+
+const corsOptions = {
+    origin: (origin, cb) => cb(null, resolveOrigin(origin) || false),
+    credentials: true,
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','X-CSRF-Token','X-Requested-With','Accept'],
+    exposedHeaders: ['Content-Disposition'],
+};
+
+// Add a tiny logger so you can see preflights clearly
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        console.log('[OPTIONS]', req.headers.origin, req.path);
+    }
+    next();
+});
+
+// CORS must be before anything else:
+app.use(cors(corsOptions));
+
+// IMPORTANT: handle *all* OPTIONS with CORS and end with 204
+app.options(/^\/.*/, cors(corsOptions), (req, res) => {
+    res.sendStatus(204);
+});
+
 // Health / readiness probe for CI and Render
 app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
     res.json({ ok: true, service: 'vah-backend' });
 });
 
-// Security first
+// Security first (after CORS)
 app.use(helmet());
 
-// Cookies, then CORS (with CSRF header allowed)
+// Cookies after CORS
 app.use(cookieParser());
-
-// CORS configuration - use environment variables
-const ALLOWLIST = (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-const corsMiddleware = cors({
-    origin: function (origin, cb) {
-        // allow same-origin or preflight tools
-        if (!origin) return cb(null, true);
-        if (ALLOWLIST.includes(origin)) return cb(null, true);
-        return cb(new Error('Not allowed by CORS: ' + origin));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-});
-
-app.use(corsMiddleware);
 
 // important: express must parse JSON before routes
 app.use(express.json());
@@ -92,22 +107,14 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: new MemoryStore({
-        checkPeriod: 86400000 // prune expired entries every 24h
-    }),
+    store: new MemoryStore({ checkPeriod: 86400000 }),
     cookie: {
         httpOnly: true,
-        sameSite: 'none',
-        secure: true, // requires HTTPS + trust proxy
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    }
+        secure: true,         // Render uses HTTPS → required for cross-site cookies
+        sameSite: 'none',     // cross-site
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
 }));
-
-// OPTIONAL: explicit OPTIONS handler for some hosts
-app.options(/.*/, (req, res) => {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.sendStatus(204);
-});
 
 // Compression
 app.use(compression());
@@ -127,92 +134,92 @@ app.get('/api/auth/ping', (req, res) => res.json({ ok: true }));
 
 // Temporary endpoint to create test users (remove in production)
 app.post('/api/create-test-users', async (req, res) => {
-  try {
-    const bcrypt = require('bcrypt');
-    const now = Date.now();
-    
-    // Hash passwords
-    const adminPassword = await bcrypt.hash('AdminPass123!', 12);
-    const userPassword = await bcrypt.hash('UserPass123!', 12);
-    
-    // Create admin user
-    const adminResult = await db.run(`
-      INSERT INTO "user" (
-        email, password, first_name, last_name, name,
-        is_admin, role, status, kyc_status, plan_status,
-        plan_start_date, onboarding_step, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-      ) ON CONFLICT (email) DO UPDATE SET
-        is_admin = EXCLUDED.is_admin,
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        password = EXCLUDED.password,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, email, first_name, last_name, is_admin, role
-    `, [
-      'admin@virtualaddresshub.co.uk',
-      adminPassword,
-      'Admin',
-      'User',
-      'Admin User',
-      true,
-      'admin',
-      'active',
-      'verified',
-      'active',
-      now,
-      'completed',
-      now,
-      now
-    ]);
-    
-    // Create regular user
-    const userResult = await db.run(`
-      INSERT INTO "user" (
-        email, password, first_name, last_name, name,
-        is_admin, role, status, kyc_status, plan_status,
-        plan_start_date, onboarding_step, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-      ) ON CONFLICT (email) DO UPDATE SET
-        is_admin = EXCLUDED.is_admin,
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        password = EXCLUDED.password,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, email, first_name, last_name, is_admin, role
-    `, [
-      'user@virtualaddresshub.co.uk',
-      userPassword,
-      'Regular',
-      'User',
-      'Regular User',
-      false,
-      'user',
-      'active',
-      'verified',
-      'active',
-      now,
-      'completed',
-      now,
-      now
-    ]);
+    try {
+        const bcrypt = require('bcrypt');
+        const now = Date.now();
 
-    res.json({
-      success: true,
-      message: 'Test users created successfully',
-      admin: adminResult.rows[0],
-      user: userResult.rows[0],
-      credentials: {
-        admin: { email: 'admin@virtualaddresshub.co.uk', password: 'AdminPass123!' },
-        user: { email: 'user@virtualaddresshub.co.uk', password: 'UserPass123!' }
-      }
-    });
+        // Hash passwords
+        const adminPassword = await bcrypt.hash('AdminPass123!', 12);
+        const userPassword = await bcrypt.hash('UserPass123!', 12);
+
+        // Create admin user
+        const adminResult = await db.run(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+            'admin@virtualaddresshub.co.uk',
+            adminPassword,
+            'Admin',
+            'User',
+            'Admin User',
+            true,
+            'admin',
+            'active',
+            'verified',
+            'active',
+            now,
+            'completed',
+            now,
+            now
+        ]);
+
+        // Create regular user
+        const userResult = await db.run(`
+      INSERT INTO "user" (
+        email, password, first_name, last_name, name,
+        is_admin, role, status, kyc_status, plan_status,
+        plan_start_date, onboarding_step, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      ) ON CONFLICT (email) DO UPDATE SET
+        is_admin = EXCLUDED.is_admin,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        password = EXCLUDED.password,
+        updated_at = EXCLUDED.updated_at
+      RETURNING id, email, first_name, last_name, is_admin, role
+    `, [
+            'user@virtualaddresshub.co.uk',
+            userPassword,
+            'Regular',
+            'User',
+            'Regular User',
+            false,
+            'user',
+            'active',
+            'verified',
+            'active',
+            now,
+            'completed',
+            now,
+            now
+        ]);
+
+        res.json({
+            success: true,
+            message: 'Test users created successfully',
+            admin: adminResult.rows[0],
+            user: userResult.rows[0],
+            credentials: {
+                admin: { email: 'admin@virtualaddresshub.co.uk', password: 'AdminPass123!' },
+                user: { email: 'user@virtualaddresshub.co.uk', password: 'UserPass123!' }
+            }
+        });
     } catch (error) {
-    console.error('Error creating test users:', error);
-    res.status(500).json({ error: 'Failed to create test users', details: error.message });
-  }
+        console.error('Error creating test users:', error);
+        res.status(500).json({ error: 'Failed to create test users', details: error.message });
+    }
 });
 
 // Auth routes (import existing handlers)

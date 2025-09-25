@@ -10,13 +10,13 @@ const pool = new Pool({
 async function createTestUsers() {
   try {
     console.log('Creating test users...');
-    
+
     // Hash passwords
     const adminPassword = await bcrypt.hash('AdminPass123!', 12);
     const userPassword = await bcrypt.hash('UserPass123!', 12);
-    
+
     const now = Date.now();
-    
+
     // Create admin user
     const adminResult = await pool.query(`
       INSERT INTO "user" (
@@ -48,9 +48,9 @@ async function createTestUsers() {
       now,
       now
     ]);
-    
+
     console.log('✅ Admin user created:', adminResult.rows[0]);
-    
+
     // Create regular user
     const userResult = await pool.query(`
       INSERT INTO "user" (
@@ -82,14 +82,14 @@ async function createTestUsers() {
       now,
       now
     ]);
-    
+
     console.log('✅ Regular user created:', userResult.rows[0]);
-    
+
     console.log('\n🎉 Test users created successfully!');
     console.log('\nLogin credentials:');
     console.log('Admin: admin@virtualaddresshub.co.uk / AdminPass123!');
     console.log('User: user@virtualaddresshub.co.uk / UserPass123!');
-    
+
   } catch (error) {
     console.error('❌ Error creating users:', error);
   } finally {
