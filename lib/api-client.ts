@@ -408,10 +408,10 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
 export const adminApi = {
   // Mail Management
   mailItems: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/admin/mail-items?${p.toString()}`, o),
+    req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`, o),
 
   updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>
-    req<{ id: string }>(`/admin/mail-items/${id}`, {
+    req<{ id: string }>(`/api/admin/mail-items/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
@@ -423,23 +423,23 @@ export const adminApi = {
       outstanding_invoices_pence: number;
       churn_rate: number;
       recent_transactions: any[]
-    }>(`/admin/billing/metrics`),
+    }>(`/api/admin/billing/metrics`),
 
   // User Management
   users: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/admin/users?${p.toString()}`, o),
+    req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`, o),
 
   userStats: () =>
-    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/admin/users/stats`),
+    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/api/admin/users/stats`),
 
   deleteUser: (id: string | number) =>
-    req<{ deleted: number }>(`/admin/users/${id}`, { method: 'DELETE' }),
+    req<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
 
   restoreUser: (
     id: string | number,
     body: { email: string; first_name?: string; last_name?: string; reactivate?: boolean }
   ) =>
-    req<{ restored: number }>(`/admin/users/${id}/restore`, {
+    req<{ restored: number }>(`/api/admin/users/${id}/restore`, {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -464,13 +464,13 @@ export const adminApi = {
 
   // Forwarding Management
   forwardingQueue: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/admin/forwarding/queue?${p.toString()}`, o),
+    req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`, o),
 
   fulfillForward: (id: string) =>
-    req(`/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
+    req(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
 
   cancelForward: (id: string) =>
-    req(`/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
+    req(`/api/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
 
   // Analytics
   analytics: (range = '30d', period = 'rolling') =>

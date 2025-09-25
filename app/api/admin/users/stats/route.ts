@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-    try {
-        // TODO: Replace with actual database queries
-        // For now, return zero values as placeholders
-        
-        const stats = {
-            total: 0,        // Total users (active + suspended + pending)
-            active: 0,       // Active users
-            suspended: 0,    // Suspended users
-            pending: 0,      // Users with pending KYC
-            deleted: 0       // Soft-deleted users
-        };
+const API_BASE = process.env.API_BASE || 'https://vah-api-staging.onrender.com';
 
-        return NextResponse.json({
-            ok: true,
-            data: stats
-        });
-    } catch (error) {
-        console.error('Error fetching user stats:', error);
-        return NextResponse.json({ 
-            ok: false, 
-            error: 'Failed to fetch user stats' 
-        }, { status: 500 });
-    }
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  try {
+    const target = `${API_BASE}/api/admin/users/stats`;
+
+    const res = await fetch(target, {
+      method: 'GET',
+      headers: {
+        Origin: process.env.NEXT_PUBLIC_FRONTEND_ORIGIN || 'https://vah-frontend-final.vercel.app',
+        Cookie: req.headers.get('cookie') || '',
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    const body = await res.text();
+    return new NextResponse(body, {
+      status: res.status,
+      headers: {
+        'content-type': res.headers.get('content-type') ?? 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error('Error proxying user stats to backend:', error);
+    return NextResponse.json({ error: 'Failed to fetch user stats from backend' }, { status: 500 });
+  }
 }
