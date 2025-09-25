@@ -17,6 +17,7 @@ type AdminUser = {
   plan?: string;
   kyc_status?: string;
   created_at?: string;
+  deleted_at?: string;
 };
 
 export default function UsersSection() {
@@ -31,14 +32,27 @@ export default function UsersSection() {
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Delete confirmation state
-  const [confirming, setConfirming] = useState<null | { id: string | number; email: string }>(null);
-  const [confirmText, setConfirmText] = useState('');
-  const [isMutating, setIsMutating] = useState(false);
+  // Deleted users view toggle
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // User stats state
-  const [stats, setStats] = useState<{ total: number; deleted: number; suspended: number } | null>(null);
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [stats, setStats] = useState<{ total: number; active: number; suspended: number; pending: number; deleted: number } | null>(null);
+
+  // Delete confirmation state
+  const [deleteModal, setDeleteModal] = useState<null | { id: string | number; email: string }>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+
+  // Restore modal state
+  const [restoreModal, setRestoreModal] = useState<null | { id: string | number }>(null);
+  const [restoreForm, setRestoreForm] = useState({ 
+    email: '', 
+    first_name: '', 
+    last_name: '', 
+    reactivate: true 
+  });
+
+  // Mutation state
+  const [isMutating, setIsMutating] = useState(false);
 
   // Debounce and abort handling
   const debouncedQ = useRef(q);
@@ -67,6 +81,9 @@ export default function UsersSection() {
         ["page", String(page)],
         ["page_size", String(pageSize)],
       ]);
+      
+      if (showDeleted) params.set('include_deleted', 'true');
+
       const res = await adminApi.users(params, { signal: controller.signal });
       if (res.ok) {
         setItems(res.data?.items ?? []);
@@ -84,7 +101,7 @@ export default function UsersSection() {
     } finally {
       if (abortRef.current === controller) setIsFetching(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, showDeleted]);
 
   useEffect(() => { void load(); }, [page, load]);
 
@@ -97,25 +114,40 @@ export default function UsersSection() {
   useEffect(() => { loadUserStats(); }, [loadUserStats]);
 
   // Handle user deletion with double confirmation
-  async function handleDeleteUser() {
-    if (!confirming) return;
-    if (confirmText.trim().toLowerCase() !== confirming.email.toLowerCase()) {
-      toast({ title: 'Confirmation mismatch', description: 'Email does not match.', variant: 'destructive' });
+  async function handleDeleteUser(id: string | number) {
+    setIsMutating(true);
+    try {
+      const res = await adminApi.deleteUser(id);
+      if (!res.ok) throw new Error(res.error || 'delete_failed');
+      toast({ title: 'User deleted' });
+      await Promise.all([load(), loadUserStats()]);
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
+    } finally { 
+      setIsMutating(false); 
+      setDeleteModal(null); 
+      setDeleteConfirm(''); 
+    }
+  }
+
+  // Handle user restoration
+  async function handleRestoreUser() {
+    if (!restoreModal) return;
+    if (!restoreForm.email.trim()) {
+      toast({ title: 'Email required', variant: 'destructive' });
       return;
     }
     setIsMutating(true);
     try {
-      const res = await adminApi.deleteUser(confirming.id);
-      if (!res.ok) throw new Error(res.error || 'delete_failed');
-      toast({ title: 'User deleted', description: confirming.email });
-      setConfirming(null);
-      setConfirmText('');
-      await load(); // refresh the user list
-      await loadUserStats(); // refresh stats
+      const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
+      if (!res.ok) throw new Error(res.error || 'restore_failed');
+      toast({ title: 'User restored' });
+      await Promise.all([load(), loadUserStats()]);
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message ?? 'Failed to delete user', variant: 'destructive' });
-    } finally {
-      setIsMutating(false);
+      toast({ title: 'Error', description: e.message ?? 'Restore failed', variant: 'destructive' });
+    } finally { 
+      setIsMutating(false); 
+      setRestoreModal(null); 
     }
   }
 
@@ -125,23 +157,14 @@ export default function UsersSection() {
 
   return (
     <div className="space-y-4">
-      {/* Deleted users banner */}
-      {stats && stats.deleted > 0 && (
-        <div className="mb-3 flex items-center justify-between rounded-lg border bg-amber-50 px-3 py-2 text-sm">
-          <span>{stats.deleted} deleted user{stats.deleted > 1 ? 's' : ''} hidden.</span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowDeleted(!showDeleted);
-                setPage(1);
-                void load();
-              }}
-            >
-              {showDeleted ? 'Hide deleted' : 'View deleted'}
-            </Button>
-          </div>
+      {/* User stats badges */}
+      {stats && (
+        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+          <span>Total: {stats.total}</span>
+          <span>Active: {stats.active}</span>
+          <span>Suspended: {stats.suspended}</span>
+          <span>Pending: {stats.pending}</span>
+          <span className="text-red-600">Deleted: {stats.deleted}</span>
         </div>
       )}
 
@@ -152,6 +175,17 @@ export default function UsersSection() {
           <p className="text-sm text-muted-foreground">Total: {total}</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant={showDeleted ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setShowDeleted(!showDeleted);
+              setPage(1);
+              void load();
+            }}
+          >
+            {showDeleted ? 'Hide deleted' : 'Show deleted'}
+          </Button>
           <Input
             placeholder="Search name or email…"
             value={q}
@@ -206,14 +240,25 @@ export default function UsersSection() {
                       {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setConfirming({ id: u.id, email: u.email })}
-                        disabled={isMutating}
-                      >
-                        Delete
-                      </Button>
+                      {u.deleted_at ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRestoreModal({ id: u.id })}
+                          disabled={isMutating}
+                        >
+                          Restore
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeleteModal({ id: u.id, email: u.email })}
+                          disabled={isMutating}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -222,7 +267,7 @@ export default function UsersSection() {
           </Table>
         </div>
         
-        {/* Loading overlay - keep rows, add subtle overlay spinner */}
+        {/* Loading overlay */}
         {isFetching && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
             <span className="text-sm">Loading…</span>
@@ -260,39 +305,79 @@ export default function UsersSection() {
       </div>
 
       {/* Delete confirmation modal */}
-      {confirming && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border p-6 rounded-xl w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-2">Delete user?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              This will remove access and anonymize their data. Type
-              <span className="font-mono"> {confirming.email} </span>
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="font-semibold text-lg mb-2">Delete user</h3>
+            <p className="text-sm text-muted-foreground">
+              This will soft-delete and anonymize this user. Type the email
+              <span className="font-mono"> {deleteModal.email} </span>
               to confirm.
             </p>
             <input
-              className="w-full border rounded px-3 py-2 mb-4"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder={confirming.email}
-              autoFocus
+              className="mt-4 w-full border rounded px-3 py-2"
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              placeholder={deleteModal.email}
             />
-            <div className="flex gap-2 justify-end">
-              <Button 
-                variant="outline" 
-                onClick={() => { 
-                  setConfirming(null); 
-                  setConfirmText(''); 
-                }} 
-                disabled={isMutating}
-              >
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="outline" onClick={() => setDeleteModal(null)} disabled={isMutating}>
                 Cancel
               </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleDeleteUser} 
-                disabled={isMutating || confirmText.length === 0}
+              <Button
+                variant="destructive"
+                onClick={() => deleteConfirm.trim().toLowerCase() === deleteModal.email.toLowerCase() && handleDeleteUser(deleteModal.id)}
+                disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
               >
-                {isMutating ? 'Deleting…' : 'Delete'}
+                {isMutating ? 'Deleting…' : 'Confirm delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restore modal */}
+      {restoreModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="font-semibold text-lg mb-2">Restore user</h3>
+            <p className="text-sm text-muted-foreground mb-4">Provide a new unique email.</p>
+            <div className="space-y-3">
+              <input 
+                className="w-full border rounded px-3 py-2" 
+                placeholder="new-email@example.com"
+                value={restoreForm.email} 
+                onChange={e => setRestoreForm(f => ({ ...f, email: e.target.value }))}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input 
+                  className="border rounded px-3 py-2" 
+                  placeholder="First name"
+                  value={restoreForm.first_name} 
+                  onChange={e => setRestoreForm(f => ({ ...f, first_name: e.target.value }))}
+                />
+                <input 
+                  className="border rounded px-3 py-2" 
+                  placeholder="Last name"
+                  value={restoreForm.last_name} 
+                  onChange={e => setRestoreForm(f => ({ ...f, last_name: e.target.value }))}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input 
+                  type="checkbox" 
+                  checked={restoreForm.reactivate}
+                  onChange={e => setRestoreForm(f => ({ ...f, reactivate: e.target.checked }))}
+                />
+                Reactivate (status → active)
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="outline" onClick={() => setRestoreModal(null)} disabled={isMutating}>
+                Cancel
+              </Button>
+              <Button onClick={handleRestoreUser} disabled={isMutating || !restoreForm.email.trim()}>
+                {isMutating ? 'Restoring…' : 'Restore'}
               </Button>
             </div>
           </div>

@@ -430,10 +430,19 @@ export const adminApi = {
     req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`, o),
 
   userStats: () =>
-    req<{ total: number; deleted: number; suspended: number }>(`/api/admin/users/stats`),
+    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/api/admin/users/stats`),
 
   deleteUser: (id: string | number) =>
     req<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+
+  restoreUser: (
+    id: string | number,
+    body: { email: string; first_name?: string; last_name?: string; reactivate?: boolean }
+  ) =>
+    req<{ restored: number }>(`/api/admin/users/${id}/restore`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   updateUser: (id: string, payload: any) =>
     req(`/api/admin/users/${id}`, {

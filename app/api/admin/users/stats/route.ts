@@ -6,11 +6,11 @@ export async function GET(request: NextRequest) {
         // For now, return zero values as placeholders
         
         const stats = {
-            total: 0,        // Total active users
-            deleted: 0,     // Soft-deleted users
-            suspended: 0,   // Suspended users
-            active: 0,     // Active users
-            pending_kyc: 0  // Users with pending KYC
+            total: 0,        // Total users (active + suspended + pending)
+            active: 0,       // Active users
+            suspended: 0,    // Suspended users
+            pending: 0,      // Users with pending KYC
+            deleted: 0       // Soft-deleted users
         };
 
         return NextResponse.json({

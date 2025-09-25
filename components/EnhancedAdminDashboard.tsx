@@ -89,6 +89,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // Overview state for real-time metrics
     type Overview = {
         users: number;
+        deletedUsers: number;
         monthlyRevenuePence: number;
         mailProcessed: number;
         activeForwards: number;
@@ -96,6 +97,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     const [overview, setOverview] = useState<Overview>({
         users: 0,
+        deletedUsers: 0,
         monthlyRevenuePence: 0,
         mailProcessed: 0,
         activeForwards: 0,
@@ -115,6 +117,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
             setOverview({
                 users: userStatsRes.ok ? Number(userStatsRes.data?.total ?? 0) : 0,
+                deletedUsers: userStatsRes.ok ? Number(userStatsRes.data?.deleted ?? 0) : 0,
                 monthlyRevenuePence: billingRes.ok ? Number(billingRes.data?.monthly_revenue_pence ?? 0) : 0,
                 mailProcessed: processedRes.ok ? Number(processedRes.data?.total ?? 0) : 0,
                 activeForwards: forwardsRes.ok ? Number(forwardsRes.data?.total ?? 0) : 0,
@@ -333,6 +336,13 @@ function OverviewSection({ metrics, overview }: { metrics: any; overview: any })
                     icon={<Users2 className="h-5 w-5 text-blue-500" />}
                 />
                 <MetricCard
+                    title="Deleted Users"
+                    value={overview.deletedUsers.toLocaleString()}
+                    change=""
+                    trend="up"
+                    icon={<Users2 className="h-5 w-5 text-red-500" />}
+                />
+                <MetricCard
                     title="Monthly Revenue"
                     value={`£${(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                     change="Resets monthly"
@@ -345,13 +355,6 @@ function OverviewSection({ metrics, overview }: { metrics: any; overview: any })
                     change=""
                     trend="up"
                     icon={<Mail className="h-5 w-5 text-purple-500" />}
-                />
-                <MetricCard
-                    title="Active Forwards"
-                    value={overview.activeForwards.toLocaleString()}
-                    change=""
-                    trend="up"
-                    icon={<Truck className="h-5 w-5 text-orange-500" />}
                 />
             </div>
 
@@ -460,6 +463,10 @@ function OverviewSection({ metrics, overview }: { metrics: any; overview: any })
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Total Users</span>
                                 <span className="font-semibold">{overview.users.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Deleted Users</span>
+                                <span className="font-semibold text-red-600">{overview.deletedUsers.toLocaleString()}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Mail Processed</span>
