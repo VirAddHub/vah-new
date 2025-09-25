@@ -139,6 +139,25 @@ router.post('/signup', validateSignup, async (req, res) => {
   }
 });
 
+// CORS allowlist function (shared with main server)
+const allowlist = new Set([
+  'https://vah-frontend-final.vercel.app',
+  'http://localhost:3000',
+]);
+
+function isAllowed(origin) {
+  if (!origin) return true; // allow same-origin / server-to-server
+  if (allowlist.has(origin)) return true;
+  if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
+  return false;
+}
+
+if (process.env.ALLOWED_ORIGINS) {
+  for (const o of process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
+    allowlist.add(o);
+  }
+}
+
 // POST /api/auth/login
 router.post('/login', validateLogin, async (req, res) => {
   try {
@@ -181,6 +200,13 @@ router.post('/login', validateLogin, async (req, res) => {
       is_admin: !!user.is_admin,
       role: user.role || 'user'
     };
+
+    // Ensure ACTUAL login response carries CORS too:
+    const origin = req.headers.origin;
+    if (isAllowed(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
 
     // Return user data (without password)
     const { password: _, ...userData } = user;

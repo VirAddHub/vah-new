@@ -53,64 +53,57 @@ const app = express();
 app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // CORS configuration - MUST be at the very top before any other middleware
-const allowlist = [
+const allowlist = new Set([
     'https://vah-frontend-final.vercel.app',
     'http://localhost:3000',
-];
+]);
 
-// Allow preview URLs (startsWith)
+// Allow Vercel preview: https://vah-frontend-final-*.vercel.app
 function isAllowed(origin) {
-    if (!origin) return true;
-    if (allowlist.includes(origin)) return true;
-    if (origin.startsWith('https://vah-frontend-final-') && origin.includes('.vercel.app')) return true;
+    if (!origin) return true; // allow same-origin / server-to-server
+    if (allowlist.has(origin)) return true;
+    if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
     return false;
 }
 
-// Add environment variable support for additional origins
 if (process.env.ALLOWED_ORIGINS) {
-    const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
-    allowlist.push(...additionalOrigins);
+    for (const o of process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
+        allowlist.add(o);
+    }
 }
 
-app.use((req, res, next) => {
-    res.header('Vary', 'Origin');
-    next();
-});
-
-app.use(cors({
+const corsOptions = {
     origin(origin, cb) {
-        console.log('[CORS] Checking origin:', origin);
-        if (isAllowed(origin)) {
-            console.log('[CORS] Origin allowed:', origin);
-            return cb(null, true);
-        }
-        console.log('[CORS] Origin rejected:', origin);
+        if (isAllowed(origin)) return cb(null, origin || true);
         return cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
     exposedHeaders: ['Content-Disposition'],
-}));
+};
 
-// Ensure OPTIONS handled
-app.options('*', cors());
+app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
+app.use(require('cors')(corsOptions));
+
+// ✅ Use v6-compatible wildcard:
+app.options('/(.*)', require('cors')(corsOptions));
 
 // CORS Debug middleware (behind env flag)
 if (process.env.CORS_DEBUG === '1') {
     app.use((req, res, next) => {
         const originalSend = res.send;
         const originalJson = res.json;
-        
+
         // Log request details
         console.log('[CORS_DEBUG] Request:', {
             method: req.method,
             url: req.originalUrl,
             origin: req.headers.origin
         });
-        
+
         // Override response methods to log headers after response
-        res.send = function(data) {
+        res.send = function (data) {
             console.log('[CORS_DEBUG] Response headers:', {
                 'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
                 'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
@@ -118,8 +111,8 @@ if (process.env.CORS_DEBUG === '1') {
             });
             return originalSend.call(this, data);
         };
-        
-        res.json = function(data) {
+
+        res.json = function (data) {
             console.log('[CORS_DEBUG] Response headers:', {
                 'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
                 'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
@@ -127,7 +120,7 @@ if (process.env.CORS_DEBUG === '1') {
             });
             return originalJson.call(this, data);
         };
-        
+
         next();
     });
 }
@@ -138,12 +131,12 @@ app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
 });
 
 // Security first (after CORS) - configure helmet to not block cross-origin requests
+const helmet = require('helmet');
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            connectSrc: ["'self'", "https:"], // allow frontend to call backend
-        },
-    },
+    // API returns JSON; avoid strict CORP that can interfere with credentialed CORS
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    // Leave CSP off for API JSON endpoints to avoid noise (optional, but safer):
+    contentSecurityPolicy: false,
 }));
 
 // Cookies after CORS
@@ -153,6 +146,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 // secure session cookie for cross-site usage
+const session = require('express-session');
 app.use(session({
     name: 'sid',
     secret: process.env.SESSION_SECRET,
@@ -161,9 +155,10 @@ app.use(session({
     store: new MemoryStore({ checkPeriod: 86400000 }),
     cookie: {
         httpOnly: true,
-        secure: true,         // Render uses HTTPS → required for cross-site cookies
-        sameSite: 'none',     // cross-site
+        secure: true,          // required with SameSite=None
+        sameSite: 'none',      // cross-site
         maxAge: 1000 * 60 * 60 * 24 * 7,
+        path: '/',
     },
 }));
 
@@ -349,12 +344,10 @@ app.use(require('./routes/public/plans').default);
 // Dashboard routes
 app.use('/api', require('./routes/dashboard'));
 
-// Fallback OPTIONS handler for any missed OPTIONS requests
+// OPTIONS fallback (preflight safety net):
 app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
-    }
-    next();
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    return next();
 });
 
 // Error handling middleware
@@ -379,7 +372,7 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`VAH backend listening on http://0.0.0.0:${PORT}`);
-    console.log(`CORS origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
+    console.log(`CORS origins: ${Array.from(allowlist).join(', ')}`);
     console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
 });
 

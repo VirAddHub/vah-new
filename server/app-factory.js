@@ -23,8 +23,14 @@ function createApp(opts = {}) {
         res.json({ ok: true, service: 'vah-backend' });
     });
 
-    // Security first
-    app.use(helmet());
+    // Security first (after CORS) - configure helmet to not block cross-origin requests
+    const helmet = require('helmet');
+    app.use(helmet({
+        // API returns JSON; avoid strict CORP that can interfere with credentialed CORS
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+        // Leave CSP off for API JSON endpoints to avoid noise (optional, but safer):
+        contentSecurityPolicy: false,
+    }));
 
     // Cookies, then CORS (with CSRF header allowed)
     app.use(cookieParser());
@@ -34,61 +40,57 @@ function createApp(opts = {}) {
     const { ensureAdmin } = require('./middleware/ensureAdmin');
 
     // CORS configuration
-    const allowlist = [
+    const allowlist = new Set([
         'https://vah-frontend-final.vercel.app',
         'http://localhost:3000',
-    ];
+    ]);
 
-    // Allow preview URLs (startsWith)
+    // Allow Vercel preview: https://vah-frontend-final-*.vercel.app
     function isAllowed(origin) {
-        if (!origin) return true;
-        if (allowlist.includes(origin)) return true;
-        if (origin.startsWith('https://vah-frontend-final-') && origin.includes('.vercel.app')) return true;
+        if (!origin) return true; // allow same-origin / server-to-server
+        if (allowlist.has(origin)) return true;
+        if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
         return false;
     }
 
-    // Add environment variable support for additional origins
     if (process.env.ALLOWED_ORIGINS) {
-        const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
-        allowlist.push(...additionalOrigins);
+        for (const o of process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
+            allowlist.add(o);
+        }
     }
 
-    app.use((req, res, next) => {
-        res.header('Vary', 'Origin');
-        next();
-    });
-
-    app.use(cors({
+    const corsOptions = {
         origin(origin, cb) {
-            if (isAllowed(origin)) {
-                return cb(null, true);
-            }
+            if (isAllowed(origin)) return cb(null, origin || true);
             return cb(new Error('Not allowed by CORS'));
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
         exposedHeaders: ['Content-Disposition'],
-    }));
+    };
 
-    // Ensure OPTIONS handled
-    app.options('*', cors());
+    app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
+    app.use(require('cors')(corsOptions));
+
+    // ✅ Use v6-compatible wildcard:
+    app.options('/(.*)', require('cors')(corsOptions));
 
     // CORS Debug middleware (behind env flag)
     if (process.env.CORS_DEBUG === '1') {
         app.use((req, res, next) => {
             const originalSend = res.send;
             const originalJson = res.json;
-            
+
             // Log request details
             console.log('[CORS_DEBUG] Request:', {
                 method: req.method,
                 url: req.originalUrl,
                 origin: req.headers.origin
             });
-            
+
             // Override response methods to log headers after response
-            res.send = function(data) {
+            res.send = function (data) {
                 console.log('[CORS_DEBUG] Response headers:', {
                     'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
                     'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
@@ -96,8 +98,8 @@ function createApp(opts = {}) {
                 });
                 return originalSend.call(this, data);
             };
-            
-            res.json = function(data) {
+
+            res.json = function (data) {
                 console.log('[CORS_DEBUG] Response headers:', {
                     'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
                     'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
@@ -105,7 +107,7 @@ function createApp(opts = {}) {
                 });
                 return originalJson.call(this, data);
             };
-            
+
             next();
         });
     }
@@ -234,12 +236,10 @@ function createApp(opts = {}) {
         });
     });
 
-    // Fallback OPTIONS handler for any missed OPTIONS requests
+    // OPTIONS fallback (preflight safety net):
     app.use((req, res, next) => {
-        if (req.method === 'OPTIONS') {
-            return res.sendStatus(204);
-        }
-        next();
+        if (req.method === 'OPTIONS') return res.sendStatus(204);
+        return next();
     });
 
     return app;
