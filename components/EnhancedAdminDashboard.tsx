@@ -66,6 +66,7 @@ import {
     Building2,
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
+import UsersSection from "./admin/UsersSection";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -123,7 +124,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "overview":
                 return <OverviewSection metrics={metrics} />;
             case "users":
-                return <UsersSection onNavigate={onNavigate} users={users} />;
+                return <UsersSection />;
             case "mail":
                 return <MailSection />;
             case "forwarding":
@@ -269,7 +270,10 @@ function OverviewSection({ metrics }: { metrics: any }) {
                 />
                 <MetricCard
                     title="Monthly Revenue"
-                    value={totals && typeof totals === 'object' && 'monthly_revenue_pence' in totals && typeof totals.monthly_revenue_pence === 'number' ? `£${(totals.monthly_revenue_pence / 100).toLocaleString()}` : "£0"}
+                    value={(() => {
+                        const p = Number((totals as any)?.monthly_revenue_pence ?? 0);
+                        return `£${(p / 100).toLocaleString()}`;
+                    })()}
                     change=""
                     trend="up"
                     icon={<DollarSign className="h-5 w-5 text-green-500" />}
@@ -366,19 +370,19 @@ function OverviewSection({ metrics }: { metrics: any }) {
                             <PendingAction
                                 priority="high"
                                 title="KYC Reviews"
-                                count={7}
+                                count={0}
                                 action="Review Pending"
                             />
                             <PendingAction
                                 priority="medium"
                                 title="Mail Tagging"
-                                count={23}
+                                count={0}
                                 action="Tag Items"
                             />
                             <PendingAction
                                 priority="low"
                                 title="User Inquiries"
-                                count={4}
+                                count={0}
                                 action="Respond"
                             />
                         </div>
@@ -394,23 +398,23 @@ function OverviewSection({ metrics }: { metrics: any }) {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">New Registrations</span>
-                                <span className="font-semibold">12</span>
+                                <span className="font-semibold">0</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Mail Items Received</span>
-                                <span className="font-semibold">89</span>
+                                <span className="font-semibold">0</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Forwards Initiated</span>
-                                <span className="font-semibold">34</span>
+                                <span className="font-semibold">0</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Support Tickets</span>
-                                <span className="font-semibold">7</span>
+                                <span className="font-semibold">0</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Revenue</span>
-                                <span className="font-semibold">£1,247</span>
+                                <span className="font-semibold">£0</span>
                             </div>
                         </div>
                     </CardContent>
@@ -420,193 +424,6 @@ function OverviewSection({ metrics }: { metrics: any }) {
     );
 }
 
-function UsersSection({ onNavigate, users }: { onNavigate?: (page: string, data?: any) => void; users: any[] }) {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [planFilter, setPlanFilter] = useState("all");
-
-    // Users data comes from API - no hardcoded data
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-        const matchesPlan = planFilter === "all" || user.plan === planFilter;
-        return matchesSearch && matchesStatus && matchesPlan;
-    });
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">User Management</h1>
-                    <p className="text-muted-foreground">Manage user accounts, KYC status, and subscriptions</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" className="gap-2">
-                        <Download className="h-4 w-4" />
-                        Export Users
-                    </Button>
-                    <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add User
-                    </Button>
-                </div>
-            </div>
-
-            {/* Filters and Search */}
-            <Card>
-                <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search users by name or email..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="suspended">Suspended</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={planFilter} onValueChange={setPlanFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Plan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Plans</SelectItem>
-                                    <SelectItem value="basic">Basic</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                    <SelectItem value="professional">Professional</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Desktop Table */}
-            <div className="hidden lg:block">
-                <Card>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>KYC Status</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Mail Count</TableHead>
-                                <TableHead>Total Spent</TableHead>
-                                <TableHead>Last Login</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {(Array.isArray(filteredUsers) ? filteredUsers : []).map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{user.name}</div>
-                                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                                            <div className="text-xs text-muted-foreground">Joined {user.joined}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={user.kyc === "approved" ? "default" : user.kyc === "pending" ? "secondary" : "destructive"}>
-                                            {user.kyc}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="capitalize">
-                                            {user.plan}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                                            {user.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>{user.mailCount}</TableCell>
-                                    <TableCell>{user.totalSpent}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{user.lastLogin}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button size="sm" variant="outline">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="outline">
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="outline">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Card>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="lg:hidden space-y-4">
-                {(Array.isArray(filteredUsers) ? filteredUsers : []).map((user) => (
-                    <Card key={user.id}>
-                        <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 className="font-medium">{user.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                                    <p className="text-xs text-muted-foreground">Joined {user.joined}</p>
-                                </div>
-                                <div className="text-right">
-                                    <Badge variant={user.kyc === "approved" ? "default" : "secondary"} className="mb-1">
-                                        {user.kyc}
-                                    </Badge>
-                                    <br />
-                                    <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                                        {user.status}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                                <div>
-                                    <span className="text-muted-foreground">Plan:</span> <span className="capitalize">{user.plan}</span>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Mail:</span> {user.mailCount}
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Spent:</span> {user.totalSpent}
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground">Login:</span> {user.lastLogin}
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="outline" className="flex-1">View</Button>
-                                <Button size="sm" variant="outline" className="flex-1">Edit</Button>
-                                <Button size="sm" variant="outline" className="flex-1">Actions</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 function MailSection() {
     const [selectedTab, setSelectedTab] = useState("received");
@@ -706,13 +523,12 @@ function BillingSection() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                <p className="text-2xl font-bold">£47,329</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowUp className="h-3 w-3" />
-                                    +8.1% from last month
+                                <p className="text-2xl font-bold">£0</p>
+                                <p className="text-xs text-muted-foreground">
+                                    No data available
                                 </p>
                             </div>
-                            <DollarSign className="h-8 w-8 text-green-500" />
+                            <DollarSign className="h-8 w-8 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
@@ -722,10 +538,10 @@ function BillingSection() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
-                                <p className="text-2xl font-bold">£2,847</p>
-                                <p className="text-xs text-orange-600">12 pending payments</p>
+                                <p className="text-2xl font-bold">£0</p>
+                                <p className="text-xs text-muted-foreground">No pending payments</p>
                             </div>
-                            <FileText className="h-8 w-8 text-orange-500" />
+                            <FileText className="h-8 w-8 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
@@ -735,13 +551,12 @@ function BillingSection() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Churn Rate</p>
-                                <p className="text-2xl font-bold">2.3%</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                    <ArrowDown className="h-3 w-3" />
-                                    -0.5% from last month
+                                <p className="text-2xl font-bold">0%</p>
+                                <p className="text-xs text-muted-foreground">
+                                    No data available
                                 </p>
                             </div>
-                            <TrendingDown className="h-8 w-8 text-red-500" />
+                            <TrendingDown className="h-8 w-8 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
@@ -999,11 +814,7 @@ function PendingAction({ priority, title, count, action }: {
 }
 
 function MailTable({ status }: { status: string }) {
-    const demo = [
-        { id: 101, user: "Jane Doe", sender: "HMRC", subject: "Tax Notice", tag: "Government", received: "2 hours ago" },
-        { id: 102, user: "John Smith", sender: "Lloyds Bank", subject: "Account Statement", tag: "Financial", received: "4 hours ago" },
-        { id: 103, user: "Alice Johnson", sender: "Royal Mail", subject: "Delivery Notification", tag: "Logistics", received: "6 hours ago" },
-    ];
+    const demo: any[] = []; // No fake data
 
     return (
         <Card>
@@ -1020,31 +831,39 @@ function MailTable({ status }: { status: string }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {(Array.isArray(demo) ? demo : []).map((item) => (
-                        <TableRow key={item.id}>
-                            <TableCell>#{item.id}</TableCell>
-                            <TableCell>{item.user}</TableCell>
-                            <TableCell>{item.sender}</TableCell>
-                            <TableCell>{item.subject}</TableCell>
-                            <TableCell>
-                                <Badge variant="outline">{item.tag}</Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{item.received}</TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <Button size="sm" variant="outline">
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="outline">
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="outline">
-                                        <Truck className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                    {demo.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                No mail items found
                             </TableCell>
                         </TableRow>
-                    ))}
+                    ) : (
+                        demo.map((item) => (
+                            <TableRow key={item.id}>
+                                <TableCell>#{item.id}</TableCell>
+                                <TableCell>{item.user}</TableCell>
+                                <TableCell>{item.sender}</TableCell>
+                                <TableCell>{item.subject}</TableCell>
+                                <TableCell>
+                                    <Badge variant="outline">{item.tag}</Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">{item.received}</TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        <Button size="sm" variant="outline">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="outline">
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="outline">
+                                            <Truck className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    )}
                 </TableBody>
             </Table>
         </Card>

@@ -173,78 +173,15 @@ export async function DELETE(
 
 // Helper functions
 async function getUserById(userId: string): Promise<any> {
-    // Mock database query - replace with actual database operation
-    const mockUsers = [
-        {
-            id: 1,
-            name: "Jane Doe",
-            email: "jane@example.com",
-            firstName: "Jane",
-            lastName: "Doe",
-            kyc: "approved",
-            plan: "premium",
-            status: "active",
-            is_admin: false,
-            joined: "2023-08-15",
-            lastLogin: "2 hours ago",
-            mailCount: 23,
-            totalSpent: "£299.88",
-            companyName: "Doe Enterprises Ltd",
-            address: { line1: "123 Business St", city: "London", postcode: "SW1A 1AA" },
-            phone: "+44 20 7123 4567"
-        },
-        {
-            id: 2,
-            name: "John Smith",
-            email: "john@example.com",
-            firstName: "John",
-            lastName: "Smith",
-            kyc: "pending",
-            plan: "basic",
-            status: "active",
-            is_admin: false,
-            joined: "2023-09-02",
-            lastLogin: "1 day ago",
-            mailCount: 8,
-            totalSpent: "£39.99",
-            companyName: "Smith Consulting",
-            address: { line1: "456 High St", city: "Manchester", postcode: "M1 1AA" },
-            phone: "+44 161 234 5678"
-        },
-        {
-            id: 3,
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            firstName: "Alice",
-            lastName: "Johnson",
-            kyc: "approved",
-            plan: "professional",
-            status: "suspended",
-            is_admin: false,
-            joined: "2023-07-20",
-            lastLogin: "5 days ago",
-            mailCount: 156,
-            totalSpent: "£1,247.50",
-            companyName: "Johnson & Associates",
-            address: { line1: "789 Corporate Ave", city: "Birmingham", postcode: "B1 1AA" },
-            phone: "+44 121 345 6789"
-        }
-    ];
-
-    return mockUsers.find(user => user.id.toString() === userId) || null;
+    // TODO: Replace with actual database query
+    // For now, return null to show no fake data
+    return null;
 }
 
 async function checkEmailConflict(email: string, excludeUserId: string): Promise<boolean> {
-    // Mock email conflict check - replace with actual database query
-    const existingEmails = [
-        'admin@virtualaddresshub.co.uk',
-        'demo@virtualaddresshub.co.uk',
-        'jane@example.com',
-        'john@example.com',
-        'alice@example.com'
-    ];
-
-    return existingEmails.includes(email.toLowerCase());
+    // TODO: Replace with actual database query
+    // For now, return false to show no fake data
+    return false;
 }
 
 async function updateUser(userId: string, userData: any): Promise<any> {

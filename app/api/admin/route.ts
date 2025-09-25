@@ -44,16 +44,16 @@ export async function POST(request: NextRequest) {
 
 // Admin Stats Handler
 async function handleAdminStats() {
-    // Mock data - replace with actual database queries
+    // TODO: Replace with actual database queries
     const stats = {
-        totalUsers: 2847,
-        monthlyRevenue: 47329,
-        mailProcessed: 18492,
-        activeForwards: 1234,
-        userGrowth: 12.3,
-        revenueGrowth: 8.1,
-        mailGrowth: 23.4,
-        forwardGrowth: -2.1
+        totalUsers: 0,
+        monthlyRevenue: 0,
+        mailProcessed: 0,
+        activeForwards: 0,
+        userGrowth: 0,
+        revenueGrowth: 0,
+        mailGrowth: 0,
+        forwardGrowth: 0
     };
 
     return NextResponse.json(stats);
@@ -74,22 +74,19 @@ async function handleSystemHealth() {
 
 // Recent Activity Handler
 async function handleRecentActivity() {
-    const activity = [
-        { icon: "UserCheck", title: "New user registration", description: "jane.doe@example.com verified KYC", time: "2 minutes ago" },
-        { icon: "Mail", title: "Mail batch processed", description: "47 items scanned and uploaded", time: "15 minutes ago" },
-        { icon: "Truck", title: "Forwarding completed", description: "Delivery #FR-2847 dispatched", time: "1 hour ago" },
-        { icon: "CreditCard", title: "Payment processed", description: "Invoice #INV-1045 paid (£39.99)", time: "2 hours ago" }
-    ];
+    // TODO: Replace with actual database queries
+    const activity: any[] = [];
 
     return NextResponse.json(activity);
 }
 
 // Pending Actions Handler
 async function handlePendingActions() {
+    // TODO: Replace with actual database queries
     const pending = [
-        { priority: "high", title: "KYC Reviews", count: 7, action: "Review Pending", actionId: "kyc_reviews" },
-        { priority: "medium", title: "Mail Tagging", count: 23, action: "Tag Items", actionId: "mail_tagging" },
-        { priority: "low", title: "User Inquiries", count: 4, action: "Respond", actionId: "user_inquiries" }
+        { priority: "high", title: "KYC Reviews", count: 0, action: "Review Pending", actionId: "kyc_reviews" },
+        { priority: "medium", title: "Mail Tagging", count: 0, action: "Tag Items", actionId: "mail_tagging" },
+        { priority: "low", title: "User Inquiries", count: 0, action: "Respond", actionId: "user_inquiries" }
     ];
 
     return NextResponse.json(pending);

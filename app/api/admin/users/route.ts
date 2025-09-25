@@ -40,98 +40,53 @@ export async function POST(request: NextRequest) {
 // User List Handler
 async function handleUserList(request: NextRequest) {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'all';
-    const plan = searchParams.get('plan') || 'all';
-    const kyc = searchParams.get('kyc') || 'all';
-    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('page_size') || '20');
+    const status = searchParams.get('status') || '';
+    const plan = searchParams.get('plan') || '';
+    const kyc = searchParams.get('kyc') || '';
+    const search = searchParams.get('q') || '';
 
-    // Mock user data - replace with actual database query
-    const users = [
-        {
-            id: 1,
-            name: "Jane Doe",
-            email: "jane@example.com",
-            kyc: "approved",
-            plan: "premium",
-            status: "active",
-            joined: "2023-08-15",
-            lastLogin: "2 hours ago",
-            mailCount: 23,
-            totalSpent: "£299.88",
-            companyName: "Doe Enterprises Ltd",
-            address: "123 Business St, London",
-            phone: "+44 20 7123 4567"
-        },
-        {
-            id: 2,
-            name: "John Smith",
-            email: "john@example.com",
-            kyc: "pending",
-            plan: "basic",
-            status: "active",
-            joined: "2023-09-02",
-            lastLogin: "1 day ago",
-            mailCount: 8,
-            totalSpent: "£39.99",
-            companyName: "Smith Consulting",
-            address: "456 High St, Manchester",
-            phone: "+44 161 234 5678"
-        },
-        {
-            id: 3,
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            kyc: "approved",
-            plan: "professional",
-            status: "suspended",
-            joined: "2023-07-20",
-            lastLogin: "5 days ago",
-            mailCount: 156,
-            totalSpent: "£1,247.50",
-            companyName: "Johnson & Associates",
-            address: "789 Corporate Ave, Birmingham",
-            phone: "+44 121 345 6789"
-        }
-    ];
+    try {
+        // TODO: Replace with actual database query
+        // For now, return empty array to show no fake data
+        const users: any[] = [];
 
-    // Apply filters
-    let filteredUsers = users;
+        // Apply pagination
+        const offset = (page - 1) * pageSize;
+        const paginatedUsers = users.slice(offset, offset + pageSize);
 
-    if (status !== 'all') {
-        filteredUsers = filteredUsers.filter(user => user.status === status);
+        return NextResponse.json({
+            items: paginatedUsers,
+            total: users.length,
+            page,
+            page_size: pageSize,
+            total_pages: Math.ceil(users.length / pageSize)
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
-
-    if (plan !== 'all') {
-        filteredUsers = filteredUsers.filter(user => user.plan === plan);
-    }
-
-    if (kyc !== 'all') {
-        filteredUsers = filteredUsers.filter(user => user.kyc === kyc);
-    }
-
-    if (search) {
-        filteredUsers = filteredUsers.filter(user =>
-            user.name.toLowerCase().includes(search.toLowerCase()) ||
-            user.email.toLowerCase().includes(search.toLowerCase()) ||
-            (user.companyName && user.companyName.toLowerCase().includes(search.toLowerCase()))
-        );
-    }
-
-    return NextResponse.json(filteredUsers);
 }
 
 // User Stats Handler
 async function handleUserStats() {
-    const stats = {
-        total: 2847,
-        active: 2634,
-        pendingKyc: 156,
-        suspended: 57,
-        newThisMonth: 234,
-        churnRate: 2.3
-    };
+    try {
+        // TODO: Replace with actual database query
+        const stats = {
+            total: 0,
+            active: 0,
+            pendingKyc: 0,
+            suspended: 0,
+            newThisMonth: 0,
+            churnRate: 0
+        };
 
-    return NextResponse.json(stats);
+        return NextResponse.json(stats);
+    } catch (error) {
+        console.error('Error fetching user stats:', error);
+        return NextResponse.json({ error: 'Failed to fetch user stats' }, { status: 500 });
+    }
 }
 
 // User Export Handler

@@ -383,19 +383,23 @@ export const apiClient = {
 
 // Core request function with consistent error handling and cookies
 async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+      ...init,
+    });
 
-  const body = await res.json().catch(() => ({}));
+    const body = await res.json().catch(() => ({}));
 
-  if (!res.ok || body?.ok === false) {
-    return { ok: false, error: body?.error || res.statusText };
+    if (!res.ok || body?.ok === false) {
+      return { ok: false, error: body?.error || res.statusText };
+    }
+
+    return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
+  } catch (error) {
+    return { ok: false, error: 'Network error' };
   }
-
-  return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
 }
 
 // Typed Admin API - single place for all admin endpoints
