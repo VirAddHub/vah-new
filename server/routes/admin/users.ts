@@ -14,15 +14,32 @@ const pool = new Pool({
 
 // Get users with search, filters, and stats
 router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { search, status, plan, kyc, limit = 20, offset = 0 } = req.query;
+    const { q: search, status, plan, kyc, page = 1, page_size = 25 } = req.query;
+    const limit = parseInt(page_size);
+    const offset = (parseInt(page) - 1) * limit;
 
     try {
+        // Get total count for pagination
+        const countResult = await pool.query(`
+            SELECT COUNT(*) as total
+            FROM "user" u
+            WHERE ($1::text IS NULL OR (u.email ILIKE '%'||$1||'%' OR u.first_name ILIKE '%'||$1||'%' OR u.last_name ILIKE '%'||$1||'%'))
+              AND ($2::text IS NULL OR u.status = $2)
+              AND ($3::text IS NULL OR u.plan_status = $3)
+              AND ($4::text IS NULL OR u.kyc_status = $4)
+        `, [search || null, status || null, plan || null, kyc || null]);
+
         const { rows } = await pool.query(`
             SELECT
-              u.id, u.email, u.first_name, u.last_name, u.is_admin, u.status,
-              u.plan_status as plan, u.kyc_status, u.created_at, u.last_login_at,
-              COALESCE(SUM(i.amount_pence) FILTER(WHERE i.status='paid'),0)::bigint AS total_spent_pence,
-              COALESCE(COUNT(mi.id),0)::bigint AS mail_count
+              u.id, 
+              CONCAT(u.first_name, ' ', u.last_name) as name,
+              u.email, 
+              to_timestamp(u.created_at / 1000) as joined_at,
+              u.plan_status as plan, 
+              COALESCE(SUM(i.amount_pence) FILTER(WHERE i.status='paid'),0)::bigint AS spent_pence,
+              COALESCE(COUNT(mi.id),0)::bigint AS mail_count,
+              to_timestamp(u.last_login_at / 1000) as last_login_at,
+              u.status, u.kyc_status
             FROM "user" u
             LEFT JOIN invoice i ON i.user_id = u.id
             LEFT JOIN mail_item mi ON mi.user_id = u.id
@@ -33,12 +50,15 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
             GROUP BY u.id
             ORDER BY u.created_at DESC
             LIMIT $5 OFFSET $6
-        `, [search || null, status || null, plan || null, kyc || null, parseInt(limit), parseInt(offset)]);
+        `, [search || null, status || null, plan || null, kyc || null, limit, offset]);
 
-        ok(res, { users: rows });
+        ok(res, { 
+            items: rows, 
+            total: parseInt(countResult.rows[0].total) 
+        });
     } catch (err) {
         console.error('[admin.users] error', err);
-        ok(res, { users: [] });
+        ok(res, { items: [], total: 0 });
     }
 }));
 
@@ -67,9 +87,9 @@ router.get('/api/admin/users/stats', requireAdmin, asyncHandler(async (req: any,
 
 // Create user
 router.post('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { 
-        email, password, first_name, last_name, phone, company_name, 
-        business_type, company_number, vat_number, address, plan, is_admin = false 
+    const {
+        email, password, first_name, last_name, phone, company_name,
+        business_type, company_number, vat_number, address, plan, is_admin = false
     } = req.body;
 
     if (!email || !password || !first_name || !last_name) {
@@ -91,7 +111,7 @@ router.post('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res:
             RETURNING id, email, first_name, last_name, is_admin, status, plan_status, kyc_status, created_at
         `, [
             email, password_hash, first_name, last_name, phone || null, company_name || null,
-            business_type || null, company_number || null, vat_number || null, 
+            business_type || null, company_number || null, vat_number || null,
             address ? JSON.stringify(address) : null, plan || 'inactive', is_admin, now
         ]);
 
@@ -114,8 +134,8 @@ router.put('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any, r
     }
 
     const allowedFields = [
-        'email', 'first_name', 'last_name', 'phone', 'company_name', 
-        'business_type', 'company_number', 'vat_number', 'address', 
+        'email', 'first_name', 'last_name', 'phone', 'company_name',
+        'business_type', 'company_number', 'vat_number', 'address',
         'plan_status', 'is_admin', 'status', 'kyc_status'
     ];
 

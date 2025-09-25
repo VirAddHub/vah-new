@@ -22,31 +22,31 @@ router.get('/api/admin/billing/metrics', requireAdmin, asyncHandler(async (req: 
                 WHERE created_at >= EXTRACT(EPOCH FROM NOW() - INTERVAL '30 days') * 1000 
                   AND status = 'paid'
             `).then(r => r.rows).catch(() => [{ monthly_revenue_pence: 0 }]),
-            
+
             pool.query(`
                 SELECT COALESCE(SUM(amount_pence), 0) AS outstanding_pence, 
                        COALESCE(COUNT(*), 0) AS pending_count
                 FROM invoice
                 WHERE status = 'pending'
             `).then(r => r.rows).catch(() => [{ outstanding_pence: 0, pending_count: 0 }]),
-            
+
             // Churn rate - return 0 if not tracked
             Promise.resolve([{ churn_rate: 0 }])
         ]);
 
         ok(res, {
             monthly_revenue_pence: revenueRow?.monthly_revenue_pence ?? 0,
-            outstanding_pence: outstandingRow?.outstanding_pence ?? 0,
-            pending_count: outstandingRow?.pending_count ?? 0,
-            churn_rate: churnRow?.churn_rate ?? 0
+            outstanding_invoices_pence: outstandingRow?.outstanding_pence ?? 0,
+            churn_rate: churnRow?.churn_rate ?? 0,
+            recent_transactions: []
         });
     } catch (err) {
         console.error('[admin.billing.metrics] fatal', err);
         ok(res, {
             monthly_revenue_pence: 0,
-            outstanding_pence: 0,
-            pending_count: 0,
-            churn_rate: 0
+            outstanding_invoices_pence: 0,
+            churn_rate: 0,
+            recent_transactions: []
         });
     }
 }));

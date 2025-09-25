@@ -153,11 +153,11 @@ app.post('/api/create-test-users', async (req, res) => {
         const userPassword = await bcrypt.hash('UserPass123!', 12);
 
         // Create admin user using direct PostgreSQL pool
-        const { Pool } = require('pg');
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-        });
+            const { Pool } = require('pg');
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+            });
 
         const adminResult = await pool.query(`
       INSERT INTO "user" (
@@ -222,9 +222,9 @@ app.post('/api/create-test-users', async (req, res) => {
             now
         ]);
 
-        await pool.end();
+                await pool.end();
 
-        res.json({
+    res.json({
             success: true,
             message: 'Test users created successfully',
             admin: adminResult.rows[0],

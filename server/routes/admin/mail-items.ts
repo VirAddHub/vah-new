@@ -13,23 +13,47 @@ const pool = new Pool({
 
 // List mail items with tabs + search + paging
 router.get('/api/admin/mail-items', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { status, search, limit = 20, offset = 0 } = req.query;
+    const { status, tag, q: search, page = 1, page_size = 25 } = req.query;
+    const limit = parseInt(page_size);
+    const offset = (parseInt(page) - 1) * limit;
 
-    const { rows } = await pool.query(`
-        SELECT mi.id, mi.user_id, u.first_name, u.last_name, mi.sender, mi.subject, mi.tag,
-               mi.status, mi.created_at, mi.scan_token
+    // Get total count for pagination
+    const countResult = await pool.query(`
+        SELECT COUNT(*) as total
         FROM mail_item mi
         JOIN "user" u ON u.id = mi.user_id
         WHERE ($1::text IS NULL OR mi.status = $1)
-          AND ($2::text IS NULL OR (
-               mi.sender ILIKE '%'||$2||'%' OR mi.subject ILIKE '%'||$2||'%' OR
-               u.email ILIKE '%'||$2||'%' OR u.first_name ILIKE '%'||$2||'%' OR u.last_name ILIKE '%'||$2||'%'
+          AND ($2::text IS NULL OR mi.tag = $2)
+          AND ($3::text IS NULL OR (
+               mi.sender ILIKE '%'||$3||'%' OR mi.subject ILIKE '%'||$3||'%' OR
+               u.email ILIKE '%'||$3||'%' OR u.first_name ILIKE '%'||$3||'%' OR u.last_name ILIKE '%'||$3||'%'
+          ))
+    `, [status || null, tag || null, search || null]);
+
+    const { rows } = await pool.query(`
+        SELECT mi.id, 
+               CONCAT(u.first_name, ' ', u.last_name) as user_name,
+               mi.sender, mi.subject, mi.tag,
+               mi.status, 
+               to_timestamp(mi.created_at / 1000) as received_at
+        FROM mail_item mi
+        JOIN "user" u ON u.id = mi.user_id
+        WHERE ($1::text IS NULL OR mi.status = $1)
+          AND ($2::text IS NULL OR mi.tag = $2)
+          AND ($3::text IS NULL OR (
+               mi.sender ILIKE '%'||$3||'%' OR mi.subject ILIKE '%'||$3||'%' OR
+               u.email ILIKE '%'||$3||'%' OR u.first_name ILIKE '%'||$3||'%' OR u.last_name ILIKE '%'||$3||'%'
           ))
         ORDER BY mi.created_at DESC
-        LIMIT $3 OFFSET $4
-    `, [status || null, search || null, parseInt(limit), parseInt(offset)]);
+        LIMIT $4 OFFSET $5
+    `, [status || null, tag || null, search || null, limit, offset]);
 
-    ok(res, { items: rows });
+    ok(res, { 
+        items: rows, 
+        total: parseInt(countResult.rows[0].total), 
+        page: parseInt(page), 
+        page_size: limit 
+    });
 }));
 
 // Create mail item
@@ -112,7 +136,7 @@ router.get('/api/mail-items/:id/scan-url', requireAdmin, asyncHandler(async (req
 
     // Construct scan URL (adjust domain as needed)
     const scanUrl = `https://vah-api-staging.onrender.com/api/mail-items/${id}/scan?token=${rows[0].scan_token}`;
-    
+
     ok(res, { url: scanUrl });
 }));
 
