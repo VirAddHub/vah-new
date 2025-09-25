@@ -23,7 +23,7 @@ import {
     CheckCircle,
     XCircle,
 } from "lucide-react";
-import { apiClient, safe } from "../../lib/api-client";
+import { apiClient, safe, adminApi } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -76,7 +76,8 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     // API Data fetching
     const [users, setUsers] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    const [isMutating, setIsMutating] = useState(false);
     const [offset, setOffset] = useState(0);
     const [limit] = useState(20);
     const [hasMore, setHasMore] = useState(true);
@@ -84,26 +85,26 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     // Load users with filters
     const loadUsers = async () => {
         try {
-            setLoading(true);
-            const params = {
-                search: searchTerm || undefined,
-                status: statusFilter === "all" ? undefined : statusFilter,
-                plan: planFilter === "all" ? undefined : planFilter,
-                kyc: kycFilter === "all" ? undefined : kycFilter,
-                limit,
-                offset
-            };
+            setIsFetching(true);
+            const params = new URLSearchParams({
+                q: searchTerm || "",
+                status: statusFilter === "all" ? "" : statusFilter,
+                plan: planFilter === "all" ? "" : planFilter,
+                kyc: kycFilter === "all" ? "" : kycFilter,
+                page: String(Math.floor(offset / limit) + 1),
+                page_size: String(limit)
+            });
 
-            const response = await apiClient.getAdminUsers(params);
+            const response = await adminApi.users(params);
             if (response.ok) {
-                const userData = safe(response.data?.users, []);
+                const userData = safe(response.data?.items, []);
                 setUsers(userData);
                 setHasMore(userData.length === limit);
             }
         } catch (error) {
             console.error('Failed to load users:', error);
         } finally {
-            setLoading(false);
+            setIsFetching(false);
         }
     };
 
@@ -236,48 +237,48 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
     };
 
     const handleUpdateKycStatus = async (userId: number, newStatus: string) => {
-        setLoading(true);
+        setIsMutating(true);
         try {
             await logAdminAction('admin_update_kyc_status', { userId, newStatus });
-            await apiClient.updateUserKycStatus(userId.toString(), newStatus);
+            await adminApi.updateKyc(userId.toString(), newStatus);
             loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_update_kyc_status_error', { userId, newStatus, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleSuspendUser = async (userId: number) => {
-        setLoading(true);
+        setIsMutating(true);
         try {
             await logAdminAction('admin_suspend_user', { userId });
-            await apiClient.suspendAdminUser(userId.toString());
+            await adminApi.suspendUser(userId.toString());
             loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_suspend_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleActivateUser = async (userId: number) => {
-        setLoading(true);
+        setIsMutating(true);
         try {
             await logAdminAction('admin_activate_user', { userId });
-            await apiClient.activateAdminUser(userId.toString());
+            await adminApi.activateUser(userId.toString());
             loadUsers(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_activate_user_error', { userId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleBulkAction = async (action: string) => {
         if (selectedUsers.length === 0) return;
 
-        setLoading(true);
+        setIsMutating(true);
         try {
             await logAdminAction('admin_bulk_action', { action, userIds: selectedUsers });
             await apiClient.post(`/api/admin/users/bulk/${action}`, { userIds: selectedUsers });
@@ -286,7 +287,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
         } catch (error) {
             await logAdminAction('admin_bulk_action_error', { action, userIds: selectedUsers, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
@@ -340,7 +341,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                         variant="outline"
                         className="gap-2"
                         onClick={handleExportUsers}
-                        disabled={loading}
+                        disabled={isMutating}
                     >
                         <Download className="h-4 w-4" />
                         Export Users
@@ -348,7 +349,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                     <Button
                         className="gap-2"
                         onClick={handleAddUser}
-                        disabled={loading}
+                        disabled={isMutating}
                     >
                         <Plus className="h-4 w-4" />
                         Add User
@@ -372,7 +373,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('suspend')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <UserX className="h-4 w-4" />
                                     Suspend
@@ -381,7 +382,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('activate')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <UserCheck className="h-4 w-4" />
                                     Activate
@@ -390,7 +391,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('export')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <Download className="h-4 w-4" />
                                     Export Selected
@@ -517,7 +518,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleUpdateKycStatus(user.id, "approved")}
-                                                        disabled={loading}
+                                                        disabled={isMutating}
                                                     >
                                                         <CheckCircle className="h-3 w-3" />
                                                     </Button>
@@ -539,7 +540,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleActivateUser(user.id)}
-                                                        disabled={loading}
+                                                        disabled={isMutating}
                                                     >
                                                         <UserCheck className="h-3 w-3" />
                                                     </Button>
@@ -548,7 +549,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleSuspendUser(user.id)}
-                                                        disabled={loading}
+                                                        disabled={isMutating}
                                                     >
                                                         <UserX className="h-3 w-3" />
                                                     </Button>

@@ -25,7 +25,7 @@ import {
     Search,
     Filter,
 } from "lucide-react";
-import { apiClient, safe } from "../../lib/api-client";
+import { apiClient, safe, adminApi } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -86,15 +86,15 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const loadForwardingRequests = async () => {
         try {
             setLoading(true);
-            const params = {
-                status: statusFilter === "all" ? undefined : statusFilter,
-                search: searchTerm || undefined,
-                priority: priorityFilter === "all" ? undefined : priorityFilter,
-                limit,
-                offset
-            };
+            const params = new URLSearchParams({
+                status: statusFilter === "all" ? "" : statusFilter,
+                q: searchTerm || "",
+                priority: priorityFilter === "all" ? "" : priorityFilter,
+                page: String(Math.floor(offset / limit) + 1),
+                page_size: String(limit)
+            });
 
-            const response = await apiClient.getAdminForwardingQueue(params);
+            const response = await adminApi.forwardingQueue(params);
             if (response.ok) {
                 const requests = safe(response.data?.items, []);
                 setForwardingRequests(requests);
@@ -218,7 +218,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_cancel_forwarding_request', { requestId });
-            await apiClient.cancelForwarding(requestId.toString());
+            await adminApi.cancelForward(requestId.toString());
             loadForwardingRequests(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_cancel_forwarding_request_error', {

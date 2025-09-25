@@ -26,7 +26,7 @@ import {
     CheckCircle,
     AlertCircle,
 } from "lucide-react";
-import { apiClient, safe } from "../../lib/api-client";
+import { apiClient, safe, adminApi } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -88,15 +88,15 @@ export function MailSection({ }: MailSectionProps) {
     const loadMailItems = async () => {
         try {
             setLoading(true);
-            const params = {
-                status: selectedTab === "all" ? undefined : selectedTab,
-                search: debouncedSearchTerm || undefined,
-                tag: tagFilter === "all" ? undefined : tagFilter,
-                limit,
-                offset
-            };
+            const params = new URLSearchParams({
+                status: selectedTab === "all" ? "" : selectedTab,
+                q: debouncedSearchTerm || "",
+                tag: tagFilter === "all" ? "" : tagFilter,
+                page: String(Math.floor(offset / limit) + 1),
+                page_size: String(limit)
+            });
 
-            const response = await apiClient.getAdminMailItems(params);
+            const response = await adminApi.mailItems(params);
             if (response.ok) {
                 const items = safe(response.data?.items, []);
                 setMailItems(items);
@@ -182,7 +182,7 @@ export function MailSection({ }: MailSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_tag_mail_item', { itemId, tag });
-            await apiClient.updateAdminMailItem(itemId.toString(), { tag });
+            await adminApi.updateMailItem(itemId.toString(), { tag });
             loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });

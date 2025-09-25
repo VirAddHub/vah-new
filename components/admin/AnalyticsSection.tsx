@@ -16,7 +16,7 @@ import {
     Calendar,
     Activity,
 } from "lucide-react";
-import { apiClient, safe } from "../../lib/api-client";
+import { apiClient, safe, adminApi } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -71,7 +71,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
     const loadAnalytics = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.getAdminAnalytics(timeRange);
+            const response = await adminApi.analytics(timeRange);
             if (response.ok) {
                 setAnalytics(response.data);
             }

@@ -20,7 +20,7 @@ import {
     Clock,
     RefreshCcw,
 } from "lucide-react";
-import { apiClient, safe } from "../../lib/api-client";
+import { apiClient, safe, adminApi } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -72,7 +72,7 @@ export function BillingSection({ }: BillingSectionProps) {
     // Load billing metrics
     const loadBillingMetrics = async () => {
         try {
-            const response = await apiClient.getAdminBillingMetrics();
+            const response = await adminApi.billingMetrics();
             if (response.ok) {
                 setBillingMetrics(response.data);
             }
@@ -312,7 +312,7 @@ export function BillingSection({ }: BillingSectionProps) {
                                 <div>
                                     <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
                                     <p className="text-2xl font-bold">
-                                        £{safe(billing?.outstanding_amount_pence, 0) / 100}
+                                        £{safe(billing?.outstanding_invoices_pence, 0) / 100}
                                     </p>
                                     <p className="text-xs text-orange-600">
                                         {safe(billing?.pending_count, 0)} pending payments

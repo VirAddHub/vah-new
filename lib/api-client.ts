@@ -379,5 +379,82 @@ export const apiClient = {
   },
 };
 
+// ---- New Typed Admin API Client ----
+
+// Core request function with consistent error handling and cookies
+async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...init,
+  });
+  
+  const body = await res.json().catch(() => ({}));
+  
+  if (!res.ok || body?.ok === false) {
+    return { ok: false, error: body?.error || res.statusText };
+  }
+  
+  return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
+}
+
+// Typed Admin API - single place for all admin endpoints
+export const adminApi = {
+  // Mail Management
+  mailItems: (p: URLSearchParams) =>
+    req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`),
+  
+  updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>
+    req<{ id: string }>(`/api/admin/mail-items/${id}`, {
+      method: 'PATCH', 
+      body: JSON.stringify(payload),
+    }),
+
+  // Billing & Revenue
+  billingMetrics: () =>
+    req<{ 
+      monthly_revenue_pence: number; 
+      outstanding_invoices_pence: number; 
+      churn_rate: number; 
+      recent_transactions: any[] 
+    }>(`/api/admin/billing/metrics`),
+
+  // User Management
+  users: (p: URLSearchParams) =>
+    req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`),
+  
+  updateUser: (id: string, payload: any) =>
+    req(`/api/admin/users/${id}`, { 
+      method: 'PUT', 
+      body: JSON.stringify(payload) 
+    }),
+  
+  suspendUser: (id: string) => 
+    req(`/api/admin/users/${id}/suspend`, { method: 'PUT' }),
+  
+  activateUser: (id: string) => 
+    req(`/api/admin/users/${id}/activate`, { method: 'PUT' }),
+  
+  updateKyc: (id: string, status: string) =>
+    req(`/api/admin/users/${id}/kyc-status`, { 
+      method: 'PUT', 
+      body: JSON.stringify({ status }) 
+    }),
+
+  // Forwarding Management
+  forwardingQueue: (p: URLSearchParams) =>
+    req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`),
+  
+  fulfillForward: (id: string) => 
+    req(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
+  
+  cancelForward: (id: string) => 
+    req(`/api/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
+
+  // Analytics
+  analytics: (range = '30d', period = 'rolling') =>
+    req(`/api/admin/analytics?range=${range}&period=${period}`),
+};
+
 // Legacy exports for backward compatibility
 export const API_BASE = BASE_URL;
