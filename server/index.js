@@ -20,9 +20,9 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const session = require("express-session");
+const expressSession = require("express-session");
 const createMemoryStore = require("memorystore");
-const MemoryStore = createMemoryStore(session);
+const MemoryStore = createMemoryStore(expressSession);
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
@@ -149,8 +149,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 // secure session cookie for cross-site usage
-const session = require('express-session');
-app.use(session({
+app.use(expressSession({
     name: 'sid',
     secret: process.env.SESSION_SECRET,
     resave: false,
