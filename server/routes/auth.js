@@ -82,11 +82,11 @@ router.post('/signup', validateSignup, async (req, res) => {
         created_at, updated_at, name, email, password,
         first_name, last_name, is_admin, role, status,
         kyc_status, plan_status, plan_start_date, onboarding_step
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, email, first_name, last_name, name, role, is_admin, status, kyc_status, plan_status, created_at, updated_at
     `, [
       now, now, name, email.toLowerCase(), passwordHash,
-      first_name, last_name, 0, 'user', 'active',
+      first_name, last_name, false, 'user', 'active',
       'pending', 'active', now, 'signup'
     ]);
 
@@ -141,7 +141,7 @@ router.post('/login', validateLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await db.get('SELECT * FROM "user" WHERE email = ?', [email]);
+    const user = await db.get('SELECT * FROM "user" WHERE email = $1', [email]);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
