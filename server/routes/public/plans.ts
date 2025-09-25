@@ -10,19 +10,19 @@ const pool = new Pool({
 });
 
 router.get("/api/plans", async (req: any, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT id, name, price_pence, features_json, sort
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, name, price_pence, features_json, sort
        FROM plans
        WHERE active = true
        ORDER BY sort NULLS LAST, price_pence ASC`
-    );
-    
-    res.json({ items: rows });
-  } catch (err: any) {
-    console.error("GET /api/plans", err);
-    res.status(500).json({ error: "server_error" });
-  }
+        );
+
+        res.json({ items: rows });
+    } catch (err: any) {
+        console.error("GET /api/plans", err);
+        res.status(500).json({ error: "server_error" });
+    }
 });
 
 export default router;
