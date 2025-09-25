@@ -83,6 +83,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
 
     const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
     const [stats, setStats] = useState<ForwardingStats | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     const loadRequests = useCallback(async () => {
         setIsFetchingRequests(true);
@@ -247,30 +248,30 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     };
 
     const handleExportRequests = async () => {
-        setLoading(true);
+        setIsExporting(true);
         try {
             await logAdminAction('admin_export_forwarding_requests', {
-                filters: { statusFilter, priorityFilter, searchTerm }
+                filters: { q, status },
             });
 
-            const response = await apiClient.get(`/api/admin/forwarding-requests/export?status=${statusFilter}&priority=${priorityFilter}&search=${encodeURIComponent(searchTerm)}`);
+            const params = new URLSearchParams();
+            if (q) params.set('q', q);
+            if (status && status !== 'all') params.set('status', status);
+            // add pagination if your backend supports it for exports:
+            // params.set('page', String(page));
+            // params.set('page_size', String(pageSize));
 
-            if (!response.ok) {
-                throw new Error(response.error);
-            }
-            const blob = new Blob([response.data], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `forwarding-requests-export-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
+            const base = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+            const url = `${base}/api/admin/forwarding/requests/export?${params.toString()}`;
+
+            window.open(url, '_blank');
         } catch (error) {
             await logAdminAction('admin_export_forwarding_requests_error', {
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
+                error_message: (error as Error)?.message ?? String(error),
             });
+            console.error(error);
         } finally {
-            setLoading(false);
+            setIsExporting(false);
         }
     };
 
@@ -331,10 +332,10 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                         variant="outline"
                         className="gap-2"
                         onClick={handleExportRequests}
-                        disabled={loading}
+                        disabled={isExporting || isMutating || isFetchingRequests}
                     >
                         <Download className="h-4 w-4" />
-                        Export
+                        {isExporting ? 'Exporting…' : 'Export'}
                     </Button>
                     <Button
                         variant="outline"
