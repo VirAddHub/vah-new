@@ -7,7 +7,7 @@ require('dotenv').config({
 
 // Hard fail if SQLite is detected
 if (process.env.DISABLE_SQLITE !== "true") {
-  console.warn("Set DISABLE_SQLITE=true to guarantee Postgres-only mode.");
+    console.warn("Set DISABLE_SQLITE=true to guarantee Postgres-only mode.");
 }
 
 // Import and use strict environment validation
@@ -104,7 +104,7 @@ app.use(session({
 }));
 
 // OPTIONAL: explicit OPTIONS handler for some hosts
-app.options('*', (req, res) => {
+app.options(/.*/, (req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.sendStatus(204);
 });
