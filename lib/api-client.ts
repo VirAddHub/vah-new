@@ -8,6 +8,13 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ||
 
 export const API_BASE = BASE_URL;
 
+// Normalize user payload to always return { user }
+function normalizeUserPayload(resp: any) {
+  const raw = resp?.data?.user ?? resp?.data ?? null;
+  if (!raw) return null;
+  return { ...raw, is_admin: Boolean(raw.is_admin) };
+}
+
 // Improved API Response types
 type ApiOk<T> = { ok: true; data: T }
 type ApiErr = { ok: false; error: string; status: number }
@@ -182,7 +189,7 @@ class ApiClient {
 
   // ==================== AUTHENTICATION APIs ====================
 
-  async login(email: string, password: string): Promise<ApiResponse<User>> {
+  async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
     console.log('[API Client] login called with:', { email, passLen: password.length });
     
     // Validate inputs
@@ -202,13 +209,16 @@ class ApiClient {
 
     console.log('[API Client] making request to:', `${this.baseUrl}/api/auth/login`);
     
-    return this.request('/api/auth/login', {
+    const resp = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         email: sanitizedEmail,
         password: sanitizedPassword
       }),
     });
+    
+    const user = normalizeUserPayload(resp);
+    return user ? { ok: true, data: { user } } : resp;
   }
 
   async signup(email: string, password: string, firstName: string, lastName: string): Promise<ApiResponse<{ user: User }>> {
@@ -249,7 +259,9 @@ class ApiClient {
   }
 
   async whoami(): Promise<ApiResponse<{ user: User }>> {
-    return this.request('/api/auth/whoami');
+    const resp = await this.request('/api/auth/whoami');
+    const user = normalizeUserPayload(resp);
+    return user ? { ok: true, data: { user } } : resp;
   }
 
   async ping(): Promise<ApiResponse<{ handler: string }>> {

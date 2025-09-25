@@ -79,8 +79,8 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         }
       }
 
-      // Support both response shapes and force hard redirect
-      const user = response.data;
+      // Now response.data is always { user: User }
+      const user = response.data.user;
       const isAdmin = !!user?.is_admin;
       
       // Debug logging to see what we're getting
