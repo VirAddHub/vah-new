@@ -30,22 +30,22 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
             conds.push(`deleted_at IS NULL`);
         }
 
-        if (q) { 
-            conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); 
-            params.push(`%${q}%`); 
-            i++; 
+        if (q) {
+            conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`);
+            params.push(`%${q}%`);
+            i++;
         }
-        if (status) { 
-            conds.push(`status = $${i++}`); 
-            params.push(status); 
+        if (status) {
+            conds.push(`status = $${i++}`);
+            params.push(status);
         }
-        if (plan) { 
-            conds.push(`plan_status = $${i++}`); 
-            params.push(plan); 
+        if (plan) {
+            conds.push(`plan_status = $${i++}`);
+            params.push(plan);
         }
-        if (kyc) { 
-            conds.push(`kyc_status = $${i++}`); 
-            params.push(kyc); 
+        if (kyc) {
+            conds.push(`kyc_status = $${i++}`);
+            params.push(kyc);
         }
 
         const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';

@@ -40,6 +40,7 @@ function createApp(opts = {}) {
             if (!origin) return callback(null, true);
 
             const allowedOrigins = [
+                'https://vah-frontend-final.vercel.app',
                 'http://localhost:3000',
                 'http://localhost:3001',
                 'https://virtualaddresshub.com',
@@ -56,7 +57,16 @@ function createApp(opts = {}) {
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'x-test-bypass']
+        allowedHeaders: [
+            'Content-Type',
+            'Accept',
+            'X-CSRF-Token',
+            'X-Requested-With',
+            'Authorization',
+            'Cache-Control',   // add
+            'Pragma',          // add
+            'x-test-bypass'
+        ]
     };
     app.use(cors(corsOptions));
 

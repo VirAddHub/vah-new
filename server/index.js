@@ -77,7 +77,15 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Requested-With', 'Accept'],
+    allowedHeaders: [
+        'Content-Type',
+        'Accept',
+        'X-CSRF-Token',
+        'X-Requested-With',
+        'Authorization',
+        'Cache-Control',   // add
+        'Pragma',          // add
+    ],
     exposedHeaders: ['Content-Disposition'],
 };
 
@@ -94,6 +102,13 @@ app.use(cors(corsOptions));
 
 // IMPORTANT: handle *all* OPTIONS with CORS and end with 204
 app.options(/^\/.*/, cors(corsOptions), (req, res) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers',
+        'Content-Type,Accept,X-CSRF-Token,X-Requested-With,Authorization,Cache-Control,Pragma'
+    );
+    res.header('Vary', 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
     res.sendStatus(204);
 });
 
