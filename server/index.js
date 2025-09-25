@@ -252,14 +252,30 @@ app.use(require('./routes/user/invoices').default);
 app.use(require('./routes/user/email-prefs').default);
 
 // Core user routes
-app.use(require('./routes/profile').default);
-app.use(require('./routes/mail-items').default);
-app.use(require('./routes/forwarding-requests').default);
-app.use(require('./routes/billing').default);
-app.use(require('./routes/email-prefs').default);
+const profileModule = require('./routes/profile');
+const profileRouter = profileModule.default || profileModule;
+app.use(profileRouter);
+
+const mailItemsModule = require('./routes/mail-items');
+const mailItemsRouter = mailItemsModule.default || mailItemsModule;
+app.use(mailItemsRouter);
+
+const forwardingModule = require('./routes/forwarding-requests');
+const forwardingRouter = forwardingModule.default || forwardingModule;
+app.use(forwardingRouter);
+
+const billingModule = require('./routes/billing');
+const billingRouter = billingModule.default || billingModule;
+app.use(billingRouter);
+
+const emailPrefsModule = require('./routes/email-prefs');
+const emailPrefsRouter = emailPrefsModule.default || emailPrefsModule;
+app.use(emailPrefsRouter);
 
 // Admin routes
-app.use(require('./routes/admin.metrics').default);
+const adminMetricsModule = require('./routes/admin.metrics');
+const adminMetricsRouter = adminMetricsModule.default || adminMetricsModule;
+app.use('/api/admin/metrics', adminMetricsRouter);
 
 // Public routes
 app.use(require('./routes/public/plans').default);

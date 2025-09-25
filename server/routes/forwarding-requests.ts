@@ -13,7 +13,7 @@ const pool = new Pool({
 
 router.get("/api/forwarding-requests", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
-    
+
     try {
         const { rows } = await pool.query(`
             SELECT id, status, forwarded_physically, forward_reason, 

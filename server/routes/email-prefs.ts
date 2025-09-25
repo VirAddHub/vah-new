@@ -13,7 +13,7 @@ const pool = new Pool({
 
 router.get("/api/email-prefs", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
-    
+
     try {
         // Get user's email preferences (assuming they're stored in user table or separate prefs table)
         const { rows } = await pool.query(`

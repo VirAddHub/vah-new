@@ -13,7 +13,7 @@ const pool = new Pool({
 
 router.get("/api/billing", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
-    
+
     try {
         // Get user's current plan status
         const { rows: userRows } = await pool.query(`

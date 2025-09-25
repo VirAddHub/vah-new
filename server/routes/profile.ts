@@ -13,7 +13,7 @@ const pool = new Pool({
 
 router.get("/api/profile", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
-    
+
     try {
         const { rows } = await pool.query(`
             SELECT id, email, first_name, last_name, is_admin, role, status, 

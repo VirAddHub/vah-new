@@ -1,7 +1,5 @@
 import { Router } from "express";
 import { Pool } from "pg";
-import { asyncHandler, ok } from "../../src/lib/http";
-import { requireAuth } from "../../src/lib/authz";
 
 const router = Router();
 
@@ -19,88 +17,50 @@ function requireAdmin(req: any, res: any, next: any) {
     next();
 }
 
-router.get("/api/admin/metrics", requireAuth, requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const totals: any = {
-        users: 0,
-        monthly_revenue_pence: 0,
-        mail_processed: 0,
-        active_forwards: 0
-    };
-
-    let recent_activity: any[] = [];
-
+router.get('/', requireAdmin, async (req: any, res: any) => {
     try {
-        // Get user count
-        try {
-            const { rows: userRows } = await pool.query('SELECT COUNT(*)::int AS users FROM "user"');
-            totals.users = userRows[0]?.users || 0;
-        } catch (err) {
-            console.error('Error getting user count:', err);
-            totals.users = 0;
-        }
-
-        // Get monthly revenue (using invoice table since no payments table)
-        try {
-            const { rows: revenueRows } = await pool.query(`
+        // Run independent queries; if any fails (e.g., missing table) fall back safely
+        const [[usersRow], [revRow], [mailRow], [fwdRow]] = await Promise.all([
+            pool.query('SELECT COUNT(*)::int AS users FROM "user";').then(r => r.rows).catch(() => [{ users: 0 }]),
+            pool.query(`
                 SELECT COALESCE(SUM(amount_pence),0)::int AS monthly_revenue_pence
                 FROM invoice
-                WHERE status = 'paid' AND created_at >= date_trunc('month', now())
-            `);
-            totals.monthly_revenue_pence = revenueRows[0]?.monthly_revenue_pence || 0;
-        } catch (err) {
-            console.error('Error getting monthly revenue:', err);
-            totals.monthly_revenue_pence = 0;
-        }
-
-        // Get mail processed count
-        try {
-            const { rows: mailRows } = await pool.query(`
+                WHERE status = 'paid' AND created_at >= date_trunc('month', now());
+            `).then(r => r.rows).catch(() => [{ monthly_revenue_pence: 0 }]),
+            pool.query(`
                 SELECT COALESCE(COUNT(*),0)::int AS mail_processed
                 FROM mail_item
-                WHERE status IN ('processed','scanned','forwarded')
-            `);
-            totals.mail_processed = mailRows[0]?.mail_processed || 0;
-        } catch (err) {
-            console.error('Error getting mail processed count:', err);
-            totals.mail_processed = 0;
-        }
-
-        // Get active forwards count (using mail_item with forwarded_physically filter)
-        try {
-            const { rows: forwardsRows } = await pool.query(`
+                WHERE status IN ('processed','scanned','forwarded');
+            `).then(r => r.rows).catch(() => [{ mail_processed: 0 }]),
+            pool.query(`
                 SELECT COALESCE(COUNT(*),0)::int AS active_forwards
                 FROM mail_item
-                WHERE forwarded_physically = true AND status = 'active'
-            `);
-            totals.active_forwards = forwardsRows[0]?.active_forwards || 0;
-        } catch (err) {
-            console.error('Error getting active forwards count:', err);
-            totals.active_forwards = 0;
-        }
+                WHERE forwarded_physically = true AND status = 'active';
+            `).then(r => r.rows).catch(() => [{ active_forwards: 0 }]),
+        ]);
 
-        // Get recent activity
-        try {
-            const { rows: activityRows } = await pool.query(`
-                SELECT type, meta, occurred_at
-                FROM activity_log
-                ORDER BY occurred_at DESC
-                LIMIT 10
-            `);
-            recent_activity = activityRows || [];
-        } catch (err) {
-            console.error('Error getting recent activity:', err);
-            recent_activity = [];
-        }
+        const recent_activity =
+            await pool.query(
+                `SELECT type, meta, occurred_at
+                 FROM activity_log
+                 ORDER BY occurred_at DESC
+                 LIMIT 10;`
+            ).then(r => r.rows).catch(() => []);
 
+        res.json({
+            totals: {
+                users: usersRow?.users ?? 0,
+                monthly_revenue_pence: revRow?.monthly_revenue_pence ?? 0,
+                mail_processed: mailRow?.mail_processed ?? 0,
+                active_forwards: fwdRow?.active_forwards ?? 0,
+            },
+            recent_activity,
+            system_health: { status: 'operational' },
+        });
     } catch (err) {
-        console.error('Error in admin metrics:', err);
+        console.error('[admin.metrics] fatal', err);
+        res.status(500).json({ error: 'server_error' });
     }
-
-    ok(res, {
-        totals,
-        recent_activity,
-        system_health: { status: "operational" }
-    });
-}));
+});
 
 export default router;
