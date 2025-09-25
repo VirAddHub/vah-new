@@ -161,6 +161,11 @@ const corsMiddleware = cors({
             return cb(null, true);
         }
 
+        // Allow localhost for development
+        if (origin && (origin.includes('localhost:3000') || origin.includes('127.0.0.1:3000'))) {
+            return cb(null, true);
+        }
+
         // allow ONLY this project's vercel preview URLs
         if (allowVercelPreviews && vercelPrefix) {
             try {
@@ -319,10 +324,13 @@ app.use((req, res, next) => {
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);      // /api/auth/*
 
+// Dashboard routes with real data
+app.use('/api', require('./routes/dashboard'));
+
 // Safe endpoints to prevent UI crashes
 app.get('/api/profile', (req, res) => {
-  if (!req.session?.user) return res.status(401).json({ error: 'unauthorized' });
-  res.json({ user: req.session.user });
+    if (!req.session?.user) return res.status(401).json({ error: 'unauthorized' });
+    res.json({ user: req.session.user });
 });
 
 // temporary stubs

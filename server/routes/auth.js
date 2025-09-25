@@ -98,6 +98,8 @@ router.post('/signup', validateSignup, async (req, res) => {
     req.session.user = {
       id: user.id,
       email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
       is_admin: !!user.is_admin,
       role: user.role || 'user'
     };
@@ -154,6 +156,8 @@ router.post('/login', validateLogin, async (req, res) => {
     req.session.user = {
       id: user.id,
       email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
       is_admin: !!user.is_admin,
       role: user.role || 'user'
     };
