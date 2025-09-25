@@ -1,4 +1,5 @@
 // VirtualAddressHub Backend — PostgreSQL-only Express API for Render
+// Updated: Express 5 compatibility and CORS fixes deployed
 
 require('dotenv').config({
     path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
