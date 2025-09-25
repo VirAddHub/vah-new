@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
         Origin: process.env.NEXT_PUBLIC_FRONTEND_ORIGIN || 'https://vah-frontend-final.vercel.app',
         Cookie: req.headers.get('cookie') || '',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
       },
       cache: 'no-store',
     });
@@ -23,6 +25,9 @@ export async function GET(req: NextRequest) {
       status: res.status,
       headers: {
         'content-type': res.headers.get('content-type') ?? 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (error) {

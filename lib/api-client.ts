@@ -168,7 +168,13 @@ async function request<T = unknown>(
   try {
     const res = await fetch(url, {
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        ...(init?.headers || {}) 
+      },
+      cache: 'no-store', // Critical to bypass ETag/304
       ...init,
     });
 
@@ -426,11 +432,14 @@ export const adminApi = {
     }>(`/api/admin/billing/metrics`),
 
   // User Management
-  users: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`, o),
+  users: (p: URLSearchParams, o?: { signal?: AbortSignal }) => {
+    const params = new URLSearchParams(p);
+    params.set('t', Date.now().toString()); // Cache-buster
+    return req<{ items: any[]; total: number }>(`/api/admin/users?${params.toString()}`, o);
+  },
 
   userStats: () =>
-    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/api/admin/users/stats`),
+    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/api/admin/users/stats?t=${Date.now()}`),
 
   deleteUser: (id: string | number) =>
     req<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),

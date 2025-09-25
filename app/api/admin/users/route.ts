@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
         // Pass cookies through so the admin session is honored
         Cookie: req.headers.get('cookie') || '',
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
       },
       // Never cache admin data
       cache: 'no-store',
@@ -28,6 +30,9 @@ export async function GET(req: NextRequest) {
       status: res.status,
       headers: {
         'content-type': res.headers.get('content-type') ?? 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (error) {

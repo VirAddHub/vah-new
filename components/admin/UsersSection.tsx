@@ -116,12 +116,26 @@ export default function UsersSection() {
   // Handle user deletion with double confirmation
   async function handleDeleteUser(id: string | number) {
     setIsMutating(true);
+    
+    // Optimistic update - remove user from list immediately
+    const deletedUser = items.find(u => u.id === id);
+    setItems(prev => prev.filter(u => u.id !== id));
+    setTotal(prev => Math.max(0, prev - 1));
+    
     try {
       const res = await adminApi.deleteUser(id);
       if (!res.ok) throw new Error(res.error || 'delete_failed');
+      
       toast({ title: 'User deleted' });
+      
+      // Force reload with cache-buster to ensure fresh data
       await Promise.all([load(), loadUserStats()]);
     } catch (e: any) {
+      // Revert optimistic update on error
+      if (deletedUser) {
+        setItems(prev => [...prev, deletedUser].sort((a, b) => a.id.localeCompare(b.id)));
+        setTotal(prev => prev + 1);
+      }
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
     } finally { 
       setIsMutating(false); 
