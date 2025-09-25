@@ -323,7 +323,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         </div>
                     </div>
                 )}
-                
+
                 {renderContent()}
             </main>
         </div>

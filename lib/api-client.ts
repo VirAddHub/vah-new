@@ -170,8 +170,6 @@ async function request<T = unknown>(
       credentials: 'include',
       headers: { 
         'Content-Type': 'application/json', 
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
         ...(init?.headers || {}) 
       },
       cache: 'no-store', // Critical to bypass ETag/304
@@ -397,8 +395,6 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
       credentials: 'include', // IMPORTANT for cookies
       headers: { 
         'Content-Type': 'application/json', 
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
         ...(init?.headers || {}) 
       },
       cache: 'no-store', // Critical to bypass ETag/304
