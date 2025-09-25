@@ -133,7 +133,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {
                 email: credentials.email,
-                error_message: getErrorMessage(error), stack: getErrorStack(error)
+                error_message: getErrorMessage(error),
+                stack: getErrorStack(error)
             });
             throw error;
         } finally {
