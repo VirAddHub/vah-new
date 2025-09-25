@@ -360,14 +360,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="lg:col-span-7">
                             <div className="grid sm:grid-cols-2 gap-5">
                                 {[
-                                    "Establish Instant Credibility With a Central London Business Address",
-                                    "Fully Compliant Address for Companies House & HMRC",
-                                    "Every Letter Scanned Free — No Limits, No Delays",
-                                    "Your Mail, Your Rules — Manage Everything Online",
+                                    "Instantly Establish Credibility with a Prime Central London Address",
+                                    "Guaranteed Compliance: Fully Approved for Companies House & HMRC",
+                                    "Unlimited, Free Mail Scanning (Same-Day)",
+                                    "Total Control: Manage All Mail & Forwarding Online",
                                     "Free Forwarding for All Official Government Mail",
-                                    "Friendly, UK-Based Support When You Need It",
-                                    "Go Live Today — Address Ready After ID Check",
-                                    "No Lock-In Contracts — Cancel Anytime",
+                                    "Dedicated, UK-Based Support (We're Here for You)",
+                                    "Go Live Today: Address Ready Minutes After ID Verification",
+                                    "Zero Risk: No Lock-In Contracts, Cancel Anytime",
                                 ].map((bullet) => (
                                     <div
                                         key={bullet}
