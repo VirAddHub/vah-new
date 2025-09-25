@@ -72,7 +72,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         // Handle specific error cases
         if (response.status === 401) {
           throw new Error('Invalid email or password');
-        } else if (response.status >= 500) {
+        } else if (response.status && response.status >= 500) {
           throw new Error('Server error. Please try again.');
         } else {
           throw new Error(response.error || 'Login failed');
@@ -82,7 +82,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       // Now response.data is always { user: User }
       const user = response.data.user;
       const isAdmin = !!user?.is_admin;
-      
+
       // Debug logging to see what we're getting
       console.log('[Login] User data:', user);
       console.log('[Login] isAdmin:', isAdmin);

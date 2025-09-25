@@ -108,8 +108,8 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
   };
 
   const filteredMailItems = mailItems.filter(item =>
-    item.sender_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.sender_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -293,7 +293,7 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
                       </div>
                       <p className="text-sm text-muted-foreground">{item.description}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Received: {new Date(item.received_date).toLocaleDateString()}
+                        Received: {new Date(item.received_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
