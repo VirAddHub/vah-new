@@ -32,8 +32,12 @@ export default function SafeDashboard() {
       setState({
         loading: false,
         profile: profile.status === 'fulfilled' && profile.value.ok ? profile.value.data : null,
-        tickets: tickets.status === 'fulfilled' && (tickets.value.ok ? tickets.value.data?.items ?? [] : []),
-        forwarding: fw.status === 'fulfilled' && (fw.value.ok ? fw.value.data?.items ?? [] : []),
+        tickets: tickets.status === 'fulfilled' 
+          ? (tickets.value.ok ? (tickets.value.data?.items ?? []) : [])
+          : [],
+        forwarding: fw.status === 'fulfilled' 
+          ? (fw.value.ok ? (fw.value.data?.items ?? []) : [])
+          : [],
       });
     })();
     return () => { cancelled = true; };

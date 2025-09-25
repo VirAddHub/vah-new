@@ -38,7 +38,9 @@ export default function SafeAdminDashboard() {
       setState({
         loading: false,
         user: me.data.user,
-        users: users.status === 'fulfilled' && users.value.ok ? users.value.data?.users ?? [] : [],
+        users: users.status === 'fulfilled' 
+          ? (users.value.ok ? (users.value.data?.users ?? []) : [])
+          : [],
         analytics: analytics.status === 'fulfilled' && analytics.value.ok ? analytics.value.data : null,
       });
     })();
