@@ -12,10 +12,10 @@ const pool = new Pool({
 router.get("/api/plans", async (req: any, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, price_usd, features, sort_order
+      `SELECT id, name, price_pence, features_json, sort
        FROM plans
        WHERE active = true
-       ORDER BY sort_order NULLS LAST, price_usd ASC`
+       ORDER BY sort NULLS LAST, price_pence ASC`
     );
     
     res.json({ items: rows });
