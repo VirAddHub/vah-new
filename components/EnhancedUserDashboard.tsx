@@ -92,14 +92,15 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     apiClient.get('/api/email-prefs')
                 ]);
 
-                if (mailResponse.ok) setMailItems(mailResponse.data || []);
-                if (profileResponse.ok) setProfile(profileResponse.data);
-                if (subscriptionResponse.ok) setSubscription(subscriptionResponse.data);
-                if (ticketsResponse.ok) setSupportTickets(ticketsResponse.data || []);
-                if (forwardingResponse.ok) setForwardingRequests(forwardingResponse.data || []);
-                if (billingResponse.ok) setBilling(billingResponse.data);
-                if (invoicesResponse.ok) setInvoices(invoicesResponse.data || []);
-                if (plansResponse.ok) setPlans(plansResponse.data || []);
+                // Handle data with correct shapes
+                if (mailResponse.ok) setMailItems(mailResponse.data?.items ?? []);
+                if (profileResponse.ok) setProfile(profileResponse.data?.user ?? profileResponse.data);
+                if (subscriptionResponse.ok) setSubscription(subscriptionResponse.data?.subscription ?? subscriptionResponse.data);
+                if (ticketsResponse.ok) setSupportTickets(ticketsResponse.data?.items ?? []);
+                if (forwardingResponse.ok) setForwardingRequests(forwardingResponse.data?.items ?? []);
+                if (billingResponse.ok) setBilling(billingResponse.data?.subscription ?? billingResponse.data);
+                if (invoicesResponse.ok) setInvoices(invoicesResponse.data?.items ?? []);
+                if (plansResponse.ok) setPlans(plansResponse.data?.items ?? []);
                 if (kycResponse.ok) setKycStatus(kycResponse.data);
                 if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.data);
             } catch (err) {

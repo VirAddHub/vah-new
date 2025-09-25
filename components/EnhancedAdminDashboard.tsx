@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -20,6 +20,7 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { apiClient } from "../lib/api-client";
 import {
     Mail,
     Users,
@@ -77,6 +78,35 @@ type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    
+    // Data loading state
+    const [users, setUsers] = useState<any[]>([]);
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Load admin data
+    useEffect(() => {
+        const loadAdminData = async () => {
+            try {
+                setLoading(true);
+                const [usersResponse, analyticsResponse] = await Promise.all([
+                    apiClient.get('/api/admin/users'),
+                    apiClient.get('/api/admin/analytics')
+                ]);
+
+                if (usersResponse.ok) setUsers(usersResponse.data?.users ?? []);
+                if (analyticsResponse.ok) setAnalytics(analyticsResponse.data);
+            } catch (err) {
+                setError('Failed to load admin data');
+                console.error('Error loading admin data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadAdminData();
+    }, []);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
