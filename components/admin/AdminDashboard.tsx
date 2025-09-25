@@ -83,7 +83,7 @@ const logAdminAction = async (action: string, data?: any) => {
 
 // Import section components
 import { OverviewSection } from "./OverviewSection";
-import { UsersSection } from "./UsersSection";
+import UsersSection from "./UsersSection";
 import { MailSection } from "./MailSection";
 import { ForwardingSection } from "./ForwardingSection";
 import { BillingSection } from "./BillingSection";
@@ -209,7 +209,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             case "overview":
                 return <OverviewSection />;
             case "users":
-                return <UsersSection onNavigate={onNavigate} />;
+                return <UsersSection />;
             case "mail":
                 return <MailSection />;
             case "forwarding":
