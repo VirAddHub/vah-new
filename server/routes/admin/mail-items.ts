@@ -13,111 +13,83 @@ const pool = new Pool({
 
 // List mail items with tabs + search + paging
 router.get('/api/admin/mail-items', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { status, tag, q: search, page = 1, page_size = 25 } = req.query;
-    const limit = parseInt(page_size);
-    const offset = (parseInt(page) - 1) * limit;
+    try {
+        const { q, status, page = '1', page_size = '20', user_id } = req.query as Record<string, string>;
+        const limit = Math.min(parseInt(page_size || '20', 10), 100);
+        const offset = (Math.max(parseInt(page || '1', 10), 1) - 1) * limit;
 
-    // Get total count for pagination
-    const countResult = await pool.query(`
-        SELECT COUNT(*) as total
-        FROM mail_item mi
-        JOIN "user" u ON u.id = mi.user_id
-        WHERE ($1::text IS NULL OR mi.status = $1)
-          AND ($2::text IS NULL OR mi.tag = $2)
-          AND ($3::text IS NULL OR (
-               mi.sender ILIKE '%'||$3||'%' OR mi.subject ILIKE '%'||$3||'%' OR
-               u.email ILIKE '%'||$3||'%' OR u.first_name ILIKE '%'||$3||'%' OR u.last_name ILIKE '%'||$3||'%'
-          ))
-    `, [status || null, tag || null, search || null]);
+        const conds: string[] = [];
+        const params: any[] = [];
+        let i = 1;
 
-    const { rows } = await pool.query(`
-        SELECT mi.id, 
-               CONCAT(u.first_name, ' ', u.last_name) as user_name,
-               mi.sender, mi.subject, mi.tag,
-               mi.status, 
-               to_timestamp(mi.created_at / 1000) as received_at
-        FROM mail_item mi
-        JOIN "user" u ON u.id = mi.user_id
-        WHERE ($1::text IS NULL OR mi.status = $1)
-          AND ($2::text IS NULL OR mi.tag = $2)
-          AND ($3::text IS NULL OR (
-               mi.sender ILIKE '%'||$3||'%' OR mi.subject ILIKE '%'||$3||'%' OR
-               u.email ILIKE '%'||$3||'%' OR u.first_name ILIKE '%'||$3||'%' OR u.last_name ILIKE '%'||$3||'%'
-          ))
-        ORDER BY mi.created_at DESC
-        LIMIT $4 OFFSET $5
-    `, [status || null, tag || null, search || null, limit, offset]);
+        if (status) { conds.push(`status = $${i++}`); params.push(status); }
+        if (user_id) { conds.push(`user_id = $${i++}`); params.push(Number(user_id)); }
+        if (q) {
+            conds.push(`(
+                CAST(id AS TEXT) ILIKE $${i} OR
+                EXISTS (SELECT 1 FROM "user" u WHERE u.id = mail_item.user_id AND (
+                    u.email ILIKE $${i} OR u.first_name ILIKE $${i} OR u.last_name ILIKE $${i}
+                ))
+            )`);
+            params.push(`%${q}%`); i++;
+        }
 
-    ok(res, { 
-        items: rows, 
-        total: parseInt(countResult.rows[0].total), 
-        page: parseInt(page), 
-        page_size: limit 
-    });
+        const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+        const countSql = `SELECT COUNT(*)::int AS total FROM mail_item ${where}`;
+        const listSql = `SELECT id, user_id, status, tag, 
+                                to_timestamp(created_at / 1000) as received_at, 
+                                scan_token, forward_tracking
+                         FROM mail_item ${where}
+                         ORDER BY received_at DESC
+                         LIMIT ${limit} OFFSET ${offset}`;
+
+        const [count, items] = await Promise.all([
+            pool.query(countSql, params),
+            pool.query(listSql, params)
+        ]);
+
+        res.json({ ok: true, data: { total: count.rows[0].total, items: items.rows } });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false, error: 'server_error' });
+    }
 }));
 
 // Create mail item
 router.post('/api/admin/mail-items', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { user_id, sender, subject, tag } = req.body;
-
-    if (!user_id || !sender || !subject) {
-        return badRequest(res, 'user_id, sender, and subject are required');
+    try {
+        const { user_id, status = 'received', tag = null } = req.body;
+        const sql = `INSERT INTO mail_item (user_id, status, tag) VALUES ($1,$2,$3) RETURNING id`;
+        const { rows } = await pool.query(sql, [user_id, status, tag]);
+        res.json({ ok: true, data: { id: rows[0].id } });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false, error: 'server_error' });
     }
-
-    const { rows } = await pool.query(`
-        INSERT INTO mail_item (user_id, sender, subject, tag, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, 'received', EXTRACT(EPOCH FROM NOW()) * 1000, EXTRACT(EPOCH FROM NOW()) * 1000)
-        RETURNING id, user_id, sender, subject, tag, status, created_at
-    `, [user_id, sender, subject, tag || null]);
-
-    created(res, { mail_item: rows[0] });
 }));
 
 // Update mail item tag/status
 router.patch('/api/admin/mail-items/:id', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { id } = req.params;
-    const { tag, status } = req.body;
+    try {
+        const { id } = req.params;
+        const { tag, status } = req.body as { tag?: string; status?: string };
+        const sets: string[] = [];
+        const params: any[] = [];
+        let i = 1;
 
-    if (!tag && !status) {
-        return badRequest(res, 'tag or status must be provided');
+        if (tag !== undefined) { sets.push(`tag = $${i++}`); params.push(tag); }
+        if (status !== undefined) { sets.push(`status = $${i++}`); params.push(status); }
+        if (!sets.length) return res.json({ ok: true, data: { updated: 0 } });
+
+        params.push(Number(id));
+        const sql = `UPDATE mail_item SET ${sets.join(', ')} WHERE id = $${i} RETURNING id`;
+        const { rowCount } = await pool.query(sql, params);
+
+        res.json({ ok: true, data: { updated: rowCount } });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false, error: 'server_error' });
     }
-
-    const validStatuses = ['received', 'pending', 'processed', 'forwarded'];
-    if (status && !validStatuses.includes(status)) {
-        return badRequest(res, 'status must be one of: received, pending, processed, forwarded');
-    }
-
-    const updateFields = [];
-    const values = [];
-    let paramCount = 1;
-
-    if (tag !== undefined) {
-        updateFields.push(`tag = $${paramCount++}`);
-        values.push(tag);
-    }
-
-    if (status !== undefined) {
-        updateFields.push(`status = $${paramCount++}`);
-        values.push(status);
-    }
-
-    updateFields.push(`updated_at = $${paramCount++}`);
-    values.push(Math.floor(Date.now()));
-
-    values.push(id); // for WHERE clause
-
-    const { rows } = await pool.query(`
-        UPDATE mail_item 
-        SET ${updateFields.join(', ')}
-        WHERE id = $${paramCount}
-        RETURNING id, user_id, sender, subject, tag, status, created_at, updated_at
-    `, values);
-
-    if (rows.length === 0) {
-        return notFound(res, 'Mail item not found');
-    }
-
-    ok(res, { mail_item: rows[0] });
 }));
 
 // Get scan URL for mail item

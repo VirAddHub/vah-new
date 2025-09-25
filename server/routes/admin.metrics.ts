@@ -48,18 +48,21 @@ router.get('/', requireAdmin, async (req: any, res: any) => {
             ).then(r => r.rows).catch(() => []);
 
         res.json({
-            totals: {
-                users: usersRow?.users ?? 0,
-                monthly_revenue_pence: revRow?.monthly_revenue_pence ?? 0,
-                mail_processed: mailRow?.mail_processed ?? 0,
-                active_forwards: fwdRow?.active_forwards ?? 0,
-            },
-            recent_activity,
-            system_health: { status: 'operational' },
+            ok: true,
+            data: {
+                totals: {
+                    users: usersRow?.users ?? 0,
+                    monthly_revenue_pence: revRow?.monthly_revenue_pence ?? 0,
+                    mail_processed: mailRow?.mail_processed ?? 0,
+                    active_forwards: fwdRow?.active_forwards ?? 0,
+                },
+                recent_activity,
+                system_health: { status: 'operational' },
+            }
         });
     } catch (err) {
         console.error('[admin.metrics] fatal', err);
-        res.status(500).json({ error: 'server_error' });
+        res.status(500).json({ ok: false, error: 'server_error' });
     }
 });
 

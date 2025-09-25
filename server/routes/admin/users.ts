@@ -14,51 +14,36 @@ const pool = new Pool({
 
 // Get users with search, filters, and stats
 router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: any) => {
-    const { q: search, status, plan, kyc, page = 1, page_size = 25 } = req.query;
-    const limit = parseInt(page_size);
-    const offset = (parseInt(page) - 1) * limit;
-
     try {
-        // Get total count for pagination
-        const countResult = await pool.query(`
-            SELECT COUNT(*) as total
-            FROM "user" u
-            WHERE ($1::text IS NULL OR (u.email ILIKE '%'||$1||'%' OR u.first_name ILIKE '%'||$1||'%' OR u.last_name ILIKE '%'||$1||'%'))
-              AND ($2::text IS NULL OR u.status = $2)
-              AND ($3::text IS NULL OR u.plan_status = $3)
-              AND ($4::text IS NULL OR u.kyc_status = $4)
-        `, [search || null, status || null, plan || null, kyc || null]);
+        const { q, status, plan, kyc, page = '1', page_size = '20' } = req.query as Record<string, string>;
+        const limit = Math.min(parseInt(page_size || '20', 10), 100);
+        const offset = (Math.max(parseInt(page || '1', 10), 1) - 1) * limit;
 
-        const { rows } = await pool.query(`
-            SELECT
-              u.id, 
-              CONCAT(u.first_name, ' ', u.last_name) as name,
-              u.email, 
-              to_timestamp(u.created_at / 1000) as joined_at,
-              u.plan_status as plan, 
-              COALESCE(SUM(i.amount_pence) FILTER(WHERE i.status='paid'),0)::bigint AS spent_pence,
-              COALESCE(COUNT(mi.id),0)::bigint AS mail_count,
-              to_timestamp(u.last_login_at / 1000) as last_login_at,
-              u.status, u.kyc_status
-            FROM "user" u
-            LEFT JOIN invoice i ON i.user_id = u.id
-            LEFT JOIN mail_item mi ON mi.user_id = u.id
-            WHERE ($1::text IS NULL OR (u.email ILIKE '%'||$1||'%' OR u.first_name ILIKE '%'||$1||'%' OR u.last_name ILIKE '%'||$1||'%'))
-              AND ($2::text IS NULL OR u.status = $2)
-              AND ($3::text IS NULL OR u.plan_status = $3)
-              AND ($4::text IS NULL OR u.kyc_status = $4)
-            GROUP BY u.id
-            ORDER BY u.created_at DESC
-            LIMIT $5 OFFSET $6
-        `, [search || null, status || null, plan || null, kyc || null, limit, offset]);
+        const conds: string[] = [];
+        const params: any[] = [];
+        let i = 1;
+        if (q) { conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); params.push(`%${q}%`); i++; }
+        if (status) { conds.push(`status = $${i++}`); params.push(status); }
+        if (plan) { conds.push(`plan_status = $${i++}`); params.push(plan); }
+        if (kyc) { conds.push(`kyc_status = $${i++}`); params.push(kyc); }
+        const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
-        ok(res, { 
-            items: rows, 
-            total: parseInt(countResult.rows[0].total) 
-        });
-    } catch (err) {
-        console.error('[admin.users] error', err);
-        ok(res, { items: [], total: 0 });
+        const countSql = `SELECT COUNT(*)::int AS total FROM "user" ${where}`;
+        const listSql = `SELECT id, email, first_name, last_name, is_admin, status, plan_status as plan, kyc_status, 
+                                to_timestamp(created_at / 1000) as created_at
+                         FROM "user" ${where}
+                         ORDER BY created_at DESC
+                         LIMIT ${limit} OFFSET ${offset}`;
+
+        const [count, list] = await Promise.all([
+            pool.query(countSql, params),
+            pool.query(listSql, params)
+        ]);
+
+        res.json({ ok: true, data: { total: count.rows[0].total, items: list.rows } });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false, error: 'server_error' });
     }
 }));
 
