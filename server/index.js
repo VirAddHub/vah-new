@@ -88,13 +88,49 @@ app.use(cors({
         return cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Accept','Authorization','X-CSRF-Token','X-Requested-With','Cache-Control','Pragma'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
     exposedHeaders: ['Content-Disposition'],
 }));
 
 // Ensure OPTIONS handled
 app.options('*', cors());
+
+// CORS Debug middleware (behind env flag)
+if (process.env.CORS_DEBUG === '1') {
+    app.use((req, res, next) => {
+        const originalSend = res.send;
+        const originalJson = res.json;
+        
+        // Log request details
+        console.log('[CORS_DEBUG] Request:', {
+            method: req.method,
+            url: req.originalUrl,
+            origin: req.headers.origin
+        });
+        
+        // Override response methods to log headers after response
+        res.send = function(data) {
+            console.log('[CORS_DEBUG] Response headers:', {
+                'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
+                'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
+                'Set-Cookie': res.get('Set-Cookie') ? 'Present' : 'Not set'
+            });
+            return originalSend.call(this, data);
+        };
+        
+        res.json = function(data) {
+            console.log('[CORS_DEBUG] Response headers:', {
+                'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
+                'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
+                'Set-Cookie': res.get('Set-Cookie') ? 'Present' : 'Not set'
+            });
+            return originalJson.call(this, data);
+        };
+        
+        next();
+    });
+}
 
 // Health / readiness probe for CI and Render
 app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
@@ -312,6 +348,14 @@ app.use(require('./routes/public/plans').default);
 
 // Dashboard routes
 app.use('/api', require('./routes/dashboard'));
+
+// Fallback OPTIONS handler for any missed OPTIONS requests
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(204);
+    }
+    next();
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
