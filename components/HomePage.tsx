@@ -507,11 +507,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <strong>📍 Central London Presence</strong>
                         </div>
                         <div className="rounded-lg border border-primary/20 bg-card p-3 text-center">
-                            <strong>🔒 HMRC AML Supervised</strong>
+                            <strong>🔒 Fully AML Compliant & HMRC Supervised</strong>
                         </div>
                         <div className="rounded-lg border border-primary/20 bg-card p-3 text-center">
                             <strong>
-                                📦 No Parcels, No Spam — Just Professional Mail
+                                Professional-Grade Mail Handling Only (No Parcels)
                             </strong>
                         </div>
                     </div>
