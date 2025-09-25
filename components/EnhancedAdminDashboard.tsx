@@ -299,6 +299,31 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
             {/* Main Content */}
             <main className="p-4 lg:p-6">
+                {/* Deleted Users Banner */}
+                {overview?.deletedUsers > 0 && (
+                    <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                <div>
+                                    <h3 className="font-medium text-orange-800">Deleted Users</h3>
+                                    <p className="text-sm text-orange-600">
+                                        {overview.deletedUsers} user{overview.deletedUsers !== 1 ? 's' : ''} have been deleted
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setActiveSection('users')}
+                                className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                            >
+                                View Users
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
                 {renderContent()}
             </main>
         </div>

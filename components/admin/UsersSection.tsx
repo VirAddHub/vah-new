@@ -115,6 +115,21 @@ export default function UsersSection() {
 
   // Handle user deletion with double confirmation
   async function handleDeleteUser(id: string | number) {
+    // First confirmation: Modal with email typing
+    if (!deleteModal || !deleteConfirm.trim()) return;
+    
+    if (deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()) {
+      toast({ title: 'Confirmation mismatch', description: 'Email does not match.', variant: 'destructive' });
+      return;
+    }
+    
+    // Second confirmation: Native browser confirm
+    if (!window.confirm('This action cannot be undone. Are you absolutely sure you want to delete this user?')) {
+      setDeleteModal(null);
+      setDeleteConfirm('');
+      return;
+    }
+    
     setIsMutating(true);
     
     // Optimistic update - remove user from list immediately
@@ -126,7 +141,7 @@ export default function UsersSection() {
       const res = await adminApi.deleteUser(id);
       if (!res.ok) throw new Error(res.error || 'delete_failed');
       
-      toast({ title: 'User deleted' });
+      toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
       
       // Force reload with cache-buster to ensure fresh data
       await Promise.all([load(), loadUserStats()]);
