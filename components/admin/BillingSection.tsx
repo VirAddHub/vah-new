@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -67,6 +67,10 @@ export function BillingSection({ }: BillingSectionProps) {
     const [timeRange, setTimeRange] = useState("30d");
     const [billingMetrics, setBillingMetrics] = useState<any>(null);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [isFetchingTransactions, setIsFetchingTransactions] = useState(false);
+    const [isMutating, setIsMutating] = useState(false);
+    const [page, setPage] = useState(1);
+    const pageSize = 20;
     const [invoices, setInvoices] = useState<any[]>([]);
 
     // Load billing metrics
@@ -82,16 +86,28 @@ export function BillingSection({ }: BillingSectionProps) {
     };
 
     // Load transactions
-    const loadTransactions = async () => {
+    const loadTransactions = useCallback(async () => {
+        setIsFetchingTransactions(true);
         try {
-            const response = await apiClient.getAdminTransactions({ limit: 10, offset: 0 });
-            if (response.ok) {
-                setTransactions(safe(response.data?.items, []));
+            const params = new URLSearchParams({
+                page: String(page),
+                page_size: String(pageSize),
+            });
+
+            const resp = await apiClient.getAdminTransactions({ limit: pageSize, offset: (page - 1) * pageSize });
+            if (resp.ok) {
+                setTransactions(resp.data?.items ?? []);
+            } else {
+                setTransactions([]);
+                console.error('Failed to fetch transactions:', resp.error);
             }
-        } catch (error) {
-            console.error('Failed to load transactions:', error);
+        } catch (err) {
+            console.error('Failed to fetch transactions:', err);
+            setTransactions([]);
+        } finally {
+            setIsFetchingTransactions(false);
         }
-    };
+    }, [page, pageSize]);
 
     // Load invoices
     const loadInvoices = async () => {
@@ -107,9 +123,12 @@ export function BillingSection({ }: BillingSectionProps) {
 
     useEffect(() => {
         loadBillingMetrics();
-        loadTransactions();
         loadInvoices();
     }, []);
+
+    useEffect(() => {
+        loadTransactions();
+    }, [loadTransactions]);
 
     const billing = billingMetrics;
     const transactionsData = transactions;
@@ -173,11 +192,11 @@ export function BillingSection({ }: BillingSectionProps) {
     };
 
     const handleProcessPayment = async (transactionId: number) => {
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_process_payment', { transactionId });
             await apiClient.post(`/api/admin/transactions/${transactionId}/process`);
-            refetchTransactions();
+            await loadTransactions();
         } catch (error) {
             await logAdminAction('admin_process_payment_error', {
                 transactionId,
@@ -185,16 +204,16 @@ export function BillingSection({ }: BillingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleRefundTransaction = async (transactionId: number) => {
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_refund_transaction', { transactionId });
             await apiClient.post(`/api/admin/transactions/${transactionId}/refund`);
-            refetchTransactions();
+            await loadTransactions();
         } catch (error) {
             await logAdminAction('admin_refund_transaction_error', {
                 transactionId,
@@ -202,7 +221,7 @@ export function BillingSection({ }: BillingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
@@ -419,7 +438,7 @@ export function BillingSection({ }: BillingSectionProps) {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleProcessPayment(transaction.id)}
-                                                        disabled={loading}
+                                                        disabled={isMutating}
                                                     >
                                                         <CheckCircle className="h-4 w-4" />
                                                     </Button>
@@ -429,7 +448,7 @@ export function BillingSection({ }: BillingSectionProps) {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleRefundTransaction(transaction.id)}
-                                                        disabled={loading}
+                                                        disabled={isMutating}
                                                     >
                                                         <RefreshCcw className="h-4 w-4" />
                                                     </Button>
