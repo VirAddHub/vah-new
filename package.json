@@ -6,8 +6,9 @@
   "scripts": {
     "//": "── DB lifecycle ───────────────────────────────────────────────",
     "migrate": "node scripts/migrate-pg.cjs",
+    "migrate:soft-delete": "node scripts/apply-migration.js",
     "seed": "node scripts/seed-pg.cjs",
-    "db:prepare": "npm run migrate && npm run seed",
+    "db:prepare": "npm run migrate && npm run migrate:soft-delete && npm run seed",
     "db:init": "node scripts/migrate-pg.cjs",
     "start:ci": "node server.js",
     "//2": "── Backend checks & tests ───────────────────────────────────────",

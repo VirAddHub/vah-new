@@ -25,16 +25,26 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
         const params: any[] = [];
         let i = 1;
 
-        // Always exclude deleted users unless explicitly requested
+        // Always exclude deleted users unless explicitly requested (if column exists)
         if (!showDeleted) {
-            conds.push(`deleted_at IS NULL`);
+            try {
+                const { rows: columnCheck } = await pool.query(`
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name = 'user' AND column_name = 'deleted_at'
+                `);
+                if (columnCheck.length > 0) {
+                    conds.push(`deleted_at IS NULL`);
+                }
+            } catch (error: any) {
+                console.log('[admin.users] deleted_at column check failed, skipping filter:', error.message);
+            }
         }
 
         if (q) { conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); params.push(`%${q}%`); i++; }
         if (status) { conds.push(`status = $${i++}`); params.push(status); }
         if (plan) { conds.push(`plan_status = $${i++}`); params.push(plan); }
         if (kyc) { conds.push(`kyc_status = $${i++}`); params.push(kyc); }
-        
+
         const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
         const countSql = `SELECT COUNT(*)::int AS total FROM "user" ${where}`;
@@ -60,19 +70,47 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
 // Get user stats
 router.get('/api/admin/users/stats', requireAdmin, asyncHandler(async (req: any, res: any) => {
     try {
-        const { rows } = await pool.query(`
+        // Check if deleted_at column exists
+        let statsQuery = `
             SELECT 
-                COUNT(*) FILTER(WHERE deleted_at IS NULL) as total,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'active') as active,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'suspended') as suspended,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'pending') as pending,
-                COUNT(*) FILTER(WHERE deleted_at IS NOT NULL) as deleted,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND plan_status = 'active') as plan_active_count,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'approved') as kyc_approved_count,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'pending') as kyc_pending_count,
-                COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'rejected') as kyc_rejected_count
+                COUNT(*) as total,
+                COUNT(*) FILTER(WHERE status = 'active') as active,
+                COUNT(*) FILTER(WHERE status = 'suspended') as suspended,
+                COUNT(*) FILTER(WHERE status = 'pending') as pending,
+                0 as deleted,
+                COUNT(*) FILTER(WHERE plan_status = 'active') as plan_active_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'approved') as kyc_approved_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'pending') as kyc_pending_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'rejected') as kyc_rejected_count
             FROM "user"
-        `);
+        `;
+
+        try {
+            const { rows: columnCheck } = await pool.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'user' AND column_name = 'deleted_at'
+            `);
+            
+            if (columnCheck.length > 0) {
+                statsQuery = `
+                    SELECT 
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL) as total,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'active') as active,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'suspended') as suspended,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'pending') as pending,
+                        COUNT(*) FILTER(WHERE deleted_at IS NOT NULL) as deleted,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND plan_status = 'active') as plan_active_count,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'approved') as kyc_approved_count,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'pending') as kyc_pending_count,
+                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'rejected') as kyc_rejected_count
+                    FROM "user"
+                `;
+            }
+        } catch (error: any) {
+            console.log('[admin.users.stats] deleted_at column check failed, using basic query:', error.message);
+        }
+
+        const { rows } = await pool.query(statsQuery);
 
         ok(res, { stats: rows[0] || {} });
     } catch (err) {

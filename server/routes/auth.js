@@ -148,8 +148,25 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user by email (exclude deleted users)
-    const { rows } = await pool.query('SELECT * FROM "user" WHERE email = $1 AND deleted_at IS NULL', [email]);
+    // Find user by email (exclude deleted users if column exists)
+    let query = 'SELECT * FROM "user" WHERE email = $1';
+    let params = [email];
+    
+    // Check if deleted_at column exists (hotfix for missing migration)
+    try {
+      const { rows: columnCheck } = await pool.query(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'user' AND column_name = 'deleted_at'
+      `);
+      
+      if (columnCheck.length > 0) {
+        query += ' AND deleted_at IS NULL';
+      }
+    } catch (error) {
+      console.log('[auth.login] deleted_at column check failed, using basic query:', error.message);
+    }
+    
+    const { rows } = await pool.query(query, params);
     const user = rows[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });

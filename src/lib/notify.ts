@@ -27,7 +27,7 @@ export async function sendOpsEmail({ subject, text }: { subject: string; text: s
     // TODO: Hook into your nodemailer or email provider
     // For now, just log the email that would be sent
     console.log('[notify] Ops email would be sent:', { subject, text });
-    
+
     // Example implementation with nodemailer:
     // const nodemailer = require('nodemailer');
     // const transporter = nodemailer.createTransporter({
