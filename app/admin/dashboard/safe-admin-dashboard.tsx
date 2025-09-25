@@ -30,7 +30,7 @@ export default function SafeAdminDashboard() {
 
       // Load admin data
       const [users, analytics] = await Promise.allSettled([
-        safeGet<{ users: any[] }>('/api/admin/users'),
+        safeGet<{ items: any[] }>('/api/admin/users'),
         safeGet('/api/admin/analytics'),
       ]);
 
@@ -39,7 +39,7 @@ export default function SafeAdminDashboard() {
         loading: false,
         user: me.data.user,
         users: users.status === 'fulfilled' 
-          ? (users.value.ok ? (users.value.data?.users ?? []) : [])
+          ? (users.value.ok ? (users.value.data?.items ?? []) : [])
           : [],
         analytics: analytics.status === 'fulfilled' && analytics.value.ok ? analytics.value.data : null,
       });
