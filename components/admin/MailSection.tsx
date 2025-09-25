@@ -303,12 +303,12 @@ export function MailSection({ }: MailSectionProps) {
                 <div>
                     <h1 className="text-3xl font-bold">Mail Management</h1>
                     <p className="text-muted-foreground">Process and manage incoming mail and packages</p>
-                    {mailStats && (
+                    {stats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {stats?.total || 0}</span>
-                            <span>Received: {stats?.received || 0}</span>
-                            <span>Pending: {stats?.pending || 0}</span>
-                            <span>Processed: {stats?.processed || 0}</span>
+                            <span>Total: {stats.total || 0}</span>
+                            <span>Received: {stats.received || 0}</span>
+                            <span>Pending: {stats.pending || 0}</span>
+                            <span>Processed: {stats.processed || 0}</span>
                         </div>
                     )}
                 </div>

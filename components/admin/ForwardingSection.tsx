@@ -433,17 +433,6 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Priority" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Priority</SelectItem>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="express">Express</SelectItem>
-                                    <SelectItem value="urgent">Urgent</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                     </div>
                 </CardContent>
@@ -544,17 +533,17 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                             {request.status === "pending" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleProcessRequest(request.id)} disabled={loading}>
+                                                <Button size="sm" variant="outline" onClick={() => handleProcessRequest(request.id)} disabled={isMutating}>
                                                     <Play className="h-4 w-4" />
                                                 </Button>
                                             )}
                                             {request.status === "processing" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleShipRequest(request.id)} disabled={loading}>
+                                                <Button size="sm" variant="outline" onClick={() => handleShipRequest(request.id)} disabled={isMutating}>
                                                     <Truck className="h-4 w-4" />
                                                 </Button>
                                             )}
                                             {request.status !== "delivered" && request.status !== "cancelled" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleCancelRequest(request.id)} disabled={loading}>
+                                                <Button size="sm" variant="outline" onClick={() => handleCancelRequest(request.id)} disabled={isMutating}>
                                                     <XCircle className="h-4 w-4" />
                                                 </Button>
                                             )}

@@ -181,7 +181,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                 email: newUser.email
             });
             setShowCreateForm(false);
-            refetchUsers(); // Refresh the user list
+            loadUsers(); // Refresh the user list
         } catch (error) {
             await logAdminAction('admin_user_created_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
@@ -225,7 +225,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
             });
             setShowEditForm(false);
             setSelectedUser(null);
-            refetchUsers(); // Refresh the user list
+            loadUsers(); // Refresh the user list
         } catch (error) {
             await logAdminAction('admin_user_updated_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         }
@@ -328,7 +328,7 @@ export function UsersSection({ onNavigate }: UsersSectionProps) {
                 <div>
                     <h1 className="text-3xl font-bold">User Management</h1>
                     <p className="text-muted-foreground">Manage user accounts, KYC status, and subscriptions</p>
-                    {userStats && (
+                    {stats && (
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                             <span>Total: {stats?.total || 0}</span>
                             <span>Active: {stats?.active || 0}</span>
