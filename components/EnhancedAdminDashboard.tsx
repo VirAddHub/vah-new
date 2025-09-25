@@ -108,7 +108,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const loadOverview = useCallback(async () => {
         setIsLoadingOverview(true);
         try {
-            const [userStatsRes, billingRes, processedRes, forwardsRes] = await Promise.all([
+            const [usersRes, userStatsRes, billingRes, processedRes, forwardsRes] = await Promise.all([
+                adminApi.users(new URLSearchParams([["page", "1"], ["page_size", "1"]])),
                 adminApi.userStats(),
                 adminApi.billingMetrics(),
                 adminApi.mailItems(new URLSearchParams([["status", "processed"], ["page", "1"], ["page_size", "1"]])),
@@ -116,7 +117,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             ]);
 
             setOverview({
-                users: userStatsRes.ok ? Number(userStatsRes.data?.total ?? 0) : 0,
+                users: usersRes.ok ? Number(usersRes.data?.total ?? 0) : 0,
                 deletedUsers: userStatsRes.ok ? Number(userStatsRes.data?.deleted ?? 0) : 0,
                 monthlyRevenuePence: billingRes.ok ? Number(billingRes.data?.monthly_revenue_pence ?? 0) : 0,
                 mailProcessed: processedRes.ok ? Number(processedRes.data?.total ?? 0) : 0,
