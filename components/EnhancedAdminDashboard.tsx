@@ -20,7 +20,7 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { apiClient } from "../lib/api-client";
+import { apiClient, safe } from "../lib/api-client";
 import {
     Mail,
     Users,
@@ -81,7 +81,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     // Data loading state
     const [users, setUsers] = useState<any[]>([]);
-    const [analytics, setAnalytics] = useState<any>(null);
+    const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -90,13 +90,13 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         const loadAdminData = async () => {
             try {
                 setLoading(true);
-                const [usersResponse, analyticsResponse] = await Promise.all([
+                const [usersResponse, metricsResponse] = await Promise.all([
                     apiClient.get('/api/admin/users'),
-                    apiClient.get('/api/admin/analytics')
+                    apiClient.get('/api/admin/metrics')
                 ]);
 
-                if (usersResponse.ok) setUsers(usersResponse.data?.users ?? []);
-                if (analyticsResponse.ok) setAnalytics(analyticsResponse.data);
+                if (usersResponse.ok) setUsers(safe(usersResponse.data?.users, []));
+                if (metricsResponse.ok) setMetrics(metricsResponse.data);
             } catch (err) {
                 setError('Failed to load admin data');
                 console.error('Error loading admin data:', err);
@@ -121,7 +121,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const renderContent = () => {
         switch (activeSection) {
             case "overview":
-                return <OverviewSection />;
+                return <OverviewSection metrics={metrics} />;
             case "users":
                 return <UsersSection onNavigate={onNavigate} />;
             case "mail":
@@ -135,7 +135,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "settings":
                 return <SettingsSection />;
             default:
-                return <OverviewSection />;
+                return <OverviewSection metrics={metrics} />;
         }
     };
 
@@ -237,7 +237,11 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 }
 
 // Enhanced Section Components
-function OverviewSection() {
+function OverviewSection({ metrics }: { metrics: any }) {
+    const totals = safe(metrics?.totals, {});
+    const systemHealth = safe(metrics?.system_health, {});
+    const recentActivity = safe(metrics?.recent_activity, []);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -247,8 +251,10 @@ function OverviewSection() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline" className="gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        System Operational
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                            (systemHealth as any)?.status === 'operational' ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                        {(systemHealth as any)?.status === 'operational' ? 'System Operational' : 'System Issues'}
                     </Badge>
                 </div>
             </div>
@@ -257,30 +263,30 @@ function OverviewSection() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Users"
-                    value="2,847"
-                    change="+12.3%"
+                    value={(totals as any).users?.toLocaleString() || "0"}
+                    change=""
                     trend="up"
                     icon={<Users2 className="h-5 w-5 text-blue-500" />}
                 />
                 <MetricCard
                     title="Monthly Revenue"
-                    value="£47,329"
-                    change="+8.1%"
+                    value={(totals as any).monthly_revenue_pence ? `£${((totals as any).monthly_revenue_pence / 100).toLocaleString()}` : "£0"}
+                    change=""
                     trend="up"
                     icon={<DollarSign className="h-5 w-5 text-green-500" />}
                 />
                 <MetricCard
                     title="Mail Processed"
-                    value="18,492"
-                    change="+23.4%"
+                    value={(totals as any).mail_processed?.toLocaleString() || "0"}
+                    change=""
                     trend="up"
                     icon={<Mail className="h-5 w-5 text-purple-500" />}
                 />
                 <MetricCard
                     title="Active Forwards"
-                    value="1,234"
-                    change="-2.1%"
-                    trend="down"
+                    value={(totals as any).active_forwards?.toLocaleString() || "0"}
+                    change=""
+                    trend="up"
                     icon={<Truck className="h-5 w-5 text-orange-500" />}
                 />
             </div>
@@ -295,30 +301,22 @@ function OverviewSection() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <ActivityItem
-                                icon={<UserCheck className="h-4 w-4 text-green-500" />}
-                                title="New user registration"
-                                description="jane.doe@example.com verified KYC"
-                                time="2 minutes ago"
-                            />
-                            <ActivityItem
-                                icon={<Mail className="h-4 w-4 text-blue-500" />}
-                                title="Mail batch processed"
-                                description="47 items scanned and uploaded"
-                                time="15 minutes ago"
-                            />
-                            <ActivityItem
-                                icon={<Truck className="h-4 w-4 text-orange-500" />}
-                                title="Forwarding completed"
-                                description="Delivery #FR-2847 dispatched"
-                                time="1 hour ago"
-                            />
-                            <ActivityItem
-                                icon={<CreditCard className="h-4 w-4 text-purple-500" />}
-                                title="Payment processed"
-                                description="Invoice #INV-1045 paid (£39.99)"
-                                time="2 hours ago"
-                            />
+                            {recentActivity.length > 0 ? (
+                                recentActivity.map((activity: any, index: number) => (
+                                    <ActivityItem
+                                        key={index}
+                                        icon={<UserCheck className="h-4 w-4 text-green-500" />}
+                                        title={activity.title || "Activity"}
+                                        description={activity.description || "No description"}
+                                        time={activity.time || "Unknown time"}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p>No activity yet</p>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

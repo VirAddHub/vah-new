@@ -46,6 +46,11 @@ export interface ForwardingRequest {
 
 // ---- Helpers --------------------------------------------------
 
+// Safe helper to guard undefined data
+export function safe<T>(v: any, fallback: T): T { 
+  return (v === null || v === undefined) ? fallback : v; 
+}
+
 // Safely pick a boolean from unknown values like "true"/1/"1"/true
 const toBool = (v: unknown): boolean | undefined => {
   if (v === true || v === false) return v;

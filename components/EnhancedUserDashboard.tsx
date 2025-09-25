@@ -2,7 +2,7 @@
 
 import { useToast } from "./ui/use-toast";
 import { useMemo, useState, useEffect } from "react";
-import { apiClient } from "../lib/api-client";
+import { apiClient, safe } from "../lib/api-client";
 import { VAHLogo } from "./VAHLogo";
 
 import { Button } from "./ui/button";
@@ -92,15 +92,15 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     apiClient.get('/api/email-prefs')
                 ]);
 
-                // Handle data with correct shapes
-                if (mailResponse.ok) setMailItems(mailResponse.data?.items ?? []);
-                if (profileResponse.ok) setProfile(profileResponse.data?.user ?? profileResponse.data);
-                if (subscriptionResponse.ok) setSubscription(subscriptionResponse.data?.subscription ?? subscriptionResponse.data);
-                if (ticketsResponse.ok) setSupportTickets(ticketsResponse.data?.items ?? []);
-                if (forwardingResponse.ok) setForwardingRequests(forwardingResponse.data?.items ?? []);
-                if (billingResponse.ok) setBilling(billingResponse.data?.subscription ?? billingResponse.data);
-                if (invoicesResponse.ok) setInvoices(invoicesResponse.data?.items ?? []);
-                if (plansResponse.ok) setPlans(plansResponse.data?.items ?? []);
+                // Handle data with correct shapes using safe helper
+                if (mailResponse.ok) setMailItems(safe(mailResponse.data?.items, []));
+                if (profileResponse.ok) setProfile(safe(profileResponse.data?.user, profileResponse.data));
+                if (subscriptionResponse.ok) setSubscription(safe(subscriptionResponse.data?.subscription, subscriptionResponse.data));
+                if (ticketsResponse.ok) setSupportTickets(safe(ticketsResponse.data?.items, []));
+                if (forwardingResponse.ok) setForwardingRequests(safe(forwardingResponse.data?.items, []));
+                if (billingResponse.ok) setBilling(safe(billingResponse.data?.subscription, billingResponse.data));
+                if (invoicesResponse.ok) setInvoices(safe(invoicesResponse.data?.items, []));
+                if (plansResponse.ok) setPlans(safe(plansResponse.data?.items, []));
                 if (kycResponse.ok) setKycStatus(kycResponse.data);
                 if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.data);
             } catch (err) {
@@ -114,14 +114,14 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     }, []);
 
     // Refetch functions
-    const refetchMail = () => apiClient.get('/api/mail-items').then(r => r.ok && setMailItems(r.data || []));
-    const refetchProfile = () => apiClient.get('/api/profile').then(r => r.ok && setProfile(r.data));
-    const refetchSubscription = () => apiClient.get('/api/payments/subscriptions/status').then(r => r.ok && setSubscription(r.data));
-    const refetchTickets = () => apiClient.get('/api/support/tickets').then(r => r.ok && setSupportTickets(r.data || []));
-    const refetchForwarding = () => apiClient.get('/api/forwarding-requests').then(r => r.ok && setForwardingRequests(r.data || []));
-    const refetchBilling = () => apiClient.get('/api/billing').then(r => r.ok && setBilling(r.data));
-    const refetchInvoices = () => apiClient.get('/api/billing/invoices').then(r => r.ok && setInvoices(r.data || []));
-    const refetchPlans = () => apiClient.get('/api/plans').then(r => r.ok && setPlans(r.data || []));
+    const refetchMail = () => apiClient.get('/api/mail-items').then(r => r.ok && setMailItems(safe(r.data?.items, [])));
+    const refetchProfile = () => apiClient.get('/api/profile').then(r => r.ok && setProfile(safe(r.data?.user, r.data)));
+    const refetchSubscription = () => apiClient.get('/api/payments/subscriptions/status').then(r => r.ok && setSubscription(safe(r.data?.subscription, r.data)));
+    const refetchTickets = () => apiClient.get('/api/support/tickets').then(r => r.ok && setSupportTickets(safe(r.data?.items, [])));
+    const refetchForwarding = () => apiClient.get('/api/forwarding-requests').then(r => r.ok && setForwardingRequests(safe(r.data?.items, [])));
+    const refetchBilling = () => apiClient.get('/api/billing').then(r => r.ok && setBilling(safe(r.data?.subscription, r.data)));
+    const refetchInvoices = () => apiClient.get('/api/billing/invoices').then(r => r.ok && setInvoices(safe(r.data?.items, [])));
+    const refetchPlans = () => apiClient.get('/api/plans').then(r => r.ok && setPlans(safe(r.data?.items, [])));
     const refetchKyc = () => apiClient.get('/api/kyc/status').then(r => r.ok && setKycStatus(r.data));
     const refetchEmailPrefs = () => apiClient.get('/api/email-prefs').then(r => r.ok && setEmailPrefs(r.data));
 
