@@ -95,7 +95,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     apiClient.get('/api/admin/metrics')
                 ]);
 
-                if (usersResponse.ok) setUsers(safe(usersResponse.data?.users, []));
+                if (usersResponse.ok) setUsers(safe(usersResponse.data?.items, []));
                 if (metricsResponse.ok) setMetrics(metricsResponse.data);
             } catch (err) {
                 setError('Failed to load admin data');
