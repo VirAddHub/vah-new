@@ -131,7 +131,6 @@ app.get(['/api/ready', '/api/healthz', '/healthz'], (req, res) => {
 });
 
 // Security first (after CORS) - configure helmet to not block cross-origin requests
-const helmet = require('helmet');
 app.use(helmet({
     // API returns JSON; avoid strict CORP that can interfere with credentialed CORS
     crossOriginResourcePolicy: { policy: 'cross-origin' },
