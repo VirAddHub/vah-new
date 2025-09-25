@@ -382,12 +382,13 @@ export const apiClient = {
 // ---- New Typed Admin API Client ----
 
 // Core request function with consistent error handling and cookies
-async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
+async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<ApiResponse<T>> {
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
       ...init,
+      credentials: 'include', // IMPORTANT for cookies
+      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+      signal: init?.signal,
     });
 
     const body = await res.json().catch(() => ({}));
@@ -397,16 +398,17 @@ async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>>
     }
 
     return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
-  } catch (error) {
-    return { ok: false, error: 'Network error' };
+  } catch (error: any) {
+    if (error.name === 'AbortError') return { ok: false, error: 'aborted' };
+    return { ok: false, error: error?.message || 'network_error' };
   }
 }
 
 // Typed Admin API - single place for all admin endpoints
 export const adminApi = {
   // Mail Management
-  mailItems: (p: URLSearchParams) =>
-    req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`),
+  mailItems: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
+    req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`, o),
 
   updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>
     req<{ id: string }>(`/api/admin/mail-items/${id}`, {
@@ -417,15 +419,15 @@ export const adminApi = {
   // Billing & Revenue
   billingMetrics: () =>
     req<{
-      monthly_revenue_pence: number;
+      monthly_revenue_pence: number | string;
       outstanding_invoices_pence: number;
       churn_rate: number;
       recent_transactions: any[]
     }>(`/api/admin/billing/metrics`),
 
   // User Management
-  users: (p: URLSearchParams) =>
-    req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`),
+  users: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
+    req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`, o),
 
   updateUser: (id: string, payload: any) =>
     req(`/api/admin/users/${id}`, {
@@ -446,8 +448,8 @@ export const adminApi = {
     }),
 
   // Forwarding Management
-  forwardingQueue: (p: URLSearchParams) =>
-    req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`),
+  forwardingQueue: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
+    req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`, o),
 
   fulfillForward: (id: string) =>
     req(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),

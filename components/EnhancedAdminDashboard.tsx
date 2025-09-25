@@ -107,10 +107,10 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         setIsLoadingOverview(true);
         try {
             const [usersRes, billingRes, processedRes, forwardsRes] = await Promise.all([
-                adminApi.users(new URLSearchParams([["page","1"],["page_size","1"]])),
+                adminApi.users(new URLSearchParams([["page", "1"], ["page_size", "1"]])),
                 adminApi.billingMetrics(),
-                adminApi.mailItems(new URLSearchParams([["status","processed"],["page","1"],["page_size","1"]])),
-                adminApi.forwardingQueue(new URLSearchParams([["status","pending"],["page","1"],["page_size","1"]])),
+                adminApi.mailItems(new URLSearchParams([["status", "processed"], ["page", "1"], ["page_size", "1"]])),
+                adminApi.forwardingQueue(new URLSearchParams([["status", "pending"], ["page", "1"], ["page_size", "1"]])),
             ]);
 
             setOverview({
@@ -133,17 +133,17 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 setLoading(true);
                 // Fetch all users to get accurate totals
                 const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
-                
+
                 if (usersResponse.ok) {
                     const userData = safe(usersResponse.data?.items, []);
                     setUsers(userData);
-                    
+
                     // Calculate real metrics from user data
                     const totalUsers = userData.length;
                     const activeUsers = userData.filter((u: any) => u.status === 'active').length;
                     const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
                     const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
-                    
+
                     // Set calculated metrics
                     setMetrics({
                         totals: {
