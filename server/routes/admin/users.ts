@@ -19,27 +19,41 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
         const { q, status, plan, kyc, page = '1', page_size = '20', include_deleted = 'false' } = req.query as Record<string, string>;
         const limit = Math.min(parseInt(page_size || '20', 10), 100);
         const offset = (Math.max(parseInt(page || '1', 10), 1) - 1) * limit;
-        const showDeleted = include_deleted === 'true';
+        const includeDeleted = include_deleted === 'true';
 
         const conds: string[] = [];
         const params: any[] = [];
         let i = 1;
 
-        // Temporarily disable deleted_at filter until migration is applied
-        // if (!showDeleted) {
-        //     conds.push(`deleted_at IS NULL`);
-        // }
+        // Filter by deleted_at status
+        if (!includeDeleted) {
+            conds.push(`deleted_at IS NULL`);
+        }
 
-        if (q) { conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); params.push(`%${q}%`); i++; }
-        if (status) { conds.push(`status = $${i++}`); params.push(status); }
-        if (plan) { conds.push(`plan_status = $${i++}`); params.push(plan); }
-        if (kyc) { conds.push(`kyc_status = $${i++}`); params.push(kyc); }
+        if (q) { 
+            conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); 
+            params.push(`%${q}%`); 
+            i++; 
+        }
+        if (status) { 
+            conds.push(`status = $${i++}`); 
+            params.push(status); 
+        }
+        if (plan) { 
+            conds.push(`plan_status = $${i++}`); 
+            params.push(plan); 
+        }
+        if (kyc) { 
+            conds.push(`kyc_status = $${i++}`); 
+            params.push(kyc); 
+        }
 
         const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
         const countSql = `SELECT COUNT(*)::int AS total FROM "user" ${where}`;
         const listSql = `SELECT id, email, first_name, last_name, is_admin, status, plan_status as plan, kyc_status, 
-                                to_timestamp(created_at / 1000) as created_at
+                                to_timestamp(created_at / 1000) as created_at,
+                                deleted_at
                          FROM "user" ${where}
                          ORDER BY created_at DESC
                          LIMIT $${i++} OFFSET $${i++}`;
@@ -59,18 +73,17 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
 // Get user stats
 router.get('/api/admin/users/stats', requireAdmin, asyncHandler(async (req: any, res: any) => {
     try {
-        // Temporarily use basic stats query until migration is applied
         const { rows } = await pool.query(`
             SELECT 
-                COUNT(*) as total,
-                COUNT(*) FILTER(WHERE status = 'active') as active,
-                COUNT(*) FILTER(WHERE status = 'suspended') as suspended,
-                COUNT(*) FILTER(WHERE status = 'pending') as pending,
-                0 as deleted,
-                COUNT(*) FILTER(WHERE plan_status = 'active') as plan_active_count,
-                COUNT(*) FILTER(WHERE kyc_status = 'approved') as kyc_approved_count,
-                COUNT(*) FILTER(WHERE kyc_status = 'pending') as kyc_pending_count,
-                COUNT(*) FILTER(WHERE kyc_status = 'rejected') as kyc_rejected_count
+                COUNT(*) FILTER(WHERE deleted_at IS NULL) as total,
+                COUNT(*) FILTER(WHERE deleted_at IS NOT NULL) as deleted,
+                COUNT(*) FILTER(WHERE status = 'active' AND deleted_at IS NULL) as active,
+                COUNT(*) FILTER(WHERE status = 'suspended' AND deleted_at IS NULL) as suspended,
+                COUNT(*) FILTER(WHERE status = 'pending' AND deleted_at IS NULL) as pending,
+                COUNT(*) FILTER(WHERE plan_status = 'active' AND deleted_at IS NULL) as plan_active_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'approved' AND deleted_at IS NULL) as kyc_approved_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'pending' AND deleted_at IS NULL) as kyc_pending_count,
+                COUNT(*) FILTER(WHERE kyc_status = 'rejected' AND deleted_at IS NULL) as kyc_rejected_count
             FROM "user"
         `);
 
@@ -242,9 +255,9 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
         return badRequest(res, 'Cannot delete your own account');
     }
 
-    // Check if user exists (temporarily remove deleted_at check until migration)
+    // Check if user exists and is not already deleted
     const { rows: targetRows } = await pool.query(
-        `SELECT id, email, is_admin FROM "user" WHERE id = $1`,
+        `SELECT id, email, is_admin FROM "user" WHERE id = $1 AND deleted_at IS NULL`,
         [id]
     );
 
@@ -254,10 +267,10 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
 
     const target = targetRows[0];
 
-    // Disallow deleting last admin (temporarily remove deleted_at check until migration)
+    // Disallow deleting last admin
     if (target.is_admin) {
         const { rows: adminCount } = await pool.query(
-            `SELECT COUNT(*)::int AS count FROM "user" WHERE is_admin = true`
+            `SELECT COUNT(*)::int AS count FROM "user" WHERE is_admin = true AND deleted_at IS NULL`
         );
         if (adminCount[0].count <= 1) {
             return badRequest(res, 'Cannot delete the last admin user');
@@ -267,18 +280,18 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
     // Perform soft delete in a transaction
     await pool.query('BEGIN');
     try {
-        // Temporarily disable soft delete until migration is applied
-        // For now, just anonymize PII to avoid unique constraint violations
+        // Soft delete: set deleted_at timestamp and anonymize email
         await pool.query(`
             UPDATE "user"
-            SET email = CONCAT('deleted+', id, '@example.invalid'),
+            SET deleted_at = NOW(),
+                email = CONCAT('deleted+', id, '@example.invalid'),
                 first_name = 'Deleted',
                 last_name = 'User',
                 updated_at = $1
-            WHERE id = $2
+            WHERE id = $2 AND deleted_at IS NULL
         `, [Math.floor(Date.now()), id]);
 
-        // Log admin action (if admin_audit table exists)
+        // Log admin action
         try {
             await pool.query(`
                 INSERT INTO admin_audit (admin_id, action, target_user_id, meta, created_at)
@@ -300,6 +313,59 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
         notifyUserDeleted(actorId, id, target.email);
 
         ok(res, { deleted: 1 });
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        throw error;
+    }
+}));
+
+// POST /api/admin/users/:id/restore - Restore soft-deleted user
+router.post('/api/admin/users/:id/restore', requireAdmin, asyncHandler(async (req: any, res: any) => {
+    const { id } = req.params;
+    const actorId = String(req.session!.user!.id);
+
+    // Check if user exists and is deleted
+    const { rows: targetRows } = await pool.query(
+        `SELECT id, email FROM "user" WHERE id = $1 AND deleted_at IS NOT NULL`,
+        [id]
+    );
+
+    if (targetRows.length === 0) {
+        return notFound(res, 'User not found or not deleted');
+    }
+
+    const target = targetRows[0];
+
+    // Perform restore in a transaction
+    await pool.query('BEGIN');
+    try {
+        // Restore: set deleted_at to NULL
+        await pool.query(`
+            UPDATE "user"
+            SET deleted_at = NULL,
+                updated_at = $1
+            WHERE id = $2 AND deleted_at IS NOT NULL
+        `, [Math.floor(Date.now()), id]);
+
+        // Log admin action
+        try {
+            await pool.query(`
+                INSERT INTO admin_audit (admin_id, action, target_user_id, meta, created_at)
+                VALUES ($1, 'admin_restore_user', $2, $3, NOW())
+            `, [actorId, id, JSON.stringify({ restored_email: target.email })]);
+        } catch (auditError) {
+            // If admin_audit table doesn't exist, just log it
+            console.log('[admin.restore] Audit table not available, logging to console:', {
+                admin_id: actorId,
+                action: 'admin_restore_user',
+                target_user_id: id,
+                restored_email: target.email
+            });
+        }
+
+        await pool.query('COMMIT');
+
+        ok(res, { restored: 1 });
     } catch (error) {
         await pool.query('ROLLBACK');
         throw error;
