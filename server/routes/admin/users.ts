@@ -25,20 +25,10 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
         const params: any[] = [];
         let i = 1;
 
-        // Always exclude deleted users unless explicitly requested (if column exists)
-        if (!showDeleted) {
-            try {
-                const { rows: columnCheck } = await pool.query(`
-                    SELECT column_name FROM information_schema.columns 
-                    WHERE table_name = 'user' AND column_name = 'deleted_at'
-                `);
-                if (columnCheck.length > 0) {
-                    conds.push(`deleted_at IS NULL`);
-                }
-            } catch (error: any) {
-                console.log('[admin.users] deleted_at column check failed, skipping filter:', error.message);
-            }
-        }
+        // Temporarily disable deleted_at filter until migration is applied
+        // if (!showDeleted) {
+        //     conds.push(`deleted_at IS NULL`);
+        // }
 
         if (q) { conds.push(`(email ILIKE $${i} OR first_name ILIKE $${i} OR last_name ILIKE $${i})`); params.push(`%${q}%`); i++; }
         if (status) { conds.push(`status = $${i++}`); params.push(status); }
@@ -49,8 +39,7 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
 
         const countSql = `SELECT COUNT(*)::int AS total FROM "user" ${where}`;
         const listSql = `SELECT id, email, first_name, last_name, is_admin, status, plan_status as plan, kyc_status, 
-                                to_timestamp(created_at / 1000) as created_at,
-                                deleted_at
+                                to_timestamp(created_at / 1000) as created_at
                          FROM "user" ${where}
                          ORDER BY created_at DESC
                          LIMIT $${i++} OFFSET $${i++}`;
@@ -70,8 +59,8 @@ router.get('/api/admin/users', requireAdmin, asyncHandler(async (req: any, res: 
 // Get user stats
 router.get('/api/admin/users/stats', requireAdmin, asyncHandler(async (req: any, res: any) => {
     try {
-        // Check if deleted_at column exists
-        let statsQuery = `
+        // Temporarily use basic stats query until migration is applied
+        const { rows } = await pool.query(`
             SELECT 
                 COUNT(*) as total,
                 COUNT(*) FILTER(WHERE status = 'active') as active,
@@ -83,34 +72,7 @@ router.get('/api/admin/users/stats', requireAdmin, asyncHandler(async (req: any,
                 COUNT(*) FILTER(WHERE kyc_status = 'pending') as kyc_pending_count,
                 COUNT(*) FILTER(WHERE kyc_status = 'rejected') as kyc_rejected_count
             FROM "user"
-        `;
-
-        try {
-            const { rows: columnCheck } = await pool.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'user' AND column_name = 'deleted_at'
-            `);
-            
-            if (columnCheck.length > 0) {
-                statsQuery = `
-                    SELECT 
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL) as total,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'active') as active,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'suspended') as suspended,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND status = 'pending') as pending,
-                        COUNT(*) FILTER(WHERE deleted_at IS NOT NULL) as deleted,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND plan_status = 'active') as plan_active_count,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'approved') as kyc_approved_count,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'pending') as kyc_pending_count,
-                        COUNT(*) FILTER(WHERE deleted_at IS NULL AND kyc_status = 'rejected') as kyc_rejected_count
-                    FROM "user"
-                `;
-            }
-        } catch (error: any) {
-            console.log('[admin.users.stats] deleted_at column check failed, using basic query:', error.message);
-        }
-
-        const { rows } = await pool.query(statsQuery);
+        `);
 
         ok(res, { stats: rows[0] || {} });
     } catch (err) {
