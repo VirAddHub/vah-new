@@ -47,8 +47,8 @@ export interface ForwardingRequest {
 // ---- Helpers --------------------------------------------------
 
 // Safe helper to guard undefined data
-export function safe<T>(v: any, fallback: T): T { 
-  return (v === null || v === undefined) ? fallback : v; 
+export function safe<T>(v: any, fallback: T): T {
+  return (v === null || v === undefined) ? fallback : v;
 }
 
 // Safely pick a boolean from unknown values like "true"/1/"1"/true
@@ -78,8 +78,8 @@ function normalizeUserPayload(input: unknown): User | null {
     u.id != null
       ? String(u.id)
       : u.user_id != null
-      ? String(u.user_id)
-      : undefined;
+        ? String(u.user_id)
+        : undefined;
 
   const email = typeof u.email === 'string' ? u.email : undefined;
 
@@ -87,22 +87,22 @@ function normalizeUserPayload(input: unknown): User | null {
     typeof u.first_name === 'string'
       ? u.first_name
       : typeof u.firstName === 'string'
-      ? u.firstName
-      : undefined;
+        ? u.firstName
+        : undefined;
 
   const last_name =
     typeof u.last_name === 'string'
       ? u.last_name
       : typeof u.lastName === 'string'
-      ? u.lastName
-      : undefined;
+        ? u.lastName
+        : undefined;
 
   const name =
     typeof u.name === 'string'
       ? u.name
       : first_name && last_name
-      ? `${first_name} ${last_name}`
-      : first_name || last_name || undefined;
+        ? `${first_name} ${last_name}`
+        : first_name || last_name || undefined;
 
   const is_admin =
     toBool(u.is_admin) ??
@@ -113,10 +113,10 @@ function normalizeUserPayload(input: unknown): User | null {
     typeof u.role === 'string'
       ? (u.role as User['role'])
       : is_admin === true
-      ? 'admin'
-      : is_admin === false
-      ? 'user'
-      : undefined;
+        ? 'admin'
+        : is_admin === false
+          ? 'user'
+          : undefined;
 
   if (!id || !email) return null;
 
@@ -388,13 +388,13 @@ async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>>
     headers: { 'Content-Type': 'application/json' },
     ...init,
   });
-  
+
   const body = await res.json().catch(() => ({}));
-  
+
   if (!res.ok || body?.ok === false) {
     return { ok: false, error: body?.error || res.statusText };
   }
-  
+
   return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
 }
 
@@ -403,52 +403,52 @@ export const adminApi = {
   // Mail Management
   mailItems: (p: URLSearchParams) =>
     req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`),
-  
+
   updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>
     req<{ id: string }>(`/api/admin/mail-items/${id}`, {
-      method: 'PATCH', 
+      method: 'PATCH',
       body: JSON.stringify(payload),
     }),
 
   // Billing & Revenue
   billingMetrics: () =>
-    req<{ 
-      monthly_revenue_pence: number; 
-      outstanding_invoices_pence: number; 
-      churn_rate: number; 
-      recent_transactions: any[] 
+    req<{
+      monthly_revenue_pence: number;
+      outstanding_invoices_pence: number;
+      churn_rate: number;
+      recent_transactions: any[]
     }>(`/api/admin/billing/metrics`),
 
   // User Management
   users: (p: URLSearchParams) =>
     req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`),
-  
+
   updateUser: (id: string, payload: any) =>
-    req(`/api/admin/users/${id}`, { 
-      method: 'PUT', 
-      body: JSON.stringify(payload) 
+    req(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
     }),
-  
-  suspendUser: (id: string) => 
+
+  suspendUser: (id: string) =>
     req(`/api/admin/users/${id}/suspend`, { method: 'PUT' }),
-  
-  activateUser: (id: string) => 
+
+  activateUser: (id: string) =>
     req(`/api/admin/users/${id}/activate`, { method: 'PUT' }),
-  
+
   updateKyc: (id: string, status: string) =>
-    req(`/api/admin/users/${id}/kyc-status`, { 
-      method: 'PUT', 
-      body: JSON.stringify({ status }) 
+    req(`/api/admin/users/${id}/kyc-status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
     }),
 
   // Forwarding Management
   forwardingQueue: (p: URLSearchParams) =>
     req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`),
-  
-  fulfillForward: (id: string) => 
+
+  fulfillForward: (id: string) =>
     req(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
-  
-  cancelForward: (id: string) => 
+
+  cancelForward: (id: string) =>
     req(`/api/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
 
   // Analytics

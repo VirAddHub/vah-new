@@ -169,7 +169,7 @@ export function MailSection({ }: MailSectionProps) {
         setLoading(true);
         try {
             await logAdminAction('admin_process_mail_item', { itemId });
-            await apiClient.post(`/api/admin/mail-items/${itemId}/process`);
+            await adminApi.updateMailItem(itemId.toString(), { status: 'processed' });
             loadMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
