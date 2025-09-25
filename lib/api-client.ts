@@ -390,7 +390,7 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
   try {
     // Determine URL: Next.js API routes vs direct backend calls
     const isNextApi = path.startsWith('/api/');
-    const url = isNextApi ? path : `${BASE_URL}${path}`;
+    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_BACKEND_BASE || BASE_URL}${path}`;
     const method = (init?.method || 'GET').toUpperCase();
 
     // Add cache-buster for GET requests
@@ -425,7 +425,9 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
       message: error.message,
       stack: error.stack,
       path,
-      method: init?.method || 'GET'
+      method: init?.method || 'GET',
+      responseStatus: error.response?.status,
+      responseHeaders: error.response?.headers
     });
     
     if (error.name === 'AbortError') return { ok: false, error: 'aborted' };

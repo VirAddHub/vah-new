@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_BASE || 'https://vah-api-staging.onrender.com';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     });
 
     const body = await res.text(); // stream-safe
-    return new NextResponse(body, {
+    const out = new NextResponse(body, {
       status: res.status,
       headers: {
         'content-type': res.headers.get('content-type') ?? 'application/json',
@@ -33,6 +33,17 @@ export async function GET(req: NextRequest) {
         'Expires': '0',
       },
     });
+
+    // Pass through Set-Cookie headers if any
+    const setCookie = res.headers.get('set-cookie');
+    if (setCookie) {
+      const cookies = setCookie.split(/,(?=\s*\w+=)/);
+      cookies.forEach(cookie => {
+        out.headers.append('set-cookie', cookie.trim());
+      });
+    }
+
+    return out;
   } catch (error) {
     console.error('Error proxying to backend:', error);
     return NextResponse.json({ error: 'Failed to fetch users from backend' }, { status: 500 });
@@ -56,12 +67,26 @@ export async function POST(req: NextRequest) {
     });
 
     const responseBody = await res.text();
-    return new NextResponse(responseBody, {
+    const out = new NextResponse(responseBody, {
       status: res.status,
       headers: {
         'content-type': res.headers.get('content-type') ?? 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
+
+    // Pass through Set-Cookie headers if any
+    const setCookie = res.headers.get('set-cookie');
+    if (setCookie) {
+      const cookies = setCookie.split(/,(?=\s*\w+=)/);
+      cookies.forEach(cookie => {
+        out.headers.append('set-cookie', cookie.trim());
+      });
+    }
+
+    return out;
   } catch (error) {
     console.error('Error proxying POST to backend:', error);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });

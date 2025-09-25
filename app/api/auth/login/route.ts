@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_BASE || 'https://vah-api-staging.onrender.com';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,10 +30,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Pass Set-Cookie to the browser
+    // Pass through ALL Set-Cookie headers (handle multiple cookies)
     const setCookie = resp.headers.get('set-cookie');
     if (setCookie) {
-      out.headers.set('set-cookie', setCookie);
+      // Handle multiple cookies by splitting on comma followed by space and word
+      const cookies = setCookie.split(/,(?=\s*\w+=)/);
+      cookies.forEach(cookie => {
+        out.headers.append('set-cookie', cookie.trim());
+      });
     }
 
     return out;
