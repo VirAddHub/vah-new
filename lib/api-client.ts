@@ -429,6 +429,12 @@ export const adminApi = {
   users: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
     req<{ items: any[]; total: number }>(`/api/admin/users?${p.toString()}`, o),
 
+  userStats: () =>
+    req<{ total: number; deleted: number; suspended: number }>(`/api/admin/users/stats`),
+
+  deleteUser: (id: string | number) =>
+    req<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+
   updateUser: (id: string, payload: any) =>
     req(`/api/admin/users/${id}`, {
       method: 'PUT',

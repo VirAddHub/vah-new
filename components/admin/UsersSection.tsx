@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
+import { useToast } from "../ui/use-toast";
 
 type AdminUser = {
   id: string;
@@ -19,6 +20,8 @@ type AdminUser = {
 };
 
 export default function UsersSection() {
+  const { toast } = useToast();
+  
   // Search and pagination state
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -27,6 +30,15 @@ export default function UsersSection() {
   const [items, setItems] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Delete confirmation state
+  const [confirming, setConfirming] = useState<null | { id: string | number; email: string }>(null);
+  const [confirmText, setConfirmText] = useState('');
+  const [isMutating, setIsMutating] = useState(false);
+
+  // User stats state
+  const [stats, setStats] = useState<{ total: number; deleted: number; suspended: number } | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // Debounce and abort handling
   const debouncedQ = useRef(q);
@@ -76,12 +88,63 @@ export default function UsersSection() {
 
   useEffect(() => { void load(); }, [page, load]);
 
+  // Load user stats
+  const loadUserStats = useCallback(async () => {
+    const res = await adminApi.userStats();
+    if (res.ok) setStats(res.data);
+  }, []);
+
+  useEffect(() => { loadUserStats(); }, [loadUserStats]);
+
+  // Handle user deletion with double confirmation
+  async function handleDeleteUser() {
+    if (!confirming) return;
+    if (confirmText.trim().toLowerCase() !== confirming.email.toLowerCase()) {
+      toast({ title: 'Confirmation mismatch', description: 'Email does not match.', variant: 'destructive' });
+      return;
+    }
+    setIsMutating(true);
+    try {
+      const res = await adminApi.deleteUser(confirming.id);
+      if (!res.ok) throw new Error(res.error || 'delete_failed');
+      toast({ title: 'User deleted', description: confirming.email });
+      setConfirming(null);
+      setConfirmText('');
+      await load(); // refresh the user list
+      await loadUserStats(); // refresh stats
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message ?? 'Failed to delete user', variant: 'destructive' });
+    } finally {
+      setIsMutating(false);
+    }
+  }
+
   // Pagination helpers
   const hasNext = useMemo(() => page * pageSize < total, [page, pageSize, total]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
   return (
     <div className="space-y-4">
+      {/* Deleted users banner */}
+      {stats && stats.deleted > 0 && (
+        <div className="mb-3 flex items-center justify-between rounded-lg border bg-amber-50 px-3 py-2 text-sm">
+          <span>{stats.deleted} deleted user{stats.deleted > 1 ? 's' : ''} hidden.</span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowDeleted(!showDeleted);
+                setPage(1);
+                void load();
+              }}
+            >
+              {showDeleted ? 'Hide deleted' : 'View deleted'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -113,12 +176,13 @@ export default function UsersSection() {
                 <TableHead>Plan</TableHead>
                 <TableHead>KYC</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground">
+                  <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
@@ -140,6 +204,16 @@ export default function UsersSection() {
                     </TableCell>
                     <TableCell>
                       {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setConfirming({ id: u.id, email: u.email })}
+                        disabled={isMutating}
+                      >
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -184,6 +258,46 @@ export default function UsersSection() {
           </Button>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirming && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border p-6 rounded-xl w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-2">Delete user?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will remove access and anonymize their data. Type
+              <span className="font-mono"> {confirming.email} </span>
+              to confirm.
+            </p>
+            <input
+              className="w-full border rounded px-3 py-2 mb-4"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={confirming.email}
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => { 
+                  setConfirming(null); 
+                  setConfirmText(''); 
+                }} 
+                disabled={isMutating}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteUser} 
+                disabled={isMutating || confirmText.length === 0}
+              >
+                {isMutating ? 'Deleting…' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
