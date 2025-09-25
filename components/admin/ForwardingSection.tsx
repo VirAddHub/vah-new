@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -71,41 +71,46 @@ interface ForwardingStats {
 interface ForwardingSectionProps { }
 
 export function ForwardingSection({ }: ForwardingSectionProps) {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [priorityFilter, setPriorityFilter] = useState("all");
-    const [loading, setLoading] = useState(false);
+    const [requests, setRequests] = useState<any[]>([]);
+    const [total, setTotal] = useState(0);
+    const [isFetchingRequests, setIsFetchingRequests] = useState(false);
+    const [isMutating, setIsMutating] = useState(false);
+
+    const [q, setQ] = useState("");
+    const [status, setStatus] = useState<"pending"|"fulfilled"|"canceled"|"all">("pending");
+    const [page, setPage] = useState(1);
+    const pageSize = 20;
+
     const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
-    const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
     const [stats, setStats] = useState<ForwardingStats | null>(null);
-    const [offset, setOffset] = useState(0);
-    const [limit] = useState(20);
-    const [hasMore, setHasMore] = useState(true);
 
-    // Load forwarding requests
-    const loadForwardingRequests = async () => {
+    const loadRequests = useCallback(async () => {
+        setIsFetchingRequests(true);
         try {
-            setLoading(true);
             const params = new URLSearchParams({
-                status: statusFilter === "all" ? "" : statusFilter,
-                q: searchTerm || "",
-                priority: priorityFilter === "all" ? "" : priorityFilter,
-                page: String(Math.floor(offset / limit) + 1),
-                page_size: String(limit)
+                page: String(page),
+                page_size: String(pageSize),
             });
+            if (q) params.set("q", q);
+            if (status && status !== "all") params.set("status", status);
 
-            const response = await adminApi.forwardingQueue(params);
-            if (response.ok) {
-                const requests = safe(response.data?.items, []);
-                setForwardingRequests(requests);
-                setHasMore(requests.length === limit);
+            const resp = await adminApi.forwardingQueue(params);
+            if (resp.ok) {
+                setRequests(resp.data.items ?? []);
+                setTotal(resp.data.total ?? 0);
+            } else {
+                console.error("forwardingQueue failed:", resp.error);
+                setRequests([]);
+                setTotal(0);
             }
-        } catch (error) {
-            console.error('Failed to load forwarding requests:', error);
+        } catch (err) {
+            console.error("loadRequests error:", err);
+            setRequests([]);
+            setTotal(0);
         } finally {
-            setLoading(false);
+            setIsFetchingRequests(false);
         }
-    };
+    }, [page, pageSize, q, status]);
 
     // Load stats
     const loadStats = async () => {
@@ -120,38 +125,27 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     };
 
     useEffect(() => {
-        loadForwardingRequests();
-    }, [searchTerm, statusFilter, priorityFilter, offset]);
+        loadRequests();
+    }, [loadRequests]);
 
     useEffect(() => {
         loadStats();
     }, []);
 
-    const requestsData = forwardingRequests;
-
-    const filteredRequests = requestsData.filter((request: ForwardingRequest) => {
-        const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            request.mailSubject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            request.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (request.trackingNumber && request.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesStatus = statusFilter === "all" || request.status === statusFilter;
-        const matchesPriority = priorityFilter === "all" || request.priority === priorityFilter;
-        return matchesSearch && matchesStatus && matchesPriority;
-    });
+    const requestsData = requests;
 
     const handleRefresh = async () => {
-        setLoading(true);
-        try {
-            await logAdminAction('admin_forwarding_refresh');
-            await refetchRequests();
-        } catch (error) {
-            await logAdminAction('admin_forwarding_refresh_error', {
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        } finally {
-            setLoading(false);
-        }
+        await loadRequests();
+    };
+
+    const onSearchChange = (val: string) => {
+        setPage(1);
+        setQ(val);
+    };
+
+    const onStatusChange = (val: "pending"|"fulfilled"|"canceled"|"all") => {
+        setPage(1);
+        setStatus(val);
     };
 
     const handleViewRequest = async (requestId: number) => {
@@ -181,11 +175,11 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     };
 
     const handleProcessRequest = async (requestId: number) => {
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_process_forwarding_request', { requestId });
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/process`);
-            loadForwardingRequests(); // Refetch current data
+            await loadRequests();
         } catch (error) {
             await logAdminAction('admin_process_forwarding_request_error', {
                 requestId,
@@ -193,16 +187,16 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleShipRequest = async (requestId: number) => {
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_ship_forwarding_request', { requestId });
             await apiClient.post(`/api/admin/forwarding-requests/${requestId}/ship`);
-            loadForwardingRequests(); // Refetch current data
+            await loadRequests();
         } catch (error) {
             await logAdminAction('admin_ship_forwarding_request_error', {
                 requestId,
@@ -210,16 +204,16 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleCancelRequest = async (requestId: number) => {
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_cancel_forwarding_request', { requestId });
             await adminApi.cancelForward(requestId.toString());
-            loadForwardingRequests(); // Refetch current data
+            await loadRequests();
         } catch (error) {
             await logAdminAction('admin_cancel_forwarding_request_error', {
                 requestId,
@@ -227,19 +221,19 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
     const handleBulkAction = async (action: string) => {
         if (selectedRequests.length === 0) return;
 
-        setLoading(true);
         try {
+            setIsMutating(true);
             await logAdminAction('admin_bulk_forwarding_action', { action, requestIds: selectedRequests });
             await apiClient.post(`/api/admin/forwarding-requests/bulk/${action}`, { requestIds: selectedRequests });
             setSelectedRequests([]);
-            loadForwardingRequests(); // Refetch current data
+            await loadRequests();
         } catch (error) {
             await logAdminAction('admin_bulk_forwarding_action_error', {
                 action,
@@ -248,7 +242,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 stack: getErrorStack(error)
             });
         } finally {
-            setLoading(false);
+            setIsMutating(false);
         }
     };
 
@@ -289,7 +283,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     };
 
     const selectAllRequests = () => {
-        setSelectedRequests(filteredRequests.map((request: ForwardingRequest) => request.id));
+        setSelectedRequests(requestsData.map((request: any) => request.id));
     };
 
     const clearSelection = () => {
@@ -346,10 +340,10 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                         variant="outline"
                         className="gap-2"
                         onClick={handleRefresh}
-                        disabled={loading}
+                        disabled={isFetchingRequests || isMutating}
                     >
-                        <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
+                        <RefreshCcw className={`h-4 w-4 ${isFetchingRequests ? 'animate-spin' : ''}`} />
+                        {isFetchingRequests ? "Refreshing…" : "Refresh"}
                     </Button>
                 </div>
             </div>
@@ -370,7 +364,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('process')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <Play className="h-4 w-4" />
                                     Process
@@ -379,7 +373,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('ship')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <Truck className="h-4 w-4" />
                                     Ship
@@ -388,7 +382,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleBulkAction('cancel')}
-                                    disabled={loading}
+                                    disabled={isMutating}
                                 >
                                     <XCircle className="h-4 w-4" />
                                     Cancel
@@ -408,14 +402,14 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search forwarding requests..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    value={q}
+                                    onChange={(e) => onSearchChange(e.target.value)}
                                     className="pl-10"
                                 />
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select value={status} onValueChange={onStatusChange}>
                                 <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
@@ -452,8 +446,8 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                             <TableHead className="w-12">
                                 <input
                                     type="checkbox"
-                                    checked={filteredRequests.length > 0 && filteredRequests.every((request: ForwardingRequest) => selectedRequests.includes(request.id))}
-                                    onChange={filteredRequests.length > 0 && filteredRequests.every((request: ForwardingRequest) => selectedRequests.includes(request.id)) ? clearSelection : selectAllRequests}
+                                    checked={requestsData.length > 0 && requestsData.every((request: any) => selectedRequests.includes(request.id))}
+                                    onChange={requestsData.length > 0 && requestsData.every((request: any) => selectedRequests.includes(request.id)) ? clearSelection : selectAllRequests}
                                     className="rounded"
                                 />
                             </TableHead>
@@ -470,14 +464,14 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredRequests.length === 0 ? (
+                        {requestsData.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                                     No forwarding requests found
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredRequests.map((request: ForwardingRequest) => (
+                            requestsData.map((request: any) => (
                                 <TableRow key={request.id}>
                                     <TableCell>
                                         <input
@@ -561,6 +555,34 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                     </TableBody>
                 </Table>
             </Card>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                    Showing {Math.min((page - 1) * pageSize + 1, total)} to {Math.min(page * pageSize, total)} of {total} requests
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1 || isFetchingRequests}
+                        variant="outline"
+                        size="sm"
+                    >
+                        Previous
+                    </Button>
+                    <span className="text-sm">
+                        Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+                    </span>
+                    <Button
+                        onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
+                        disabled={page >= Math.ceil(total / pageSize) || isFetchingRequests}
+                        variant="outline"
+                        size="sm"
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
