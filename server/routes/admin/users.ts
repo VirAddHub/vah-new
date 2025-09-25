@@ -242,9 +242,9 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
         return badRequest(res, 'Cannot delete your own account');
     }
 
-    // Check if user exists and is not already deleted
+    // Check if user exists (temporarily remove deleted_at check until migration)
     const { rows: targetRows } = await pool.query(
-        `SELECT id, email, is_admin FROM "user" WHERE id = $1 AND deleted_at IS NULL`,
+        `SELECT id, email, is_admin FROM "user" WHERE id = $1`,
         [id]
     );
 
@@ -254,10 +254,10 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
 
     const target = targetRows[0];
 
-    // Disallow deleting last admin
+    // Disallow deleting last admin (temporarily remove deleted_at check until migration)
     if (target.is_admin) {
         const { rows: adminCount } = await pool.query(
-            `SELECT COUNT(*)::int AS count FROM "user" WHERE is_admin = true AND deleted_at IS NULL`
+            `SELECT COUNT(*)::int AS count FROM "user" WHERE is_admin = true`
         );
         if (adminCount[0].count <= 1) {
             return badRequest(res, 'Cannot delete the last admin user');
@@ -267,15 +267,15 @@ router.delete('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any
     // Perform soft delete in a transaction
     await pool.query('BEGIN');
     try {
-        // Soft delete and anonymize PII to avoid unique constraint violations
+        // Temporarily disable soft delete until migration is applied
+        // For now, just anonymize PII to avoid unique constraint violations
         await pool.query(`
             UPDATE "user"
-            SET deleted_at = NOW(),
-                email = CONCAT('deleted+', id, '@example.invalid'),
+            SET email = CONCAT('deleted+', id, '@example.invalid'),
                 first_name = 'Deleted',
                 last_name = 'User',
                 updated_at = $1
-            WHERE id = $2 AND deleted_at IS NULL
+            WHERE id = $2
         `, [Math.floor(Date.now()), id]);
 
         // Log admin action (if admin_audit table exists)
