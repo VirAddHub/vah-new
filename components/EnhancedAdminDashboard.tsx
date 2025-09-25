@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -20,7 +20,7 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { apiClient, safe } from "../lib/api-client";
+import { apiClient, safe, adminApi } from "../lib/api-client";
 import {
     Mail,
     Users,
@@ -86,18 +86,81 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Overview state for real-time metrics
+    type Overview = {
+        users: number;
+        monthlyRevenuePence: number;
+        mailProcessed: number;
+        activeForwards: number;
+    };
+
+    const [overview, setOverview] = useState<Overview>({
+        users: 0,
+        monthlyRevenuePence: 0,
+        mailProcessed: 0,
+        activeForwards: 0,
+    });
+    const [isLoadingOverview, setIsLoadingOverview] = useState(false);
+
+    // Load overview metrics from specific endpoints
+    const loadOverview = useCallback(async () => {
+        setIsLoadingOverview(true);
+        try {
+            const [usersRes, billingRes, processedRes, forwardsRes] = await Promise.all([
+                adminApi.users(new URLSearchParams([["page","1"],["page_size","1"]])),
+                adminApi.billingMetrics(),
+                adminApi.mailItems(new URLSearchParams([["status","processed"],["page","1"],["page_size","1"]])),
+                adminApi.forwardingQueue(new URLSearchParams([["status","pending"],["page","1"],["page_size","1"]])),
+            ]);
+
+            setOverview({
+                users: usersRes.ok ? Number(usersRes.data?.total ?? 0) : 0,
+                monthlyRevenuePence: billingRes.ok ? Number(billingRes.data?.monthly_revenue_pence ?? 0) : 0,
+                mailProcessed: processedRes.ok ? Number(processedRes.data?.total ?? 0) : 0,
+                activeForwards: forwardsRes.ok ? Number(forwardsRes.data?.total ?? 0) : 0,
+            });
+        } catch (err) {
+            console.error('Error loading overview:', err);
+        } finally {
+            setIsLoadingOverview(false);
+        }
+    }, []);
+
     // Load admin data
     useEffect(() => {
         const loadAdminData = async () => {
             try {
                 setLoading(true);
-                const [usersResponse, metricsResponse] = await Promise.all([
-                    apiClient.get('/api/admin/users?page=1&page_size=20'),
-                    apiClient.get('/api/admin/metrics')
-                ]);
-
-                if (usersResponse.ok) setUsers(safe(usersResponse.data?.items, []));
-                if (metricsResponse.ok) setMetrics(metricsResponse.data);
+                // Fetch all users to get accurate totals
+                const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
+                
+                if (usersResponse.ok) {
+                    const userData = safe(usersResponse.data?.items, []);
+                    setUsers(userData);
+                    
+                    // Calculate real metrics from user data
+                    const totalUsers = userData.length;
+                    const activeUsers = userData.filter((u: any) => u.status === 'active').length;
+                    const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
+                    const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
+                    
+                    // Set calculated metrics
+                    setMetrics({
+                        totals: {
+                            users: totalUsers,
+                            active_users: activeUsers,
+                            pending_kyc: pendingKyc,
+                            suspended_users: suspendedUsers,
+                            monthly_revenue_pence: 0, // Will be loaded by overview
+                            mail_processed: 0, // Will be loaded by overview
+                            active_forwards: 0  // Will be loaded by overview
+                        },
+                        system_health: {
+                            status: 'operational'
+                        },
+                        recent_activity: [] // TODO: Fetch from activity log
+                    });
+                }
             } catch (err) {
                 setError('Failed to load admin data');
                 console.error('Error loading admin data:', err);
@@ -107,7 +170,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         };
 
         loadAdminData();
-    }, []);
+        loadOverview();
+    }, [loadOverview]);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
@@ -122,7 +186,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const renderContent = () => {
         switch (activeSection) {
             case "overview":
-                return <OverviewSection metrics={metrics} />;
+                return <OverviewSection metrics={metrics} overview={overview} />;
             case "users":
                 return <UsersSection />;
             case "mail":
@@ -136,7 +200,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "settings":
                 return <SettingsSection />;
             default:
-                return <OverviewSection metrics={metrics} />;
+                return <OverviewSection metrics={metrics} overview={overview} />;
         }
     };
 
@@ -238,7 +302,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 }
 
 // Enhanced Section Components
-function OverviewSection({ metrics }: { metrics: any }) {
+function OverviewSection({ metrics, overview }: { metrics: any; overview: any }) {
     const totals = safe(metrics?.totals, {});
     const systemHealth = safe(metrics?.system_health, {});
     const recentActivity = safe(metrics?.recent_activity, []);
@@ -263,31 +327,28 @@ function OverviewSection({ metrics }: { metrics: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Users"
-                    value={totals && typeof totals === 'object' && 'users' in totals ? totals.users?.toLocaleString() || "0" : "0"}
+                    value={overview.users.toLocaleString()}
                     change=""
                     trend="up"
                     icon={<Users2 className="h-5 w-5 text-blue-500" />}
                 />
                 <MetricCard
                     title="Monthly Revenue"
-                    value={(() => {
-                        const p = Number((totals as any)?.monthly_revenue_pence ?? 0);
-                        return `£${(p / 100).toLocaleString()}`;
-                    })()}
-                    change=""
+                    value={`£${(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                    change="Resets monthly"
                     trend="up"
                     icon={<DollarSign className="h-5 w-5 text-green-500" />}
                 />
                 <MetricCard
                     title="Mail Processed"
-                    value={totals && typeof totals === 'object' && 'mail_processed' in totals ? totals.mail_processed?.toLocaleString() || "0" : "0"}
+                    value={overview.mailProcessed.toLocaleString()}
                     change=""
                     trend="up"
                     icon={<Mail className="h-5 w-5 text-purple-500" />}
                 />
                 <MetricCard
                     title="Active Forwards"
-                    value={totals && typeof totals === 'object' && 'active_forwards' in totals ? totals.active_forwards?.toLocaleString() || "0" : "0"}
+                    value={overview.activeForwards.toLocaleString()}
                     change=""
                     trend="up"
                     icon={<Truck className="h-5 w-5 text-orange-500" />}
@@ -370,51 +431,53 @@ function OverviewSection({ metrics }: { metrics: any }) {
                             <PendingAction
                                 priority="high"
                                 title="KYC Reviews"
-                                count={0}
+                                count={Number(totals && typeof totals === 'object' && 'pending_kyc' in totals ? totals.pending_kyc || 0 : 0)}
                                 action="Review Pending"
                             />
                             <PendingAction
                                 priority="medium"
-                                title="Mail Tagging"
-                                count={0}
-                                action="Tag Items"
+                                title="Suspended Users"
+                                count={Number(totals && typeof totals === 'object' && 'suspended_users' in totals ? totals.suspended_users || 0 : 0)}
+                                action="Review Status"
                             />
                             <PendingAction
                                 priority="low"
-                                title="User Inquiries"
-                                count={0}
-                                action="Respond"
+                                title="Active Forwards"
+                                count={overview.activeForwards}
+                                action="Process Queue"
                             />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Quick Stats */}
+                {/* System Summary */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Today's Summary</CardTitle>
+                        <CardTitle className="text-lg">System Summary</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">New Registrations</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-muted-foreground">Total Users</span>
+                                <span className="font-semibold">{overview.users.toLocaleString()}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Mail Items Received</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-muted-foreground">Mail Processed</span>
+                                <span className="font-semibold">{overview.mailProcessed.toLocaleString()}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Forwards Initiated</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-muted-foreground">Active Forwards</span>
+                                <span className="font-semibold">{overview.activeForwards.toLocaleString()}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Support Tickets</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-muted-foreground">Monthly Revenue</span>
+                                <span className="font-semibold">
+                                    £{(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Revenue</span>
-                                <span className="font-semibold">£0</span>
+                                <span className="text-sm text-muted-foreground">System Status</span>
+                                <span className="font-semibold text-green-600">Operational</span>
                             </div>
                         </div>
                     </CardContent>

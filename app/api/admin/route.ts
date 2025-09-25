@@ -44,19 +44,28 @@ export async function POST(request: NextRequest) {
 
 // Admin Stats Handler
 async function handleAdminStats() {
-    // TODO: Replace with actual database queries
-    const stats = {
-        totalUsers: 0,
-        monthlyRevenue: 0,
-        mailProcessed: 0,
-        activeForwards: 0,
-        userGrowth: 0,
-        revenueGrowth: 0,
-        mailGrowth: 0,
-        forwardGrowth: 0
-    };
+    try {
+        // TODO: Replace with actual database queries
+        // For now, return basic structure that can be populated with real data
+        const stats = {
+            totalUsers: 0,
+            activeUsers: 0,
+            pendingKyc: 0,
+            suspendedUsers: 0,
+            monthlyRevenue: 0,
+            mailProcessed: 0,
+            activeForwards: 0,
+            userGrowth: 0,
+            revenueGrowth: 0,
+            mailGrowth: 0,
+            forwardGrowth: 0
+        };
 
-    return NextResponse.json(stats);
+        return NextResponse.json(stats);
+    } catch (error) {
+        console.error('Error fetching admin stats:', error);
+        return NextResponse.json({ error: 'Failed to fetch admin stats' }, { status: 500 });
+    }
 }
 
 // System Health Handler
