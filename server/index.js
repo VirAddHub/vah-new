@@ -323,6 +323,15 @@ app.get('/api/auth/ping', (_req, res) => {
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);      // /api/auth/*
 
+// User-specific routes
+app.use(require('./routes/user/tickets').default);
+app.use(require('./routes/user/forwarding').default);
+app.use(require('./routes/user/billing').default);
+app.use(require('./routes/user/email-prefs').default);
+
+// Public routes
+app.use(require('./routes/public/plans').default);
+
 // Dashboard routes with real data
 app.use('/api', require('./routes/dashboard'));
 
