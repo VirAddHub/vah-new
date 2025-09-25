@@ -524,7 +524,7 @@ function UsersSection({ onNavigate }: { onNavigate?: (page: string, data?: any) 
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.map((user) => (
+                            {(Array.isArray(filteredUsers) ? filteredUsers : []).map((user) => (
                                 <TableRow key={user.id}>
                                     <TableCell>
                                         <div>
@@ -573,7 +573,7 @@ function UsersSection({ onNavigate }: { onNavigate?: (page: string, data?: any) 
 
             {/* Mobile Cards */}
             <div className="lg:hidden space-y-4">
-                {filteredUsers.map((user) => (
+                {(Array.isArray(filteredUsers) ? filteredUsers : []).map((user) => (
                     <Card key={user.id}>
                         <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-3">
@@ -1031,7 +1031,7 @@ function MailTable({ status }: { status: string }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {demo.map((item) => (
+                    {(Array.isArray(demo) ? demo : []).map((item) => (
                         <TableRow key={item.id}>
                             <TableCell>#{item.id}</TableCell>
                             <TableCell>{item.user}</TableCell>

@@ -354,7 +354,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {mailItems.map((item: any) => (
+                                        {(Array.isArray(mailItems) ? mailItems : []).map((item: any) => (
                                             <TableRow key={item.id}>
                                                 <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
                                                 <TableCell>{item.sender}</TableCell>
@@ -405,7 +405,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {forwardingRequests.map((request: any) => (
+                                            {(Array.isArray(forwardingRequests) ? forwardingRequests : []).map((request: any) => (
                                                 <TableRow key={request.id}>
                                                     <TableCell>{request.mailItem?.description || 'Mail Item'}</TableCell>
                                                     <TableCell>{request.destinationAddress}</TableCell>
@@ -438,7 +438,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                         <label className="text-sm font-medium">Select Mail Item</label>
                                         <select className="w-full p-2 border rounded">
                                             <option>Select a mail item to forward...</option>
-                                            {mailItems.map((item: any) => (
+                                            {(Array.isArray(mailItems) ? mailItems : []).map((item: any) => (
                                                 <option key={item.id} value={item.id}>
                                                     {item.description || 'Mail Item'} - {new Date(item.createdAt).toLocaleDateString()}
                                                 </option>
@@ -505,7 +505,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                     <p className="text-muted-foreground">No plans available.</p>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {plans.map((plan: any) => (
+                                        {(Array.isArray(plans) ? plans : []).map((plan: any) => (
                                             <div key={plan.id} className="border rounded-lg p-4">
                                                 <h3 className="font-semibold">{plan.name}</h3>
                                                 <p className="text-2xl font-bold">£{plan.price}</p>
@@ -543,7 +543,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {invoices.map((invoice: any) => (
+                                            {(Array.isArray(invoices) ? invoices : []).map((invoice: any) => (
                                                 <TableRow key={invoice.id}>
                                                     <TableCell>{invoice.invoiceNumber || invoice.id}</TableCell>
                                                     <TableCell>£{invoice.amount || '0.00'}</TableCell>
@@ -636,7 +636,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {mailItems.map((item: any) => (
+                                            {(Array.isArray(mailItems) ? mailItems : []).map((item: any) => (
                                                 <TableRow key={item.id}>
                                                     <TableCell>{item.description || 'Mail Item'}</TableCell>
                                                     <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
@@ -877,7 +877,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {supportTickets.map((ticket: any) => (
+                                            {(Array.isArray(supportTickets) ? supportTickets : []).map((ticket: any) => (
                                                 <TableRow key={ticket.id}>
                                                     <TableCell>{ticket.subject}</TableCell>
                                                     <TableCell>

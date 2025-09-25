@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -23,7 +23,17 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
+
+  // Cleanup timeout on unmount to prevent DOM errors
+  useEffect(() => {
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
+  }, [redirectTimeout]);
 
   // Helper to discover role after login (via whoami)
   const fetchRole = async (): Promise<Role> => {
@@ -80,8 +90,11 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       if (onSuccess) {
         onSuccess(isAdmin ? 'admin' : 'user');
       } else {
-        // Force hard redirect to prevent bounce
-        window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
+        // Use setTimeout to prevent DOM manipulation errors during rapid state changes
+        const timeout = setTimeout(() => {
+          window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
+        }, 100);
+        setRedirectTimeout(timeout);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
