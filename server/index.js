@@ -64,7 +64,17 @@ function resolveOrigin(origin) {
 }
 
 const corsOptions = {
-    origin: (origin, cb) => cb(null, resolveOrigin(origin) || false),
+    origin: (origin, cb) => {
+        console.log('[CORS] Checking origin:', origin);
+        const allowed = resolveOrigin(origin);
+        console.log('[CORS] Resolved to:', allowed);
+        if (!origin || allowed) {
+            cb(null, true);
+        } else {
+            console.log('[CORS] Rejecting origin:', origin);
+            cb(null, false);
+        }
+    },
     credentials: true,
     methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','X-CSRF-Token','X-Requested-With','Accept'],
@@ -253,7 +263,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`VAH backend listening on http://0.0.0.0:${PORT}`);
-    console.log(`CORS origins: ${ALLOWLIST.join(', ')}`);
+    console.log(`CORS origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
     console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
 });
 
