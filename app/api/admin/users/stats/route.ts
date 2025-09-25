@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.API_BASE || 'https://vah-api-staging.onrender.com';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
 
 export const dynamic = 'force-dynamic';
 

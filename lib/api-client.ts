@@ -157,7 +157,7 @@ function coerceUserResponse(resp: ApiResponse<unknown>): ApiResponse<{ user: Use
 // ---- API Client ----------------------------------------------
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
+  process.env.NEXT_PUBLIC_API_BASE?.trim() ||
   'https://vah-api-staging.onrender.com';
 
 async function request<T = unknown>(
