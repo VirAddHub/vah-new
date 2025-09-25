@@ -148,8 +148,13 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user by email (temporarily exclude deleted_at filter until migration)
-    const { rows } = await pool.query('SELECT * FROM "user" WHERE email = $1', [email]);
+    // Find user by email (explicitly select columns to avoid deleted_at dependency)
+    const { rows } = await pool.query(`
+      SELECT id, email, password, first_name, last_name, is_admin, role, status, 
+             plan_status, kyc_status, created_at, updated_at
+      FROM "user" 
+      WHERE email = $1
+    `, [email]);
     const user = rows[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });

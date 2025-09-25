@@ -127,8 +127,13 @@ router.post('/login', validateLogin, async (req, res) => {
 
         const { email, password } = req.body;
 
-        // Find user by email
-        const user = await db.get('SELECT * FROM "user" WHERE email = ?', [email]);
+        // Find user by email (explicitly select columns to avoid deleted_at dependency)
+        const user = await db.get(`
+            SELECT id, email, password, first_name, last_name, is_admin, role, status, 
+                   plan_status, kyc_status, created_at, updated_at
+            FROM "user" 
+            WHERE email = ?
+        `, [email]);
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
