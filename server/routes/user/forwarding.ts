@@ -16,8 +16,8 @@ router.get("/api/forwarding-requests", requireAuth, asyncHandler(async (req: any
     
     const { rows } = await pool.query(
         `SELECT id, status, created_at, updated_at
-         FROM forwarding_requests
-         WHERE user_id = $1
+         FROM mail_item
+         WHERE user_id = $1 AND forwarded_physically = true
          ORDER BY created_at DESC
          LIMIT 100`,
         [userId]

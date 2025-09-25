@@ -14,29 +14,30 @@ const pool = new Pool({
 router.get("/api/billing", requireAuth, asyncHandler(async (req: any, res: any) => {
     const userId = req.session!.user.id;
     
-    // Get current subscription
-    const { rows: subscriptionRows } = await pool.query(
-        `SELECT s.id, s.status, s.current_period_end, p.name as plan_name, p.price_cents, p.currency
-         FROM subscriptions s
-         JOIN plans p ON p.id = s.plan_id
-         WHERE s.user_id = $1
-         ORDER BY s.created_at DESC
-         LIMIT 1`,
+    // Get user's current plan
+    const { rows: userRows } = await pool.query(
+        `SELECT plan_status, plan_start_date
+         FROM "user"
+         WHERE id = $1`,
         [userId]
     );
 
     // Get recent invoices
     const { rows: invoiceRows } = await pool.query(
-        `SELECT id, invoice_number, total_pence, status, issued_at
-         FROM invoices
+        `SELECT id, invoice_number, amount_pence, status, created_at
+         FROM invoice
          WHERE user_id = $1
-         ORDER BY issued_at DESC
+         ORDER BY created_at DESC
          LIMIT 10`,
         [userId]
     );
 
+    const user = userRows[0];
     ok(res, {
-        subscription: subscriptionRows[0] ?? null,
+        subscription: {
+            status: user?.plan_status ?? 'inactive',
+            plan_start_date: user?.plan_start_date ?? null
+        },
         invoices: invoiceRows ?? [] // Safe empty array
     });
 }));

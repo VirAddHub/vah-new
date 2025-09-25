@@ -15,10 +15,10 @@ router.get("/api/invoices", requireAuth, asyncHandler(async (req: any, res: any)
     const userId = req.session!.user.id;
     
     const { rows } = await pool.query(
-        `SELECT id, invoice_number, total_pence, status, issued_at
-         FROM invoices
+        `SELECT id, invoice_number, amount_pence, status, created_at
+         FROM invoice
          WHERE user_id = $1
-         ORDER BY issued_at DESC
+         ORDER BY created_at DESC
          LIMIT 100`,
         [userId]
     );

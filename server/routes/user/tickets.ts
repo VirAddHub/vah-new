@@ -16,7 +16,7 @@ router.get("/api/tickets", requireAuth, asyncHandler(async (req: any, res: any) 
     
     const { rows } = await pool.query(
         `SELECT id, subject, status, created_at
-         FROM support_tickets
+         FROM mail_item
          WHERE user_id = $1
          ORDER BY created_at DESC
          LIMIT 100`,
