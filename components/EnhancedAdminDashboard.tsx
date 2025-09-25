@@ -123,7 +123,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "overview":
                 return <OverviewSection metrics={metrics} />;
             case "users":
-                return <UsersSection onNavigate={onNavigate} />;
+                return <UsersSection onNavigate={onNavigate} users={users} />;
             case "mail":
                 return <MailSection />;
             case "forwarding":
@@ -262,28 +262,28 @@ function OverviewSection({ metrics }: { metrics: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Users"
-                    value={(totals as any).users?.toLocaleString() || "0"}
+                    value={totals && typeof totals === 'object' && 'users' in totals ? totals.users?.toLocaleString() || "0" : "0"}
                     change=""
                     trend="up"
                     icon={<Users2 className="h-5 w-5 text-blue-500" />}
                 />
                 <MetricCard
                     title="Monthly Revenue"
-                    value={(totals as any).monthly_revenue_pence ? `£${((totals as any).monthly_revenue_pence / 100).toLocaleString()}` : "£0"}
+                    value={totals && typeof totals === 'object' && 'monthly_revenue_pence' in totals && typeof totals.monthly_revenue_pence === 'number' ? `£${(totals.monthly_revenue_pence / 100).toLocaleString()}` : "£0"}
                     change=""
                     trend="up"
                     icon={<DollarSign className="h-5 w-5 text-green-500" />}
                 />
                 <MetricCard
                     title="Mail Processed"
-                    value={(totals as any).mail_processed?.toLocaleString() || "0"}
+                    value={totals && typeof totals === 'object' && 'mail_processed' in totals ? totals.mail_processed?.toLocaleString() || "0" : "0"}
                     change=""
                     trend="up"
                     icon={<Mail className="h-5 w-5 text-purple-500" />}
                 />
                 <MetricCard
                     title="Active Forwards"
-                    value={(totals as any).active_forwards?.toLocaleString() || "0"}
+                    value={totals && typeof totals === 'object' && 'active_forwards' in totals ? totals.active_forwards?.toLocaleString() || "0" : "0"}
                     change=""
                     trend="up"
                     icon={<Truck className="h-5 w-5 text-orange-500" />}
@@ -420,53 +420,15 @@ function OverviewSection({ metrics }: { metrics: any }) {
     );
 }
 
-function UsersSection({ onNavigate }: { onNavigate?: (page: string, data?: any) => void }) {
+function UsersSection({ onNavigate, users }: { onNavigate?: (page: string, data?: any) => void; users: any[] }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [planFilter, setPlanFilter] = useState("all");
 
-    const users = [
-        {
-            id: 1,
-            name: "Jane Doe",
-            email: "jane@example.com",
-            kyc: "approved",
-            plan: "premium",
-            status: "active",
-            joined: "2023-08-15",
-            lastLogin: "2 hours ago",
-            mailCount: 23,
-            totalSpent: "£299.88"
-        },
-        {
-            id: 2,
-            name: "John Smith",
-            email: "john@example.com",
-            kyc: "pending",
-            plan: "basic",
-            status: "active",
-            joined: "2023-09-02",
-            lastLogin: "1 day ago",
-            mailCount: 8,
-            totalSpent: "£39.99"
-        },
-        {
-            id: 3,
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            kyc: "approved",
-            plan: "professional",
-            status: "suspended",
-            joined: "2023-07-20",
-            lastLogin: "5 days ago",
-            mailCount: 156,
-            totalSpent: "£1,247.50"
-        },
-    ];
-
+    // Users data comes from API - no hardcoded data
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || user.status === statusFilter;
         const matchesPlan = planFilter === "all" || user.plan === planFilter;
         return matchesSearch && matchesStatus && matchesPlan;
