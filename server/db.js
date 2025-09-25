@@ -1,9 +1,15 @@
-// server/db.js — PostgreSQL-only database adapter
+// server/db.js — PostgreSQL-only database adapter (NO SQLite support)
 const { Pool } = require('pg');
 
-// PostgreSQL adapter (production only)
+// Hard fail if DATABASE_URL is missing or not PostgreSQL
 const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) throw new Error('DATABASE_URL is required for PostgreSQL mode.');
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL is required. This app does NOT support SQLite.');
+}
+
+if (!DATABASE_URL.startsWith('postgres')) {
+  throw new Error('DATABASE_URL must be a PostgreSQL connection string. SQLite is not supported.');
+}
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -108,25 +114,8 @@ db = {
     });
   },
 
-  // SQLite-compatible prepare method for backward compatibility
-  // WARNING: This is a compatibility layer that makes async operations look synchronous
-  // This should be refactored to use proper async/await in the future
-  prepare(sql) {
-    console.warn('WARNING: Using db.prepare() with PostgreSQL. This is a compatibility layer and should be refactored to use async/await.');
-    console.warn('Consider refactoring this code to use db.run(), db.get(), or db.all() with await.');
-
-    return {
-      run: (...params) => {
-        throw new Error('db.prepare().run() is not supported with PostgreSQL. Use db.run() with await instead.');
-      },
-      get: (...params) => {
-        throw new Error('db.prepare().get() is not supported with PostgreSQL. Use db.get() with await instead.');
-      },
-      all: (...params) => {
-        throw new Error('db.prepare().all() is not supported with PostgreSQL. Use db.all() with await instead.');
-      }
-    };
-  },
+  // PostgreSQL-only: No SQLite compatibility methods
+  // Use db.run(), db.get(), db.all() with await instead of db.prepare()
 };
 
 module.exports = { db, DB_KIND: 'pg' };

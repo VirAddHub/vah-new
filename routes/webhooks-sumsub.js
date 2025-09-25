@@ -25,7 +25,7 @@ function verifySig(secret, rawBody, signature) {
  * POST /api/webhooks/sumsub
  * Heads-up: body is raw Buffer; parse JSON after signature verification
  */
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const secret = process.env.SUMSUB_WEBHOOK_SECRET || '';
   const sig = req.header('x-payload-digest') || req.header('X-Payload-Digest');
   const raw = req.body; // Buffer
@@ -56,10 +56,10 @@ router.post('/', (req, res) => {
   // Resolve the user row: prefer externalUserId if you set it to user.id; fallback by applicantId
   let userRow = null;
   if (externalUserId) {
-    userRow = db.prepare('SELECT id FROM user WHERE id = ?').get(Number(externalUserId));
+    userRow = await db.get('SELECT id FROM "user" WHERE id = $1', [Number(externalUserId)]);
   }
   if (!userRow && applicantId) {
-    userRow = db.prepare('SELECT id FROM user WHERE sumsub_applicant_id = ?').get(applicantId);
+    userRow = await db.get('SELECT id FROM "user" WHERE sumsub_applicant_id = $1', [applicantId]);
   }
   if (!userRow) {
     // store orphan webhook for audit, then 200 (Sumsub expects 2xx)
@@ -70,20 +70,19 @@ router.post('/', (req, res) => {
   const now = Date.now();
   const statusText = reviewAnswer || reviewStatus || 'unknown';
 
-  const tx = db.transaction(() => {
-    db.prepare(`
-      UPDATE user
-      SET sumsub_applicant_id = COALESCE(sumsub_applicant_id, ?),
-          sumsub_review_status = ?,
-          sumsub_last_updated = ?,
-          sumsub_rejection_reason = ?,
-          sumsub_webhook_payload = ?
-      WHERE id = ?
-    `).run(applicantId || null, statusText, now, rejectReason, JSON.stringify(payload).slice(0, 50000), userRow.id);
+  await db.transaction(async (txDb) => {
+    await txDb.run(`
+      UPDATE "user"
+      SET sumsub_applicant_id = COALESCE(sumsub_applicant_id, $1),
+          sumsub_review_status = $2,
+          sumsub_last_updated = $3,
+          sumsub_rejection_reason = $4,
+          sumsub_webhook_payload = $5
+      WHERE id = $6
+    `, [applicantId || null, statusText, now, rejectReason, JSON.stringify(payload).slice(0, 50000), userRow.id]);
 
     // Note: mail_event requires a valid mail_item, so we skip audit logging for KYC events
   });
-  tx();
 
   // Send notification to user
   notify({

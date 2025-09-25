@@ -51,11 +51,11 @@ function renderInvoicePDF({ filePath, invoice, user, plan }) {
     });
 }
 
-function issueInvoiceToken(invoiceId, ttlMinutes = 30) {
+async function issueInvoiceToken(invoiceId, ttlMinutes = 30) {
     const { db } = require('../db');
     const token = randToken();
     const expires_at = dayjs().add(ttlMinutes, 'minute').toDate().toISOString();
-    db.prepare(`INSERT INTO invoice_token (token, invoice_id, expires_at) VALUES (?, ?, ?)`).run(token, invoiceId, expires_at);
+    await db.run(`INSERT INTO invoice_token (token, invoice_id, expires_at) VALUES ($1, $2, $3)`, [token, invoiceId, expires_at]);
     return token;
 }
 
@@ -71,19 +71,14 @@ async function createInvoiceFromPayment({ user, plan, gcPayment }) {
         : period_start.add(1, 'month').subtract(1, 'day');
 
     // provisional row to get seq id
-    const ins = db.prepare(`
+    const { rows } = await db.run(`
         INSERT INTO invoice (user_id, number, gocardless_payment_id, amount_pence, currency, period_start, period_end, pdf_path)
-        VALUES (@user_id, 'PENDING', @gpid, @amount_pence, 'GBP', @start, @end, 'PENDING')
-    `).run({
-        user_id: user.id,
-        gpid: gcPayment.id,
-        amount_pence,
-        start: period_start.toISOString(),
-        end: period_end.toISOString()
-    });
+        VALUES ($1, 'PENDING', $2, $3, 'GBP', $4, $5, 'PENDING')
+        RETURNING id, created_at
+    `, [user.id, gcPayment.id, amount_pence, period_start.toISOString(), period_end.toISOString()]);
 
-    const id = ins.lastInsertRowid;
-    const created = db.prepare(`SELECT created_at FROM invoice WHERE id = ?`).get(id);
+    const id = rows[0].id;
+    const created = { created_at: rows[0].created_at };
     const number = mkInvoiceNumber(created?.created_at || new Date(), id);
     const filePath = path.join(INVOICE_PDF_DIR, dayjs().format('YYYY'), String(user.id), `${number}.pdf`);
 
@@ -100,8 +95,8 @@ async function createInvoiceFromPayment({ user, plan, gcPayment }) {
         plan
     });
 
-    db.prepare(`UPDATE invoice SET number = ?, pdf_path = ? WHERE id = ?`).run(number, filePath, id);
-    const token = issueInvoiceToken(id, 60); // 60 min validity
+    await db.run(`UPDATE invoice SET number = $1, pdf_path = $2 WHERE id = $3`, [number, filePath, id]);
+    const token = await issueInvoiceToken(id, 60); // 60 min validity
     return { id, number, filePath, token, period_start, period_end, amount_pence };
 }
 

@@ -5,11 +5,6 @@ require('dotenv').config({
     override: true,
 });
 
-// Hard fail if SQLite is detected
-if (process.env.DISABLE_SQLITE !== "true") {
-  console.warn("Set DISABLE_SQLITE=true to guarantee Postgres-only mode.");
-}
-
 // Import and use strict environment validation
 const { validateEnvironment, env } = require('./bootstrap/requireEnv');
 validateEnvironment();
@@ -70,14 +65,14 @@ const ALLOWLIST = (process.env.ALLOWED_ORIGINS || '')
     .filter(Boolean);
 
 const corsMiddleware = cors({
-    origin: function (origin, cb) {
+    origin: function(origin, cb) {
         // allow same-origin or preflight tools
         if (!origin) return cb(null, true);
         if (ALLOWLIST.includes(origin)) return cb(null, true);
         return cb(new Error('Not allowed by CORS: ' + origin));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 });
 
