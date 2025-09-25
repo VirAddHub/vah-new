@@ -65,13 +65,12 @@ export default function UsersSection() {
     setError(null);
     
     try {
-      const params = new URLSearchParams([
-        ["q", searchQuery ?? q],
-        ["page", String(page)],
-        ["page_size", String(pageSize)],
-      ]);
-      
-      if (showDeleted) params.set('include_deleted', 'true');
+      const params = new URLSearchParams({
+        q: (searchQuery ?? q).trim(),
+        page: String(page),
+        page_size: String(pageSize),
+        ...(showDeleted ? { include_deleted: 'true' } : {}),
+      });
 
       const res = await adminApi.users(params, { signal: controller.signal });
       if (res.ok) {
@@ -102,7 +101,7 @@ export default function UsersSection() {
   }, [q, load]);
 
   // Initial load and when page/deleted status changes
-  useEffect(() => { void load(); }, [page, showDeleted]);
+  useEffect(() => { void load(); }, [page, pageSize, showDeleted, load]);
 
     // Load user stats
   const loadUserStats = useCallback(async () => {
