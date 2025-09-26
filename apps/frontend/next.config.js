@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Build will succeed even with lint errors (lint can still run in CI separately)
-    ignoreDuringBuilds: true,
+    // Re-enable ESLint in build - now all rules are warnings
+    ignoreDuringBuilds: false,
   },
 };
 module.exports = nextConfig;
