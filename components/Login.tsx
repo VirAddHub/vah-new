@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -24,6 +24,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
+  const redirectedRef = useRef(false); // ✅ prevent redirect loops
   const { login } = useAuth();
 
   // Cleanup timeout on unmount to prevent DOM errors
@@ -52,6 +53,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // ✅ guard multiple submits
     setError('');
 
     if (!email || !password) {
@@ -95,11 +97,15 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       if (onSuccess) {
         onSuccess(isAdmin ? 'admin' : 'user');
       } else {
-        // Use setTimeout to prevent DOM manipulation errors during rapid state changes
-        const timeout = setTimeout(() => {
-          window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
-        }, 100);
-        setRedirectTimeout(timeout);
+        // ✅ prevent redirect loops
+        if (!redirectedRef.current) {
+          redirectedRef.current = true;
+          // Use setTimeout to prevent DOM manipulation errors during rapid state changes
+          const timeout = setTimeout(() => {
+            window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
+          }, 100);
+          setRedirectTimeout(timeout);
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
