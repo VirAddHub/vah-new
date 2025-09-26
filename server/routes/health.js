@@ -1,23 +1,26 @@
+// server/routes/health.js - Database health check
 const express = require('express');
-const { db, DB_CLIENT } = require('../db');
+const { Pool } = require('pg');
+
 const router = express.Router();
 
-router.get('/health', async (_req, res) => {
+// Create a direct PostgreSQL pool for health checks
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+// Database health check endpoint
+router.get('/api/health', async (req, res) => {
   try {
-    await db.get('SELECT 1', []);
-    return res.status(200).json({
-      ok: true,
-      db: DB_CLIENT,
-      uptime: process.uptime(),
-      ts: new Date().toISOString()
-    });
-  } catch (e) {
-    return res.status(500).json({ 
+    await pool.query('SELECT 1');
+    res.json({ ok: true, database: 'connected' });
+  } catch (error) {
+    console.error('[health] Database connection failed:', error.message);
+    res.status(500).json({ 
       ok: false, 
-      error: e.message, 
-      db: DB_CLIENT,
-      uptime: process.uptime(),
-      ts: new Date().toISOString()
+      database: 'disconnected',
+      error: error.message 
     });
   }
 });

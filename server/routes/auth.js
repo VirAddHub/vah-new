@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { db } = require('../db');
 const { Pool } = require('pg');
+const { HttpError } = require('../errors');
 
 // Create a direct PostgreSQL pool for auth routes
 const pool = new Pool({
@@ -159,14 +160,19 @@ if (process.env.ALLOWED_ORIGINS) {
 }
 
 // POST /api/auth/login
-router.post('/login', validateLogin, async (req, res) => {
+router.post('/login', validateLogin, async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ error: 'Validation failed', details: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+    
+    // Validate input
+    if (!email || !password) {
+      throw new HttpError(400, 'Missing credentials');
+    }
 
     // Find user by email (explicitly select columns to avoid deleted_at dependency)
     const { rows } = await pool.query(`
@@ -176,19 +182,18 @@ router.post('/login', validateLogin, async (req, res) => {
       WHERE email = $1
     `, [email]);
     const user = rows[0];
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    
+    // Do constant-time-ish check even if user missing to avoid oracle attacks
+    const hash = user?.password ?? '$2a$10$invalidinvalidinvalidinvalidinva';
+    const isValidPassword = comparePasswordSync(password, hash);
+    
+    if (!user || !isValidPassword) {
+      throw new HttpError(401, 'Invalid credentials');
     }
 
     // Check if user is suspended
     if (user.status === 'suspended') {
-      return res.status(403).json({ ok: false, error: 'account_suspended' });
-    }
-
-    // Check password
-    const isValidPassword = comparePasswordSync(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      throw new HttpError(403, 'Account suspended');
     }
 
     // Set session user for cross-site authentication
@@ -215,8 +220,8 @@ router.post('/login', validateLogin, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error' });
+    // Let the error handler deal with HttpError instances
+    next(error);
   }
 });
 
@@ -229,12 +234,16 @@ router.post('/logout', (req, res) => {
 });
 
 // GET /api/auth/whoami
-router.get('/whoami', (req, res) => {
-  if (!req.session?.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+router.get('/whoami', (req, res, next) => {
+  try {
+    if (!req.session?.user) {
+      throw new HttpError(401, 'Not authenticated');
+    }
 
-  res.json({ user: req.session.user });
+    res.json({ user: req.session.user });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

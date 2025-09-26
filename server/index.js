@@ -277,6 +277,10 @@ app.post('/api/create-test-users', async (req, res) => {
     }
 });
 
+// Health check route
+const healthRouter = require('./routes/health');
+app.use(healthRouter);
+
 // Auth routes (import existing handlers)
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);
@@ -367,12 +371,11 @@ app.use((req, res) => {
     res.status(404).send('Not Found');
 });
 
+// Import error handler
+const { errorMiddleware } = require('./errors');
+
 // Global error handler - must be after all routes
-app.use((err, _req, res, _next) => {
-    console.error("[UNCAUGHT]", err);
-    // Only treat truly unexpected conditions as 5xx
-    res.status(500).json({ error: "server_error" });
-});
+app.use(errorMiddleware);
 
 // Process guards for better error handling
 process.on('uncaughtException', (err) => {
