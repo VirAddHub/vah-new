@@ -40,7 +40,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
   const fetchRole = useCallback(async (): Promise<Role> => {
     console.log('🚨 FETCH ROLE DISABLED TO STOP INFINITE LOOP');
     return 'user'; // Just return user role, no API calls
-    
+
     try {
       const res = await fetch('/api/auth/whoami', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch session');
@@ -56,7 +56,9 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return; // ✅ guard multiple submits
+    // CIRCUIT BREAKER: Use guards to ensure router.replace only runs ONCE.
+    if (isLoading || redirectedRef.current) return; // Guard
+
     setError('');
 
     if (!email || !password) {
@@ -98,9 +100,12 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       localStorage.setItem('auth_bootstrap', '1');
 
       if (onSuccess) {
-        onSuccess(isAdmin ? 'admin' : 'user');
+        if (!redirectedRef.current) {
+          redirectedRef.current = true;
+          onSuccess(isAdmin ? 'admin' : 'user');
+        }
       } else {
-        // ✅ prevent redirect loops
+        // CIRCUIT BREAKER: Deterministic redirect
         if (!redirectedRef.current) {
           redirectedRef.current = true;
           // Use setTimeout to prevent DOM manipulation errors during rapid state changes
@@ -113,9 +118,9 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Reset loading state on error
     }
+    // Note: Don't reset isLoading here if redirect is successful
   };
 
   return (

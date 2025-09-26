@@ -87,6 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const userData = JSON.parse(localStorage.getItem('user') || 'null');
                     if (userData) {
                         setUser(userData);
+                        clientAuthManager.markInitialized(); // ✅ Mark client auth as initialized
                     }
                     setIsLoading(false);
                     setAuthInitialized(true); // ✅ Mark as initialized
@@ -95,12 +96,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 // Always try to check auth, even if localStorage says we're not authenticated
                 // This handles cases where the session cookie is still valid
+                // ✅ CRITICAL: Never initiate redirects from AuthContext - middleware handles this
                 try {
                     const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
                     setUser(userData);
                 } catch (error) {
                     // Only clear auth if we're sure there's no valid session
                     console.log('No valid session found, user will need to login again');
+                    // ✅ Don't redirect here - let middleware handle unauthenticated users
                 }
             } catch (error) {
                 console.error('Auth initialization failed:', error);
@@ -121,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         initializeAuth().finally(() => {
             clearTimeout(timeout);
         });
-    }, [authInitialized]); // ✅ Include authInitialized in deps
+    }, []); // ✅ Empty dependency array - run only once on mount
 
     const login = async (credentials: { email: string; password: string }) => {
         setIsLoading(true);
@@ -218,7 +221,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const refreshUser = async () => {
         // 🛑 GUARD CLAUSE: Don't refresh if we're already loading or not initialized
         if (isLoading || !authInitialized) return;
-        
+
         try {
             const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
             setUser(userData);

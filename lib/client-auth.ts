@@ -6,7 +6,8 @@ import { apiClient, isOk, ApiResponse, ApiErr } from './api-client';
 export class ClientAuthManager {
   private token: string | null = null;
   private user: any = null;
-  private checkingAuth: boolean = false; // ✅ Prevent multiple simultaneous auth checks
+  private _inFlight: boolean = false; // ✅ Prevent simultaneous /whoami calls
+  private _initialized: boolean = false; // ✅ Ensure first-time check logic runs only once
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -51,17 +52,13 @@ export class ClientAuthManager {
   }
 
   async checkAuth() {
-    // 🚨 NUCLEAR OPTION: Temporarily disable all auth checks to stop the loop
-    console.log('🚨 AUTH CHECK DISABLED TO STOP INFINITE LOOP');
-    return this.user; // Just return cached user data, no API calls
-
     // 🛑 GUARD CLAUSE: Prevent multiple simultaneous auth checks
-    if (this.checkingAuth) {
+    if (this._inFlight) {
       console.log('Auth check already in progress, skipping...');
       return this.user; // Return cached user data
     }
 
-    this.checkingAuth = true;
+    this._inFlight = true;
     try {
       console.log('Checking auth with API client...');
       const response: ApiResponse<any> = await apiClient.get('/api/auth/whoami');
@@ -73,6 +70,7 @@ export class ClientAuthManager {
         const payload = successResponse.data;
         const userData = (payload && 'user' in payload) ? payload.user : payload;
         this.setUser(userData);
+        this._initialized = true; // ✅ Mark as initialized
         return userData;
       }
 
@@ -80,14 +78,25 @@ export class ClientAuthManager {
       const errorResponse = response as { ok: false; message: string };
       const msg = errorResponse.message || 'Auth failed';
       console.error('Whoami check failed:', msg);
+      this.clearAuth();
       throw new Error(msg);
     } catch (error) {
       console.error('Auth check failed:', error);
       this.clearAuth();
       throw error;
     } finally {
-      this.checkingAuth = false; // ✅ Always reset the flag
+      this._inFlight = false; // ✅ Always reset the flag
     }
+  }
+
+  // ✅ Getter for initialization status
+  get initialized(): boolean {
+    return this._initialized;
+  }
+
+  // ✅ Method to mark as initialized (useful for fresh login scenarios)
+  markInitialized(): void {
+    this._initialized = true;
   }
 }
 
