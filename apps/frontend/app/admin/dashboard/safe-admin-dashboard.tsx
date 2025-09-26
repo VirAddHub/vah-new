@@ -21,9 +21,9 @@ export default function SafeAdminDashboard() {
       console.log('🚨 ADMIN DASHBOARD WHOAMI DISABLED TO STOP INFINITE LOOP');
       const me = { ok: true, data: { user: { is_admin: true } } }; // Mock response
       // const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
-      if (!me.ok) { 
-        router.replace('/login?expired=1'); 
-        return; 
+      if (!me.ok) {
+        router.replace('/login?expired=1');
+        return;
       }
 
       if (!me.data?.user?.is_admin) {
@@ -41,7 +41,7 @@ export default function SafeAdminDashboard() {
       setState({
         loading: false,
         user: me.data.user,
-        users: users.status === 'fulfilled' 
+        users: users.status === 'fulfilled'
           ? (users.value.ok ? (users.value.data?.items ?? []) : [])
           : [],
         analytics: analytics.status === 'fulfilled' && analytics.value.ok ? analytics.value.data : null,

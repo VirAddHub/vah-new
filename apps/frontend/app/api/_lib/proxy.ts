@@ -47,7 +47,7 @@ export async function proxy(req: NextRequest, targetPath: string) {
 
   if (!r.ok) {
     let body = '';
-    try { body = await r.clone().text(); } catch {}
+    try { body = await r.clone().text(); } catch { }
     console.error('[proxy:error]', { target, status: r.status, body });
   }
 

@@ -28,7 +28,7 @@ class DatabaseManager {
         return DatabaseManager.instance;
     }
 
-    async query(text: string, params?: any[]): Promise<any> {
+    async query(text: string, params?: unknown[]): Promise<{ rows: unknown[]; rowCount: number | null }> {
         const start = Date.now();
         try {
             const res = await this.pool.query(text, params);
@@ -218,7 +218,7 @@ const createDefaultAdmin = async () => {
         );
 
         if (existingAdmin.rows.length === 0) {
-            const bcrypt = require('bcrypt');
+            const bcrypt = await import('bcrypt');
             const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
             await db.query(`

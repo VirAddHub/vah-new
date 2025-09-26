@@ -19,7 +19,7 @@ export interface User {
   first_name?: string | null;
   last_name?: string | null;
   is_admin?: boolean;            // backend uses is_admin
-  role?: 'admin' | 'user' | string;
+  role?: 'admin' | 'user';
   kyc_status?: 'pending' | 'verified' | 'rejected';
   // ...any other fields you expect (plan_id, created_at, etc.)
 }

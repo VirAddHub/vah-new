@@ -21,9 +21,9 @@ export default function SafeDashboard() {
       console.log('🚨 USER DASHBOARD WHOAMI DISABLED TO STOP INFINITE LOOP');
       const me = { ok: true, data: { user: { is_admin: false } } }; // Mock response
       // const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
-      if (!me.ok) { 
-        router.replace('/login?expired=1'); 
-        return; 
+      if (!me.ok) {
+        router.replace('/login?expired=1');
+        return;
       }
 
       const [profile, tickets, fw] = await Promise.allSettled([
@@ -36,10 +36,10 @@ export default function SafeDashboard() {
       setState({
         loading: false,
         profile: profile.status === 'fulfilled' && profile.value.ok ? profile.value.data : null,
-        tickets: tickets.status === 'fulfilled' 
+        tickets: tickets.status === 'fulfilled'
           ? (tickets.value.ok ? (tickets.value.data?.items ?? []) : [])
           : [],
-        forwarding: fw.status === 'fulfilled' 
+        forwarding: fw.status === 'fulfilled'
           ? (fw.value.ok ? (fw.value.data?.items ?? []) : [])
           : [],
       });

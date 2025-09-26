@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import { useApiData } from "../../lib/client-hooks";
+import type { SystemSettings } from "../../lib/types";
 
 const logAdminAction = async (action: string, data?: any) => {
     try {
@@ -43,36 +44,6 @@ const logAdminAction = async (action: string, data?: any) => {
 };
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
-interface SystemSettings {
-    general: {
-        siteName: string;
-        siteUrl: string;
-        adminEmail: string;
-        timezone: string;
-        maintenanceMode: boolean;
-    };
-    notifications: {
-        emailNotifications: boolean;
-        smsNotifications: boolean;
-        pushNotifications: boolean;
-        adminAlerts: boolean;
-        userAlerts: boolean;
-    };
-    integrations: {
-        mailProvider: string;
-        paymentProvider: string;
-        kycProvider: string;
-        analyticsProvider: string;
-        emailProvider: string;
-    };
-    security: {
-        twoFactorAuth: boolean;
-        sessionTimeout: number;
-        passwordPolicy: string;
-        ipWhitelist: string[];
-        auditLogging: boolean;
-    };
-}
 
 type SettingsSectionProps = Record<string, never>;
 
@@ -111,14 +82,12 @@ export function SettingsSection({ }: SettingsSectionProps) {
     });
 
     // API Data fetching
-    const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useApiData('/api/admin/settings');
+    const { data: systemSettings, isLoading: settingsLoading, refetch: refetchSettings } = useApiData<SystemSettings>('/api/admin/settings');
     const { data: systemHealth, isLoading: healthLoading } = useApiData('/api/admin/system/health');
     const health = systemHealth as any;
 
     useEffect(() => {
-        if (systemSettings) {
-            setSettings(systemSettings);
-        }
+        if (systemSettings) setSettings(systemSettings);
     }, [systemSettings]);
 
     const handleRefresh = async () => {
@@ -532,7 +501,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 </div>
                             </div>
 
-                            {systemHealth && (
+                            {!!systemHealth && (
                                 <div className="space-y-4">
                                     <h3 className="font-semibold">System Health</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 export interface SessionData {
   token: string | null;
   role: 'user' | 'admin';
-  user: any | null;
+  user: unknown | null;
   authenticated: boolean;
 }
 
@@ -13,7 +13,7 @@ export function getSessionFromCookies(): SessionData {
   const token = cookieStore.get('vah_session')?.value ?? '';
   const role = (cookieStore.get('vah_role')?.value ?? 'user') as 'user' | 'admin';
   const userStr = cookieStore.get('vah_user')?.value ?? '';
-  
+
   let user = null;
   try {
     user = userStr ? JSON.parse(userStr) : null;

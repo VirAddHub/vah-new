@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
         // Send welcome email if requested
         if (send_welcome_email) {
-            await sendWelcomeEmail(savedUser);
+            await sendWelcomeEmail(savedUser as NewUser);
         }
 
         // Log admin action
@@ -107,12 +107,12 @@ export async function POST(request: NextRequest) {
       INSERT INTO audit_logs (user_id, action, data, ip_address, user_agent)
       VALUES ($1, $2, $3, $4, $5)
     `, [
-            savedUser.id,
+            (savedUser as any).id,
             'user_created',
             JSON.stringify({
-                email: savedUser.email,
-                companyName: savedUser.company_name,
-                plan: savedUser.plan,
+                email: (savedUser as any).email,
+                companyName: (savedUser as any).company_name,
+                plan: (savedUser as any).plan,
                 createdBy: 'admin'
             }),
             request.headers.get('x-forwarded-for') || '127.0.0.1',
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         ]);
 
         // Return user data (without password hash)
-        const { password_hash, ...userResponse } = savedUser;
+        const { password_hash, ...userResponse } = savedUser as any;
 
         return NextResponse.json({
             user: userResponse,
@@ -138,23 +138,48 @@ export async function POST(request: NextRequest) {
 
 // Helper functions
 
-async function sendWelcomeEmail(user: { email: string; firstName?: string }): Promise<void> {
+type NewUser = { email: string; firstName?: string; lastName?: string; company_name?: string; plan?: string };
+
+const fullName = (u: NewUser) =>
+    [u.firstName, u.lastName].filter(Boolean).join(" ") || "there";
+
+async function sendWelcomeEmail(user: NewUser): Promise<void> {
     try {
         const postmark = await import('postmark');
-        const client = new postmark.ServerClient(process.env.POSTMARK_API_TOKEN);
+        const client = new postmark.ServerClient(process.env.POSTMARK_API_TOKEN || '');
 
+        // Option A: Use Postmark Template (recommended)
+        // Replace TEMPLATE_ID with your actual Postmark template ID
+        const TEMPLATE_ID = process.env.POSTMARK_WELCOME_TEMPLATE_ID || '123456';
+
+        await client.sendEmailWithTemplate({
+            From: process.env.POSTMARK_FROM_EMAIL || 'noreply@virtualaddresshub.co.uk',
+            To: user.email,
+            TemplateId: parseInt(TEMPLATE_ID),
+            TemplateModel: {
+                firstName: user.firstName ?? "",
+                lastName: user.lastName ?? "",
+                fullName: fullName(user),
+                email: user.email,
+                companyName: user.company_name || 'N/A',
+                plan: user.plan || 'basic',
+                loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/login`
+            }
+        });
+
+        // Option B: Keep inline body (current approach)
+        // Uncomment this block and comment out the template approach above if you prefer inline HTML
+        /*
         await client.sendEmail({
             From: process.env.POSTMARK_FROM_EMAIL || 'noreply@virtualaddresshub.co.uk',
             To: user.email,
             Subject: 'Welcome to VirtualAddressHub',
             HtmlBody: `
         <h1>Welcome to VirtualAddressHub!</h1>
-        <p>Dear ${user.first_name} ${user.last_name},</p>
+        <p>Dear ${fullName(user)},</p>
         <p>Welcome to VirtualAddressHub! Your account has been successfully created.</p>
         <p><strong>Account Details:</strong></p>
         <ul>
-          <li>Company: ${user.company_name}</li>
-          <li>Plan: ${user.plan}</li>
           <li>Email: ${user.email}</li>
         </ul>
         <p>You can now log in to your account and start using our services.</p>
@@ -165,13 +190,13 @@ async function sendWelcomeEmail(user: { email: string; firstName?: string }): Pr
             TextBody: `
         Welcome to VirtualAddressHub!
         
-        Dear ${user.first_name} ${user.last_name},
+        Dear ${fullName(user)},
         
         Welcome to VirtualAddressHub! Your account has been successfully created.
         
         Account Details:
-        - Company: ${user.company_name}
-        - Plan: ${user.plan}
+        - Company: ${user.company_name || 'N/A'}
+        - Plan: ${user.plan || 'basic'}
         - Email: ${user.email}
         
         You can now log in to your account and start using our services.
@@ -183,6 +208,7 @@ async function sendWelcomeEmail(user: { email: string; firstName?: string }): Pr
         The VirtualAddressHub Team
       `
         });
+        */
 
         console.log(`Welcome email sent to: ${user.email}`);
 

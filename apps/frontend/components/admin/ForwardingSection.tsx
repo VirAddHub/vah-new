@@ -76,7 +76,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const [isMutating, setIsMutating] = useState(false);
 
     const [q, setQ] = useState("");
-    const [status, setStatus] = useState<"pending"|"fulfilled"|"canceled"|"all">("pending");
+    const [status, setStatus] = useState<"pending" | "fulfilled" | "canceled" | "all">("pending");
     const [page, setPage] = useState(1);
     const pageSize = 20;
 
@@ -155,7 +155,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         setQ(val);
     };
 
-    const onStatusChange = (val: "pending"|"fulfilled"|"canceled"|"all") => {
+    const onStatusChange = (val: "pending" | "fulfilled" | "canceled" | "all") => {
         setPage(1);
         setStatus(val);
     };

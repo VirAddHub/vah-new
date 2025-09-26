@@ -1,34 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from './api-client';
 
 // Custom hook for API data fetching
-export function useApiData(url: string) {
-  const [data, setData] = useState<any>(null);
+export function useApiData<T = unknown>(url: string) {
+  const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const result = await apiClient.get(url);
       if (result.ok) {
-        setData(result.data);
+        setData(result.data as T);
       } else {
         setError(result.message);
       }
     } catch (err) {
-      setError(err as any);
+      setError(err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [url]);
 
   useEffect(() => {
     fetchData();
-  }, [url]);
+  }, [fetchData]);
 
   const refetch = () => {
     fetchData();
