@@ -17,7 +17,7 @@ export function useApiData(url: string) {
       if (result.ok) {
         setData(result.data);
       } else {
-        setError(result.error);
+        setError(result.message);
       }
     } catch (err) {
       setError(err as any);

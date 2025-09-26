@@ -8,9 +8,9 @@ import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { 
-  Shield, 
-  Upload, 
+import {
+  Shield,
+  Upload,
   CheckCircle,
   AlertTriangle,
   Clock,
@@ -60,13 +60,13 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
       try {
         setLoading(true);
         setError(null);
-        
+
         const kycResponse = await apiClient.getKycStatus();
-        
+
         if (kycResponse.ok) {
           setKycStatus(kycResponse.data);
         }
-        
+
       } catch (err) {
         console.error('Failed to load KYC data:', err);
         setError('Failed to load KYC information');
@@ -74,24 +74,24 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
         setLoading(false);
       }
     };
-    
+
     loadKycData();
   }, []);
 
   const handleBusinessInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      
+
       const response = await apiClient.submitBusinessInfo(businessInfo);
-      
+
       if (response.ok) {
         setSuccess('Business information submitted successfully!');
       } else {
-        setError(response.error || 'Failed to submit business information');
+        setError(response.message || 'Failed to submit business information');
       }
     } catch (err) {
       console.error('Failed to submit business info:', err);
@@ -105,9 +105,9 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
     try {
       setSubmitting(true);
       setError(null);
-      
+
       const response = await apiClient.startKyc();
-      
+
       if (response.ok && response.data?.token) {
         // Redirect to KYC provider or show instructions
         setSuccess('KYC process started. Please follow the instructions to complete verification.');
@@ -218,9 +218,9 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 {getKycStatusBadge(kycStatus?.status || 'not_started')}
               </div>
             </div>
-            
+
             {kycStatus?.status !== 'verified' && (
-              <Button 
+              <Button
                 onClick={handleKycStart}
                 disabled={submitting}
                 className="flex items-center gap-2"
@@ -343,8 +343,8 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={submitting}
                 className="flex items-center gap-2"
               >
@@ -374,7 +374,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
@@ -384,7 +384,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
@@ -394,7 +394,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>

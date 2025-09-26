@@ -151,7 +151,7 @@ function coerceUserResponse(resp: ApiResponse<unknown>): ApiResponse<{ user: Use
   const nested = normalizeUserPayload((resp as ApiOk<any>).data?.user);
   if (nested) return { ok: true, data: { user: nested } };
 
-  return { ok: false, error: 'Invalid user payload', status: 500 };
+  return { ok: false, message: 'Invalid user payload', status: 500 };
 }
 
 // ---- Unified API Client ----------------------------------------------
@@ -189,10 +189,9 @@ export async function req<T>(path: string, init?: RequestInit): Promise<ApiRespo
 // Legacy request function that returns ApiResponse format
 async function legacyReq<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   try {
-    const data = await req<T>(path, init);
-    return { ok: true, data };
+    return await req<T>(path, init);
   } catch (error: any) {
-    return { ok: false, error: error.message, status: error.status };
+    return { ok: false, message: error.message, status: error.status };
   }
 }
 
@@ -202,7 +201,7 @@ export const apiClient = {
   // Always return ApiResponse<{ user: User }>
   async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
     if (!email || !password) {
-      return { ok: false, error: 'Email and password are required', status: 400 };
+      return { ok: false, message: 'Email and password are required', status: 400 };
     }
     const resp = await legacyReq('/api/auth/login', {
       method: 'POST',
@@ -402,7 +401,7 @@ export const adminApi = {
   suspendUser: (id: string) => legacyReq(`/api/admin/users/${id}/suspend`, { method: 'PUT' }),
   activateUser: (id: string) => legacyReq(`/api/admin/users/${id}/activate`, { method: 'PUT' }),
   updateKyc: (id: string, status: string) => legacyReq(`/api/admin/users/${id}/kyc-status`, { method: 'PUT', body: JSON.stringify({ status }) }),
-  
+
   // Mail Management
   mailItems: (params: URLSearchParams) => legacyReq<{ items: any[]; total: number }>(`/api/admin/mail-items?${params.toString()}`),
   updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>

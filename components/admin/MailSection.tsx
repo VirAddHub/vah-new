@@ -76,7 +76,7 @@ export function MailSection({ }: MailSectionProps) {
 
     // Debounced search
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
-    
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
@@ -256,7 +256,7 @@ export function MailSection({ }: MailSectionProps) {
             const response = await apiClient.get(`/api/admin/mail-items/export?status=${statusFilter}&tag=${tagFilter}&search=${searchTerm}&tab=${selectedTab}`);
 
             if (!response.ok) {
-                throw new Error(response.error);
+                throw new Error(response.message);
             }
             const blob = new Blob([response.data], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);

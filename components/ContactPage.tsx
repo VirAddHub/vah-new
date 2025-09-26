@@ -112,13 +112,11 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     website: "",
                 });
             } else {
-                setErrorMsg(response.error || "Unable to send message. Please try again.");
+                setErrorMsg(response.message || "Unable to send message. Please try again.");
             }
-        } catch (err: any) {
-            setErrorMsg(
-                err?.message ||
-                "Unable to send message. Please try again.",
-            );
+        } catch (err: unknown) {
+            const msg = (err as { message?: string })?.message ?? "Something went wrong. Please try again in a moment.";
+            setErrorMsg(msg);
         } finally {
             setIsSubmitting(false);
         }

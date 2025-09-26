@@ -165,7 +165,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
             await logAdminAction('admin_backup_database');
             const response = await apiClient.post('/api/admin/database/backup');
             if (!response.ok) {
-                throw new Error(response.error);
+                throw new Error(response.message);
             }
             const blob = new Blob([response.data], { type: 'application/sql' });
             const url = window.URL.createObjectURL(blob);

@@ -91,7 +91,7 @@ export function useSignup() {
                 setIsComplete(true);
                 console.log('Signup successful:', response.data);
             } else {
-                throw new Error(response.error || 'Signup failed');
+                throw new Error(response.message || 'Signup failed');
             }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Signup failed';
