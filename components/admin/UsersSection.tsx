@@ -29,15 +29,7 @@ interface UsersSectionProps {
 
 export default function UsersSection({ users, loading, error, onRefresh }: UsersSectionProps) {
   const { toast } = useToast();
-  
-  // Debug logging
-  console.log('👥 UsersSection: Component rendered with props:', {
-    usersCount: users?.length || 0,
-    loading,
-    error,
-    hasOnRefresh: !!onRefresh
-  });
-  
+
   // Search and pagination state
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -55,26 +47,26 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
 
   // Restore modal state
   const [restoreModal, setRestoreModal] = useState<null | { id: string | number }>(null);
-  const [restoreForm, setRestoreForm] = useState({ 
-    email: '', 
-    first_name: '', 
-    last_name: '', 
-    reactivate: true 
+  const [restoreForm, setRestoreForm] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    reactivate: true
   });
 
   // Mutation state
-    const [isMutating, setIsMutating] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
 
   // Reset page when search changes
   useEffect(() => {
     setPage(1);
   }, [q]);
 
-    // Load user stats
+  // Load user stats
   const loadUserStats = useCallback(async () => {
     const res = await adminApi.userStats();
     if (res.ok) setStats(res.data);
-    }, []);
+  }, []);
 
   useEffect(() => { loadUserStats(); }, [loadUserStats]);
 
@@ -82,35 +74,35 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
   async function handleDeleteUser(id: string | number) {
     // First confirmation: Modal with email typing
     if (!deleteModal || !deleteConfirm.trim()) return;
-    
+
     if (deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()) {
       toast({ title: 'Confirmation mismatch', description: 'Email does not match.', variant: 'destructive' });
       return;
     }
-    
+
     // Second confirmation: Native browser confirm
     if (!window.confirm('This action cannot be undone. Are you absolutely sure you want to delete this user?')) {
       setDeleteModal(null);
       setDeleteConfirm('');
       return;
     }
-    
+
     setIsMutating(true);
-    
+
     try {
       const res = await adminApi.deleteUser(id);
       if (!res.ok) throw new Error(res.error || 'delete_failed');
-      
+
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
-      
+
       // Refresh data from parent
       await Promise.all([onRefresh(), loadUserStats()]);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
     } finally {
       setIsMutating(false);
-      setDeleteModal(null); 
-      setDeleteConfirm(''); 
+      setDeleteModal(null);
+      setDeleteConfirm('');
     }
   }
 
@@ -121,18 +113,18 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
       toast({ title: 'Email required', variant: 'destructive' });
       return;
     }
-    
+
     setIsMutating(true);
-    
+
     try {
       const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
       if (!res.ok) throw new Error(res.error || 'restore_failed');
-      
+
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
-      
+
       // Refresh data from parent
       await Promise.all([onRefresh(), loadUserStats()]);
-      
+
       // Close modal
       setRestoreModal(null);
       setRestoreForm({ email: '', first_name: '', last_name: '', reactivate: true });
@@ -146,22 +138,22 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
   // Local filtering of users prop
   const filteredUsers = useMemo(() => {
     let filtered = users;
-    
+
     // Apply search filter
     if (q.trim()) {
       const searchTerm = q.trim().toLowerCase();
-      filtered = filtered.filter((u: any) => 
+      filtered = filtered.filter((u: any) =>
         u.email?.toLowerCase().includes(searchTerm) ||
         u.first_name?.toLowerCase().includes(searchTerm) ||
         u.last_name?.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     // Apply deleted filter
     if (!showDeleted) {
       filtered = filtered.filter((u: any) => !u.deleted_at);
     }
-    
+
     return filtered;
   }, [users, q, showDeleted]);
 
@@ -173,7 +165,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
   const hasNext = useMemo(() => endIndex < totalFiltered, [endIndex, totalFiltered]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
-    return (
+  return (
     <div className="space-y-4">
       {/* User stats badges */}
       {stats && (
@@ -187,16 +179,13 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
       )}
 
       {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
+      <div className="flex items-center justify-between">
+        <div>
           <h2 className="text-xl font-semibold">Users</h2>
           <p className="text-sm text-muted-foreground">Total: {users.length}</p>
-                            </div>
-                            <div className="flex gap-2">
-          <Button variant="outline" onClick={() => {
-            console.log('🔄 UsersSection: Refresh button clicked, calling onRefresh...');
-            onRefresh();
-          }} disabled={loading}>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onRefresh} disabled={loading}>
             Refresh
           </Button>
           <Input
@@ -205,89 +194,100 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             onChange={(e) => setQ(e.target.value)}
             className="w-60"
           />
-                            </div>
-                        </div>
+        </div>
+      </div>
 
-      {/* Loading and error states */}
+      {/* Status row */}
       {loading && (
-        <div className="text-center py-4 text-muted-foreground">
+        <div className="text-center py-2 text-sm text-muted-foreground">
           Loading users…
         </div>
       )}
       {error && (
-        <div className="text-center py-4 text-red-600">
-          {error}
+        <div className="text-center py-2">
+          <div className="text-sm text-red-600 mb-2">{error}</div>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            Retry
+          </Button>
+        </div>
+      )}
+      {!loading && !error && users.length === 0 && (
+        <div className="text-center py-2">
+          <div className="text-sm text-muted-foreground mb-2">No users yet. Click Refresh to load.</div>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            Refresh
+          </Button>
         </div>
       )}
 
       {/* Users table */}
-                            <div className="relative">
+      <div className="relative">
         <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
+          <Table>
+            <TableHeader>
+              <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
-                                <TableHead>Plan</TableHead>
+                <TableHead>Plan</TableHead>
                 <TableHead>KYC</TableHead>
                 <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {paginatedUsers.length === 0 ? (
-                                <TableRow>
+                <TableRow>
                   <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
+                  </TableCell>
+                </TableRow>
+              ) : (
                 paginatedUsers.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell>{u.email}</TableCell>
-                                        <TableCell>
+                    <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                                        </TableCell>
-                                        <TableCell>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={u.status === "active" ? "default" : "secondary"}>
                         {u.status || "active"}
                       </Badge>
-                                        </TableCell>
+                    </TableCell>
                     <TableCell>{u.plan || "—"}</TableCell>
-                                        <TableCell>
+                    <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
-                                        </TableCell>
-                                        <TableCell>
+                    </TableCell>
+                    <TableCell>
                       {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
-                                        </TableCell>
-                                        <TableCell>
+                    </TableCell>
+                    <TableCell>
                       {u.deleted_at ? (
-                                                    <Button
+                        <Button
                           variant="outline"
-                                                        size="sm"
+                          size="sm"
                           onClick={() => setRestoreModal({ id: u.id })}
-                                                        disabled={isMutating}
-                                                    >
+                          disabled={isMutating}
+                        >
                           Restore
-                                                    </Button>
-                                                ) : (
-                                                    <Button
+                        </Button>
+                      ) : (
+                        <Button
                           variant="destructive"
-                                                        size="sm"
+                          size="sm"
                           onClick={() => setDeleteModal({ id: u.id, email: u.email })}
-                                                        disabled={isMutating}
-                                                    >
+                          disabled={isMutating}
+                        >
                           Delete
-                                                    </Button>
-                                                )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-            </div>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
         {/* Loading overlay */}
         {loading && (
@@ -295,16 +295,16 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             <span className="text-sm">Loading…</span>
           </div>
         )}
-                                    </div>
+      </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Page {page} • {totalFiltered} total
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
             disabled={!hasPrev || loading}
             onClick={() => {
               const next = Math.max(1, page - 1);
@@ -312,9 +312,9 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             }}
           >
             Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
+          </Button>
+          <Button
+            variant="outline"
             disabled={!hasNext || loading}
             onClick={() => {
               const next = page + 1;
@@ -345,15 +345,15 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             <div className="flex justify-end gap-2 mt-5">
               <Button variant="outline" onClick={() => setDeleteModal(null)} disabled={isMutating}>
                 Cancel
-                                </Button>
+              </Button>
               <Button
                 variant="destructive"
                 onClick={() => deleteConfirm.trim().toLowerCase() === deleteModal.email.toLowerCase() && handleDeleteUser(deleteModal.id)}
                 disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
               >
                 {isMutating ? 'Deleting…' : 'Confirm delete'}
-                                </Button>
-                            </div>
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -365,29 +365,29 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             <h3 className="font-semibold text-lg mb-2">Restore user</h3>
             <p className="text-sm text-muted-foreground mb-4">Provide a new unique email.</p>
             <div className="space-y-3">
-              <input 
-                className="w-full border rounded px-3 py-2" 
+              <input
+                className="w-full border rounded px-3 py-2"
                 placeholder="new-email@example.com"
-                value={restoreForm.email} 
+                value={restoreForm.email}
                 onChange={e => setRestoreForm(f => ({ ...f, email: e.target.value }))}
               />
               <div className="grid grid-cols-2 gap-2">
-                <input 
-                  className="border rounded px-3 py-2" 
+                <input
+                  className="border rounded px-3 py-2"
                   placeholder="First name"
-                  value={restoreForm.first_name} 
+                  value={restoreForm.first_name}
                   onChange={e => setRestoreForm(f => ({ ...f, first_name: e.target.value }))}
                 />
-                <input 
-                  className="border rounded px-3 py-2" 
+                <input
+                  className="border rounded px-3 py-2"
                   placeholder="Last name"
-                  value={restoreForm.last_name} 
+                  value={restoreForm.last_name}
                   onChange={e => setRestoreForm(f => ({ ...f, last_name: e.target.value }))}
                 />
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={restoreForm.reactivate}
                   onChange={e => setRestoreForm(f => ({ ...f, reactivate: e.target.checked }))}
                 />
@@ -402,9 +402,9 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                 {isMutating ? 'Restoring…' : 'Restore'}
               </Button>
             </div>
-            </div>
+          </div>
         </div>
       )}
-        </div>
-    );
+    </div>
+  );
 }

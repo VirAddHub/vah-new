@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -86,6 +86,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Throttle repeated requests
+    const usersLastLoadedAtRef = useRef<number | null>(null);
+
     // Overview state for real-time metrics
     type Overview = {
         users: number;
@@ -133,16 +136,14 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // Load admin data - hoisted into stable useCallback
     const loadAdminData = useCallback(async () => {
         try {
-            console.log('🔄 loadAdminData: Starting to fetch users...');
+            console.debug('[Users] loadAdminData: start');
             setLoading(true);
             // Fetch all users to get accurate totals
-            console.log('🌐 loadAdminData: Making API call to /api/admin/users?page=1&page_size=1000');
             const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
-            console.log('📡 loadAdminData: API response received:', usersResponse);
 
             if (usersResponse.ok) {
                 const userData = safe(usersResponse.data?.items, []);
-                console.log('✅ loadAdminData: Success! Users fetched:', userData.length, 'users');
+                console.debug('[Users] loadAdminData: success', { count: userData.length });
                 setUsers(userData);
 
                 // Calculate real metrics from user data
@@ -150,7 +151,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 const activeUsers = userData.filter((u: any) => u.status === 'active').length;
                 const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
                 const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
-                console.log('📊 loadAdminData: Calculated metrics - Total:', totalUsers, 'Active:', activeUsers, 'Pending KYC:', pendingKyc, 'Suspended:', suspendedUsers);
 
                 // Set calculated metrics
                 setMetrics({
@@ -170,26 +170,36 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 });
             }
         } catch (err) {
-            console.error('❌ loadAdminData: Error loading admin data:', err);
+            console.debug('[Users] loadAdminData: error', err);
             setError('Failed to load admin data');
         } finally {
-            console.log('🏁 loadAdminData: Finished loading, setting loading to false');
             setLoading(false);
         }
     }, [setUsers, setMetrics, setError, setLoading]);
 
-    // Load admin data and overview
+    // Prefetch users on mount once (safe)
     useEffect(() => {
-        console.log('🚀 EnhancedAdminDashboard: Component mounted, initializing data...');
-        const initializeData = async () => {
-            console.log('📋 EnhancedAdminDashboard: Calling loadAdminData...');
-            await loadAdminData();
-            console.log('📋 EnhancedAdminDashboard: Calling loadOverview...');
-            await loadOverview();
-            console.log('✅ EnhancedAdminDashboard: Data initialization complete!');
-        };
-        initializeData();
-    }, [loadAdminData, loadOverview]);
+        // Prefetch users so the tab has data immediately
+        if (!users || users.length === 0) {
+            console.debug('[Users] Prefetch on mount');
+            void loadAdminData();
+        }
+    }, []); // do not add deps—prefetch only once
+
+    // Load overview on mount
+    useEffect(() => {
+        loadOverview();
+    }, [loadOverview]);
+
+    // Fetch when Users tab becomes active
+    useEffect(() => {
+        if (activeSection !== 'users') return;
+        // Only fetch if not already loading and nothing loaded yet (or data is empty)
+        if (!loading && (!users || users.length === 0)) {
+            console.debug('[Users] Tab activated, triggering fetch');
+            void loadAdminData();
+        }
+    }, [activeSection, loading, users, loadAdminData]);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },

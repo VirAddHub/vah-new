@@ -157,7 +157,7 @@ function coerceUserResponse(resp: ApiResponse<unknown>): ApiResponse<{ user: Use
 // ---- API Client ----------------------------------------------
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE?.trim() ||
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
   'https://vah-api-staging.onrender.com';
 
 async function request<T = unknown>(
@@ -390,7 +390,7 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
   try {
     // For browser calls, always hit relative /api/* (Next.js proxy)
     const isNextApi = path.startsWith('/api/');
-    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_BACKEND_BASE}${path}`;
+    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_API_BASE_URL || BASE_URL}${path}`;
     const method = (init?.method || 'GET').toUpperCase();
 
     // Add cache-buster for GET requests
@@ -404,8 +404,6 @@ async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal 
       cache: 'no-store', // ALWAYS bypass browser cache
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
         ...(init?.headers || {}),
       },
       signal: init?.signal,
