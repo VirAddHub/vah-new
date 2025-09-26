@@ -4,6 +4,11 @@ export type ApiOk<T> = { ok: true; data: T };
 export type ApiErr = { ok: false; message: string; code?: string; status?: number };
 export type ApiResponse<T> = ApiOk<T> | ApiErr;
 
+// Type guard function to safely check if response is successful
+export function isOk<T>(r: ApiResponse<T> | unknown): r is ApiOk<T> {
+  return !!r && typeof r === "object" && (r as any).ok === true;
+}
+
 // Match your backend fields (snake_case). Add/trim fields to match your app.
 export interface User {
   id: string;                    // keep as string; backend often returns text ids

@@ -1,6 +1,6 @@
 'use client';
 
-import { apiClient } from './api-client';
+import { apiClient, isOk, ApiResponse, ApiErr } from './api-client';
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
 export class ClientAuthManager {
@@ -54,7 +54,7 @@ export class ClientAuthManager {
     // 🚨 NUCLEAR OPTION: Temporarily disable all auth checks to stop the loop
     console.log('🚨 AUTH CHECK DISABLED TO STOP INFINITE LOOP');
     return this.user; // Just return cached user data, no API calls
-    
+
     // 🛑 GUARD CLAUSE: Prevent multiple simultaneous auth checks
     if (this.checkingAuth) {
       console.log('Auth check already in progress, skipping...');
@@ -64,14 +64,20 @@ export class ClientAuthManager {
     this.checkingAuth = true;
     try {
       console.log('Checking auth with API client...');
-      const response = await apiClient.get('/api/auth/whoami');
+      const response: ApiResponse<any> = await apiClient.get('/api/auth/whoami');
       console.log('Auth check response:', response);
-      if (response.ok && response.data) {
-        const userData = response.data?.user || response.data;
+
+      if (response.ok) {
+        // TypeScript now knows this is the success branch with data property
+        const successResponse = response as { ok: true; data: any };
+        const userData = successResponse.data?.user || successResponse.data;
         this.setUser(userData);
         return userData;
+      } else {
+        // TypeScript now knows this is the error branch with message property
+        const errorResponse = response as { ok: false; message: string };
+        throw new Error(errorResponse.message || 'Auth failed');
       }
-      throw new Error('No user data received');
     } catch (error) {
       console.error('Auth check failed:', error);
       this.clearAuth();

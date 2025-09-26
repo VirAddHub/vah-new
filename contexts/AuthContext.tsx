@@ -130,7 +130,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const response = await apiClient.login(credentials.email, credentials.password);
 
-            if (response.ok && response.data?.user) {
+            if (response.ok) {
                 // Set user data from the response
                 const userData = response.data.user;
                 clientAuthManager.setUser(userData);
@@ -162,7 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const response = await apiClient.login(credentials.email, credentials.password);
 
-            if (response.ok && response.data?.user) {
+            if (response.ok) {
                 const userData = response.data.user;
                 if (userData?.is_admin) {
                     clientAuthManager.setUser(userData);
