@@ -108,7 +108,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
 
       const response = await apiClient.startKyc();
 
-      if (response.ok && response.data?.token) {
+      if (response.ok) {
         // Redirect to KYC provider or show instructions
         setSuccess('KYC process started. Please follow the instructions to complete verification.');
       } else {

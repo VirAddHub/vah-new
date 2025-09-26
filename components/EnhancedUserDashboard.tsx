@@ -163,7 +163,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const openMail = async (id: string) => {
         try {
             const response = await apiClient.get(`/api/mail-items/${id}`);
-            if (response.ok && response.data) {
+            if (response.ok) {
                 await apiClient.post(`/api/mail-items/${id}/mark-read`);
                 refetchMail();
                 toast({ title: "Success", description: `Opened "${response.data.description || "Mail"}".` });
@@ -178,7 +178,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const downloadMailPdf = async (id: string) => {
         try {
             const response = await apiClient.get(`/api/mail-items/${id}/scan-url`);
-            if (response.ok && response.data?.url) {
+            if (response.ok) {
                 const a = document.createElement("a");
                 a.href = response.data.url;
                 a.download = `mail-${id}.pdf`;
@@ -198,7 +198,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const startKyc = async () => {
         try {
             const response = await apiClient.post('/api/kyc/start');
-            if (response.ok && response.data?.url) {
+            if (response.ok) {
                 window.open(response.data.url, '_blank');
                 toast({ title: "KYC Started", description: "Opening KYC verification..." });
             } else {
@@ -231,7 +231,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const createPaymentRedirect = async (planId: string) => {
         try {
             const response = await apiClient.post('/api/payments/redirect-flows', { planId });
-            if (response.ok && response.data?.url) {
+            if (response.ok) {
                 window.location.href = response.data.url;
             } else {
                 throw new Error("Failed to create payment redirect");
@@ -244,7 +244,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const downloadInvoice = async (invoiceId: string) => {
         try {
             const response = await apiClient.get(`/api/billing/invoices/${invoiceId}/link`);
-            if (response.ok && response.data?.url) {
+            if (response.ok) {
                 window.open(response.data.url, '_blank');
                 toast({ title: "Download", description: "Opening invoice..." });
             } else {

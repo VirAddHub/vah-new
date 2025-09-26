@@ -67,17 +67,20 @@ export class ClientAuthManager {
       const response: ApiResponse<any> = await apiClient.get('/api/auth/whoami');
       console.log('Auth check response:', response);
 
-      if (response.ok) {
-        // TypeScript now knows this is the success branch with data property
+      if (response.ok && 'data' in response) {
+        // ✅ SUCCESS CASE: TypeScript now knows this is ApiOk<T> branch
         const successResponse = response as { ok: true; data: any };
-        const userData = successResponse.data?.user || successResponse.data;
+        const payload = successResponse.data;
+        const userData = (payload && 'user' in payload) ? payload.user : payload;
         this.setUser(userData);
         return userData;
-      } else {
-        // TypeScript now knows this is the error branch with message property
-        const errorResponse = response as { ok: false; message: string };
-        throw new Error(errorResponse.message || 'Auth failed');
       }
+
+      // ✅ ERROR CASE: TypeScript now knows this is ApiErr branch
+      const errorResponse = response as { ok: false; message: string };
+      const msg = errorResponse.message || 'Auth failed';
+      console.error('Whoami check failed:', msg);
+      throw new Error(msg);
     } catch (error) {
       console.error('Auth check failed:', error);
       this.clearAuth();

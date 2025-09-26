@@ -99,7 +99,7 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
   const handleViewMailItem = async (itemId: string) => {
     try {
       const response = await apiClient.getMailScanUrl(itemId);
-      if (response.ok && response.data?.url) {
+      if (response.ok) {
         window.open(response.data.url, '_blank');
       }
     } catch (err) {

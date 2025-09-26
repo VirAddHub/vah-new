@@ -146,7 +146,7 @@ export function MailSection({ }: MailSectionProps) {
             await logAdminAction('admin_view_mail_item', { itemId });
             // Try to get scan URL first, fallback to detail page
             const response = await apiClient.get(`/api/mail-items/${itemId}/scan-url`);
-            if (response.ok && response.data?.url) {
+            if (response.ok) {
                 window.open(response.data.url, '_blank');
             } else {
                 window.open(`/admin/mail/${itemId}`, '_blank');

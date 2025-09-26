@@ -50,7 +50,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 billing_period: isAnnual ? 'annual' : 'monthly'
             });
 
-            if (response.ok && response.data?.redirect_url) {
+            if (response.ok) {
                 // Redirect to payment
                 window.location.href = response.data.redirect_url;
             } else {

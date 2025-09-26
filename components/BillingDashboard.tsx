@@ -80,7 +80,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
       setLoading(true);
       const response = await apiClient.createRedirectFlow();
       
-      if (response.ok && response.data?.redirect_url) {
+      if (response.ok) {
         setRedirectUrl(response.data.redirect_url);
         // Redirect to GoCardless
         window.open(response.data.redirect_url, '_blank');
@@ -99,7 +99,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
     try {
       const response = await apiClient.getInvoiceLink(invoiceId);
       
-      if (response.ok && response.data?.url) {
+      if (response.ok) {
         window.open(response.data.url, '_blank');
       } else {
         setError('Failed to get invoice download link');
