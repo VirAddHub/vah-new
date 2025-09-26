@@ -1,7 +1,7 @@
 // ---- Types ----------------------------------------------------
 
 export type ApiOk<T> = { ok: true; data: T };
-export type ApiErr = { ok: false; error: string; status?: number };
+export type ApiErr = { ok: false; message: string; code?: string; status?: number };
 export type ApiResponse<T> = ApiOk<T> | ApiErr;
 
 // Match your backend fields (snake_case). Add/trim fields to match your app.
@@ -157,20 +157,33 @@ function coerceUserResponse(resp: ApiResponse<unknown>): ApiResponse<{ user: Use
 // ---- Unified API Client ----------------------------------------------
 
 // Core request function - always hits Next.js proxy routes
-export async function req<T>(path: string, init?: RequestInit): Promise<T> {
+export async function req<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   const r = await fetch(path, {
     ...init,
     // browser requests must send cookies to Next API (same-site)
     credentials: "include",
     headers: {
       ...(init?.headers || {}),
-      "content-type": init?.body ? "application/json" : "application/json",
+      "content-type": "application/json",
     },
     cache: "no-store",
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(data?.message || "Request failed"), { status: r.status, data });
-  return data as T;
+
+  let json: any = null;
+  try { json = await r.json(); } catch { json = null; }
+
+  if (!r.ok) {
+    const err: ApiErr = {
+      ok: false,
+      message: json?.message || json?.error || r.statusText || "Request failed",
+      status: r.status,
+      code: json?.code,
+    };
+    return err;
+  }
+
+  const ok: ApiOk<T> = { ok: true, data: (json as T) };
+  return ok;
 }
 
 // Legacy request function that returns ApiResponse format

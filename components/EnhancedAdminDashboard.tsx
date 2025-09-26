@@ -152,11 +152,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             // Fetch all users to get accurate totals using the correct adminApi
             console.debug('[Users] Making API call to:', '/api/admin/users?page=1&page_size=1000');
             const usersResponse = await adminApi.users(new URLSearchParams([['page', '1'], ['page_size', '1000']]));
-            console.debug('[Users] API response:', {
-                ok: usersResponse.ok,
-                error: usersResponse.ok ? undefined : usersResponse.error,
-                data: usersResponse.ok ? usersResponse.data : undefined
-            });
+            console.debug('[Users] API response:', usersResponse);
 
             if (usersResponse.ok) {
                 const userData = safe(usersResponse.data?.items, []);

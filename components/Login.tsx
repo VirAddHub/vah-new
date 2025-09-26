@@ -75,7 +75,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
         } else if (response.status && response.status >= 500) {
           throw new Error('Server error. Please try again.');
         } else {
-          throw new Error(response.error || 'Login failed');
+          throw new Error(response.message || 'Login failed');
         }
       }
 

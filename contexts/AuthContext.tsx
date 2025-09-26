@@ -133,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     userId: userData.id
                 });
             } else {
-                throw new Error('error' in response ? response.error : 'Login failed');
+                throw new Error('message' in response ? response.message : 'Login failed');
             }
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {

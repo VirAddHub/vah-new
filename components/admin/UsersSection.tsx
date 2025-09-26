@@ -91,7 +91,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
 
     try {
       const res = await adminApi.deleteUser(id);
-      if (!res.ok) throw new Error(res.error || 'delete_failed');
+      if (!res.ok) throw new Error(res.message || 'delete_failed');
 
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
 
@@ -118,7 +118,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
 
     try {
       const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
-      if (!res.ok) throw new Error(res.error || 'restore_failed');
+      if (!res.ok) throw new Error(res.message || 'restore_failed');
 
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
 

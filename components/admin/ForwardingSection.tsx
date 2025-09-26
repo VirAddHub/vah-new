@@ -109,7 +109,7 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                 };
                 setStats(counts);
             } else {
-                console.error("forwardingQueue failed:", resp.error);
+                console.error("forwardingQueue failed:", resp.message);
                 setRequests([]);
                 setTotal(0);
                 setStats(null);
