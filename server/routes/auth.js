@@ -168,7 +168,7 @@ router.post('/login', validateLogin, async (req, res, next) => {
     }
 
     const { email, password } = req.body || {};
-    
+
     // Validate input
     if (!email || !password) {
       throw new HttpError(400, 'Missing credentials');
@@ -182,11 +182,11 @@ router.post('/login', validateLogin, async (req, res, next) => {
       WHERE email = $1
     `, [email]);
     const user = rows[0];
-    
+
     // Do constant-time-ish check even if user missing to avoid oracle attacks
     const hash = user?.password ?? '$2a$10$invalidinvalidinvalidinvalidinva';
     const isValidPassword = comparePasswordSync(password, hash);
-    
+
     if (!user || !isValidPassword) {
       throw new HttpError(401, 'Invalid credentials');
     }
@@ -206,12 +206,7 @@ router.post('/login', validateLogin, async (req, res, next) => {
       role: user.role || 'user'
     };
 
-    // Ensure ACTUAL login response carries CORS too:
-    const origin = req.headers.origin;
-    if (isAllowed(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
+    // CORS is handled by middleware - no manual header setting needed
 
     // Return user data (without password)
     const { password: _, ...userData } = user;

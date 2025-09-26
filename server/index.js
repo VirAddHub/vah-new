@@ -63,7 +63,8 @@ const allowlist = new Set([
 function isAllowed(origin) {
     if (!origin) return true; // allow same-origin / server-to-server
     if (allowlist.has(origin)) return true;
-    if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
+    // Allow Vercel preview URLs with proper regex
+    if (/^https:\/\/vah-frontend-final-[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
     return false;
 }
 
