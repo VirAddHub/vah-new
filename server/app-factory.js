@@ -72,8 +72,7 @@ function createApp(opts = {}) {
     app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
     app.use(require('cors')(corsOptions));
 
-    // ✅ Use v6-compatible wildcard:
-    app.options('/(.*)', require('cors')(corsOptions));
+    // OPTIONS requests are handled by cors middleware above
 
     // CORS Debug middleware (behind env flag)
     if (process.env.CORS_DEBUG === '1') {

@@ -87,8 +87,7 @@ const corsOptions = {
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
 app.use(require('cors')(corsOptions));
 
-// ✅ Use v6-compatible wildcard:
-app.options('/(.*)', require('cors')(corsOptions));
+// OPTIONS requests are handled by cors middleware above
 
 // CORS Debug middleware (behind env flag)
 if (process.env.CORS_DEBUG === '1') {
@@ -358,9 +357,14 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// 404 handler
+// API 404 (runs only if no API route matched)
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Not Found', path: req.originalUrl });
+});
+
+// generic 404 for anything else (non-API) — since this is an API service, just 404
 app.use((req, res) => {
-    res.status(404).json({ error: 'Not found' });
+    res.status(404).send('Not Found');
 });
 
 // Global error handler - must be after all routes
