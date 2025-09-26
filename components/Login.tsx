@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -36,8 +36,8 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     };
   }, [redirectTimeout]);
 
-  // Helper to discover role after login (via whoami)
-  const fetchRole = async (): Promise<Role> => {
+  // Helper to discover role after login (via whoami) - CACHED to prevent multiple calls
+  const fetchRole = useCallback(async (): Promise<Role> => {
     try {
       const res = await fetch('/api/auth/whoami', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch session');
@@ -49,7 +49,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       // default to user if unknown
       return 'user';
     }
-  };
+  }, []); // ✅ Memoize to prevent recreation on every render
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

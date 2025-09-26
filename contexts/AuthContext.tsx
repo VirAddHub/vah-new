@@ -64,12 +64,16 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [authInitialized, setAuthInitialized] = useState(false); // ✅ Guard against re-initialization
 
     const isAuthenticated = !!user;
     const isAdmin = Boolean(user?.is_admin);
 
-    // Initialize auth state on mount
+    // Initialize auth state on mount - ONLY ONCE
     useEffect(() => {
+        // 🛑 GUARD CLAUSE: Don't run if we've already initialized
+        if (authInitialized) return;
+
         const initializeAuth = async () => {
             try {
                 // Check if this is a fresh login redirect
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         setUser(userData);
                     }
                     setIsLoading(false);
+                    setAuthInitialized(true); // ✅ Mark as initialized
                     return;
                 }
 
@@ -101,6 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 clientAuthManager.clearAuth();
             } finally {
                 setIsLoading(false);
+                setAuthInitialized(true); // ✅ Mark as initialized
             }
         };
 
@@ -108,12 +114,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const timeout = setTimeout(() => {
             console.warn('Auth initialization timeout, setting loading to false');
             setIsLoading(false);
+            setAuthInitialized(true); // ✅ Mark as initialized even on timeout
         }, 5000);
 
         initializeAuth().finally(() => {
             clearTimeout(timeout);
         });
-    }, []);
+    }, [authInitialized]); // ✅ Include authInitialized in deps
 
     const login = async (credentials: { email: string; password: string }) => {
         setIsLoading(true);
@@ -208,6 +215,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 
     const refreshUser = async () => {
+        // 🛑 GUARD CLAUSE: Don't refresh if we're already loading or not initialized
+        if (isLoading || !authInitialized) return;
+        
         try {
             const userData = await clientAuthManager.checkAuth();
             setUser(userData);
