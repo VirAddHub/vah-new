@@ -21,8 +21,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
-const createMemoryStore = require("memorystore");
-const MemoryStore = createMemoryStore(expressSession);
+const { sessions } = require('./sessions');
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
@@ -54,39 +53,10 @@ const app = express();
 app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // CORS configuration - MUST be at the very top before any other middleware
-const allowlist = new Set([
-    'https://vah-frontend-final.vercel.app',
-    'http://localhost:3000',
-]);
-
-// Allow Vercel preview: https://vah-frontend-final-*.vercel.app
-function isAllowed(origin) {
-    if (!origin) return true; // allow same-origin / server-to-server
-    if (allowlist.has(origin)) return true;
-    // Allow Vercel preview URLs with proper regex
-    if (/^https:\/\/vah-frontend-final-[a-z0-9-]+\.vercel\.app$/.test(origin)) return true;
-    return false;
-}
-
-if (process.env.ALLOWED_ORIGINS) {
-    for (const o of process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
-        allowlist.add(o);
-    }
-}
-
-const corsOptions = {
-    origin(origin, cb) {
-        if (isAllowed(origin)) return cb(null, origin || true);
-        return cb(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
-    exposedHeaders: ['Content-Disposition'],
-};
+const { makeCors } = require('./cors');
 
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
-app.use(require('cors')(corsOptions));
+app.use(makeCors());
 
 // OPTIONS requests are handled by cors middleware above
 
@@ -148,21 +118,8 @@ app.use(cookieParser());
 // important: express must parse JSON before routes
 app.use(express.json());
 
-// secure session cookie for cross-site usage
-app.use(expressSession({
-    name: 'sid',
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: new MemoryStore({ checkPeriod: 86400000 }),
-    cookie: {
-        httpOnly: true,
-        secure: true,          // required with SameSite=None
-        sameSite: 'none',      // cross-site
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        path: '/',
-    },
-}));
+// PostgreSQL session store for production
+app.use(sessions);
 
 // Compression
 app.use(compression());
@@ -350,6 +307,10 @@ app.use(require('./routes/public/plans').default);
 // Dashboard routes
 app.use('/api', require('./routes/dashboard'));
 
+// TEMPORARY: Legacy router for missing endpoints
+const { buildLegacyRouter } = require('./routes/legacy-router');
+app.use('/api', buildLegacyRouter({ db, logger: console }));
+
 // OPTIONS fallback (preflight safety net):
 app.use((req, res, next) => {
     if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -364,6 +325,7 @@ app.use((err, req, res, next) => {
 
 // API 404 (runs only if no API route matched)
 app.use('/api', (req, res) => {
+    console.warn('[404]', req.method, req.originalUrl);
     res.status(404).json({ error: 'Not Found', path: req.originalUrl });
 });
 
@@ -375,8 +337,18 @@ app.use((req, res) => {
 // Import error handler
 const { errorMiddleware } = require('./errors');
 
+// 404 telemetry
+app.use((req, res, next) => {
+    if (!res.headersSent) console.warn('[404]', req.method, req.originalUrl);
+    next();
+});
+
 // Global error handler - must be after all routes
 app.use(errorMiddleware);
+
+// Print all mounted routes for debugging
+const { printRoutes } = require('./utils/printRoutes');
+printRoutes(app);
 
 // Process guards for better error handling
 process.on('uncaughtException', (err) => {
@@ -393,8 +365,9 @@ const HOST = '0.0.0.0';
 const PORT = Number(process.env.PORT || 8080);
 app.listen(PORT, HOST, () => {
     console.log(`[boot] listening on http://${HOST}:${PORT}`);
-    console.log(`[boot] CORS origins: ${Array.from(allowlist).join(', ')}`);
+    console.log(`[boot] CORS origins: ${process.env.CORS_ORIGINS || 'default'}`);
     console.log(`[boot] DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
+    console.log(`[boot] Render deployment: https://vah-api-staging.onrender.com`);
 });
 
 module.exports = app;

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient, ApiClientError } from './api-client';
+import { apiClient, ApiClientError, isOk } from './api-client';
 
 // User type definition
 export interface User {
@@ -43,9 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const response = await apiClient.get<{ user: User }>('/auth/whoami');
 
-            if (response.user) {
+            if (isOk(response)) {
                 setUser({
-                    ...response.user,
+                    ...response.data.user,
                     isAuthenticated: true,
                 });
             } else {
@@ -69,17 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 password,
             });
 
-            if (response.user) {
+            if (isOk(response)) {
                 setUser({
-                    ...response.user,
+                    ...response.data.user,
                     isAuthenticated: true,
                 });
 
                 // Store token if provided
-                if (response.token) {
-                    localStorage.setItem('auth_token', response.token);
-                    apiClient.setAuthToken(response.token);
+                if (response.data.token) {
+                    localStorage.setItem('auth_token', response.data.token);
                 }
+            } else {
+                setError(response.message || 'Login failed');
             }
         } catch (error) {
             const errorMessage = error instanceof ApiClientError
@@ -94,13 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            await apiClient.post('/auth/logout');
+            await apiClient.post('/auth/logout', {});
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
             setUser(null);
             localStorage.removeItem('auth_token');
-            apiClient.clearAuthToken();
         }
     };
 
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const token = localStorage.getItem('auth_token');
         if (token) {
-            apiClient.setAuthToken(token);
+            // Token is stored in localStorage, no need to set it on apiClient
         }
     }, []);
 
