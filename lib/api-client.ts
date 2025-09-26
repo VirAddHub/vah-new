@@ -154,45 +154,36 @@ function coerceUserResponse(resp: ApiResponse<unknown>): ApiResponse<{ user: Use
   return { ok: false, error: 'Invalid user payload', status: 500 };
 }
 
-// ---- API Client ----------------------------------------------
+// ---- Unified API Client ----------------------------------------------
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
-  'https://vah-api-staging.onrender.com';
+// Core request function - always hits Next.js proxy routes
+export async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const r = await fetch(path, {
+    ...init,
+    // browser requests must send cookies to Next API (same-site)
+    credentials: "include",
+    headers: {
+      ...(init?.headers || {}),
+      "content-type": init?.body ? "application/json" : "application/json",
+    },
+    cache: "no-store",
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data?.message || "Request failed"), { status: r.status, data });
+  return data as T;
+}
 
-async function request<T = unknown>(
-  path: string,
-  init?: RequestInit
-): Promise<ApiResponse<T>> {
-  const url = `${BASE_URL}${path}`;
+// Legacy request function that returns ApiResponse format
+async function legacyReq<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   try {
-    const res = await fetch(url, {
-      credentials: 'include',
-      headers: { 
-        'Content-Type': 'application/json', 
-        ...(init?.headers || {}) 
-      },
-      cache: 'no-store', // Critical to bypass ETag/304
-      ...init,
-    });
-
-    let json: any = null;
-    try {
-      json = await res.json();
-    } catch {
-      // non-JSON
-    }
-
-    if (!res.ok) {
-      const message = (json?.error || json?.message || res.statusText || 'Request failed') as string;
-      return { ok: false, error: message, status: res.status };
-    }
-
-    return { ok: true, data: json as T };
-  } catch (err: any) {
-    return { ok: false, error: err?.message || 'Network error', status: 0 };
+    const data = await req<T>(path, init);
+    return { ok: true, data };
+  } catch (error: any) {
+    return { ok: false, error: error.message, status: error.status };
   }
 }
+
+// ---- Legacy API Client (for backward compatibility) ----
 
 export const apiClient = {
   // Always return ApiResponse<{ user: User }>
@@ -200,7 +191,7 @@ export const apiClient = {
     if (!email || !password) {
       return { ok: false, error: 'Email and password are required', status: 400 };
     }
-    const resp = await request('/api/auth/login', {
+    const resp = await legacyReq('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -208,7 +199,7 @@ export const apiClient = {
   },
 
   async whoami(): Promise<ApiResponse<{ user: User }>> {
-    const resp = await request('/api/auth/whoami', { method: 'GET' });
+    const resp = await legacyReq('/api/auth/whoami', { method: 'GET' });
     return coerceUserResponse(resp);
   },
 
@@ -218,7 +209,7 @@ export const apiClient = {
     first_name: string,
     last_name: string
   ): Promise<ApiResponse<{ user: User }>> {
-    const resp = await request('/api/auth/signup', {
+    const resp = await legacyReq('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, first_name, last_name }),
     });
@@ -226,35 +217,34 @@ export const apiClient = {
   },
 
   async logout(): Promise<ApiResponse<{ success: true }>> {
-    const resp = await request<{ success: true }>('/api/auth/logout', { method: 'POST' });
-    return resp;
+    return legacyReq<{ success: true }>('/api/auth/logout', { method: 'POST' });
   },
 
   // Generic HTTP methods
   async get<T = any>(path: string): Promise<ApiResponse<T>> {
-    return request<T>(path, { method: 'GET' });
+    return legacyReq<T>(path, { method: 'GET' });
   },
 
   async post<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return request<T>(path, {
+    return legacyReq<T>(path, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   },
 
   async put<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return request<T>(path, {
+    return legacyReq<T>(path, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   },
 
   async delete<T = any>(path: string): Promise<ApiResponse<T>> {
-    return request<T>(path, { method: 'DELETE' });
+    return legacyReq<T>(path, { method: 'DELETE' });
   },
 
   async patch<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return request<T>(path, {
+    return legacyReq<T>(path, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -383,131 +373,39 @@ export const apiClient = {
   },
 };
 
-// ---- New Typed Admin API Client ----
+// ---- New Simplified Admin API Client ----
 
-// Core request function with comprehensive error handling, credentials, and cache busting
-async function req<T>(path: string, init?: RequestInit & { signal?: AbortSignal }): Promise<ApiResponse<T>> {
-  try {
-    // For browser calls, always hit relative /api/* (Next.js proxy)
-    const isNextApi = path.startsWith('/api/');
-    const url = isNextApi ? path : `${process.env.NEXT_PUBLIC_API_BASE_URL || BASE_URL}${path}`;
-    const method = (init?.method || 'GET').toUpperCase();
-
-    // Add cache-buster for GET requests
-    const finalUrl = (method === 'GET')
-      ? url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()
-      : url;
-
-    const res = await fetch(finalUrl, {
-      ...init,
-      credentials: 'include', // ALWAYS include credentials for session cookies
-      cache: 'no-store', // ALWAYS bypass browser cache
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init?.headers || {}),
-      },
-      signal: init?.signal,
-    });
-
-    const body = await res.json().catch(() => ({}));
-
-    if (!res.ok || body?.ok === false) {
-      return { ok: false, error: body?.error || res.statusText };
-    }
-
-    return { ok: true, data: body.data ?? body }; // supports both {ok:true,data} and raw {data}
-  } catch (error: any) {
-    // Enhanced error logging for diagnostics
-    console.error('API Request Error:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      path,
-      method: init?.method || 'GET',
-      responseStatus: error.response?.status,
-      responseHeaders: error.response?.headers
-    });
-    
-    if (error.name === 'AbortError') return { ok: false, error: 'aborted' };
-    return { ok: false, error: error?.message || 'network_error' };
-  }
-}
-
-// Typed Admin API - single place for all admin endpoints
+// Admin helpers (all via proxy) - returns ApiResponse format for compatibility
 export const adminApi = {
+  users: (params: URLSearchParams) => legacyReq<{ items: any[]; total: number }>(`/api/admin/users?${params.toString()}`),
+  userStats: () => legacyReq<{ total: number; active: number; suspended: number; pending: number; deleted: number }>('/api/admin/users/stats'),
+  deleteUser: (id: string | number) => legacyReq<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+  restoreUser: (id: string | number, body: { email: string; first_name?: string; last_name?: string; reactivate?: boolean }) =>
+    legacyReq<{ restored: number }>(`/api/admin/users/${id}/restore`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateUser: (id: string, payload: any) => legacyReq(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  suspendUser: (id: string) => legacyReq(`/api/admin/users/${id}/suspend`, { method: 'PUT' }),
+  activateUser: (id: string) => legacyReq(`/api/admin/users/${id}/activate`, { method: 'PUT' }),
+  updateKyc: (id: string, status: string) => legacyReq(`/api/admin/users/${id}/kyc-status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  
   // Mail Management
-  mailItems: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/api/admin/mail-items?${p.toString()}`, o),
-
+  mailItems: (params: URLSearchParams) => legacyReq<{ items: any[]; total: number }>(`/api/admin/mail-items?${params.toString()}`),
   updateMailItem: (id: string, payload: Partial<{ tag: string; status: string }>) =>
-    req<{ id: string }>(`/api/admin/mail-items/${id}`, {
+    legacyReq<{ id: string }>(`/api/admin/mail-items/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
 
   // Billing & Revenue
-  billingMetrics: () =>
-    req<{
-      monthly_revenue_pence: number | string;
-      outstanding_invoices_pence: number;
-      churn_rate: number;
-      recent_transactions: any[]
-    }>(`/api/admin/billing/metrics`),
-
-  // User Management
-  users: (p: URLSearchParams, o?: { signal?: AbortSignal }) => {
-    const params = new URLSearchParams(p);
-    params.set('t', Date.now().toString()); // Cache-buster
-    return req<{ items: any[]; total: number }>(`/api/admin/users?${params.toString()}`, o);
-  },
-
-  userStats: () =>
-    req<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(`/api/admin/users/stats?t=${Date.now()}`),
-
-  deleteUser: (id: string | number) =>
-    req<{ deleted: number }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
-
-  restoreUser: (
-    id: string | number,
-    body: { email: string; first_name?: string; last_name?: string; reactivate?: boolean }
-  ) =>
-    req<{ restored: number }>(`/api/admin/users/${id}/restore`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
-
-  updateUser: (id: string, payload: any) =>
-    req(`/api/admin/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload)
-    }),
-
-  suspendUser: (id: string) =>
-    req(`/api/admin/users/${id}/suspend`, { method: 'PUT' }),
-
-  activateUser: (id: string) =>
-    req(`/api/admin/users/${id}/activate`, { method: 'PUT' }),
-
-  updateKyc: (id: string, status: string) =>
-    req(`/api/admin/users/${id}/kyc-status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status })
-    }),
+  billingMetrics: () => legacyReq<{ monthly_revenue_pence: number | string; outstanding_invoices_pence: number; churn_rate: number; recent_transactions: any[] }>('/api/admin/billing/metrics'),
 
   // Forwarding Management
-  forwardingQueue: (p: URLSearchParams, o?: { signal?: AbortSignal }) =>
-    req<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${p.toString()}`, o),
-
-  fulfillForward: (id: string) =>
-    req(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
-
-  cancelForward: (id: string) =>
-    req(`/api/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
+  forwardingQueue: (params: URLSearchParams) => legacyReq<{ items: any[]; total: number }>(`/api/admin/forwarding/queue?${params.toString()}`),
+  fulfillForward: (id: string) => legacyReq(`/api/admin/forwarding/requests/${id}/fulfill`, { method: 'POST' }),
+  cancelForward: (id: string) => legacyReq(`/api/admin/forwarding/requests/${id}/cancel`, { method: 'POST' }),
 
   // Analytics
-  analytics: (range = '30d', period = 'rolling') =>
-    req(`/api/admin/analytics?range=${range}&period=${period}`),
+  analytics: (range = '30d', period = 'rolling') => legacyReq(`/api/admin/analytics?range=${range}&period=${period}`),
 };
-
-// Legacy exports for backward compatibility
-export const API_BASE = BASE_URL;
