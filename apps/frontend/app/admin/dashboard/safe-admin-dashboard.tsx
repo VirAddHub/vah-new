@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { safeGet } from '@/lib/safeRequest';
 import { Button } from '@/components/ui/button';
-import { authGuard } from '@/lib/auth-guard';
+// import { authGuard } from '@/lib/auth-guard'; // TODO: implement auth guard usage
 
 export default function SafeAdminDashboard() {
   const router = useRouter();

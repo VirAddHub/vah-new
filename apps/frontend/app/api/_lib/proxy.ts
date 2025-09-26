@@ -39,8 +39,9 @@ export async function proxy(req: NextRequest, targetPath: string) {
   let r: Response;
   try {
     r = await fetch(target, init);
-  } catch (e: any) {
-    console.error('[proxy:fetch-throw]', { target, error: e?.message });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+    console.error('[proxy:fetch-throw]', { target, error: errorMessage });
     return NextResponse.json({ message: 'Upstream fetch failed', target }, { status: 502, headers: { 'x-proxy-target': target } });
   }
 

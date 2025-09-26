@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
 
 // Helper functions
 
-async function sendWelcomeEmail(user: any): Promise<void> {
+async function sendWelcomeEmail(user: { email: string; firstName?: string }): Promise<void> {
     try {
-        const postmark = require('postmark');
+        const postmark = await import('postmark');
         const client = new postmark.ServerClient(process.env.POSTMARK_API_TOKEN);
 
         await client.sendEmail({

@@ -12,7 +12,7 @@ function AdminDashboardContent() {
         window.location.href = '/login';
     };
 
-    const handleNavigate = (page: string, data?: any) => {
+    const handleNavigate = (page: string, data?: unknown) => {
         // Handle navigation within the admin dashboard
         console.log('Navigate to:', page, data);
     };

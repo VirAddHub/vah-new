@@ -1,3 +1,5 @@
-# Temporary ignore to unblock builds; we'll narrow these later
-components/**
-lib/**
+# Specific files to ignore during migration
+.next/
+out/
+dist/
+*.tsbuildinfo
