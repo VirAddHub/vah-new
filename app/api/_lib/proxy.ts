@@ -4,6 +4,21 @@ import { NextRequest, NextResponse } from 'next/server'
 const BACKEND = process.env.BACKEND_API_ORIGIN || 'http://localhost:4000'
 
 export async function proxy(req: NextRequest, backendPath: string) {
+    // Guard against missing BACKEND_API_ORIGIN in preview/production
+    if (!process.env.BACKEND_API_ORIGIN) {
+        console.error('[proxy] BACKEND_API_ORIGIN missing for environment:', process.env.NODE_ENV);
+        return new NextResponse(
+            JSON.stringify({ 
+                message: 'Missing BACKEND_API_ORIGIN environment variable. Set it in Vercel for this environment (Development/Preview/Production)',
+                error: 'CONFIGURATION_ERROR'
+            }),
+            { 
+                status: 500, 
+                headers: { 'content-type': 'application/json' } 
+            }
+        );
+    }
+    
     const url = new URL(backendPath, BACKEND)
     const init: RequestInit = {
         method: req.method,
@@ -18,14 +33,14 @@ export async function proxy(req: NextRequest, backendPath: string) {
     h.set('host', url.host) // avoid host mismatch issues
 
     const res = await fetch(url, init)
-    
+
     // Debug logging for 500 errors
     if (!res.ok) {
         let body = '';
-        try { body = await res.clone().text(); } catch {}
+        try { body = await res.clone().text(); } catch { }
         console.error('[proxy:error]', { target: url.toString(), status: res.status, body });
     }
-    
+
     const data = await res.arrayBuffer()
     const out = new NextResponse(data, {
         status: res.status,
