@@ -67,6 +67,7 @@ import {
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import UsersSection from "./admin/UsersSection";
+import { DebugInfo } from "./DebugInfo";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -147,9 +148,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             console.debug('[Users] loadAdminData: start');
             setLoading(true);
             setError(null);
-            
+
             // Fetch all users to get accurate totals
+            console.debug('[Users] Making API call to:', '/api/admin/users?page=1&page_size=1000');
             const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
+            console.debug('[Users] API response:', { 
+                ok: usersResponse.ok, 
+                error: usersResponse.ok ? undefined : usersResponse.error,
+                data: usersResponse.ok ? usersResponse.data : undefined
+            });
 
             if (usersResponse.ok) {
                 const userData = safe(usersResponse.data?.items, []);
@@ -198,7 +205,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 loadOverview()
             ]);
         };
-        
+
         void loadAllData();
     }, []); // Only run once on mount
 
@@ -376,6 +383,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
                 {renderContent()}
             </main>
+            
+            {/* Debug Info - Remove this after fixing */}
+            <DebugInfo />
         </div>
     );
 }
