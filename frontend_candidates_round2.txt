@@ -1,9 +1,0 @@
-.next
-app
-components
-next.config.js
-postcss.config.js
-public
-src/components
-styles
-tailwind.config.js
