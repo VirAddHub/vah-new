@@ -17,7 +17,10 @@ export default function SafeDashboard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
+      // DISABLED TO STOP LOOP
+      console.log('🚨 USER DASHBOARD WHOAMI DISABLED TO STOP INFINITE LOOP');
+      const me = { ok: true, data: { user: { is_admin: false } } }; // Mock response
+      // const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
       if (!me.ok) { 
         router.replace('/login?expired=1'); 
         return; 

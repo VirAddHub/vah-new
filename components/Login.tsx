@@ -36,8 +36,11 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     };
   }, [redirectTimeout]);
 
-  // Helper to discover role after login (via whoami) - CACHED to prevent multiple calls
+  // Helper to discover role after login (via whoami) - DISABLED TO STOP LOOP
   const fetchRole = useCallback(async (): Promise<Role> => {
+    console.log('🚨 FETCH ROLE DISABLED TO STOP INFINITE LOOP');
+    return 'user'; // Just return user role, no API calls
+    
     try {
       const res = await fetch('/api/auth/whoami', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch session');

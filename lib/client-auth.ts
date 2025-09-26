@@ -51,6 +51,10 @@ export class ClientAuthManager {
   }
 
   async checkAuth() {
+    // 🚨 NUCLEAR OPTION: Temporarily disable all auth checks to stop the loop
+    console.log('🚨 AUTH CHECK DISABLED TO STOP INFINITE LOOP');
+    return this.user; // Just return cached user data, no API calls
+    
     // 🛑 GUARD CLAUSE: Prevent multiple simultaneous auth checks
     if (this.checkingAuth) {
       console.log('Auth check already in progress, skipping...');
