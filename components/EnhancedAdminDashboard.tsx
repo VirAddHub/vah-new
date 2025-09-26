@@ -133,12 +133,16 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // Load admin data - hoisted into stable useCallback
     const loadAdminData = useCallback(async () => {
         try {
+            console.log('🔄 loadAdminData: Starting to fetch users...');
             setLoading(true);
             // Fetch all users to get accurate totals
+            console.log('🌐 loadAdminData: Making API call to /api/admin/users?page=1&page_size=1000');
             const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
+            console.log('📡 loadAdminData: API response received:', usersResponse);
 
             if (usersResponse.ok) {
                 const userData = safe(usersResponse.data?.items, []);
+                console.log('✅ loadAdminData: Success! Users fetched:', userData.length, 'users');
                 setUsers(userData);
 
                 // Calculate real metrics from user data
@@ -146,6 +150,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 const activeUsers = userData.filter((u: any) => u.status === 'active').length;
                 const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
                 const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
+                console.log('📊 loadAdminData: Calculated metrics - Total:', totalUsers, 'Active:', activeUsers, 'Pending KYC:', pendingKyc, 'Suspended:', suspendedUsers);
 
                 // Set calculated metrics
                 setMetrics({
@@ -165,18 +170,23 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 });
             }
         } catch (err) {
+            console.error('❌ loadAdminData: Error loading admin data:', err);
             setError('Failed to load admin data');
-            console.error('Error loading admin data:', err);
         } finally {
+            console.log('🏁 loadAdminData: Finished loading, setting loading to false');
             setLoading(false);
         }
     }, [setUsers, setMetrics, setError, setLoading]);
 
     // Load admin data and overview
     useEffect(() => {
+        console.log('🚀 EnhancedAdminDashboard: Component mounted, initializing data...');
         const initializeData = async () => {
+            console.log('📋 EnhancedAdminDashboard: Calling loadAdminData...');
             await loadAdminData();
+            console.log('📋 EnhancedAdminDashboard: Calling loadOverview...');
             await loadOverview();
+            console.log('✅ EnhancedAdminDashboard: Data initialization complete!');
         };
         initializeData();
     }, [loadAdminData, loadOverview]);

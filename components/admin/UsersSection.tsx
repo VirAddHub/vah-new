@@ -30,6 +30,14 @@ interface UsersSectionProps {
 export default function UsersSection({ users, loading, error, onRefresh }: UsersSectionProps) {
   const { toast } = useToast();
   
+  // Debug logging
+  console.log('👥 UsersSection: Component rendered with props:', {
+    usersCount: users?.length || 0,
+    loading,
+    error,
+    hasOnRefresh: !!onRefresh
+  });
+  
   // Search and pagination state
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -185,7 +193,10 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
           <p className="text-sm text-muted-foreground">Total: {users.length}</p>
                             </div>
                             <div className="flex gap-2">
-          <Button variant="outline" onClick={onRefresh} disabled={loading}>
+          <Button variant="outline" onClick={() => {
+            console.log('🔄 UsersSection: Refresh button clicked, calling onRefresh...');
+            onRefresh();
+          }} disabled={loading}>
             Refresh
           </Button>
           <Input
