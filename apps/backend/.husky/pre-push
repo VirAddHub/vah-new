@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+set -e
+
+echo "[pre-push] Running checks…"
+
+# 1) Always run fast typecheck (already defined by your test:prepush)
+npm run test:prepush
+
+# 2) Optional: run a quick secret scan if requested
+#    Enable with: RUN_SECRET_SCAN=1 git push
+if [ "${RUN_SECRET_SCAN:-0}" = "1" ]; then
+  echo "[pre-push] Secret scan requested (RUN_SECRET_SCAN=1)"
+  node scripts/secret-scan.mjs
+fi
+
+# 3) Optional: run smoke (you already support RUN_SMOKE=1)
+if [ "${RUN_SMOKE:-0}" = "1" ]; then
+  echo "[pre-push] Smoke test requested (RUN_SMOKE=1)"
+  npm run test:prepush:smoke
+fi
+
+echo "[pre-push] OK"

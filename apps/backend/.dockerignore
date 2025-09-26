@@ -1,0 +1,14 @@
+# keep images small; don't copy dev/test stuff into Docker
+node_modules
+logs
+*.log
+coverage
+tests
+__mocks__
+*.spec.js
+*.test.js
+.DS_Store
+.history
+_archive
+vah.db*
+.env*

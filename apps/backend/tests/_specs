@@ -1,0 +1,440 @@
+const request = require('supertest');
+const { app } = require('../server');
+
+describe('Account basics: password reset, profile update, address, plans', () => {
+  const agent = request.agent(app);
+  const email = 'acct1@example.com';
+  const pass = 'Password123!';
+
+  beforeAll(async () => {
+    await agent.post('/api/auth/signup').send({ email, password: pass, first_name: 'A', last_name: 'One' });
+  });
+
+  test('POST /api/profile -> update profile fields', async () => {
+    const res = await agent.post('/api/profile').send({
+      first_name: 'Alpha',
+      last_name: 'One',
+      company_name: 'Test Co',
+      forwarding_address: '221B Baker St, London'
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.first_name).toBe('Alpha');
+    expect(res.body.company_name).toBe('Test Co');
+  });
+
+  test('PUT /api/profile/address -> updates forwarding address', async () => {
+    const res = await agent.put('/api/profile/address').send({
+      forwarding_address: '10 Downing St, London'
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.forwarding_address).toMatch(/Downing/);
+  });
+
+  test('POST /api/profile/reset-password-request -> returns ok and debug token (test env)', async () => {
+    const res = await request(app).post('/api/profile/reset-password-request').send({ email });
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(typeof res.body.debug_token).toBe('string');
+    const r2 = await request(app).post('/api/profile/reset-password').send({
+      token: res.body.debug_token,
+      new_password: 'NewPassword123!'
+    });
+    expect(r2.status).toBe(200);
+    expect(r2.body.ok).toBe(true);
+  });
+
+  test('POST /api/auth/login -> works with new password', async () => {
+    const r = await request(app).post('/api/auth/login').send({ email, password: 'NewPassword123!' });
+    expect(r.status).toBe(200);
+  });
+
+  test('GET /api/plans -> returns array (possibly empty)', async () => {
+    const r = await request(app).get('/api/plans');
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body.data)).toBe(true);
+  });
+});
+const jwt = require('jsonwebtoken');
+const { app } = require('../server');
+
+// envs used in tests
+const BOOTSTRAP_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@test.local';
+const BOOTSTRAP_PASS = process.env.TEST_ADMIN_PASSWORD || 'Password123!';
+const JWT_COOKIE = process.env.JWT_COOKIE || 'vah_session';
+const JWT_SECRET = process.env.JWT_SECRET || 'testing-secret';
+
+describe('Health', () => {
+  test('GET /api/healthz -> 200', async () => {
+    const res = await request(app).get('/api/healthz');
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('Auth + Profile', () => {
+  const agent = request.agent(app);
+
+  test('POST /api/auth/signup -> creates session cookie (or log in if already exists)', async () => {
+    const email = 'u1@example.com';
+    const password = 'Password123!';
+
+    let res = await agent.post('/api/auth/signup').send({
+      email,
+      password,
+      first_name: 'U1',
+      last_name: 'Test'
+    });
+
+    if (res.status === 409) {
+      res = await agent.post('/api/auth/login').send({ email, password });
+      expect(res.status).toBe(200);
+    } else {
+      expect(res.status).toBe(201);
+    }
+
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.join(';')).toMatch(/vah_session=/);
+  });
+
+  test('GET /api/profile -> returns current user', async () => {
+    const res = await agent.get('/api/profile');
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe('u1@example.com');
+  });
+
+  test('POST /api/auth/logout -> clears cookie', async () => {
+    const res = await agent.post('/api/auth/logout');
+    expect([204, 200]).toContain(res.status);
+  });
+
+  test('POST /api/auth/login -> sets cookie', async () => {
+    const res = await agent.post('/api/auth/login').send({
+      email: 'u1@example.com',
+      password: 'Password123!'
+    });
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.join(';')).toMatch(/vah_session=/);
+  });
+});
+
+describe('Auth guard', () => {
+  test('GET /api/mail-items without cookie -> 401', async () => {
+    const res = await request(app).get('/api/mail-items');
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('Admin guard', () => {
+  const userAgent = request.agent(app);
+
+  test('Create normal user (or log in if already exists)', async () => {
+    let r = await userAgent.post('/api/auth/signup').send({
+      email: 'u2@example.com',
+      password: 'Password123!'
+    });
+
+    if (r.status === 409) {
+      r = await userAgent.post('/api/auth/login').send({
+        email: 'u2@example.com',
+        password: 'Password123!'
+      });
+      expect(r.status).toBe(200);
+    } else {
+      expect(r.status).toBe(201);
+    }
+  });
+
+  test('Admin can list users; normal user receives 403', async () => {
+    // normal user -> 403
+    const r1 = await userAgent.get('/api/admin/users');
+    expect(r1.status).toBe(403);
+
+    // 🔑 Mint an admin JWT and send it as the cookie (no flaky login path)
+    const adminToken = jwt.sign(
+      { id: 9999, is_admin: true }, // id doesn't matter for this endpoint
+      JWT_SECRET,
+      { expiresIn: '10m', issuer: 'virtualaddresshub', audience: 'vah-users' }
+    );
+
+    const r2 = await request(app)
+      .get('/api/admin/users')
+      .set('Cookie', [`${JWT_COOKIE}=${adminToken}`]);
+
+    expect(r2.status).toBe(200);
+    expect(Array.isArray(r2.body.data)).toBe(true);
+  });
+});
+const request = require('supertest');
+const { app } = require('../server');
+const { loginAdmin } = require('./_helpers');
+
+describe('KYC + Support', () => {
+  const userAgent = request.agent(app);
+  const adminAgent = request.agent(app);
+
+  beforeAll(async () => {
+    await userAgent
+      .post('/api/auth/signup')
+      .send({ email: 'ks1@example.com', password: 'Password123!' });
+
+    const a = await loginAdmin(adminAgent);
+    expect(a.status).toBe(200);
+  });
+
+  test('POST /api/kyc/upload -> returns sdk token; GET /api/kyc/status -> returns data', async () => {
+    const r = await userAgent.post('/api/kyc/upload').send({});
+    expect(r.status).toBe(200);
+    expect(r.body.data.sdk_access_token).toMatch(/sumsub_token_/);
+
+    const r2 = await userAgent.get('/api/kyc/status');
+    expect(r2.status).toBe(200);
+    expect(r2.body.data).toHaveProperty('kyc_status');
+  });
+
+  test('Support ticket open/close flow', async () => {
+    const open = await userAgent.post('/api/support/tickets').send({
+      subject: 'Help please',
+      message: 'Something is wrong',
+    });
+    expect(open.status).toBe(201);
+    const ticketId = open.body.data.ticket_id;
+    expect(ticketId).toBeTruthy();
+
+    const close = await adminAgent
+      .post(`/api/admin/support/tickets/${ticketId}/close`)
+      .send({ note: 'Resolved' });
+    expect(close.status).toBe(200);
+    expect(close.body.ok).toBe(true);
+  });
+});
+const request = require('supertest');
+const { app } = require('../server');
+const { loginAdmin } = require('./_helpers');
+
+describe('Admin mail controls', () => {
+  const adminAgent = request.agent(app);
+  const userAgent = request.agent(app);
+
+  let userId, mailId;
+
+  beforeAll(async () => {
+    await userAgent
+      .post('/api/auth/signup')
+      .send({ email: 'am1@example.com', password: 'Password123!' });
+
+    const p = await userAgent.get('/api/profile');
+    userId = p.body.id; // adjust to p.body.data.id if your API wraps data
+
+    const a = await loginAdmin(adminAgent);
+    expect(a.status).toBe(200);
+
+    const created = await adminAgent.post('/api/admin/mail-items').send({
+      user_id: userId,
+      subject: 'Admin Created',
+      sender_name: 'ACME',
+    });
+    expect(created.status).toBe(201);
+    mailId = created.body.data.id;
+  });
+
+  test('GET /api/admin/mail-items/:id -> ETag then 304 with If-None-Match', async () => {
+    const r1 = await adminAgent.get(`/api/admin/mail-items/${mailId}`);
+    expect(r1.status).toBe(200);
+    const etag = r1.headers.etag;
+    expect(etag).toBeTruthy();
+
+    const r2 = await adminAgent
+      .get(`/api/admin/mail-items/${mailId}`)
+      .set('If-None-Match', etag);
+    expect(r2.status).toBe(304);
+  });
+
+  test('PUT /api/admin/mail-items/:id -> set status=scanned', async () => {
+    const r = await adminAgent
+      .put(`/api/admin/mail-items/${mailId}`)
+      .send({ status: 'scanned' });
+    expect(r.status).toBe(200);
+    expect(r.body.data.status).toBe('scanned');
+  });
+
+  test('POST /api/admin/mail-items/:id/log-physical-dispatch -> ok', async () => {
+    const r = await adminAgent
+      .post(`/api/admin/mail-items/${mailId}/log-physical-dispatch`)
+      .send({ tracking_number: 'RN123456789GB' });
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(true);
+  });
+});
+const request = require('supertest');
+const { app } = require('../server');
+const { loginAdmin } = require('./_helpers');
+
+describe('Mail (user flow)', () => {
+  const userAgent = request.agent(app);
+  const adminAgent = request.agent(app);
+
+  let userId;
+  let mailId;
+
+  beforeAll(async () => {
+    const s = await userAgent
+      .post('/api/auth/signup')
+      .send({ email: 'mu1@example.com', password: 'Password123!' });
+    expect([201, 409]).toContain(s.status);
+
+    const p = await userAgent.get('/api/profile');
+    expect(p.status).toBe(200);
+    userId = p.body.id; // change to p.body.data.id if your API wraps responses
+
+    const a = await loginAdmin(adminAgent);
+    expect(a.status).toBe(200);
+
+    const created = await adminAgent.post('/api/admin/mail-items').send({
+      user_id: userId,
+      subject: 'Test Letter',
+      sender_name: 'Sender Inc',
+      notes: 'Be nice',
+    });
+    expect(created.status).toBe(201);
+    mailId = created.body.data.id;
+  });
+
+  test('GET /api/mail-items lists the item', async () => {
+    const r = await userAgent.get('/api/mail-items');
+    expect(r.status).toBe(200);
+    expect(r.body.data.some((x) => x.id === mailId)).toBe(true);
+  });
+
+  test('GET /api/mail-items/:id -> ok', async () => {
+    const r = await userAgent.get(`/api/mail-items/${mailId}`);
+    expect(r.status).toBe(200);
+    expect(r.body.data.id).toBe(mailId);
+  });
+
+  test('POST /api/mail-items/:id/tag -> sets tag', async () => {
+    const r = await userAgent
+      .post(`/api/mail-items/${mailId}/tag`)
+      .send({ tag: 'important' });
+    expect(r.status).toBe(200);
+    expect(r.body.data.tag).toBe('important');
+  });
+
+  test('GET /api/mail-items/:id/history -> returns events', async () => {
+    const r = await userAgent.get(`/api/mail-items/${mailId}/history`);
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body.data)).toBe(true);
+  });
+
+  test('DELETE /api/mail-items/:id -> archive; restore works', async () => {
+    const del = await userAgent.delete(`/api/mail-items/${mailId}`);
+    expect(del.status).toBe(200);
+
+    const list = await userAgent.get('/api/mail-items');
+    expect(list.status).toBe(200);
+    expect(list.body.data.find((x) => x.id === mailId)).toBeFalsy();
+
+    const restore = await userAgent
+      .post(`/api/mail-items/${mailId}/restore`)
+      .send({});
+    expect(restore.status).toBe(200);
+
+    const list2 = await userAgent.get('/api/mail-items');
+    expect(list2.status).toBe(200);
+    expect(list2.body.data.find((x) => x.id === mailId)).toBeTruthy();
+  });
+});
+const request = require('supertest');
+const { app } = require('../server');
+
+describe('Payments: redirect flow (mock) + cancel + status', () => {
+  const agent = request.agent(app);
+  const email = 'pay1@example.com';
+  const pass = 'Password123!';
+
+  beforeAll(async () => {
+    await agent.post('/api/auth/signup').send({ email, password: pass });
+  });
+
+  test('POST /api/payments/redirect-flows -> returns mock redirect_url', async () => {
+    const r = await agent.post('/api/payments/redirect-flows').send({});
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(true);
+    expect(r.body.data.redirect_flow_id).toBeTruthy();
+
+    const r2 = await agent.post(`/api/payments/redirect-flows/${r.body.data.redirect_flow_id}/complete`).send({});
+    expect(r2.status).toBe(200);
+  });
+
+  test('GET /api/payments/subscriptions/status -> returns plan_status', async () => {
+    const r = await agent.get('/api/payments/subscriptions/status');
+    expect(r.status).toBe(200);
+    expect(r.body.data).toHaveProperty('plan_status');
+  });
+
+  test('POST /api/payments/subscriptions { cancel } -> ok', async () => {
+    const r = await agent.post('/api/payments/subscriptions').send({ action: 'cancel' });
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(true);
+  });
+});
+const request = require('supertest');
+const { app } = require('../server');
+const { loginAdmin } = require('./_helpers');
+
+describe('Reports (CSV) & Webhooks', () => {
+  const adminAgent = request.agent(app);
+  const userAgent = request.agent(app);
+  let userId;
+
+  beforeAll(async () => {
+    await userAgent
+      .post('/api/auth/signup')
+      .send({ email: 'rw1@example.com', password: 'Password123!' });
+
+    const p = await userAgent.get('/api/profile');
+    userId = p.body.id; // use p.body.data.id if your API wraps responses
+
+    const a = await loginAdmin(adminAgent);
+    expect(a.status).toBe(200);
+  });
+
+  test('CSV reports return text/csv', async () => {
+    const users = await adminAgent.get('/api/admin/reports/users/csv');
+    expect(users.status).toBe(200);
+    expect(users.headers['content-type']).toMatch(/text\/csv/);
+
+    const mail = await adminAgent.get('/api/admin/reports/mail-items/csv');
+    expect(mail.status).toBe(200);
+    expect(mail.headers['content-type']).toMatch(/text\/csv/);
+
+    const fwd = await adminAgent.get('/api/admin/reports/forwarding-log/csv');
+    expect(fwd.status).toBe(200);
+    expect(fwd.headers['content-type']).toMatch(/text\/csv/);
+  });
+
+  test('POST /api/webhooks/gocardless -> updates plan_status', async () => {
+    const r = await request(app).post('/api/webhooks/gocardless').send({
+      payment: { user_id: userId, status: 'confirmed', amount: 999, currency: 'GBP' },
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(true);
+
+    const status = await userAgent.get('/api/payments/subscriptions/status');
+    expect(status.status).toBe(200);
+    expect(status.body.data.plan_status).toBe('active');
+  });
+
+  test('POST /api/webhooks/sumsub -> sets kyc to verified', async () => {
+    const r = await request(app).post('/api/webhooks/sumsub').send({
+      user_id: userId,
+      applicant_id: 'app_123',
+      review_status: 'approved',
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(true);
+
+    const k = await userAgent.get('/api/kyc/status');
+    expect(k.status).toBe(200);
+    expect(k.body.data.kyc_status).toBe('verified');
+  });
+});

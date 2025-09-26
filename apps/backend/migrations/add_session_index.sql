@@ -1,0 +1,3 @@
+-- migrations/add_session_index.sql
+-- Note: session_token column doesn't exist in base schema, skipping this migration
+-- CREATE INDEX IF NOT EXISTS idx_user_session_token ON "user"(session_token);
