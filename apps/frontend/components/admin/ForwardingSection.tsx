@@ -67,7 +67,7 @@ interface ForwardingStats {
     canceled: number;
 }
 
-interface ForwardingSectionProps { }
+type ForwardingSectionProps = Record<string, never>;
 
 export function ForwardingSection({ }: ForwardingSectionProps) {
     const [requests, setRequests] = useState<any[]>([]);

@@ -59,7 +59,7 @@ interface AnalyticsData {
     };
 }
 
-interface AnalyticsSectionProps { }
+type AnalyticsSectionProps = Record<string, never>;
 
 export function AnalyticsSection({ }: AnalyticsSectionProps) {
     const [loading, setLoading] = useState(false);

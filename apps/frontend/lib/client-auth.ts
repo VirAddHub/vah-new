@@ -1,6 +1,7 @@
 'use client';
 
-import { apiClient, isOk, ApiResponse, ApiErr } from './api-client';
+import { apiClient, ApiResponse } from './api-client';
+// import { isOk, ApiErr } from './api-client'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
 export class ClientAuthManager {

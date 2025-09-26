@@ -60,7 +60,7 @@ interface Transaction {
     paymentMethod: string;
 }
 
-interface BillingSectionProps { }
+type BillingSectionProps = Record<string, never>;
 
 export function BillingSection({ }: BillingSectionProps) {
     const [loading, setLoading] = useState(false);

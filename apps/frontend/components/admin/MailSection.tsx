@@ -59,7 +59,7 @@ interface MailItem {
     dimensions?: string;
 }
 
-interface MailSectionProps { }
+type MailSectionProps = Record<string, never>;
 
 export function MailSection({ }: MailSectionProps) {
     const [selectedTab, setSelectedTab] = useState("received");

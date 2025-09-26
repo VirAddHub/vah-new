@@ -74,7 +74,7 @@ interface SystemSettings {
     };
 }
 
-interface SettingsSectionProps { }
+type SettingsSectionProps = Record<string, never>;
 
 export function SettingsSection({ }: SettingsSectionProps) {
     const [loading, setLoading] = useState(false);

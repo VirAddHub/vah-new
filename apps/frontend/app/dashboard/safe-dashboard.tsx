@@ -74,7 +74,7 @@ export default function SafeDashboard() {
 
         {!state.profile && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-yellow-800">Couldn't load your profile yet. Some features may be limited.</p>
+            <p className="text-yellow-800">Couldn&apos;t load your profile yet. Some features may be limited.</p>
           </div>
         )}
 
