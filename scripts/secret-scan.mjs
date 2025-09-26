@@ -22,15 +22,21 @@ function main() {
     process.exit(code);
   }
 
-  // Fallback to docker if available
+  // Fallback to docker if available and daemon is running
   if (which('docker')) {
-    console.log('[secret-scan] using docker gitleaks');
-    const code = run('docker', [
-      'run', '--rm', '-v', `${process.cwd()}:/repo`,
-      'zricethezav/gitleaks:latest', 'detect',
-      '-s', '/repo', '--redact'
-    ]);
-    process.exit(code);
+    // Check if Docker daemon is running
+    const dockerCheck = spawnSync('docker', ['info'], { stdio: 'ignore' });
+    if (dockerCheck.status === 0) {
+      console.log('[secret-scan] using docker gitleaks');
+      const code = run('docker', [
+        'run', '--rm', '-v', `${process.cwd()}:/repo`,
+        'zricethezav/gitleaks:latest', 'detect',
+        '-s', '/repo', '--redact'
+      ]);
+      process.exit(code);
+    } else {
+      console.log('[secret-scan] Docker found but daemon not running. Skipping scan.');
+    }
   }
 
   console.warn('[secret-scan] gitleaks not found (local or docker). Skipping scan.');
