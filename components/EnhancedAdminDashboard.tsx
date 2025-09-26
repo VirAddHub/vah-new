@@ -133,11 +133,21 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, []);
 
-    // Load admin data - hoisted into stable useCallback
+    // Load admin data - hoisted into stable useCallback with throttling
     const loadAdminData = useCallback(async () => {
+        // Throttle rapid requests
+        const now = Date.now();
+        if (usersLastLoadedAtRef.current && (now - usersLastLoadedAtRef.current) < 2000) {
+            console.debug('[Users] loadAdminData: throttled');
+            return;
+        }
+        usersLastLoadedAtRef.current = now;
+
         try {
             console.debug('[Users] loadAdminData: start');
             setLoading(true);
+            setError(null);
+            
             // Fetch all users to get accurate totals
             const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
 
@@ -168,6 +178,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     },
                     recent_activity: [] // TODO: Fetch from activity log
                 });
+            } else {
+                setError('Failed to load users data');
             }
         } catch (err) {
             console.debug('[Users] loadAdminData: error', err);
@@ -177,29 +189,28 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, [setUsers, setMetrics, setError, setLoading]);
 
-    // Prefetch users on mount once (safe)
+    // Load all data on mount once
     useEffect(() => {
-        // Prefetch users so the tab has data immediately
-        if (!users || users.length === 0) {
-            console.debug('[Users] Prefetch on mount');
-            void loadAdminData();
-        }
-    }, []); // do not add deps—prefetch only once
+        const loadAllData = async () => {
+            console.debug('[Admin] Loading all data on mount');
+            await Promise.all([
+                loadAdminData(),
+                loadOverview()
+            ]);
+        };
+        
+        void loadAllData();
+    }, []); // Only run once on mount
 
-    // Load overview on mount
-    useEffect(() => {
-        loadOverview();
-    }, [loadOverview]);
-
-    // Fetch when Users tab becomes active
+    // Fetch when Users tab becomes active (only if no data loaded yet)
     useEffect(() => {
         if (activeSection !== 'users') return;
-        // Only fetch if not already loading and nothing loaded yet (or data is empty)
-        if (!loading && (!users || users.length === 0)) {
+        // Only fetch if not already loading and no users data
+        if (!loading && users.length === 0) {
             console.debug('[Users] Tab activated, triggering fetch');
             void loadAdminData();
         }
-    }, [activeSection, loading, users, loadAdminData]);
+    }, [activeSection, loading, users.length, loadAdminData]);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
@@ -212,6 +223,18 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     ] as const;
 
     const renderContent = () => {
+        // Show loading state for overview when data is being loaded initially
+        if (activeSection === "overview" && isLoadingOverview && !metrics) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Loading admin data...</p>
+                    </div>
+                </div>
+            );
+        }
+
         switch (activeSection) {
             case "overview":
                 return <OverviewSection metrics={metrics} overview={overview} />;
