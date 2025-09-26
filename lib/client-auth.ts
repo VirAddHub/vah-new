@@ -6,6 +6,7 @@ import { apiClient } from './api-client';
 export class ClientAuthManager {
   private token: string | null = null;
   private user: any = null;
+  private checkingAuth: boolean = false; // ✅ Prevent multiple simultaneous auth checks
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -50,6 +51,13 @@ export class ClientAuthManager {
   }
 
   async checkAuth() {
+    // 🛑 GUARD CLAUSE: Prevent multiple simultaneous auth checks
+    if (this.checkingAuth) {
+      console.log('Auth check already in progress, skipping...');
+      return this.user; // Return cached user data
+    }
+
+    this.checkingAuth = true;
     try {
       console.log('Checking auth with API client...');
       const response = await apiClient.get('/api/auth/whoami');
@@ -64,6 +72,8 @@ export class ClientAuthManager {
       console.error('Auth check failed:', error);
       this.clearAuth();
       throw error;
+    } finally {
+      this.checkingAuth = false; // ✅ Always reset the flag
     }
   }
 }

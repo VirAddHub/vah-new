@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { safeGet } from '@/lib/safeRequest';
 import { Button } from '@/components/ui/button';
+import { authGuard } from '@/lib/auth-guard';
 
 export default function SafeDashboard() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function SafeDashboard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await safeGet<{ user: any }>('/api/auth/whoami');
+      const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
       if (!me.ok) { 
         router.replace('/login?expired=1'); 
         return; 

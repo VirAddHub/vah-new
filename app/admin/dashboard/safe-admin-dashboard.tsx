@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { safeGet } from '@/lib/safeRequest';
 import { Button } from '@/components/ui/button';
+import { authGuard } from '@/lib/auth-guard';
 
 export default function SafeAdminDashboard() {
   const router = useRouter();
@@ -16,8 +17,8 @@ export default function SafeAdminDashboard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Check if user is admin
-      const me = await safeGet<{ user: any }>('/api/auth/whoami');
+      // Check if user is admin - use global guard to prevent multiple calls
+      const me = await authGuard.checkAuth(() => safeGet<{ user: any }>('/api/auth/whoami'));
       if (!me.ok) { 
         router.replace('/login?expired=1'); 
         return; 

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getErrorMessage, getErrorStack } from '../lib/errors';
 import { apiClient } from '../lib/api-client';
 import { clientAuthManager } from '../lib/client-auth';
+import { authGuard } from '../lib/auth-guard';
 
 // Client-safe logging functions
 const logAuthEvent = async (event: string, data?: any) => {
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 // Always try to check auth, even if localStorage says we're not authenticated
                 // This handles cases where the session cookie is still valid
                 try {
-                    const userData = await clientAuthManager.checkAuth();
+                    const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
                     setUser(userData);
                 } catch (error) {
                     // Only clear auth if we're sure there's no valid session
@@ -219,7 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (isLoading || !authInitialized) return;
         
         try {
-            const userData = await clientAuthManager.checkAuth();
+            const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
             setUser(userData);
         } catch (error) {
             console.error('Failed to refresh user data:', error);
