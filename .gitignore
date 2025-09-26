@@ -99,3 +99,27 @@ tools/mock-api/
 # test outputs (keep the directory; ignore artifacts)
 test-results/**
 !test-results/.gitkeep
+
+
+# === Block frontend artifacts in backend repo ===
+.next/
+out/
+app/
+pages/
+components/
+public/
+styles/
+assets/
+src/app/
+src/pages/
+src/components/
+next.config.*
+postcss.config.*
+tailwind.config.*
+vite.config.*
+webpack.config.*
+.babelrc*
+components.json
+vercel.json
+playwright.config.*
+jest.config.js
