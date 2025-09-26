@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import bcrypt from 'bcrypt';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 // Admin User Creation API Route
 export async function POST(request: NextRequest) {
     try {
