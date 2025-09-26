@@ -149,11 +149,11 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             setLoading(true);
             setError(null);
 
-            // Fetch all users to get accurate totals
+            // Fetch all users to get accurate totals using the correct adminApi
             console.debug('[Users] Making API call to:', '/api/admin/users?page=1&page_size=1000');
-            const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
-            console.debug('[Users] API response:', { 
-                ok: usersResponse.ok, 
+            const usersResponse = await adminApi.users(new URLSearchParams([['page', '1'], ['page_size', '1000']]));
+            console.debug('[Users] API response:', {
+                ok: usersResponse.ok,
                 error: usersResponse.ok ? undefined : usersResponse.error,
                 data: usersResponse.ok ? usersResponse.data : undefined
             });
@@ -383,7 +383,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
                 {renderContent()}
             </main>
-            
+
             {/* Debug Info - Remove this after fixing */}
             <DebugInfo />
         </div>
