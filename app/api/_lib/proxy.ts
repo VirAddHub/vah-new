@@ -18,6 +18,14 @@ export async function proxy(req: NextRequest, backendPath: string) {
     h.set('host', url.host) // avoid host mismatch issues
 
     const res = await fetch(url, init)
+    
+    // Debug logging for 500 errors
+    if (!res.ok) {
+        let body = '';
+        try { body = await res.clone().text(); } catch {}
+        console.error('[proxy:error]', { target: url.toString(), status: res.status, body });
+    }
+    
     const data = await res.arrayBuffer()
     const out = new NextResponse(data, {
         status: res.status,
