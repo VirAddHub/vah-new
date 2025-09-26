@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-react';
-import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { ScrollToTopButton } from '../ScrollToTopButton';
@@ -10,7 +9,7 @@ interface SignupStep3Props {
     onBack: () => void;
     billing: 'monthly' | 'annual';
     price: string;
-    step2Data?: any;
+    step2Data?: unknown;
     isLoading?: boolean;
     error?: string | null;
 }
@@ -44,11 +43,11 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
         },
         {
             step: 2,
-            title: "We'll send your welcome pack with clear next steps."
+            title: "We&apos;ll send your welcome pack with clear next steps."
         },
         {
             step: 3,
-            title: "You'll complete identity verification with Sumsub before your first login (required for compliance)."
+            title: "You&apos;ll complete identity verification with Sumsub before your first login (required for compliance)."
         },
         {
             step: 4,
@@ -243,7 +242,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                             {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
                         </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground">
-                            You'll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
+                            You&apos;ll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
                         </p>
                     </div>
 

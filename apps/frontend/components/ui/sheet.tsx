@@ -1,18 +1,22 @@
 "use client"
 
 import * as React from "react"
-import { Dialog, DialogOverlay } from "@radix-ui/react-dialog"
-// import { Drawer, div, div, div, div, div, div, div } from "vaul"
 import { cn } from "@/lib/utils"
 
 // A minimal Sheet API compatible with shadcn/ui usage.
 // Uses `vaul` under the hood for mobile-friendly drawer behavior.
 
-type SheetProps = React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode };
+type SheetProps = React.HTMLAttributes<HTMLDivElement> & { 
+  children?: React.ReactNode;
+  open?: boolean;
+};
 
-export const Sheet = ({ children, ...props }: SheetProps) => (
-    <div {...props}>{children}</div>
-)
+export const Sheet = React.forwardRef<HTMLDivElement, SheetProps>(function Sheet(
+  { open, children, ...rest },
+  ref
+) {
+  return <div ref={ref} data-open={open ? 'true' : 'false'} {...rest}>{children}</div>;
+});
 
 export const SheetTrigger = ({ children, ...props }: SheetProps) => <div {...props}>{children}</div>
 

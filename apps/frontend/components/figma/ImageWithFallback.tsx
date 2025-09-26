@@ -1,44 +1,41 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 
-interface ImageWithFallbackProps {
-    src: string;
-    alt: string;
-    fallback?: string;
-    className?: string;
-    [key: string]: any;
-}
+type ImageWithFallbackProps = {
+  src: string;
+  alt: string;
+  className?: string;
+  width?: number;
+  height?: number;
+  priority?: boolean;
+  fallbackSrc?: string;
+};
 
 export function ImageWithFallback({
-    src,
-    alt,
-    fallback = '/placeholder-image.png',
-    className = '',
-    ...props
+  src,
+  alt,
+  className,
+  width = 800,
+  height = 600,
+  priority,
+  fallbackSrc,
 }: ImageWithFallbackProps) {
-    const [imgSrc, setImgSrc] = React.useState(src);
-    const [hasError, setHasError] = React.useState(false);
-
-    React.useEffect(() => {
-        setImgSrc(src);
-        setHasError(false);
-    }, [src]);
-
-    const handleError = () => {
-        if (!hasError) {
-            setHasError(true);
-            setImgSrc(fallback);
+  const [currentSrc, setCurrentSrc] = useState(src);
+  return (
+    <Image
+      src={currentSrc}
+      alt={alt}
+      className={className}
+      width={width}
+      height={height}
+      priority={priority}
+      onError={() => {
+        if (fallbackSrc && currentSrc !== fallbackSrc) {
+          setCurrentSrc(fallbackSrc);
         }
-    };
-
-    return (
-        <img
-            src={imgSrc}
-            alt={alt}
-            className={className}
-            onError={handleError}
-            {...props}
-        />
-    );
+      }}
+    />
+  );
 }

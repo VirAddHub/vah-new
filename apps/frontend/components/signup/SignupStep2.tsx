@@ -558,7 +558,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             Continue to Payment
                         </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground mt-4">
-                            Your information is encrypted and secure. We'll create your account in the next step.
+                            Your information is encrypted and secure. We&apos;ll create your account in the next step.
                         </p>
                     </div>
                 </form>

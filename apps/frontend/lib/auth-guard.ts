@@ -1,13 +1,13 @@
 // Global auth check guard to prevent multiple simultaneous whoami calls
 let globalAuthCheckInProgress = false;
-let globalAuthCheckPromise: Promise<any> | null = null;
+let globalAuthCheckPromise: Promise<unknown> | null = null;
 
 export const authGuard = {
-  async checkAuth(checkFunction: () => Promise<any>): Promise<any> {
+  async checkAuth<T>(checkFunction: () => Promise<T>): Promise<T> {
     // If a check is already in progress, return the existing promise
     if (globalAuthCheckInProgress && globalAuthCheckPromise) {
       console.log('Auth check already in progress globally, returning existing promise');
-      return globalAuthCheckPromise;
+      return globalAuthCheckPromise as Promise<T>;
     }
 
     // Start new auth check
@@ -16,7 +16,7 @@ export const authGuard = {
 
     try {
       const result = await globalAuthCheckPromise;
-      return result;
+      return result as T;
     } finally {
       // Always reset the global state
       globalAuthCheckInProgress = false;
