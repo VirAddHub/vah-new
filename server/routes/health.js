@@ -17,10 +17,10 @@ router.get('/api/health', async (req, res) => {
     res.json({ ok: true, database: 'connected' });
   } catch (error) {
     console.error('[health] Database connection failed:', error.message);
-    res.status(500).json({ 
-      ok: false, 
+    res.status(500).json({
+      ok: false,
       database: 'disconnected',
-      error: error.message 
+      error: error.message
     });
   }
 });

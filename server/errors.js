@@ -17,11 +17,11 @@ function errorMiddleware(err, req, res, next) {
         url: req.originalUrl,
         method: req.method
     });
-    
+
     const status = typeof err?.status === 'number' ? err.status : 500;
     const message = err?.message || 'Server error';
     const code = err?.code;
-    
+
     res.status(status).json({ message, code });
 }
 
