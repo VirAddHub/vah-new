@@ -8,15 +8,17 @@ import { cn } from "@/lib/utils"
 // A minimal Sheet API compatible with shadcn/ui usage.
 // Uses `vaul` under the hood for mobile-friendly drawer behavior.
 
-export const Sheet = ({ children, ...props }: any) => (
+type SheetProps = React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode };
+
+export const Sheet = ({ children, ...props }: SheetProps) => (
     <div {...props}>{children}</div>
 )
 
-export const SheetTrigger = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const SheetTrigger = ({ children, ...props }: SheetProps) => <div {...props}>{children}</div>
 
-export const SheetClose = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const SheetClose = ({ children, ...props }: SheetProps) => <div {...props}>{children}</div>
 
-export const SheetPortal = ({ children, ...props }: any) => <div {...props}>{children}</div>
+export const SheetPortal = ({ children, ...props }: SheetProps) => <div {...props}>{children}</div>
 
 export const SheetOverlay = React.forwardRef<
     HTMLDivElement,

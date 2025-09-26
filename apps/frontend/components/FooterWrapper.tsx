@@ -1,9 +1,10 @@
 "use client";
 
 import { Footer } from './Footer';
+import { UnknownRecord } from '../lib/types';
 
 export function FooterWrapper() {
-    const handleNavigate = (page: string, data?: any) => {
+    const handleNavigate = (page: string, data?: UnknownRecord) => {
         // Handle navigation based on your actual page structure
         switch (page) {
             case 'home':
