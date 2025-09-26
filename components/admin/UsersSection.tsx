@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi } from "../../lib/api-client";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -20,17 +20,20 @@ type AdminUser = {
   deleted_at?: string;
 };
 
-export default function UsersSection() {
+interface UsersSectionProps {
+  users: any[];
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+}
+
+export default function UsersSection({ users, loading, error, onRefresh }: UsersSectionProps) {
   const { toast } = useToast();
   
   // Search and pagination state
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-    const [isFetching, setIsFetching] = useState(false);
-  const [items, setItems] = useState<AdminUser[]>([]);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState<string | null>(null);
 
   // Deleted users view toggle
   const [showDeleted, setShowDeleted] = useState(false);
@@ -54,54 +57,10 @@ export default function UsersSection() {
   // Mutation state
     const [isMutating, setIsMutating] = useState(false);
 
-  // Debounce and abort handling
-  const abortRef = useRef<AbortController | null>(null);
-
-  const load = useCallback(async (searchQuery?: string) => {
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setIsFetching(true);
-    setError(null);
-    
-    try {
-      const params = new URLSearchParams({
-        q: (searchQuery ?? q).trim(),
-        page: String(page),
-        page_size: String(pageSize),
-        ...(showDeleted ? { include_deleted: 'true' } : {}),
-      });
-
-      const res = await adminApi.users(params, { signal: controller.signal });
-      if (res.ok) {
-        setItems(res.data?.items ?? []);
-        setTotal(Number(res.data?.total ?? 0));
-      } else {
-        setItems([]);
-        setTotal(0);
-        setError("Failed to load users");
-      }
-    } catch (e) {
-      if ((e as any).name !== "AbortError") {
-        console.error(e);
-        setError("Network error while fetching users");
-      }
-        } finally {
-      if (abortRef.current === controller) setIsFetching(false);
-    }
-  }, [q, page, pageSize, showDeleted]);
-
-  // Debounce the query (300ms)
+  // Reset page when search changes
   useEffect(() => {
-    const t = setTimeout(() => {
-      setPage(1); // only reset page AFTER debounce, not on each key stroke
-      void load(q);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [q, load]);
-
-  // Initial load and when page/deleted status changes
-  useEffect(() => { void load(); }, [page, pageSize, showDeleted, load]);
+    setPage(1);
+  }, [q]);
 
     // Load user stats
   const loadUserStats = useCallback(async () => {
@@ -130,33 +89,18 @@ export default function UsersSection() {
     
     setIsMutating(true);
     
-    // Optimistic update - remove user from list immediately
-    const deletedUser = items.find(u => u.id === id);
-    setItems(prev => prev.filter(u => u.id !== id));
-    setTotal(prev => Math.max(0, prev - 1));
-    
     try {
       const res = await adminApi.deleteUser(id);
       if (!res.ok) throw new Error(res.error || 'delete_failed');
       
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
       
-      // If we deleted the last item on the last page, go back a page
-      if (items.length === 1 && page > 1) {
-        setPage(page - 1);
-      }
-      
-      // Force reload with cache-buster to ensure fresh data
-      await Promise.all([load(), loadUserStats()]);
+      // Refresh data from parent
+      await Promise.all([onRefresh(), loadUserStats()]);
     } catch (e: any) {
-      // Revert optimistic update on error
-      if (deletedUser) {
-        setItems(prev => [...prev, deletedUser].sort((a, b) => a.id.localeCompare(b.id)));
-        setTotal(prev => prev + 1);
-      }
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
-        } finally {
-            setIsMutating(false);
+    } finally {
+      setIsMutating(false);
       setDeleteModal(null); 
       setDeleteConfirm(''); 
     }
@@ -178,8 +122,8 @@ export default function UsersSection() {
       
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
       
-      // Reload to refresh the list
-      await Promise.all([load(), loadUserStats()]);
+      // Refresh data from parent
+      await Promise.all([onRefresh(), loadUserStats()]);
       
       // Close modal
       setRestoreModal(null);
@@ -191,8 +135,34 @@ export default function UsersSection() {
     }
   }
 
+  // Local filtering of users prop
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+    
+    // Apply search filter
+    if (q.trim()) {
+      const searchTerm = q.trim().toLowerCase();
+      filtered = filtered.filter((u: any) => 
+        u.email?.toLowerCase().includes(searchTerm) ||
+        u.first_name?.toLowerCase().includes(searchTerm) ||
+        u.last_name?.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Apply deleted filter
+    if (!showDeleted) {
+      filtered = filtered.filter((u: any) => !u.deleted_at);
+    }
+    
+    return filtered;
+  }, [users, q, showDeleted]);
+
   // Pagination helpers
-  const hasNext = useMemo(() => page * pageSize < total, [page, pageSize, total]);
+  const totalFiltered = filteredUsers.length;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const hasNext = useMemo(() => endIndex < totalFiltered, [endIndex, totalFiltered]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
     return (
@@ -212,31 +182,32 @@ export default function UsersSection() {
             <div className="flex items-center justify-between">
                 <div>
           <h2 className="text-xl font-semibold">Users</h2>
-          <p className="text-sm text-muted-foreground">Total: {total}</p>
+          <p className="text-sm text-muted-foreground">Total: {users.length}</p>
                             </div>
                             <div className="flex gap-2">
-                                <Button
-            variant={showDeleted ? "default" : "outline"}
-                                    size="sm"
-            onClick={() => {
-              setShowDeleted(!showDeleted);
-              setPage(1);
-              void load();
-            }}
-          >
-            {showDeleted ? 'Hide deleted' : 'Show deleted'}
-                                </Button>
+          <Button variant="outline" onClick={onRefresh} disabled={loading}>
+            Refresh
+          </Button>
           <Input
             placeholder="Search name or email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-60"
           />
-          <Button variant="outline" onClick={() => load()} disabled={isFetching}>
-            Search
-                                </Button>
                             </div>
                         </div>
+
+      {/* Loading and error states */}
+      {loading && (
+        <div className="text-center py-4 text-muted-foreground">
+          Loading users…
+        </div>
+      )}
+      {error && (
+        <div className="text-center py-4 text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Users table */}
                             <div className="relative">
@@ -254,14 +225,14 @@ export default function UsersSection() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-              {items.length === 0 ? (
+              {paginatedUsers.length === 0 ? (
                                 <TableRow>
                   <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                items.map((u) => (
+                paginatedUsers.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell>{u.email}</TableCell>
                                         <TableCell>
@@ -308,7 +279,7 @@ export default function UsersSection() {
             </div>
 
         {/* Loading overlay */}
-        {isFetching && (
+        {loading && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
             <span className="text-sm">Loading…</span>
           </div>
@@ -318,12 +289,12 @@ export default function UsersSection() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Page {page} • {total} total
+          Page {page} • {totalFiltered} total
                             </div>
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
-            disabled={!hasPrev || isFetching}
+            disabled={!hasPrev || loading}
             onClick={() => {
               const next = Math.max(1, page - 1);
               setPage(next);
@@ -333,7 +304,7 @@ export default function UsersSection() {
                                 </Button>
                                 <Button
                                     variant="outline"
-            disabled={!hasNext || isFetching}
+            disabled={!hasNext || loading}
             onClick={() => {
               const next = page + 1;
               setPage(next);

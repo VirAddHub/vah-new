@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiClient, type User, type MailItem, type ForwardingRequest } from "@/lib/api-client";
 import { Button } from "../ui/button";
 import {
@@ -115,46 +115,47 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
         totalRevenue: 0
     });
 
+    // Load admin data - hoisted into stable useCallback
+    const loadAdminData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const [usersResponse, mailResponse, forwardingResponse] = await Promise.all([
+                apiClient.get('/api/admin/users'),
+                apiClient.get('/api/admin/mail-items'),
+                apiClient.get('/api/admin/forwarding-requests')
+            ]);
+
+            if (usersResponse.ok) {
+                setUsers(usersResponse.data || []);
+                setStats(prev => ({ ...prev, totalUsers: usersResponse.data?.length || 0 }));
+            }
+
+            if (mailResponse.ok) {
+                setMailItems(mailResponse.data || []);
+                setStats(prev => ({ ...prev, totalMail: mailResponse.data?.length || 0 }));
+            }
+
+            if (forwardingResponse.ok) {
+                const requests = forwardingResponse.data || [];
+                setForwardingRequests(requests);
+                const pending = requests.filter((r: any) => r.status === 'pending').length;
+                setStats(prev => ({ ...prev, pendingForwarding: pending }));
+            }
+
+        } catch (err) {
+            console.error('Failed to load admin data:', err);
+            setError('Failed to load admin data');
+        } finally {
+            setLoading(false);
+        }
+    }, [setUsers, setMailItems, setForwardingRequests, setStats, setLoading, setError]);
+
     // Load admin data
     useEffect(() => {
-        const loadAdminData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                const [usersResponse, mailResponse, forwardingResponse] = await Promise.all([
-                    apiClient.get('/api/admin/users'),
-                    apiClient.get('/api/admin/mail-items'),
-                    apiClient.get('/api/admin/forwarding-requests')
-                ]);
-
-                if (usersResponse.ok) {
-                    setUsers(usersResponse.data || []);
-                    setStats(prev => ({ ...prev, totalUsers: usersResponse.data?.length || 0 }));
-                }
-
-                if (mailResponse.ok) {
-                    setMailItems(mailResponse.data || []);
-                    setStats(prev => ({ ...prev, totalMail: mailResponse.data?.length || 0 }));
-                }
-
-                if (forwardingResponse.ok) {
-                    const requests = forwardingResponse.data || [];
-                    setForwardingRequests(requests);
-                    const pending = requests.filter((r: any) => r.status === 'pending').length;
-                    setStats(prev => ({ ...prev, pendingForwarding: pending }));
-                }
-
-            } catch (err) {
-                console.error('Failed to load admin data:', err);
-                setError('Failed to load admin data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadAdminData();
-    }, []);
+    }, [loadAdminData]);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
@@ -209,7 +210,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
             case "overview":
                 return <OverviewSection />;
             case "users":
-                return <UsersSection />;
+                return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} />;
             case "mail":
                 return <MailSection />;
             case "forwarding":

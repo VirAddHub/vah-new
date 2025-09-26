@@ -130,52 +130,56 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, []);
 
-    // Load admin data
-    useEffect(() => {
-        const loadAdminData = async () => {
-            try {
-                setLoading(true);
-                // Fetch all users to get accurate totals
-                const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
+    // Load admin data - hoisted into stable useCallback
+    const loadAdminData = useCallback(async () => {
+        try {
+            setLoading(true);
+            // Fetch all users to get accurate totals
+            const usersResponse = await apiClient.get('/api/admin/users?page=1&page_size=1000');
 
-                if (usersResponse.ok) {
-                    const userData = safe(usersResponse.data?.items, []);
-                    setUsers(userData);
+            if (usersResponse.ok) {
+                const userData = safe(usersResponse.data?.items, []);
+                setUsers(userData);
 
-                    // Calculate real metrics from user data
-                    const totalUsers = userData.length;
-                    const activeUsers = userData.filter((u: any) => u.status === 'active').length;
-                    const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
-                    const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
+                // Calculate real metrics from user data
+                const totalUsers = userData.length;
+                const activeUsers = userData.filter((u: any) => u.status === 'active').length;
+                const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
+                const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
 
-                    // Set calculated metrics
-                    setMetrics({
-                        totals: {
-                            users: totalUsers,
-                            active_users: activeUsers,
-                            pending_kyc: pendingKyc,
-                            suspended_users: suspendedUsers,
-                            monthly_revenue_pence: 0, // Will be loaded by overview
-                            mail_processed: 0, // Will be loaded by overview
-                            active_forwards: 0  // Will be loaded by overview
-                        },
-                        system_health: {
-                            status: 'operational'
-                        },
-                        recent_activity: [] // TODO: Fetch from activity log
-                    });
-                }
-            } catch (err) {
-                setError('Failed to load admin data');
-                console.error('Error loading admin data:', err);
-            } finally {
-                setLoading(false);
+                // Set calculated metrics
+                setMetrics({
+                    totals: {
+                        users: totalUsers,
+                        active_users: activeUsers,
+                        pending_kyc: pendingKyc,
+                        suspended_users: suspendedUsers,
+                        monthly_revenue_pence: 0, // Will be loaded by overview
+                        mail_processed: 0, // Will be loaded by overview
+                        active_forwards: 0  // Will be loaded by overview
+                    },
+                    system_health: {
+                        status: 'operational'
+                    },
+                    recent_activity: [] // TODO: Fetch from activity log
+                });
             }
-        };
+        } catch (err) {
+            setError('Failed to load admin data');
+            console.error('Error loading admin data:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [setUsers, setMetrics, setError, setLoading]);
 
-        loadAdminData();
-        loadOverview();
-    }, [loadOverview]);
+    // Load admin data and overview
+    useEffect(() => {
+        const initializeData = async () => {
+            await loadAdminData();
+            await loadOverview();
+        };
+        initializeData();
+    }, [loadAdminData, loadOverview]);
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
@@ -192,7 +196,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "overview":
                 return <OverviewSection metrics={metrics} overview={overview} />;
             case "users":
-                return <UsersSection />;
+                return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} />;
             case "mail":
                 return <MailSection />;
             case "forwarding":
