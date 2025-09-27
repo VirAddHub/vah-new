@@ -1,0 +1,5 @@
+# Specific files to ignore during migration
+.next/
+out/
+dist/
+*.tsbuildinfo

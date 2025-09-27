@@ -1,0 +1,28 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "ES2020",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "allowJs": true,
+        "checkJs": false,
+        "noEmit": false,
+        "outDir": "./dist"
+    },
+    "include": [
+        "server/**/*",
+        "routes/**/*",
+        "lib/**/*",
+        "middleware/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        ".next",
+        "dist",
+        "app",
+        "src"
+    ]
+}

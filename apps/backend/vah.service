@@ -1,0 +1,27 @@
+[Unit]
+Description=Virtual Address Hub Mailroom System
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/srv/vah
+Environment=NODE_ENV=production
+Environment=DEV_MODE=0
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vah
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/vah/data
+ReadWritePaths=/srv/vah/logs
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Check if Docker is available for secret scanning
+command -v docker >/dev/null 2>&1 || {
+  echo "[pre-commit] Docker not found; skipping secret scan."
+  exit 0
+}
+
+# Run secret scan if Docker is available
+node scripts/secret-scan.mjs || exit 1
