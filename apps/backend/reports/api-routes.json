@@ -1,9 +1,5 @@
 [
   {
-    "method": "POST",
-    "path": "/{param}/signed-url"
-  },
-  {
     "method": "GET",
     "path": "/api/admin/invoices"
   },
@@ -192,95 +188,7 @@
     "path": "/api/webhooks/sumsub"
   },
   {
-    "method": "POST",
-    "path": "/backfill-expiry"
-  },
-  {
     "method": "GET",
     "path": "/csrf"
-  },
-  {
-    "method": "GET",
-    "path": "/email-prefs"
-  },
-  {
-    "method": "POST",
-    "path": "/email-prefs"
-  },
-  {
-    "method": "GET",
-    "path": "/export-jobs/ping"
-  },
-  {
-    "method": "POST",
-    "path": "/export-jobs/run-once"
-  },
-  {
-    "method": "GET",
-    "path": "/export/{param}"
-  },
-  {
-    "method": "POST",
-    "path": "/export/request"
-  },
-  {
-    "method": "GET",
-    "path": "/export/status"
-  },
-  {
-    "method": "POST",
-    "path": "/forward"
-  },
-  {
-    "method": "POST",
-    "path": "/fts/rebuild"
-  },
-  {
-    "method": "POST",
-    "path": "/fts"
-  },
-  {
-    "method": "GET",
-    "path": "/"
-  },
-  {
-    "method": "GET",
-    "path": "/mail-audit"
-  },
-  {
-    "method": "PATCH",
-    "path": "/mail-items/{param}"
-  },
-  {
-    "method": "POST",
-    "path": "/mail-items/bulk"
-  },
-  {
-    "method": "POST",
-    "path": "/mark-read"
-  },
-  {
-    "method": "POST",
-    "path": "/"
-  },
-  {
-    "method": "POST",
-    "path": "/reset-password-request"
-  },
-  {
-    "method": "POST",
-    "path": "/reset-password"
-  },
-  {
-    "method": "GET",
-    "path": "/search/test"
-  },
-  {
-    "method": "GET",
-    "path": "/search"
-  },
-  {
-    "method": "POST",
-    "path": "/start"
   }
 ]
