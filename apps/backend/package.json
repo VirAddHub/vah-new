@@ -69,7 +69,13 @@
     "repo:tidy": "bash scripts/repo-tidy.sh",
     "repo:tidy:dry": "bash scripts/repo-tidy.sh --dry-run"
   },
-  "keywords": ["backend", "api", "express", "postgresql", "virtual-address"],
+  "keywords": [
+    "backend",
+    "api",
+    "express",
+    "postgresql",
+    "virtual-address"
+  ],
   "author": "Virtual Address Hub",
   "license": "ISC",
   "engines": {
@@ -112,6 +118,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "6.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/compression": "1.8.1",
     "@types/connect-pg-simple": "7.0.3",
     "@types/cookie-parser": "1.4.9",

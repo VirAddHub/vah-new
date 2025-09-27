@@ -1,0 +1,194 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/admin/invoices"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/mail-bulk"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/mail-items/{param}"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/mail-items/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/mail-items"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/plans/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/plans"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/support/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/support"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/users/{param}/kyc-status"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/admin/users/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/users"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/logout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/whoami"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/invoices/{param}/link"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/invoices"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing"
+  },
+  {
+    "method": "GET",
+    "path": "/api/debug/db-info"
+  },
+  {
+    "method": "GET",
+    "path": "/api/debug/whoami"
+  },
+  {
+    "method": "GET",
+    "path": "/api/downloads/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/forwarding-requests/usage"
+  },
+  {
+    "method": "GET",
+    "path": "/api/forwarding-requests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/gdpr-export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/healthz"
+  },
+  {
+    "method": "GET",
+    "path": "/api/mail-items/{param}/history"
+  },
+  {
+    "method": "GET",
+    "path": "/api/mail-items/{param}/scan-url"
+  },
+  {
+    "method": "GET",
+    "path": "/api/mail-items/{param}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/mail-items"
+  },
+  {
+    "method": "GET",
+    "path": "/api/mail-search"
+  },
+  {
+    "method": "POST",
+    "path": "/api/mail/forward"
+  },
+  {
+    "method": "POST",
+    "path": "/api/me/address/assign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/me/address"
+  },
+  {
+    "method": "GET",
+    "path": "/api/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/notifications/unread"
+  },
+  {
+    "method": "POST",
+    "path": "/api/payments/redirect-flows"
+  },
+  {
+    "method": "GET",
+    "path": "/api/payments/subscriptions/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/payments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/plans"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/profile/address"
+  },
+  {
+    "method": "GET",
+    "path": "/api/profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/ready"
+  },
+  {
+    "method": "POST",
+    "path": "/api/support"
+  },
+  {
+    "method": "POST",
+    "path": "/api/webhooks-gc"
+  },
+  {
+    "method": "POST",
+    "path": "/api/webhooks-postmark"
+  },
+  {
+    "method": "GET",
+    "path": "/api/webhooks/gc"
+  },
+  {
+    "method": "POST",
+    "path": "/api/webhooks/sumsub"
+  },
+  {
+    "method": "GET",
+    "path": "/csrf"
+  }
+]
