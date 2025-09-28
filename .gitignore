@@ -120,4 +120,4 @@ apps/frontend/out/
 **/setup_live_users.ps1
 
 # local history/scratch
-.history/
+.history/replace-map.txt
