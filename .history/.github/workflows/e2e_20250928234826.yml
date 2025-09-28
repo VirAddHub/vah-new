@@ -1,0 +1,28 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci --include=dev
+
+      - name: Run e2e tests against deployed API
+        env:
+          BASE_URL: https://vah-api-staging.onrender.com
+          AUTH_TOKEN: ${{ secrets.E2E_AUTH_TOKEN }} # optional
+        run: npm run test:e2e
