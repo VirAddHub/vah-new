@@ -79,3 +79,46 @@ node_modules/
 
 # TernJS port file
 .tern-port
+
+# Security: Stop tracking sensitive files
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+# seed/login fixtures & cookies
+**/seed-users.mjs
+**/scripts/seed.cjs
+**/scripts/create-admin-users.cjs
+**/scripts/create-users-via-api.mjs
+**/login.json
+**/bff.cookies.txt
+**/*.cookies.txt
+**/admin*.cookies.txt
+**/user*.cookies.txt
+**/test*.cookies.txt
+**/backend-cookie.txt
+**/bff-cookie.txt
+**/cookie.txt
+**/cookies.txt
+**/admin_cookies.txt
+**/admin2_cookies.txt
+**/user_cookies.txt
+**/user2_cookies.txt
+**/test_cookies.txt
+**/test_auth_debug.ps1
+**/test_complete_auth.ps1
+**/test_debug_routes.ps1
+**/test-endpoints.ps1
+**/test-key-endpoints.ps1
+**/test-rest-collection.ps1
+**/final_auth_test.ps1
+**/test-auth.mjs
+**/test-contact.sh
+**/test-search.js
+**/test-login.html
+**/run-comprehensive-test.ps1
+**/setup_live_users.ps1
+# logs/history
+.history/
+*.log
