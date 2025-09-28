@@ -47,7 +47,7 @@ function loadRouter(p) {
 }
 
 // Safe middleware loader - import from compiled util
-const { asMiddleware: asMw } = require('../dist/src/server/util/asMiddleware');
+const { asMiddleware: asMw } = require('./util/asMiddleware');
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
