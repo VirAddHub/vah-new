@@ -2,8 +2,68 @@
   "generated": "2025-09-28T03:00:05.051Z",
   "version": "0.1.0-draft",
   "canonical": {
-    "count": 32,
+    "count": 36,
     "routes": [
+      {
+        "method": "GET",
+        "path": "/healthz",
+        "routerFile": "server/index.js (inline)",
+        "status": "canonical",
+        "auth": false,
+        "csrf": false,
+        "stream": false,
+        "webhook": false,
+        "public": true,
+        "role": null,
+        "tags": [
+          "health"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/healthz",
+        "routerFile": "server/index.js (inline)",
+        "status": "canonical",
+        "auth": false,
+        "csrf": false,
+        "stream": false,
+        "webhook": false,
+        "public": true,
+        "role": null,
+        "tags": [
+          "health"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/ready",
+        "routerFile": "server/index.js (inline)",
+        "status": "canonical",
+        "auth": false,
+        "csrf": false,
+        "stream": false,
+        "webhook": false,
+        "public": true,
+        "role": null,
+        "tags": [
+          "health"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/ping",
+        "routerFile": "server/index.js (inline)",
+        "status": "canonical",
+        "auth": false,
+        "csrf": false,
+        "stream": false,
+        "webhook": false,
+        "public": true,
+        "role": null,
+        "tags": [
+          "auth"
+        ]
+      },
       {
         "method": "GET",
         "path": "/api/admin/analytics",
@@ -380,15 +440,17 @@
       {
         "method": "GET",
         "path": "/api/plans",
-        "routerFile": "public/plans.ts",
+        "routerFile": "server/index.js (inline)",
         "status": "canonical",
-        "auth": true,
+        "auth": false,
         "csrf": false,
         "stream": false,
         "webhook": false,
-        "public": false,
+        "public": true,
         "role": null,
-        "tags": []
+        "tags": [
+          "billing"
+        ]
       },
       {
         "method": "GET",
@@ -2171,12 +2233,28 @@
         "public": false,
         "role": null,
         "tags": []
+      },
+      {
+        "method": "GET",
+        "path": "/plans",
+        "routerFile": "server/index.js (inline)",
+        "status": "deprecated",
+        "auth": false,
+        "csrf": false,
+        "stream": false,
+        "webhook": false,
+        "public": true,
+        "role": null,
+        "tags": [
+          "billing"
+        ],
+        "aliasOf": "/api/plans"
       }
     ]
   },
   "summary": {
-    "totalCanonical": 32,
-    "totalDeprecated": 117,
+    "totalCanonical": 36,
+    "totalDeprecated": 118,
     "byTag": {
       "admin": 18,
       "billing": 2,

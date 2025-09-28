@@ -4,21 +4,21 @@ const { body, param, validationResult } = require('express-validator');
 
 // Integration configuration helper
 const isConfigured = (name) => {
-  if (name === 'gocardless') {
-    return !!(process.env.GOCARDLESS_ACCESS_TOKEN && process.env.GOCARDLESS_WEBHOOK_SECRET);
-  }
-  if (name === 'sumsub') {
-    return !!(process.env.SUMSUB_API_KEY && process.env.SUMSUB_WEBHOOK_SECRET);
-  }
-  return false;
+    if (name === 'gocardless') {
+        return !!(process.env.GOCARDLESS_ACCESS_TOKEN && process.env.GOCARDLESS_WEBHOOK_SECRET);
+    }
+    if (name === 'sumsub') {
+        return !!(process.env.SUMSUB_API_KEY && process.env.SUMSUB_WEBHOOK_SECRET);
+    }
+    return false;
 };
 
 function notImplemented(res, provider) {
-  return res.status(501).json({
-    ok: false,
-    error: `${provider} integration is not configured`,
-    configured: false,
-  });
+    return res.status(501).json({
+        ok: false,
+        error: `${provider} integration is not configured`,
+        configured: false,
+    });
 }
 
 function buildLegacyRouter(deps = {}) {

@@ -8,17 +8,17 @@ const SLIDE_AFTER_SECS = Number(process.env.SLIDE_AFTER_SECS || 60 * 5);
 // Public-aware wrapper so any router using requireAuth won't guard public endpoints.
 // IMPORTANT: use originalUrl (full mount path), not req.path (router-relative).
 const PUBLIC_PATTERNS = [
-  /^\/healthz$/,
-  /^\/api\/healthz$/,
-  /^\/api\/ready$/,
-  /^\/api\/auth\/ping$/,
-  /^\/api\/plans(?:\/.*)?$/, // GET-only logic happens in the route, but bypass auth here
-  /^\/plans$/,               // legacy alias
-  /^\/scans\/.*/,            // static/public scans
+    /^\/healthz$/,
+    /^\/api\/healthz$/,
+    /^\/api\/ready$/,
+    /^\/api\/auth\/ping$/,
+    /^\/api\/plans(?:\/.*)?$/, // GET-only logic happens in the route, but bypass auth here
+    /^\/plans$/,               // legacy alias
+    /^\/scans\/.*/,            // static/public scans
 ];
 function isPublic(req) {
-  const raw = (req.originalUrl || req.url || '').split('?')[0];
-  return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
+    const raw = (req.originalUrl || req.url || '').split('?')[0];
+    return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
 }
 
 function nowSec() { return Math.floor(Date.now() / 1000); }

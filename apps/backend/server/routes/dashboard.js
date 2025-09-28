@@ -11,18 +11,18 @@ const pool = new Pool({
 
 // Authentication middleware with public path bypass
 const PUBLIC_PATTERNS = [
-  /^\/healthz$/,
-  /^\/api\/healthz$/,
-  /^\/api\/ready$/,
-  /^\/api\/auth\/ping$/,
-  /^\/api\/plans(?:\/.*)?$/,
-  /^\/plans$/,
-  /^\/scans\/.*/,
+    /^\/healthz$/,
+    /^\/api\/healthz$/,
+    /^\/api\/ready$/,
+    /^\/api\/auth\/ping$/,
+    /^\/api\/plans(?:\/.*)?$/,
+    /^\/plans$/,
+    /^\/scans\/.*/,
 ];
 
 function isPublic(req) {
-  const raw = (req.originalUrl || req.url || '').split('?')[0];
-  return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
+    const raw = (req.originalUrl || req.url || '').split('?')[0];
+    return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
 }
 
 const requireAuth = (req, res, next) => {
