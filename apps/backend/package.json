@@ -64,6 +64,7 @@
     "dev:bypass:on": "cross-env DEV_MODE=1 node server.js",
     "smoke": "node scripts/smoke-e2e.mjs",
     "smoke:prod": "node scripts/smoke-production.mjs",
+    "dev:local": "PORT=8080 DISABLE_SQLITE=true DATABASE_URL=postgresql://test:test@localhost:5432/test node dist/server/index.js", // pragma: allowlist secret
     "start:prod": "NODE_ENV=production node server.js",
     "build:prod": "NODE_ENV=production npm run build:backend",
     "deploy:check": "NODE_ENV=production npm run db:integrity && echo '✅ Database integrity check passed'",
