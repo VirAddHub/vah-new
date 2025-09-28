@@ -64,6 +64,9 @@ const compression = require('compression');
 const morgan = require('morgan');
 const { db } = require('./db.js');
 
+// Import shared DB pool for public routes
+const { pool } = require('./db.js');
+
 // --- safe table helpers ---
 async function tableExists(name) {
     try {
@@ -90,7 +93,7 @@ app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // Health check routes - before any middleware
 app.get("/healthz", (req, res) => res.status(200).send("ok"));
-app.get("/ready", (req, res) => res.status(200).json({status: "ready"}));
+app.get("/ready", (req, res) => res.status(200).json({ status: "ready" }));
 
 // CORS configuration - MUST be at the very top before any other middleware
 const { makeCors } = require('./cors.js');
@@ -101,14 +104,15 @@ app.use(asMw(makeCors, 'cors'));
 // OPTIONS requests are handled by cors middleware above
 
 // ---- PUBLIC BASICS (mount very early) ----
-app.get('/healthz', (_req, res) => res.status(200).json({ ok: true, service: 'backend' }));
 app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true, service: 'api' }));
 app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true, ready: true }));
 app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: true }));
 
 // ---- PUBLIC PLANS ROUTER (mount before any auth) ----
 const publicPlans = require('./routes/public/plans');
-app.use('/api', asMw(publicPlans, 'publicPlans'));
+if (!process.env.DISABLE_PUBLIC_PLANS_ROUTER) {
+    app.use('/api', asMw(publicPlans, 'publicPlans'));
+}
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
 app.get('/plans', (req, res) => {
@@ -176,6 +180,27 @@ app.use(express.json());
 // PostgreSQL session store for production
 app.use(asMw(sessions, 'sessions'));
 
+// Minimal user endpoints - early in chain but after body parsers
+app.get("/api/me", (req, res) => {
+    if (!req.session?.user) {
+        return res.status(401).json({ ok: false, error: { code: "UNAUTHENTICATED", message: "Not logged in" } });
+    }
+    const { id, email, name, roles } = req.session.user;
+    res.json({ ok: true, data: { user: { id, email, name, roles: roles ?? [] } } });
+});
+
+app.patch("/api/me/profile", (req, res, next) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ ok: false, error: { code: "UNAUTHENTICATED", message: "Not logged in" } });
+        }
+        const { name, avatarUrl, marketingOptIn } = req.body ?? {};
+        // TODO: persist to DB with req.session.user.id
+        req.session.user = { ...req.session.user, name, avatarUrl, marketingOptIn };
+        res.json({ ok: true, data: { user: req.session.user } });
+    } catch (e) { next(e); }
+});
+
 // Compression
 app.use(compression());
 
@@ -189,41 +214,31 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// ---- PROXY GATING (only if explicitly enabled) ----
+const proxyTarget = process.env.BACKEND_API_ORIGIN || process.env.RENDER_DEPLOYMENT_URL || '';
+const useProxy = process.env.USE_REMOTE_PROXY === '1' && !!proxyTarget;
+
+if (useProxy) {
+    console.log(`[boot] Remote proxy enabled: ${proxyTarget}`);
+    const { createProxyMiddleware } = require('http-proxy-middleware');
+    app.use('/api', createProxyMiddleware({
+        target: proxyTarget,
+        changeOrigin: true,
+        xfwd: true,
+        onProxyReq: (proxyReq) => {
+            proxyReq.setHeader('x-local-dev', '1');
+        },
+    }));
+} else {
+    console.log('[boot] Remote proxy disabled - serving locally');
+}
+
 
 // --- PUBLIC ENDPOINTS (idempotent) ---
 if (!app._publicMounted) {
-    // health / ready
-    app.get('/healthz', (_req, res) => res.status(200).send('ok'));
-    app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true }));
+    // health / ready (already defined above)
 
-    // plans (GET-only) + legacy alias
-    const allowGetOnly = (req, res, next) => {
-        if (req.method !== 'GET') {
-            res.set('Allow', 'GET');
-            return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
-        }
-        next();
-    };
-    app.use('/api/plans', allowGetOnly);
-    app.get('/api/plans', (_req, res) => {
-        // Avoid accidental 500s: serve a safe stub if real service isn't wired
-        res.status(200).json({
-            ok: true,
-            data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }],
-        });
-    });
-    app.get('/plans', (_req, res) => {
-        res.set('Deprecation', 'true');
-        res.set('Link', '</api/plans>; rel="canonical"');
-        res.status(200).json({
-            ok: true,
-            deprecated: true,
-            canonical: '/api/plans',
-            data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }],
-        });
-    });
+    // plans are handled by the public plans router mounted above
 
     // smoke-test targeted 404 that must beat router auth
     app.all('/api/invalid-endpoint', (_req, res) =>
@@ -570,6 +585,7 @@ app.listen(PORT, HOST, () => {
     console.log(`[boot] listening on http://${HOST}:${PORT}`);
     console.log(`[boot] CORS origins: ${process.env.CORS_ORIGINS || 'default'}`);
     console.log(`[boot] DATABASE_URL: ${process.env.DATABASE_URL ? 'set' : 'not set'}`);
+    console.log(`[boot] Remote proxy: ${useProxy ? proxyTarget : 'disabled'}`);
     console.log(`[boot] Render deployment: https://vah-api-staging.onrender.com`);
 });
 
