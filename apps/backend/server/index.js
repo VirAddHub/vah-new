@@ -46,11 +46,16 @@ function loadRouter(p) {
     throw new TypeError(`Invalid router export from ${p}`);
 }
 
-// Safe middleware loader
-function asMw(mod) {
+// Safe middleware loader - will be replaced by compiled version
+function asMw(mod, name = 'middleware') {
     if (typeof mod === 'function') return mod;
     if (mod && typeof mod.default === 'function') return mod.default;
-    return null;
+    return (_req, _res, next) => {
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn(`[asMiddleware] skipped ${name}`);
+        }
+        next();
+    };
 }
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -96,8 +101,7 @@ app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 const { makeCors } = require('./cors.js');
 
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
-const corsMw = asMw(makeCors);
-if (corsMw) app.use(corsMw); else console.warn('[boot] cors middleware missing');
+app.use(asMw(makeCors, 'cors'));
 
 // OPTIONS requests are handled by cors middleware above
 
@@ -109,8 +113,7 @@ app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: 
 
 // ---- PUBLIC PLANS ROUTER (mount before any auth) ----
 const publicPlans = require('./routes/public/plans');
-const publicRoutes = asMw(publicPlans);
-if (publicRoutes) app.use('/api', publicRoutes);
+app.use('/api', asMw(publicPlans, 'publicPlans'));
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
 app.get('/plans', (req, res) => {
@@ -176,8 +179,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 // PostgreSQL session store for production
-const sessionsMw = asMw(sessions);
-if (sessionsMw) app.use(sessionsMw);
+app.use(asMw(sessions, 'sessions'));
 
 // Compression
 app.use(compression());
@@ -365,8 +367,7 @@ app.post('/api/create-test-users', async (req, res) => {
 
 // Health check route
 const healthRouter = require('./routes/health');
-const healthMw = asMw(healthRouter);
-if (healthMw) app.use(healthMw);
+app.use(asMw(healthRouter, 'healthRouter'));
 
 // Auth routes (import existing handlers)
 try {

@@ -28,8 +28,16 @@ export async function pgQuery<T = any>(text: string, params?: any[]) {
 }
 
 // --- SQLite (disabled) ---
-// We keep a guarded code-path for dev-only, but no top-level import.
-const USE_SQLITE = process.env.DISABLE_SQLITE !== 'true' && (process.env.DATABASE_URL?.startsWith('sqlite') ?? false);
+// Postgres-only by default; enable SQLite only when DATABASE_URL starts with sqlite
+const USE_SQLITE =
+  process.env.DISABLE_SQLITE !== 'true' &&
+  (process.env.DATABASE_URL || '').startsWith('sqlite');
+
+let Sqlite: any = null;
+if (USE_SQLITE) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Sqlite = require('better-sqlite3');
+}
 
 type SqliteDb = any;
 
@@ -38,11 +46,8 @@ let sqliteDb: SqliteDb | null = null;
 export function getSqliteDb(): SqliteDb | null {
   if (!USE_SQLITE) return null;
 
-  if (!sqliteDb) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    // @ts-ignore: optional dev-only dependency
-    const BetterSqlite3 = require("better-sqlite3");
-    sqliteDb = new BetterSqlite3(process.env.SQLITE_DB_PATH || ":memory:");
+  if (!sqliteDb && Sqlite) {
+    sqliteDb = new Sqlite(process.env.SQLITE_DB_PATH || ":memory:");
   }
   return sqliteDb;
 }
