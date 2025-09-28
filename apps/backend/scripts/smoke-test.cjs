@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const API_BASE = process.env.API_BASE_URL || 'https://vah-api-staging.onrender.com/api';
+const API_BASE = process.env.API_BASE_URL || 'https://vah-api-staging.onrender.com';
 const TEST_RESULTS_FILE = path.join(__dirname, '../test-results/smoke-test-results.json');
 
 // Ensure test results directory exists
