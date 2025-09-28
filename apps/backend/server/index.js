@@ -86,7 +86,7 @@ const app = express();
 app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // CORS configuration - MUST be at the very top before any other middleware
-const { makeCors } = require('../dist/server/cors.js');
+const { makeCors } = require('./cors.js');
 
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
 app.use(makeCors());
@@ -482,7 +482,7 @@ try {
 // Mount the legacy router at root (it only defines specific paths like /plans)
 // Note: This will work if the TypeScript is compiled, otherwise we'll need to use the JS version
 try {
-    const { legacyRouter } = require('../dist/src/legacy/adapters.js');
+    const { legacyRouter } = require('./legacy/adapters.js');
     app.use(legacyRouter);
 } catch (e) {
     console.warn('[startup] Legacy router not available, skipping:', e.message);

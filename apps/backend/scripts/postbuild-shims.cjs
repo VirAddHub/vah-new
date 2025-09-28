@@ -19,10 +19,10 @@ try {
 
     // Create server/db.js shim
     const dbShim = `// auto-generated shim so routes requiring '../server/db' work under dist/server/routes
-module.exports = require('../db');
+module.exports = require('../src/lib/db');
 `;
-    fs.writeFileSync(path.join(shimDir, 'db.js'), dbShim);
-    console.log('[shims] wrote', path.relative(root, path.join(shimDir, 'db.js')));
+    fs.writeFileSync(path.join(serverDir, 'db.js'), dbShim);
+    console.log('[shims] wrote', path.relative(root, path.join(serverDir, 'db.js')));
 
     // Create lib/*.js shims for common modules
     const libModules = [
@@ -34,8 +34,8 @@ module.exports = require('../db');
         const shimContent = `// auto-generated shim so routes requiring '../lib/${module}' work under dist/server/routes
 module.exports = require('../../lib/${module}');
 `;
-        fs.writeFileSync(path.join(libShimDir, `${module}.js`), shimContent);
-        console.log('[shims] wrote', path.relative(root, path.join(libShimDir, `${module}.js`)));
+        fs.writeFileSync(path.join(serverDir, `${module}.js`), shimContent);
+        console.log('[shims] wrote', path.relative(root, path.join(serverDir, `${module}.js`)));
     }
 
 } catch (e) {
