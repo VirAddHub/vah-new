@@ -26,9 +26,12 @@ const PUBLIC_PATHS = new Set([
     '/api/ready',
     '/api/auth/ping',
     '/api/plans',
+    '/plans', // legacy alias
 ]);
 function isPublic(req) {
-    return PUBLIC_PATHS.has(req.path) || req.path.startsWith('/scans/');
+    const url = req.originalUrl || req.url || '';
+    const path = url.split('?')[0]; // remove query string
+    return PUBLIC_PATHS.has(path) || path.startsWith('/scans/');
 }
 
 // Helper to load routers from CJS/TS default exports or module.exports
@@ -45,7 +48,13 @@ function loadRouter(p) {
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
-const { sessions } = require('./sessions');
+// Guard missing optional modules for dev mode
+let sessions = null;
+try {
+  sessions = require('./sessions');
+} catch (_) {
+  // dev mode without sessions; proceed
+}
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
 const compression = require('compression');
@@ -77,12 +86,38 @@ const app = express();
 app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
 // CORS configuration - MUST be at the very top before any other middleware
-const { makeCors } = require('./cors');
+const { makeCors } = require('../dist/server/cors.js');
 
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
 app.use(makeCors());
 
 // OPTIONS requests are handled by cors middleware above
+
+// ---- PUBLIC BASICS (mount very early) ----
+app.get('/healthz', (_req, res) => res.status(200).json({ ok: true, service: 'backend' }));
+app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true, service: 'api' }));
+app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true, ready: true }));
+app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: true }));
+
+// ---- PUBLIC: /api/plans ----
+const PLANS = [
+  { id: 'starter', name: 'Starter', priceMonthly: 0 },
+  { id: 'pro',     name: 'Pro',     priceMonthly: 12 },
+  { id: 'team',    name: 'Team',    priceMonthly: 29 },
+];
+
+// GET/HEAD → 200, everything else → 405
+app.get('/api/plans', (_req, res) => res.status(200).json({ ok: true, plans: PLANS }));
+app.head('/api/plans', (_req, res) => res.status(200).end());
+app.all('/api/plans', (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return next(); // let the GET/HEAD above run (they already matched)
+  res.set('Allow', 'GET, HEAD');
+  return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
+});
+
+// ---- PUBLIC LEGACY: /plans → same payload as /api/plans
+app.get('/plans', (_req, res) => res.status(200).json({ ok: true, plans: PLANS }));
+app.head('/plans', (_req, res) => res.status(200).end());
 
 // CORS Debug middleware (behind env flag)
 if (process.env.CORS_DEBUG === '1') {
@@ -136,7 +171,9 @@ app.use(cookieParser());
 app.use(express.json());
 
 // PostgreSQL session store for production
-app.use(sessions);
+if (sessions) {
+  app.use(sessions);
+}
 
 // Compression
 app.use(compression());
@@ -482,8 +519,17 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// 404 after all routers, before error handler
-app.use((req, res) => res.status(404).json({ ok: false, error: 'Not Found' }));
+// ---- FINAL 404s (after all routes) ----
+app.use('/api', (req, res, next) => {
+  // This will catch any /api/* routes that weren't matched above
+  return res.status(404).json({ ok: false, error: 'Not Found', path: req.originalUrl });
+});
+
+// optional: non-api 404
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/api/')) return next(); // already handled
+  return res.status(404).send('Not Found');
+});
 
 // Import error handler
 const { errorMiddleware } = require('./errors');
@@ -498,8 +544,13 @@ app.use((req, res, next) => {
 app.use(errorMiddleware);
 
 // Print all mounted routes for debugging
-const { printRoutes } = require('./utils/printRoutes');
-printRoutes(app);
+// Optional route printing for dev
+try {
+    const { printRoutes } = require('./utils/printRoutes');
+    printRoutes(app);
+} catch (e) {
+    console.warn('[startup] Route printing not available, skipping:', e.message);
+}
 
 // Process guards for better error handling
 process.on('uncaughtException', (err) => {
