@@ -13,7 +13,7 @@ import { Input } from "./components/ui/input";
 import { Textarea } from "./components/ui/textarea";
 import { Shield, Users, Mail, Check, MessageCircle, Phone, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./components/figma/ImageWithFallback";
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/apiClient';
 
 // Client-safe utilities
 const logClientEvent = async (event: string, data?: any) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/apiClient";
 import {
     ArrowRight,
     Mail,

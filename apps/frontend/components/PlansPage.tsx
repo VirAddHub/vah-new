@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Check, Info, Loader2, CreditCard } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/apiClient';
 import { Button } from './ui/button';
 
 interface PlansPageProps {

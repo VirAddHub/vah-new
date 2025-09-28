@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from './api-client';
+import { apiClient } from './apiClient';
 
 // Custom hook for API data fetching
 export function useApiData<T = unknown>(url: string) {

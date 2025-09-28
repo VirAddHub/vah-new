@@ -19,7 +19,7 @@ import {
     ArrowDown,
     RefreshCcw,
 } from "lucide-react";
-import { apiClient } from "../../lib/api-client";
+import { apiClient } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {

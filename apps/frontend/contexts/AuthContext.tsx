@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getErrorMessage, getErrorStack } from '../lib/errors';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '../lib/apiClient';
 import { clientAuthManager } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
 

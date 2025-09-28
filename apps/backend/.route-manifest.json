@@ -1,7 +1,7 @@
 {
-  "generated": "2025-09-28T02:48:05.941Z",
-  "totalRouters": 42,
-  "totalEndpoints": 152,
+  "generated": "2025-09-28T20:57:29.896Z",
+  "totalRouters": 43,
+  "totalEndpoints": 163,
   "routes": [
     {
       "method": "GET",
@@ -387,6 +387,19 @@
     },
     {
       "method": "GET",
+      "path": "/api/admin/integrations/status",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/api/admin/mail-items",
       "routerFile": "admin/mail-items.ts",
       "middleware": [
@@ -650,6 +663,19 @@
     },
     {
       "method": "GET",
+      "path": "/api/healthz",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/api/invoices",
       "routerFile": "user/invoices.ts",
       "middleware": [
@@ -681,6 +707,45 @@
     },
     {
       "method": "GET",
+      "path": "/api/me",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/me/profile",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plans",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/api/plans",
       "routerFile": "public/plans.ts",
       "middleware": [
@@ -696,6 +761,19 @@
         "auth"
       ],
       "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/ready",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
     },
     {
       "method": "GET",
@@ -1381,6 +1459,39 @@
       "notes": []
     },
     {
+      "method": "DELETE",
+      "path": "/plans",
+      "routerFile": "public/plans.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/plans",
       "routerFile": "admin.js",
@@ -1396,6 +1507,13 @@
       "middleware": [
         "auth"
       ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "routerFile": "public/plans.js",
+      "middleware": [],
       "notes": []
     },
     {
@@ -1504,6 +1622,19 @@
         "supports query parameters",
         "supports pagination",
         "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/ready",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
       ]
     },
     {

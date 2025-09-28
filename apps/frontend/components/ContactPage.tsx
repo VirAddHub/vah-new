@@ -20,7 +20,7 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/apiClient";
 
 interface ContactPageProps {
     onNavigate?: (page: string) => void;

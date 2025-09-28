@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/apiClient";
 
 type Role = 'admin' | 'user';
 

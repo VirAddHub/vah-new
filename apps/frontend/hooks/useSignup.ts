@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '../lib/apiClient';
 
 export interface SignupStep1Data {
     billing: 'monthly' | 'annual';

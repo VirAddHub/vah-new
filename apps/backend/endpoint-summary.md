@@ -1,9 +1,9 @@
 # Backend Endpoint Summary
 
-Generated on: 2025-09-28T02:48:05.952Z
+Generated on: 2025-09-28T20:57:29.907Z
 
-**Total Routers:** 42
-**Total Endpoints:** 152
+**Total Routers:** 43
+**Total Endpoints:** 163
 **With Auth:** 120
 **With File Upload:** 0
 
@@ -35,7 +35,7 @@ Generated on: 2025-09-28T02:48:05.952Z
 
 ## API Domain
 
-**Methods:** GET: 21, POST: 6, PATCH: 1, DELETE: 1, PUT: 4
+**Methods:** GET: 26, POST: 6, PATCH: 2, DELETE: 1, PUT: 4
 
 ### Routes
 
@@ -44,6 +44,7 @@ Generated on: 2025-09-28T02:48:05.952Z
 - `GET /api/admin/forwarding/queue` [auth] - uses id parameter
 - `POST /api/admin/forwarding/requests/:id/cancel` [auth] - uses id parameter
 - `POST /api/admin/forwarding/requests/:id/fulfill` [auth] - uses id parameter
+- `GET /api/admin/integrations/status` [rate-limit, cors, helmet] - inline route definition
 - `GET /api/admin/mail-items` [auth] - uses id parameter, supports query parameters, supports pagination
 - `POST /api/admin/mail-items` [auth] - uses id parameter, supports query parameters, supports pagination
 - `PATCH /api/admin/mail-items/:id` [auth] - uses id parameter, supports query parameters, supports pagination
@@ -66,11 +67,16 @@ Generated on: 2025-09-28T02:48:05.952Z
 - `GET /api/forwarding-requests` [auth]
 - `GET /api/forwarding-requests` [auth]
 - `GET /api/health` [auth]
+- `GET /api/healthz` [rate-limit, cors, helmet] - inline route definition
 - `GET /api/invoices` [auth]
 - `GET /api/mail-items` [auth]
 - `GET /api/mail-items/:id/scan-url` [auth] - uses id parameter, supports query parameters, supports pagination
+- `GET /api/me` [rate-limit, cors, helmet] - inline route definition
+- `PATCH /api/me/profile` [rate-limit, cors, helmet] - inline route definition
+- `GET /api/plans` [rate-limit, cors, helmet] - inline route definition
 - `GET /api/plans` [auth]
 - `GET /api/profile` [auth]
+- `GET /api/ready` [rate-limit, cors, helmet] - inline route definition
 - `GET /api/tickets` [auth]
 
 ## AUTH Domain
@@ -87,7 +93,7 @@ Generated on: 2025-09-28T02:48:05.952Z
 
 ## OTHER Domain
 
-**Methods:** GET: 46, PATCH: 5, POST: 43, PUT: 4, DELETE: 1
+**Methods:** GET: 50, PATCH: 5, POST: 43, PUT: 4, DELETE: 2
 
 **Special Features:** webhook, streaming
 
@@ -152,8 +158,12 @@ Generated on: 2025-09-28T02:48:05.952Z
 - `POST /payments/subscriptions` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
 - `GET /payments/subscriptions/status` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
 - `GET /ping` [auth]
+- `DELETE /plans`
+- `GET /plans` [rate-limit, cors, helmet] - inline route definition
+- `GET /plans` [rate-limit, cors, helmet] - inline route definition
 - `GET /plans` - uses id parameter
 - `GET /plans` [auth]
+- `GET /plans`
 - `PATCH /plans/:id` - uses id parameter
 - `GET /profile` [auth]
 - `GET /profile/certificate-url` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
@@ -162,6 +172,7 @@ Generated on: 2025-09-28T02:48:05.952Z
 - `POST /profile/reset-password` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
 - `POST /profile/reset-password-request` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
 - `POST /profile/update-password` [auth, csrf] - uses id parameter, supports query parameters, supports pagination, webhook endpoint
+- `GET /ready` [rate-limit, cors, helmet] - inline route definition
 - `POST /redirect-flows`
 - `GET /requests` - uses id parameter, supports query parameters
 - `GET /requests` [auth] - uses id parameter
