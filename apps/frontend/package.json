@@ -19,7 +19,8 @@
         "db:backup": "node scripts/backup.js",
         "test": "jest",
         "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+        "test:coverage": "jest --coverage",
+        "docs:refresh": "mkdir -p public/api-docs && cp ../backend/docs/public/api.html public/api-docs/index.html"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.3.0",
