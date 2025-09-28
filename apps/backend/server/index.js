@@ -18,6 +18,18 @@ validateEnvironment();
 // --- core & middleware
 const express = require("express");
 const helmet = require("helmet");
+
+// Helper to load routers from CJS/TS default exports or module.exports
+function loadRouter(p) {
+    const mod = require(p);
+    const r = (mod && (mod.default || mod.router || mod)) || mod;
+
+    // Accept express.Router instances or handler functions
+    if (typeof r === 'function') return r;
+    if (r && typeof r === 'object' && typeof r.handle === 'function') return r;
+
+    throw new TypeError(`Invalid router export from ${p}`);
+}
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
@@ -240,77 +252,55 @@ const healthRouter = require('./routes/health');
 app.use(healthRouter);
 
 // Auth routes (import existing handlers)
-const authRouter = require('./routes/auth');
+const authRouter = loadRouter('./routes/auth');
 app.use('/api/auth', authRouter);
 
 // User-specific routes
-app.use(require('./routes/user/tickets').default);
-app.use(require('./routes/user/forwarding').default);
-app.use(require('./routes/user/billing').default);
-app.use(require('./routes/user/invoices').default);
-app.use(require('./routes/user/email-prefs').default);
+app.use(loadRouter('./routes/user/tickets'));
+app.use(loadRouter('./routes/user/forwarding'));
+app.use(loadRouter('./routes/user/billing'));
+app.use(loadRouter('./routes/user/invoices'));
+app.use(loadRouter('./routes/user/email-prefs'));
 
 // Core user routes
-const profileModule = require('./routes/profile');
-const profileRouter = profileModule.default || profileModule;
-app.use(profileRouter);
+app.use(loadRouter('./routes/profile'));
 
-const mailItemsModule = require('./routes/mail-items');
-const mailItemsRouter = mailItemsModule.default || mailItemsModule;
-app.use(mailItemsRouter);
+app.use(loadRouter('./routes/mail-items'));
 
-const forwardingModule = require('./routes/forwarding-requests');
-const forwardingRouter = forwardingModule.default || forwardingModule;
-app.use(forwardingRouter);
+app.use(loadRouter('./routes/forwarding-requests'));
 
-const billingModule = require('./routes/billing');
-const billingRouter = billingModule.default || billingModule;
-app.use(billingRouter);
+app.use(loadRouter('./routes/billing'));
 
-const emailPrefsModule = require('./routes/email-prefs');
-const emailPrefsRouter = emailPrefsModule.default || emailPrefsModule;
-app.use(emailPrefsRouter);
+app.use(loadRouter('./routes/email-prefs'));
 
 // Admin routes
-const adminMetricsModule = require('./routes/admin.metrics');
-const adminMetricsRouter = adminMetricsModule.default || adminMetricsModule;
-app.use('/api/admin/metrics', adminMetricsRouter);
+app.use('/api/admin/metrics', loadRouter('./routes/admin.metrics'));
 
 // Admin mail management
-const adminMailModule = require('./routes/admin/mail-items');
-const adminMailRouter = adminMailModule.default || adminMailModule;
-app.use(adminMailRouter);
+app.use(loadRouter('./routes/admin/mail-items'));
 
 // Admin billing management
-const adminBillingModule = require('./routes/admin/billing');
-const adminBillingRouter = adminBillingModule.default || adminBillingModule;
-app.use(adminBillingRouter);
+app.use(loadRouter('./routes/admin/billing'));
 
 // Admin user management
-const adminUsersModule = require('./routes/admin/users');
-const adminUsersRouter = adminUsersModule.default || adminUsersModule;
-app.use(adminUsersRouter);
+app.use(loadRouter('./routes/admin/users'));
 
 // Admin forwarding management
-const adminForwardingModule = require('./routes/admin/forwarding');
-const adminForwardingRouter = adminForwardingModule.default || adminForwardingModule;
-app.use(adminForwardingRouter);
+app.use(loadRouter('./routes/admin/forwarding'));
 
 // Admin analytics
-const adminAnalyticsModule = require('./routes/admin/analytics');
-const adminAnalyticsRouter = adminAnalyticsModule.default || adminAnalyticsModule;
-app.use(adminAnalyticsRouter);
+app.use(loadRouter('./routes/admin/analytics'));
 
 // Public routes
 try {
     // prefer compiled TS public router
-    app.use(require('./routes/public/plans').default);
+    app.use(loadRouter('./routes/public/plans'));
 } catch (e) {
     console.warn('[startup] public/plans route missing, skipping:', e.message);
 }
 
 // Dashboard routes
-app.use('/api', require('./routes/dashboard'));
+app.use('/api', loadRouter('./routes/dashboard'));
 
 // TEMPORARY: Legacy router for missing endpoints
 const { buildLegacyRouter } = require('./routes/legacy-router');

@@ -1,0 +1,1811 @@
+{
+  "generated": "2025-09-28T02:48:05.941Z",
+  "totalRouters": 42,
+  "totalEndpoints": 152,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "routerFile": "admin.metrics.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "routerFile": "email-prefs.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "routerFile": "plans.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "routerFile": "profile.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/",
+      "routerFile": "email-prefs.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/",
+      "routerFile": "contact.js",
+      "middleware": [
+        "rate-limit"
+      ],
+      "notes": [
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/",
+      "routerFile": "email-prefs.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/",
+      "routerFile": "profile.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/address",
+      "routerFile": "profile.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/admin/invoices",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/admin/invoices/:id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/invoices/:id/link",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/invoices/:id/resend",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/mail-items/:id/log-physical-dispatch",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/mail-items/:id/log-physical-receipt",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/mail-items/:id/restore",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/payments/create-adhoc-link",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/payments/initiate-refund",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/admin/support",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/support/:id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/support/tickets/:id/close",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users/:user_id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/users/:user_id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users/:user_id/billing-history",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/admin/users/:user_id/impersonate",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/users/:user_id/kyc-status",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/analytics",
+      "routerFile": "admin/analytics.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/billing/metrics",
+      "routerFile": "admin/billing.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/forwarding/queue",
+      "routerFile": "admin/forwarding.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/forwarding/requests/:id/cancel",
+      "routerFile": "admin/forwarding.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/forwarding/requests/:id/fulfill",
+      "routerFile": "admin/forwarding.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/mail-items",
+      "routerFile": "admin/mail-items.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/mail-items",
+      "routerFile": "admin/mail-items.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/mail-items/:id",
+      "routerFile": "admin/mail-items.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/transactions",
+      "routerFile": "admin/billing.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/users/:id",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/activate",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/kyc-status",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/:id/restore",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/suspend",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users/stats",
+      "routerFile": "admin/users.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "expects JSON body",
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/ping",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/billing",
+      "routerFile": "billing.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/billing",
+      "routerFile": "user/billing.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/create-test-users",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/email-prefs",
+      "routerFile": "email-prefs.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/email-prefs",
+      "routerFile": "user/email-prefs.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/forwarding-requests",
+      "routerFile": "forwarding-requests.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/forwarding-requests",
+      "routerFile": "user/forwarding.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "routerFile": "health.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/invoices",
+      "routerFile": "user/invoices.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/mail-items",
+      "routerFile": "mail-items.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/mail-items/:id/scan-url",
+      "routerFile": "admin/mail-items.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plans",
+      "routerFile": "public/plans.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/profile",
+      "routerFile": "profile.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/tickets",
+      "routerFile": "user/tickets.ts",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/auth/db-check",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/auth/hash-check",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout-all",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/billing",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/business",
+      "routerFile": "onboarding.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/company-search",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/create-admin-user",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/csrf",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/debug/db-info",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/debug/whoami",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/email-prefs",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/forward/bulk",
+      "routerFile": "mail-forward.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/forwarding-requests",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "PUT",
+      "path": "/forwarding-requests/:id/cancel",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/forwarding-requests/usage",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/gc/redirect-flow/callback",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/gc/redirect-flow/start",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "routerFile": "server/index.js (inline)",
+      "middleware": [
+        "rate-limit",
+        "cors",
+        "helmet"
+      ],
+      "notes": [
+        "inline route definition"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/invoices",
+      "routerFile": "billing.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/invoices",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/:id/link",
+      "routerFile": "billing.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/:token",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/kyc/resend-verification-link",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/kyc/start",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/kyc/status",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/kyc/upload",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/login",
+      "routerFile": "auth-real.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/login",
+      "routerFile": "auth.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/logout",
+      "routerFile": "auth-real.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/logout",
+      "routerFile": "auth.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/mail",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mail-items",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/mail-items",
+      "routerFile": "mail.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/mail-items/:id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mail-items/:id",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/mail-items/:id",
+      "routerFile": "mail.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/mail-items/:id",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mail-items/:id/history",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail-items/:id/log-physical-dispatch",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail-items/:id/restore",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mail-items/:id/scan-url",
+      "routerFile": "mail-items.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter",
+        "streaming response"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail-items/:id/tag",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail/bulk-forward-request",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail/forward",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/mail/forward",
+      "routerFile": "mail.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/mail/history/:id",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/payments",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/payments/redirect-flows",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/payments/redirect-flows/:id/complete",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/payments/subscriptions",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/payments/subscriptions/status",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/ping",
+      "routerFile": "auth.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/plans/:id",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/profile",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/profile/certificate-url",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/profile/certificate.pdf",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/profile/request-business-name-change",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/profile/reset-password",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/profile/reset-password-request",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/profile/update-password",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/redirect-flows",
+      "routerFile": "payments.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/requests",
+      "routerFile": "admin/forwarding.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/requests",
+      "routerFile": "forwarding.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/requests",
+      "routerFile": "forwarding.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/requests/:id",
+      "routerFile": "forwarding.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/requests/:id",
+      "routerFile": "admin/forwarding.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/requests/:id/fulfill",
+      "routerFile": "admin/forwarding.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/reset-password",
+      "routerFile": "profile.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/reset-password-request",
+      "routerFile": "profile.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/scans/:token",
+      "routerFile": "mail-items.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter",
+        "streaming response"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/search/mail",
+      "routerFile": "mail-search.js",
+      "middleware": [],
+      "notes": [
+        "supports query parameters",
+        "supports pagination"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/signup",
+      "routerFile": "auth-real.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/signup",
+      "routerFile": "auth.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "routerFile": "kyc.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions",
+      "routerFile": "payments.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/status",
+      "routerFile": "payments.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/support",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/support",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/tickets",
+      "routerFile": "dashboard.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "POST",
+      "path": "/tickets",
+      "routerFile": "support.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/tickets/:id/close",
+      "routerFile": "support.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/upload",
+      "routerFile": "kyc.js",
+      "middleware": [],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/:id",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/users/:id/kyc-status",
+      "routerFile": "admin.js",
+      "middleware": [],
+      "notes": [
+        "uses id parameter"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks-gc",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks-postmark",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks/sumsub",
+      "routerFile": "legacy-router.js",
+      "middleware": [
+        "auth",
+        "csrf"
+      ],
+      "notes": [
+        "uses id parameter",
+        "supports query parameters",
+        "supports pagination",
+        "webhook endpoint"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/whoami",
+      "routerFile": "auth-real.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    },
+    {
+      "method": "GET",
+      "path": "/whoami",
+      "routerFile": "auth.js",
+      "middleware": [
+        "auth"
+      ],
+      "notes": []
+    }
+  ]
+}
