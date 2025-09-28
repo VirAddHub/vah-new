@@ -101,7 +101,7 @@ app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: 
 
 // ---- PUBLIC PLANS ROUTER (mount before any auth) ----
 const publicPlans = require('./routes/public/plans');
-app.use('/api', publicPlans);
+app.use('/api', publicPlans.default || publicPlans);
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
 app.get('/plans', (req, res) => {
@@ -167,7 +167,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 // PostgreSQL session store for production
-if (sessions) {
+if (sessions && typeof sessions === 'function') {
     app.use(sessions);
 }
 
