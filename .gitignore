@@ -23,9 +23,6 @@ pids/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
-
 # Optional npm cache directory
 .npm
 
@@ -38,7 +35,7 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file (general)
+# dotenv environment variables files
 .env
 .env.*
 *.env
