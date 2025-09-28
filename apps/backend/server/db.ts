@@ -1,9 +1,9 @@
 // server/db.ts
-// Unified DB adapter compatible with legacy SQLite-style `prepare()`
-// - DB_CLIENT=sqlite  -> better-sqlite3 (sync)
-// - DB_CLIENT=pg      -> node-postgres (async) with `?` -> $n and IN (?) expansion
+// Postgres-only database adapter with optional SQLite support for local dev
+// - Primary: node-postgres (async) with `?` -> $n and IN (?) expansion
+// - Optional: better-sqlite3 (sync) for local development only
 //
-// Both clients expose the same public surface:
+// Public surface:
 //   - db.prepare(sql).get(...args)
 //   - db.prepare(sql).all(...args)
 //   - db.prepare(sql).run(...args)
@@ -12,13 +12,46 @@
 //   - db.run(sql, params?)
 //   - db.transaction(fn)
 
-import type { QueryResult } from 'pg';
+import { Pool } from "pg";
+
+// --- Postgres (primary) ---
+export const pg = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Render Postgres often needs SSL; this keeps it simple and safe:
+  ssl: { rejectUnauthorized: false },
+  max: 10,
+});
+
+export async function pgQuery<T = any>(text: string, params?: any[]) {
+  const res = await pg.query(text, params);
+  return res;
+}
+
+// --- SQLite (disabled) ---
+// We keep a guarded code-path for dev-only, but no top-level import.
+const SQLITE_ENABLED =
+  process.env.DISABLE_SQLITE !== "true" &&
+  process.env.ENABLE_SQLITE === "true"; // default OFF
+
+type SqliteDb = any;
+
+let sqliteDb: SqliteDb | null = null;
+
+export function getSqliteDb(): SqliteDb | null {
+  if (!SQLITE_ENABLED) return null;
+
+  if (!sqliteDb) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // @ts-ignore: optional dev-only dependency
+    const BetterSqlite3 = require("better-sqlite3");
+    sqliteDb = new BetterSqlite3(process.env.SQLITE_DB_PATH || ":memory:");
+  }
+  return sqliteDb;
+}
 
 // ---------- Config ----------
 type DBClient = 'pg' | 'sqlite';
-const DB_CLIENT: DBClient =
-  (process.env.DB_CLIENT as DBClient) ||
-  (process.env.DATABASE_URL ? 'pg' : 'sqlite');
+const DB_CLIENT: DBClient = 'pg'; // Always use Postgres
 
 // ---------- Utilities ----------
 type Param = any;
@@ -66,31 +99,14 @@ function convertForPg(sql: string, params: Param[] = []): { sql: string; params:
 }
 
 // ---------- Driver bootstraps ----------
-let sqlite: import('better-sqlite3').Database | null = null;
-let pgPool: import('pg').Pool | null = null;
-
-if (DB_CLIENT === 'sqlite') {
-  // NOTE: keep path configurable via env for local dev; do NOT use in production.
-  const Database = require('better-sqlite3') as typeof import('better-sqlite3');
-  const { resolveDataDir } = require('./storage-paths');
-  const SQLITE_PATH =
-    process.env.SQLITE_PATH || process.env.DB_PATH || require('path').join(resolveDataDir(), 'app.db');
-  sqlite = new Database(SQLITE_PATH);
-} else {
-  const { Pool } = require('pg') as typeof import('pg');
-  const DATABASE_URL = process.env.DATABASE_URL;
-  if (!DATABASE_URL) {
-    throw new Error('DATABASE_URL is required when DB_CLIENT=pg.');
-  }
-  pgPool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 10,
-  });
+// Postgres is the primary and only database client
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL is required for Postgres connection.');
 }
 
 async function withPgClient<T>(fn: (c: import('pg').PoolClient) => Promise<T>): Promise<T> {
-  const c = await pgPool!.connect();
+  const c = await pg.connect();
 
   // Monkey-patch query to log SQL on error (once per error)
   const origQuery = c.query.bind(c);
@@ -133,202 +149,131 @@ type DB = {
 };
 
 // ---------- Implementations ----------
-const db: DB = ((): DB => {
-  if (DB_CLIENT === 'sqlite') {
-    // ---- SQLite (sync) ----
+const db: DB = {
+  client: 'pg',
+  prepare(sql: string): PreparedAny {
+    // Provide a facade so legacy call sites can switch by just adding `await`.
     return {
-      client: 'sqlite',
-      prepare(sql: string): PreparedAny {
-        const stmt = sqlite!.prepare(sql);
-        return {
-          get: (...args: Param[]) => stmt.get(...args),
-          all: (...args: Param[]) => stmt.all(...args),
-          run: (...args: Param[]) => stmt.run(...args),
-        };
-      },
-      get<T = any>(sql: string, params?: Param[]): T | undefined {
-        return sqlite!.prepare(sql).get(...(params ?? [])) as T | undefined;
-      },
-      all<T = any>(sql: string, params?: Param[]): T[] {
-        return sqlite!.prepare(sql).all(...(params ?? [])) as T[];
-      },
-      run(sql: string, params?: Param[]) {
-        return sqlite!.prepare(sql).run(...(params ?? []));
-      },
-      transaction<T>(fn: (tx: DB) => Promise<T> | T) {
-        // Use manual transaction to keep the same DB surface
-        sqlite!.exec('BEGIN');
+      get: async (...args: Param[]) => {
         try {
-          const txDb: DB = {
-            client: 'sqlite',
-            prepare: (s) => {
-              const st = sqlite!.prepare(s);
-              return {
-                get: (...a) => st.get(...a),
-                all: (...a) => st.all(...a),
-                run: (...a) => st.run(...a),
-              };
-            },
-            get: (s, p) => sqlite!.prepare(s).get(...(p ?? [])) as any,
-            all: (s, p) => sqlite!.prepare(s).all(...(p ?? [])) as any,
-            run: (s, p) => sqlite!.prepare(s).run(...(p ?? [])),
-            transaction: (inner) => inner(txDb), // no nested savepoints for simplicity
-          };
-          const res = fn(txDb);
-          // if fn is async, you can await it here, but sqlite path is typically sync
-          if (res && typeof (res as any).then === 'function') {
-            // If someone passed async fn by mistake, block until it resolves
-            // (rare, but avoids leaving tx open)
-            (res as Promise<T>).then(
-              () => sqlite!.exec('COMMIT'),
-              () => sqlite!.exec('ROLLBACK')
-            );
-            return res;
-          } else {
-            sqlite!.exec('COMMIT');
-            return res as T;
-          }
-        } catch (e) {
-          try { sqlite!.exec('ROLLBACK'); } catch { }
+          const { sql: q, params: p } = convertForPg(sql, args);
+          const { rows } = await withPgClient((c) => c.query(q, p));
+          return rows[0];
+        } catch (e: any) {
+          console.error('[db.prepare.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
+          throw e;
+        }
+      },
+      all: async (...args: Param[]) => {
+        try {
+          const { sql: q, params: p } = convertForPg(sql, args);
+          const { rows } = await withPgClient((c) => c.query(q, p));
+          return rows;
+        } catch (e: any) {
+          console.error('[db.prepare.all] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
+          throw e;
+        }
+      },
+      run: async (...args: Param[]) => {
+        try {
+          const { sql: q, params: p } = convertForPg(sql, args);
+          return withPgClient((c) => c.query(q, p));
+        } catch (e: any) {
+          console.error('[db.prepare.run] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
           throw e;
         }
       },
     };
-  }
-
-  // ---- Postgres (async) ----
-  return {
-    client: 'pg',
-    prepare(sql: string): PreparedAny {
-      // Provide a facade so legacy call sites can switch by just adding `await`.
-      return {
-        get: async (...args: Param[]) => {
-          try {
-            const { sql: q, params: p } = convertForPg(sql, args);
-            const { rows } = await withPgClient((c) => c.query(q, p));
-            return rows[0];
-          } catch (e: any) {
-            console.error('[db.prepare.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
-            throw e;
-          }
-        },
-        all: async (...args: Param[]) => {
-          try {
-            const { sql: q, params: p } = convertForPg(sql, args);
-            const { rows } = await withPgClient((c) => c.query(q, p));
-            return rows;
-          } catch (e: any) {
-            console.error('[db.prepare.all] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
-            throw e;
-          }
-        },
-        run: async (...args: Param[]) => {
-          try {
-            const { sql: q, params: p } = convertForPg(sql, args);
-            return withPgClient((c) => c.query(q, p));
-          } catch (e: any) {
-            console.error('[db.prepare.run] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', args);
-            throw e;
-          }
-        },
-      };
-    },
-    async get<T = any>(sql: string, params?: Param[]) {
+  },
+  async get<T = any>(sql: string, params?: Param[]) {
+    try {
+      const { sql: q, params: p } = convertForPg(sql, params ?? []);
+      const { rows } = await withPgClient((c) => c.query(q, p));
+      return (rows[0] as T) ?? undefined;
+    } catch (e: any) {
+      console.error('[db.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
+      throw e;
+    }
+  },
+  async all<T = any>(sql: string, params?: Param[]) {
+    try {
+      const { sql: q, params: p } = convertForPg(sql, params ?? []);
+      const { rows } = await withPgClient((c) => c.query(q, p));
+      return rows as T[];
+    } catch (e: any) {
+      // Use safe logger to prevent recursion
+      const { dbError } = require('./lib/safe-logger');
+      dbError(e, sql, params);
+      throw e;
+    }
+  },
+  async run(sql: string, params?: Param[]) {
+    try {
+      const { sql: q, params: p } = convertForPg(sql, params ?? []);
+      return withPgClient((c) => c.query(q, p));
+    } catch (e: any) {
+      // Use safe logger to prevent recursion
+      const { dbError } = require('./lib/safe-logger');
+      dbError(e, sql, params);
+      throw e;
+    }
+  },
+  async transaction<T>(fn: (tx: DB) => Promise<T> | T): Promise<T> {
+    return withPgClient(async (c) => {
+      await c.query('BEGIN');
       try {
-        const { sql: q, params: p } = convertForPg(sql, params ?? []);
-        const { rows } = await withPgClient((c) => c.query(q, p));
-        return (rows[0] as T) ?? undefined;
-      } catch (e: any) {
-        console.error('[db.get] error:', e?.code, e?.message, '\nSQL:', sql, '\nParams:', params);
-        throw e;
-      }
-    },
-    async all<T = any>(sql: string, params?: Param[]) {
-      try {
-        const { sql: q, params: p } = convertForPg(sql, params ?? []);
-        const { rows } = await withPgClient((c) => c.query(q, p));
-        return rows as T[];
-      } catch (e: any) {
-        // Use safe logger to prevent recursion
-        const { dbError } = require('./lib/safe-logger');
-        dbError(e, sql, params);
-        throw e;
-      }
-    },
-    async run(sql: string, params?: Param[]) {
-      try {
-        const { sql: q, params: p } = convertForPg(sql, params ?? []);
-        return withPgClient((c) => c.query(q, p));
-      } catch (e: any) {
-        // Use safe logger to prevent recursion
-        const { dbError } = require('./lib/safe-logger');
-        dbError(e, sql, params);
-        throw e;
-      }
-    },
-    async transaction<T>(fn: (tx: DB) => Promise<T> | T): Promise<T> {
-      return withPgClient(async (c) => {
-        await c.query('BEGIN');
-        try {
-          const txDb: DB = {
-            client: 'pg',
-            prepare: (s) => ({
-              get: async (...a) => {
-                const { sql: q, params: p } = convertForPg(s, a);
-                const { rows } = await c.query(q, p);
-                return rows[0];
-              },
-              all: async (...a) => {
-                const { sql: q, params: p } = convertForPg(s, a);
-                const { rows } = await c.query(q, p);
-                return rows;
-              },
-              run: async (...a) => {
-                const { sql: q, params: p } = convertForPg(s, a);
-                return c.query(q, p);
-              },
-            }),
-            get: async (s, p) => {
-              const { sql: q, params: pr } = convertForPg(s, p ?? []);
-              const { rows } = await c.query(q, pr);
+        const txDb: DB = {
+          client: 'pg',
+          prepare: (s) => ({
+            get: async (...a) => {
+              const { sql: q, params: p } = convertForPg(s, a);
+              const { rows } = await c.query(q, p);
               return rows[0];
             },
-            all: async (s, p) => {
-              const { sql: q, params: pr } = convertForPg(s, p ?? []);
-              const { rows } = await c.query(q, pr);
+            all: async (...a) => {
+              const { sql: q, params: p } = convertForPg(s, a);
+              const { rows } = await c.query(q, p);
               return rows;
             },
-            run: async (s, p) => {
-              const { sql: q, params: pr } = convertForPg(s, p ?? []);
-              return c.query(q, pr);
+            run: async (...a) => {
+              const { sql: q, params: p } = convertForPg(s, a);
+              return c.query(q, p);
             },
-            transaction: async (inner) => inner(txDb),
-          };
-          const res = await fn(txDb);
-          await c.query('COMMIT');
-          return res;
-        } catch (e) {
-          await c.query('ROLLBACK');
-          throw e;
-        }
-      });
-    },
-  };
-})();
+          }),
+          get: async (s, p) => {
+            const { sql: q, params: pr } = convertForPg(s, p ?? []);
+            const { rows } = await c.query(q, pr);
+            return rows[0];
+          },
+          all: async (s, p) => {
+            const { sql: q, params: pr } = convertForPg(s, p ?? []);
+            const { rows } = await c.query(q, pr);
+            return rows;
+          },
+          run: async (s, p) => {
+            const { sql: q, params: pr } = convertForPg(s, p ?? []);
+            return c.query(q, pr);
+          },
+          transaction: async (inner) => inner(txDb),
+        };
+        const res = await fn(txDb);
+        await c.query('COMMIT');
+        return res;
+      } catch (e) {
+        await c.query('ROLLBACK');
+        throw e;
+      }
+    });
+  },
+};
 
 // Helper function to list tables (for schema validation)
 async function listTables(): Promise<string[]> {
-  if (DB_CLIENT === 'sqlite') {
-    // Use the existing SQLite instance
-    const result = sqlite!.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-    return result.map((row: any) => row.name);
-  } else {
-    // PostgreSQL
-    const { rows } = await withPgClient((c) =>
-      c.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-    );
-    return rows.map((row: any) => row.tablename);
-  }
+  // PostgreSQL only
+  const { rows } = await withPgClient((c) =>
+    c.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+  );
+  return rows.map((row: any) => row.tablename);
 }
 
 // Schema feature detection
@@ -366,4 +311,4 @@ export function expiryExpr(alias = false) {
   return alias ? `${expr} AS expires_at_ms` : expr;
 }
 
-export { db, DB_CLIENT, listTables, withPgClient };
+export { db, listTables, withPgClient };
