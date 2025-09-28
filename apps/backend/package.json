@@ -24,7 +24,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.server.json && npm run copy:server-files && node scripts/write-build-meta.cjs && node scripts/postbuild-shims.cjs",
     "build:backend": "npm run build",
     "prestart:backend": "node scripts/prestart.cjs",
-    "copy:server-files": "mkdir -p dist/middleware dist/server && cp middleware/*.js dist/middleware/ 2>/dev/null || true && cp -r routes dist/ 2>/dev/null || true && cp -r routes dist/server/ 2>/dev/null || true && cp server/*.js dist/server/ 2>/dev/null || true",
+    "copy:server-files": "mkdir -p dist/middleware dist/server && cp middleware/*.js dist/middleware/ 2>/dev/null || true && cp -r dist/routes dist/server/ 2>/dev/null || true && cp server/*.js dist/server/ 2>/dev/null || true",
     "predev": "echo 'PostgreSQL mode - ensure DATABASE_URL is set'",
     "dev:backend": "SKIP_BOOT_SIDE_EFFECTS=1 HOURLY_EXPORTS_ENABLED=false DISABLE_INVOICE_CLEANUP=1 tsx watch server/index.js",
     "start": "node dist/server/index.js",
