@@ -41,7 +41,7 @@ pids/
 *.env
 **/.env
 **/.env.*
-# Specific dot-env files from 'main' that were missed by the glob
+# explicit variants that sometimes slip through
 .env.test
 .env.local
 .env.production
