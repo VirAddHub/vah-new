@@ -5,10 +5,6 @@ coverage/
 .turbo/
 .DS_Store
 
-# Lockfiles at root (keep inside apps/)
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
 
 # Logs
 logs/
