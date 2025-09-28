@@ -45,11 +45,11 @@ module.exports = require('../../lib/${module}');
 
 // Write shim for old server path to maintain compatibility
 (function writeStartShim() {
-    const dir = path.join(__dirname, '..', 'dist', 'server');
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(
-        path.join(dir, 'index.js'),
-        "require('../src/server.js');\n"
-    );
-    console.log('[shims] wrote dist/server/index.js');
+  const dir = path.join(__dirname, '..', 'dist', 'server');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'index.js'),
+    "require('../src/server.js');\n"
+  );
+  console.log('[shims] wrote dist/server/index.js');
 })();
