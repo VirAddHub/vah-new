@@ -29,16 +29,14 @@ export async function pgQuery<T = any>(text: string, params?: any[]) {
 
 // --- SQLite (disabled) ---
 // We keep a guarded code-path for dev-only, but no top-level import.
-const SQLITE_ENABLED =
-  process.env.DISABLE_SQLITE !== "true" &&
-  process.env.ENABLE_SQLITE === "true"; // default OFF
+const USE_SQLITE = process.env.DISABLE_SQLITE !== 'true' && (process.env.DATABASE_URL?.startsWith('sqlite') ?? false);
 
 type SqliteDb = any;
 
 let sqliteDb: SqliteDb | null = null;
 
 export function getSqliteDb(): SqliteDb | null {
-  if (!SQLITE_ENABLED) return null;
+  if (!USE_SQLITE) return null;
 
   if (!sqliteDb) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires

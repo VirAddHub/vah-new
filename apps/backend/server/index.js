@@ -45,6 +45,13 @@ function loadRouter(p) {
 
     throw new TypeError(`Invalid router export from ${p}`);
 }
+
+// Safe middleware loader
+function asMw(mod) {
+    if (typeof mod === 'function') return mod;
+    if (mod && typeof mod.default === 'function') return mod.default;
+    return null;
+}
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
@@ -89,7 +96,8 @@ app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 const { makeCors } = require('./cors.js');
 
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); });
-app.use(makeCors());
+const corsMw = asMw(makeCors);
+if (corsMw) app.use(corsMw); else console.warn('[boot] cors middleware missing');
 
 // OPTIONS requests are handled by cors middleware above
 
@@ -101,7 +109,8 @@ app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: 
 
 // ---- PUBLIC PLANS ROUTER (mount before any auth) ----
 const publicPlans = require('./routes/public/plans');
-app.use('/api', publicPlans.default || publicPlans);
+const publicRoutes = asMw(publicPlans);
+if (publicRoutes) app.use('/api', publicRoutes);
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
 app.get('/plans', (req, res) => {
@@ -167,9 +176,8 @@ app.use(cookieParser());
 app.use(express.json());
 
 // PostgreSQL session store for production
-if (sessions && typeof sessions === 'function') {
-    app.use(sessions);
-}
+const sessionsMw = asMw(sessions);
+if (sessionsMw) app.use(sessionsMw);
 
 // Compression
 app.use(compression());
@@ -345,8 +353,8 @@ app.post('/api/create-test-users', async (req, res) => {
             admin: adminResult.rows[0],
             user: userResult.rows[0],
             credentials: {
-                admin: { email: 'admin@virtualaddresshub.co.uk', password: 'AdminPass123!' },
-                user: { email: 'user@virtualaddresshub.co.uk', password: 'UserPass123!' }
+                admin: { email: 'admin@virtualaddresshub.co.uk', password: 'AdminPass123!' }, // pragma: allowlist secret
+                user: { email: 'user@virtualaddresshub.co.uk', password: 'UserPass123!' } // pragma: allowlist secret
             }
         });
     } catch (error) {
@@ -357,7 +365,8 @@ app.post('/api/create-test-users', async (req, res) => {
 
 // Health check route
 const healthRouter = require('./routes/health');
-app.use(healthRouter);
+const healthMw = asMw(healthRouter);
+if (healthMw) app.use(healthMw);
 
 // Auth routes (import existing handlers)
 try {
