@@ -302,7 +302,12 @@ const adminAnalyticsRouter = adminAnalyticsModule.default || adminAnalyticsModul
 app.use(adminAnalyticsRouter);
 
 // Public routes
-app.use(require('./routes/public/plans').default);
+try {
+    // prefer compiled TS public router
+    app.use(require('./routes/public/plans').default);
+} catch (e) {
+    console.warn('[startup] public/plans route missing, skipping:', e.message);
+}
 
 // Dashboard routes
 app.use('/api', require('./routes/dashboard'));
