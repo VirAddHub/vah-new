@@ -3,7 +3,24 @@ const router = express.Router();
 const { validate, z } = require('../lib/validate');
 const { db } = require('../db');
 
+// Public path bypass
+const PUBLIC_PATTERNS = [
+  /^\/healthz$/,
+  /^\/api\/healthz$/,
+  /^\/api\/ready$/,
+  /^\/api\/auth\/ping$/,
+  /^\/api\/plans(?:\/.*)?$/,
+  /^\/plans$/,
+  /^\/scans\/.*/,
+];
+
+function isPublic(req) {
+  const raw = (req.originalUrl || req.url || '').split('?')[0];
+  return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
+}
+
 function requireAuth(req, res, next) {
+    if (isPublic(req)) return next();
     const token = req.cookies?.vah_session;
     if (!token) return res.status(401).json({ error: 'unauthenticated' });
     const user = db.prepare('SELECT * FROM user WHERE session_token = ?').get(token);

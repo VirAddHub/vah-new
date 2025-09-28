@@ -5,6 +5,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const SESSION_TTL_SECS = Number(process.env.SESSION_TTL_SECS || 60 * 60 * 24 * 30);
 const SLIDE_AFTER_SECS = Number(process.env.SLIDE_AFTER_SECS || 60 * 5);
 
+// Public-aware wrapper so any router using requireAuth won't guard public endpoints.
+// IMPORTANT: use originalUrl (full mount path), not req.path (router-relative).
+const PUBLIC_PATTERNS = [
+  /^\/healthz$/,
+  /^\/api\/healthz$/,
+  /^\/api\/ready$/,
+  /^\/api\/auth\/ping$/,
+  /^\/api\/plans(?:\/.*)?$/, // GET-only logic happens in the route, but bypass auth here
+  /^\/plans$/,               // legacy alias
+  /^\/scans\/.*/,            // static/public scans
+];
+function isPublic(req) {
+  const raw = (req.originalUrl || req.url || '').split('?')[0];
+  return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
+}
+
 function nowSec() { return Math.floor(Date.now() / 1000); }
 
 async function findBySession(token) {
@@ -24,7 +40,8 @@ async function findBySession(token) {
     return { id: row.id, email: row.email, role: row.role || 'user' };
 }
 
-async function requireAuth(req, res, next) {
+// Keep your original checks in here (token/cookie/session). This is a placeholder pass-through.
+async function baseRequireAuth(req, res, next) {
     console.log('[requireAuth] req.user:', req.user);
     console.log('[requireAuth] authorization header:', req.headers.authorization);
 
@@ -60,6 +77,11 @@ async function requireAuth(req, res, next) {
     req.user = { id: u.id, email: u.email, role: u.role || 'user' };
     console.log('[requireAuth] Session verified, user:', req.user);
     return next();
+}
+
+async function requireAuth(req, res, next) {
+    if (isPublic(req)) return next();
+    return baseRequireAuth(req, res, next);
 }
 
 module.exports = { requireAuth };

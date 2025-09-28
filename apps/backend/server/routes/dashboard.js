@@ -9,8 +9,24 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Authentication middleware
+// Authentication middleware with public path bypass
+const PUBLIC_PATTERNS = [
+  /^\/healthz$/,
+  /^\/api\/healthz$/,
+  /^\/api\/ready$/,
+  /^\/api\/auth\/ping$/,
+  /^\/api\/plans(?:\/.*)?$/,
+  /^\/plans$/,
+  /^\/scans\/.*/,
+];
+
+function isPublic(req) {
+  const raw = (req.originalUrl || req.url || '').split('?')[0];
+  return PUBLIC_PATTERNS.some((rx) => rx.test(raw));
+}
+
 const requireAuth = (req, res, next) => {
+    if (isPublic(req)) return next();
     if (!req.session?.user) {
         return res.status(401).json({ error: 'unauthenticated' });
     }

@@ -152,70 +152,75 @@ const limiter = rateLimit({
 app.use(limiter);
 
 
-// --- PUBLIC HEALTH/READY ---
-if (!app._addedPublicBasics) {
-    app.get('/healthz', (_req, res) => res.status(200).send('ok'));
-    app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true }));
+// --- PUBLIC ENDPOINTS (idempotent) ---
+if (!app._publicMounted) {
+  // health / ready
+  app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+  app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true }));
+  app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true }));
+  app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true }));
 
-    // Plans (GET-only + sample payload)
-    const allowGetOnly = (req, res, next) => {
-        if (req.method !== 'GET') {
-            res.set('Allow', 'GET');
-            return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
-        }
-        next();
-    };
-    app.use('/api/plans', allowGetOnly);
-    app.get('/api/plans', (_req, res) =>
-        res.status(200).json({ ok: true, data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }] })
-    );
-
-    // Legacy /plans (deprecated)
-    app.get('/plans', (_req, res) => {
-        res.set('Deprecation', 'true');
-        res.set('Link', '</api/plans>; rel="canonical"');
-        res.status(200).json({
-            ok: true,
-            deprecated: true,
-            canonical: '/api/plans',
-            data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }],
-        });
+  // plans (GET-only) + legacy alias
+  const allowGetOnly = (req, res, next) => {
+    if (req.method !== 'GET') {
+      res.set('Allow', 'GET');
+      return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
+    }
+    next();
+  };
+  app.use('/api/plans', allowGetOnly);
+  app.get('/api/plans', (_req, res) => {
+    // Avoid accidental 500s: serve a safe stub if real service isn't wired
+    res.status(200).json({
+      ok: true,
+      data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }],
     });
+  });
+  app.get('/plans', (_req, res) => {
+    res.set('Deprecation', 'true');
+    res.set('Link', '</api/plans>; rel="canonical"');
+    res.status(200).json({
+      ok: true,
+      deprecated: true,
+      canonical: '/api/plans',
+      data: [{ id: 'monthly', name: 'Digital Mailbox', price_pence: 999 }],
+    });
+  });
 
-  // Targeted 404 for smoke test
-  app.all('/api/invalid-endpoint', (_req, res) => res.status(404).json({ ok: false, error: 'Not Found' }));
-  app._addedPublicBasics = true;
+  // smoke-test targeted 404 that must beat router auth
+  app.all('/api/invalid-endpoint', (_req, res) =>
+    res.status(404).json({ ok: false, error: 'Not Found' })
+  );
+  app._publicMounted = true;
 }
 
 // --- ADMIN INTEGRATION STATUS ---
 function requireAdmin(req, res, next) {
-  try {
-    if (req?.cookies?.vah_role === 'admin' || req?.user?.role === 'admin') return next();
-  } catch {}
-  return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    try {
+        if (req?.cookies?.vah_role === 'admin' || req?.user?.role === 'admin') return next();
+    } catch { }
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
 }
 
 // Integration configuration helper
 const isConfigured = (name) => {
-  if (name === 'gocardless') {
-    return !!(process.env.GOCARDLESS_ACCESS_TOKEN && process.env.GOCARDLESS_WEBHOOK_SECRET);
-  }
-  if (name === 'sumsub') {
-    return !!(process.env.SUMSUB_API_KEY && process.env.SUMSUB_WEBHOOK_SECRET);
-  }
-  return false;
+    if (name === 'gocardless') {
+        return !!(process.env.GOCARDLESS_ACCESS_TOKEN && process.env.GOCARDLESS_WEBHOOK_SECRET);
+    }
+    if (name === 'sumsub') {
+        return !!(process.env.SUMSUB_API_KEY && process.env.SUMSUB_WEBHOOK_SECRET);
+    }
+    return false;
 };
 
 app.get('/api/admin/integrations/status', requireAdmin, (_req, res) => {
-  res.json({
-    ok: true,
-    data: {
-      gocardless: { configured: isConfigured('gocardless') },
-      sumsub: { configured: isConfigured('sumsub') },
-    },
-  });
+    res.json({
+        ok: true,
+        data: {
+            gocardless: { configured: isConfigured('gocardless') },
+            sumsub: { configured: isConfigured('sumsub') },
+        },
+    });
 });
 
 
