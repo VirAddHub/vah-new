@@ -51,9 +51,9 @@ const expressSession = require("express-session");
 // Guard missing optional modules for dev mode
 let sessions = null;
 try {
-  sessions = require('./sessions');
+    sessions = require('./sessions');
 } catch (_) {
-  // dev mode without sessions; proceed
+    // dev mode without sessions; proceed
 }
 const rateLimit = require("express-rate-limit");
 const winston = require('winston');
@@ -105,12 +105,14 @@ app.use('/api', publicPlans);
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
 app.get('/plans', (req, res) => {
-  // simple passthrough to /api/plans without redirect (avoid CORS/get semantics)
-  res.json({ plans: [
-    { id: 'basic',  name: 'Basic',  price: 0,     currency: 'GBP', interval: 'month' },
-    { id: 'pro',    name: 'Pro',    price: 1500,  currency: 'GBP', interval: 'month' },
-    { id: 'teams',  name: 'Teams',  price: 4900,  currency: 'GBP', interval: 'month' },
-  ], public: true, legacy: true });
+    // simple passthrough to /api/plans without redirect (avoid CORS/get semantics)
+    res.json({
+        plans: [
+            { id: 'basic', name: 'Basic', price: 0, currency: 'GBP', interval: 'month' },
+            { id: 'pro', name: 'Pro', price: 1500, currency: 'GBP', interval: 'month' },
+            { id: 'teams', name: 'Teams', price: 4900, currency: 'GBP', interval: 'month' },
+        ], public: true, legacy: true
+    });
 });
 
 // CORS Debug middleware (behind env flag)
@@ -166,7 +168,7 @@ app.use(express.json());
 
 // PostgreSQL session store for production
 if (sessions) {
-  app.use(sessions);
+    app.use(sessions);
 }
 
 // Compression
@@ -515,14 +517,14 @@ app.use((err, req, res, next) => {
 
 // ---- FINAL 404s (after all routes) ----
 app.use('/api', (req, res, next) => {
-  // This will catch any /api/* routes that weren't matched above
-  return res.status(404).json({ ok: false, error: 'Not Found', path: req.originalUrl });
+    // This will catch any /api/* routes that weren't matched above
+    return res.status(404).json({ ok: false, error: 'Not Found', path: req.originalUrl });
 });
 
 // optional: non-api 404
 app.use((req, res, next) => {
-  if (req.originalUrl.startsWith('/api/')) return next(); // already handled
-  return res.status(404).send('Not Found');
+    if (req.originalUrl.startsWith('/api/')) return next(); // already handled
+    return res.status(404).send('Not Found');
 });
 
 // Import error handler
