@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR, { type SWRConfiguration, type BareFetcher } from 'swr';
-import { apiClient, handleApiError } from './api-client';
+import { apiClient } from './api-client';
 
 // A strongly-typed JSON fetcher that throws on !res.ok
 export type Json = unknown;
@@ -45,7 +45,7 @@ const fetcher = async (url: string) => {
     try {
         return await apiClient.get(url);
     } catch (error) {
-        throw new Error(handleApiError(error));
+        throw new Error(error instanceof Error ? error.message : "An error occurred");
     }
 };
 

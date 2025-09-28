@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient, ApiClientError, isOk } from './api-client';
+import { apiClient, ApiErr, isOk } from './api-client';
 
 // User type definition
 export interface User {
@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setError(response.message || 'Login failed');
             }
         } catch (error) {
-            const errorMessage = error instanceof ApiClientError
-                ? error.message
+            const errorMessage = (error && typeof error === "object" && "message" in error)
+                ? (error as any).message
                 : 'Login failed. Please try again.';
             setError(errorMessage);
             throw error;
