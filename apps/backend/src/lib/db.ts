@@ -1,5 +1,5 @@
 // PostgreSQL-only database helper - NO SQLite support
-import { Pool, PoolClient } from "pg";
+import { Pool, PoolClient, QueryResultRow } from "pg";
 
 if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required. This app does NOT support SQLite.");
@@ -14,7 +14,7 @@ export const pool = new Pool({
     ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
-export async function query<T = any>(text: string, params?: any[]) {
+export async function query<T extends QueryResultRow = any>(text: string, params?: any[]) {
     return pool.query<T>(text, params);
 }
 
@@ -34,12 +34,12 @@ export async function tx<T>(fn: (client: PoolClient) => Promise<T>) {
 }
 
 // Helper functions for common patterns
-export async function getOne<T = any>(text: string, params?: any[]): Promise<T | null> {
+export async function getOne<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<T | null> {
     const { rows } = await query<T>(text, params);
     return rows[0] || null;
 }
 
-export async function getAll<T = any>(text: string, params?: any[]): Promise<T[]> {
+export async function getAll<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<T[]> {
     const { rows } = await query<T>(text, params);
     return rows;
 }

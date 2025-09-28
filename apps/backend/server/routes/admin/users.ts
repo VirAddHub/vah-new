@@ -148,8 +148,8 @@ router.put('/api/admin/users/:id', requireAdmin, asyncHandler(async (req: any, r
         'plan_status', 'is_admin', 'status', 'kyc_status'
     ];
 
-    const updateFields = [];
-    const values = [];
+    const updateFields: string[] = [];
+    const values: any[] = [];
     let paramCount = 1;
 
     for (const [key, value] of Object.entries(updates)) {

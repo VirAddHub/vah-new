@@ -163,9 +163,7 @@ const ensureColumn = async (table: string, column: string, type: string) => {
 async function start() {
     await initializeDatabase();
 
-    // Detect schema features before mounting routes
-    const { detectSchemaFeatures } = await import('./db');
-    await detectSchemaFeatures();
+    // Database is ready, proceed with route mounting
 
     // Dev-only guard to detect stale dist
     if (process.env.NODE_ENV !== 'production') {
