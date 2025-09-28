@@ -2,6 +2,25 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 
+// Integration configuration helper
+const isConfigured = (name) => {
+  if (name === 'gocardless') {
+    return !!(process.env.GOCARDLESS_ACCESS_TOKEN && process.env.GOCARDLESS_WEBHOOK_SECRET);
+  }
+  if (name === 'sumsub') {
+    return !!(process.env.SUMSUB_API_KEY && process.env.SUMSUB_WEBHOOK_SECRET);
+  }
+  return false;
+};
+
+function notImplemented(res, provider) {
+  return res.status(501).json({
+    ok: false,
+    error: `${provider} integration is not configured`,
+    configured: false,
+  });
+}
+
 function buildLegacyRouter(deps = {}) {
     const router = express.Router();
     const { db, logger, auth, adminOnly } = deps;
@@ -653,7 +672,9 @@ function buildLegacyRouter(deps = {}) {
 
     router.post('/webhooks-gc', asyncHandler(async (req, res) => {
         try {
-            res.json({ success: true, message: 'Webhook received' });
+            if (!isConfigured('gocardless')) return notImplemented(res, 'GoCardless');
+            // TODO: verify signature and process events
+            res.status(204).end();
         } catch (e) {
             logger?.error('webhook gc failed', e);
             res.status(500).json({ error: 'Server error' });
@@ -671,7 +692,9 @@ function buildLegacyRouter(deps = {}) {
 
     router.post('/webhooks/sumsub', asyncHandler(async (req, res) => {
         try {
-            res.json({ success: true, message: 'Webhook received' });
+            if (!isConfigured('sumsub')) return notImplemented(res, 'Sumsub');
+            // TODO: verify signature and process events
+            res.status(204).end();
         } catch (e) {
             logger?.error('webhook sumsub failed', e);
             res.status(500).json({ error: 'Server error' });

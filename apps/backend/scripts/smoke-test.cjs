@@ -242,3 +242,7 @@ if (require.main === module) {
 }
 
 module.exports = { runSmokeTests, generateReport };
+
+// If you choose to test webhooks while unconfigured, expect 501:
+// await test('POST /webhooks-gc (unconfigured)', 'POST', '/webhooks-gc', 501);
+// await test('POST /webhooks/sumsub (unconfigured)', 'POST', '/webhooks/sumsub', 501);
