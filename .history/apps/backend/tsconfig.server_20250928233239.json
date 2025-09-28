@@ -28,6 +28,9 @@
         ]
     },
     "include": [
+        "server/**/*",
+        "routes/**/*",
+        "middleware/**/*",
         "src/**/*"
     ],
     "exclude": [
