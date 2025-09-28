@@ -99,25 +99,19 @@ app.get('/api/healthz', (_req, res) => res.status(200).json({ ok: true, service:
 app.get('/api/ready', (_req, res) => res.status(200).json({ ok: true, ready: true }));
 app.get('/api/auth/ping', (_req, res) => res.status(200).json({ ok: true, pong: true }));
 
-// ---- PUBLIC: /api/plans ----
-const PLANS = [
-  { id: 'starter', name: 'Starter', priceMonthly: 0 },
-  { id: 'pro',     name: 'Pro',     priceMonthly: 12 },
-  { id: 'team',    name: 'Team',    priceMonthly: 29 },
-];
-
-// GET/HEAD → 200, everything else → 405
-app.get('/api/plans', (_req, res) => res.status(200).json({ ok: true, plans: PLANS }));
-app.head('/api/plans', (_req, res) => res.status(200).end());
-app.all('/api/plans', (req, res, next) => {
-  if (req.method === 'GET' || req.method === 'HEAD') return next(); // let the GET/HEAD above run (they already matched)
-  res.set('Allow', 'GET, HEAD');
-  return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
-});
+// ---- PUBLIC PLANS ROUTER (mount before any auth) ----
+const publicPlans = require('./routes/public/plans');
+app.use('/api', publicPlans);
 
 // ---- PUBLIC LEGACY: /plans → same payload as /api/plans
-app.get('/plans', (_req, res) => res.status(200).json({ ok: true, plans: PLANS }));
-app.head('/plans', (_req, res) => res.status(200).end());
+app.get('/plans', (req, res) => {
+  // simple passthrough to /api/plans without redirect (avoid CORS/get semantics)
+  res.json({ plans: [
+    { id: 'basic',  name: 'Basic',  price: 0,     currency: 'GBP', interval: 'month' },
+    { id: 'pro',    name: 'Pro',    price: 1500,  currency: 'GBP', interval: 'month' },
+    { id: 'teams',  name: 'Teams',  price: 4900,  currency: 'GBP', interval: 'month' },
+  ], public: true, legacy: true });
+});
 
 // CORS Debug middleware (behind env flag)
 if (process.env.CORS_DEBUG === '1') {
