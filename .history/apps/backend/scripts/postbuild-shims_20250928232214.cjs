@@ -19,7 +19,7 @@ try {
 
     // Create server/db.js shim
     const dbShim = `// auto-generated shim so routes requiring '../server/db' work under dist/server/routes
-module.exports = require('./db/index');
+module.exports = require('../src/lib/db');
 `;
     fs.writeFileSync(path.join(serverDir, 'db.js'), dbShim);
     console.log('[shims] wrote', path.relative(root, path.join(serverDir, 'db.js')));

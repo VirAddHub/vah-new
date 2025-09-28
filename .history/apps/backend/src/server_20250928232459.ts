@@ -27,10 +27,9 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 // --- routes that need raw body (webhooks)
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import profileRouter from "./server/routes/profile";
-import publicPlansRouter from "./server/routes/public/plans";
 
 // --- cookie options helper
-const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
+const { sessionCookieOptions, isSecureEnv } = require("../../lib/cookies");
 
 // --- init
 const app = express();
@@ -189,7 +188,6 @@ async function start() {
     // Mount routes
     app.use('/api/profile', profileRouter);
     app.use('/api', sumsubWebhook);
-    app.use('/api', publicPlansRouter);
 
     // Stub other routes to prevent crashes
     app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));

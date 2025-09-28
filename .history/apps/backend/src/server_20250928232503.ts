@@ -189,7 +189,6 @@ async function start() {
     // Mount routes
     app.use('/api/profile', profileRouter);
     app.use('/api', sumsubWebhook);
-    app.use('/api', publicPlansRouter);
 
     // Stub other routes to prevent crashes
     app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));

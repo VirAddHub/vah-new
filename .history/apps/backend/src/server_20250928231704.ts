@@ -21,16 +21,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { corsMiddleware } from './cors';
 
 // Database adapters
-import { ensureSchema, getPool } from "./server/db";
-import { selectOne, selectMany, execute, insertReturningId } from "./server/db-helpers";
+import { ensureSchema, selectOne, selectMany, execute, insertReturningId } from './db';
 
 // --- routes that need raw body (webhooks)
-import sumsubWebhook from "./server/routes/webhooks-sumsub";
-import profileRouter from "./server/routes/profile";
-import publicPlansRouter from "./server/routes/public/plans";
+import sumsubWebhook from "./routes/webhooks-sumsub";
 
 // --- cookie options helper
-const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
+const { sessionCookieOptions, isSecureEnv } = require("../lib/cookies");
 
 // --- init
 const app = express();
@@ -187,28 +184,25 @@ async function start() {
     });
 
     // Mount routes
-    app.use('/api/profile', profileRouter);
-    app.use('/api', sumsubWebhook);
-    app.use('/api', publicPlansRouter);
-
-    // Stub other routes to prevent crashes
-    app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-mail-bulk', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-gc', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-postmark', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-onedrive', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/email-prefs', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/gdpr-export', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/downloads', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/notifications', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-search', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/files', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-forward', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-repair', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-forward-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
+    app.use('/api', require('../routes/profile-reset'));
+    app.use('/api', require('../routes/admin-mail'));
+    app.use('/api', require('../routes/admin-mail-bulk'));
+    app.use('/api', require('../routes/admin-audit'));
+    app.use('/api', require('../routes/webhooks-sumsub'));
+    app.use('/api', require('../routes/webhooks-gc'));
+    app.use('/api', require('../routes/webhooks-postmark'));
+    app.use('/api', require('../routes/webhooks-onedrive'));
+    app.use('/api', require('../routes/email-prefs'));
+    app.use('/api', require('../routes/gdpr-export'));
+    app.use('/api', require('../routes/downloads'));
+    app.use('/api', require('../routes/notifications'));
+    app.use('/api', require('../routes/mail-search'));
+    app.use('/api', require('../routes/files'));
+    app.use('/api', require('../routes/mail-forward'));
+    app.use('/api', require('../routes/admin-repair'));
+    app.use('/api', require('../routes/admin-forward-audit'));
+    app.use('/api', require('../routes/debug'));
+    app.use('/api', require('../routes/metrics'));
 
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
     const rawPort = process.env.PORT || process.env.port || '8080';

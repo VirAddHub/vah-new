@@ -1,6 +1,0 @@
-{
-    "name": "vah-api",
-    "scripts": {
-        "start": "node index.js"
-    }
-}

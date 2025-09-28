@@ -14,23 +14,19 @@ import crypto from 'crypto';
 import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import http from 'http';
 import type { Request, Response, NextFunction } from 'express';
 
 // CORS middleware
 import { corsMiddleware } from './cors';
 
 // Database adapters
-import { ensureSchema, getPool } from "./server/db";
-import { selectOne, selectMany, execute, insertReturningId } from "./server/db-helpers";
+import { ensureSchema, selectOne, selectMany, execute, insertReturningId } from './db';
 
 // --- routes that need raw body (webhooks)
-import sumsubWebhook from "./server/routes/webhooks-sumsub";
-import profileRouter from "./server/routes/profile";
-import publicPlansRouter from "./server/routes/public/plans";
+const sumsubWebhook = require("./routes/webhooks-sumsub");
 
 // --- cookie options helper
-const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
+const { sessionCookieOptions, isSecureEnv } = require("../lib/cookies");
 
 // --- init
 const app = express();
@@ -181,67 +177,48 @@ async function start() {
         }
     }
 
-    // ---- Health check (must be synchronous/instant) ----
-    app.get('/api/healthz', (_req, res) => {
-        res.status(200).send('ok');
-    });
-
     // Mount routes
-    app.use('/api/profile', profileRouter);
-    app.use('/api', sumsubWebhook);
-    app.use('/api', publicPlansRouter);
+    app.use('/api', require('./routes/profile-reset'));
+    app.use('/api', require('./routes/admin-mail'));
+    app.use('/api', require('./routes/admin-mail-bulk'));
+    app.use('/api', require('./routes/admin-audit'));
+    app.use('/api', require('./routes/webhooks-sumsub'));
+    app.use('/api', require('./routes/webhooks-gc'));
+    app.use('/api', require('./routes/webhooks-postmark'));
+    app.use('/api', require('./routes/webhooks-onedrive'));
+    app.use('/api', require('./routes/email-prefs'));
+    app.use('/api', require('./routes/gdpr-export'));
+    app.use('/api', require('./routes/downloads'));
+    app.use('/api', require('./routes/notifications'));
+    app.use('/api', require('./routes/mail-search'));
+    app.use('/api', require('./routes/files'));
+    app.use('/api', require('./routes/mail-forward'));
+    app.use('/api', require('./routes/admin-repair'));
+    app.use('/api', require('./routes/admin-forward-audit'));
+    app.use('/api', require('./routes/debug'));
+    app.use('/api', require('./routes/metrics'));
 
-    // Stub other routes to prevent crashes
-    app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-mail-bulk', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-gc', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-postmark', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-onedrive', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/email-prefs', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/gdpr-export', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/downloads', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/notifications', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-search', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/files', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-forward', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-repair', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-forward-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
-
-    // ---- Server bootstrap: bind to Render's PORT or fallback ----
-    const rawPort = process.env.PORT || process.env.port || '8080';
-    const PORT = Number(rawPort);
+    // Bind to the platform-provided port on Render; default for local dev.
+    const PORT = Number(process.env.PORT || 8080);
     const HOST = '0.0.0.0';
+    const server = app.listen(PORT, HOST, () => {
+        console.log(`VAH backend listening on http://${HOST}:${PORT}`);
+        console.log(`CORS origins: ${process.env.APP_ORIGIN || 'http://localhost:3000'}`);
+        console.log(`DB client: ${process.env.DB_CLIENT || 'sqlite'}`);
 
-    const server = http.createServer(app);
-
-    server.listen(PORT, HOST, () => {
-        const env = process.env.NODE_ENV || 'development';
-        const cors = process.env.CORS_ORIGINS || 'default';
-        // Print extremely explicit diagnostics for Render logs:
-        console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
-        console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');
-        console.log('[boot] CORS origins:', cors);
-        console.log(`[boot] listening on http://${HOST}:${PORT}`);
-        console.log('[boot] health check:', '/api/healthz');
-        console.log('[boot] NODE_ENV:', env);
+        // Log build metadata
+        try {
+            const fs = require('fs');
+            const meta = JSON.parse(fs.readFileSync('dist/build-meta.json', 'utf8'));
+            console.log('[boot] build:', meta);
+        } catch {
+            console.log('[boot] build: (no meta)');
+        }
     });
 
-    // ---- Graceful shutdown (prevents crash loops) ----
-    const shutdown = (signal: NodeJS.Signals) => {
-        console.log(`[boot] received ${signal}, shutting down...`);
-        server.close(err => {
-            if (err) {
-                console.error('[boot] error during server.close:', err);
-                process.exit(1);
-            }
-            process.exit(0);
-        });
-    };
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
+    // Render prefers these to avoid early close on slow networks
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
 }
 
 start().catch(err => {
