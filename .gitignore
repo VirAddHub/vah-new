@@ -14,7 +14,6 @@ apps/frontend/out/
 *.tsbuildinfo
 
 # Lockfiles at root (keep inside apps/)
-package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
