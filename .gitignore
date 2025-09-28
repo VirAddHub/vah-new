@@ -41,6 +41,10 @@ pids/
 *.env
 **/.env
 **/.env.*
+# Specific dot-env files from 'main' that were missed by the glob
+.env.test
+.env.local
+.env.production
 
 # Framework outputs
 # Next.js
