@@ -46,17 +46,8 @@ function loadRouter(p) {
     throw new TypeError(`Invalid router export from ${p}`);
 }
 
-// Safe middleware loader - will be replaced by compiled version
-function asMw(mod, name = 'middleware') {
-    if (typeof mod === 'function') return mod;
-    if (mod && typeof mod.default === 'function') return mod.default;
-    return (_req, _res, next) => {
-        if (process.env.NODE_ENV !== 'production') {
-            console.warn(`[asMiddleware] skipped ${name}`);
-        }
-        next();
-    };
-}
+// Safe middleware loader - import from compiled util
+const { asMiddleware: asMw } = require('../dist/src/server/util/asMiddleware');
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
