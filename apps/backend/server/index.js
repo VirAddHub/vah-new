@@ -88,6 +88,10 @@ function logSkip(what, table) {
 const app = express();
 app.set('trust proxy', 1); // needed for Secure cookies behind CF/Render
 
+// Health check routes - before any middleware
+app.get("/healthz", (req, res) => res.status(200).send("ok"));
+app.get("/ready", (req, res) => res.status(200).json({status: "ready"}));
+
 // CORS configuration - MUST be at the very top before any other middleware
 const { makeCors } = require('./cors.js');
 
