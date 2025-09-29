@@ -68,8 +68,9 @@ jobs:
           PGDATABASE: vah_test
           DATABASE_URL: postgres://${{ env.PGUSER }}:${{ env.PGPASSWORD }}@${{ env.PGHOST }}:${{ env.PGPORT }}/${{ env.PGDATABASE }}?sslmode=disable # pragma: allowlist secret
           PORT: 3001
+          HOST: 0.0.0.0
           NODE_ENV: test
-          APP_BASE_URL: http://localhost:3001
+          APP_BASE_URL: http://localhost:3000
           EMAIL_FROM: hello@virtualaddresshub.co.uk
           EMAIL_FROM_NAME: VirtualAddressHub
           EMAIL_REPLY_TO: support@virtualaddresshub.co.uk

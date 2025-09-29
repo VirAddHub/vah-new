@@ -17,6 +17,9 @@ import jwt from 'jsonwebtoken';
 import http from 'http';
 import type { Request, Response, NextFunction } from 'express';
 
+// Centralized environment config
+import { HOST, PORT } from './config/env';
+
 // CORS middleware
 import { corsMiddleware } from './cors';
 
@@ -272,10 +275,6 @@ async function start() {
     app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
 
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
-    const rawPort = process.env.PORT || process.env.port || '8080';
-    const PORT = Number(rawPort);
-    const HOST = '0.0.0.0';
-
     const server = http.createServer(app);
 
     server.listen(PORT, HOST, () => {
@@ -285,7 +284,7 @@ async function start() {
         console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
         console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');
         console.log('[boot] CORS origins:', cors);
-        console.log(`[boot] listening on http://${HOST}:${PORT}`);
+        console.log(`[start] backend listening at http://${HOST}:${PORT}`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
     });

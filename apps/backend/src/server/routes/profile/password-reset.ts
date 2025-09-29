@@ -2,10 +2,9 @@ import { Router } from "express";
 import type { Pool } from "pg";
 import { generateResetTokenRaw, hashToken, verifyToken, expiryFromNow } from "../../../security/reset-token";
 import { sendTemplateEmail } from "../../../lib/mailer";
-import { buildPasswordResetModel } from "../../../mailer/models";
+import { buildPasswordResetModel } from "../../../lib/mail/models";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
-const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:3001";
 const ttl = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES ?? 30);
 
 export default function passwordResetRouter(pool: Pool) {
@@ -42,8 +41,6 @@ export default function passwordResetRouter(pool: Pool) {
         [hash, expiresAt.toISOString(), user.id]
       );
 
-      const resetUrl = `${appBaseUrl}/reset-password/confirm?token=${encodeURIComponent(raw)}`;
-
       // fire-and-forget; do not leak errors
       try {
         await sendTemplateEmail({
@@ -51,7 +48,7 @@ export default function passwordResetRouter(pool: Pool) {
           templateAlias: 'password-reset-email',
           model: buildPasswordResetModel({
             firstName: user.first_name,
-            resetUrl,
+            rawToken: raw,
             ttlMinutes: ttl,
           }),
         });
