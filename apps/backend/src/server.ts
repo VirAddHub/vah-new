@@ -181,7 +181,7 @@ async function start() {
 
     // ---- Health check (must be synchronous/instant) ----
     app.get('/api/healthz', (_req, res) => {
-        res.set('Content-Type', 'application/json').status(200).send('{"ok":true}');
+        res.status(200).json({ ok: true });
     });
 
     // Version info (for deployment verification)
