@@ -1,0 +1,12 @@
+# .github/workflows/security.yml
+name: Security Scan
+on: [pull_request]
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install detect-secrets
+        run: pip install detect-secrets
+      - name: Scan for secrets (baseline)
+        run: detect-secrets scan --baseline .secrets.baseline
