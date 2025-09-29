@@ -78,10 +78,10 @@ const billing = {
     createRedirectFlow: () => post<{ redirect_url: string }>('/api/billing/create-redirect-flow'),
     getInvoiceLink: (invoiceId: string) => get<{ url: string }>(`/api/admin/invoices/${invoiceId}/link`), // admin link
     getAdminTransactions: (params: { page?: number; page_size?: number }) => {
-        const u = new URL('/api/admin/transactions', 'http://x');
-        if (params.page) u.searchParams.set('page', String(params.page));
-        if (params.page_size) u.searchParams.set('page_size', String(params.page_size));
-        return get<{ items: any[]; total?: number }>(u.pathname + u.search);
+        const searchParams = new URLSearchParams();
+        if (params.page) searchParams.set('page', String(params.page));
+        if (params.page_size) searchParams.set('page_size', String(params.page_size));
+        return get<{ items: any[]; total?: number }>(`/api/admin/transactions?${searchParams.toString()}`);
     },
     manageSubscription: (action: 'pause' | 'resume' | 'cancel') =>
         post<{ ok: true; message?: string }>('/api/billing/subscription/manage', { action }),

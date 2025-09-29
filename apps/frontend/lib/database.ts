@@ -255,7 +255,7 @@ const createDefaultSettings = async () => {
         },
         {
             key: 'site_url',
-            value: { value: process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualaddresshub.co.uk' }
+            value: { value: process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk' }
         },
         {
             key: 'admin_email',

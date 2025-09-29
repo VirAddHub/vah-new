@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
                 plan: (savedUser as any).plan,
                 createdBy: 'admin'
             }),
-            request.headers.get('x-forwarded-for') || '127.0.0.1',
+            request.headers.get('x-forwarded-for') || 'unknown',
             request.headers.get('user-agent') || 'Admin Panel'
         ]);
 
@@ -163,7 +163,7 @@ async function sendWelcomeEmail(user: NewUser): Promise<void> {
                 email: user.email,
                 companyName: user.company_name || 'N/A',
                 plan: user.plan || 'basic',
-                loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/login`
+                loginUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000'}/login`
             }
         });
 
@@ -183,7 +183,7 @@ async function sendWelcomeEmail(user: NewUser): Promise<void> {
           <li>Email: ${user.email}</li>
         </ul>
         <p>You can now log in to your account and start using our services.</p>
-        <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Your Account</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000'}/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Your Account</a></p>
         <p>If you have any questions, please don't hesitate to contact our support team.</p>
         <p>Best regards,<br>The VirtualAddressHub Team</p>
       `,
@@ -200,7 +200,7 @@ async function sendWelcomeEmail(user: NewUser): Promise<void> {
         - Email: ${user.email}
         
         You can now log in to your account and start using our services.
-        Login URL: ${process.env.NEXT_PUBLIC_BASE_URL}/login
+        Login URL: ${process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:3000'}/login
         
         If you have any questions, please don't hesitate to contact our support team.
         
