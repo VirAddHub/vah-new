@@ -73,7 +73,7 @@ describe('template sends (guarded)', () => {
       expect.objectContaining({
                 From: 'VirtualAddressHub <hello@virtualaddresshub.co.uk>',
                 To: 'u@example.com',
-                Subject: 'Your plan has been cancelled',
+                Subject: 'Notification',
                 MessageStream: 'outbound',
                 ReplyTo: 'support@virtualaddresshub.co.uk',
                 HtmlBody: expect.stringContaining('Hi'),
@@ -104,8 +104,9 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'password-reset-email',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    cta_url: 'https://app.example.com/reset?token=abc123',
-                    name: 'User',
+                    reset_link: 'https://app.example.com/reset?token=abc123',
+                    first_name: 'User',
+                    expiry_minutes: '60',
                 }),
             }),
         );
@@ -122,7 +123,7 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'password-changed-confirmation',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    name: 'User',
+                    first_name: 'User',
                 }),
             }),
         );
@@ -144,8 +145,8 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'welcome-email',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    cta_url: 'https://app.example.com/dashboard',
-                    name: 'User',
+                    dashboard_link: 'https://app.example.com/dashboard',
+                    first_name: 'User',
                 }),
             }),
         );
@@ -249,7 +250,7 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'kyc-approved',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    name: 'User',
+                    first_name: 'User',
                 }),
             }),
         );
