@@ -114,16 +114,37 @@ const csrfProtection = (req: any, res: any, next: any) => {
     next();
 };
 
-// Rate limiting
+// ---- Health check FIRST (before rate limiter) ----
+app.get('/api/healthz', (_req, res) => {
+    res.status(200).json({ ok: true });
+});
+
+// Rate limiting (with health check exemption)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => {
+        // Keep existing keying logic
+        return req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+    },
+    skip: (req) => {
+        const ua = (req.headers['user-agent'] || '').toString();
+        // Skip our health check and Render's probe entirely
+        if (req.path === '/api/healthz') return true;
+        if (ua.startsWith('Render/1.0')) return true;
+        return false;
+    },
 });
 
-app.use(limiter);
+// Apply rate limiter to API routes only (health check already excluded)
+// Optional staging toggle to disable rate limiting
+const disableLimiter = process.env.DISABLE_RATE_LIMIT === '1';
+if (!disableLimiter) {
+    app.use('/api', limiter);
+}
 
 // Global parsers for the whole app (safe)
 app.use(express.json({ limit: '10mb' }));
@@ -181,10 +202,7 @@ async function start() {
         }
     }
 
-    // ---- Health check (must be synchronous/instant) ----
-    app.get('/api/healthz', (_req, res) => {
-        res.status(200).json({ ok: true });
-    });
+    // ---- Health check already defined above (before rate limiter) ----
 
     // Version info (for deployment verification)
     app.get('/api/__version', (_req, res) => {
