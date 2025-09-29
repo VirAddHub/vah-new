@@ -1,22 +1,17 @@
 // apps/backend/src/server/routes/webhooks-postmark.ts
 import type { Request, Response } from 'express';
 
-// simple optional basic auth for Postmark
-// POSTMARK_WEBHOOK_BASIC="user:pass" or leave unset for no-auth (CI/staging)
-const BASIC = process.env.POSTMARK_WEBHOOK_BASIC || '';
-const [BASIC_USER, BASIC_PASS] = BASIC ? BASIC.split(':', 2) : ['', ''];
+// Postmark webhook secret validation
+const WEBHOOK_SECRET = process.env.POSTMARK_WEBHOOK_SECRET || '';
 
-function basicAuthOk(authHeader?: string) {
-    if (!BASIC) return true; // no secret => allow (CI/Staging)
-    if (!authHeader?.startsWith('Basic ')) return false;
-    const creds = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
-    const [u, p] = creds.split(':', 2);
-    return u === BASIC_USER && p === BASIC_PASS;
+function webhookSecretOk(secretHeader?: string) {
+    if (!WEBHOOK_SECRET) return true; // no secret => allow (CI/Staging)
+    return secretHeader === WEBHOOK_SECRET;
 }
 
 export function postmarkWebhook(req: Request, res: Response) {
-    if (!basicAuthOk(req.headers.authorization)) {
-        res.setHeader('WWW-Authenticate', 'Basic');
+    const secretHeader = req.headers['x-postmark-webhook-secret'] as string;
+    if (!webhookSecretOk(secretHeader)) {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
 

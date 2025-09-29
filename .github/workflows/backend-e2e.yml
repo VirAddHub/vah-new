@@ -66,7 +66,7 @@ jobs:
           PGHOST: localhost
           PGPORT: 5432
           PGDATABASE: vah_test
-          DATABASE_URL: postgres://${{ env.PGUSER }}:${{ env.PGPASSWORD }}@${{ env.PGHOST }}:${{ env.PGPORT }}/${{ env.PGDATABASE }} # pragma: allowlist secret
+          DATABASE_URL: postgres://${{ env.PGUSER }}:${{ env.PGPASSWORD }}@${{ env.PGHOST }}:${{ env.PGPORT }}/${{ env.PGDATABASE }}?sslmode=disable # pragma: allowlist secret
           PORT: 3001
           NODE_ENV: test
           APP_BASE_URL: http://localhost:3001
@@ -74,6 +74,7 @@ jobs:
           EMAIL_FROM_NAME: VirtualAddressHub
           EMAIL_REPLY_TO: support@virtualaddresshub.co.uk
           POSTMARK_TOKEN: dummy
+          POSTMARK_WEBHOOK_SECRET: test-secret # pragma: allowlist secret
           DISABLE_RATE_LIMIT_FOR_HEALTHZ: 1
         run: |
           node dist/server/index.js &
