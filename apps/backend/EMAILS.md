@@ -1,35 +1,28 @@
-# Email System Operations Guide
+# Email System – Operations Guide (Prod-Ready)
 
-## Overview
+## Current topology
 
-Production-ready email notification system with Postmark integration, feature flags, and graceful fallbacks.
+* **Frontend (APP_BASE_URL):** `https://vah-new-frontend-75d6.vercel.app`
+* **Backend (API base):** `https://vah-api-staging.onrender.com`
 
-## Current Setup (Vercel + Render)
+All email CTA links will point to the **frontend**. Postmark webhooks will POST to the **backend**.
 
-**Frontend**: `https://vah-new-frontend-75d6.vercel.app` (Vercel)  
-**Backend**: `https://vah-api-staging.onrender.com` (Render)  
-**Email CTAs**: Point to Vercel frontend URLs
+## Environment Variables (set in **Render → Backend**)
 
-### When Switching to Custom Domain
-Change only `APP_BASE_URL` to `https://virtualaddresshub.co.uk` - everything else stays the same.
-
-## Environment Variables
-
-### Required (Current Vercel Setup)
 ```bash
 # --- App / URLs
 APP_BASE_URL=https://vah-new-frontend-75d6.vercel.app
 
-# --- Postmark
-POSTMARK_TOKEN=your_postmark_server_token  # pragma: allowlist secret
+# --- Postmark (DO NOT COMMIT)
+POSTMARK_TOKEN=<server_token_from_postmark_dashboard>
 POSTMARK_FROM=hello@virtualaddresshub.co.uk
 POSTMARK_FROM_NAME=VirtualAddressHub
 POSTMARK_REPLY_TO=support@virtualaddresshub.co.uk
 POSTMARK_STREAM=outbound
 
-# --- Webhook basic auth (optional)
-POSTMARK_WEBHOOK_USER=your_webhook_user  # pragma: allowlist secret
-POSTMARK_WEBHOOK_PASS=your_webhook_pass  # pragma: allowlist secret
+# --- Webhook basic auth (optional but recommended)
+POSTMARK_WEBHOOK_USER=<random_username>
+POSTMARK_WEBHOOK_PASS=<random_password>
 
 # --- Feature flags (1=on, 0=off)
 EMAIL_ONBOARDING=1
@@ -40,138 +33,118 @@ EMAIL_SUPPORT=1
 EMAIL_SECURITY=1
 ```
 
-## Postmark Templates
+> ✅ **Secrets live only in Render/Vercel env dashboards.** Never commit them to Git.
 
-Create these templates with **exact aliases**:
+## Postmark templates (aliases + variables)
 
-### 1. `billing-reminder`
-- **CTA Target**: `${APP_BASE_URL}/billing#payment`
-- **Template Variables**: `name`, `action_url`
-- **Subject**: "Action required: complete your payment"
+Create **exact** aliases in Postmark:
 
-### 2. `kyc-reminder`
-- **CTA Target**: `${APP_BASE_URL}/profile`
-- **Template Variables**: `name`, `action_url`
-- **Subject**: "Please complete KYC"
+1. `billing-reminder`
 
-### 3. `mail-received`
-- **CTA Target**: `${APP_BASE_URL}/mail`
-- **Template Variables**: `name`, `preview`, `action_url`
-- **Subject**: "You have got mail"
+   * **Subject:** `Action required: complete your payment`
+   * **CTA:** `${APP_BASE_URL}/billing#payment`
+   * **Variables:** `name`, `action_url`
 
-## Webhook Configuration
+2. `kyc-reminder`
 
-**Endpoint**: `POST https://vah-api-staging.onrender.com/api/webhooks-postmark`
+   * **Subject:** `Please complete KYC`
+   * **CTA:** `${APP_BASE_URL}/profile`
+   * **Variables:** `name`, `action_url`
 
-**Authentication**: Basic Auth (if configured)
-- Username: `POSTMARK_WEBHOOK_USER`  # pragma: allowlist secret
-- Password: `POSTMARK_WEBHOOK_PASS`  # pragma: allowlist secret
+3. `mail-received`
 
-**Expected Response**: `204 No Content`
+   * **Subject:** `You've got mail`
+   * **CTA:** `${APP_BASE_URL}/mail`
+   * **Variables:** `name`, `preview`, `action_url`
 
-## API Usage
+> If a template is missing, the system sends a built-in **HTML fallback** automatically.
 
-### Send Billing Reminder
-```typescript
-import { sendBillingReminder } from './lib/mailer';
+## Webhook (Postmark → Backend)
 
-await sendBillingReminder({ 
-  email: 'user@example.com', 
-  name: 'John Doe' 
-});
-```
+* **URL:** `POST https://vah-api-staging.onrender.com/api/webhooks-postmark`
+* **Auth:** Basic (if configured)
 
-### Send KYC Reminder
-```typescript
-import { sendKycReminder } from './lib/mailer';
+  * Username: `POSTMARK_WEBHOOK_USER`  # pragma: allowlist secret
+  * Password: `POSTMARK_WEBHOOK_PASS`  # pragma: allowlist secret
+* **Expected response:** `204 No Content`
 
-await sendKycReminder({ 
-  email: 'user@example.com', 
-  name: 'John Doe' 
-});
-```
+## CTA conventions (used across templates)
 
-### Send Mail Received Notification
-```typescript
-import { sendMailReceived } from './lib/mailer';
+* Invoice: `/billing#invoices`
+* Payment method: `/billing#payment`
+* Plan: `/billing#plan`
+* Profile / Security: `/profile#security`
+* Profile / KYC: `/profile`
+* Dashboard: `/dashboard`
+* Mail inbox: `/mail`
+* Forwarding: `/forwarding`
+* Support: `/support`
 
-await sendMailReceived({ 
-  email: 'user@example.com', 
-  name: 'John Doe',
-  preview: 'New message from Jane Smith...'
-});
-```
+## Health & verification
 
-## Feature Flags
+**Backend health**
 
-Each email type can be independently enabled/disabled:
-
-- `EMAIL_BILLING=1` - Enable billing reminders
-- `EMAIL_KYC=1` - Enable KYC reminders  
-- `EMAIL_MAIL=1` - Enable mail notifications
-- `EMAIL_ONBOARDING=1` - Enable onboarding emails
-- `EMAIL_SUPPORT=1` - Enable support emails
-- `EMAIL_SECURITY=1` - Enable security emails
-
-**Safe Deployment**: Set flags to `0` or unset to disable without code changes.
-
-## Health Checks
-
-### API Health
 ```bash
-curl -i https://vah-api-staging.onrender.com/api/healthz
-# Expected: {"ok":true}
+curl -i https://vah-api-staging.onrender.com/api/healthz   # -> {"ok":true}
+curl -i https://vah-api-staging.onrender.com/api/__version # build/commit info
 ```
 
-### Version Check
-```bash
-curl -i https://vah-api-staging.onrender.com/api/__version
-# Expected: Build info with commit hash
-```
+**Webhook smoke test**
 
-### Webhook Test
 ```bash
-curl -i -X POST -H "Content-Type: application/json" \
-  --data-binary '{"MessageStream":"outbound","RecordType":"Open","MessageID":"test-123","Recipient":"test@example.com"}' \
+curl -i -X POST \
+  -H "Content-Type: application/json" \
+  --data-binary '{"MessageStream":"outbound","RecordType":"Open","MessageID":"ops-test","Recipient":"test@example.com"}' \
   https://vah-api-staging.onrender.com/api/webhooks-postmark
-# Expected: 204 No Content
+# -> 204 No Content
 ```
+
+## Feature flags (safe rollout)
+
+* Toggle any email type independently using the `EMAIL_*` flags above.
+* When a flag is off, the corresponding function is a **no-op** (no send, no crash).
 
 ## Troubleshooting
 
-### Emails Not Sending
-1. Check `POSTMARK_TOKEN` is set in Vercel
-2. Verify feature flags are set to `1`
-3. Confirm template aliases match exactly
-4. Check Postmark dashboard for delivery status
+**Emails not sending**
 
-### Webhook Issues
-1. Verify webhook URL is correct
-2. Check basic auth credentials if configured
-3. Review webhook logs in Postmark dashboard
-4. Test with curl command above
+1. `POSTMARK_TOKEN` set in Render?
+2. `EMAIL_*` flag = `1`?
+3. Template alias names match exactly?
+4. Check Postmark Activity for send/delivery status.
 
-### Fallback Behavior
-- If templates are missing, system sends HTML fallback
-- If Postmark token is missing, functions return early (no-op)
-- All errors are logged but don't crash the application
+**Webhook issues**
 
-## Development
+1. Postmark webhook URL matches the backend URL above.
+2. Basic auth creds match Render envs.
+3. Backend returns `204`.
+4. See backend logs for `[postmark-webhook]` entries.
 
-### Local Testing
-```bash
-# Set minimal env vars for testing
-export POSTMARK_TOKEN=""
-export EMAIL_BILLING=1
-export EMAIL_KYC=1
-export EMAIL_MAIL=1
+**Fallback behavior**
 
-# Run tests
-npm test -- tests/unit/mailer.templates.spec.ts
+* Missing templates → HTML fallback is sent.
+* Missing Postmark token → functions return early (no-op), app stays up.
+* Errors are logged; they don't crash the server.
+
+## Migration later (custom domain)
+
+When you switch the frontend to your custom domain, update **one** var:
+
+```
+APP_BASE_URL=https://virtualaddresshub.co.uk
 ```
 
-### Production Testing
+Everything else (templates, flags, webhook) can remain unchanged unless you also move the backend URL.
+
+## Debug endpoint (optional)
+
+**Safe test email trigger** (guarded by env flags):
+
 ```bash
+# Enable debug emails in Render env:
+DEBUG_EMAIL_ENABLED=1
+DEBUG_EMAIL_ALLOWED_IPS=your.ip.address,another.ip  # optional IP allowlist
+
 # Test billing reminder
 curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
   -H "Content-Type: application/json" \
@@ -182,24 +155,12 @@ curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
   -H "Content-Type: application/json" \
   -d '{"type":"kyc","email":"test@example.com","name":"Test User"}'
 
-# Test mail received notification
+# Test mail received
 curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
   -H "Content-Type: application/json" \
-  -d '{"type":"mail","email":"test@example.com","name":"Test User","preview":"New message from John..."}'
+  -d '{"type":"mail","email":"test@example.com","name":"Test User","preview":"New message..."}'
 ```
 
-**Response**: Returns environment info and CTA URLs for verification.
+**Response:** Returns environment info and CTA URLs for verification.
 
-## Security
-
-- All environment variables are kept in Vercel (not in Git)
-- Webhook endpoint has basic auth protection
-- Email functions are feature-flagged for safe deployment
-- No sensitive data is logged in production
-
-## Monitoring
-
-- Check Postmark dashboard for delivery rates
-- Monitor webhook endpoint for 204 responses
-- Watch application logs for email function calls
-- Set up alerts for webhook failures
+> 🔒 **Security:** Debug endpoint is disabled by default. Enable only when needed for testing.
