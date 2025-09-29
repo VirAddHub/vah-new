@@ -126,10 +126,6 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-        // Keep existing keying logic
-        return req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
-    },
     skip: (req) => {
         const ua = (req.headers['user-agent'] || '').toString();
         // Skip our health check and Render's probe entirely
