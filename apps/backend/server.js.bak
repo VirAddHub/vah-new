@@ -29,6 +29,9 @@ const path = require('path');
 // Import new mailer system
 const { sendTemplateEmail } = require('./src/lib/mailer.ts');
 const { Templates } = require('./src/lib/postmark-templates.ts');
+
+// Import email feature flags
+const { EMAIL_ONBOARDING, EMAIL_BILLING, EMAIL_KYC, EMAIL_MAIL, EMAIL_SUPPORT, EMAIL_SECURITY } = require('./src/lib/email-flags.ts');
 fs.mkdirSync(path.join(process.cwd(), 'logs'), { recursive: true });
 
 
@@ -641,7 +644,10 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
             req.ip
         );
 
-        await sendTemplateEmail({
+        if (EMAIL_SECURITY) {
+
+
+            await sendTemplateEmail({
     to: user.email,
     templateAlias: Templates.PasswordReset,
     model: {
@@ -650,6 +656,9 @@ app.post('/api/profile/reset-password-request', authLimiter, validate(schemas.pa
     },
     cta_path: `/reset-password?token=${token}`
 });
+
+
+        }
 
         logActivity(user.id, 'password_reset_requested', { email }, null, req);
         const resp = { ok: true, message: 'If the email exists, we sent a link' };
@@ -674,7 +683,9 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
 
         const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(row.user_id);
         if (u) {
-            await sendTemplateEmail({
+            if (EMAIL_SECURITY) {
+
+                await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.PasswordChanged,
     model: {
@@ -683,6 +694,8 @@ app.post('/api/profile/reset-password', authLimiter, validate(schemas.resetPassw
     },
     cta_path: '/profile#security'
 });
+
+            }
         }
 
         res.json({ ok: true, message: 'Password has been reset successfully' });
@@ -702,7 +715,10 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
         db.prepare('UPDATE user SET password=? WHERE id=?').run(hash, req.user.id);
         logActivity(req.user.id, 'password_changed', null, null, req);
 
-        await sendTemplateEmail({
+        if (EMAIL_SECURITY) {
+
+
+            await sendTemplateEmail({
     to: user.email,
     templateAlias: Templates.PasswordChanged,
     model: {
@@ -711,6 +727,9 @@ app.post('/api/profile/update-password', auth, validate(schemas.updatePassword),
     },
     cta_path: '/profile#security'
 });
+
+
+        }
 
         res.json({ ok: true, message: 'Password updated successfully' });
     } catch (e) {
@@ -770,7 +789,9 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
         const user = db.prepare('SELECT * FROM user WHERE id=?').get(info.lastInsertRowid);
 
         const token = setSession(res, user); // cookie + token
-        await sendTemplateEmail({
+        if (EMAIL_ONBOARDING) {
+
+            await sendTemplateEmail({
     to: user.email,
     templateAlias: Templates.Welcome,
     model: {
@@ -778,6 +799,8 @@ app.post('/api/auth/signup', authLimiter, validate(schemas.signup), async (req, 
     },
     cta_path: '/dashboard'
 });
+
+        }
 
         logActivity(user.id, 'signup', { email: user.email }, null, req);
         return res.status(201).json({ ok: true, token, data: userRowToDto(user) });
@@ -1217,7 +1240,9 @@ app.post('/api/payments/subscriptions', auth, async (req, res) => {
 
     const me = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     if (me) {
-        await sendTemplateEmail({
+        if (EMAIL_BILLING) {
+
+            await sendTemplateEmail({
     to: me.email,
     templateAlias: Templates.PlanCancelled,
     model: {
@@ -1225,6 +1250,8 @@ app.post('/api/payments/subscriptions', auth, async (req, res) => {
     },
     cta_path: '/billing#plan'
 });
+
+        }
     }
 
     res.json({ ok: true, message: 'Your subscription has been cancelled.' });
@@ -1238,7 +1265,9 @@ app.post('/api/kyc/upload', auth, async (req, res) => {
 
     const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     if (u) {
-        await sendTemplateEmail({
+        if (EMAIL_KYC) {
+
+            await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.KycSubmitted,
     model: {
@@ -1246,6 +1275,8 @@ app.post('/api/kyc/upload', auth, async (req, res) => {
     },
     cta_path: '/profile'
 });
+
+        }
     }
 
     res.json({ ok: true, data: { sdk_access_token: sdkToken } });
@@ -1283,7 +1314,9 @@ app.post('/api/support/tickets', auth, validate(schemas.createSupportTicket), as
 
     const u = db.prepare('SELECT email, first_name FROM user WHERE id=?').get(req.user.id);
     try {
-        await sendTemplateEmail({
+        if (EMAIL_SUPPORT) {
+
+            await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.SupportRequestReceived,
     model: {
@@ -1293,6 +1326,8 @@ app.post('/api/support/tickets', auth, validate(schemas.createSupportTicket), as
     },
     cta_path: '/support'
 });
+
+        }
     } catch (e) {
         logger.error('support received email failed', { error: e.message, ticket_id: info.lastInsertRowid });
     }
@@ -1315,7 +1350,9 @@ app.post('/api/admin/support/tickets/:id/close', auth, adminOnly, param('id').is
     logAdminAction(req.user.id, 'support_close', 'support_ticket', id, { note: req.body.note || null }, req);
 
     try {
-        await sendTemplateEmail({
+        if (EMAIL_SUPPORT) {
+
+            await sendTemplateEmail({
     to: row.email,
     templateAlias: Templates.SupportRequestClosed,
     model: {
@@ -1324,6 +1361,8 @@ app.post('/api/admin/support/tickets/:id/close', auth, adminOnly, param('id').is
     },
     cta_path: '/support'
 });
+
+        }
     } catch (e) {
         logger.error('support closed email failed', { error: e.message, ticket_id: id });
     }
@@ -1390,7 +1429,9 @@ app.put('/api/admin/users/:user_id/kyc-status', auth, adminOnly, param('user_id'
     try {
         if (u) {
             if (kyc_status === 'verified') {
-                await sendTemplateEmail({
+                if (EMAIL_KYC) {
+
+                    await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.KycApproved,
     model: {
@@ -1399,8 +1440,12 @@ app.put('/api/admin/users/:user_id/kyc-status', auth, adminOnly, param('user_id'
     },
     cta_path: '/dashboard'
 });
+
+                }
             } else if (kyc_status === 'rejected') {
-                await sendTemplateEmail({
+                if (EMAIL_KYC) {
+
+                    await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.KycRejected,
     model: {
@@ -1409,6 +1454,8 @@ app.put('/api/admin/users/:user_id/kyc-status', auth, adminOnly, param('user_id'
     },
     cta_path: '/profile'
 });
+
+                }
             }
         }
     } catch (e) {
@@ -1486,7 +1533,9 @@ app.post('/api/admin/mail-items', auth, adminOnly, async (req, res) => {
 
     const owner = db.prepare('SELECT email, first_name, plan_status FROM user WHERE id=?').get(user_id);
     if (owner && (owner.plan_status === 'cancelled' || owner.plan_status === 'past_due')) {
-        await sendTemplateEmail({
+        if (EMAIL_MAIL) {
+
+            await sendTemplateEmail({
     to: owner.email,
     templateAlias: Templates.MailAfterCancellation,
     model: {
@@ -1495,6 +1544,8 @@ app.post('/api/admin/mail-items', auth, adminOnly, async (req, res) => {
     },
     cta_path: '/billing#plan'
 });
+
+        }
     }
 
     res.status(201).json({ data: row });
@@ -1552,7 +1603,9 @@ app.put('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), async
     if (before?.status !== 'scanned' && after?.status === 'scanned') {
         const owner = db.prepare(`SELECT u.email, u.first_name FROM user u WHERE u.id=?`).get(after.user_id);
         if (owner) {
-            await sendTemplateEmail({
+            if (EMAIL_MAIL) {
+
+                await sendTemplateEmail({
     to: owner.email,
     templateAlias: Templates.MailScanned,
     model: {
@@ -1561,6 +1614,8 @@ app.put('/api/admin/mail-items/:id', auth, adminOnly, param('id').isInt(), async
     },
     cta_path: '/mail'
 });
+
+            }
         }
     }
 
@@ -1616,7 +1671,9 @@ app.post('/api/admin/mail-items/:id/log-physical-dispatch', auth, adminOnly, par
         .get(id);
     if (owner) {
         const trackUrl = tracking_number ? `${ROYALMAIL_TRACK_URL}/${encodeURIComponent(tracking_number)}` : '';
-        await sendTemplateEmail({
+        if (EMAIL_MAIL) {
+
+            await sendTemplateEmail({
     to: owner.email,
     templateAlias: Templates.MailForwarded,
     model: {
@@ -1627,6 +1684,8 @@ app.post('/api/admin/mail-items/:id/log-physical-dispatch', auth, adminOnly, par
     },
     cta_path: '/forwarding'
 });
+
+        }
     }
 
     res.json({ ok: true, message: 'Physical dispatch logged.' });
@@ -1676,7 +1735,9 @@ app.post('/api/webhooks/gocardless', async (req, res) => {
                 db.prepare(`UPDATE user SET plan_status='active' WHERE id=?`).run(p.user_id);
 
                 if (u) {
-                    await sendTemplateEmail({
+                    if (EMAIL_BILLING) {
+
+                        await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.InvoiceSent,
     model: {
@@ -1687,13 +1748,17 @@ app.post('/api/webhooks/gocardless', async (req, res) => {
     },
     cta_path: '/billing#invoices'
 });
+
+                    }
                 }
             }
             if (p.status === 'failed') {
                 db.prepare(`UPDATE user SET plan_status='past_due' WHERE id=?`).run(p.user_id);
 
                 if (u) {
-                    await sendTemplateEmail({
+                    if (EMAIL_BILLING) {
+
+                        await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.PaymentFailed,
     model: {
@@ -1701,6 +1766,8 @@ app.post('/api/webhooks/gocardless', async (req, res) => {
     },
     cta_path: '/billing#payment'
 });
+
+                    }
                 }
             }
             if (p.status === 'cancelled') {
@@ -1738,7 +1805,9 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
                     certificate_url: `${CERTIFICATE_BASE_URL}/${userId}/proof-of-address.pdf`,
                 });
             } else if (kyc === 'rejected') {
-                await sendTemplateEmail({
+                if (EMAIL_KYC) {
+
+                    await sendTemplateEmail({
     to: u.email,
     templateAlias: Templates.KycRejected,
     model: {
@@ -1747,6 +1816,8 @@ app.post('/api/webhooks/sumsub', async (req, res) => {
     },
     cta_path: '/profile'
 });
+
+                }
             }
         }
     }

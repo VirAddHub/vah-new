@@ -6,6 +6,11 @@ coverage/
 .DS_Store
 .history/
 
+# build/backup noise
+*.bak
+*.backup
+*.bak.*
+
 
 # Logs
 logs/
