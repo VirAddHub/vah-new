@@ -131,6 +131,8 @@ const limiter = rateLimit({
         // Skip our health check and Render's probe entirely
         if (req.path === '/api/healthz') return true;
         if (ua.startsWith('Render/1.0')) return true;
+        // Skip rate limiting in test mode if DISABLE_RATE_LIMIT_FOR_HEALTHZ is set
+        if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV === 'test') return true;
         return false;
     },
 });

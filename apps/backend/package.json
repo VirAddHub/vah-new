@@ -82,7 +82,7 @@
     "email:live": "ts-node --project tsconfig.server.json scripts/test-email-live.ts",
     "postmark:pull": "ts-node --project tsconfig.server.json scripts/postmark-pull.ts",
     "test:variables": "ts-node --project tsconfig.server.json scripts/test-template-variables.ts",
-    "start:test": "NODE_ENV=test node dist/server/index.js",
+    "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js",
     "test:e2e": "cross-env NODE_ENV=test TS_NODE_TRANSPILE_ONLY=1 jest --runInBand --config ./jest.e2e.config.js"
   },
   "keywords": [

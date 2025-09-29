@@ -2,6 +2,45 @@
 
 **Professional Virtual Address Service Platform**
 
+## 🧪 E2E Testing
+
+### Local E2E Testing
+
+Run E2E tests against a local server:
+
+```bash
+# 1) Start local PostgreSQL (Docker)
+docker run --rm -d --name vah-pg \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=vah_test \
+  -p 5432:5432 postgres:15
+
+# 2) Build the backend
+npm run build
+
+# 3) Start the API locally (in a new terminal)
+PORT=3001 \
+NODE_ENV=test \
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/vah_test \ # pragma: allowlist secret
+POSTMARK_TOKEN=dummy \
+POSTMARK_STREAM=outbound \
+EMAIL_FROM=hello@virtualaddresshub.co.uk \
+EMAIL_FROM_NAME=VirtualAddressHub \
+EMAIL_REPLY_TO=support@virtualaddresshub.co.uk \
+DISABLE_RATE_LIMIT_FOR_HEALTHZ=1 \
+node dist/server/index.js
+
+# 4) Run E2E tests (back in the first terminal)
+E2E_BASE_URL=http://localhost:3001 npm run test:e2e
+
+# 5) Cleanup
+docker stop vah-pg
+```
+
+### CI E2E Testing
+
+E2E tests run automatically in GitHub Actions against a local PostgreSQL service and local server instance.
+
 ## 🚀 Production Deployment
 
 This is the **FINAL PRODUCTION VERSION** of VirtualAddressHub. All demo references have been removed and the system is ready for live deployment.
