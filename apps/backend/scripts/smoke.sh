@@ -34,4 +34,16 @@ else
   exit 1
 fi
 
+# Test webhook (should return 204, not stub)
+W="$(code "$BASE_URL/api/webhooks-postmark")"
+if [ "$W" = "204" ]; then
+  echo "✅ /api/webhooks-postmark 204 (real handler)"
+else
+  echo "❌ /api/webhooks-postmark expected 204, got $W"
+  if [ "$W" = "200" ]; then
+    echo "💡 Webhook may be returning stub response - check deployment"
+  fi
+  exit 1
+fi
+
 echo "🎉 Smoke passed"

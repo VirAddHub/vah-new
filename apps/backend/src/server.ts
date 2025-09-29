@@ -187,6 +187,26 @@ async function start() {
         res.status(200).send('ok');
     });
 
+    // Version info (for deployment verification)
+    app.get('/api/__version', (_req, res) => {
+        try {
+            const buildMeta = require('../../dist/build-meta.json');
+            res.json({
+                builtAt: buildMeta.builtAt,
+                commit: buildMeta.commit || 'unknown',
+                branch: buildMeta.branch || 'unknown',
+                nodeEnv: process.env.NODE_ENV || 'development'
+            });
+        } catch {
+            res.json({
+                builtAt: 'unknown',
+                commit: 'unknown', 
+                branch: 'unknown',
+                nodeEnv: process.env.NODE_ENV || 'development'
+            });
+        }
+    });
+
     // Mount routes
     app.use('/api/profile', profileRouter);
     app.use('/api', sumsubWebhook);
