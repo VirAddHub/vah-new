@@ -30,6 +30,7 @@ import { postmarkWebhook } from "./server/routes/webhooks-postmark";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
+import devRouter from "./server/routes/dev";
 
 // --- cookie options helper
 const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
@@ -213,6 +214,11 @@ async function start() {
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
+
+    // Dev routes (staging/local only)
+    if (process.env.NODE_ENV !== 'production') {
+        app.use(devRouter);
+    }
 
     // Stub other routes to prevent crashes
     app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));

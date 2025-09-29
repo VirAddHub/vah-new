@@ -8,6 +8,9 @@ export const ENV = {
     EMAIL_REPLY_TO: process.env.POSTMARK_REPLY_TO ?? "support@virtualaddresshub.co.uk",
     POSTMARK_STREAM: process.env.POSTMARK_STREAM ?? "outbound",
 
+    // Dev routes (staging/local only)
+    DEV_SEED_SECRET: process.env.DEV_SEED_SECRET ?? "",
+
     // Feature flags / guards
     EMAIL_ONBOARDING: process.env.EMAIL_ONBOARDING ?? "1",
     EMAIL_BILLING: process.env.EMAIL_BILLING ?? "1",
