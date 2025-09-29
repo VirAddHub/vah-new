@@ -21,10 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ReadyPing />
                 <AuthProvider>
                     <ToastProvider>
-                        {/* Temporarily disabled StatusPill to stop /undefined/api/ready spam */}
-                        {/* <div className="fixed top-4 right-4 z-50">
+                        <div className="fixed top-4 right-4 z-50">
                             <StatusPill />
-                        </div> */}
+                        </div>
                         {children}
                     </ToastProvider>
                 </AuthProvider>
