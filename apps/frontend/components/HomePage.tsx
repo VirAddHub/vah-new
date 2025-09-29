@@ -136,7 +136,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <div className="lg:col-span-5">
                         <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
-                            <div className="aspect-[4/3] w-full rounded-[16px] bg-gradient-to-br from-primary/20 via-primary/40 to-primary/60" />
+                            <img 
+                                src="/images/london_skyline.png" 
+                                alt="London skyline - Your professional business address location"
+                                className="aspect-[4/3] w-full rounded-[16px] object-cover"
+                            />
                             <div className="p-4 text-sm text-muted-foreground">
                                 Same-Day Scans • Secure Dashboard • UK
                                 Forwarding On Request
