@@ -152,5 +152,11 @@
     "tsx": "4.20.5",
     "typescript": "5.5.4",
     "wait-on": "8.0.5"
+  },
+  "overrides": {
+    "redoc-cli/@babel/traverse": "^7.23.2",
+    "redoc-cli/dompurify": "^3.2.4",
+    "redoc-cli/elliptic": "^6.6.1",
+    "redoc-cli/sha.js": "^2.4.12"
   }
 }

@@ -32,6 +32,19 @@ node dist/server/index.js
 In another window:
 
 ```powershell
+# Test against local server
 $env:BASE_URL = "http://localhost:8080"
 bash apps/backend/scripts/smoke.sh
+
+# Or test against staging (no local server needed)
+$env:BASE_URL = "https://vah-api-staging.onrender.com"
+bash apps/backend/scripts/smoke.sh
+```
+
+## One-time Postgres setup (if using test:test DSN)
+
+```bash
+psql -U postgres -c "CREATE ROLE test LOGIN PASSWORD 'test';"  # pragma: allowlist secret
+psql -U postgres -c "ALTER ROLE test CREATEDB;"
+createdb -U test test
 ```

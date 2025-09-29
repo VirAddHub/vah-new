@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-BASE="${1:-${BASE_URL:-https://vah-api-staging.onrender.com}}"
-echo "Smoke against: $BASE"
+BASE_URL="${1:-${BASE_URL:-https://vah-api-staging.onrender.com}}"
+echo "Smoke against: $BASE_URL"
 
 code() { 
   local url="$1"
@@ -12,24 +12,24 @@ code() {
   echo "$result"
 }
 
-H="$(code "$BASE/api/healthz")"
+H="$(code "$BASE_URL/api/healthz")"
 if [ "$H" != "200" ]; then
   echo "❌ /api/healthz expected 200, got $H"
   if [ "$H" = "000" ]; then
-    echo "💡 Check if server is running and accessible at $BASE"
+    echo "💡 Check if server is running and accessible at $BASE_URL"
   fi
   exit 1
 else
   echo "✅ /api/healthz 200"
 fi
 
-P="$(code "$BASE/api/plans")"
+P="$(code "$BASE_URL/api/plans")"
 if [[ "$P" =~ ^2 ]]; then
   echo "✅ /api/plans 2xx"
 else
   echo "❌ /api/plans expected 2xx, got $P"
   if [ "$P" = "000" ]; then
-    echo "💡 Check if server is running and accessible at $BASE"
+    echo "💡 Check if server is running and accessible at $BASE_URL"
   fi
   exit 1
 fi
