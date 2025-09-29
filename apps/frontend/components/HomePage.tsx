@@ -136,8 +136,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <div className="lg:col-span-5">
                         <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
-                            <img 
-                                src="/images/london_skyline.png" 
+                            <img
+                                src="/images/london_skyline.png"
                                 alt="London skyline - Your professional business address location"
                                 className="aspect-[4/3] w-full rounded-[16px] object-cover object-top"
                             />
