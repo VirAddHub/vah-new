@@ -63,7 +63,7 @@ export function safe<T>(v: any, fallback: T): T {
 // Simple fetch wrapper for legacy compatibility
 async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-        const url = path.startsWith('http') ? path : `${process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, '') || '/api'}${path}`;
+        const url = path.startsWith('http') ? path : `${process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, '') || process.env.BACKEND_API_ORIGIN?.replace(/\/+$/, '') + '/api' || 'https://vah-api-staging.onrender.com/api'}${path}`;
         const res = await fetch(url, {
             credentials: 'include',
             headers: {
