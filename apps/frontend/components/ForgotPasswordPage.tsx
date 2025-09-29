@@ -52,8 +52,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         body: JSON.stringify({ email }),
       });
 
-      // Backend returns 204 (No Content) for security (no user enumeration)
       if (response.ok) {
+        const data = await response.json();
         setMessage({ 
           type: 'success', 
           text: `Password reset instructions have been sent to ${email}` 
@@ -115,7 +115,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       });
 
       if (response.ok) {
-        // Backend returns 204 (No Content) on success
+        const data = await response.json();
         setMessage({ 
           type: 'success', 
           text: 'Password has been successfully reset. Redirecting to login...' 

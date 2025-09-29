@@ -69,7 +69,7 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
     }
   }
 
-  return res.sendStatus(204);
+  return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
 });
 
 /**
@@ -120,5 +120,5 @@ passwordResetRouter.post('/reset-password', limiter, async (req, res) => {
 
   // Optional: send "password changed" notification with your existing template system
 
-  return res.sendStatus(204);
+  return res.status(200).json({ ok: true, message: 'Password has been successfully reset.' });
 });
