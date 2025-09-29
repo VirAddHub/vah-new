@@ -38,6 +38,7 @@ r.post('/', (req, res) => {
   }
 
   // Postmark expects 200/204 with no body
+  res.setHeader('x-build', (process.env.RENDER_GIT_COMMIT || 'local') + ':' + (process.env.NODE_ENV || 'dev'));
   return res.status(204).end();
 });
 
