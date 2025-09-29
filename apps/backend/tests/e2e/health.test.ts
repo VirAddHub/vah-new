@@ -1,10 +1,9 @@
-import { api } from './client';
+import { api, healthCheck } from './_utils';
 
 describe('health', () => {
   it('GET /api/healthz -> 200', async () => {
-    const res = await api().get('/api/healthz');
+    const res = await healthCheck();
     expect(res.status).toBe(200);
-    // Optionally assert body shape if any:
-    // expect(res.body).toEqual(expect.objectContaining({ ok: true }));
+    expect(res.body).toEqual(expect.objectContaining({ ok: true }));
   });
 });

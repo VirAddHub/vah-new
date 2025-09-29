@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api } from './_utils';
 
 describe('plans', () => {
   it('GET /api/plans -> 2xx & returns array', async () => {
