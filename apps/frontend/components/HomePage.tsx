@@ -139,7 +139,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <img 
                                 src="/images/london_skyline.png" 
                                 alt="London skyline - Your professional business address location"
-                                className="aspect-[3/2] w-full rounded-[16px] object-cover object-center"
+                                className="aspect-[3/2] w-full rounded-[16px] object-cover object-top"
                             />
                             <div className="p-4 text-sm text-muted-foreground">
                                 Same-Day Scans • Secure Dashboard • UK
