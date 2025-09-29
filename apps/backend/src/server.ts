@@ -126,7 +126,7 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => ipKeyGenerator(req.ip || 'unknown'), // IPv6-safe key generation
+    keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''), // IPv6-safe key generation
     skip: (req) => {
         const ua = (req.headers['user-agent'] || '').toString();
         // Skip our health check and Render's probe entirely
