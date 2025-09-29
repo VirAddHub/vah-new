@@ -26,7 +26,7 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 
 // --- routes that need raw body (webhooks)
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
-import { postmarkWebhook } from "./server/routes/webhooks-postmark";
+import postmarkWebhook from "./server/routes/webhooks-postmark";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 
