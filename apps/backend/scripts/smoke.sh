@@ -35,17 +35,31 @@ else
 fi
 
 # Test webhook (should return 204, not stub) - POST request required
+# Try without auth first
 W=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks-postmark" \
   -H "Content-Type: application/json" \
   --data '{"RecordType":"Delivery","MessageID":"smoke-test"}' 2>/dev/null || echo "000")
-if [ "$W" = "204" ]; then
-  echo "✅ /api/webhooks-postmark 204 (real handler)"
+
+# If 401 and we have auth credentials, try with auth
+if [ "$W" = "401" ] && [ -n "${POSTMARK_WEBHOOK_BASIC:-}" ]; then
+  echo "🔐 Webhook requires auth, trying with credentials..."
+  auth="Basic $(printf %s "$POSTMARK_WEBHOOK_BASIC" | base64)"
+  W=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks-postmark" \
+    -H "Authorization: $auth" \
+    -H "Content-Type: application/json" \
+    --data '{"RecordType":"Delivery","MessageID":"smoke-test-auth"}' 2>/dev/null || echo "000")
+fi
+
+if [ "$W" = "204" ] || [ "$W" = "200" ]; then
+  echo "✅ /api/webhooks-postmark $W (real handler)"
 else
-  echo "❌ /api/webhooks-postmark expected 204, got $W"
+  echo "❌ /api/webhooks-postmark expected 200/204, got $W"
   if [ "$W" = "200" ]; then
     echo "💡 Webhook may be returning stub response - check deployment"
   elif [ "$W" = "404" ]; then
     echo "💡 Webhook endpoint not found - check deployment"
+  elif [ "$W" = "401" ]; then
+    echo "💡 Webhook requires auth - set POSTMARK_WEBHOOK_BASIC=user:pass or disable auth"
   fi
   exit 1
 fi

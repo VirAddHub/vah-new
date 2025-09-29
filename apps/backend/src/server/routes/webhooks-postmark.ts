@@ -2,14 +2,16 @@
 import type { Request, Response } from 'express';
 
 // simple optional basic auth for Postmark
-const USER = process.env.POSTMARK_WEBHOOK_USER;
-const PASS = process.env.POSTMARK_WEBHOOK_PASS;
+// POSTMARK_WEBHOOK_BASIC="user:pass" or leave unset for no-auth (CI/staging)
+const BASIC = process.env.POSTMARK_WEBHOOK_BASIC || '';
+const [BASIC_USER, BASIC_PASS] = BASIC ? BASIC.split(':', 2) : ['', ''];
+
 function basicAuthOk(authHeader?: string) {
-    if (!USER || !PASS) return true; // auth disabled
+    if (!BASIC) return true; // no secret => allow (CI/Staging)
     if (!authHeader?.startsWith('Basic ')) return false;
     const creds = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
     const [u, p] = creds.split(':', 2);
-    return u === USER && p === PASS;
+    return u === BASIC_USER && p === BASIC_PASS;
 }
 
 export function postmarkWebhook(req: Request, res: Response) {
