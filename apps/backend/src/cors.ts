@@ -2,9 +2,9 @@ import cors from 'cors';
 
 const { NODE_ENV, CORS_ORIGINS } = process.env;
 const allowList = (CORS_ORIGINS || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
 
 // Fallback allowlist for development
 const fallbackAllowlist = [
@@ -16,10 +16,10 @@ const fallbackAllowlist = [
 function isAllowed(origin: string | undefined): boolean {
     // Always allow no-origin (health checks, curl, Render probes)
     if (!origin) return true;
-    
+
     // Use CORS_ORIGINS if set, otherwise fallback
     const origins = allowList.length > 0 ? allowList : fallbackAllowlist;
-    
+
     if (origins.includes(origin)) return true;
     if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
     return false;
