@@ -10,10 +10,9 @@ const nextConfig = {
     return {
       // Apply this rewrite BEFORE checking Next's filesystem routes (pages/api or app/api)
       beforeFiles: [
-        // send everything under /api/* to Render ...
-        // ...except your local /api/ready endpoint
+        // send everything under /api/* to Render
         {
-          source: '/api/:path((?!ready$).*)',
+          source: '/api/:path*',
           destination: `${BACKEND_API_ORIGIN}/api/:path*`,
         },
       ],

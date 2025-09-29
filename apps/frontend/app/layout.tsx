@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ToastProvider } from '@/components/ui/use-toast';
-import StatusPill from '@/components/StatusPill';
 import { AuthProvider } from '@/lib/auth';
 import { ReadyPing } from '@/components/ReadyPing';
 
@@ -21,9 +20,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ReadyPing />
                 <AuthProvider>
                     <ToastProvider>
-                        <div className="fixed top-4 right-4 z-50">
-                            <StatusPill />
-                        </div>
                         {children}
                     </ToastProvider>
                 </AuthProvider>
