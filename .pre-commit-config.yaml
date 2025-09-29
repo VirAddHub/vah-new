@@ -11,5 +11,9 @@ repos:
             apps/frontend/out/|
             \.history/|
             .*\.lock$|
-            .*\.min\.js$
+            .*\.min\.js$|
+            .*\.(bak|backup)$|
+            docs/.*\.(png|jpg|svg|pdf)$|
+            node_modules/|
+            \.git/
           )
