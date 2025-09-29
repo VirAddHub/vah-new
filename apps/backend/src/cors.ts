@@ -1,23 +1,28 @@
 import cors from 'cors';
-import { URL } from 'node:url';
 
-const allowlist = new Set([
+const { NODE_ENV, CORS_ORIGINS } = process.env;
+const allowList = (CORS_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+// Fallback allowlist for development
+const fallbackAllowlist = [
     'https://vah-frontend-final.vercel.app',
     'http://localhost:3000',
-]);
+];
 
 // Allow Vercel preview: https://vah-frontend-final-*.vercel.app
 function isAllowed(origin: string | undefined): boolean {
-    if (!origin) return true; // allow same-origin / server-to-server
-    if (allowlist.has(origin)) return true;
+    // Always allow no-origin (health checks, curl, Render probes)
+    if (!origin) return true;
+    
+    // Use CORS_ORIGINS if set, otherwise fallback
+    const origins = allowList.length > 0 ? allowList : fallbackAllowlist;
+    
+    if (origins.includes(origin)) return true;
     if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
     return false;
-}
-
-if (process.env.ALLOWED_ORIGINS) {
-    for (const o of process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)) {
-        allowlist.add(o);
-    }
 }
 
 export const corsOptions = {
