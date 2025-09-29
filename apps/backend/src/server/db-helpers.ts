@@ -32,3 +32,6 @@ export async function insertReturningId(
     const firstRow = rows[0] as Record<string, any>;
     return firstRow.id ?? (Object.values(firstRow)[0] as any);
 }
+
+// Alias for backward compatibility
+export const many = selectMany;
