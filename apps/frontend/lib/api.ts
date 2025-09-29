@@ -3,7 +3,7 @@ import { fetchJson } from "./apiClient"; // <- this matches your step 6 filename
 import type { Plan } from "@/types/plans";
 
 export const getReady = () =>
-    fetchJson<{ status: string }>("/ready");
+    fetchJson<{ status: string }>("/api/ready");
 
 export const getPlans = () =>
     fetchJson<{ ok: boolean; data: Plan[] }>("/api/plans");

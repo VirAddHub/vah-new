@@ -27,49 +27,58 @@ export const passwordResetRouter = Router();
  * Always 204 to avoid account enumeration.
  */
 passwordResetRouter.post('/reset-password-request', limiter, async (req, res) => {
-  const email = String((req.body?.email ?? '')).trim().toLowerCase();
-  if (!email) return res.sendStatus(204);
+  try {
+    const email = String((req.body?.email ?? '')).trim().toLowerCase();
+    if (!email) return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
 
-  const pool = getPool();
-  const { rows } = await pool.query(
-    'SELECT id, first_name, email FROM "user" WHERE lower(email) = $1 LIMIT 1',
-    [email]
-  );
-  const user = rows[0];
-
-  if (user) {
-    const raw = generateRawToken(32);
-    const tokenHash = await hashToken(raw);
-
-    await pool.query(
-      `UPDATE "user"
-          SET reset_token_hash = $1,
-              reset_token_expires_at = NOW() + INTERVAL '${TTL_MINUTES} minutes',
-              reset_token_used_at = NULL
-        WHERE id = $2`,
-      [tokenHash, user.id]
+    const pool = getPool();
+    const { rows } = await pool.query(
+      'SELECT id, first_name, email FROM "user" WHERE lower(email) = $1 LIMIT 1',
+      [email]
     );
+    const user = rows[0];
 
-    const resetLink = `${ENV.APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`;
+    if (user) {
+      try {
+        const raw = generateRawToken(32);
+        const tokenHash = await hashToken(raw);
 
-    // Your mailer + template model builder (camelCase ➜ snake_case) is used here
-    try {
-      await sendTemplateEmail({
-        to: user.email,
-        templateAlias: 'password-reset-email',
-        model: {
-          firstName: user.first_name,
-          resetLink,
-          expiryMinutes: String(TTL_MINUTES),
-        },
-      });
-    } catch (err) {
-      // We still return 204; just log
-      console.error('password-reset email send failed', err);
+        await pool.query(
+          `UPDATE "user"
+              SET reset_token_hash = $1,
+                  reset_token_expires_at = NOW() + INTERVAL '${TTL_MINUTES} minutes',
+                  reset_token_used_at = NULL
+            WHERE id = $2`,
+          [tokenHash, user.id]
+        );
+
+        const resetLink = `${ENV.APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`;
+
+        // Your mailer + template model builder (camelCase ➜ snake_case) is used here
+        try {
+          await sendTemplateEmail({
+            to: user.email,
+            templateAlias: 'password-reset-email',
+            model: {
+              firstName: user.first_name,
+              resetLink,
+              expiryMinutes: String(TTL_MINUTES),
+            },
+          });
+        } catch (err) {
+          // We still return 200; just log
+          console.error('password-reset email send failed', err);
+        }
+      } catch (tokenErr) {
+        console.error('password-reset token creation failed', tokenErr);
+      }
     }
-  }
 
-  return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
+    return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
+  } catch (err) {
+    console.error('password-reset-request fatal error', err);
+    return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
+  }
 });
 
 /**
