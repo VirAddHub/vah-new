@@ -1,0 +1,138 @@
+[
+  {
+    "TemplateId": 40508752,
+    "Name": "Account Closed & Data Removed",
+    "Alias": "account-closed-data-removed",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508069,
+    "Name": "Code your own",
+    "Alias": "code-your-own-2",
+    "Type": "Layout",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40488425,
+    "Name": "Code your own",
+    "Alias": "code-your-own",
+    "Type": "Layout",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508791,
+    "Name": "Invoice Sent",
+    "Alias": "invoice-sent",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508788,
+    "Name": "KYC Approved",
+    "Alias": "kyc-approved",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508769,
+    "Name": "KYC Rejected",
+    "Alias": "kyc-rejected",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508751,
+    "Name": "KYC Submitted",
+    "Alias": "kyc-submitted",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508790,
+    "Name": "Mail Forwarded",
+    "Alias": "mail-forwarded",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508753,
+    "Name": "Mail Received After Cancellation",
+    "Alias": "mail-received-after-cancellation",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508789,
+    "Name": "Mail Scanned",
+    "Alias": "mail-scanned",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 41178999,
+    "Name": "Password Changed Confirmation",
+    "Alias": "password-changed-confirmation",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 41178890,
+    "Name": "Password Reset Email",
+    "Alias": "password-reset-email",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508770,
+    "Name": "Payment Failed",
+    "Alias": "payment-failed",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508771,
+    "Name": "Plan Cancelled",
+    "Alias": "plan-cancelled",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508792,
+    "Name": "Support Request Closed",
+    "Alias": "support-request-closed",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508772,
+    "Name": "Support Request Received",
+    "Alias": "support-request-received",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  },
+  {
+    "TemplateId": 40508745,
+    "Name": "Welcome Email",
+    "Alias": "welcome-email",
+    "Type": "Standard",
+    "Active": true,
+    "LayoutTemplate": null
+  }
+]

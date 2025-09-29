@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508751,
+  "Name": "KYC Submitted",
+  "Alias": "kyc-submitted",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "We’ve received your identity documents",
+  "HtmlBody": "\r\n<p>Hi {{first_name}},</p>\r\n\r\n<p>Thanks — we’ve received your documents and are now reviewing your identity verification.</p>\r\n\r\n<p>We’ll let you know as soon as your account is fully verified.</p>\r\n\r\n<p>You can check your status here:<br>\r\n<a href=\"{{dashboard_link}}\" style=\"color: #FF6B57; text-decoration: none;\">View my status</a></p>\r\n\r\n<p>Once you're verified, you’ll be able to receive post and manage everything directly from your dashboard.</p>\r\n\r\n<p>If you have any questions, feel free to reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nThanks — we’ve received your documents and are now reviewing your identity verification.\r\n\r\nWe’ll let you know as soon as your account is fully verified.\r\n\r\nYou can check your status here: {{dashboard_link}}\r\n\r\nOnce you're verified, you’ll be able to receive post and manage everything directly from your dashboard.\r\n\r\nIf you have any questions, feel free to reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508772,
+  "Name": "Support Request Received",
+  "Alias": "support-request-received",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "We have received your message",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Thank you for contacting VirtualAddressHub. Your support request has been received.</p>\r\n\r\n<p>We aim to respond as soon as possible. In the meantime, you may find our Help Centre helpful:<br>\r\n<a href=\"{{help_centre_link}}\">Visit help centre</a></p>\r\n\r\n<p>If you have any questions, please reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nThank you for contacting VirtualAddressHub. Your support request has been received.\r\n\r\nWe aim to respond as soon as possible. In the meantime, you may find our Help Centre helpful: {{help_centre_link}}\r\n\r\nIf you have any questions, please reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

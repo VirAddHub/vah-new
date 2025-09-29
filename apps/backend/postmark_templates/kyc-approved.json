@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508788,
+  "Name": "KYC Approved",
+  "Alias": "kyc-approved",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "You’re verified and ready to go 🎉",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Great news — your identity check is complete and your account is fully verified.</p>\r\n\r\n<p>You can now start receiving mail at your VirtualAddressHub address:</p>\r\n\r\n<p>\r\n  <strong>Your Business Address</strong><br>\r\n  <strong>{{virtual_address_line_1}}</strong><br>\r\n  <strong>{{virtual_address_line_2}}, {{postcode}}</strong>\r\n</p>\r\n\r\n<p>🔐 Manage your mail any time:<br>\r\n<a href=\"{{dashboard_link}}\" style=\"color: #FF6B57; text-decoration: none;\">Access my dashboard</a></p>\r\n\r\n<p>Welcome aboard!</p>\r\n\r\n<p>If you have any questions, feel free to reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nGreat news — your identity check is complete and your account is fully verified.\r\n\r\nYou can now start receiving mail at your VirtualAddressHub address:\r\n\r\nYour Business Address  \r\n{{virtual_address_line_1}}  \r\n{{virtual_address_line_2}}, {{postcode}}\r\n\r\nManage your mail any time: {{dashboard_link}}\r\n\r\nWelcome aboard!\r\n\r\nIf you have any questions, feel free to reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

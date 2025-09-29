@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508769,
+  "Name": "KYC Rejected",
+  "Alias": "kyc-rejected",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "We couldn’t verify your ID",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Thanks for uploading your documents. Our ID check partner wasn’t able to verify them this time.</p>\r\n\r\n<p>It could be something simple — like a blurry photo, expired ID, or a detail that didn’t quite match.</p>\r\n\r\n<p>No worries — you can re-upload a clearer set of documents in just a few steps:</p>\r\n\r\n<p>Try again here:<br>\r\n<a href=\"{{kyc_link}}\" style=\"color: #FF6B57; text-decoration: none;\">Re-submit my documents</a></p>\r\n\r\n<p>If you’re stuck or have any questions, just hit reply — we’re happy to help.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nThanks for uploading your documents. Our ID check partner wasn’t able to verify them this time.\r\n\r\nIt could be something simple — like a blurry photo, expired ID, or a detail that didn’t quite match.\r\n\r\nNo worries — you can re-upload a clearer set of documents in just a few steps:\r\n\r\nTry again here: {{kyc_link}}\r\n\r\nIf you’re stuck or have any questions, just hit reply — we’re happy to help.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508791,
+  "Name": "Invoice Sent",
+  "Alias": "invoice-sent",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Your monthly invoice is ready",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your latest invoice for the Virtual Mailbox Plan is now available.</p>\r\n\r\n<ul style=\"list-style: none; padding-left: 0;\">\r\n  <li>🧾 Amount: <strong>£{{invoice_amount}}</strong></li>\r\n  <li>📅 Billing period: <strong>{{billing_period}}</strong></li>\r\n  <li>📄 Download PDF: \r\n    <a href=\"{{invoice_link}}\" style=\"background-color: #FF6B57; color: #ffffff; padding: 6px 12px; text-decoration: none; border-radius: 4px;\">\r\n      View invoice\r\n    </a>\r\n  </li>\r\n</ul>\r\n\r\n<p>Thanks for being a valued client!</p>\r\n\r\n<p>If you have any questions, feel free to reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYour latest invoice for the Digital Mailbox Plan is now available.\r\n\r\nAmount: £{{invoice_amount}}  \r\nBilling period: {{billing_period}}  \r\nDownload PDF: {{invoice_link}}\r\n\r\nThanks for being a valued client!\r\n\r\nIf you have any questions, feel free to reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

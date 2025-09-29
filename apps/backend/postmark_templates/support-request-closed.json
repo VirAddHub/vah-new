@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508792,
+  "Name": "Support Request Closed",
+  "Alias": "support-request-closed",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Your support request has been closed",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your support request has now been closed.</p>\r\n\r\n<p>If you have any further questions or need additional assistance, please don’t hesitate to reply to this email.</p>\r\n\r\n<p>Thank you for contacting us.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYour support request has now been closed.\r\n\r\nIf you have any further questions or need additional assistance, please don’t hesitate to reply to this email.\r\n\r\nThank you for contacting us.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508752,
+  "Name": "Account Closed & Data Removed",
+  "Alias": "account-closed-data-removed",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Your VirtualAddressHub account is now closed",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your account has now been fully closed. Your data has been securely deleted in line with our GDPR policy, except for any records we are legally required to retain (e.g., for billing or AML purposes).</p>\r\n\r\n<p>Please note that any mail received after your account closure will be returned to the sender.</p>\r\n\r\n<p>If you wish to rejoin in the future, you’ll need to register again and complete verification.</p>\r\n\r\n<p>You can restart your plan at any time here:<br>\r\n<a href=\"{{restart_link}}\">Restart my plan</a></p>\r\n\r\n<p>Thank you for being a part of VirtualAddressHub.</p>\r\n\r\n<p>If you have any questions, please reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your account has now been fully closed. Your data has been securely deleted in line with our GDPR policy, except for any records we are legally required to retain (e.g., for billing or AML purposes).</p>\r\n\r\n<p>Please note that any mail received after your account closure will be returned to the sender.</p>\r\n\r\n<p>If you wish to rejoin in the future, you’ll need to register again and complete verification.</p>\r\n\r\n<p>You can restart your plan at any time here:<br>\r\n<a href=\"{{restart_link}}\">Restart my plan</a></p>\r\n\r\n<p>Thank you for being a part of VirtualAddressHub.</p>\r\n\r\n<p>If you have any questions, please reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n"
+}

@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508770,
+  "Name": "Payment Failed",
+  "Alias": "payment-failed",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Payment failed — action needed",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>We weren’t able to process your latest payment for your <strong>Virtual Mailbox Plan</strong>.</p>\r\n\r\n<p>This may be due to a cancelled Direct Debit or insufficient funds. Please update your billing details to avoid any interruption to your service.</p>\r\n\r\n<p>🔁 Update your payment method:<br>\r\n<a href=\"{{billing_link}}\">Fix my billing</a></p>\r\n\r\n<p>We'll keep trying for a short time. If payment still fails, we may need to pause your mail services until it's resolved.</p>\r\n\r\n<p>If you have any questions, feel free to reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nWe weren’t able to process your latest payment for your Digital Mailbox Plan.\r\n\r\nThis may be due to a cancelled Direct Debit or insufficient funds. Please update your billing info to avoid service interruption.\r\n\r\nUpdate your payment details here: {{billing_link}}\r\n\r\nWe’ll keep trying for a short while — if it fails again, your mail may be paused.\r\n\r\nIf you have any questions, please reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

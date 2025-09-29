@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508771,
+  "Name": "Plan Cancelled",
+  "Alias": "plan-cancelled",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Your VirtualAddressHub plan has been cancelled",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your subscription to the <strong>Virtual Mailbox Plan</strong> has been cancelled. You’ll continue to have access until:</p>\r\n\r\n<p>📆 Final active date: {{end_date}}</p>\r\n\r\n<p>Please note, any mail received after this date will be returned to the sender.</p>\r\n\r\n<p>You can restart your plan at any time here:<br>\r\n<a href=\"{{restart_link}}\">Restart my plan</a></p>\r\n\r\n<p>Thanks for using VirtualAddressHub — we hope to see you again!</p>\r\n\r\n<p>If you have any questions, please reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYour subscription to the Digital Mailbox Plan has been cancelled. You’ll continue to have access until:\r\n\r\nFinal active date: {{end_date}}\r\n\r\nPlease note, any mail received after this date will be returned to the sender.\r\n\r\nYou can restart your plan at any time here: {{restart_link}}\r\n\r\nThanks for using VirtualAddressHub — we hope to see you again!\r\n\r\nIf you have any questions, please reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508753,
+  "Name": "Mail Received After Cancellation",
+  "Alias": "mail-received-after-cancellation",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Important: Mail received after your VirtualAddressHub plan ended",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>We wanted to inform you that your <strong>Virtual Mailbox Plan</strong> subscription has been cancelled, but we have recently received post addressed to you or your company.</p>\r\n\r\n<p>As your plan is no longer active, we will need to return this mail to the sender shortly.</p>\r\n\r\n<p>If you’d like to avoid this and have us continue processing your mail, please reactivate your account as soon as possible.</p>\r\n\r\n<p>You can restart your plan here:<br>\r\n<a href=\"{{restart_link}}\">Reactivate my plan</a></p>\r\n\r\n<p>If you have any questions or need assistance, feel free to reply to this email.</p>\r\n\r\n<p>Thank you for choosing VirtualAddressHub.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n\r\n\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nWe wanted to inform you that your VirtualAddressHub subscription has been cancelled, but we have recently received post addressed to you or your company.\r\n\r\nAs your plan is no longer active, we will need to return this mail to the sender shortly.\r\n\r\nIf you’d like to avoid this and have us continue processing your mail, please reactivate your account as soon as possible.\r\n\r\nYou can restart your plan here: {{restart_link}}\r\n\r\nIf you have any questions or need assistance, feel free to reply to this email.\r\n\r\nThank you for choosing VirtualAddressHub.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

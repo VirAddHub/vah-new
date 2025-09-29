@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508745,
+  "Name": "Welcome Email",
+  "Alias": "welcome-email",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "Welcome to VirtualAddressHub!",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Welcome to VirtualAddressHub — your new digital mailbox is ready!</p>\r\n\r\n<p>You can now start receiving post at your new UK address — view it in your dashboard anytime, and we’ll notify you whenever something new arrives.</p>\r\n\r\n<p>🔐 Manage your mail at any time:<br>\r\n<a href=\"{{dashboard_link}}\">Access my mailbox</a></p>\r\n\r\n<p>Thanks for choosing us. We're here to help if you need anything.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nWelcome to VirtualAddressHub — your new digital mailbox is ready!\r\n\r\nYou can now start receiving post at your new UK address — view it in your dashboard anytime, and we’ll notify you whenever something new arrives.\r\n\r\nManage your mail at any time: {{dashboard_link}}\r\n\r\nThanks for choosing us. We're here to help if you need anything.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}

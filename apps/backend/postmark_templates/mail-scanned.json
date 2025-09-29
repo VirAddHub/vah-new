@@ -1,0 +1,11 @@
+{
+  "TemplateId": 40508789,
+  "Name": "Mail Scanned",
+  "Alias": "mail-scanned",
+  "Active": true,
+  "TemplateType": "Standard",
+  "LayoutTemplate": null,
+  "Subject": "You've received new post 📬",
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>You’ve received a new letter at your VirtualAddressHub address.</p>\r\n\r\n<p>You can now view it securely in your dashboard.</p>\r\n\r\n<p>🔍 View now:<br>\r\n<a href=\"{{dashboard_link}}\">Go to my mail</a></p>\r\n\r\n<p>If you have any questions, just reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYou’ve received a new letter at your VirtualAddressHub address.\r\n\r\nYour scan is now available in your dashboard.\r\n\r\nView now: {{dashboard_link}}\r\n\r\nIf you have any questions, just reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+}
