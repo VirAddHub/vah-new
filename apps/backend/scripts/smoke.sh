@@ -34,14 +34,18 @@ else
   exit 1
 fi
 
-# Test webhook (should return 204, not stub)
-W="$(code "$BASE_URL/api/webhooks-postmark")"
+# Test webhook (should return 204, not stub) - POST request required
+W=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/webhooks-postmark" \
+  -H "Content-Type: application/json" \
+  --data '{"RecordType":"Delivery","MessageID":"smoke-test"}' 2>/dev/null || echo "000")
 if [ "$W" = "204" ]; then
   echo "✅ /api/webhooks-postmark 204 (real handler)"
 else
   echo "❌ /api/webhooks-postmark expected 204, got $W"
   if [ "$W" = "200" ]; then
     echo "💡 Webhook may be returning stub response - check deployment"
+  elif [ "$W" = "404" ]; then
+    echo "💡 Webhook endpoint not found - check deployment"
   fi
   exit 1
 fi
