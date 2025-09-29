@@ -1,0 +1,13 @@
+name: Post-Deploy Smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash apps/backend/scripts/smoke.sh
+        env:
+          BASE_URL: https://vah-api-staging.onrender.com
