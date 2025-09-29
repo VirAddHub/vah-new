@@ -15,13 +15,18 @@ docker run --rm -d --name vah-pg \
   -e POSTGRES_DB=vah_test \
   -p 5432:5432 postgres:15
 
-# 2) Build the backend
+# 2) Create test user and database
+docker exec -it vah-pg psql -U postgres -c "CREATE ROLE test WITH LOGIN PASSWORD 'test';" # pragma: allowlist secret
+docker exec -it vah-pg psql -U postgres -c "CREATE DATABASE test OWNER test;"
+
+# 3) Build the backend
 npm run build
 
-# 3) Start the API locally (in a new terminal)
+# 4) Start the API locally (in a new terminal)
+# macOS/zsh:
 PORT=3001 \
 NODE_ENV=test \
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/vah_test \ # pragma: allowlist secret
+DATABASE_URL=postgres://test:test@localhost:5432/test \ # pragma: allowlist secret
 POSTMARK_TOKEN=dummy \
 POSTMARK_STREAM=outbound \
 EMAIL_FROM=hello@virtualaddresshub.co.uk \
@@ -30,10 +35,22 @@ EMAIL_REPLY_TO=support@virtualaddresshub.co.uk \
 DISABLE_RATE_LIMIT_FOR_HEALTHZ=1 \
 node dist/server/index.js
 
-# 4) Run E2E tests (back in the first terminal)
+# PowerShell (Windows):
+$env:PORT="3001"
+$env:NODE_ENV="test"
+$env:DATABASE_URL="postgres://test:test@localhost:5432/test" # pragma: allowlist secret
+$env:POSTMARK_TOKEN="dummy"
+$env:POSTMARK_STREAM="outbound"
+$env:EMAIL_FROM="hello@virtualaddresshub.co.uk"
+$env:EMAIL_FROM_NAME="VirtualAddressHub"
+$env:EMAIL_REPLY_TO="support@virtualaddresshub.co.uk"
+$env:DISABLE_RATE_LIMIT_FOR_HEALTHZ="1"
+node dist/server/index.js
+
+# 5) Run E2E tests (back in the first terminal)
 E2E_BASE_URL=http://localhost:3001 npm run test:e2e
 
-# 5) Cleanup
+# 6) Cleanup
 docker stop vah-pg
 ```
 

@@ -5,7 +5,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import winston from 'winston';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -119,20 +119,19 @@ app.get('/api/healthz', (_req, res) => {
     res.status(200).json({ ok: true });
 });
 
-// Rate limiting (with health check exemption)
+// Rate limiting (IPv6-safe with health check exemption)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => ipKeyGenerator(req.ip || 'unknown'), // IPv6-safe key generation
     skip: (req) => {
         const ua = (req.headers['user-agent'] || '').toString();
         // Skip our health check and Render's probe entirely
         if (req.path === '/api/healthz') return true;
         if (ua.startsWith('Render/1.0')) return true;
-        // Skip rate limiting in test mode if DISABLE_RATE_LIMIT_FOR_HEALTHZ is set
-        if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV === 'test') return true;
         return false;
     },
 });
@@ -140,7 +139,16 @@ const limiter = rateLimit({
 // Apply rate limiter to API routes only (health check already excluded)
 // Optional staging toggle to disable rate limiting
 const disableLimiter = process.env.DISABLE_RATE_LIMIT === '1';
-if (!disableLimiter) {
+
+if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV === 'test') {
+    // In test mode, wrap limiter to skip health checks
+    app.use('/api', (req, res, next) => {
+        if (req.path === '/api/healthz') {
+            return next(); // Skip rate limiting for health checks in test mode
+        }
+        return limiter(req, res, next);
+    });
+} else if (!disableLimiter) {
     app.use('/api', limiter);
 }
 
