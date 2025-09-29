@@ -3,22 +3,27 @@ import { Router } from 'express';
 import { sendBillingReminder, sendKycReminder, sendMailReceived } from '../../lib/mailer';
 import { ENV } from '../../env';
 
+// Type definitions for email functions
+type SendBillingReminderArgs = { email: string; name?: string };
+type SendKycReminderArgs = { email: string; name?: string };
+type SendMailReceivedArgs = { email: string; name?: string; preview?: string };
+
 const router = Router();
 
 // Debug route to test email functions with current environment
 // Guarded by DEBUG_EMAIL_ENABLED env var and IP allowlist
 router.post('/debug-email', async (req, res) => {
-  // Check if debug emails are enabled
-  if (process.env.DEBUG_EMAIL_ENABLED !== '1') {
-    return res.status(404).json({ error: 'Debug endpoint disabled' });
-  }
+    // Check if debug emails are enabled
+    if (process.env.DEBUG_EMAIL_ENABLED !== '1') {
+        return res.status(404).json({ error: 'Debug endpoint disabled' });
+    }
 
-  // Optional: Add IP allowlist check
-  const allowedIPs = process.env.DEBUG_EMAIL_ALLOWED_IPS?.split(',') || [];
-  const clientIP = req.ip || req.connection.remoteAddress || '';
-  if (allowedIPs.length > 0 && clientIP && !allowedIPs.includes(clientIP)) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
+    // Optional: Add IP allowlist check
+    const allowedIPs = process.env.DEBUG_EMAIL_ALLOWED_IPS?.split(',') || [];
+    const clientIP = req.ip || req.connection.remoteAddress || '';
+    if (allowedIPs.length > 0 && clientIP && !allowedIPs.includes(clientIP)) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
     try {
         const { type, email, name } = req.body;
 
@@ -34,39 +39,45 @@ router.post('/debug-email', async (req, res) => {
             });
         }
 
-        const testRecipient = { email, name: name || 'Test User' };
-        let result;
+    let result;
 
-        switch (type) {
-            case 'billing':
-                await sendBillingReminder(testRecipient);
-                result = {
-                    type: 'billing-reminder',
-                    cta: `${ENV.APP_BASE_URL}/billing#payment`,
-                    status: 'sent'
-                };
-                break;
-
-            case 'kyc':
-                await sendKycReminder(testRecipient);
-                result = {
-                    type: 'kyc-reminder',
-                    cta: `${ENV.APP_BASE_URL}/profile`,
-                    status: 'sent'
-                };
-                break;
-
-            case 'mail':
-                await sendMailReceived({
-                    ...testRecipient,
-                    preview: req.body.preview || 'This is a test message preview...'
-                });
-                result = {
-                    type: 'mail-received',
-                    cta: `${ENV.APP_BASE_URL}/mail`,
-                    status: 'sent'
-                };
-                break;
+    switch (type) {
+      case 'billing':
+        await sendBillingReminder({
+          email,
+          name: name || 'Test User'
+        });
+        result = {
+          type: 'billing-reminder',
+          cta: `${ENV.APP_BASE_URL}/billing#payment`,
+          status: 'sent'
+        };
+        break;
+        
+      case 'kyc':
+        await sendKycReminder({
+          email,
+          name: name || 'Test User'
+        });
+        result = {
+          type: 'kyc-reminder',
+          cta: `${ENV.APP_BASE_URL}/profile`,
+          status: 'sent'
+        };
+        break;
+        
+      case 'mail':
+        await sendMailReceived({
+          email,
+          name: name || 'Test User',
+          preview: req.body.preview || 'This is a test message preview...'
+        });
+        result = {
+          type: 'mail-received',
+          cta: `${ENV.APP_BASE_URL}/mail`,
+          status: 'sent'
+        };
+        break;
 
             default:
                 return res.status(400).json({
