@@ -216,6 +216,11 @@ async function start() {
 
     // ---- Health check already defined above (before rate limiter) ----
 
+    // Ready endpoint (for frontend status check)
+    app.get('/api/ready', (_req, res) => {
+        res.json({ status: 'ready' });
+    });
+
     // Version info (for deployment verification)
     app.get('/api/__version', (_req, res) => {
         try {
