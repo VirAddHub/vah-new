@@ -12,8 +12,8 @@ export async function GET() {
     });
     clearTimeout(t);
     const ok = r.ok;
-    return NextResponse.json({ ok }, { status: ok ? 200 : 503 });
+    return NextResponse.json({ status: ok ? "ready" : "error" }, { status: ok ? 200 : 503 });
   } catch {
-    return NextResponse.json({ ok: false }, { status: 503 });
+    return NextResponse.json({ status: "error" }, { status: 503 });
   }
 }
