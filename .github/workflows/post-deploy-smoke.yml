@@ -3,6 +3,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
@@ -13,10 +18,10 @@ jobs:
       - name: Warm up Render service
         run: curl -sS -m 5 --connect-timeout 3 https://vah-api-staging.onrender.com/ || true
       
-      - name: Smoke staging (retry until healthy)
+      - name: Smoke staging (patient)
         env:
           SMOKE_BASE_URL: https://vah-api-staging.onrender.com
-          SMOKE_MAX_WAIT: 900            # 15 minutes budget
-          SMOKE_INITIAL_DELAY: 120       # 2 minutes "let Render boot" delay
-          SMOKE_SLEEP_BASE: 2            # backoff base (2s, 4s, 8s…capped at 15s)
+          SMOKE_INITIAL_DELAY_SECONDS: 120
+          SMOKE_MAX_WAIT_SECONDS: 900
+          SMOKE_BACKOFF_MAX_SECONDS: 15
         run: bash apps/backend/scripts/smoke.sh

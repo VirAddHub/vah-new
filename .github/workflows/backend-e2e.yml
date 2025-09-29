@@ -10,21 +10,24 @@ on:
     paths:
       - 'apps/backend/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres # pragma: allowlist secret
-          POSTGRES_DB: vah_test # pragma: allowlist secret
         ports: ['5432:5432']
         options: >-
-          --health-cmd="pg_isready -U postgres -d vah_test"
-          --health-interval=5s --health-timeout=5s --health-retries=10
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s --health-timeout=5s --health-retries=20
 
     steps:
       - name: Checkout code
@@ -45,54 +48,44 @@ jobs:
         working-directory: apps/backend
 
       - name: Setup test database
+        env:
+          PGUSER: postgres
+          PGPASSWORD: postgres # pragma: allowlist secret
+          PGHOST: localhost
+          PGPORT: 5432
+          PGDATABASE: vah_test
         run: |
           # Create test user and database
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE ROLE test WITH LOGIN PASSWORD 'test';" || true # pragma: allowlist secret
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE test OWNER test;" || true # pragma: allowlist secret
+          psql -c "CREATE ROLE test WITH LOGIN PASSWORD 'test';" || true
+          psql -c "CREATE DATABASE test OWNER test;" || true
 
       - name: Start API server
         env:
+          PGUSER: postgres
+          PGPASSWORD: postgres # pragma: allowlist secret
+          PGHOST: localhost
+          PGPORT: 5432
+          PGDATABASE: vah_test
+          DATABASE_URL: postgres://${{ env.PGUSER }}:${{ env.PGPASSWORD }}@${{ env.PGHOST }}:${{ env.PGPORT }}/${{ env.PGDATABASE }} # pragma: allowlist secret
           PORT: 3001
           NODE_ENV: test
-          DATABASE_URL: postgres://test:test@localhost:5432/test # pragma: allowlist secret
-          POSTMARK_TOKEN: dummy
-          POSTMARK_STREAM: outbound
+          APP_BASE_URL: http://localhost:3001
           EMAIL_FROM: hello@virtualaddresshub.co.uk
           EMAIL_FROM_NAME: VirtualAddressHub
           EMAIL_REPLY_TO: support@virtualaddresshub.co.uk
+          POSTMARK_TOKEN: dummy
           DISABLE_RATE_LIMIT_FOR_HEALTHZ: 1
         run: |
           node dist/server/index.js &
           echo $! > server.pid
         working-directory: apps/backend
 
-      - name: Wait for local server to be healthy
-        run: |
-          set -euo pipefail
-          BASE="http://localhost:3001"
-          PATH="/api/healthz"
-          MAX=600          # 10 minutes
-          SLEEP=2
-          start=$(date +%s)
-          attempt=0
-          while :; do
-            attempt=$((attempt+1))
-            code=$(curl -sS -m 5 --connect-timeout 3 -o /dev/null -w "%{http_code}" "$BASE$PATH" || echo 000)
-            if [ "$code" = "200" ] || [ "$code" = "204" ]; then
-              echo "✅ healthy ($code) after $(( $(date +%s) - start ))s ($attempt attempts)"
-              break
-            fi
-            case "$code" in 000|429|500|502|503|504) ;; *) echo "❌ non-retryable $code"; exit 1 ;; esac
-            elapsed=$(( $(date +%s) - start ))
-            if [ "$elapsed" -ge "$MAX" ]; then
-              echo "❌ never became healthy (last $code) after ${elapsed}s"
-              exit 1
-            fi
-            backoff=$(( SLEEP << (attempt-1) ))
-            [ "$backoff" -gt 15 ] && backoff=15
-            echo "⏳ attempt $attempt: $code. retrying in ${backoff}s (elapsed ${elapsed}s / ${MAX}s)"
-            sleep "$backoff"
-          done
+      - name: Wait for health
+        env:
+          SMOKE_BASE_URL: http://localhost:3001
+          SMOKE_INITIAL_DELAY_SECONDS: 10
+          SMOKE_MAX_WAIT_SECONDS: 600
+        run: bash apps/backend/scripts/smoke.sh
 
       - name: Run E2E tests
         env:
@@ -103,7 +96,4 @@ jobs:
       - name: Stop server
         if: always()
         run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) || true
-            rm server.pid
-          fi
+          if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
