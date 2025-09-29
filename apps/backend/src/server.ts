@@ -123,7 +123,7 @@ const csrfProtection = (req: any, res: any, next: any) => {
 
 // ---- Health check FIRST (before rate limiter) ----
 app.get('/api/healthz', (_req, res) => {
-    res.status(200).json({ ok: true });
+    res.status(200).json({ status: "ready" });
 });
 
 // Rate limiting (IPv6-safe with health check exemption)
