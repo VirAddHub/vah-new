@@ -37,35 +37,6 @@ async function sendWithTemplate(alias: string, to: string, model: Record<string,
     }
 }
 
-export async function sendBillingReminder({ email, name }: { email: string; name?: string }) {
-    if (!emailGuard(ENV.EMAIL_BILLING)) return;
-    await sendWithTemplate('billing-reminder', email, {
-        name,
-        subject: 'Complete your payment',
-        action_url: `${ENV.APP_BASE_URL}/billing#payment`,
-    });
-}
-
-export async function sendKycReminder({ email, name }: { email: string; name?: string }) {
-    if (!emailGuard(ENV.EMAIL_KYC)) return;
-    await sendWithTemplate('kyc-reminder', email, {
-        name,
-        subject: 'Verify your identity',
-        action_url: `${ENV.APP_BASE_URL}/profile`,
-    });
-}
-
-export async function sendMailReceived({
-    email, name, preview,
-}: { email: string; name?: string; preview?: string }) {
-    if (!emailGuard(ENV.EMAIL_MAIL)) return;
-    await sendWithTemplate('mail-received', email, {
-        name,
-        subject: 'You have got mail',
-        preview,
-        action_url: `${ENV.APP_BASE_URL}/mail`,
-    });
-}
 
 // Auth / Security
 export async function sendPasswordResetEmail({ email, name, cta_url }: { email: string; name?: string; cta_url: string }): Promise<void> {

@@ -163,9 +163,6 @@ Everything else (templates, flags, webhook) can remain unchanged unless you also
 
 | Alias | Function | Required fields | Optional fields |
 |-------|----------|----------------|-----------------|
-| `billing-reminder` | `sendBillingReminder` | `email` | `name` |
-| `kyc-reminder` | `sendKycReminder` | `email` | `name` |
-| `mail-received` | `sendMailReceived` | `email` | `name`, `preview` |
 | `password-reset-email` | `sendPasswordResetEmail` | `email`, `cta_url` | `name` |
 | `password-changed-confirmation` | `sendPasswordChangedConfirmation` | `email` | `name` |
 | `welcome-email` | `sendWelcomeEmail` | `email`, `cta_url` | `name` |
@@ -191,21 +188,6 @@ Everything else (templates, flags, webhook) can remain unchanged unless you also
 # Enable debug emails in Render env:
 DEBUG_EMAIL_ENABLED=1
 DEBUG_EMAIL_ALLOWED_IPS=your.ip.address,another.ip  # optional IP allowlist
-
-# Test billing reminder
-curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
-  -H "Content-Type: application/json" \
-  -d '{"type":"billing","email":"test@example.com","name":"Test User"}'
-
-# Test KYC reminder
-curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
-  -H "Content-Type: application/json" \
-  -d '{"type":"kyc","email":"test@example.com","name":"Test User"}'
-
-# Test mail received
-curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
-  -H "Content-Type: application/json" \
-  -d '{"type":"mail","email":"test@example.com","name":"Test User","preview":"New message..."}'
 
 # Test password reset
 curl -X POST https://vah-api-staging.onrender.com/api/debug-email \

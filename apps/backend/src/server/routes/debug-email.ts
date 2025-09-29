@@ -1,9 +1,6 @@
 // apps/backend/src/server/routes/debug-email.ts
 import { Router } from 'express';
 import { 
-    sendBillingReminder, 
-    sendKycReminder, 
-    sendMailReceived,
     sendPasswordResetEmail,
     sendPasswordChangedConfirmation,
     sendWelcomeEmail,
@@ -22,9 +19,6 @@ import {
 import { ENV } from '../../env';
 
 // Type definitions for email functions
-type SendBillingReminderArgs = { email: string; name?: string };
-type SendKycReminderArgs = { email: string; name?: string };
-type SendMailReceivedArgs = { email: string; name?: string; preview?: string };
 
 const router = Router();
 
@@ -49,11 +43,10 @@ router.post('/debug-email', async (req, res) => {
             return res.status(400).json({
                 error: 'Email is required',
                 usage: {
-                    type: 'billing|kyc|mail|password-reset|password-changed|welcome|plan-cancelled|invoice-sent|payment-failed|kyc-submitted|kyc-approved|kyc-rejected|support-received|support-closed|mail-scanned|mail-forwarded|mail-after-cancellation',
+                    type: 'password-reset|password-changed|welcome|plan-cancelled|invoice-sent|payment-failed|kyc-submitted|kyc-approved|kyc-rejected|support-received|support-closed|mail-scanned|mail-forwarded|mail-after-cancellation',
                     email: 'test@example.com',
                     name: 'Test User (optional)',
                     cta_url: 'https://example.com (for password-reset, welcome, payment-failed)',
-                    preview: 'Message preview (for mail types)',
                     ticket_id: 'TICKET-123 (for support types)',
                     reason: 'Rejection reason (for kyc-rejected)',
                     invoice_number: 'INV-123 (for invoice-sent)',
@@ -69,43 +62,6 @@ router.post('/debug-email', async (req, res) => {
         let result;
 
         switch (type) {
-            case 'billing':
-                await sendBillingReminder({
-                    email,
-                    name: name || 'Test User'
-                });
-                result = {
-                    type: 'billing-reminder',
-                    cta: `${ENV.APP_BASE_URL}/billing#payment`,
-                    status: 'sent'
-                };
-                break;
-
-            case 'kyc':
-                await sendKycReminder({
-                    email,
-                    name: name || 'Test User'
-                });
-                result = {
-                    type: 'kyc-reminder',
-                    cta: `${ENV.APP_BASE_URL}/profile`,
-                    status: 'sent'
-                };
-                break;
-
-            case 'mail':
-                await sendMailReceived({
-                    email,
-                    name: name || 'Test User',
-                    preview: req.body.preview || 'This is a test message preview...'
-                });
-                result = {
-                    type: 'mail-received',
-                    cta: `${ENV.APP_BASE_URL}/mail`,
-                    status: 'sent'
-                };
-                break;
-
             // Auth / Security
             case 'password-reset':
                 await sendPasswordResetEmail({
@@ -306,7 +262,6 @@ router.post('/debug-email', async (req, res) => {
                 return res.status(400).json({
                     error: 'Invalid type. Use one of the supported types.',
                     availableTypes: [
-                        'billing', 'kyc', 'mail',
                         'password-reset', 'password-changed', 'welcome',
                         'plan-cancelled', 'invoice-sent', 'payment-failed',
                         'kyc-submitted', 'kyc-approved', 'kyc-rejected',

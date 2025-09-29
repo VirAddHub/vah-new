@@ -1,0 +1,11 @@
+{
+    "From": "hello@virtualaddresshub.co.uk",
+    "To": "support@virtualaddresshub.co.uk",
+    "TemplateAlias": "welcome-email",
+    "TemplateModel": {
+        "first_name": "Test User",
+        "dashboard_link": "https://vah-new-frontend-75d6.vercel.app/dashboard"
+    },
+    "MessageStream": "outbound",
+    "ReplyTo": "support@virtualaddresshub.co.uk"
+}

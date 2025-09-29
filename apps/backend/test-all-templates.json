@@ -1,0 +1,223 @@
+{
+  "templates": [
+        {
+            "name": "password-reset-email",
+            "description": "Password reset email",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "password-reset-email",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/reset?token=test123"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "password-changed-confirmation",
+            "description": "Password changed confirmation",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "password-changed-confirmation",
+                "TemplateModel": {
+                    "name": "Test User"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "welcome-email",
+            "description": "Welcome email",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "welcome-email",
+                "TemplateModel": {
+                    "first_name": "Test User",
+                    "dashboard_link": "https://vah-new-frontend-75d6.vercel.app/dashboard"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "plan-cancelled",
+            "description": "Plan cancelled notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "plan-cancelled",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "end_date": "2024-12-31",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/billing"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "invoice-sent",
+            "description": "Invoice sent notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "invoice-sent",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "invoice_number": "INV-123456",
+                    "amount": "£29.99",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/billing"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "payment-failed",
+            "description": "Payment failed notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "payment-failed",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/billing#payment"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "kyc-submitted",
+            "description": "KYC documents submitted",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "kyc-submitted",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/profile"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "kyc-approved",
+            "description": "KYC approved notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "kyc-approved",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/profile"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "kyc-rejected",
+            "description": "KYC rejected notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "kyc-rejected",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "reason": "Document quality insufficient - please resubmit with clearer images",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/profile"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "support-request-received",
+            "description": "Support request received",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "support-request-received",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "ticket_id": "TICKET-789456",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/support"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "support-request-closed",
+            "description": "Support request closed",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "support-request-closed",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "ticket_id": "TICKET-789456",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/support"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "mail-scanned",
+            "description": "Mail scanned notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "mail-scanned",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "subject": "Bank statement received",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/mail"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "mail-forwarded",
+            "description": "Mail forwarded notification",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "mail-forwarded",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "tracking_number": "TRK123456789",
+                    "carrier": "Royal Mail",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/mail"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        },
+        {
+            "name": "mail-received-after-cancellation",
+            "description": "Mail received after cancellation",
+            "payload": {
+                "From": "hello@virtualaddresshub.co.uk",
+                "To": "support@virtualaddresshub.co.uk",
+                "TemplateAlias": "mail-received-after-cancellation",
+                "TemplateModel": {
+                    "name": "Test User",
+                    "subject": "Important document received after cancellation",
+                    "cta_url": "https://vah-new-frontend-75d6.vercel.app/mail"
+                },
+                "MessageStream": "outbound",
+                "ReplyTo": "support@virtualaddresshub.co.uk"
+            }
+        }
+    ]
+}
