@@ -4,12 +4,21 @@
 
 Production-ready email notification system with Postmark integration, feature flags, and graceful fallbacks.
 
+## Current Setup (Vercel + Render)
+
+**Frontend**: `https://vah-new-frontend-75d6.vercel.app` (Vercel)  
+**Backend**: `https://vah-api-staging.onrender.com` (Render)  
+**Email CTAs**: Point to Vercel frontend URLs
+
+### When Switching to Custom Domain
+Change only `APP_BASE_URL` to `https://virtualaddresshub.co.uk` - everything else stays the same.
+
 ## Environment Variables
 
-### Required (Production)
+### Required (Current Vercel Setup)
 ```bash
 # --- App / URLs
-APP_BASE_URL=https://virtualaddresshub.co.uk
+APP_BASE_URL=https://vah-new-frontend-75d6.vercel.app
 
 # --- Postmark
 POSTMARK_TOKEN=your_postmark_server_token  # pragma: allowlist secret
@@ -52,7 +61,7 @@ Create these templates with **exact aliases**:
 
 ## Webhook Configuration
 
-**Endpoint**: `POST https://virtualaddresshub.co.uk/api/webhooks-postmark`
+**Endpoint**: `POST https://vah-api-staging.onrender.com/api/webhooks-postmark`
 
 **Authentication**: Basic Auth (if configured)
 - Username: `POSTMARK_WEBHOOK_USER`  # pragma: allowlist secret
@@ -110,13 +119,13 @@ Each email type can be independently enabled/disabled:
 
 ### API Health
 ```bash
-curl -i https://virtualaddresshub.co.uk/api/healthz
+curl -i https://vah-api-staging.onrender.com/api/healthz
 # Expected: {"ok":true}
 ```
 
 ### Version Check
 ```bash
-curl -i https://virtualaddresshub.co.uk/api/__version
+curl -i https://vah-api-staging.onrender.com/api/__version
 # Expected: Build info with commit hash
 ```
 
@@ -124,7 +133,7 @@ curl -i https://virtualaddresshub.co.uk/api/__version
 ```bash
 curl -i -X POST -H "Content-Type: application/json" \
   --data-binary '{"MessageStream":"outbound","RecordType":"Open","MessageID":"test-123","Recipient":"test@example.com"}' \
-  https://virtualaddresshub.co.uk/api/webhooks-postmark
+  https://vah-api-staging.onrender.com/api/webhooks-postmark
 # Expected: 204 No Content
 ```
 
@@ -163,11 +172,23 @@ npm test -- tests/unit/mailer.templates.spec.ts
 
 ### Production Testing
 ```bash
-# Test billing reminder (replace with real email)
-curl -X POST https://virtualaddresshub.co.uk/api/test-billing-reminder \
+# Test billing reminder
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","name":"Test User"}'
+  -d '{"type":"billing","email":"test@example.com","name":"Test User"}'
+
+# Test KYC reminder
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"kyc","email":"test@example.com","name":"Test User"}'
+
+# Test mail received notification
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"mail","email":"test@example.com","name":"Test User","preview":"New message from John..."}'
 ```
+
+**Response**: Returns environment info and CTA URLs for verification.
 
 ## Security
 
