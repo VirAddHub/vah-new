@@ -6,8 +6,17 @@ on:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: bash apps/backend/scripts/smoke.sh
+      
+      - name: Warm up Render service
+        run: curl -sS -m 5 --connect-timeout 3 https://vah-api-staging.onrender.com/ || true
+      
+      - name: Smoke staging (retry until healthy)
         env:
-          BASE_URL: https://vah-api-staging.onrender.com
+          SMOKE_BASE_URL: https://vah-api-staging.onrender.com
+          SMOKE_MAX_WAIT: 900            # 15 minutes budget
+          SMOKE_INITIAL_DELAY: 120       # 2 minutes "let Render boot" delay
+          SMOKE_SLEEP_BASE: 2            # backoff base (2s, 4s, 8s…capped at 15s)
+        run: bash apps/backend/scripts/smoke.sh

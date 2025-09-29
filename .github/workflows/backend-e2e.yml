@@ -13,6 +13,7 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -65,18 +66,38 @@ jobs:
           echo $! > server.pid
         working-directory: apps/backend
 
-      - name: Wait for server readiness
+      - name: Wait for local server to be healthy
         run: |
-          for i in {1..60}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/healthz || true)
-            if [ "$code" = "200" ]; then echo "Server is healthy!"; exit 0; fi
-            echo "Waiting for server... (attempt $i/60)"
-            sleep 1
+          set -euo pipefail
+          BASE="http://localhost:3001"
+          PATH="/api/healthz"
+          MAX=600          # 10 minutes
+          SLEEP=2
+          start=$(date +%s)
+          attempt=0
+          while :; do
+            attempt=$((attempt+1))
+            code=$(curl -sS -m 5 --connect-timeout 3 -o /dev/null -w "%{http_code}" "$BASE$PATH" || echo 000)
+            if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+              echo "✅ healthy ($code) after $(( $(date +%s) - start ))s ($attempt attempts)"
+              break
+            fi
+            case "$code" in 000|429|500|502|503|504) ;; *) echo "❌ non-retryable $code"; exit 1 ;; esac
+            elapsed=$(( $(date +%s) - start ))
+            if [ "$elapsed" -ge "$MAX" ]; then
+              echo "❌ never became healthy (last $code) after ${elapsed}s"
+              exit 1
+            fi
+            backoff=$(( SLEEP << (attempt-1) ))
+            [ "$backoff" -gt 15 ] && backoff=15
+            echo "⏳ attempt $attempt: $code. retrying in ${backoff}s (elapsed ${elapsed}s / ${MAX}s)"
+            sleep "$backoff"
           done
-          echo "Server not healthy after 60 seconds"; exit 1
 
       - name: Run E2E tests
-        run: E2E_BASE_URL=http://localhost:3001 npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:3001
+        run: npm run test:e2e
         working-directory: apps/backend
 
       - name: Stop server
