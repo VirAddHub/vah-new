@@ -33,6 +33,7 @@ import debugEmailRouter from "./server/routes/debug-email";
 import devRouter from "./server/routes/dev";
 import passwordResetRouter from "./server/routes/password-reset";
 import { passwordResetRouter as profilePasswordResetRouter } from "./server/routes/profile.password-reset";
+import passwordResetRouterV2 from "./server/routes/profile/password-reset";
 
 // --- cookie options helper
 const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
@@ -238,6 +239,7 @@ async function start() {
     // Mount other routes
     app.use('/api/profile', profileRouter);
     app.use('/api/profile', profilePasswordResetRouter);
+    app.use('/api/profile', passwordResetRouterV2(getPool()));
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
