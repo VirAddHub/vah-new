@@ -28,6 +28,8 @@
     "dev:backend": "SKIP_BOOT_SIDE_EFFECTS=1 HOURLY_EXPORTS_ENABLED=false DISABLE_INVOICE_CLEANUP=1 tsx watch server/index.js",
     "start": "node dist/src/server.js",
     "start:backend": "npm run start",
+    "dev:local": "node dist/server/index.js",
+    "start:local:ps": "node dist/server/index.js",
     "db:migrate": "node scripts/migrate-pg.cjs",
     "db:rollback": "node scripts/migrate-pg.cjs rollback",
     "typecheck": "tsc -p tsconfig.server.json --noEmit",
