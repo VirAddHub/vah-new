@@ -123,12 +123,9 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Body parsing
+// Global parsers for the whole app (safe)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Raw body for webhooks
-app.use('/api/webhooks/onedrive', express.raw({ type: 'application/json' }));
 
 // Database initialization
 async function initializeDatabase() {
@@ -184,7 +181,7 @@ async function start() {
 
     // ---- Health check (must be synchronous/instant) ----
     app.get('/api/healthz', (_req, res) => {
-        res.status(200).send('ok');
+        res.set('Content-Type', 'application/json').status(200).send('{"ok":true}');
     });
 
     // Version info (for deployment verification)
@@ -200,7 +197,7 @@ async function start() {
         } catch {
             res.json({
                 builtAt: 'unknown',
-                commit: 'unknown', 
+                commit: 'unknown',
                 branch: 'unknown',
                 nodeEnv: process.env.NODE_ENV || 'development'
             });
@@ -217,7 +214,8 @@ async function start() {
     app.use('/api/admin-mail-bulk', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/admin-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/webhooks-gc', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-postmark', express.json(), postmarkWebhook);
+    // Webhook with scoped raw body parsing
+    app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
     app.use('/api/webhooks-onedrive', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/email-prefs', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/gdpr-export', (_req, res) => res.json({ ok: true, message: 'stub' }));
