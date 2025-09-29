@@ -85,7 +85,7 @@ export async function sendPasswordResetEmail({ email, name, cta_url }: { email: 
         model: {
             firstName: name,
             resetLink: cta_url,
-            expiryMinutes: 60,
+            expiryMinutes: 30,
         },
     });
 }

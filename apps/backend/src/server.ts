@@ -31,6 +31,7 @@ import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
 import devRouter from "./server/routes/dev";
+import passwordResetRouter from "./server/routes/password-reset";
 
 // --- cookie options helper
 const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
@@ -238,6 +239,7 @@ async function start() {
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
+    app.use('/api', passwordResetRouter);
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {

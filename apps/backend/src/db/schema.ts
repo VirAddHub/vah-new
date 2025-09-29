@@ -21,7 +21,10 @@ CREATE TABLE IF NOT EXISTS "user" (
   sumsub_rejection_reason TEXT,
   sumsub_webhook_payload TEXT,
   plan_start_date BIGINT,
-  onboarding_step TEXT
+  onboarding_step TEXT,
+  password_reset_token TEXT,
+  password_reset_expires BIGINT,
+  password_reset_used_at BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS mail_item (
