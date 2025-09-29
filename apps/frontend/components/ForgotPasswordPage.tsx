@@ -52,9 +52,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      // Backend returns 204 (No Content) for security (no user enumeration)
+      if (response.ok) {
         setMessage({ 
           type: 'success', 
           text: `Password reset instructions have been sent to ${email}` 
@@ -67,7 +66,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       } else {
         setMessage({ 
           type: 'error', 
-          text: data.message || 'Failed to send reset link. Please try again.' 
+          text: 'Failed to send reset link. Please try again or contact support if the problem persists.' 
         });
       }
       
@@ -115,9 +114,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.ok) {
+        // Backend returns 204 (No Content) on success
         setMessage({ 
           type: 'success', 
           text: 'Password has been successfully reset. Redirecting to login...' 
@@ -128,9 +126,24 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           onNavigate('login');
         }, 2000);
       } else {
+        // Parse error response for specific error messages
+        let errorMessage = 'Failed to reset password. Please try again or request a new reset link.';
+        try {
+          const data = await response.json();
+          if (data.error === 'invalid_or_expired') {
+            errorMessage = 'This reset link is invalid or has expired. Please request a new one.';
+          } else if (data.error === 'weak_password') {
+            errorMessage = 'Password must be at least 8 characters with uppercase, lowercase, and numbers.';
+          } else if (data.error === 'missing_fields') {
+            errorMessage = 'Please fill in all required fields.';
+          }
+        } catch {
+          // If we can't parse JSON, use default message
+        }
+        
         setMessage({ 
           type: 'error', 
-          text: data.message || 'Failed to reset password. Please try again or request a new reset link.' 
+          text: errorMessage
         });
       }
       
