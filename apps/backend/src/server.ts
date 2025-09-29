@@ -26,7 +26,7 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 
 // --- routes that need raw body (webhooks)
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
-import postmarkWebhook from "./server/routes/webhooks-postmark";
+import { postmarkWebhook } from "./server/routes/webhooks-postmark";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 
@@ -204,7 +204,10 @@ async function start() {
         }
     });
 
-    // Mount routes
+    // Mount Postmark webhook FIRST with raw parser (before other routes)
+    app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
+
+    // Mount other routes
     app.use('/api/profile', profileRouter);
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
@@ -214,8 +217,6 @@ async function start() {
     app.use('/api/admin-mail-bulk', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/admin-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/webhooks-gc', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    // Webhook with scoped raw body parsing
-    app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
     app.use('/api/webhooks-onedrive', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/email-prefs', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/gdpr-export', (_req, res) => res.json({ ok: true, message: 'stub' }));

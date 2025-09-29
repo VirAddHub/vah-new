@@ -1,7 +1,5 @@
 // apps/backend/src/server/routes/webhooks-postmark.ts
-import { Router } from 'express';
-
-const r = Router();
+import type { Request, Response } from 'express';
 
 // simple optional basic auth for Postmark
 const USER = process.env.POSTMARK_WEBHOOK_USER;
@@ -14,18 +12,18 @@ function basicAuthOk(authHeader?: string) {
     return u === USER && p === PASS;
 }
 
-r.post('/', (req, res) => {
+export function postmarkWebhook(req: Request, res: Response) {
     if (!basicAuthOk(req.headers.authorization)) {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
 
     try {
-        const buf = req.body;                 // Buffer
-        const text = buf.toString('utf8');    // String
-        const evt = JSON.parse(text);         // Parsed JSON
+        const body = Buffer.isBuffer(req.body)
+            ? JSON.parse(req.body.toString('utf8'))
+            : (req.body ?? {});
 
-        const type = evt.RecordType || evt.recordType || 'Unknown';
-        const id = evt.MessageID || evt.RecordID || 'n/a';
+        const type = body.RecordType || body.recordType || 'Unknown';
+        const id = body.MessageID || body.RecordID || 'n/a';
 
         // minimal routing; expand as you need
         switch (type) {
@@ -43,10 +41,8 @@ r.post('/', (req, res) => {
 
         // Postmark expects 204 with no body
         res.setHeader('x-build', (process.env.RENDER_GIT_COMMIT || 'local') + ':' + (process.env.NODE_ENV || 'dev'));
-        return res.sendStatus(204);           // No body
-    } catch (e) {
+        return res.status(204).end();
+    } catch (err) {
         return res.status(400).json({ ok: false, error: 'Invalid JSON' });
     }
-});
-
-export default r;
+}
