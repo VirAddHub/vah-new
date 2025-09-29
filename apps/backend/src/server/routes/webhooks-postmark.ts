@@ -14,6 +14,7 @@ function basicAuthOk(authHeader?: string) {
 
 export function postmarkWebhook(req: Request, res: Response) {
     if (!basicAuthOk(req.headers.authorization)) {
+        res.setHeader('WWW-Authenticate', 'Basic');
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
 

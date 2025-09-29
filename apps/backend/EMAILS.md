@@ -20,9 +20,9 @@ POSTMARK_FROM_NAME=VirtualAddressHub
 POSTMARK_REPLY_TO=support@virtualaddresshub.co.uk
 POSTMARK_STREAM=outbound
 
-# --- Webhook basic auth (optional but recommended)
-POSTMARK_WEBHOOK_USER=<random_username>
-POSTMARK_WEBHOOK_PASS=<random_password>
+# --- Webhook basic auth (YOUR random credentials to protect the webhook)
+POSTMARK_WEBHOOK_USER=<your_random_username>  # pragma: allowlist secret
+POSTMARK_WEBHOOK_PASS=<your_random_password>  # pragma: allowlist secret
 
 # --- Feature flags (1=on, 0=off)
 EMAIL_ONBOARDING=1
@@ -67,6 +67,29 @@ Create **exact** aliases in Postmark:
   * Username: `POSTMARK_WEBHOOK_USER`  # pragma: allowlist secret
   * Password: `POSTMARK_WEBHOOK_PASS`  # pragma: allowlist secret
 * **Expected response:** `204 No Content`
+
+### Basic Auth Setup (Your Random Credentials)
+
+**These are YOUR random username/password** (not Postmark's account credentials):
+
+1. **Pick any random values** (e.g. `POSTMARK_WEBHOOK_USER=s71c3x` and `POSTMARK_WEBHOOK_PASS=zW_9pN7q8R`)
+2. **Set them in Render environment variables**
+3. **Configure Postmark webhook** to use the same credentials
+4. **Test with curl:**
+   ```bash
+   # Should succeed (204) with correct creds
+   curl -i -u s71c3x:zW_9pN7q8R \
+     -H "Content-Type: application/json" \
+     -d '{"MessageStream":"outbound","RecordType":"Open"}' \
+     https://vah-api-staging.onrender.com/api/webhooks-postmark
+   
+   # Should fail (401) with wrong creds
+   curl -i -u wrong:wrong https://vah-api-staging.onrender.com/api/webhooks-postmark
+   ```
+
+**Why?** Your webhook URL is public. Basic Auth stops random traffic from spamming it.
+
+> ✅ **Already implemented:** The webhook route automatically checks Basic Auth when `POSTMARK_WEBHOOK_USER` and `POSTMARK_WEBHOOK_PASS` are set. If not set, auth is disabled (useful for local development).
 
 ## CTA conventions (used across templates)
 
