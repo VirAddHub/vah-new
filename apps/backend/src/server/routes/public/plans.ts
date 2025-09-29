@@ -5,9 +5,9 @@ const router = Router();
 
 router.get('/plans', async (_req, res) => {
     try {
-        const rows = await selectMany<{ id: string; name: string; price_pence: number }>(
+        const rows = await selectMany(
             `select id, name, price_pence from plans order by price_pence asc`
-        );
+        ) as { id: string; name: string; price_pence: number }[];
         return res.status(200).json({ ok: true, data: rows, source: 'db' });
     } catch (e) {
         // Safe stub if DB not reachable
