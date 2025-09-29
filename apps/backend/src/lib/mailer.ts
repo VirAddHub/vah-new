@@ -1,99 +1,65 @@
 // apps/backend/src/lib/mailer.ts
-import { ServerClient } from "postmark";
-import { ENV, emailGuard } from "../env";
+import postmark from 'postmark';
+import { ENV, emailGuard } from '../env';
 
-let client: ServerClient | null = null;
-const FROM = ENV.EMAIL_FROM;
-const STREAM = "outbound"; // keep consistent with your setup
-
+let _client: postmark.ServerClient | null = null;
 function getClient() {
-  if (!client) {
-    client = new ServerClient(ENV.POSTMARK_TOKEN);
+  if (!_client) {
+    if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
+    _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
   }
-  return client;
+  return _client;
 }
 
-type SendArgs = {
-  to: string;
-  alias: "billing-reminder" | "kyc-reminder" | "mail-received";
-  model: Record<string, unknown>;
-  subject?: string;
-  tag?: string;
-};
-
-async function sendWithTemplate({ to, alias, model, subject, tag }: SendArgs) {
+async function sendWithTemplate(alias: string, to: string, model: Record<string, any>) {
+  const client = getClient();
+  if (!client) return; // silently skip when not configured (tests/local)
   try {
-    return await getClient().sendEmailWithTemplate({
-      From: FROM,
+    await client.sendEmailWithTemplate({
+      From: ENV.EMAIL_FROM,
       To: to,
-      TemplateAlias: alias,          // ✅ use alias, not numeric ID
+      TemplateAlias: alias,
       TemplateModel: model,
-      MessageStream: STREAM,
-      Tag: tag,
-      ...(subject ? { Subject: subject } : {}),
+      MessageStream: 'outbound',
     });
-  } catch (err) {
-    // Graceful fallback so first deploys don't explode if template is missing.
-    const href =
-      (model as any)?.action_url ??
-      `${ENV.APP_BASE_URL}`; // generic fallback
-    const greeting = (model as any)?.name
-      ? `Hi ${(model as any).name},`
-      : "Hello,";
-    const html = `
-      <p>${greeting}</p>
-      <p>Please follow this link:</p>
-      <p><a href="${href}">${href}</a></p>
-    `;
-    return getClient().sendEmail({
-      From: FROM,
+  } catch {
+    // graceful fallback
+    await client.sendEmail({
+      From: ENV.EMAIL_FROM,
       To: to,
-      HtmlBody: html,
-      Subject: subject ?? "Notification",
-      MessageStream: STREAM,
-      Tag: tag,
+      Subject: model.subject ?? 'Notification',
+      HtmlBody: `<p>${model.greeting ?? 'Hi'},</p><p>${model.body ?? 'Action needed.'}</p><p><a href="${model.action_url}">Open</a></p>`,
+      MessageStream: 'outbound',
     });
   }
 }
 
-// === Public, guarded helpers ===
-
-export async function sendBillingReminder(args: { email: string; name?: string }) {
+export async function sendBillingReminder({ email, name }: { email: string; name?: string }) {
   if (!emailGuard(ENV.EMAIL_BILLING)) return;
-  return sendWithTemplate({
-    to: args.email,
-    alias: "billing-reminder",
-    model: {
-      name: args.name,
-      action_url: `${ENV.APP_BASE_URL}/billing#payment`,
-    },
-    tag: "billing-reminder",
+  await sendWithTemplate('billing-reminder', email, {
+    name,
+    subject: 'Complete your payment',
+    action_url: `${ENV.APP_BASE_URL}/billing#payment`,
   });
 }
 
-export async function sendKycReminder(args: { email: string; name?: string }) {
+export async function sendKycReminder({ email, name }: { email: string; name?: string }) {
   if (!emailGuard(ENV.EMAIL_KYC)) return;
-  return sendWithTemplate({
-    to: args.email,
-    alias: "kyc-reminder",
-    model: {
-      name: args.name,
-      action_url: `${ENV.APP_BASE_URL}/profile`,
-    },
-    tag: "kyc-reminder",
+  await sendWithTemplate('kyc-reminder', email, {
+    name,
+    subject: 'Verify your identity',
+    action_url: `${ENV.APP_BASE_URL}/profile`,
   });
 }
 
-export async function sendMailReceived(args: { email: string; name?: string; preview?: string }) {
+export async function sendMailReceived({
+  email, name, preview,
+}: { email: string; name?: string; preview?: string }) {
   if (!emailGuard(ENV.EMAIL_MAIL)) return;
-  return sendWithTemplate({
-    to: args.email,
-    alias: "mail-received",
-    model: {
-      name: args.name,
-      preview: args.preview, // optional snippet for the template
-      action_url: `${ENV.APP_BASE_URL}/mail`,
-    },
-    tag: "mail-received",
+  await sendWithTemplate('mail-received', email, {
+    name,
+    subject: 'You have got mail',
+    preview,
+    action_url: `${ENV.APP_BASE_URL}/mail`,
   });
 }
