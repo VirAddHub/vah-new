@@ -1,6 +1,24 @@
 // apps/backend/src/server/routes/debug-email.ts
 import { Router } from 'express';
-import { sendBillingReminder, sendKycReminder, sendMailReceived } from '../../lib/mailer';
+import { 
+    sendBillingReminder, 
+    sendKycReminder, 
+    sendMailReceived,
+    sendPasswordResetEmail,
+    sendPasswordChangedConfirmation,
+    sendWelcomeEmail,
+    sendPlanCancelled,
+    sendInvoiceSent,
+    sendPaymentFailed,
+    sendKycSubmitted,
+    sendKycApproved,
+    sendKycRejected,
+    sendSupportRequestReceived,
+    sendSupportRequestClosed,
+    sendMailScanned,
+    sendMailForwarded,
+    sendMailReceivedAfterCancellation
+} from '../../lib/mailer';
 import { ENV } from '../../env';
 
 // Type definitions for email functions
@@ -31,58 +49,270 @@ router.post('/debug-email', async (req, res) => {
             return res.status(400).json({
                 error: 'Email is required',
                 usage: {
-                    type: 'billing|kyc|mail',
+                    type: 'billing|kyc|mail|password-reset|password-changed|welcome|plan-cancelled|invoice-sent|payment-failed|kyc-submitted|kyc-approved|kyc-rejected|support-received|support-closed|mail-scanned|mail-forwarded|mail-after-cancellation',
                     email: 'test@example.com',
                     name: 'Test User (optional)',
-                    preview: 'Message preview (for mail type)'
+                    cta_url: 'https://example.com (for password-reset, welcome, payment-failed)',
+                    preview: 'Message preview (for mail types)',
+                    ticket_id: 'TICKET-123 (for support types)',
+                    reason: 'Rejection reason (for kyc-rejected)',
+                    invoice_number: 'INV-123 (for invoice-sent)',
+                    amount: '£29.99 (for invoice-sent)',
+                    end_date: '2024-12-31 (for plan-cancelled)',
+                    tracking_number: 'TRK123456 (for mail-forwarded)',
+                    carrier: 'Royal Mail (for mail-forwarded)',
+                    subject: 'Email subject (for mail types)'
                 }
             });
         }
 
-    let result;
+        let result;
 
-    switch (type) {
-      case 'billing':
-        await sendBillingReminder({
-          email,
-          name: name || 'Test User'
-        });
-        result = {
-          type: 'billing-reminder',
-          cta: `${ENV.APP_BASE_URL}/billing#payment`,
-          status: 'sent'
-        };
-        break;
-        
-      case 'kyc':
-        await sendKycReminder({
-          email,
-          name: name || 'Test User'
-        });
-        result = {
-          type: 'kyc-reminder',
-          cta: `${ENV.APP_BASE_URL}/profile`,
-          status: 'sent'
-        };
-        break;
-        
-      case 'mail':
-        await sendMailReceived({
-          email,
-          name: name || 'Test User',
-          preview: req.body.preview || 'This is a test message preview...'
-        });
-        result = {
-          type: 'mail-received',
-          cta: `${ENV.APP_BASE_URL}/mail`,
-          status: 'sent'
-        };
-        break;
+        switch (type) {
+            case 'billing':
+                await sendBillingReminder({
+                    email,
+                    name: name || 'Test User'
+                });
+                result = {
+                    type: 'billing-reminder',
+                    cta: `${ENV.APP_BASE_URL}/billing#payment`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'kyc':
+                await sendKycReminder({
+                    email,
+                    name: name || 'Test User'
+                });
+                result = {
+                    type: 'kyc-reminder',
+                    cta: `${ENV.APP_BASE_URL}/profile`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'mail':
+                await sendMailReceived({
+                    email,
+                    name: name || 'Test User',
+                    preview: req.body.preview || 'This is a test message preview...'
+                });
+                result = {
+                    type: 'mail-received',
+                    cta: `${ENV.APP_BASE_URL}/mail`,
+                    status: 'sent'
+                };
+                break;
+
+            // Auth / Security
+            case 'password-reset':
+                await sendPasswordResetEmail({
+                    email,
+                    name: name || 'Test User',
+                    cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/reset?token=test123`
+                });
+                result = {
+                    type: 'password-reset-email',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/reset?token=test123`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'password-changed':
+                await sendPasswordChangedConfirmation({
+                    email,
+                    name: name || 'Test User'
+                });
+                result = {
+                    type: 'password-changed-confirmation',
+                    status: 'sent'
+                };
+                break;
+
+            // Welcome & onboarding
+            case 'welcome':
+                await sendWelcomeEmail({
+                    email,
+                    name: name || 'Test User',
+                    cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/dashboard`
+                });
+                result = {
+                    type: 'welcome-email',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/dashboard`,
+                    status: 'sent'
+                };
+                break;
+
+            // Billing & invoices
+            case 'plan-cancelled':
+                await sendPlanCancelled({
+                    email,
+                    name: name || 'Test User',
+                    end_date: req.body.end_date,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'plan-cancelled',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/billing`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'invoice-sent':
+                await sendInvoiceSent({
+                    email,
+                    name: name || 'Test User',
+                    invoice_number: req.body.invoice_number,
+                    amount: req.body.amount,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'invoice-sent',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/billing`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'payment-failed':
+                await sendPaymentFailed({
+                    email,
+                    name: name || 'Test User',
+                    cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/billing#payment`
+                });
+                result = {
+                    type: 'payment-failed',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/billing#payment`,
+                    status: 'sent'
+                };
+                break;
+
+            // KYC
+            case 'kyc-submitted':
+                await sendKycSubmitted({
+                    email,
+                    name: name || 'Test User',
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'kyc-submitted',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/profile`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'kyc-approved':
+                await sendKycApproved({
+                    email,
+                    name: name || 'Test User',
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'kyc-approved',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/profile`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'kyc-rejected':
+                await sendKycRejected({
+                    email,
+                    name: name || 'Test User',
+                    reason: req.body.reason,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'kyc-rejected',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/profile`,
+                    status: 'sent'
+                };
+                break;
+
+            // Support
+            case 'support-received':
+                await sendSupportRequestReceived({
+                    email,
+                    name: name || 'Test User',
+                    ticket_id: req.body.ticket_id,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'support-request-received',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/support`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'support-closed':
+                await sendSupportRequestClosed({
+                    email,
+                    name: name || 'Test User',
+                    ticket_id: req.body.ticket_id,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'support-request-closed',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/support`,
+                    status: 'sent'
+                };
+                break;
+
+            // Mail events
+            case 'mail-scanned':
+                await sendMailScanned({
+                    email,
+                    name: name || 'Test User',
+                    subject: req.body.subject,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'mail-scanned',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/mail`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'mail-forwarded':
+                await sendMailForwarded({
+                    email,
+                    name: name || 'Test User',
+                    tracking_number: req.body.tracking_number,
+                    carrier: req.body.carrier,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'mail-forwarded',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/mail`,
+                    status: 'sent'
+                };
+                break;
+
+            case 'mail-after-cancellation':
+                await sendMailReceivedAfterCancellation({
+                    email,
+                    name: name || 'Test User',
+                    subject: req.body.subject,
+                    cta_url: req.body.cta_url
+                });
+                result = {
+                    type: 'mail-received-after-cancellation',
+                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/mail`,
+                    status: 'sent'
+                };
+                break;
 
             default:
                 return res.status(400).json({
-                    error: 'Invalid type. Use: billing, kyc, or mail',
-                    availableTypes: ['billing', 'kyc', 'mail']
+                    error: 'Invalid type. Use one of the supported types.',
+                    availableTypes: [
+                        'billing', 'kyc', 'mail',
+                        'password-reset', 'password-changed', 'welcome',
+                        'plan-cancelled', 'invoice-sent', 'payment-failed',
+                        'kyc-submitted', 'kyc-approved', 'kyc-rejected',
+                        'support-received', 'support-closed',
+                        'mail-scanned', 'mail-forwarded', 'mail-after-cancellation'
+                    ]
                 });
         }
 

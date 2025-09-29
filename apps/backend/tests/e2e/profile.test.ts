@@ -7,13 +7,13 @@ maybe('profile (requires AUTH_TOKEN)', () => {
     const res = await api().get('/api/profile').set(auth());
     // Accept 200 (implemented) or 404 (stub) as valid responses
     expect([200, 404]).toContain(res.status);
-    
+
     if (res.status === 200) {
       // Validate response schema
       expect(res.body).toEqual(expect.objectContaining({
         ok: expect.any(Boolean),
       }));
-      
+
       // If it's a user profile, check for expected fields
       if (res.body.ok && res.body.user) {
         expect(res.body.user).toEqual(expect.objectContaining({

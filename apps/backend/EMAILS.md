@@ -159,6 +159,30 @@ APP_BASE_URL=https://virtualaddresshub.co.uk
 
 Everything else (templates, flags, webhook) can remain unchanged unless you also move the backend URL.
 
+## Email Functions Reference
+
+| Alias | Function | Required fields | Optional fields |
+|-------|----------|----------------|-----------------|
+| `billing-reminder` | `sendBillingReminder` | `email` | `name` |
+| `kyc-reminder` | `sendKycReminder` | `email` | `name` |
+| `mail-received` | `sendMailReceived` | `email` | `name`, `preview` |
+| `password-reset-email` | `sendPasswordResetEmail` | `email`, `cta_url` | `name` |
+| `password-changed-confirmation` | `sendPasswordChangedConfirmation` | `email` | `name` |
+| `welcome-email` | `sendWelcomeEmail` | `email`, `cta_url` | `name` |
+| `plan-cancelled` | `sendPlanCancelled` | `email` | `name`, `end_date`, `cta_url` |
+| `invoice-sent` | `sendInvoiceSent` | `email` | `name`, `invoice_number`, `amount`, `cta_url` |
+| `payment-failed` | `sendPaymentFailed` | `email`, `cta_url` | `name` |
+| `kyc-submitted` | `sendKycSubmitted` | `email` | `name`, `cta_url` |
+| `kyc-approved` | `sendKycApproved` | `email` | `name`, `cta_url` |
+| `kyc-rejected` | `sendKycRejected` | `email` | `name`, `reason`, `cta_url` |
+| `support-request-received` | `sendSupportRequestReceived` | `email` | `name`, `ticket_id`, `cta_url` |
+| `support-request-closed` | `sendSupportRequestClosed` | `email` | `name`, `ticket_id`, `cta_url` |
+| `mail-scanned` | `sendMailScanned` | `email` | `name`, `subject`, `cta_url` |
+| `mail-forwarded` | `sendMailForwarded` | `email` | `name`, `tracking_number`, `carrier`, `cta_url` |
+| `mail-received-after-cancellation` | `sendMailReceivedAfterCancellation` | `email` | `name`, `subject`, `cta_url` |
+
+> **Note:** See Postmark template for exact variables. Fields can be adjusted per template content.
+
 ## Debug endpoint (optional)
 
 **Safe test email trigger** (guarded by env flags):
@@ -182,6 +206,36 @@ curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
 curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
   -H "Content-Type: application/json" \
   -d '{"type":"mail","email":"test@example.com","name":"Test User","preview":"New message..."}'
+
+# Test password reset
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"password-reset","email":"test@example.com","name":"Test User","cta_url":"https://vah-new-frontend-75d6.vercel.app/reset?token=abc123"}'
+
+# Test welcome email
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"welcome","email":"test@example.com","name":"Test User","cta_url":"https://vah-new-frontend-75d6.vercel.app/dashboard"}'
+
+# Test invoice sent
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"invoice-sent","email":"test@example.com","name":"Test User","invoice_number":"INV-123","amount":"£29.99"}'
+
+# Test KYC rejected
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"kyc-rejected","email":"test@example.com","name":"Test User","reason":"Document quality insufficient"}'
+
+# Test support request received
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"support-received","email":"test@example.com","name":"Test User","ticket_id":"TICKET-456"}'
+
+# Test mail forwarded
+curl -X POST https://vah-api-staging.onrender.com/api/debug-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"mail-forwarded","email":"test@example.com","name":"Test User","tracking_number":"TRK123456","carrier":"Royal Mail"}'
 ```
 
 **Response:** Returns environment info and CTA URLs for verification.

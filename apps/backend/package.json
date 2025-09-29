@@ -79,7 +79,8 @@
     "repo:tidy:dry": "bash scripts/repo-tidy.sh --dry-run",
     "redoc:serve": "redoc-cli serve docs/openapi.yaml --watch --port 8088",
     "redoc:build": "redoc-cli build docs/openapi.yaml -o docs/public/api.html",
-    "email:live": "ts-node --project tsconfig.server.json scripts/test-email-live.ts"
+    "email:live": "ts-node --project tsconfig.server.json scripts/test-email-live.ts",
+    "postmark:pull": "ts-node --project tsconfig.server.json scripts/postmark-pull.ts"
   },
   "keywords": [
     "backend",
