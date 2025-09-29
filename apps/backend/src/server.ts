@@ -233,9 +233,12 @@ async function start() {
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
 
-    // Dev routes (staging/local only)
+    // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
         app.use(devRouter);
+        logger.info('🔧 Dev routes enabled (non-production)');
+    } else {
+        logger.info('🔒 Dev routes disabled (production)');
     }
 
     // Stub other routes to prevent crashes

@@ -2,6 +2,11 @@ import { Router } from "express";
 import { ENV } from "../../env";
 import { getPool } from "../db";
 import { v4 as uuid } from "uuid";
+
+// Security: Disable dev routes in production
+if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️  Dev routes disabled in production');
+}
 import {
     sendWelcomeEmail,
     sendPasswordResetEmail,
@@ -22,12 +27,23 @@ import {
 const router = Router();
 
 function ensureAllowed(req: any, res: any, next: any) {
-    const allowedEnv = ENV.NODE_ENV !== "production"; // only non-prod
-    const secret = req.headers["x-dev-seed-secret"];
-    if (!allowedEnv || !ENV.DEV_SEED_SECRET || secret !== ENV.DEV_SEED_SECRET) {
-        return res.status(401).json({ ok: false, error: "unauthorized" });
-    }
-    next();
+  // Security: Disable in production
+  if (ENV.NODE_ENV === "production") {
+    return res.status(404).json({ ok: false, error: "not found" });
+  }
+  
+  // Security: Require secret to be configured
+  if (!ENV.DEV_SEED_SECRET) {
+    return res.status(404).json({ ok: false, error: "not found" });
+  }
+  
+  // Security: Require correct header
+  const secret = req.headers["x-dev-seed-secret"];
+  if (!secret || secret !== ENV.DEV_SEED_SECRET) {
+    return res.status(401).json({ ok: false, error: "unauthorized" });
+  }
+  
+  next();
 }
 
 /**
