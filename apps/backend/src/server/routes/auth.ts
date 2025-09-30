@@ -337,7 +337,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         `);
 
         let validUser: { id: number; email: string; reset_token_hash: string; reset_token_expires_at: string; reset_token_used_at: string | null } | null = null;
-        
+
         // Check if any user's reset token matches (using bcrypt compare)
         for (const user of userResult.rows) {
             const isValidToken = await bcrypt.compare(token, user.reset_token_hash);
@@ -362,7 +362,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         // Update user's password and mark token as used
         await pool.query(`
             UPDATE "user" 
-            SET password_hash = $1, 
+            SET password = $1, 
                 reset_token_hash = NULL, 
                 reset_token_expires_at = NULL, 
                 reset_token_used_at = NOW(),
