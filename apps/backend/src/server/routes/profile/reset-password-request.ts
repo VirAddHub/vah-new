@@ -82,17 +82,15 @@ router.post('/api/profile/reset-password-request', limiter, async (req, res) => 
       if (!saved) return;
 
       // Send email **fire-and-forget** with a short timeout (don't block)
-      const model = buildPasswordResetModel({
-        firstName: user.name || user.first_name || 'there',
-        rawToken: raw,
-        ttlMinutes,
-      });
-
       withTimeout(
         sendTemplateEmail({
           to: user.email,
           templateAlias: 'password-reset-email',
-          model,
+          model: {
+            firstName: user.name || user.first_name || 'there',
+            resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+            expiryMinutes: ttlMinutes,
+          },
         }),
         2000,
         'email send'
