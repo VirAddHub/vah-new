@@ -49,6 +49,9 @@ const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
 const app = express();
 app.set("trust proxy", 1);
 
+// ---- Health routes FIRST (before helmet/cors/anything else) ----
+app.use('/api', health);
+
 // security + CORS (must be before routes)
 app.use(helmet());
 
@@ -124,8 +127,7 @@ const csrfProtection = (req: any, res: any, next: any) => {
     next();
 };
 
-// ---- Health routes FIRST (before rate limiter, before DB) ----
-app.use('/api', health);
+// ---- Health routes already mounted above (before helmet/cors) ----
 
 // Rate limiting (IPv6-safe with health check exemption)
 const limiter = rateLimit({
@@ -217,12 +219,7 @@ async function start() {
         }
     }
 
-    // ---- Health check already defined above (before rate limiter) ----
-
-    // Ready endpoint (for frontend status check)
-    app.get('/api/ready', (_req, res) => {
-        res.json({ status: 'ready' });
-    });
+    // ---- Health check already defined above (before helmet/cors) ----
 
     // Version info (for deployment verification)
     app.get('/api/__version', (_req, res) => {
@@ -283,18 +280,18 @@ async function start() {
     app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
 
-// ---- Global error handlers to prevent crashes ----
-process.on("unhandledRejection", (reason) => {
-    console.error("[unhandledRejection]", reason);
-});
+    // ---- Global error handlers to prevent crashes ----
+    process.on("unhandledRejection", (reason) => {
+        console.error("[unhandledRejection]", reason);
+    });
 
-process.on("uncaughtException", (error) => {
-    console.error("[uncaughtException]", error);
-    // Don't exit - let the platform restart if truly fatal
-});
+    process.on("uncaughtException", (error) => {
+        console.error("[uncaughtException]", error);
+        // Don't exit - let the platform restart if truly fatal
+    });
 
-// ---- Server bootstrap: bind to Render's PORT or fallback ----
-const server = http.createServer(app);
+    // ---- Server bootstrap: bind to Render's PORT or fallback ----
+    const server = http.createServer(app);
 
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';

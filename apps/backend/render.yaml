@@ -9,7 +9,7 @@ services:
       npm ci
       npm run build
     startCommand: npm run start
-    healthCheckPath: /healthz
+    healthCheckPath: /api/healthz
     disk:
       name: vah-data
       mountPath: /var/data

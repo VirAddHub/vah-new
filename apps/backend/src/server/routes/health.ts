@@ -3,10 +3,11 @@ import { Router } from "express";
 
 export const health = Router();
 
-health.get("/", (_req, res) => {
-  res.status(200).json({ ok: true });
+health.get("/healthz", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.type("text/plain").status(200).send("ok");
 });
 
-health.get("/api/ready", (_req, res) => {
+health.get("/ready", (_req, res) => {
   res.status(200).json({ status: "ready" });
 });
