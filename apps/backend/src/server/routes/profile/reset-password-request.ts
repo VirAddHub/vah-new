@@ -44,7 +44,7 @@ router.post('/api/profile/reset-password-request', limiter, async (req, res) => 
         (async () => {
           const pool = getPool();
           const { rows } = await pool.query(
-            'SELECT id, first_name, email FROM "user" WHERE lower(email) = $1 LIMIT 1',
+            'SELECT id, name, first_name, email FROM "user" WHERE lower(email) = $1 LIMIT 1',
             [email.toLowerCase()]
           );
           return rows[0] || null;
