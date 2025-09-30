@@ -107,33 +107,8 @@ router.post("/signup", async (req, res) => {
 
         const hash = await bcrypt.hash(i.password, 12);
 
-        // Try to insert using a `password_hash` column first.
-        // If your table uses `password` instead, we fall back automatically.
-        const baseArgs = [
-            i.first_name, i.last_name, email, i.phone ?? null,
-            i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
-            i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
-            i.city, i.postcode, i.forward_country,
-        ];
-
-        const insertWithPasswordHash = `
-      INSERT INTO "user" (
-        first_name, last_name, email, phone,
-        business_type, country_of_incorporation, company_number, company_name,
-        forward_to_first_name, forward_to_last_name, address_line1, address_line2,
-        city, postcode, forward_country,
-        password_hash
-      ) VALUES (
-        $1,$2,$3,$4,
-        $5,$6,$7,$8,
-        $9,$10,$11,$12,
-        $13,$14,$15,
-        $16
-      )
-      RETURNING id, email, first_name, last_name
-    `;
-
-        const insertWithPassword = `
+        // Insert using the `password` column (we know this exists from the schema)
+        const insertQuery = `
       INSERT INTO "user" (
         first_name, last_name, email, phone,
         business_type, country_of_incorporation, company_number, company_name,
@@ -150,19 +125,16 @@ router.post("/signup", async (req, res) => {
       RETURNING id, email, first_name, last_name
     `;
 
-        let row;
-        try {
-            const rs = await pool.query(insertWithPasswordHash, [...baseArgs, hash]);
-            row = rs.rows[0];
-        } catch (e: any) {
-            const msg = String(e?.message || "").toLowerCase();
-            if (msg.includes('column "password_hash" does not exist')) {
-                const rs2 = await pool.query(insertWithPassword, [...baseArgs, hash]);
-                row = rs2.rows[0];
-            } else {
-                throw e;
-            }
-        }
+        const args = [
+            i.first_name, i.last_name, email, i.phone ?? null,
+            i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
+            i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
+            i.city, i.postcode, i.forward_country,
+            hash
+        ];
+
+        const rs = await pool.query(insertQuery, args);
+        const row = rs.rows[0];
 
         return res.status(201).json({
             ok: true,

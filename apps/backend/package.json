@@ -28,7 +28,7 @@
     "dev:backend": "SKIP_BOOT_SIDE_EFFECTS=1 HOURLY_EXPORTS_ENABLED=false DISABLE_INVOICE_CLEANUP=1 tsx watch server/index.js",
     "start": "node dist/src/server.js",
     "start:backend": "npm run start",
-    "dev:local": "node dist/server/index.js",
+    "dev:local": "NODE_ENV=development node dist/server/index.js",
     "start:local:ps": "node dist/server/index.js",
     "db:migrate": "node scripts/migrate-pg.cjs",
     "db:rollback": "node scripts/migrate-pg.cjs rollback",
@@ -68,7 +68,6 @@
     "dev:bypass:on": "cross-env DEV_MODE=1 node server.js",
     "smoke:e2e": "node scripts/smoke-e2e.mjs",
     "smoke:prod": "node scripts/smoke-production.mjs",
-    "dev:local": "NODE_ENV=development node dist/server/index.js",
     "smoke": "bash scripts/smoke.sh",
     "_dev_local_note": "pragma: allowlist secret - test database URL for local development only",
     "start:prod": "NODE_ENV=production node server.js",
@@ -82,8 +81,7 @@
     "email:live": "ts-node --project tsconfig.server.json scripts/test-email-live.ts",
     "postmark:pull": "ts-node --project tsconfig.server.json scripts/postmark-pull.ts",
     "test:variables": "ts-node --project tsconfig.server.json scripts/test-template-variables.ts",
-    "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js",
-    "test:e2e": "cross-env NODE_ENV=test TS_NODE_TRANSPILE_ONLY=1 jest --runInBand --config ./jest.e2e.config.js"
+    "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js"
   },
   "keywords": [
     "backend",
@@ -102,7 +100,7 @@
     "@types/pg": "8.15.5",
     "archiver": "^7.0.1",
     "bcrypt": "6.0.0",
-    "bcryptjs": "3.0.2",
+    "bcryptjs": "^3.0.2",
     "compression": "1.8.1",
     "connect-pg-simple": "10.0.0",
     "cookie-parser": "1.4.7",
@@ -119,7 +117,7 @@
     "helmet": "8.1.0",
     "joi": "^18.0.1",
     "js-yaml": "^4.1.0",
-    "jsonwebtoken": "9.0.2",
+    "jsonwebtoken": "^9.0.2",
     "memorystore": "1.6.7",
     "morgan": "1.10.1",
     "nanoid": "^5.1.5",
@@ -130,7 +128,7 @@
     "prom-client": "^15.1.3",
     "uuid": "^12.0.0",
     "winston": "3.17.0",
-    "zod": "4.1.8"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@types/bcrypt": "6.0.0",
