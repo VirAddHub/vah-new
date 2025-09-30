@@ -56,8 +56,11 @@ app.use(helmet());
 // Strict CORS allowlisting
 app.use(corsMiddleware);
 
-// Handle CORS preflights for API routes specifically
-app.options('/api/*', corsMiddleware);
+// This tiny handler guarantees a 204 for any stray OPTIONS
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
