@@ -63,7 +63,7 @@ export function safe<T>(v: any, fallback: T): T {
 
 // Clean API URL construction helper
 const API = (path: string) => {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://vah-api-staging.onrender.com';
+    const base = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://vah-api-staging.onrender.com';
     return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 };
 
@@ -84,6 +84,14 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
         const data = await res.json();
 
         if (!res.ok) {
+            // Handle 401 errors by clearing token and redirecting to login
+            if (res.status === 401) {
+                removeToken();
+                // Redirect to login page if we're in the browser
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/login?expired=1';
+                }
+            }
             return { ok: false, message: data.message || res.statusText, status: res.status };
         }
 
@@ -164,9 +172,33 @@ export const apiClient = {
             body: JSON.stringify({ email, password }),
         });
         
+        // Debug logging for login response
+        console.log('Login response:', {
+            ok: resp.ok,
+            status: resp.status,
+            hasData: !!resp.data,
+            hasToken: !!(resp.data && 'token' in resp.data),
+            dataKeys: resp.data ? Object.keys(resp.data) : []
+        });
+        
         // If login successful, store the JWT token
         if (resp.ok && resp.data && 'token' in resp.data) {
             setToken(resp.data.token as string);
+            console.log('JWT token stored successfully');
+            
+            // Sanity check: verify token works with whoami
+            try {
+                const whoamiResp = await legacyReq('/api/auth/whoami', { method: 'GET' });
+                if (!whoamiResp.ok) {
+                    console.warn('Login successful but whoami failed - token may be invalid');
+                } else {
+                    console.log('Whoami check passed - token is valid');
+                }
+            } catch (error) {
+                console.warn('Login successful but whoami check failed:', error);
+            }
+        } else {
+            console.error('Login failed or no token in response:', resp);
         }
         
         return coerceUserResponse(resp);
