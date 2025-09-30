@@ -207,7 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 await logAuthEvent('user_logout', { userId: user?.id });
             }
 
-            await apiClient.post('/api/auth/logout');
+            await apiClient.logout();
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {

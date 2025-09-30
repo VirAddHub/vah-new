@@ -1,4 +1,6 @@
 // apps/frontend/lib/api.ts
+import { getAuthHeader } from './token-manager';
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ??
   "https://vah-api-staging.onrender.com";
@@ -9,7 +11,7 @@ function buildUrl(path: string) {
   return `${API_BASE}${p}`;
 }
 
-/** Low-level fetch helper – keeps headers sane */
+/** Low-level fetch helper – keeps headers sane with JWT support */
 export async function apiFetch(
   path: string,
   init: RequestInit = {}
@@ -19,6 +21,7 @@ export async function apiFetch(
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeader(), // Include JWT token in Authorization header
       ...(init.headers || {}),
     },
   });

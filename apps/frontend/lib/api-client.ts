@@ -1,6 +1,7 @@
 // ---- Types ----------------------------------------------------
 
 import { UnknownRecord } from './types';
+import { getAuthHeader, setToken, removeToken } from './token-manager';
 
 export type ApiOk<T> = { ok: true; data: T };
 export type ApiErr = { ok: false; message: string; code?: string; status?: number };
@@ -66,7 +67,7 @@ const API = (path: string) => {
     return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 };
 
-// Simple fetch wrapper for legacy compatibility
+// Simple fetch wrapper for legacy compatibility with JWT support
 async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
         const url = path.startsWith('http') ? path : API(path);
@@ -74,6 +75,7 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
+                ...getAuthHeader(), // Include JWT token in Authorization header
                 ...init.headers,
             },
             ...init,
@@ -161,12 +163,25 @@ export const apiClient = {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
+        
+        // If login successful, store the JWT token
+        if (resp.ok && resp.data && 'token' in resp.data) {
+            setToken(resp.data.token as string);
+        }
+        
         return coerceUserResponse(resp);
     },
 
     async whoami(): Promise<ApiResponse<{ user: User }>> {
         const resp = await legacyReq('/api/auth/whoami', { method: 'GET' });
         return coerceUserResponse(resp);
+    },
+
+    async logout(): Promise<ApiResponse<{ message: string }>> {
+        const resp = await legacyReq('/api/auth/logout', { method: 'POST' });
+        // Always clear the token on logout, regardless of API response
+        removeToken();
+        return resp;
     },
 
     async signup(
@@ -182,9 +197,6 @@ export const apiClient = {
         return coerceUserResponse(resp);
     },
 
-    async logout(): Promise<ApiResponse<{ success: true }>> {
-        return legacyReq<{ success: true }>('/api/auth/logout', { method: 'POST' });
-    },
 
     // Generic HTTP methods
     async get<T = any>(path: string): Promise<ApiResponse<T>> {
