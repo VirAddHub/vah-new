@@ -69,7 +69,7 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
         } else if (process.env.BACKEND_API_ORIGIN) {
             baseUrl = process.env.BACKEND_API_ORIGIN.replace(/\/+$/, '') + '/api';
         } else {
-            baseUrl = 'https://vah-api-staging.onrender.com/api';
+            baseUrl = 'https://vah-api-staging.onrender.com';
         }
         const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
         const res = await fetch(url, {
