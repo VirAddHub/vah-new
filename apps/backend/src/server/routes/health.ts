@@ -1,4 +1,5 @@
 // Pure health route - never touches DB, never crashes
+// Updated for Render health check fix
 import { Router } from "express";
 
 export const health = Router();
