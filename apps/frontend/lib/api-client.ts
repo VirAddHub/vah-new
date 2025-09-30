@@ -63,7 +63,7 @@ export function safe<T>(v: any, fallback: T): T {
 
 // Clean API URL construction helper
 const API = (path: string) => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'https://vah-api-staging.onrender.com';
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://vah-api-staging.onrender.com';
     return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 };
 
