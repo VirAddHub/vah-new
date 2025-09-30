@@ -64,6 +64,10 @@ export function safe<T>(v: any, fallback: T): T {
 // Clean API URL construction helper
 const API = (path: string) => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://vah-api-staging.onrender.com';
+    // Don't add /api if path already starts with /api
+    if (path.startsWith('/api/')) {
+        return `${base.replace(/\/+$/, '')}${path}`;
+    }
     return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 };
 
@@ -72,7 +76,7 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
     try {
         const url = path.startsWith('http') ? path : API(path);
         const authHeader = getAuthHeader();
-        
+
         // Debug logging for API requests
         if (path.includes('/api/auth/')) {
             console.log('🌐 API DEBUG - Making request to:', url);
@@ -83,7 +87,7 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
                 ...init.headers,
             });
         }
-        
+
         const res = await fetch(url, {
             credentials: 'include',
             headers: {
@@ -166,7 +170,9 @@ function normalizeUserPayload(input: unknown): User | null {
 function coerceUserResponse(resp: ApiResponse<any>): ApiResponse<{ user: User }> {
     if (!resp.ok) return resp;
 
-    const user = normalizeUserPayload(resp.data);
+    // Handle nested data structure: resp.data.data contains the actual user data
+    const userData = resp.data.data || resp.data;
+    const user = normalizeUserPayload(userData);
     if (!user) {
         return { ok: false, message: 'Invalid user data received', status: 500 };
     }
@@ -191,23 +197,24 @@ export const apiClient = {
             ok: resp.ok,
             status: 'status' in resp ? resp.status : 'N/A',
             hasData: resp.ok && !!resp.data,
-            hasToken: resp.ok && resp.data && 'token' in resp.data,
+            hasToken: resp.ok && resp.data && resp.data.data && 'token' in resp.data.data,
             dataKeys: resp.ok && resp.data ? Object.keys(resp.data) : [],
+            dataDataKeys: resp.ok && resp.data && resp.data.data ? Object.keys(resp.data.data) : [],
             fullData: resp.ok ? resp.data : null
         });
 
         // If login successful, store the JWT token
-        if (resp.ok && resp.data && 'token' in resp.data) {
-            const token = resp.data.token as string;
+        if (resp.ok && resp.data && resp.data.data && 'token' in resp.data.data) {
+            const token = resp.data.data.token as string;
             console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
-            
+
             // Verify token was stored
             const storedToken = getToken();
             console.log('🔍 TOKEN DEBUG - Verification - stored token exists:', !!storedToken);
             console.log('🔍 TOKEN DEBUG - Stored token matches:', storedToken === token);
-            
+
             // Sanity check: verify token works with whoami
             try {
                 console.log('🔍 WHOAMI DEBUG - Testing token with whoami endpoint...');
