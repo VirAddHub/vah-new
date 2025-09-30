@@ -62,7 +62,8 @@ router.get("/debug-env", async (req, res) => {
             POSTMARK_FROM_NAME: process.env.POSTMARK_FROM_NAME || "NOT SET",
             POSTMARK_REPLY_TO: process.env.POSTMARK_REPLY_TO || "NOT SET",
             POSTMARK_STREAM: process.env.POSTMARK_STREAM || "NOT SET",
-            NODE_ENV: process.env.NODE_ENV || "NOT SET"
+            NODE_ENV: process.env.NODE_ENV || "NOT SET",
+            APP_BASE_URL: process.env.APP_BASE_URL || process.env.APP_URL || "NOT SET (defaults to localhost:3000)"
         }
     });
 });
