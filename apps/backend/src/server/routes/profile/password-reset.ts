@@ -51,7 +51,7 @@ export default function passwordResetRouter(pool: Pool) {
             expiryMinutes: ttl,
           },
         });
-      } catch (_) {}
+      } catch (_) { }
 
       return res.sendStatus(204);
     } catch (err) {

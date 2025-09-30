@@ -304,4 +304,85 @@ router.get("/whoami", async (req, res) => {
     }
 });
 
+// Password reset confirmation endpoint
+router.post("/reset-password/confirm", async (req, res) => {
+    try {
+        const { token, password } = req.body;
+        
+        if (!token || !password) {
+            return res.status(400).json({
+                ok: false,
+                error: "missing_fields",
+                message: "Token and password are required"
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                ok: false,
+                error: "password_too_short",
+                message: "Password must be at least 8 characters long"
+            });
+        }
+
+        const pool = getPool();
+        
+        // Find user with valid reset token
+        const userResult = await pool.query(`
+            SELECT id, email, reset_token_hash, reset_token_expires_at, reset_token_used_at
+            FROM "user" 
+            WHERE reset_token_hash IS NOT NULL 
+            AND reset_token_expires_at > NOW() 
+            AND reset_token_used_at IS NULL
+        `);
+
+        let validUser = null;
+        
+        // Check if any user's reset token matches (using bcrypt compare)
+        for (const user of userResult.rows) {
+            const isValidToken = await bcrypt.compare(token, user.reset_token_hash);
+            if (isValidToken) {
+                validUser = user;
+                break;
+            }
+        }
+
+        if (!validUser) {
+            return res.status(400).json({
+                ok: false,
+                error: "invalid_token",
+                message: "Invalid, expired, or already used reset token"
+            });
+        }
+
+        // Hash the new password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Update user's password and mark token as used
+        await pool.query(`
+            UPDATE "user" 
+            SET password_hash = $1, 
+                reset_token_hash = NULL, 
+                reset_token_expires_at = NULL, 
+                reset_token_used_at = NOW(),
+                updated_at = NOW()
+            WHERE id = $2
+        `, [hashedPassword, validUser.id]);
+
+        return res.status(200).json({
+            ok: true,
+            message: "Password reset successfully"
+        });
+
+    } catch (error: any) {
+        console.error('[reset-confirm] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: "server_error",
+            message: "An error occurred while resetting your password"
+        });
+    }
+});
+
 export default router;
