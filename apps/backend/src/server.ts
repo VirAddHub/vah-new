@@ -53,14 +53,21 @@ app.use('/api', health);
 // security + CORS (must be before routes)
 app.use(helmet());
 
-// Strict CORS allowlisting
-app.use(corsMiddleware);
-
-// This tiny handler guarantees a 204 for any stray OPTIONS
+// Handle CORS preflights first
 app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method === 'OPTIONS') {
+    // Set CORS headers manually for OPTIONS
+    res.set('Access-Control-Allow-Origin', 'https://vah-new-frontend-75d6.vercel.app');
+    res.set('Access-Control-Allow-Credentials', 'true');
+    res.set('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization,X-CSRF-Token,X-Requested-With,Cache-Control,Pragma');
+    return res.sendStatus(204);
+  }
   next();
 });
+
+// Apply CORS to all other routes
+app.use(corsMiddleware);
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
