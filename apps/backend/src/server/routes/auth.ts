@@ -106,13 +106,13 @@ router.get("/debug-user/:email", async (req, res) => {
 router.post("/debug-update-password", async (req, res) => {
     try {
         const { email, newPassword } = req.body;
-        
+
         if (!email || !newPassword) {
             return res.status(400).json({ ok: false, error: "email and newPassword required" });
         }
 
         const pool = getPool();
-        
+
         // Get user
         const userResult = await pool.query(
             'SELECT id FROM "user" WHERE email = $1',
@@ -124,16 +124,16 @@ router.post("/debug-update-password", async (req, res) => {
         }
 
         const userId = userResult.rows[0].id;
-        
+
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 12);
-        
+
         // Update password
         const updateResult = await pool.query(`
             UPDATE "user" 
-            SET password = $1, updated_at = NOW()
+            SET password = $1, updated_at = $3
             WHERE id = $2
-        `, [hashedPassword, userId]);
+        `, [hashedPassword, userId, Date.now()]);
 
         res.json({
             ok: true,
@@ -447,9 +447,9 @@ router.post("/reset-password/confirm", async (req, res) => {
                 reset_token_hash = NULL, 
                 reset_token_expires_at = NULL, 
                 reset_token_used_at = NOW(),
-                updated_at = NOW()
+                updated_at = $3
             WHERE id = $2
-        `, [hashedPassword, validUser.id]);
+        `, [hashedPassword, validUser.id, Date.now()]);
 
         // Verify the update was successful
         if (updateResult.rowCount !== 1) {
