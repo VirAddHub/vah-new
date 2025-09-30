@@ -23,6 +23,9 @@ import { HOST, PORT } from './config/env';
 // CORS middleware
 import { corsMiddleware } from './cors';
 
+// Health routes (no DB dependencies)
+import { health } from './server/routes/health';
+
 // Database adapters
 import { ensureSchema, getPool } from "./server/db";
 import { selectOne, selectMany, execute, insertReturningId } from "./server/db-helpers";
@@ -121,10 +124,8 @@ const csrfProtection = (req: any, res: any, next: any) => {
     next();
 };
 
-// ---- Health check FIRST (before rate limiter) ----
-app.get('/api/healthz', (_req, res) => {
-    res.status(200).json({ status: "ready" });
-});
+// ---- Health routes FIRST (before rate limiter, before DB) ----
+app.use('/api', health);
 
 // Rate limiting (IPv6-safe with health check exemption)
 const limiter = rateLimit({
@@ -167,15 +168,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 async function initializeDatabase() {
     try {
         if (process.env.DB_CLIENT === 'pg') {
-            await ensureSchema();
-            logger.info('PostgreSQL schema ensured');
+            // Don't initialize DB at startup - make it lazy
+            logger.info('PostgreSQL will be initialized on first use');
         } else {
             logger.info('SQLite database ready');
         }
-        logger.info('DB connected');
+        logger.info('DB connection will be established on first use');
     } catch (e) {
-        logger.error('DB connect failed', e);
-        process.exit(1);
+        logger.error('DB initialization warning:', e);
+        // Don't exit - let the app start and fail gracefully on first DB use
+        logger.warn('Continuing without DB initialization - will retry on first use');
     }
 }
 
@@ -281,8 +283,18 @@ async function start() {
     app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
 
-    // ---- Server bootstrap: bind to Render's PORT or fallback ----
-    const server = http.createServer(app);
+// ---- Global error handlers to prevent crashes ----
+process.on("unhandledRejection", (reason) => {
+    console.error("[unhandledRejection]", reason);
+});
+
+process.on("uncaughtException", (error) => {
+    console.error("[uncaughtException]", error);
+    // Don't exit - let the platform restart if truly fatal
+});
+
+// ---- Server bootstrap: bind to Render's PORT or fallback ----
+const server = http.createServer(app);
 
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';

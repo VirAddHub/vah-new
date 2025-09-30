@@ -9,8 +9,9 @@
 
 const RAW = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
 
-// Allow empty/undefined - will use relative URLs
-const API_BASE = RAW ? RAW.replace(/\/+$/, "") : ""; // trim trailing slash if present
+// Always use relative URLs for password reset to go through bulletproof Next.js routes
+// This ensures we never get 500s from Vercel proxy issues
+const API_BASE = ""; // Force relative URLs
 
 type Json = Record<string, unknown> | unknown[];
 

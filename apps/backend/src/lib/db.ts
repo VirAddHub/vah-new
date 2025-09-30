@@ -1,27 +1,43 @@
 // PostgreSQL-only database helper - NO SQLite support
 import { Pool, PoolClient, QueryResultRow } from "pg";
 
-if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required. This app does NOT support SQLite.");
+// Lazy DB initialization - don't connect at import time
+let pool: Pool | undefined;
+
+export function getPool() {
+    if (!pool) {
+        const url = process.env.DATABASE_URL;
+        
+        if (!url) {
+            throw new Error("DATABASE_URL is required. This app does NOT support SQLite.");
+        }
+
+        if (!url.startsWith('postgres')) {
+            throw new Error("DATABASE_URL must be a PostgreSQL connection string. SQLite is not supported.");
+        }
+
+        pool = new Pool({
+            connectionString: url,
+            ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+            // Add connection timeouts to prevent hanging
+            connectionTimeoutMillis: 5000,
+            idleTimeoutMillis: 10000,
+        });
+        
+        // Don't connect immediately - let first query open the connection
+    }
+    return pool;
 }
 
-if (!process.env.DATABASE_URL.startsWith('postgres')) {
-    throw new Error("DATABASE_URL must be a PostgreSQL connection string. SQLite is not supported.");
-}
-
+// Backward compatibility - but now lazy
 export const DATABASE_URL = process.env.DATABASE_URL;
 
-export const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-});
-
 export async function query<T extends QueryResultRow = any>(text: string, params?: any[]) {
-    return pool.query<T>(text, params);
+    return getPool().query<T>(text, params);
 }
 
 export async function tx<T>(fn: (client: PoolClient) => Promise<T>) {
-    const client = await pool.connect();
+    const client = await getPool().connect();
     try {
         await client.query("BEGIN");
         const out = await fn(client);
