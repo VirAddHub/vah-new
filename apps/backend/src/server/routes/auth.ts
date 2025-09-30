@@ -102,6 +102,53 @@ router.get("/debug-user/:email", async (req, res) => {
     }
 });
 
+// Debug endpoint to test password update
+router.post("/debug-update-password", async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
+        
+        if (!email || !newPassword) {
+            return res.status(400).json({ ok: false, error: "email and newPassword required" });
+        }
+
+        const pool = getPool();
+        
+        // Get user
+        const userResult = await pool.query(
+            'SELECT id FROM "user" WHERE email = $1',
+            [email.toLowerCase()]
+        );
+
+        if (!userResult.rows[0]) {
+            return res.status(404).json({ ok: false, error: "User not found" });
+        }
+
+        const userId = userResult.rows[0].id;
+        
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        
+        // Update password
+        const updateResult = await pool.query(`
+            UPDATE "user" 
+            SET password = $1, updated_at = NOW()
+            WHERE id = $2
+        `, [hashedPassword, userId]);
+
+        res.json({
+            ok: true,
+            message: "Password updated",
+            userId,
+            rowCount: updateResult.rowCount,
+            success: updateResult.rowCount === 1
+        });
+
+    } catch (error: any) {
+        console.error('[debug-update-password] error:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
 // Email test endpoint
 router.post("/test-email", async (req, res) => {
     try {
@@ -394,7 +441,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         // Update user's password and mark token as used
-        await pool.query(`
+        const updateResult = await pool.query(`
             UPDATE "user" 
             SET password = $1, 
                 reset_token_hash = NULL, 
@@ -403,6 +450,22 @@ router.post("/reset-password/confirm", async (req, res) => {
                 updated_at = NOW()
             WHERE id = $2
         `, [hashedPassword, validUser.id]);
+
+        // Verify the update was successful
+        if (updateResult.rowCount !== 1) {
+            console.error('[reset-confirm] Database update failed:', {
+                userId: validUser.id,
+                rowCount: updateResult.rowCount,
+                expected: 1
+            });
+            return res.status(500).json({
+                ok: false,
+                error: "database_error",
+                message: "Failed to update password"
+            });
+        }
+
+        console.log('[reset-confirm] Password updated successfully for user:', validUser.id);
 
         return res.status(200).json({
             ok: true,
