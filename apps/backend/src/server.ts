@@ -54,7 +54,24 @@ app.use('/api', health);
 app.use(helmet());
 
 // CORS first - apply to ALL responses including errors
-app.use(corsMiddleware);
+// Use a simple CORS configuration for debugging
+app.use(cors({
+    origin: (origin, cb) => {
+        const allowedOrigins = [
+            'https://vah-new-frontend-75d6.vercel.app',
+            'https://vah-frontend-final.vercel.app',
+            'http://localhost:3000'
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+            return cb(null, true);
+        }
+        return cb(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
+    optionsSuccessStatus: 204,
+}));
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
