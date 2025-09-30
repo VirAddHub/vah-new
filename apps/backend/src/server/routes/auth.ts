@@ -16,6 +16,17 @@ router.get("/test-db", async (req, res) => {
     }
 });
 
+// Test user table endpoint
+router.get("/test-user-table", async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.query('SELECT COUNT(*) as count FROM "user"');
+        res.json({ ok: true, message: "User table exists", user_count: result.rows[0].count });
+    } catch (error: any) {
+        res.status(500).json({ ok: false, error: "table_error", message: error.message });
+    }
+});
+
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({
     // Contact
