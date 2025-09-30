@@ -11,8 +11,8 @@ export function buildPasswordResetModel(opts: {
   )}`;
 
   return {
-    name: opts.firstName, // Updated to match Postmark template
-    reset_url: resetUrl,
-    ttl_minutes: opts.ttlMinutes,
+    first_name: opts.firstName, // Template expects first_name
+    reset_link: resetUrl, // Template expects reset_link
+    expiry_minutes: opts.ttlMinutes, // Template expects expiry_minutes
   };
 }
