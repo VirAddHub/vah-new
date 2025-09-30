@@ -1,162 +1,140 @@
 import { Router } from "express";
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { getPool } from '../db';
-import { selectOne } from '../db-helpers';
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { Pool } from "pg";
+
+// Use your existing DATABASE_URL from Render/local .env
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
 
 const router = Router();
 
-// Cookie options helper
-const { sessionCookieOptions } = require("../../lib/cookies");
+/** Validation mirrors your frontend exactly */
+const SignupSchema = z.object({
+  // Contact
+  first_name: z.string().min(1).max(50),
+  last_name: z.string().min(1).max(50),
+  email: z.string().email(),
+  password: z.string().min(8).max(100)
+    .regex(/[a-z]/, "password must contain a lowercase letter")
+    .regex(/[A-Z]/, "password must contain an uppercase letter")
+    .regex(/\d/, "password must contain a number"),
+  phone: z.string().optional(),
 
-router.post("/login", async (req, res) => {
-    try {
-        const { email, password } = req.body || {};
-        
-        if (!email || !password) {
-            return res.status(400).json({ 
-                ok: false, 
-                error: "missing_fields",
-                message: "Email and password are required" 
-            });
-        }
+  // Company
+  business_type: z.enum(["limited_company","llp","lp","sole_trader","partnership","charity","other"]),
+  country_of_incorporation: z.enum(["GB","IE","US","CA","AU"]),
+  company_number: z.string().optional(),
+  company_name: z.string().min(1).max(100),
 
-        // Get user from database
-        const pool = getPool();
-        const user = await selectOne(pool, 
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2',
-            [email, 'active']
-        );
+  // Forwarding address
+  forward_to_first_name: z.string().min(1).max(50),
+  forward_to_last_name: z.string().min(1).max(50),
+  address_line1: z.string().min(1).max(200),
+  address_line2: z.string().optional(),
+  city: z.string().min(1).max(100),
+  postcode: z.string().min(1).max(20),
+  forward_country: z.enum(["GB","IE","US","CA","AU"]),
 
-        if (!user) {
-            return res.status(401).json({ 
-                ok: false, 
-                error: "invalid_credentials",
-                message: "Invalid email or password" 
-            });
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-            return res.status(401).json({ 
-                ok: false, 
-                error: "invalid_credentials",
-                message: "Invalid email or password" 
-            });
-        }
-
-        // Create JWT token
-        const token = jwt.sign(
-            { 
-                userId: user.id, 
-                email: user.email, 
-                isAdmin: user.is_admin,
-                role: user.role 
-            },
-            process.env.JWT_SECRET || 'fallback-secret',
-            { expiresIn: '7d' }
-        );
-
-        // Set session cookie
-        res.cookie('vah_session', token, sessionCookieOptions);
-
-        // Return user data (without password)
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({
-            ok: true,
-            user: {
-                id: user.id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                is_admin: user.is_admin,
-                role: user.role
-            },
-            token
-        });
-
-    } catch (error) {
-        console.error('[auth/login] Error:', error);
-        res.status(500).json({ 
-            ok: false, 
-            error: "internal_error",
-            message: "An error occurred during login" 
-        });
-    }
+  // Step 1/3 fields that backend can ignore or store if you already do
+  billing: z.enum(["monthly","annual"]).optional(),
+  price: z.string().optional(), // frontend-calculated
 });
 
-router.post("/logout", (req, res) => {
-    try {
-        // Clear session cookie
-        res.clearCookie('vah_session', { 
-            httpOnly: true, 
-            sameSite: 'lax', 
-            secure: process.env.NODE_ENV === 'production',
-            path: '/'
-        });
-        
-        res.json({ ok: true, message: "Logged out successfully" });
-    } catch (error) {
-        console.error('[auth/logout] Error:', error);
-        res.status(500).json({ 
-            ok: false, 
-            error: "internal_error",
-            message: "An error occurred during logout" 
-        });
+router.post("/signup", async (req, res) => {
+  const parsed = SignupSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: "validation_error", details: parsed.error.flatten() });
+  }
+  const i = parsed.data;
+
+  // Normalize
+  const email = i.email.toLowerCase();
+
+  try {
+    // Enforce unique email at app layer (still rely on DB unique index if you have it)
+    const exists = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1`,
+      [email]
+    );
+    if (Number(exists.rows[0]?.count ?? 0) > 0) {
+      return res.status(409).json({ ok: false, error: "email_exists" });
     }
-});
 
-router.get("/whoami", async (req, res) => {
+    const hash = await bcrypt.hash(i.password, 12);
+
+    // Try to insert using a `password_hash` column first.
+    // If your table uses `password` instead, we fall back automatically.
+    const baseArgs = [
+      i.first_name, i.last_name, email, i.phone ?? null,
+      i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
+      i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
+      i.city, i.postcode, i.forward_country,
+    ];
+
+    const insertWithPasswordHash = `
+      INSERT INTO "user" (
+        first_name, last_name, email, phone,
+        business_type, country_of_incorporation, company_number, company_name,
+        forward_to_first_name, forward_to_last_name, address_line1, address_line2,
+        city, postcode, forward_country,
+        password_hash
+      ) VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,$8,
+        $9,$10,$11,$12,
+        $13,$14,$15,
+        $16
+      )
+      RETURNING id, email, first_name, last_name
+    `;
+
+    const insertWithPassword = `
+      INSERT INTO "user" (
+        first_name, last_name, email, phone,
+        business_type, country_of_incorporation, company_number, company_name,
+        forward_to_first_name, forward_to_last_name, address_line1, address_line2,
+        city, postcode, forward_country,
+        password
+      ) VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,$8,
+        $9,$10,$11,$12,
+        $13,$14,$15,
+        $16
+      )
+      RETURNING id, email, first_name, last_name
+    `;
+
+    let row;
     try {
-        const token = req.cookies.vah_session;
-        
-        if (!token) {
-            return res.status(401).json({ 
-                ok: false, 
-                error: "not_authenticated",
-                message: "No session found" 
-            });
-        }
-
-        // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-        
-        // Get fresh user data from database
-        const pool = getPool();
-        const user = await selectOne(pool, 
-            'SELECT id, email, first_name, last_name, is_admin, role FROM "user" WHERE id = $1 AND status = $2',
-            [decoded.userId, 'active']
-        );
-
-        if (!user) {
-            return res.status(401).json({ 
-                ok: false, 
-                error: "user_not_found",
-                message: "User not found" 
-            });
-        }
-
-        res.json({
-            ok: true,
-            user: {
-                id: user.id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                is_admin: user.is_admin,
-                role: user.role
-            }
-        });
-
-    } catch (error) {
-        console.error('[auth/whoami] Error:', error);
-        res.status(401).json({ 
-            ok: false, 
-            error: "invalid_token",
-            message: "Invalid or expired session" 
-        });
+      const rs = await pool.query(insertWithPasswordHash, [...baseArgs, hash]);
+      row = rs.rows[0];
+    } catch (e: any) {
+      const msg = String(e?.message || "").toLowerCase();
+      if (msg.includes('column "password_hash" does not exist')) {
+        const rs2 = await pool.query(insertWithPassword, [...baseArgs, hash]);
+        row = rs2.rows[0];
+      } else {
+        throw e;
+      }
     }
+
+    return res.status(201).json({
+      ok: true,
+      data: {
+        user_id: row.id,
+        email: row.email,
+        name: `${row.first_name} ${row.last_name}`,
+      },
+    });
+  } catch (err: any) {
+    const m = String(err?.message || "");
+    if (m.includes("duplicate key value") && m.toLowerCase().includes("email")) {
+      return res.status(409).json({ ok: false, error: "email_exists" });
+    }
+    console.error("[auth/signup] error:", err);
+    return res.status(500).json({ ok: false, error: "server_error" });
+  }
 });
 
 export default router;
