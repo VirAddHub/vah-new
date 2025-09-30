@@ -90,7 +90,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
     try {
       // Call backend API to reset password
-      await postJson('/api/profile/reset-password', { 
+      await postJson('/api/auth/reset-password/confirm', { 
         token: token || '',
         password: password 
       });

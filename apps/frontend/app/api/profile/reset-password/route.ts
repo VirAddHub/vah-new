@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 2500);
 
-    const res = await fetch(buildUrl("/api/profile/reset-password"), {
+    const res = await fetch(buildUrl("/api/auth/reset-password/confirm"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
