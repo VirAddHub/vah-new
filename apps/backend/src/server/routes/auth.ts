@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getPool } from "../db";
+import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 
 const router = Router();
 
@@ -329,7 +330,15 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Return user data (without password)
+        // Generate JWT token
+        const token = generateToken({
+            id: userData.id,
+            email: userData.email,
+            is_admin: userData.is_admin,
+            role: userData.role
+        });
+
+        // Return user data with token (without password)
         res.json({
             ok: true,
             data: {
@@ -338,7 +347,8 @@ router.post("/login", async (req, res) => {
                 first_name: userData.first_name,
                 last_name: userData.last_name,
                 is_admin: userData.is_admin,
-                role: userData.role
+                role: userData.role,
+                token: token
             }
         });
 
@@ -369,11 +379,37 @@ router.post("/logout", (req, res) => {
 // --- WHOAMI ---
 router.get("/whoami", async (req, res) => {
     try {
-        // For now, return not authenticated since we don't have JWT setup yet
-        res.status(401).json({
-            ok: false,
-            error: "not_authenticated",
-            message: "No session found"
+        // Extract token from Authorization header
+        const authHeader = req.headers.authorization;
+        const token = extractTokenFromHeader(authHeader);
+        
+        if (!token) {
+            return res.status(401).json({
+                ok: false,
+                error: "not_authenticated",
+                message: "No token provided"
+            });
+        }
+
+        // Verify the token
+        const payload = verifyToken(token);
+        if (!payload) {
+            return res.status(401).json({
+                ok: false,
+                error: "invalid_token",
+                message: "Invalid or expired token"
+            });
+        }
+
+        // Return user data from token
+        res.json({
+            ok: true,
+            data: {
+                user_id: payload.id,
+                email: payload.email,
+                is_admin: payload.is_admin,
+                role: payload.role
+            }
         });
     } catch (error) {
         console.error('[auth/whoami] Error:', error);
