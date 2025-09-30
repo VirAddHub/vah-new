@@ -60,18 +60,16 @@ export function safe<T>(v: any, fallback: T): T {
 
 // ---- Legacy API Client (for backward compatibility) ----
 
+// Clean API URL construction helper
+const API = (path: string) => {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'https://vah-api-staging.onrender.com';
+    return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+};
+
 // Simple fetch wrapper for legacy compatibility
 async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-        let baseUrl: string;
-        if (process.env.NEXT_PUBLIC_API_BASE) {
-            baseUrl = process.env.NEXT_PUBLIC_API_BASE.replace(/\/+$/, '');
-        } else if (process.env.BACKEND_API_ORIGIN) {
-            baseUrl = process.env.BACKEND_API_ORIGIN.replace(/\/+$/, '') + '/api';
-        } else {
-            baseUrl = 'https://vah-api-staging.onrender.com';
-        }
-        const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
+        const url = path.startsWith('http') ? path : API(path);
         const res = await fetch(url, {
             credentials: 'include',
             headers: {

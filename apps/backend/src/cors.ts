@@ -9,6 +9,7 @@ const allowList = (CORS_ORIGINS || "")
 // Fallback allowlist for development
 const fallbackAllowlist = [
     'https://vah-frontend-final.vercel.app',
+    'https://vah-new-frontend-75d6.vercel.app',
     'http://localhost:3000',
 ];
 
