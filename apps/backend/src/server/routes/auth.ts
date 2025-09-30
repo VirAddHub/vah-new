@@ -308,7 +308,7 @@ router.get("/whoami", async (req, res) => {
 router.post("/reset-password/confirm", async (req, res) => {
     try {
         const { token, password } = req.body;
-        
+
         if (!token || !password) {
             return res.status(400).json({
                 ok: false,
@@ -326,7 +326,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         }
 
         const pool = getPool();
-        
+
         // Find user with valid reset token
         const userResult = await pool.query(`
             SELECT id, email, reset_token_hash, reset_token_expires_at, reset_token_used_at
@@ -336,7 +336,7 @@ router.post("/reset-password/confirm", async (req, res) => {
             AND reset_token_used_at IS NULL
         `);
 
-        let validUser = null;
+        let validUser: { id: number; email: string; reset_token_hash: string; reset_token_expires_at: string; reset_token_used_at: string | null } | null = null;
         
         // Check if any user's reset token matches (using bcrypt compare)
         for (const user of userResult.rows) {
@@ -386,3 +386,4 @@ router.post("/reset-password/confirm", async (req, res) => {
 });
 
 export default router;
+
