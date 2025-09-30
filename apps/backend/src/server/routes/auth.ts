@@ -115,13 +115,13 @@ router.post("/signup", async (req, res) => {
         business_type, country_of_incorporation, company_number, company_name,
         forward_to_first_name, forward_to_last_name, address_line1, address_line2,
         city, postcode, forward_country,
-        password, created_at, updated_at
+        password, created_at, updated_at, is_admin, role
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,$12,
         $13,$14,$15,
-        $16,$17,$18
+        $16,$17,$18,$19,$20
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -131,7 +131,7 @@ router.post("/signup", async (req, res) => {
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country,
-            hash, now, now
+            hash, now, now, false, 'user'
         ];
 
         const rs = await pool.query(insertQuery, args);
