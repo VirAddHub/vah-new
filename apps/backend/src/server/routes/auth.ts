@@ -42,10 +42,10 @@ router.get("/user-table-schema", async (req, res) => {
             WHERE table_name = 'user' 
             ORDER BY ordinal_position
         `);
-        res.json({ 
-            ok: true, 
-            message: "User table schema", 
-            columns: result.rows 
+        res.json({
+            ok: true,
+            message: "User table schema",
+            columns: result.rows
         });
     } catch (error: any) {
         res.status(500).json({ ok: false, error: "schema_error", message: error.message });
