@@ -62,3 +62,8 @@ export async function getMe() {
 export async function patchMe(data: any) {
   return apiJson("/api/profile/me", { method: "PATCH", body: data });
 }
+
+/** Convenience function for POST requests with JSON body */
+export async function postJson<T = any>(path: string, body: any): Promise<T> {
+  return apiJson<T>(path, { method: "POST", body });
+}
