@@ -171,21 +171,21 @@ export const apiClient = {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
-        
+
         // Debug logging for login response
         console.log('Login response:', {
             ok: resp.ok,
-            status: resp.status,
-            hasData: !!resp.data,
-            hasToken: !!(resp.data && 'token' in resp.data),
-            dataKeys: resp.data ? Object.keys(resp.data) : []
+            status: 'status' in resp ? resp.status : 'N/A',
+            hasData: resp.ok && !!resp.data,
+            hasToken: resp.ok && resp.data && 'token' in resp.data,
+            dataKeys: resp.ok && resp.data ? Object.keys(resp.data) : []
         });
-        
+
         // If login successful, store the JWT token
         if (resp.ok && resp.data && 'token' in resp.data) {
             setToken(resp.data.token as string);
             console.log('JWT token stored successfully');
-            
+
             // Sanity check: verify token works with whoami
             try {
                 const whoamiResp = await legacyReq('/api/auth/whoami', { method: 'GET' });
@@ -200,7 +200,7 @@ export const apiClient = {
         } else {
             console.error('Login failed or no token in response:', resp);
         }
-        
+
         return coerceUserResponse(resp);
     },
 
