@@ -1,14 +1,16 @@
 // apps/backend/src/lib/mailer.ts
-import { ServerClient } from 'postmark'; // Fixed import
 import { ENV, emailGuard } from '../env';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
-let _client: ServerClient | null = null;
+// Use CommonJS require for Postmark to avoid import issues
+const postmark = require('postmark');
+
+let _client: any | null = null;
 function getClient() {
     if (!_client) {
         if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
-        _client = new ServerClient(ENV.POSTMARK_TOKEN);
+        _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
     }
     return _client;
 }
