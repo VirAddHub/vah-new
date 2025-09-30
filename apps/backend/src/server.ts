@@ -53,20 +53,7 @@ app.use('/api', health);
 // security + CORS (must be before routes)
 app.use(helmet());
 
-// Handle CORS preflights first
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    // Set CORS headers manually for OPTIONS
-    res.set('Access-Control-Allow-Origin', 'https://vah-new-frontend-75d6.vercel.app');
-    res.set('Access-Control-Allow-Credentials', 'true');
-    res.set('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization,X-CSRF-Token,X-Requested-With,Cache-Control,Pragma');
-    return res.sendStatus(204);
-  }
-  next();
-});
-
-// Apply CORS to all other routes
+// CORS first - apply to ALL responses including errors
 app.use(corsMiddleware);
 
 // cookies must come before any access to req.cookies
@@ -289,6 +276,37 @@ async function start() {
     app.use('/api/admin-forward-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
     app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
+
+    // 404 handler that still returns CORS
+    app.use((req, res) => {
+        const origin = req.headers.origin as string;
+        const allowedOrigins = [
+            'https://vah-new-frontend-75d6.vercel.app',
+            'https://vah-frontend-final.vercel.app',
+            'http://localhost:3000'
+        ];
+        if (origin && allowedOrigins.includes(origin)) {
+            res.set('Access-Control-Allow-Origin', origin);
+            res.set('Access-Control-Allow-Credentials', 'true');
+        }
+        res.status(404).json({ ok: false, error: 'not_found' });
+    });
+
+    // Error handler that still returns CORS
+    app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+        console.error('[unhandled]', err);
+        const origin = req.headers.origin as string;
+        const allowedOrigins = [
+            'https://vah-new-frontend-75d6.vercel.app',
+            'https://vah-frontend-final.vercel.app',
+            'http://localhost:3000'
+        ];
+        if (origin && allowedOrigins.includes(origin)) {
+            res.set('Access-Control-Allow-Origin', origin);
+            res.set('Access-Control-Allow-Credentials', 'true');
+        }
+        res.status(500).json({ ok: false, error: 'server_error', message: err.message });
+    });
 
     // ---- Global error handlers to prevent crashes ----
     process.on("unhandledRejection", (reason) => {
