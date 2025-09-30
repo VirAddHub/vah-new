@@ -248,11 +248,14 @@ router.post("/login", async (req, res) => {
             });
         }
 
+        // Normalize email: trim and lowercase
+        const normalizedEmail = email.trim().toLowerCase();
+
         // Get user from database
         const pool = getPool();
         const user = await pool.query(
             'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2',
-            [email.toLowerCase(), 'active']
+            [normalizedEmail, 'active']
         );
 
         if (!user.rows[0]) {
