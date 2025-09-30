@@ -68,6 +68,40 @@ router.get("/debug-env", async (req, res) => {
     });
 });
 
+// Debug endpoint to check specific user
+router.get("/debug-user/:email", async (req, res) => {
+    try {
+        const email = req.params.email;
+        const pool = getPool();
+        const user = await pool.query(
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1',
+            [email.toLowerCase()]
+        );
+
+        if (!user.rows[0]) {
+            return res.json({ ok: false, message: "User not found" });
+        }
+
+        const userData = user.rows[0];
+        res.json({
+            ok: true,
+            user: {
+                id: userData.id,
+                email: userData.email,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                is_admin: userData.is_admin,
+                role: userData.role,
+                status: userData.status,
+                has_password: !!userData.password,
+                password_length: userData.password ? userData.password.length : 0
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
 // Email test endpoint
 router.post("/test-email", async (req, res) => {
     try {
@@ -231,12 +265,9 @@ router.post("/login", async (req, res) => {
 
         const userData = user.rows[0];
 
-        // Verify password (try both password_hash and password columns)
+        // Verify password using the password column
         let isValidPassword = false;
-        try {
-            isValidPassword = await bcrypt.compare(password, userData.password_hash);
-        } catch (e) {
-            // Fallback to password column
+        if (userData.password) {
             isValidPassword = await bcrypt.compare(password, userData.password);
         }
 
@@ -317,25 +348,23 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        // Server-side strength validation (mirror frontend rules)
-        if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        if (password.length < 8) {
             return res.status(400).json({
                 ok: false,
-                error: "weak_password",
-                message: "Password must be at least 8 characters with letters and numbers"
+                error: "password_too_short",
+                message: "Password must be at least 8 characters long"
             });
         }
 
         const pool = getPool();
 
-        // Find users with valid reset tokens (keep result set small)
+        // Find user with valid reset token
         const userResult = await pool.query(`
             SELECT id, email, reset_token_hash, reset_token_expires_at, reset_token_used_at
             FROM "user" 
-            WHERE reset_token_hash IS NOT NULL
+            WHERE reset_token_hash IS NOT NULL 
             AND reset_token_expires_at > NOW() 
             AND reset_token_used_at IS NULL
-            LIMIT 500
         `);
 
         let validUser: { id: number; email: string; reset_token_hash: string; reset_token_expires_at: string; reset_token_used_at: string | null } | null = null;

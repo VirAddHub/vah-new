@@ -42,8 +42,7 @@ type ModelBuilder = (a: BuildArgs) => AnyDict;
 export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], ModelBuilder> = {
   // SECURITY
   [Templates.PasswordReset]: (a) => ({
-    first_name: a.firstName ?? a.name,
-    name: a.name ?? a.firstName,          // safe extra for template
+    name: a.firstName ?? a.name,
     reset_link: a.resetLink ?? a.ctaUrl,
     expiry_minutes: String(a.expiryMinutes ?? 60),
   }),
