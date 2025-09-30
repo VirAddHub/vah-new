@@ -6,6 +6,7 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { VAHLogo } from './VAHLogo';
+import { postJson } from '@/lib/api';
 
 interface ForgotPasswordPageProps {
   onNavigate: (page: string) => void;
@@ -44,31 +45,17 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
     try {
       // Call backend API to request password reset
-      const response = await fetch('/api/profile/reset-password-request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      await postJson('/api/profile/reset-password-request', { email });
+      
+      setMessage({ 
+        type: 'success', 
+        text: `Password reset instructions have been sent to ${email}` 
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ 
-          type: 'success', 
-          text: `Password reset instructions have been sent to ${email}` 
-        });
-        
-        // Navigate to sent confirmation after brief delay
-        setTimeout(() => {
-          onNavigate('reset-password-sent');
-        }, 1500);
-      } else {
-        setMessage({ 
-          type: 'error', 
-          text: 'Failed to send reset link. Please try again or contact support if the problem persists.' 
-        });
-      }
+      
+      // Navigate to sent confirmation after brief delay
+      setTimeout(() => {
+        onNavigate('reset-password-sent');
+      }, 1500);
       
     } catch (error) {
       setMessage({ 
@@ -103,49 +90,20 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
     try {
       // Call backend API to reset password
-      const response = await fetch('/api/profile/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          token: token || '',
-          password: password 
-        }),
+      await postJson('/api/profile/reset-password', { 
+        token: token || '',
+        password: password 
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ 
-          type: 'success', 
-          text: 'Password has been successfully reset. Redirecting to login...' 
-        });
-        
-        // Navigate to login after brief delay
-        setTimeout(() => {
-          onNavigate('login');
-        }, 2000);
-      } else {
-        // Parse error response for specific error messages
-        let errorMessage = 'Failed to reset password. Please try again or request a new reset link.';
-        try {
-          const data = await response.json();
-          if (data.error === 'invalid_or_expired') {
-            errorMessage = 'This reset link is invalid or has expired. Please request a new one.';
-          } else if (data.error === 'weak_password') {
-            errorMessage = 'Password must be at least 8 characters with uppercase, lowercase, and numbers.';
-          } else if (data.error === 'missing_fields') {
-            errorMessage = 'Please fill in all required fields.';
-          }
-        } catch {
-          // If we can't parse JSON, use default message
-        }
-        
-        setMessage({ 
-          type: 'error', 
-          text: errorMessage
-        });
-      }
+      setMessage({ 
+        type: 'success', 
+        text: 'Password has been successfully reset. Redirecting to login...' 
+      });
+      
+      // Navigate to login after brief delay
+      setTimeout(() => {
+        onNavigate('login');
+      }, 2000);
       
     } catch (error) {
       setMessage({ 
