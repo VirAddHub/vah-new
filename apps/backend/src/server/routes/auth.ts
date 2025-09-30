@@ -5,6 +5,17 @@ import { getPool } from "../db";
 
 const router = Router();
 
+// Test database connection endpoint
+router.get("/test-db", async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.query('SELECT NOW() as current_time');
+        res.json({ ok: true, message: "Database connected", time: result.rows[0].current_time });
+    } catch (error: any) {
+        res.status(500).json({ ok: false, error: "database_error", message: error.message });
+    }
+});
+
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({
     // Contact
