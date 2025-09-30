@@ -42,17 +42,17 @@ type ModelBuilder = (a: BuildArgs) => AnyDict;
 export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], ModelBuilder> = {
   // SECURITY
   [Templates.PasswordReset]: (a) => ({
-    first_name: a.firstName ?? a.name,
+    name: a.firstName ?? a.name,
     reset_link: a.resetLink ?? a.ctaUrl,
     expiry_minutes: String(a.expiryMinutes ?? 60),
   }),
   [Templates.PasswordChanged]: (a) => ({
-    first_name: a.firstName ?? a.name,
+    name: a.firstName ?? a.name,
   }),
 
   // ONBOARDING
   [Templates.Welcome]: (a) => ({
-    first_name: a.firstName ?? a.name,
+    name: a.firstName ?? a.name,
     dashboard_link: a.dashboardUrl ?? a.ctaUrl,
   }),
 
@@ -79,7 +79,7 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     cta_url: a.profileUrl ?? a.ctaUrl,
   }),
   [Templates.KycApproved]: (a) => ({
-    first_name: a.firstName ?? a.name,
+    name: a.firstName ?? a.name,
     virtual_address_line_1: a.virtualAddressLine1,
     virtual_address_line_2: a.virtualAddressLine2,
     postcode: a.postcode,

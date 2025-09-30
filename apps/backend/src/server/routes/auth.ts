@@ -76,7 +76,7 @@ router.post("/test-email", async (req, res) => {
         }
 
         const { sendTemplateEmail } = await import("../../lib/mailer");
-        
+
         await sendTemplateEmail({
             to: to,
             templateAlias: 'password-reset-email',

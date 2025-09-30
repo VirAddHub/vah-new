@@ -42,39 +42,39 @@ async function sendWithTemplate(alias: string, to: string, model: Record<string,
 
 // New standardized template email function
 export async function sendTemplateEmail(opts: {
-  to: string;
-  templateAlias: (typeof Templates)[keyof typeof Templates];
-  model: BuildArgs;
+    to: string;
+    templateAlias: (typeof Templates)[keyof typeof Templates];
+    model: BuildArgs;
 }) {
-  if (!ENV.POSTMARK_TOKEN) return;
+    if (!ENV.POSTMARK_TOKEN) return;
 
-  const client = getClient();
-  if (!client) return;
+    const client = getClient();
+    if (!client) return;
 
-  const build = modelBuilders[opts.templateAlias];
-  const TemplateModel = build ? build(opts.model) : opts.model;
+    const build = modelBuilders[opts.templateAlias];
+    const TemplateModel = build ? build(opts.model) : opts.model;
 
-  try {
-    await client.sendEmailWithTemplate({
-      From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
-      To: opts.to,
-      TemplateAlias: opts.templateAlias,
-      TemplateModel,
-      ReplyTo: ENV.EMAIL_REPLY_TO,
-      MessageStream: ENV.POSTMARK_STREAM,
-    });
-  } catch (error) {
-    console.error(`Failed to send template email ${opts.templateAlias}:`, error);
-    // Graceful fallback - send simple email
-    await client.sendEmail({
-      From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
-      To: opts.to,
-      Subject: 'Notification',
-      HtmlBody: `<p>Hi ${opts.model.name || 'there'},</p><p>You have a new notification.</p>`,
-      MessageStream: ENV.POSTMARK_STREAM,
-      ReplyTo: ENV.EMAIL_REPLY_TO,
-    });
-  }
+    try {
+        await client.sendEmailWithTemplate({
+            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+            To: opts.to,
+            TemplateAlias: opts.templateAlias,
+            TemplateModel,
+            ReplyTo: ENV.EMAIL_REPLY_TO,
+            MessageStream: ENV.POSTMARK_STREAM,
+        });
+    } catch (error) {
+        console.error(`Failed to send template email ${opts.templateAlias}:`, error);
+        // Graceful fallback - send simple email
+        await client.sendEmail({
+            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+            To: opts.to,
+            Subject: 'Notification',
+            HtmlBody: `<p>Hi ${opts.model.name || 'there'},</p><p>You have a new notification.</p>`,
+            MessageStream: ENV.POSTMARK_STREAM,
+            ReplyTo: ENV.EMAIL_REPLY_TO,
+        });
+    }
 }
 
 
