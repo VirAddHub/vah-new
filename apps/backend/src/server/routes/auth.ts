@@ -32,14 +32,14 @@ router.get("/user-table-schema", async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.query(`
-            SELECT 
-                column_name, 
-                data_type, 
-                is_nullable, 
+            SELECT
+                column_name,
+                data_type,
+                is_nullable,
                 column_default,
                 character_maximum_length
-            FROM information_schema.columns 
-            WHERE table_name = 'user' 
+            FROM information_schema.columns
+            WHERE table_name = 'user'
             ORDER BY ordinal_position
         `);
         res.json({
@@ -50,6 +50,21 @@ router.get("/user-table-schema", async (req, res) => {
     } catch (error: any) {
         res.status(500).json({ ok: false, error: "schema_error", message: error.message });
     }
+});
+
+// Debug endpoint to check environment variables
+router.get("/debug-env", async (req, res) => {
+    res.json({
+        ok: true,
+        env: {
+            POSTMARK_TOKEN: process.env.POSTMARK_TOKEN ? "SET" : "NOT SET",
+            POSTMARK_FROM: process.env.POSTMARK_FROM || "NOT SET",
+            POSTMARK_FROM_NAME: process.env.POSTMARK_FROM_NAME || "NOT SET",
+            POSTMARK_REPLY_TO: process.env.POSTMARK_REPLY_TO || "NOT SET",
+            POSTMARK_STREAM: process.env.POSTMARK_STREAM || "NOT SET",
+            NODE_ENV: process.env.NODE_ENV || "NOT SET"
+        }
+    });
 });
 
 /** Validation mirrors your frontend exactly */
