@@ -73,6 +73,16 @@ app.use(cors({
     optionsSuccessStatus: 204,
 }));
 
+// Debug middleware to catch errors
+app.use((req, res, next) => {
+    try {
+        next();
+    } catch (error) {
+        console.error('[DEBUG] Error in middleware chain:', error);
+        res.status(500).json({ ok: false, error: 'middleware_error', message: error.message });
+    }
+});
+
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
 
