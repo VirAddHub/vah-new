@@ -41,6 +41,7 @@ import passwordResetRouter from "./server/routes/password-reset";
 import { passwordResetRouter as profilePasswordResetRouter } from "./server/routes/profile.password-reset";
 import passwordResetRouterV2 from "./server/routes/profile/password-reset";
 import robustPasswordResetRouter from "./server/routes/profile/reset-password-request";
+import authRouter from "./server/routes/auth";
 
 // --- cookie options helper
 const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
@@ -245,6 +246,8 @@ async function start() {
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
 
     // Mount other routes
+    app.use('/api/auth', authRouter);
+    logger.info('[mount] /api/auth mounted');
     app.use('/api/profile', profileRouter);
     app.use(robustPasswordResetRouter); // Mount robust password reset FIRST
     app.use('/api/profile', profilePasswordResetRouter);
