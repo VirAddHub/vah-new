@@ -317,23 +317,25 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        if (password.length < 8) {
+        // Server-side strength validation (mirror frontend rules)
+        if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
             return res.status(400).json({
                 ok: false,
-                error: "password_too_short",
-                message: "Password must be at least 8 characters long"
+                error: "weak_password",
+                message: "Password must be at least 8 characters with letters and numbers"
             });
         }
 
         const pool = getPool();
 
-        // Find user with valid reset token
+        // Find users with valid reset tokens (keep result set small)
         const userResult = await pool.query(`
             SELECT id, email, reset_token_hash, reset_token_expires_at, reset_token_used_at
             FROM "user" 
-            WHERE reset_token_hash IS NOT NULL 
+            WHERE reset_token_hash IS NOT NULL
             AND reset_token_expires_at > NOW() 
             AND reset_token_used_at IS NULL
+            LIMIT 500
         `);
 
         let validUser: { id: number; email: string; reset_token_hash: string; reset_token_expires_at: string; reset_token_used_at: string | null } | null = null;

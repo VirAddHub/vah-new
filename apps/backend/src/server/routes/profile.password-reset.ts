@@ -52,7 +52,13 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
           [tokenHash, user.id]
         );
 
-        const resetLink = `${ENV.APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`;
+        // Build reset link with proper base URL
+        const baseUrl = process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app';
+        const resetLink = `${baseUrl}/reset-password/confirm?token=${encodeURIComponent(raw)}`;
+
+        // Build user names safely
+        const fullName = (user.first_name ?? user.name ?? '').trim();
+        const firstName = user.first_name ?? (fullName.split(/\s+/)[0] || 'there');
 
         // Your mailer + template model builder (camelCase ➜ snake_case) is used here
         try {
@@ -60,7 +66,8 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
             to: user.email,
             templateAlias: 'password-reset-email',
             model: {
-              firstName: user.first_name,
+              firstName: firstName,
+              name: fullName || firstName,          // safe extra for template
               resetLink,
               expiryMinutes: String(TTL_MINUTES),
             },
