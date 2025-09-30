@@ -56,8 +56,8 @@ app.use(helmet());
 // Strict CORS allowlisting
 app.use(corsMiddleware);
 
-// Ensure OPTIONS requests always succeed (CORS preflight)
-app.options('*', corsMiddleware);
+// Handle CORS preflights for API routes specifically
+app.options('/api/*', corsMiddleware);
 
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
