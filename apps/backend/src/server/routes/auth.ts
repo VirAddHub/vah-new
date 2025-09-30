@@ -27,6 +27,31 @@ router.get("/test-user-table", async (req, res) => {
     }
 });
 
+// Get user table schema endpoint
+router.get("/user-table-schema", async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.query(`
+            SELECT 
+                column_name, 
+                data_type, 
+                is_nullable, 
+                column_default,
+                character_maximum_length
+            FROM information_schema.columns 
+            WHERE table_name = 'user' 
+            ORDER BY ordinal_position
+        `);
+        res.json({ 
+            ok: true, 
+            message: "User table schema", 
+            columns: result.rows 
+        });
+    } catch (error: any) {
+        res.status(500).json({ ok: false, error: "schema_error", message: error.message });
+    }
+});
+
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({
     // Contact
