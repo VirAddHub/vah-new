@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { getPool } from '../../db';
 import { sendTemplateEmail } from '../../../lib/mailer';
-import { buildPasswordResetModel } from '../../../lib/mail/models';
 import { APP_BASE_URL } from '../../../config/env';
 import { withTimeout } from '../../../lib/withTimeout';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
