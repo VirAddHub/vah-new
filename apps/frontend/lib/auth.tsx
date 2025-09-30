@@ -1,7 +1,7 @@
 // apps/frontend/lib/auth.tsx
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { getMe } from "./api";
+import { getMe } from "@/lib/api";
 
 type AuthState = { loading: boolean; user: any | null };
 const AuthCtx = createContext<AuthState>({ loading: true, user: null });

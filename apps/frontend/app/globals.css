@@ -131,15 +131,15 @@ iframe {
         /* airy surfaces */
         --background: 0 12% 97%;
         /* #F9F8F8 */
-        --foreground: 210 37% 9%;
-        /* #0f1720 */
+        --foreground: 210 37% 3%;
+        /* #0f1720 - much darker */
 
         --card: 0 0% 100%;
         /* #ffffff */
-        --card-foreground: 210 37% 9%;
+        --card-foreground: 210 37% 3%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 210 37% 9%;
+        --popover-foreground: 210 37% 3%;
 
         /* brand green */
         --primary: 145 41% 22%;
@@ -160,16 +160,16 @@ iframe {
 
         /* calm utility */
         --secondary: 0 0% 100%;
-        --secondary-foreground: 210 37% 9%;
+        --secondary-foreground: 210 37% 3%;
 
         --muted: 48 10% 94%;
         /* #f1f0ec */
-        --muted-foreground: 210 13% 45%;
-        /* #667085 */
+        --muted-foreground: 210 13% 28%;
+        /* #667085 - darker gray */
 
         --accent: 48 12% 91%;
         /* #edebe6 */
-        --accent-foreground: 210 37% 9%;
+        --accent-foreground: 210 37% 3%;
 
         /* semantics */
         --destructive: 0 0% 0%;
@@ -441,7 +441,6 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 3rem;
         margin-bottom: 1.5rem;
-        color: hsl(var(--foreground));
     }
 
     .prose h3 {
@@ -452,14 +451,12 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 2.5rem;
         margin-bottom: 1rem;
-        color: hsl(var(--foreground));
     }
 
     .prose p {
         font-size: 1.125rem;
         line-height: 1.8;
         margin-bottom: 1.5rem;
-        color: hsl(var(--foreground));
     }
 
     .prose ul {
@@ -471,12 +468,10 @@ iframe {
         font-size: 1.125rem;
         line-height: 1.8;
         margin-bottom: 0.75rem;
-        color: hsl(var(--foreground));
     }
 
     .prose strong {
         font-weight: 600;
-        color: hsl(var(--foreground));
     }
 
     /* Additional responsive utilities */
