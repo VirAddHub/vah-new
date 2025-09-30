@@ -9,14 +9,8 @@
 
 const RAW = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
 
-if (!RAW) {
-  // Fail fast in build to avoid shipping broken clients
-  throw new Error(
-    "Missing env NEXT_PUBLIC_BACKEND_API_ORIGIN. Set it to your backend origin, e.g. https://vah-api-staging.onrender.com"
-  );
-}
-
-const API_BASE = RAW.replace(/\/+$/, ""); // trim trailing slash
+// Allow empty/undefined - will use relative URLs
+const API_BASE = RAW ? RAW.replace(/\/+$/, "") : ""; // trim trailing slash if present
 
 type Json = Record<string, unknown> | unknown[];
 
@@ -44,8 +38,16 @@ async function handle(res: Response) {
   return data;
 }
 
+function buildUrl(base: string, path: string): string {
+  if (!base) return path; // relative URL
+  const cleanBase = base.replace(/\/+$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${cleanBase}${cleanPath}`;
+}
+
 export async function getJson<T = any>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = buildUrl(API_BASE, path);
+  const res = await fetch(url, {
     method: "GET",
     credentials: "include",
     ...init,
@@ -58,7 +60,8 @@ export async function getJson<T = any>(path: string, init: RequestInit = {}): Pr
 }
 
 export async function postJson<T = any>(path: string, body?: Json, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = buildUrl(API_BASE, path);
+  const res = await fetch(url, {
     method: "POST",
     credentials: "include",
     ...init,
