@@ -67,6 +67,33 @@ router.get("/debug-env", async (req, res) => {
     });
 });
 
+// Email test endpoint
+router.post("/test-email", async (req, res) => {
+    try {
+        const { to } = req.body;
+        if (!to) {
+            return res.status(400).json({ ok: false, error: "to_required" });
+        }
+
+        const { sendTemplateEmail } = await import("../../lib/mailer");
+        
+        await sendTemplateEmail({
+            to: to,
+            templateAlias: 'password-reset-email',
+            model: {
+                firstName: 'Test User',
+                resetLink: 'https://example.com/test',
+                expiryMinutes: '30'
+            }
+        });
+
+        res.json({ ok: true, message: "Test email sent successfully" });
+    } catch (error: any) {
+        console.error('[test-email] error:', error);
+        res.status(500).json({ ok: false, error: error.message || 'email_failed' });
+    }
+});
+
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({
     // Contact

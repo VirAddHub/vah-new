@@ -1,14 +1,14 @@
 // apps/backend/src/lib/mailer.ts
-import postmark from 'postmark';
+import { ServerClient } from 'postmark';
 import { ENV, emailGuard } from '../env';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
-let _client: postmark.ServerClient | null = null;
+let _client: ServerClient | null = null;
 function getClient() {
     if (!_client) {
         if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
-        _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
+        _client = new ServerClient(ENV.POSTMARK_TOKEN);
     }
     return _client;
 }
