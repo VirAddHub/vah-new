@@ -1,5 +1,5 @@
 // apps/backend/src/lib/mailer.ts
-import { ServerClient } from 'postmark';
+import { ServerClient } from 'postmark'; // Fixed import
 import { ENV, emailGuard } from '../env';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
