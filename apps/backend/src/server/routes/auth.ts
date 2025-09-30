@@ -108,19 +108,20 @@ router.post("/signup", async (req, res) => {
         const hash = await bcrypt.hash(i.password, 12);
 
         // Insert using the `password` column (we know this exists from the schema)
+        const now = Date.now();
         const insertQuery = `
       INSERT INTO "user" (
         first_name, last_name, email, phone,
         business_type, country_of_incorporation, company_number, company_name,
         forward_to_first_name, forward_to_last_name, address_line1, address_line2,
         city, postcode, forward_country,
-        password
+        password, created_at, updated_at
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,$12,
         $13,$14,$15,
-        $16
+        $16,$17,$18
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -130,7 +131,7 @@ router.post("/signup", async (req, res) => {
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country,
-            hash
+            hash, now, now
         ];
 
         const rs = await pool.query(insertQuery, args);
