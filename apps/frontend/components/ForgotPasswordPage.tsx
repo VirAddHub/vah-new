@@ -46,21 +46,21 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
     try {
       // Call backend API to request password reset
       await postJson('/api/profile/reset-password-request', { email });
-      
-      setMessage({ 
-        type: 'success', 
-        text: `Password reset instructions have been sent to ${email}` 
+
+      setMessage({
+        type: 'success',
+        text: `Password reset instructions have been sent to ${email}`
       });
-      
+
       // Navigate to sent confirmation after brief delay
       setTimeout(() => {
         onNavigate('reset-password-sent');
       }, 1500);
-      
+
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Failed to send reset link. Please try again or contact support if the problem persists.' 
+      setMessage({
+        type: 'error',
+        text: 'Failed to send reset link. Please try again or contact support if the problem persists.'
       });
     } finally {
       setLoading(false);
@@ -90,25 +90,25 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
     try {
       // Call backend API to reset password
-      await postJson('/api/auth/reset-password/confirm', { 
+      await postJson('/api/profile/reset-password', {
         token: token || '',
-        password: password 
+        password: password
       });
 
-      setMessage({ 
-        type: 'success', 
-        text: 'Password has been successfully reset. Redirecting to login...' 
+      setMessage({
+        type: 'success',
+        text: 'Password has been successfully reset. Redirecting to login...'
       });
-      
+
       // Navigate to login after brief delay
       setTimeout(() => {
         onNavigate('login');
       }, 2000);
-      
+
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Failed to reset password. Please try again or request a new reset link.' 
+      setMessage({
+        type: 'error',
+        text: 'Failed to reset password. Please try again or request a new reset link.'
       });
     } finally {
       setLoading(false);
@@ -150,8 +150,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           </div>
         </div>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full h-12 text-base font-medium"
           disabled={loading || !email.trim()}
         >
@@ -169,7 +169,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Additional Info */}
       <div className="mt-8 space-y-4 text-center">
         <div className="text-sm text-muted-foreground">
-          <p>Don't have an account? 
+          <p>Don't have an account?
             <button
               onClick={() => onNavigate('signup')}
               className="ml-1 text-primary hover:text-primary/80 font-medium"
@@ -178,13 +178,13 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             </button>
           </p>
         </div>
-        
+
         <div className="pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground mb-3">
             Having trouble? Our support team is here to help.
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onNavigate('contact')}
             className="text-sm"
           >
@@ -230,7 +230,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Actions */}
       <div className="space-y-4">
         <div className="text-center text-sm text-muted-foreground">
-          <p>Didn't receive the email? Check your spam folder or 
+          <p>Didn't receive the email? Check your spam folder or
             <button
               onClick={() => onNavigate('reset-password')}
               className="ml-1 text-primary hover:text-primary/80 font-medium"
@@ -239,16 +239,16 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             </button>
           </p>
         </div>
-        
+
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onNavigate('login')}
             className="flex-1"
           >
             Back to Login
           </Button>
-          <Button 
+          <Button
             onClick={() => onNavigate('contact')}
             variant="outline"
             className="flex-1"
@@ -311,8 +311,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           />
         </div>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full h-12 text-base font-medium"
           disabled={loading || !password.trim() || !confirmPassword.trim()}
         >
@@ -363,11 +363,10 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
         {/* Message Alert */}
         {message && (
-          <Alert className={`mt-4 ${
-            message.type === 'error' 
-              ? 'border-red-200 bg-red-50' 
+          <Alert className={`mt-4 ${message.type === 'error'
+              ? 'border-red-200 bg-red-50'
               : 'border-green-200 bg-green-50'
-          }`}>
+            }`}>
             {message.type === 'error' ? (
               <AlertCircle className="h-4 w-4" />
             ) : (
