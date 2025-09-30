@@ -1,10 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { Pool } from "pg";
-
-// Use your existing DATABASE_URL from Render/local .env
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
+import { getPool } from "../db";
 
 const router = Router();
 
@@ -52,6 +49,7 @@ router.post("/signup", async (req, res) => {
 
     try {
         // Enforce unique email at app layer (still rely on DB unique index if you have it)
+        const pool = getPool();
         const exists = await pool.query<{ count: string }>(
             `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1`,
             [email]
@@ -141,26 +139,27 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body || {};
-        
+
         if (!email || !password) {
-            return res.status(400).json({ 
-                ok: false, 
+            return res.status(400).json({
+                ok: false,
                 error: "missing_fields",
-                message: "Email and password are required" 
+                message: "Email and password are required"
             });
         }
 
         // Get user from database
+        const pool = getPool();
         const user = await pool.query(
             'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2',
             [email.toLowerCase(), 'active']
         );
 
         if (!user.rows[0]) {
-            return res.status(401).json({ 
-                ok: false, 
+            return res.status(401).json({
+                ok: false,
                 error: "invalid_credentials",
-                message: "Invalid email or password" 
+                message: "Invalid email or password"
             });
         }
 
@@ -176,10 +175,10 @@ router.post("/login", async (req, res) => {
         }
 
         if (!isValidPassword) {
-            return res.status(401).json({ 
-                ok: false, 
+            return res.status(401).json({
+                ok: false,
                 error: "invalid_credentials",
-                message: "Invalid email or password" 
+                message: "Invalid email or password"
             });
         }
 
@@ -198,10 +197,10 @@ router.post("/login", async (req, res) => {
 
     } catch (error) {
         console.error('[auth/login] Error:', error);
-        res.status(500).json({ 
-            ok: false, 
+        res.status(500).json({
+            ok: false,
             error: "internal_error",
-            message: "An error occurred during login" 
+            message: "An error occurred during login"
         });
     }
 });
@@ -212,10 +211,10 @@ router.post("/logout", (req, res) => {
         res.json({ ok: true, message: "Logged out successfully" });
     } catch (error) {
         console.error('[auth/logout] Error:', error);
-        res.status(500).json({ 
-            ok: false, 
+        res.status(500).json({
+            ok: false,
             error: "internal_error",
-            message: "An error occurred during logout" 
+            message: "An error occurred during logout"
         });
     }
 });
@@ -224,17 +223,17 @@ router.post("/logout", (req, res) => {
 router.get("/whoami", async (req, res) => {
     try {
         // For now, return not authenticated since we don't have JWT setup yet
-        res.status(401).json({ 
-            ok: false, 
+        res.status(401).json({
+            ok: false,
             error: "not_authenticated",
-            message: "No session found" 
+            message: "No session found"
         });
     } catch (error) {
         console.error('[auth/whoami] Error:', error);
-        res.status(401).json({ 
-            ok: false, 
+        res.status(401).json({
+            ok: false,
             error: "invalid_token",
-            message: "Invalid or expired session" 
+            message: "Invalid or expired session"
         });
     }
 });
