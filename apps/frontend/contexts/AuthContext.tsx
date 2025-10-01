@@ -81,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [status, setStatus] = useState<AuthStatus>('loading');
     const ranOnceRef = useRef(false);
 
-    const isAuthenticated = !!user;
+    const hasUser = !!user;
     const isAdmin = Boolean(user?.is_admin);
 
     // Initialize auth state on mount - ONLY ONCE
@@ -285,6 +285,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
+    /// NOTE: Do not declare another `isAuthenticated` from user here.
+    /// `isAuthenticated` below is derived from `status` and is the single source of truth.
     const loading = status === 'loading';
     const isAuthenticated = status === 'authed';
 
