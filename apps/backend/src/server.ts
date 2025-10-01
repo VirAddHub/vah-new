@@ -40,6 +40,14 @@ import devRouter from "./server/routes/dev";
 import robustPasswordResetRouter from "./server/routes/profile/reset-password-request";
 import authRouter from "./server/routes/auth";
 
+// NEW: Import missing endpoints
+import mailRouter from "./server/routes/mail";
+import billingRouter from "./server/routes/billing";
+import paymentsRouter from "./server/routes/payments";
+import adminUsersRouter from "./server/routes/admin-users";
+import adminForwardingRouter from "./server/routes/admin-forwarding";
+import kycRouter from "./server/routes/kyc";
+
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
 import * as path from 'path';
@@ -291,6 +299,20 @@ async function start() {
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
+
+    // NEW: Mount missing endpoints
+    app.use('/api', mailRouter);
+    logger.info('[mount] /api (mail routes) mounted');
+    app.use('/api', billingRouter);
+    logger.info('[mount] /api/billing mounted');
+    app.use('/api/payments', paymentsRouter);
+    logger.info('[mount] /api/payments mounted');
+    app.use('/api/admin', adminUsersRouter);
+    logger.info('[mount] /api/admin (users) mounted');
+    app.use('/api/admin', adminForwardingRouter);
+    logger.info('[mount] /api/admin (forwarding) mounted');
+    app.use('/api/kyc', kycRouter);
+    logger.info('[mount] /api/kyc mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
