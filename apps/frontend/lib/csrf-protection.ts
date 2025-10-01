@@ -59,6 +59,27 @@ export function clearStoredCSRFToken(): void {
   }
 }
 
+/**
+ * Clear CSRF token (on logout) - Legacy compatibility function
+ */
+export function clearCSRFToken(): void {
+  if (typeof window === 'undefined') return;
+  
+  localStorage.removeItem(CSRF_TOKEN_KEY);
+  document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+}
+
+/**
+ * Add CSRF token to request headers - Legacy compatibility function
+ */
+export function addCSRFHeader(headers: HeadersInit = {}): HeadersInit {
+  const token = getStoredCSRFToken() || generateCSRFToken();
+  return {
+    ...headers,
+    'X-CSRF-Token': token,
+  };
+}
+
 // --- Token Validation ---
 
 /**
