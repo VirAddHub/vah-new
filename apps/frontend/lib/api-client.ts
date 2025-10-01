@@ -2,6 +2,7 @@
 
 import { UnknownRecord } from './types';
 import { setToken, clearToken, getToken } from './token-manager';
+import { addCSRFHeader } from './csrf-protection';
 
 export type ApiOk<T> = { ok: true; data: T };
 export type ApiErr = { ok: false; message: string; code?: string; status?: number };
@@ -279,6 +280,14 @@ async function authFetch(inputPath: string, init: RequestInit = {}) {
     // Keep existing Content-Type if caller set it
     if (!headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
+    }
+    
+    // Add CSRF protection for state-changing requests
+    if (init.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(init.method.toUpperCase())) {
+        const csrfHeaders = addCSRFHeader();
+        Object.entries(csrfHeaders).forEach(([key, value]) => {
+            headers.set(key, value as string);
+        });
     }
     const res = await fetch(url, { ...init, headers, credentials: 'include' });
     // optional: clear token on 401 to avoid loops

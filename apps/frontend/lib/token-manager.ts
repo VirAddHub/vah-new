@@ -1,5 +1,6 @@
 // apps/frontend/lib/token-manager.ts
 import { parseJSONSafe } from './parse-json-safe';
+import { clearCSRFToken } from './csrf-protection';
 
 const KEY = 'vah_jwt';
 const USER_KEY = 'vah_user';
@@ -31,8 +32,8 @@ export function setToken(token: string | null) {
   } else {
     try { 
       window.localStorage.setItem(KEY, token); 
-      // Also set cookie for middleware to access
-      document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      // Also set cookie for middleware to access with CSRF protection
+      document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; HttpOnly=false; Secure=${location.protocol === 'https:'}`;
     } catch { }
   }
   if (typeof window !== 'undefined') {
@@ -46,6 +47,8 @@ export function clearToken() {
     window.localStorage.removeItem(KEY); 
     // Also clear the cookie for middleware
     document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Clear CSRF token for security
+    clearCSRFToken();
   } catch { }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(EVT));
@@ -61,8 +64,8 @@ export const tokenManager = {
   set(token: string) {
     if (typeof window === 'undefined') return;
     localStorage.setItem(KEY, token);
-    // Also set cookie for middleware to access
-    document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    // Also set cookie for middleware to access with CSRF protection
+    document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; HttpOnly=false; Secure=${location.protocol === 'https:'}`;
     window.dispatchEvent(new Event(EVT));
   },
   clear() {
@@ -70,6 +73,8 @@ export const tokenManager = {
     localStorage.removeItem(KEY);
     // Also clear the cookie for middleware
     document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Clear CSRF token for security
+    clearCSRFToken();
     window.dispatchEvent(new Event(EVT));
   },
   onChange(cb: () => void) {
