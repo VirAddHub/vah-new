@@ -54,7 +54,9 @@ export interface JWTPayload {
 }
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  const options: jwt.SignOptions = {
+  // FIX: Removed the explicit `: jwt.SignOptions` type annotation.
+  // This allows TypeScript to correctly infer the type and resolve the function overload.
+  const options = {
     ...baseOpts,
     algorithm: ALG,
     expiresIn: JWT_EXPIRES_IN,
