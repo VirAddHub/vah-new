@@ -58,7 +58,7 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                         setProfile({
                             id: userData.id,
                             email: userData.email,
-                            name: userData.name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+                            name: userData.name || userData.email, // Use email as fallback name
                             is_admin: userData.is_admin,
                             role: userData.role
                         });
