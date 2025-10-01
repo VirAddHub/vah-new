@@ -6,7 +6,20 @@ import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
-import type { User as AuthUser } from '../types/user';
+import type { User as ApiUser, WhoAmI, Role } from '../types/user';
+import type { User as ClientUser } from '../lib/client-auth';
+
+// Map API user -> Client user (storage)
+function toClientUser(u: ApiUser | WhoAmI): ClientUser {
+  // Normalize role to 'user' | 'admin' if possible
+  const role = (u.role === 'admin' || u.role === 'user') ? (u.role as Role) : undefined;
+  return {
+    id: (u as ApiUser).user_id ?? (u as WhoAmI).user_id,
+    email: u.email,
+    is_admin: u.is_admin,
+    role
+  };
+}
 
 // Client-safe logging functions
 const logAuthEvent = async (event: string, data?: any) => {
@@ -137,9 +150,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.ok) {
                 // Set user data from the response
-                const userData: AuthUser = response.data.user;
-                clientAuthManager.setUser(userData);
-                setUser(userData);
+                const userData = response.data.user as ApiUser;
+                const clientUser = toClientUser(userData);
+                clientAuthManager.setUser(clientUser);
+                setUser(clientUser as unknown as any); // if your local state expects client user
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
@@ -168,19 +182,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const response = await AuthAPI.login(credentials.email, credentials.password);
 
             if (response.ok) {
-                const userData = response.data.user;
+                const userData = response.data.user as ApiUser;
                 if (userData?.is_admin) {
-                    clientAuthManager.setUser(userData);
-                    setUser(userData);
+                    const clientUser = toClientUser(userData);
+                    clientAuthManager.setUser(clientUser);
+                    setUser(clientUser as unknown as any);
 
                     await logAuthEvent('admin_login_success', {
                         email: credentials.email,
-                        adminId: userData.id
+                        adminId: userData.user_id
                     });
 
                     await logAdminAction('admin_login', {
                         email: credentials.email,
-                        adminId: userData.id
+                        adminId: userData.user_id
                     });
                 } else {
                     throw new Error('Admin access required');
