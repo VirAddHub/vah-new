@@ -1,6 +1,6 @@
 // server/db.js
-// Database adapter that provides SQLite-like API for PostgreSQL
-// This allows legacy routes to work without complete rewriting
+// PostgreSQL database adapter with prepare/get/all/run API for legacy routes
+// All database operations use PostgreSQL - no other database is supported
 
 const { Pool } = require('pg');
 
@@ -21,18 +21,18 @@ function getPool() {
     return pool;
 }
 
-// SQLite-compatible wrapper for PostgreSQL
-class PostgreSQLiteAdapter {
+// PostgreSQL adapter with prepare/get/all/run API
+class PostgreSQLAdapter {
     constructor() {
         this.pool = getPool();
     }
 
-    // SQLite: db.prepare(sql).get(...params)
+    // db.prepare(sql).get(...params) - Returns single row
     // PostgreSQL: pool.query(sql, params) -> rows[0]
     prepare(sql) {
         const pool = this.pool;
 
-        // Convert SQLite placeholders (?) to PostgreSQL ($1, $2, etc.)
+        // Convert ? placeholders to PostgreSQL $1, $2, etc.
         let paramIndex = 0;
         const pgSql = sql.replace(/\?/g, () => `$${++paramIndex}`);
 
@@ -72,7 +72,7 @@ class PostgreSQLiteAdapter {
         };
     }
 
-    // SQLite: db.exec(sql)
+    // db.exec(sql) - Execute raw SQL
     // PostgreSQL: pool.query(sql)
     async exec(sql) {
         try {
@@ -92,7 +92,7 @@ class PostgreSQLiteAdapter {
 }
 
 // Export singleton instance
-const db = new PostgreSQLiteAdapter();
+const db = new PostgreSQLAdapter();
 
 // Also export for use in newer routes
 async function withPgClient(callback) {

@@ -212,12 +212,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Database initialization
 async function initializeDatabase() {
     try {
-        if (process.env.DB_CLIENT === 'pg') {
-            // Don't initialize DB at startup - make it lazy
-            logger.info('PostgreSQL will be initialized on first use');
-        } else {
-            logger.info('SQLite database ready');
-        }
+        // PostgreSQL connection will be established on first use (lazy initialization)
+        logger.info('PostgreSQL will be initialized on first use');
         logger.info('DB connection will be established on first use');
     } catch (e) {
         logger.error('DB initialization warning:', e);

@@ -32,7 +32,7 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 // Load user data and all dashboard information using the service layer
                 const [
                     whoamiResponse,
@@ -378,9 +378,9 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                             <div><strong>Role:</strong> {userData?.role || user?.role || 'N/A'}</div>
                             <div><strong>Is Admin:</strong> {userData?.is_admin ? 'Yes' : 'No'}</div>
                         </div>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="mt-4"
                             onClick={() => window.location.reload()}
                         >

@@ -114,24 +114,23 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     });
     const [isLoadingOverview, setIsLoadingOverview] = useState(false);
 
-    // Load overview metrics from specific endpoints
+    // Load overview metrics using new service layer
     const loadOverview = useCallback(async () => {
         setIsLoadingOverview(true);
         try {
-            const [usersRes, userStatsRes, billingRes, processedRes, forwardsRes] = await Promise.all([
-                adminApi.users(new URLSearchParams([["page", "1"], ["page_size", "1"]])),
-                adminApi.userStats(),
-                adminApi.billingMetrics(),
-                adminApi.mailItems(new URLSearchParams([["status", "processed"], ["page", "1"], ["page_size", "1"]])),
-                adminApi.forwardingQueue(new URLSearchParams([["status", "pending"], ["page", "1"], ["page_size", "1"]])),
+            const [usersRes, mailRes, forwardsRes, billingRes] = await Promise.all([
+                adminService.getUsers(),
+                adminService.getMailItems(),
+                adminService.getForwardingRequests(),
+                adminService.getAuditLogs({ limit: 1, offset: 0 })
             ]);
 
             setOverview({
-                users: usersRes.ok ? Number((usersRes.data as any)?.total ?? 0) : 0,
-                deletedUsers: userStatsRes.ok ? Number((userStatsRes.data as any)?.deleted ?? 0) : 0,
-                monthlyRevenuePence: billingRes.ok ? Number((billingRes.data as any)?.monthly_revenue_pence ?? 0) : 0,
-                mailProcessed: processedRes.ok ? Number((processedRes.data as any)?.total ?? 0) : 0,
-                activeForwards: forwardsRes.ok ? Number((forwardsRes.data as any)?.total ?? 0) : 0,
+                users: usersRes.ok ? Array.isArray(usersRes.data) ? usersRes.data.length : 0 : 0,
+                deletedUsers: usersRes.ok ? Array.isArray(usersRes.data) ? usersRes.data.filter((u: any) => u.deleted_at).length : 0 : 0,
+                monthlyRevenuePence: 0, // TODO: implement billing metrics endpoint
+                mailProcessed: mailRes.ok ? Array.isArray(mailRes.data) ? mailRes.data.length : 0 : 0,
+                activeForwards: forwardsRes.ok ? Array.isArray(forwardsRes.data) ? forwardsRes.data.filter((f: any) => f.status === 'pending').length : 0 : 0,
             });
         } catch (err) {
             console.error('Error loading overview:', err);
@@ -140,7 +139,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, []);
 
-    // Load admin data - hoisted into stable useCallback with throttling
+    // Load admin data using new service layer with throttling
     const loadAdminData = useCallback(async () => {
         // Throttle rapid requests
         const now = Date.now();
@@ -155,14 +154,13 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             setLoading(true);
             setError(null);
 
-            // Fetch all users to get accurate totals using the correct adminApi
-            console.debug('[Users] Making API call to:', '/api/admin/users?page=1&page_size=1000');
-            const usersResponse = await adminApi.users(new URLSearchParams([['page', '1'], ['page_size', '1000']]));
+            // Fetch all users using adminService
+            console.debug('[Users] Making API call via adminService.getUsers()');
+            const usersResponse = await adminService.getUsers();
             console.debug('[Users] API response:', usersResponse);
 
             if (usersResponse.ok) {
-                const data = usersResponse.data as { items?: any[] };
-                const userData = safe(data?.items, []);
+                const userData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
                 console.debug('[Users] loadAdminData: success', { count: userData.length });
                 setUsers(userData);
 

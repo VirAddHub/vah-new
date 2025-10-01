@@ -1,13 +1,9 @@
 // src/db/index.ts
-// Works in CommonJS build (dist) and avoids top-level await.
+// PostgreSQL database adapter - exports PostgreSQL implementation only
 
-// Choose impl once based on env
-const client = (process.env.DB_CLIENT || 'sqlite').toLowerCase();
-
-let impl: any;
-// Use require so TS compiles to CJS cleanly
+// Always use PostgreSQL - no other database is supported
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-impl = client === 'pg' ? require('./pg') : require('./sqlite');
+const impl = require('./pg');
 
 export const {
     ensureSchema,

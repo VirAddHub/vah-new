@@ -12,12 +12,10 @@ dist/
 !env.example
 *.local
 
-# data & logs
-data/*.db*
-data/*.db-wal
-data/*.db-shm
+# logs
 logs/
 var/
+web.log
 
 # editor cruft
 .history/
@@ -27,22 +25,8 @@ Thumbs.db
 # ops artifacts
 ops/artifacts/*
 *.zip
-# local db & build
-*.db
-*.db-*
-vah.db*
-data/*.db*
 *.tsbuildinfo
 .cookies.backend.txt
-
-# local db & build
-*.db
-*.db-*
-vah.db*
-data/*.db*
-*.tsbuildinfo
-.cookies.backend.txt
-
 
 # temp/test artifacts
 *.cookies.txt
@@ -56,39 +40,15 @@ csrf-token.txt
 test-login.json
 login.json
 debug-session.sql
-web.log
 
-# local SQLite (optional; keep if you use sqlite in dev)
-app.db
-app.db-shm
-app.db-wal
-vah_corrupted.db
-vah.db.backup
-
-# --- repo hygiene (keep tests, ignore junk) ---
-
-# local db & backups (we use Postgres in prod)
-app.db
-app.db-shm
-app.db-wal
-vah_corrupted.db
-vah.db.backup
+# PostgreSQL backups
+*.sql.backup
 vah_backup.sql
-
-# logs & pids
-logs/
-web.log
-*.pid
 
 # request sandboxes & cookies/csrf
 *.http
-*.cookies.txt
-*.cookie.txt
-*.csrf.txt
-csrf-token.txt
 
 # misc local junk folders
-.history/
 _archive/
 -Force/
 backups/
@@ -99,7 +59,6 @@ tools/mock-api/
 # test outputs (keep the directory; ignore artifacts)
 test-results/**
 !test-results/.gitkeep
-
 
 # === Block frontend artifacts in backend repo ===
 .next/

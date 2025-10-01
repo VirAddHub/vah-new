@@ -15,6 +15,16 @@ export interface SupportTicket {
 
 export const supportService = {
     /**
+     * Get all support tickets for current user
+     */
+    async getTickets(): Promise<{ ok: boolean; data: SupportTicket[] }> {
+        const { data } = await api('/api/support/tickets', {
+            method: 'GET',
+        });
+        return data;
+    },
+
+    /**
      * Create a support ticket
      */
     async createTicket(ticket: { subject: string; message: string }): Promise<{ ok: boolean; data: SupportTicket }> {

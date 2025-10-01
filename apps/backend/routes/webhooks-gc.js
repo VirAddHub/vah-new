@@ -7,8 +7,8 @@ const router = express.Router();
 // Use centralized database connection
 const { db } = require('../server/db');
 
-// Import invoice functions
-const { createInvoiceFromPayment } = require('../server/services/invoice');
+// Import invoice functions - points to compiled TypeScript in dist
+const { createInvoiceFromPayment } = require('../dist/src/server/services/invoice');
 
 // Import email templates
 const { emailInvoiceSent } = require('../server/mailer-templates');

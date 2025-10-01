@@ -17,9 +17,12 @@ export interface Invoice {
 
 export interface BillingOverview {
     ok: boolean;
-    current_plan?: string;
-    next_billing_date?: string;
-    amount_due?: number;
+    data?: {
+        current_plan?: string;
+        next_billing_date?: string;
+        amount_due?: number;
+        subscription?: any;
+    };
 }
 
 export interface SubscriptionStatus {
