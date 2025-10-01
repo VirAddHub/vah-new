@@ -1,7 +1,6 @@
 "use client";
 
 export const dynamic = 'force-dynamic';
-export const revalidate = false;
 
 import { useState, useEffect, useRef } from 'react';
 import Login from '../../components/Login';
