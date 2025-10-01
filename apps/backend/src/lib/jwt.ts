@@ -35,12 +35,11 @@ try {
 
 // Define JWT constants
 const ALG = (process.env.JWT_ALG || 'HS256') as 'HS256' | 'RS256';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+// FIX: Changed default expiration to a number of seconds to match the project's type definitions.
+const JWT_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-// FIX: Removed the explicit `: jwt.SignOptions` type annotation.
-// This lets TypeScript infer the narrow, correct types, fixing both build errors.
-const baseOpts = { 
-  issuer: 'virtualaddresshub', 
+const baseOpts = {
+  issuer: 'virtualaddresshub',
   audience: 'vah-users',
 };
 
@@ -54,12 +53,10 @@ export interface JWTPayload {
 }
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  // FIX: Removed the explicit `: jwt.SignOptions` type annotation.
-  // This allows TypeScript to correctly infer the type and resolve the function overload.
   const options = {
     ...baseOpts,
     algorithm: ALG,
-    expiresIn: JWT_EXPIRES_IN,
+    expiresIn: JWT_EXPIRES_IN_SECONDS, // Use the numeric value
   };
   return jwt.sign(payload, signKey, options);
 }
