@@ -2,6 +2,7 @@
 
 import { apiClient, ApiResponse } from './apiClient';
 import { parseJSONSafe } from './parse-json-safe';
+import { apiUrl } from './api-url';
 // import { isOk, ApiErr } from './apiClient'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
@@ -105,7 +106,7 @@ export class ClientAuthManager {
     this._inFlight = true;
     try {
       console.log('Checking auth with API client...');
-      const response: ApiResponse<unknown> = await apiClient.get('/api/auth/whoami');
+      const response: ApiResponse<unknown> = await apiClient.get(apiUrl('auth/whoami'));
       console.log('Auth check response:', response);
 
       if (response.ok && 'data' in response) {

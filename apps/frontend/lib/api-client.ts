@@ -154,7 +154,7 @@ export const apiClient = {
         if (!email || !password) {
             return { ok: false, message: 'Email and password are required', status: 400 };
         }
-        const resp = await legacyReq('/api/auth/login', {
+        const resp = await legacyReq(apiUrl('auth/login'), {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
@@ -186,7 +186,7 @@ export const apiClient = {
             // Sanity check: verify token works with whoami
             try {
                 console.log('🔍 WHOAMI DEBUG - Testing token with whoami endpoint...');
-                const whoamiResp = await legacyReq('/api/auth/whoami', { method: 'GET' });
+                const whoamiResp = await legacyReq(apiUrl('auth/whoami'), { method: 'GET' });
                 console.log('🔍 WHOAMI DEBUG - Whoami response:', whoamiResp);
                 if (!whoamiResp.ok) {
                     console.warn('⚠️ Login successful but whoami failed - token may be invalid');
@@ -204,12 +204,12 @@ export const apiClient = {
     },
 
     async whoami(): Promise<ApiResponse<{ user: User }>> {
-        const resp = await legacyReq('/api/auth/whoami', { method: 'GET' });
+        const resp = await legacyReq(apiUrl('auth/whoami'), { method: 'GET' });
         return coerceUserResponse(resp);
     },
 
     async logout(): Promise<ApiResponse<{ message: string }>> {
-        const resp = await legacyReq('/api/auth/logout', { method: 'POST' });
+        const resp = await legacyReq(apiUrl('auth/logout'), { method: 'POST' });
         // Always clear the token on logout, regardless of API response
         clearToken();
         return resp;
@@ -221,7 +221,7 @@ export const apiClient = {
         first_name?: string,
         last_name?: string
     ): Promise<ApiResponse<{ user: User }>> {
-        const resp = await legacyReq('/api/auth/signup', {
+        const resp = await legacyReq(apiUrl('auth/signup'), {
             method: 'POST',
             body: JSON.stringify({ email, password, first_name, last_name }),
         });
@@ -256,18 +256,19 @@ export const apiClient = {
 // Export AuthAPI for components that need it
 import type { Role } from '../types/user';
 import type { User } from './client-auth';
+import { apiUrl } from './api-url';
 export type { User } from './client-auth';
 
 // Safe response parser to avoid "undefined is not valid JSON" crashes
 async function parseResponseSafe(res: Response): Promise<any> {
-  const ct = res.headers.get('content-type') || '';
-  const text = await res.text();
-  if (!text.trim()) return null;
-  if (ct.includes('application/json')) {
-    try { return JSON.parse(text); } catch { return null; }
-  }
-  // Non-JSON payloads: return raw text
-  return text;
+    const ct = res.headers.get('content-type') || '';
+    const text = await res.text();
+    if (!text.trim()) return null;
+    if (ct.includes('application/json')) {
+        try { return JSON.parse(text); } catch { return null; }
+    }
+    // Non-JSON payloads: return raw text
+    return text;
 }
 
 // Normalize backend payload to our strict User type
@@ -291,7 +292,8 @@ type Fail = { ok: false; message?: string; error?: string };
 export const AuthAPI = {
     async login(email: string, password: string): Promise<LoginOk | Fail> {
         // NOTE: no leading /api here if api() already injects it
-        const { res, data } = await api('/auth/login', {
+        console.debug('🌐 Final URL =>', apiUrl('auth/login'));
+        const { res, data } = await api(apiUrl('auth/login'), {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
@@ -305,7 +307,7 @@ export const AuthAPI = {
 
         setToken(token);
 
-        const who = await api('/auth/whoami', { method: 'GET' });
+        const who = await api(apiUrl('auth/whoami'), { method: 'GET' });
         if (!who.res.ok || !who.data?.ok) {
             return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
         }
@@ -315,7 +317,7 @@ export const AuthAPI = {
     },
 
     async whoami(): Promise<{ ok: true; data: User } | Fail> {
-        const { res, data } = await api('/auth/whoami', { method: 'GET' });
+        const { res, data } = await api(apiUrl('auth/whoami'), { method: 'GET' });
         if (!res.ok || !data?.ok) {
             return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
         }
