@@ -179,6 +179,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     email: credentials.email,
                     userId: apiUser.user_id
                 });
+
+                // ✅ CRITICAL: Redirect to dashboard after successful login
+                console.log('User is authenticated. Redirecting to /dashboard');
+                window.location.href = '/dashboard';
             } else {
                 throw new Error('message' in response ? response.message : 'Login failed');
             }

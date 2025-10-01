@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { EnhancedUserDashboard } from '../../components/EnhancedUserDashboard';
+import { SimpleDashboard } from '../../components/SimpleDashboard';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import { RouteGuard } from '../../components/RouteGuard';
 
@@ -25,7 +25,7 @@ function DashboardContent() {
 
     return (
         <RouteGuard requireAuth>
-            <EnhancedUserDashboard
+            <SimpleDashboard
                 onLogout={handleLogout}
                 onNavigate={handleNavigate}
                 onGoBack={handleGoBack}
