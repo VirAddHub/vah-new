@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Login from '../../components/Login';
-import { AuthProvider, useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
-function LoginPageContent() {
+export default function LoginPage() {
     const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
     const router = useRouter();
     const hasRedirected = useRef(false);
@@ -45,17 +45,5 @@ function LoginPageContent() {
                 if (page === 'signup') router.push('/signup');
             }}
         />
-    );
-}
-
-export default function LoginPage() {
-    // IMPORTANT ARCHITECTURAL NOTE:
-    // AuthProvider should ideally be placed in your root layout (`app/layout.tsx`)
-    // to provide auth context to the entire application. Placing it here works
-    // for this specific page but is not a scalable pattern.
-    return (
-        <AuthProvider>
-            <LoginPageContent />
-        </AuthProvider>
     );
 }
