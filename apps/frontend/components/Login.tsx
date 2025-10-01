@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "@/lib/apiClient";
+import { AuthAPI } from "@/lib/api-client";
 
 type Role = 'admin' | 'user';
 
@@ -72,7 +73,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       console.log('[Login] submitting', { email, passLen: password.length });
 
       // Real authentication - call your actual API
-      const response = await apiClient.login(email, password);
+      const response = await AuthAPI.login(email, password);
       console.log('[Login] api login result', response);
 
       if (!response.ok) {
