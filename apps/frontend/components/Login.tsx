@@ -10,6 +10,7 @@ import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "@/lib/apiClient";
 import { AuthAPI } from "@/lib/api-client";
+import type { User } from "../types/user";
 
 type Role = 'admin' | 'user';
 

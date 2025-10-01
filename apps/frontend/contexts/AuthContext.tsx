@@ -6,6 +6,7 @@ import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
+import type { User } from '../types/user';
 
 // Client-safe logging functions
 const logAuthEvent = async (event: string, data?: any) => {
@@ -136,13 +137,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.ok) {
                 // Set user data from the response
-                const userData = response.data.user;
+                const userData: User = response.data.user;
                 clientAuthManager.setUser(userData);
                 setUser(userData);
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
-                    userId: userData.id
+                    userId: userData.user_id
                 });
             } else {
                 throw new Error('message' in response ? response.message : 'Login failed');

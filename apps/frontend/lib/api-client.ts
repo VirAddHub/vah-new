@@ -12,18 +12,7 @@ export function isOk<T>(r: ApiResponse<T> | unknown): r is ApiOk<T> {
     return !!r && typeof r === "object" && (r as UnknownRecord).ok === true;
 }
 
-// Match your backend fields (snake_case). Add/trim fields to match your app.
-export interface User {
-    id: string;                    // keep as string; backend often returns text ids
-    email: string;
-    name?: string;                 // display name
-    first_name?: string | null;
-    last_name?: string | null;
-    is_admin?: boolean;            // backend uses is_admin
-    role?: 'admin' | 'user';
-    kyc_status?: 'pending' | 'verified' | 'rejected';
-    // ...any other fields you expect (plan_id, created_at, etc.)
-}
+// User interface is now imported from ../types/user
 
 // Additional types used throughout the app
 export interface MailItem {
@@ -138,14 +127,12 @@ function normalizeUserPayload(input: unknown): User | null {
     if (!id || !email) return null;
 
     return {
-        id,
+        user_id: id,
         email,
-        name: u.name || `${first_name || ''} ${last_name || ''}`.trim() || undefined,
         first_name: first_name || null,
         last_name: last_name || null,
         is_admin: u.is_admin === true || u.role === 'admin',
         role: u.role || (u.is_admin ? 'admin' : 'user'),
-        kyc_status: u.kyc_status || 'pending',
     };
 }
 
@@ -267,69 +254,62 @@ export const apiClient = {
 };
 
 // Export AuthAPI for components that need it
-type WhoAmI = { id: string; email: string; role?: string; is_admin?: boolean; first_name?: string; last_name?: string };
-type LoginOk = { ok: true; data: { token: string; user: WhoAmI } };
+import type { User, Role } from '../types/user';
+
+// Normalize backend payload to our strict User type
+function normalizeUser(input: any): User {
+  const rawRole = typeof input?.role === 'string' ? input.role.toLowerCase() : undefined;
+  const role: Role = rawRole === 'admin' ? 'admin' : rawRole === 'user' ? 'user' : undefined;
+
+  return {
+    user_id: String(input?.user_id ?? input?.id ?? ''),
+    email: String(input?.email ?? ''),
+    role,
+    is_admin: Boolean(input?.is_admin),
+    first_name: input?.first_name ? String(input.first_name) : undefined,
+    last_name: input?.last_name ? String(input.last_name) : undefined,
+  };
+}
+
+type LoginOk = { ok: true; data: { token: string; user: User } };
 type Fail = { ok: false; message?: string; error?: string };
 
 export const AuthAPI = {
-    async login(email: string, password: string): Promise<LoginOk | Fail> {
-        const { res, data } = await api('/api/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password }),
-        });
+  async login(email: string, password: string): Promise<LoginOk | Fail> {
+    // NOTE: no leading /api here if api() already injects it
+    const { res, data } = await api('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
 
-        if (!res.ok || !data?.ok) {
-            const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-            return { ok: false, message: msg };
-        }
-
-        const token: string | undefined = data?.data?.token ?? data?.token;
-        if (!token) return { ok: false, message: 'No token in response' };
-
-        setToken(token);
-
-        // Fetch user profile immediately so callers get user + token
-        const who = await api('/api/auth/whoami', { method: 'GET' });
-        if (!who.res.ok || !who.data?.ok) {
-            const msg = (who.data && (who.data.message || who.data.error)) || `HTTP ${who.res.status}`;
-            return { ok: false, message: msg || 'Failed to fetch user after login' };
-        }
-
-    const rawUser = who.data.data as any;
-    const user: WhoAmI = {
-      id: rawUser.user_id || rawUser.id,
-      email: rawUser.email,
-      role: rawUser.role,
-      is_admin: rawUser.is_admin,
-      first_name: rawUser.first_name,
-      last_name: rawUser.last_name,
-    };
-
-    return { ok: true, data: { token, user } };
-    },
-
-  async whoami(): Promise<{ ok: true; data: WhoAmI } | Fail> {
-    const { res, data } = await api('/api/auth/whoami', { method: 'GET' });
     if (!res.ok || !data?.ok) {
-      const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-      return { ok: false, message: msg || 'Auth failed' };
+      return { ok: false, message: data?.message || data?.error || `HTTP ${res.status}` };
     }
-    
-    const rawUser = data.data as any;
-    const user: WhoAmI = {
-      id: rawUser.user_id || rawUser.id,
-      email: rawUser.email,
-      role: rawUser.role,
-      is_admin: rawUser.is_admin,
-      first_name: rawUser.first_name,
-      last_name: rawUser.last_name,
-    };
-    
-    return { ok: true, data: user };
+
+    const token: string | undefined = data?.data?.token ?? data?.token;
+    if (!token) return { ok: false, message: 'No token in response' };
+
+    setToken(token);
+
+    const who = await api('/auth/whoami', { method: 'GET' });
+    if (!who.res.ok || !who.data?.ok) {
+      return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
+    }
+
+    const user = normalizeUser(who.data.data);
+    return { ok: true, data: { token, user } };
   },
 
-    async logout() {
-        clearToken();
-        return { ok: true } as const;
-    },
+  async whoami(): Promise<{ ok: true; data: User } | Fail> {
+    const { res, data } = await api('/auth/whoami', { method: 'GET' });
+    if (!res.ok || !data?.ok) {
+      return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
+    }
+    return { ok: true, data: normalizeUser(data.data) };
+  },
+
+  async logout() {
+    clearToken();
+    return { ok: true } as const;
+  },
 };
