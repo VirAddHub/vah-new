@@ -307,6 +307,11 @@ async function start() {
     // Mount Postmark webhook FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
 
+    // JWT authentication middleware - extracts and verifies JWT tokens
+    const { authenticateJWT } = require('./middleware/auth');
+    app.use('/api', authenticateJWT);
+    logger.info('[middleware] JWT authentication middleware mounted');
+
     // Mount other routes
     app.use('/api/auth', authRouter);
     logger.info('[mount] /api/auth mounted');
