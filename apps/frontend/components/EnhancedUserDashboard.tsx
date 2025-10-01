@@ -268,7 +268,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await billingService.createRedirectFlow();
             if (response.ok) {
-                window.location.href = response.redirect_url;
+                window.location.href = response.data.redirect_url;
             } else {
                 throw new Error("Failed to create payment redirect");
             }
