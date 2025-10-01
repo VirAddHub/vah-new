@@ -47,7 +47,7 @@ export async function middleware(req: NextRequest) {
       });
 
       const isValidToken = whoamiResponse.ok;
-      
+
       if (!isValidToken) {
         // Token is invalid/expired, clear it and redirect to login
         const loginUrl = new URL('/login', req.url);

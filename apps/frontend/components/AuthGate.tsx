@@ -8,11 +8,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const { loading, isAuthenticated, isAdmin } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
-    
+
     useEffect(() => {
         // Wait for auth check to complete
         if (loading) return;
-        
+
         // If user is authenticated and on login page, redirect to dashboard
         if (isAuthenticated && pathname === '/login') {
             const destination = isAdmin ? '/admin/dashboard' : '/dashboard';
@@ -20,7 +20,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             router.replace(destination);
         }
     }, [loading, isAuthenticated, isAdmin, pathname, router]);
-    
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -31,6 +31,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             </div>
         );
     }
-    
+
     return <>{children}</>;
 }
