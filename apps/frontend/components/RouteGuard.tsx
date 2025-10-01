@@ -40,20 +40,9 @@ export function RouteGuard({ children, requireAuth = false, requireAdmin = false
         }
     }, [isAuthenticated, isAdmin, isLoading, requireAuth, requireAdmin, pathname, router]);
 
-    // Show loading while checking auth
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Don't render children if requirements not met
-    if (requireAuth && !isAuthenticated) return null;
+    // ✅ KEY FIX: Don't render anything while loading or redirecting
+    if (isLoading) return null;           // wait for auth to resolve
+    if (requireAuth && !isAuthenticated) return null;     // prevent paint before redirect
     if (requireAdmin && !isAdmin) return null;
     if (pathname.startsWith('/admin') && isAuthenticated && !isAdmin) return null;
 
