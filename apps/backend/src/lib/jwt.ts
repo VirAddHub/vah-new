@@ -37,11 +37,11 @@ try {
 const ALG = (process.env.JWT_ALG || 'HS256') as 'HS256' | 'RS256';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-// FIX: Removed `as const` and added an explicit type to prevent the readonly mismatch.
-const baseOpts: jwt.SignOptions = {
-  issuer: 'virtualaddresshub',
+// FIX: Removed the explicit `: jwt.SignOptions` type annotation.
+// This lets TypeScript infer the narrow, correct types, fixing both build errors.
+const baseOpts = { 
+  issuer: 'virtualaddresshub', 
   audience: 'vah-users',
-  algorithm: ALG,
 };
 
 export interface JWTPayload {
@@ -54,18 +54,21 @@ export interface JWTPayload {
 }
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  // Combine base options with the specific expiration for this token
-  return jwt.sign(payload, signKey, { ...baseOpts, expiresIn: JWT_EXPIRES_IN });
+  const options: jwt.SignOptions = {
+    ...baseOpts,
+    algorithm: ALG,
+    expiresIn: JWT_EXPIRES_IN,
+  };
+  return jwt.sign(payload, signKey, options);
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const verifyOptions: jwt.VerifyOptions = {
-      issuer: baseOpts.issuer,
-      audience: baseOpts.audience,
+    const options: jwt.VerifyOptions = {
+      ...baseOpts,
       algorithms: [ALG],
     };
-    return jwt.verify(token, verifyKey, verifyOptions) as JWTPayload;
+    return jwt.verify(token, verifyKey, options) as JWTPayload;
   } catch (error) {
     if (!(error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError)) {
       console.error('JWT verification encountered an unexpected error:', error);
@@ -76,11 +79,11 @@ export function verifyToken(token: string): JWTPayload | null {
 
 export function extractTokenFromHeader(authHeader?: string): string | null {
   if (!authHeader) return null;
-
+  
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return null;
   }
-
+  
   return parts[1];
 }
