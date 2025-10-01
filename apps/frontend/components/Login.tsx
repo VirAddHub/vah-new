@@ -73,22 +73,17 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       console.log('[Login] submitting', { email, passLen: password.length });
 
       // Real authentication - call your actual API
-      const response = await AuthAPI.login(email, password);
-      console.log('[Login] api login result', response);
+      const result = await AuthAPI.login(email, password);
+      console.log('[Login] api login result', result);
 
-      if (!response.ok) {
+      if (!result.ok) {
         // Handle specific error cases
-        if (response.status === 401) {
-          throw new Error('Invalid email or password');
-        } else if (response.status && response.status >= 500) {
-          throw new Error('Server error. Please try again.');
-        } else {
-          throw new Error(response.message || 'Login failed');
-        }
+        setError(result.message || 'Login failed');
+        return;
       }
 
-      // Now response.data is always { user: User }
-      const user = response.data.user;
+      // Now result.data is { token, user }
+      const { user } = result.data;
       const isAdmin = !!user?.is_admin;
 
       // Debug logging to see what we're getting
