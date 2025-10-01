@@ -1,23 +1,17 @@
-// Token management utilities for JWT authentication
-
-const TOKEN_KEY = 'vah_auth_token';
+// apps/frontend/lib/token-manager.ts
+const KEY = 'vah_jwt';
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
+  try { return window.localStorage.getItem(KEY); } catch { return null; }
 }
 
-export function setToken(token: string): void {
+export function setToken(token: string) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(TOKEN_KEY, token);
+  try { window.localStorage.setItem(KEY, token); } catch {}
 }
 
-export function removeToken(): void {
+export function clearToken() {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export function getAuthHeader(): { Authorization: string } | {} {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  try { window.localStorage.removeItem(KEY); } catch {}
 }
