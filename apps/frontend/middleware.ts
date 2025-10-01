@@ -1,36 +1,49 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+// middleware.ts
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const AUTH_COOKIE = "vah_jwt";
+export const config = {
+  // Only guard truly protected pages
+  matcher: ['/admin/:path*', '/dashboard'],
+};
+
+function isInternal(pathname: string) {
+  // Guard against internal Next.js paths, API routes, and assets
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') // General check for static files
+  );
+}
 
 export function middleware(req: NextRequest) {
-  const { pathname, origin, searchParams } = req.nextUrl;
-  const isAuthed = Boolean(req.cookies.get(AUTH_COOKIE)?.value);
+  const { pathname, search } = req.nextUrl;
 
-  const isAuthRoute =
-    pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/");
-  const isProtected =
-    pathname === "/dashboard" || pathname.startsWith("/dashboard/") ||
-    pathname === "/admin" || pathname.startsWith("/admin/");
+  if (isInternal(pathname)) return NextResponse.next();
 
-  if (isAuthed && isAuthRoute) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  // Check for JWT token in cookies (since middleware can't access localStorage)
+  const jwtToken = req.cookies.get('vah_jwt')?.value;
+  const hasValidToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined';
+  const isLogin = pathname === '/login';
+
+  // SCENARIO 1: Not logged in → Force to /login (with next parameter)
+  if (!hasValidToken && !isLogin) {
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('next', pathname + search);
+    const res = NextResponse.redirect(loginUrl);
+    res.headers.set('x-loop-guard', 'mw->login');
+    return res;
   }
 
-  if (!isAuthed && isProtected) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    if (pathname !== "/login") {
-      url.searchParams.set("next", pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""));
+  // SCENARIO 2: Logged in but landed on /login → Send them to next (or /dashboard)
+  if (hasValidToken && isLogin) {
+    const next = req.nextUrl.searchParams.get('next') || '/dashboard';
+    if (next !== pathname) { // Prevent redirecting to the page you are already on
+      const res = NextResponse.redirect(new URL(next, req.url));
+      res.headers.set('x-loop-guard', 'login->next');
+      return res;
     }
-    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ["/login", "/signup", "/auth/:path*", "/dashboard/:path*", "/admin/:path*"],
-};
