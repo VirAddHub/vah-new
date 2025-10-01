@@ -1,43 +1,80 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { EnhancedAdminDashboard } from '@/components/EnhancedAdminDashboard';
 
-import { EnhancedAdminDashboard } from '../../../components/EnhancedAdminDashboard';
-import { AuthProvider, useAuth } from '../../../contexts/AuthContext';
-import { RouteGuard } from '../../../components/RouteGuard';
+export default function AdminDashboardPage() {
+    const router = useRouter();
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-function AdminDashboardContent() {
-    const { logout } = useAuth();
+    useEffect(() => {
+        // Check if user is authenticated and is admin
+        const token = localStorage.getItem('vah_jwt');
+        const storedUser = localStorage.getItem('vah_user');
 
-    const handleLogout = async () => {
-        await logout();
-        window.location.href = '/login';
+        if (!token) {
+            // Not authenticated, redirect to login
+            router.push('/login');
+            return;
+        }
+
+        if (storedUser) {
+            try {
+                const userData = JSON.parse(storedUser);
+                // Check if user is admin
+                if (!userData.is_admin && userData.role !== 'admin') {
+                    // Not an admin, redirect to user dashboard
+                    router.push('/dashboard');
+                    return;
+                }
+                setUser(userData);
+            } catch (e) {
+                console.error('Failed to parse stored user:', e);
+                router.push('/login');
+                return;
+            }
+        }
+
+        setLoading(false);
+    }, [router]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading admin dashboard...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null; // Will redirect
+    }
+
+    const handleLogout = () => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        router.push('/login');
     };
 
-    const handleNavigate = (page: string, data?: unknown) => {
-        // Handle navigation within the admin dashboard
-        console.log('Navigate to:', page, data);
+    const handleNavigate = (page: string) => {
+        console.log('Navigate to:', page);
     };
 
     const handleGoBack = () => {
-        window.location.href = '/';
+        router.push('/');
     };
 
     return (
-        <RouteGuard requireAuth requireAdmin>
-            <EnhancedAdminDashboard
-                onLogout={handleLogout}
-                onNavigate={handleNavigate}
-                onGoBack={handleGoBack}
-            />
-        </RouteGuard>
-    );
-}
-
-export default function AdminDashboardPage() {
-    return (
-        <AuthProvider>
-            <AdminDashboardContent />
-        </AuthProvider>
+        <EnhancedAdminDashboard
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            onGoBack={handleGoBack}
+        />
     );
 }
