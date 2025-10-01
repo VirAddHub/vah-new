@@ -8,10 +8,10 @@ export function getToken(): string | null {
 
 export function setToken(token: string) {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.setItem(KEY, token); } catch {}
+  try { window.localStorage.setItem(KEY, token); } catch { }
 }
 
 export function clearToken() {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.removeItem(KEY); } catch {}
+  try { window.localStorage.removeItem(KEY); } catch { }
 }

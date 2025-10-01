@@ -1,6 +1,7 @@
 // apps/frontend/lib/api.ts
 import { API } from './api-base';
 import { getToken } from './token-manager';
+import { safeJson } from './http';
 
 export async function api(path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
@@ -19,12 +20,16 @@ export async function api(path: string, init: RequestInit = {}) {
   }
 
   const res = await fetch(url, { ...init, headers, credentials: 'include' });
-  return res;
+
+  // Don't throw here; let callers read both json + status
+  const data = await safeJson(res);
+  return { res, data };
 }
 
 // Legacy compatibility exports
 export async function apiFetch(path: string, init: RequestInit = {}) {
-  return api(path, init);
+  const { res } = await api(path, init);
+  return res;
 }
 
 export async function apiJson<T = any>(
@@ -37,16 +42,16 @@ export async function apiJson<T = any>(
   } = {}
 ): Promise<T> {
   const { method = options.body ? "POST" : "GET", body, init, throwOnError = true } = options;
-  const res = await api(path, {
+  const { res, data } = await api(path, {
     method,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     ...init,
   });
   if (throwOnError && !res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`API ${method} ${path} -> ${res.status} ${res.statusText} ${text}`);
+    const errorMsg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    throw new Error(`API ${method} ${path} -> ${res.status} ${res.statusText} ${errorMsg}`);
   }
-  try { return (await res.json()) as T; } catch { return undefined as T; }
+  return data as T;
 }
 
 export async function postJson<T = any>(path: string, body: any): Promise<T> {

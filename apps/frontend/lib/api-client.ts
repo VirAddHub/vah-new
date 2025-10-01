@@ -61,26 +61,17 @@ export function safe<T>(v: any, fallback: T): T {
 
 // ---- Legacy API Client (for backward compatibility) ----
 
-// Clean API URL construction helper
-const API = (path: string) => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://vah-api-staging.onrender.com';
-    // Don't add /api if path already starts with /api
-    if (path.startsWith('/api/')) {
-        return `${base.replace(/\/+$/, '')}${path}`;
-    }
-    return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
-};
+import { api } from './api';
 
 // Simple fetch wrapper for legacy compatibility with JWT support
 async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-        const url = path.startsWith('http') ? path : API(path);
         const token = getToken();
         const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
-        
+
         // Debug logging for API requests
         if (path.includes('/api/auth/')) {
-            console.log('🌐 API DEBUG - Making request to:', url);
+            console.log('🌐 API DEBUG - Making request to:', path);
             console.log('🌐 API DEBUG - Auth header:', authHeader);
             console.log('🌐 API DEBUG - Full headers:', {
                 'Content-Type': 'application/json',
@@ -88,20 +79,8 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
                 ...init.headers,
             });
         }
-        
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            ...(authHeader.Authorization ? authHeader : {}),
-            ...(init.headers as Record<string, string> || {}),
-        };
-        
-        const res = await fetch(url, {
-            credentials: 'include',
-            headers,
-            ...init,
-        });
 
-        const data = await res.json();
+        const { res, data } = await api(path, init);
 
         if (!res.ok) {
             // Handle 401 errors by clearing token and redirecting to login
@@ -112,7 +91,8 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
                     window.location.href = '/login?expired=1';
                 }
             }
-            return { ok: false, message: data.message || res.statusText, status: res.status };
+            const errorMsg = (data && (data.message || data.error)) || res.statusText;
+            return { ok: false, message: errorMsg, status: res.status };
         }
 
         return { ok: true, data };
@@ -210,12 +190,12 @@ export const apiClient = {
             console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
-            
+
             // Verify token was stored
             const storedToken = getToken();
             console.log('🔍 TOKEN DEBUG - Verification - stored token exists:', !!storedToken);
             console.log('🔍 TOKEN DEBUG - Stored token matches:', storedToken === token);
-            
+
             // Sanity check: verify token works with whoami
             try {
                 console.log('🔍 WHOAMI DEBUG - Testing token with whoami endpoint...');
@@ -289,38 +269,31 @@ export const apiClient = {
 // Export AuthAPI for components that need it
 export const AuthAPI = {
     async login(email: string, password: string) {
-        const res = await legacyReq('/api/auth/login', {
+        const { res, data } = await api('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
 
-        // Enhanced debug logging for login response
-        console.log('🔍 LOGIN DEBUG - Full response:', res);
-        console.log('🔍 LOGIN DEBUG - Response structure:', {
-            ok: res.ok,
-            status: 'status' in res ? res.status : 'N/A',
-            hasData: res.ok && !!res.data,
-            hasToken: res.ok && res.data && res.data.data && 'token' in res.data.data,
-            dataKeys: res.ok && res.data ? Object.keys(res.data) : [],
-            dataDataKeys: res.ok && res.data && res.data.data ? Object.keys(res.data.data) : [],
-            fullData: res.ok ? res.data : null
-        });
-
-        // If login successful, store the JWT token
-        if (res.ok && res.data && res.data.data && 'token' in res.data.data) {
-            const token = res.data.data.token as string;
-            console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
-            setToken(token);
-            console.log('✅ JWT token stored successfully in localStorage');
-        } else {
-            console.error('❌ LOGIN FAILED - No token in response:', res);
+        if (!res.ok || !data?.ok) {
+            const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            throw new Error(msg || 'Login failed');
         }
 
-        return res;
+        // Backend shape: { ok: true, data: { ..., token } }
+        const token: string | undefined = data?.data?.token ?? data?.token;
+        if (!token) throw new Error('No token in response');
+        setToken(token);
+
+        return data as ApiResponse<{ token: string }>;
     },
 
     async whoami() {
-        return legacyReq('/api/auth/whoami', { method: 'GET' });
+        const { res, data } = await api('/api/auth/whoami', { method: 'GET' });
+        if (!res.ok || !data?.ok) {
+            const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            throw new Error(msg || 'Auth failed');
+        }
+        return data as ApiResponse<{ user_id: string; email: string; role?: string; is_admin?: boolean }>;
     },
 
     async logout() {
