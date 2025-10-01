@@ -1,57 +1,77 @@
-// CSRF Protection utilities
-// This implements the Double Submit Cookie pattern for CSRF protection
+/**
+ * csrf-protection.ts
+ *
+ * Implements the Double Submit Cookie pattern for CSRF protection.
+ * A CSRF token is stored in both localStorage (or memory) and a cookie.
+ * On mutating API requests, the client sends the token in a header.
+ * The server-side middleware validates that the header token matches the cookie token.
+ */
+import { nanoid } from 'nanoid';
 
-const CSRF_TOKEN_KEY = 'vah_csrf_token';
+// --- Token Generation ---
 
 /**
- * Generate a cryptographically secure random token
+ * Generates a cryptographically secure, URL-safe string to be used as a CSRF token.
+ * @returns {string} A new CSRF token.
  */
-function generateCSRFToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+export function generateCSRFToken(): string {
+  return nanoid(32); // Generates a 32-character secure random string
 }
 
+// --- Token Storage (Client-Side) ---
+
+const CSRF_TOKEN_KEY = 'csrf_token';
+
 /**
- * Get or create CSRF token
+ * Stores the CSRF token in client-side storage (e.g., localStorage).
+ * @param {string} token The CSRF token to store.
  */
-export function getCSRFToken(): string {
-  if (typeof window === 'undefined') return '';
-  
-  let token = localStorage.getItem(CSRF_TOKEN_KEY);
-  if (!token) {
-    token = generateCSRFToken();
+export function storeCSRFToken(token: string): void {
+  try {
     localStorage.setItem(CSRF_TOKEN_KEY, token);
-    // Also set as cookie for server-side validation
-    document.cookie = `vah_csrf_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+  } catch (error) {
+    console.warn('localStorage is not available. CSRF token will be stored in memory.');
+    // Fallback to in-memory storage if localStorage is blocked or unavailable
+    (globalThis as any)[CSRF_TOKEN_KEY] = token;
   }
-  return token;
 }
 
 /**
- * Clear CSRF token (on logout)
+ * Retrieves the CSRF token from client-side storage.
+ * @returns {string | null} The stored CSRF token, or null if not found.
  */
-export function clearCSRFToken(): void {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.removeItem(CSRF_TOKEN_KEY);
-  document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+export function getStoredCSRFToken(): string | null {
+  try {
+    return localStorage.getItem(CSRF_TOKEN_KEY);
+  } catch (error) {
+    return (globalThis as any)[CSRF_TOKEN_KEY] || null;
+  }
 }
 
 /**
- * Add CSRF token to request headers
+ * Clears the CSRF token from client-side storage.
  */
-export function addCSRFHeader(headers: HeadersInit = {}): HeadersInit {
-  const token = getCSRFToken();
-  return {
-    ...headers,
-    'X-CSRF-Token': token,
-  };
+export function clearStoredCSRFToken(): void {
+  try {
+    localStorage.removeItem(CSRF_TOKEN_KEY);
+  } catch (error) {
+    delete (globalThis as any)[CSRF_TOKEN_KEY];
+  }
 }
 
+// --- Token Validation ---
+
 /**
- * Validate CSRF token (for server-side use)
+ * Validates that the request token (from header) matches the cookie token.
+ * This is the core logic of the Double Submit Cookie pattern.
+ * @param {string} requestToken The token sent in the request header.
+ * @param {string} cookieToken The token sent in the cookie.
+ * @returns {boolean} True if the tokens are valid and match, otherwise false.
  */
 export function validateCSRFToken(requestToken: string, cookieToken: string): boolean {
-  return requestToken && cookieToken && requestToken === cookieToken;
+  // REVISED: This logic now guarantees a boolean return value.
+  if (!requestToken || !cookieToken) {
+    return false; // If either token is missing, validation fails.
+  }
+  return requestToken === cookieToken; // Return the result of the strict comparison.
 }
