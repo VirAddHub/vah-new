@@ -23,7 +23,9 @@ export function Navigation({ onNavigate }: NavigationProps) {
     ];
 
     const handleNavClick = (page: string) => {
-        if (page === 'dashboard' || page === 'admin') {
+        if (page === 'login') {
+            window.location.href = '/login';
+        } else if (page === 'dashboard' || page === 'admin') {
             window.location.href = '/login';
         } else if (page === 'signup') {
             window.location.href = '/signup';

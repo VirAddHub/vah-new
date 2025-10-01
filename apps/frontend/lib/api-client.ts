@@ -1,8 +1,7 @@
 // ---- Types ----------------------------------------------------
 
 import { UnknownRecord } from './types';
-import { setToken, clearToken, getToken } from './token-manager';
-import { setStoredUser } from './session';
+import { setToken, clearToken, getToken, setStoredUser } from './token-manager';
 import { addCSRFHeader } from './csrf-protection';
 
 export type ApiOk<T> = { ok: true; data: T };
