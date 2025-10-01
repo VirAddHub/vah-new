@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader } from '../lib/jwt';
+import { getPool } from '../server/db';
 
 /**
  * Optional JWT authentication middleware
@@ -31,7 +32,29 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         is_admin: payload.is_admin
     };
     console.log('[JWT] Authenticated user:', req.user.id, req.user.email, 'is_admin:', req.user.is_admin);
+
+    // Update last_active_at asynchronously (don't wait for it)
+    updateUserActivity(req.user.id).catch(err => {
+        console.error('[Activity] Failed to update last_active_at:', err);
+    });
+
     next();
+}
+
+/**
+ * Update user's last activity timestamp
+ */
+async function updateUserActivity(userId: number): Promise<void> {
+    try {
+        const pool = getPool();
+        await pool.query(
+            'UPDATE "user" SET last_active_at = $1 WHERE id = $2',
+            [Date.now(), userId]
+        );
+    } catch (error) {
+        // Silently fail - don't disrupt the request
+        console.error('[Activity] Error updating user activity:', error);
+    }
 }
 
 /**

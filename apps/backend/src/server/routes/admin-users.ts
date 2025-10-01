@@ -20,6 +20,9 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
     const offset = (pageNum - 1) * limitNum;
 
     try {
+        // Consider user online if active in last 5 minutes
+        const onlineThreshold = Date.now() - (5 * 60 * 1000);
+
         let query = `
             SELECT
                 u.id,
@@ -30,28 +33,36 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 u.plan_status,
                 u.kyc_status,
                 u.created_at,
-                u.updated_at
+                u.updated_at,
+                u.last_active_at,
+                CASE
+                    WHEN u.last_active_at > ${onlineThreshold} THEN 'online'
+                    ELSE 'offline'
+                END as activity_status
             FROM "user" u
         `;
 
         const params: any[] = [];
         let paramIndex = 1;
 
+        // Filter out soft-deleted users
+        let whereClause = 'WHERE u.deleted_at IS NULL';
+
         if (search) {
-            query += ` WHERE (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+            whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
             params.push(`%${search}%`);
             paramIndex++;
         }
 
-        query += ` ORDER BY u.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        query += ` ${whereClause} ORDER BY u.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         params.push(limitNum, offset);
 
         const result = await pool.query(query, params);
 
-        // Get total count
+        // Get total count (excluding deleted users)
         const countQuery = search
-            ? 'SELECT COUNT(*) FROM "user" WHERE (email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1)'
-            : 'SELECT COUNT(*) FROM "user"';
+            ? 'SELECT COUNT(*) FROM "user" WHERE deleted_at IS NULL AND (email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1)'
+            : 'SELECT COUNT(*) FROM "user" WHERE deleted_at IS NULL';
         const countParams = search ? [`%${search}%`] : [];
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
