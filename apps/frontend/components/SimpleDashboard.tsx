@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../lib/apiClient";
+import { mailService, forwardingService, profileService, billingService, plansService } from "../lib/services";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
-import { LogOut, Mail, Truck, Settings, RefreshCw } from "lucide-react";
+import { LogOut, Mail, Truck, Settings, RefreshCw, User, CreditCard, FileText } from "lucide-react";
 
 interface SimpleDashboardProps {
     onLogout: () => void;
@@ -20,30 +21,95 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [userData, setUserData] = useState<any>(null);
+    const [mailItems, setMailItems] = useState<any[]>([]);
+    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
+    const [profile, setProfile] = useState<any>(null);
+    const [billing, setBilling] = useState<any>(null);
+    const [plans, setPlans] = useState<any[]>([]);
 
     useEffect(() => {
-        const loadUserData = async () => {
+        const loadDashboardData = async () => {
             try {
                 setLoading(true);
                 setError(null);
                 
-                // Get user data from whoami endpoint
-                const response = await apiClient.whoami();
-                if (response.ok) {
-                    setUserData(response.data?.user);
-                } else {
-                    setError('Failed to load user data');
+                // Load user data and all dashboard information using the service layer
+                const [
+                    whoamiResponse,
+                    mailResponse,
+                    forwardingResponse,
+                    profileResponse,
+                    billingResponse,
+                    plansResponse
+                ] = await Promise.allSettled([
+                    apiClient.whoami(),
+                    mailService.getMailItems(),
+                    forwardingService.getForwardingRequests(),
+                    profileService.getProfile(),
+                    billingService.getBillingOverview(),
+                    plansService.getPlans()
+                ]);
+
+                // Handle user data
+                if (whoamiResponse.status === 'fulfilled' && whoamiResponse.value.ok) {
+                    const userData = whoamiResponse.value.data?.user;
+                    if (userData) {
+                        setUserData(userData);
+                        setProfile({
+                            id: userData.id,
+                            email: userData.email,
+                            name: userData.name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+                            is_admin: userData.is_admin,
+                            role: userData.role
+                        });
+                    }
                 }
+
+                // Handle mail items
+                if (mailResponse.status === 'fulfilled' && mailResponse.value.ok) {
+                    setMailItems(mailResponse.value.data || []);
+                } else {
+                    console.warn('Failed to load mail items:', mailResponse.status === 'rejected' ? mailResponse.reason : 'API error');
+                }
+
+                // Handle forwarding requests
+                if (forwardingResponse.status === 'fulfilled' && forwardingResponse.value.ok) {
+                    setForwardingRequests(forwardingResponse.value.data || []);
+                } else {
+                    console.warn('Failed to load forwarding requests:', forwardingResponse.status === 'rejected' ? forwardingResponse.reason : 'API error');
+                }
+
+                // Handle profile data
+                if (profileResponse.status === 'fulfilled' && profileResponse.value.ok) {
+                    setProfile(profileResponse.value.data);
+                } else {
+                    console.warn('Failed to load profile:', profileResponse.status === 'rejected' ? profileResponse.reason : 'API error');
+                }
+
+                // Handle billing data
+                if (billingResponse.status === 'fulfilled' && billingResponse.value.ok) {
+                    setBilling(billingResponse.value);
+                } else {
+                    console.warn('Failed to load billing:', billingResponse.status === 'rejected' ? billingResponse.reason : 'API error');
+                }
+
+                // Handle plans data
+                if (plansResponse.status === 'fulfilled' && plansResponse.value.ok) {
+                    setPlans(plansResponse.value.data || []);
+                } else {
+                    console.warn('Failed to load plans:', plansResponse.status === 'rejected' ? plansResponse.reason : 'API error');
+                }
+
             } catch (err) {
-                console.error('Failed to load user data:', err);
-                setError('Failed to load user data');
+                console.error('Failed to load dashboard data:', err);
+                setError('Failed to load dashboard data');
             } finally {
                 setLoading(false);
             }
         };
 
         if (isAuthenticated) {
-            loadUserData();
+            loadDashboardData();
         }
     }, [isAuthenticated]);
 
@@ -100,7 +166,7 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                     </Alert>
                 )}
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {/* Welcome Card */}
                     <Card>
                         <CardHeader>
@@ -140,8 +206,17 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                                 Manage your virtual mail
                             </p>
                             <div className="mt-4">
-                                <Badge variant="secondary">0 items</Badge>
+                                <Badge variant="secondary">{mailItems.length} items</Badge>
                             </div>
+                            {mailItems.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                    {mailItems.slice(0, 3).map((item) => (
+                                        <div key={item.id} className="text-xs text-muted-foreground">
+                                            {item.subject || 'No subject'} - {new Date(item.received_at).toLocaleDateString()}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <Button variant="outline" size="sm" className="mt-2">
                                 View Mail
                             </Button>
@@ -161,10 +236,107 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                                 Manage forwarding requests
                             </p>
                             <div className="mt-4">
-                                <Badge variant="secondary">0 requests</Badge>
+                                <Badge variant="secondary">{forwardingRequests.length} requests</Badge>
                             </div>
+                            {forwardingRequests.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                    {forwardingRequests.slice(0, 3).map((request) => (
+                                        <div key={request.id} className="text-xs text-muted-foreground">
+                                            {request.to_name} - <Badge variant="outline" className="text-xs">{request.status}</Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <Button variant="outline" size="sm" className="mt-2">
                                 View Requests
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Profile Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <User className="h-5 w-5" />
+                                Profile
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                                Manage your profile
+                            </p>
+                            <div className="mt-4 space-y-1">
+                                <div className="text-xs">
+                                    <strong>Name:</strong> {profile?.first_name} {profile?.last_name}
+                                </div>
+                                <div className="text-xs">
+                                    <strong>Company:</strong> {profile?.company_name || 'Not set'}
+                                </div>
+                                <div className="text-xs">
+                                    <strong>Phone:</strong> {profile?.phone || 'Not set'}
+                                </div>
+                            </div>
+                            <Button variant="outline" size="sm" className="mt-2">
+                                Edit Profile
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Billing Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <CreditCard className="h-5 w-5" />
+                                Billing
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                                Manage your subscription
+                            </p>
+                            <div className="mt-4 space-y-1">
+                                <div className="text-xs">
+                                    <strong>Plan:</strong> {billing?.current_plan || 'Free'}
+                                </div>
+                                <div className="text-xs">
+                                    <strong>Next Billing:</strong> {billing?.next_billing_date ? new Date(billing.next_billing_date).toLocaleDateString() : 'N/A'}
+                                </div>
+                                <div className="text-xs">
+                                    <strong>Amount Due:</strong> {billing?.amount_due ? `£${billing.amount_due}` : '£0'}
+                                </div>
+                            </div>
+                            <Button variant="outline" size="sm" className="mt-2">
+                                Manage Billing
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Plans Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <FileText className="h-5 w-5" />
+                                Available Plans
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                                View subscription plans
+                            </p>
+                            <div className="mt-4">
+                                <Badge variant="secondary">{plans.length} plans available</Badge>
+                            </div>
+                            {plans.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                    {plans.slice(0, 3).map((plan) => (
+                                        <div key={plan.id} className="text-xs text-muted-foreground">
+                                            {plan.name} - £{plan.price_monthly}/month
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <Button variant="outline" size="sm" className="mt-2">
+                                View Plans
                             </Button>
                         </CardContent>
                     </Card>

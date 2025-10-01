@@ -1,0 +1,70 @@
+// lib/services/profile.service.ts
+// User profile management API service
+
+import { api } from '../api';
+
+export interface UserProfile {
+    id: number;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    company_name?: string;
+    forwarding_address?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export const profileService = {
+    /**
+     * Get current user profile
+     */
+    async getProfile(): Promise<{ ok: boolean; data: UserProfile }> {
+        const { data } = await api('/api/profile', { method: 'GET' });
+        return data;
+    },
+
+    /**
+     * Update user profile
+     */
+    async updateProfile(updates: Partial<UserProfile>): Promise<{ ok: boolean; data: UserProfile }> {
+        const { data } = await api('/api/profile', {
+            method: 'POST',
+            body: JSON.stringify(updates),
+        });
+        return data;
+    },
+
+    /**
+     * Update forwarding address
+     */
+    async updateForwardingAddress(address: string): Promise<{ ok: boolean; forwarding_address: string }> {
+        const { data } = await api('/api/profile/address', {
+            method: 'PUT',
+            body: JSON.stringify({ forwarding_address: address }),
+        });
+        return data;
+    },
+
+    /**
+     * Request password reset
+     */
+    async requestPasswordReset(email: string): Promise<{ ok: boolean; debug_token?: string }> {
+        const { data } = await api('/api/profile/reset-password-request', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
+        return data;
+    },
+
+    /**
+     * Reset password with token
+     */
+    async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean }> {
+        const { data } = await api('/api/profile/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ token, password: newPassword }),
+        });
+        return data;
+    },
+};

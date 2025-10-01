@@ -3,6 +3,16 @@
 import { useToast } from "./ui/use-toast";
 import { useMemo, useState, useEffect } from "react";
 import { apiClient, safe } from "../lib/apiClient";
+import {
+    mailService,
+    forwardingService,
+    billingService,
+    profileService,
+    kycService,
+    supportService,
+    plansService,
+    emailPrefsService
+} from "../lib/services";
 import { VAHLogo } from "./VAHLogo";
 
 import { Button } from "./ui/button";
@@ -63,7 +73,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load data on mount
+    // Load data on mount using new service layer
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -72,7 +82,6 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     mailResponse,
                     profileResponse,
                     subscriptionResponse,
-                    ticketsResponse,
                     forwardingResponse,
                     billingResponse,
                     invoicesResponse,
@@ -80,53 +89,41 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     kycResponse,
                     emailPrefsResponse
                 ] = await Promise.all([
-                    apiClient.getMailItems(),
-                    apiClient.getProfile(),
-                    apiClient.getSubscriptionStatusUser(),
-                    apiClient.getSupportTickets(),
-                    apiClient.getForwardingRequests(),
-                    apiClient.getBilling(),
-                    apiClient.getInvoicesUser(),
-                    apiClient.getPlans(),
-                    apiClient.getKycStatus(),
-                    apiClient.getEmailPrefs()
+                    mailService.getMailItems(),
+                    profileService.getProfile(),
+                    billingService.getSubscriptionStatus(),
+                    forwardingService.getForwardingRequests(),
+                    billingService.getBillingOverview(),
+                    billingService.getInvoices(),
+                    plansService.getPlans(),
+                    kycService.getStatus(),
+                    emailPrefsService.getPreferences()
                 ]);
 
                 // Handle data with correct shapes using safe helper
                 if (mailResponse.ok) {
-                    const mailData = mailResponse.data as { items?: any[] };
-                    setMailItems(safe(mailData?.items, []));
+                    setMailItems(safe(mailResponse.data, []));
                 }
                 if (profileResponse.ok) {
-                    const profileData = profileResponse.data as { user?: any };
-                    setProfile(safe(profileData?.user, profileResponse.data));
+                    setProfile(profileResponse.data);
                 }
                 if (subscriptionResponse.ok) {
-                    const subData = subscriptionResponse.data as { subscription?: any };
-                    setSubscription(safe(subData?.subscription, subscriptionResponse.data));
-                }
-                if (ticketsResponse.ok) {
-                    const ticketsData = ticketsResponse.data as { items?: any[] };
-                    setSupportTickets(safe(ticketsData?.items, []));
+                    setSubscription(subscriptionResponse.data);
                 }
                 if (forwardingResponse.ok) {
-                    const forwardingData = forwardingResponse.data as { items?: any[] };
-                    setForwardingRequests(safe(forwardingData?.items, []));
+                    setForwardingRequests(safe(forwardingResponse.data, []));
                 }
                 if (billingResponse.ok) {
-                    const billingData = billingResponse.data as { subscription?: any };
-                    setBilling(safe(billingData?.subscription, billingResponse.data));
+                    setBilling(billingResponse.data);
                 }
                 if (invoicesResponse.ok) {
-                    const invoicesData = invoicesResponse.data as { items?: any[] };
-                    setInvoices(safe(invoicesData?.items, []));
+                    setInvoices(safe(invoicesResponse.data, []));
                 }
                 if (plansResponse.ok) {
-                    const plansData = plansResponse.data as { items?: any[] };
-                    setPlans(safe(plansData?.items, []));
+                    setPlans(safe(plansResponse.data, []));
                 }
-                if (kycResponse.ok) setKycStatus(kycResponse.data as any);
-                if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.data);
+                if (kycResponse.ok) setKycStatus(kycResponse.data);
+                if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.prefs);
             } catch (err) {
                 setError('Failed to load data');
                 console.error('Error loading data:', err);
@@ -137,28 +134,28 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         loadData();
     }, []);
 
-    // Refetch functions
+    // Refetch functions using new service layer
     const refetchMail = () =>
-        apiClient.getMailItems().then(r => r.ok && setMailItems(r.data.items));
+        mailService.getMailItems().then(r => r.ok && setMailItems(r.data));
 
     const refetchProfile = () =>
-        apiClient.getProfile().then(r => r.ok && setProfile(r.data.user));
+        profileService.getProfile().then(r => r.ok && setProfile(r.data));
 
     const refetchSubscription = () =>
-        apiClient.getSubscriptionStatusUser().then(r => r.ok && setSubscription(r.data.subscription));
+        billingService.getSubscriptionStatus().then(r => r.ok && setSubscription(r.data));
 
     const refetchTickets = () =>
-        apiClient.getSupportTickets().then(r => r.ok && setSupportTickets(r.data.items));
+        supportService.getTickets().then(r => r.ok && setSupportTickets(r.data));
     const refetchForwarding = () =>
-        apiClient.getForwardingRequests().then(r => r.ok && setForwardingRequests(r.data.items));
-    const refetchBilling = () => apiClient.getBilling().then(r => r.ok && setBilling(r.data));
+        forwardingService.getForwardingRequests().then(r => r.ok && setForwardingRequests(r.data));
+    const refetchBilling = () => billingService.getBillingOverview().then(r => r.ok && setBilling(r.data));
     const refetchInvoices = () =>
-        apiClient.getInvoicesUser().then(r => r.ok && setInvoices(r.data.items));
+        billingService.getInvoices().then(r => r.ok && setInvoices(r.data));
     const refetchPlans = () =>
-        apiClient.getPlans().then(r => r.ok && setPlans(r.data.items));
+        plansService.getPlans().then(r => r.ok && setPlans(r.data));
     const refetchKyc = () =>
-        apiClient.getKycStatus().then(r => r.ok && setKycStatus(r.data));
-    const refetchEmailPrefs = () => apiClient.getEmailPrefs().then(r => r.ok && setEmailPrefs(r.data));
+        kycService.getStatus().then(r => r.ok && setKycStatus(r.data));
+    const refetchEmailPrefs = () => emailPrefsService.getPreferences().then(r => r.ok && setEmailPrefs(r.prefs));
 
     // Derived state
     const kycStatusValue = kycStatus?.status || profile?.kycStatus || "not_started";
@@ -197,9 +194,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const openMail = async (id: string) => {
         try {
-            const response = await apiClient.getMailItem(id);
+            const response = await mailService.getMailItem(Number(id));
             if (response.ok) {
-                await apiClient.markMailRead(id);
+                await mailService.updateMailItem(Number(id), { is_read: true });
                 refetchMail();
                 toast({ title: "Success", description: `Opened "${response.data.description ?? "Mail"}".` });
             } else {
@@ -212,10 +209,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const downloadMailPdf = async (id: string) => {
         try {
-            const response = await apiClient.getMailDownloadLink(id);
+            const response = await mailService.getScanUrl(Number(id));
             if (response.ok) {
                 const a = document.createElement("a");
-                a.href = response.data.url;
+                a.href = response.url;
                 a.download = `mail-${id}.pdf`;
                 document.body.appendChild(a);
                 a.click();
@@ -247,9 +244,13 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Forwarding Management
     const createForwardingRequest = async (mailItemId: string, destinationAddress: string) => {
         try {
-            const response = await apiClient.createForwardingRequest({
-                mailItemId,
-                destinationAddress
+            const response = await forwardingService.createForwardingRequest({
+                letter_id: Number(mailItemId),
+                to_name: 'User',
+                address1: destinationAddress,
+                city: '',
+                postal: '',
+                country: 'GB'
             });
             if (response.ok) {
                 refetchForwarding();
@@ -265,9 +266,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Billing Management
     const createPaymentRedirect = async (planId: string) => {
         try {
-            const response = await apiClient.createPaymentRedirect({ planId });
+            const response = await billingService.createRedirectFlow();
             if (response.ok) {
-                window.location.href = response.data.url;
+                window.location.href = response.redirect_url;
             } else {
                 throw new Error("Failed to create payment redirect");
             }
@@ -278,9 +279,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const downloadInvoice = async (invoiceId: string) => {
         try {
-            const response = await apiClient.getInvoiceLinkUser(invoiceId);
+            const response = await billingService.getInvoiceLink(Number(invoiceId));
             if (response.ok) {
-                window.open(response.data.url, '_blank');
+                window.open(response.url, '_blank');
                 toast({ title: "Download", description: "Opening invoice..." });
             } else {
                 throw new Error("Failed to get invoice link");
@@ -293,7 +294,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Support Ticket Management
     const createSupportTicket = async (subject: string, message: string) => {
         try {
-            const response = await apiClient.createSupportTicket({ subject, message });
+            const response = await supportService.createTicket({ subject, message });
             if (response.ok) {
                 refetchTickets();
                 toast({ title: "Success", description: "Support ticket created" });
@@ -307,7 +308,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const closeSupportTicket = async (ticketId: string) => {
         try {
-            const response = await apiClient.closeSupportTicket(ticketId);
+            const response = await supportService.closeTicket(Number(ticketId));
             if (response.ok) {
                 refetchTickets();
                 toast({ title: "Success", description: "Support ticket closed" });
@@ -322,7 +323,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Email Preferences Management
     const updateEmailPrefs = async (preferences: any) => {
         try {
-            const response = await apiClient.patch('/api/email-prefs', preferences);
+            const response = await emailPrefsService.updatePreferences(preferences);
             if (response.ok) {
                 refetchEmailPrefs();
                 toast({ title: "Success", description: "Email preferences updated" });
@@ -337,7 +338,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     // Profile Management
     const updateProfile = async (profileData: any) => {
         try {
-            const response = await apiClient.patch('/api/profile', profileData);
+            const response = await profileService.updateProfile(profileData);
             if (response.ok) {
                 refetchProfile();
                 toast({ title: "Success", description: "Profile updated" });
