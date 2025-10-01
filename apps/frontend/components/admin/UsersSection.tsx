@@ -18,6 +18,8 @@ type AdminUser = {
   kyc_status?: string;
   created_at?: string;
   deleted_at?: string;
+  last_active_at?: number;
+  activity_status?: 'online' | 'offline';
 };
 
 interface UsersSectionProps {
@@ -228,6 +230,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Activity</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>KYC</TableHead>
@@ -238,7 +241,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             <TableBody>
               {paginatedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground">
+                  <TableCell colSpan={8} className="text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
@@ -248,6 +251,14 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                     <TableCell>{u.email}</TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${u.activity_status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <span className="text-xs text-muted-foreground">
+                          {u.activity_status === 'online' ? 'Online' : u.last_active_at ? new Date(u.last_active_at).toLocaleString() : 'Never'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.status === "active" ? "default" : "secondary"}>
