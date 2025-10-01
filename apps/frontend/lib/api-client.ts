@@ -267,38 +267,46 @@ export const apiClient = {
 };
 
 // Export AuthAPI for components that need it
-type WhoAmI = { user_id: string; email: string; role?: string; is_admin?: boolean; first_name?: string; last_name?: string };
+type WhoAmI = { id: string; email: string; role?: string; is_admin?: boolean; first_name?: string; last_name?: string };
 type LoginOk = { ok: true; data: { token: string; user: WhoAmI } };
 type Fail = { ok: false; message?: string; error?: string };
 
 export const AuthAPI = {
-  async login(email: string, password: string): Promise<LoginOk | Fail> {
-    const { res, data } = await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+    async login(email: string, password: string): Promise<LoginOk | Fail> {
+        const { res, data } = await api('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+        });
 
-    if (!res.ok || !data?.ok) {
-      const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-      return { ok: false, message: msg };
-    }
+        if (!res.ok || !data?.ok) {
+            const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            return { ok: false, message: msg };
+        }
 
-    const token: string | undefined = data?.data?.token ?? data?.token;
-    if (!token) return { ok: false, message: 'No token in response' };
+        const token: string | undefined = data?.data?.token ?? data?.token;
+        if (!token) return { ok: false, message: 'No token in response' };
 
-    setToken(token);
+        setToken(token);
 
-    // Fetch user profile immediately so callers get user + token
-    const who = await api('/api/auth/whoami', { method: 'GET' });
-    if (!who.res.ok || !who.data?.ok) {
-      const msg = (who.data && (who.data.message || who.data.error)) || `HTTP ${who.res.status}`;
-      return { ok: false, message: msg || 'Failed to fetch user after login' };
-    }
+        // Fetch user profile immediately so callers get user + token
+        const who = await api('/api/auth/whoami', { method: 'GET' });
+        if (!who.res.ok || !who.data?.ok) {
+            const msg = (who.data && (who.data.message || who.data.error)) || `HTTP ${who.res.status}`;
+            return { ok: false, message: msg || 'Failed to fetch user after login' };
+        }
 
-    const user = who.data.data as WhoAmI;
+    const rawUser = who.data.data as any;
+    const user: WhoAmI = {
+      id: rawUser.user_id || rawUser.id,
+      email: rawUser.email,
+      role: rawUser.role,
+      is_admin: rawUser.is_admin,
+      first_name: rawUser.first_name,
+      last_name: rawUser.last_name,
+    };
 
     return { ok: true, data: { token, user } };
-  },
+    },
 
   async whoami(): Promise<{ ok: true; data: WhoAmI } | Fail> {
     const { res, data } = await api('/api/auth/whoami', { method: 'GET' });
@@ -306,11 +314,22 @@ export const AuthAPI = {
       const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
       return { ok: false, message: msg || 'Auth failed' };
     }
-    return { ok: true, data: data.data as WhoAmI };
+    
+    const rawUser = data.data as any;
+    const user: WhoAmI = {
+      id: rawUser.user_id || rawUser.id,
+      email: rawUser.email,
+      role: rawUser.role,
+      is_admin: rawUser.is_admin,
+      first_name: rawUser.first_name,
+      last_name: rawUser.last_name,
+    };
+    
+    return { ok: true, data: user };
   },
 
-  async logout() {
-    clearToken();
-    return { ok: true } as const;
-  },
+    async logout() {
+        clearToken();
+        return { ok: true } as const;
+    },
 };
