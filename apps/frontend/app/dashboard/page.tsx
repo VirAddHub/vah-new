@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import EnhancedUserDashboard from '@/components/EnhancedUserDashboard';
+import { EnhancedUserDashboard } from '@/components/EnhancedUserDashboard';
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -46,5 +46,26 @@ export default function DashboardPage() {
         return null; // Will redirect
     }
 
-    return <EnhancedUserDashboard />;
+    const handleLogout = () => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        router.push('/login');
+    };
+
+    const handleNavigate = (page: string) => {
+        console.log('Navigate to:', page);
+    };
+
+    const handleGoBack = () => {
+        router.push('/');
+    };
+
+    return (
+        <EnhancedUserDashboard
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            onGoBack={handleGoBack}
+        />
+    );
 }
