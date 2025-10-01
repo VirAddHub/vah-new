@@ -258,58 +258,58 @@ import type { User, Role } from '../types/user';
 
 // Normalize backend payload to our strict User type
 function normalizeUser(input: any): User {
-  const rawRole = typeof input?.role === 'string' ? input.role.toLowerCase() : undefined;
-  const role: Role = rawRole === 'admin' ? 'admin' : rawRole === 'user' ? 'user' : undefined;
+    const rawRole = typeof input?.role === 'string' ? input.role.toLowerCase() : undefined;
+    const role: Role = rawRole === 'admin' ? 'admin' : 'user';
 
-  return {
-    user_id: String(input?.user_id ?? input?.id ?? ''),
-    email: String(input?.email ?? ''),
-    role,
-    is_admin: Boolean(input?.is_admin),
-    first_name: input?.first_name ? String(input.first_name) : undefined,
-    last_name: input?.last_name ? String(input.last_name) : undefined,
-  };
+    return {
+        user_id: String(input?.user_id ?? input?.id ?? ''),
+        email: String(input?.email ?? ''),
+        role,
+        is_admin: Boolean(input?.is_admin),
+        first_name: input?.first_name ? String(input.first_name) : undefined,
+        last_name: input?.last_name ? String(input.last_name) : undefined,
+    };
 }
 
 type LoginOk = { ok: true; data: { token: string; user: User } };
 type Fail = { ok: false; message?: string; error?: string };
 
 export const AuthAPI = {
-  async login(email: string, password: string): Promise<LoginOk | Fail> {
-    // NOTE: no leading /api here if api() already injects it
-    const { res, data } = await api('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+    async login(email: string, password: string): Promise<LoginOk | Fail> {
+        // NOTE: no leading /api here if api() already injects it
+        const { res, data } = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+        });
 
-    if (!res.ok || !data?.ok) {
-      return { ok: false, message: data?.message || data?.error || `HTTP ${res.status}` };
-    }
+        if (!res.ok || !data?.ok) {
+            return { ok: false, message: data?.message || data?.error || `HTTP ${res.status}` };
+        }
 
-    const token: string | undefined = data?.data?.token ?? data?.token;
-    if (!token) return { ok: false, message: 'No token in response' };
+        const token: string | undefined = data?.data?.token ?? data?.token;
+        if (!token) return { ok: false, message: 'No token in response' };
 
-    setToken(token);
+        setToken(token);
 
-    const who = await api('/auth/whoami', { method: 'GET' });
-    if (!who.res.ok || !who.data?.ok) {
-      return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
-    }
+        const who = await api('/auth/whoami', { method: 'GET' });
+        if (!who.res.ok || !who.data?.ok) {
+            return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
+        }
 
-    const user = normalizeUser(who.data.data);
-    return { ok: true, data: { token, user } };
-  },
+        const user = normalizeUser(who.data.data);
+        return { ok: true, data: { token, user } };
+    },
 
-  async whoami(): Promise<{ ok: true; data: User } | Fail> {
-    const { res, data } = await api('/auth/whoami', { method: 'GET' });
-    if (!res.ok || !data?.ok) {
-      return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
-    }
-    return { ok: true, data: normalizeUser(data.data) };
-  },
+    async whoami(): Promise<{ ok: true; data: User } | Fail> {
+        const { res, data } = await api('/auth/whoami', { method: 'GET' });
+        if (!res.ok || !data?.ok) {
+            return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
+        }
+        return { ok: true, data: normalizeUser(data.data) };
+    },
 
-  async logout() {
-    clearToken();
-    return { ok: true } as const;
-  },
+    async logout() {
+        clearToken();
+        return { ok: true } as const;
+    },
 };
