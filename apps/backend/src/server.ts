@@ -54,7 +54,7 @@ import * as path from 'path';
 // When running from dist/src/server.js, go back to project root then into routes
 const projectRoot = path.join(__dirname, '../..');
 const routesDir = path.join(projectRoot, 'routes');
-const addressRouter = require(path.join(routesDir, 'address'));
+// const addressRouter = require(path.join(routesDir, 'address')); // File doesn't exist
 const adminAuditRouter = require(path.join(routesDir, 'admin-audit'));
 const adminForwardAuditRouter = require(path.join(routesDir, 'admin-forward-audit'));
 const adminMailBulkRouter = require(path.join(routesDir, 'admin-mail-bulk'));
@@ -339,8 +339,8 @@ async function start() {
     }
 
     // Mount legacy routes (all functional now!)
-    app.use('/api', addressRouter);
-    logger.info('[mount] /api (address routes) mounted');
+    // app.use('/api', addressRouter); // File doesn't exist
+    // logger.info('[mount] /api (address routes) mounted');
 
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
