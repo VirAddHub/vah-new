@@ -265,7 +265,11 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                         {u.status || "active"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{u.plan || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={u.plan_status === "active" ? "default" : "outline"}>
+                        {u.plan_status || "—"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
                     </TableCell>

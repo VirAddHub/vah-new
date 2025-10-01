@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Search, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Search, AlertTriangle, Loader2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
+import { API_BASE } from '@/lib/config';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -60,6 +61,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [showPassword, setShowPassword] = useState(false);
     const [isManualEntry, setIsManualEntry] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [showResults, setShowResults] = useState(false);
 
     const businessTypes = [
         { value: 'limited_company', label: 'Private Limited Company' },
@@ -130,11 +135,82 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
     };
 
-    const handleCompaniesHouseSearch = () => {
-        // Simulate Companies House search
-        if (formData.company_number.trim()) {
-            // Mock API response
-            updateFormData('company_name', `Sample Company ${formData.company_number} Ltd`);
+    // Debounced search for Companies House
+    useEffect(() => {
+        if (searchQuery.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                setIsSearching(true);
+                const response = await fetch(
+                    `${API_BASE}/api/companies-house/search?q=${encodeURIComponent(searchQuery)}`
+                );
+
+                if (response.ok) {
+                    const result = await response.json();
+                    setSearchResults(result.data || []);
+                    setShowResults(true);
+                } else {
+                    console.error('Companies House API error:', response.status);
+                    setSearchResults([]);
+                }
+            } catch (error) {
+                console.error('Companies House search failed:', error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSelectCompany = (company: any) => {
+        updateFormData('company_number', company.company_number);
+        updateFormData('company_name', company.title);
+        setSearchQuery('');
+        setShowResults(false);
+        setSearchResults([]);
+
+        // Auto-fill business type based on company type
+        if (company.company_type === 'ltd') {
+            updateFormData('business_type', 'limited_company');
+        } else if (company.company_type === 'llp') {
+            updateFormData('business_type', 'llp');
+        }
+    };
+
+    const handleCompaniesHouseSearch = async () => {
+        if (!formData.company_number.trim()) return;
+
+        try {
+            setIsSearching(true);
+            const response = await fetch(
+                `${API_BASE}/api/companies-house/company/${formData.company_number}`
+            );
+
+            if (response.ok) {
+                const result = await response.json();
+                const company = result.data;
+                updateFormData('company_name', company.company_name);
+
+                // Auto-fill business type
+                if (company.company_type === 'ltd') {
+                    updateFormData('business_type', 'limited_company');
+                } else if (company.company_type === 'llp') {
+                    updateFormData('business_type', 'llp');
+                }
+            } else {
+                setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
+            }
+        } catch (error) {
+            console.error('Companies House lookup failed:', error);
+            setErrors(prev => ({ ...prev, company_number: 'Failed to lookup company' }));
+        } finally {
+            setIsSearching(false);
         }
     };
 
@@ -348,7 +424,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 <div className="flex gap-2">
                                     <Button
                                         type="button"
-                                        onClick={() => setIsManualEntry(false)}
+                                        onClick={() => {
+                                            setIsManualEntry(false);
+                                            setSearchQuery('');
+                                            setShowResults(false);
+                                        }}
                                         variant={!isManualEntry ? "default" : "outline"}
                                         className="h-8"
                                     >
@@ -357,13 +437,60 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     </Button>
                                     <Button
                                         type="button"
-                                        onClick={() => setIsManualEntry(true)}
+                                        onClick={() => {
+                                            setIsManualEntry(true);
+                                            setShowResults(false);
+                                        }}
                                         variant={isManualEntry ? "default" : "outline"}
                                         className="h-8"
                                     >
                                         Enter Manually
                                     </Button>
                                 </div>
+
+                                {!isManualEntry && (
+                                    <div className="space-y-2 relative">
+                                        <Label htmlFor="company_search">
+                                            Search for your company
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="company_search"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                placeholder="Type company name or number..."
+                                                className="pr-10"
+                                            />
+                                            {isSearching && (
+                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                                            )}
+                                        </div>
+
+                                        {/* Search Results Dropdown */}
+                                        {showResults && searchResults.length > 0 && (
+                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                                {searchResults.map((company, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        onClick={() => handleSelectCompany(company)}
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                    >
+                                                        <div className="font-medium text-sm">{company.title}</div>
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            {company.company_number} • {company.company_status}
+                                                            {company.address_snippet && ` • ${company.address_snippet}`}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {showResults && searchResults.length === 0 && !isSearching && (
+                                            <p className="text-sm text-muted-foreground">No companies found. Try a different search term.</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -377,15 +504,23 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                 onChange={(e) => updateFormData('company_number', e.target.value)}
                                                 placeholder="12345678"
                                                 className={`flex-1 ${errors.company_number ? 'border-destructive' : ''}`}
+                                                readOnly={!isManualEntry}
                                             />
-                                            <Button
-                                                type="button"
-                                                onClick={handleCompaniesHouseSearch}
-                                                variant="outline"
-                                                className="h-9"
-                                            >
-                                                Search
-                                            </Button>
+                                            {isManualEntry && (
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleCompaniesHouseSearch}
+                                                    variant="outline"
+                                                    className="h-9"
+                                                    disabled={isSearching}
+                                                >
+                                                    {isSearching ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        'Verify'
+                                                    )}
+                                                </Button>
+                                            )}
                                         </div>
                                         {errors.company_number && (
                                             <p className="text-sm text-destructive">{errors.company_number}</p>
@@ -403,7 +538,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             className={errors.company_name ? 'border-destructive' : ''}
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            If the name appears incorrect, you can still edit it later.
+                                            {!isManualEntry ? 'Selected from Companies House. You can edit if needed.' : 'If the name appears incorrect, you can still edit it later.'}
                                         </p>
                                         {errors.company_name && (
                                             <p className="text-sm text-destructive">{errors.company_name}</p>

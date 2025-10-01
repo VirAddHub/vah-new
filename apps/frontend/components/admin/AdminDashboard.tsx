@@ -89,6 +89,7 @@ import { ForwardingSection } from "./ForwardingSection";
 import { BillingSection } from "./BillingSection";
 import { AnalyticsSection } from "./AnalyticsSection";
 import { SettingsSection } from "./SettingsSection";
+import PlansSection from "./PlansSection";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -96,7 +97,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "analytics" | "settings";
+type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "analytics" | "plans" | "settings";
 
 export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -165,6 +166,7 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
         { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
+        { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
@@ -219,6 +221,8 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
                 return <ForwardingSection />;
             case "billing":
                 return <BillingSection />;
+            case "plans":
+                return <PlansSection />;
             case "analytics":
                 return <AnalyticsSection />;
             case "settings":

@@ -24,7 +24,9 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 setError(null);
                 const response = await apiClient.get('/api/plans');
                 if (response.ok) {
-                    setPlans(response.data || []);
+                    // Filter only active plans
+                    const activePlans = (response.data || []).filter((p: any) => p.active && !p.retired_at);
+                    setPlans(activePlans);
                 } else {
                     setError('Failed to load pricing plans');
                 }
@@ -171,7 +173,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <div className="flex flex-wrap items-baseline gap-3">
                                         <div className="leading-none">
                                             <span className="text-4xl font-semibold text-primary">
-                                                £{isAnnual ? '89.99' : '9.99'}
+                                                £{(() => {
+                                                    const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                    return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
+                                                })()}
                                             </span>
                                             <span className="ml-1 text-base text-primary">
                                                 {isAnnual ? '/year' : '/month'}
@@ -179,7 +184,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         </div>
                                         {isAnnual && (
                                             <p className="text-sm text-primary mt-1">
-                                                ≈ £7.50/month • 2 months free
+                                                ≈ £{(() => {
+                                                    const plan = plans.find(p => p.interval === 'year');
+                                                    return plan ? ((plan.price_pence / 100) / 12).toFixed(2) : '7.50';
+                                                })()}/month • 2 months free
                                             </p>
                                         )}
                                         <p className="text-sm text-primary">Cancel anytime. No hidden fees.</p>
@@ -239,7 +247,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {/* Action buttons */}
                                     <div className="mt-6 flex flex-col gap-3">
                                         <Button
-                                            onClick={() => handleSelectPlan()}
+                                            onClick={() => {
+                                                const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                handleSelectPlan(plan?.id);
+                                            }}
                                             disabled={processingPayment || loading}
                                             className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 w-full sm:w-auto sm:min-w-48 font-medium"
                                         >
@@ -251,7 +262,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                             ) : (
                                                 <>
                                                     <CreditCard className="h-4 w-4 mr-2" />
-                                                    Choose Plan — £{isAnnual ? '89.99' : '9.99'}{isAnnual ? '/yr' : '/mo'}
+                                                    Choose Plan — £{(() => {
+                                                        const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                        return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
+                                                    })()}{isAnnual ? '/yr' : '/mo'}
                                                 </>
                                             )}
                                         </Button>

@@ -30,6 +30,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 u.first_name,
                 u.last_name,
                 u.is_admin,
+                u.status,
                 u.plan_status,
                 u.kyc_status,
                 u.created_at,
