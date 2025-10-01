@@ -60,14 +60,15 @@ export async function middleware(req: NextRequest) {
       }
 
       // Token is valid - if on login page, redirect to dashboard
-      if (isLogin) {
-        const next = req.nextUrl.searchParams.get('next') || '/dashboard';
-        if (next !== pathname) {
-          const res = NextResponse.redirect(new URL(next, req.url));
-          res.headers.set('x-loop-guard', 'login->next');
-          return res;
-        }
-      }
+      // TEMPORARILY DISABLED FOR TESTING - uncomment to re-enable
+      // if (isLogin) {
+      //   const next = req.nextUrl.searchParams.get('next') || '/dashboard';
+      //   if (next !== pathname) {
+      //     const res = NextResponse.redirect(new URL(next, req.url));
+      //     res.headers.set('x-loop-guard', 'login->next');
+      //     return res;
+      //   }
+      // }
     } catch (error) {
       // Network error or other issue - treat as invalid token
       console.error('Middleware token validation failed:', error);
