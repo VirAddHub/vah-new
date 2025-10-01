@@ -3,19 +3,9 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { requireAdmin } from '../../middleware/auth';
 
 const router = Router();
-
-// Middleware to require admin
-function requireAdmin(req: Request, res: Response, next: Function) {
-    if (!req.user?.id) {
-        return res.status(401).json({ ok: false, error: 'unauthenticated' });
-    }
-    if (!req.user?.is_admin) {
-        return res.status(403).json({ ok: false, error: 'forbidden' });
-    }
-    next();
-}
 
 /**
  * GET /api/admin/forwarding-requests
