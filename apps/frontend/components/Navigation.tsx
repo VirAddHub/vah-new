@@ -18,15 +18,11 @@ export function Navigation({ onNavigate }: NavigationProps) {
         { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
         { label: 'Sign Up', page: 'signup' },
-        { label: 'Login', page: 'dashboard' },
-        { label: 'Admin', page: 'admin' },
     ];
 
     const handleNavClick = (page: string) => {
         if (page === 'login') {
             window.location.href = '/login';
-        } else if (page === 'dashboard' || page === 'admin') {
-            window.location.href = '/dashboard';
         } else if (page === 'signup') {
             window.location.href = '/signup';
         } else {
