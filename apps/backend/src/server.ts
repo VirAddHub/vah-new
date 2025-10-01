@@ -89,22 +89,38 @@ app.use('/api', health);
 app.use(helmet());
 
 // CORS first - apply to ALL responses including errors
-// Use a simple CORS configuration for debugging
 app.use(cors({
     origin: (origin, cb) => {
         const allowedOrigins = [
             'https://vah-new-frontend-75d6.vercel.app',
             'https://vah-frontend-final.vercel.app',
-            'http://localhost:3000'
+            'http://localhost:3000',
+            'http://localhost:3001'
         ];
-        if (!origin || allowedOrigins.includes(origin)) {
+
+        // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+        if (!origin) {
             return cb(null, true);
         }
-        return cb(null, false);
+
+        // Check if origin is in allowlist
+        if (allowedOrigins.includes(origin)) {
+            return cb(null, true);
+        }
+
+        // Check for Vercel preview deployments
+        if (/^https:\/\/vah-new-frontend-[\w-]+\.vercel\.app$/.test(origin)) {
+            return cb(null, true);
+        }
+
+        // Reject all other origins with explicit error
+        console.warn('[CORS] Blocked origin:', origin);
+        return cb(new Error(`CORS policy: Origin ${origin} not allowed`), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Cache-Control', 'Pragma'],
+    exposedHeaders: ['Content-Disposition'],
     optionsSuccessStatus: 204,
 }));
 

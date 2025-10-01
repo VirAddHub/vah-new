@@ -1,49 +1,40 @@
 // middleware.ts
+// Simple, robust middleware for protecting routes
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export const config = {
-  // Only guard truly protected pages
-  matcher: ['/admin/:path*', '/dashboard'],
+  // Only protect these routes - middleware will NOT run on other pages
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/dashboard'],
 };
 
-function isInternal(pathname: string) {
-  // Guard against internal Next.js paths, API routes, and assets
-  return (
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Skip internal Next.js routes and static files
+  if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
-    pathname.includes('.') // General check for static files
-  );
-}
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
 
-export function middleware(req: NextRequest) {
-  const { pathname, search } = req.nextUrl;
-
-  if (isInternal(pathname)) return NextResponse.next();
-
-  // Check for JWT token in cookies (since middleware can't access localStorage)
+  // Check for JWT token in cookies
   const jwtToken = req.cookies.get('vah_jwt')?.value;
-  const hasValidToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined';
-  const isLogin = pathname === '/login';
+  const hasToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined' && jwtToken.length > 10;
 
-  // SCENARIO 1: Not logged in → Force to /login (with next parameter)
-  if (!hasValidToken && !isLogin) {
+  // If no valid token, redirect to login with next parameter
+  if (!hasToken) {
     const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('next', pathname + search);
-    const res = NextResponse.redirect(loginUrl);
-    res.headers.set('x-loop-guard', 'mw->login');
-    return res;
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // SCENARIO 2: Logged in but landed on /login → Send them to next (or /dashboard)
-  if (hasValidToken && isLogin) {
-    const next = req.nextUrl.searchParams.get('next') || '/dashboard';
-    if (next !== pathname) { // Prevent redirecting to the page you are already on
-      const res = NextResponse.redirect(new URL(next, req.url));
-      res.headers.set('x-loop-guard', 'login->next');
-      return res;
-    }
-  }
-
+  // Token exists - allow access to protected route
+  // Note: We don't validate the token here because:
+  // 1. Middleware runs on Edge runtime and can't easily call backend
+  // 2. The backend API will validate the token on every request
+  // 3. If token is invalid, API calls will fail and user will be logged out
   return NextResponse.next();
 }
