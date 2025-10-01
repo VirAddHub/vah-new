@@ -11,7 +11,8 @@ export async function api(path: string, init: RequestInit = {}) {
   const token = getToken();
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  const url = API(path);
+  // Check if path is already a full URL (starts with http)
+  const url = path.startsWith('http') ? path : API(path);
   // temporary debug – remove after verification
   if (typeof window !== 'undefined') {
     // @ts-ignore
