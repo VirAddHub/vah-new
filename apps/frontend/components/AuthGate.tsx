@@ -1,26 +1,11 @@
 'use client';
 
 import { useAuth } from '../contexts/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-    const { loading, isAuthenticated, isAdmin } = useAuth();
-    const router = useRouter();
-    const pathname = usePathname();
+    const { loading } = useAuth();
 
-    useEffect(() => {
-        // Wait for auth check to complete
-        if (loading) return;
-
-        // If user is authenticated and on login page, redirect to dashboard
-        if (isAuthenticated && pathname === '/login') {
-            const destination = isAdmin ? '/admin/dashboard' : '/dashboard';
-            console.log(`🔍 AuthGate - Authenticated user on login page, redirecting to ${destination}`);
-            router.replace(destination);
-        }
-    }, [loading, isAuthenticated, isAdmin, pathname, router]);
-
+    // Show loading spinner while checking authentication
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -32,5 +17,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         );
     }
 
+    // Just render children - let middleware handle redirects
     return <>{children}</>;
 }

@@ -24,6 +24,10 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
     const handleNavClick = (page: string) => {
         if (page === 'login') {
+            // Clear any existing auth tokens before going to login
+            localStorage.removeItem('vah_jwt');
+            localStorage.removeItem('vah_user');
+            document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = '/login';
         } else if (page === 'dashboard' || page === 'admin') {
             window.location.href = '/login';
