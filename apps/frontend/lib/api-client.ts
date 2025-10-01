@@ -281,7 +281,7 @@ async function authFetch(inputPath: string, init: RequestInit = {}) {
     if (!headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
     }
-    
+
     // Add CSRF protection for state-changing requests
     if (init.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(init.method.toUpperCase())) {
         const csrfHeaders = addCSRFHeader();

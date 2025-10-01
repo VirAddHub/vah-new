@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-// REVISED: Wrap the key initialization logic in a function to ensure type safety.
+// Helper function to initialize keys safely
 function getJwtKeys(): { signKey: string | Buffer; verifyKey: string | Buffer } {
   const ALG = (process.env.JWT_ALG || 'HS256') as 'HS256' | 'RS256';
 
@@ -20,24 +20,29 @@ function getJwtKeys(): { signKey: string | Buffer; verifyKey: string | Buffer } 
   }
 }
 
+// Initialize keys on startup
 let signKey: string | Buffer;
 let verifyKey: string | Buffer;
 
 try {
-  // FIX: Call the function to securely initialize the keys.
-  // This guarantees to TypeScript that they are defined from this point on.
   const keys = getJwtKeys();
   signKey = keys.signKey;
   verifyKey = keys.verifyKey;
 } catch (error) {
   console.error("FATAL: JWT key initialization failed.", error);
-  throw error; // Prevent the server from starting in an invalid state.
+  throw error;
 }
 
-// All the code below is now guaranteed to work with defined keys.
+// Define JWT constants
 const ALG = (process.env.JWT_ALG || 'HS256') as 'HS256' | 'RS256';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-const baseOpts = { issuer: 'virtualaddresshub', audience: 'vah-users' } as const;
+
+// FIX: Removed `as const` and added an explicit type to prevent the readonly mismatch.
+const baseOpts: jwt.SignOptions = {
+  issuer: 'virtualaddresshub',
+  audience: 'vah-users',
+  algorithm: ALG,
+};
 
 export interface JWTPayload {
   id: string | number;
@@ -49,13 +54,18 @@ export interface JWTPayload {
 }
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, signKey, { ...baseOpts, expiresIn: JWT_EXPIRES_IN, algorithm: ALG });
+  // Combine base options with the specific expiration for this token
+  return jwt.sign(payload, signKey, { ...baseOpts, expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    // The cast to JWTPayload is safe here as we control the payload shape.
-    return jwt.verify(token, verifyKey, { ...baseOpts, algorithms: [ALG] }) as JWTPayload;
+    const verifyOptions: jwt.VerifyOptions = {
+      issuer: baseOpts.issuer,
+      audience: baseOpts.audience,
+      algorithms: [ALG],
+    };
+    return jwt.verify(token, verifyKey, verifyOptions) as JWTPayload;
   } catch (error) {
     if (!(error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError)) {
       console.error('JWT verification encountered an unexpected error:', error);
@@ -66,11 +76,11 @@ export function verifyToken(token: string): JWTPayload | null {
 
 export function extractTokenFromHeader(authHeader?: string): string | null {
   if (!authHeader) return null;
-  
+
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return null;
   }
-  
+
   return parts[1];
 }
