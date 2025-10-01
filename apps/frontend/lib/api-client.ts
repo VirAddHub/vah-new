@@ -264,26 +264,26 @@ export type { User } from './client-auth';
 
 // Auth-aware fetch wrapper
 async function authFetch(inputPath: string, init: RequestInit = {}) {
-  const url = apiUrl(inputPath);
-  const token = tokenManager.get();
-  
-  // Don't call whoami when there's no token
-  if (!token && inputPath === 'auth/whoami') {
-    return new Response(JSON.stringify({ ok: false, error: 'no_token' }), { status: 401 }) as any;
-  }
-  
-  const headers = new Headers(init.headers || {});
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-  // Keep existing Content-Type if caller set it
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-  const res = await fetch(url, { ...init, headers, credentials: 'include' });
-  // optional: clear token on 401 to avoid loops
-  if (res.status === 401) tokenManager.clear();
-  return res;
+    const url = apiUrl(inputPath);
+    const token = tokenManager.get();
+
+    // Don't call whoami when there's no token
+    if (!token && inputPath === 'auth/whoami') {
+        return new Response(JSON.stringify({ ok: false, error: 'no_token' }), { status: 401 }) as any;
+    }
+
+    const headers = new Headers(init.headers || {});
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+    // Keep existing Content-Type if caller set it
+    if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+    }
+    const res = await fetch(url, { ...init, headers, credentials: 'include' });
+    // optional: clear token on 401 to avoid loops
+    if (res.status === 401) tokenManager.clear();
+    return res;
 }
 
 // Safe response parser to avoid "undefined is not valid JSON" crashes
@@ -313,13 +313,12 @@ function normalizeUser(input: any): User {
     };
 }
 
+// REVISED: The API now returns a nested user object, so we adjust the type.
 type LoginOk = { ok: true; data: { token: string; user: User } };
 type Fail = { ok: false; message?: string; error?: string };
 
 export const AuthAPI = {
     async login(email: string, password: string): Promise<LoginOk | Fail> {
-        // NOTE: no leading /api here if api() already injects it
-        console.debug('🌐 Final URL =>', apiUrl('auth/login'));
         const { res, data } = await api(apiUrl('auth/login'), {
             method: 'POST',
             body: JSON.stringify({ email, password }),
@@ -329,22 +328,21 @@ export const AuthAPI = {
             return { ok: false, message: data?.message || data?.error || `HTTP ${res.status}` };
         }
 
-        const token: string | undefined = data?.data?.token ?? data?.token;
-        if (!token) return { ok: false, message: 'No token in response' };
+        const token = data?.data?.token;
+        const rawUser = data?.data?.user;
+
+        if (!token || !rawUser) {
+            return { ok: false, message: 'Invalid response from server' };
+        }
 
         setToken(token);
-        // Also store in tokenManager for consistency
         tokenManager.set(token);
         console.debug('[auth] token stored');
 
-        const whoRes = await authFetch('auth/whoami', { method: 'GET' });
-        const whoData = await parseResponseSafe(whoRes);
-        const who = { res: whoRes, data: whoData };
-        if (!who.res.ok || !who.data?.ok) {
-            return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
-        }
+        // REVISED: Normalize the user object directly from the login response.
+        // REMOVED: The unnecessary and slow `whoami` call.
+        const user = normalizeUser(rawUser);
 
-        const user = normalizeUser(who.data.data);
         return { ok: true, data: { token, user } };
     },
 

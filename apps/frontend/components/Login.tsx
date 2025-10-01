@@ -20,59 +20,24 @@ import type { User } from "../types/user";
 type Role = 'admin' | 'user';
 
 interface LoginProps {
-  onSuccess?: (role: Role) => void;     // optional override (e.g., set state not navigate)
-  onNavigate?: (page: string) => void;  // forgot/signup handlers (optional)
+  onNavigate?: (page: string) => void;
 }
 
-export default function Login({ onSuccess, onNavigate }: LoginProps) {
+// REVISED: Removed `onSuccess` prop and related logic.
+export default function Login({ onNavigate }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
-  const redirectedRef = useRef(false); // ✅ prevent redirect loops
-  const didRoute = useRef(false);
-  const router = useRouter();
-  const { login } = useAuth();
+  const { login } = useAuth(); // Use the context
 
-  // Cleanup timeout on unmount to prevent DOM errors
-  useEffect(() => {
-    return () => {
-      if (redirectTimeout) {
-        clearTimeout(redirectTimeout);
-      }
-    };
-  }, [redirectTimeout]);
-
-  // Helper to discover role after login (via whoami) - DISABLED TO STOP LOOP
-  const fetchRole = useCallback(async (): Promise<Role> => {
-    console.log('🚨 FETCH ROLE DISABLED TO STOP INFINITE LOOP');
-    return 'user'; // Just return user role, no API calls
-
-    try {
-      const res = await fetch(apiUrl('auth/whoami'), {
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${tokenManager.get() || ''}` }
-      });
-      if (!res.ok) throw new Error('Failed to fetch session');
-      const data = await res.json();
-      const role = (data?.role || data?.user?.role || 'user') as Role;
-      return role === 'admin' ? 'admin' : 'user';
-    } catch (error) {
-      console.warn('Whoami endpoint not available, defaulting to user role:', error);
-      // default to user if unknown
-      return 'user';
-    }
-  }, []); // ✅ Memoize to prevent recreation on every render
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // CIRCUIT BREAKER: Use guards to ensure router.replace only runs ONCE.
-    if (isLoading || redirectedRef.current) return; // Guard
+    if (isLoading) return;
 
     setError('');
-
     if (!email || !password) {
       setError('Please enter both email and password');
       return;
@@ -80,35 +45,18 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
     setIsLoading(true);
     try {
-      // Debug logs to trace the flow
-      console.log('[Login] submitting', { email, passLen: password.length });
-
-      // Use AuthContext login method instead of direct API call
-      // This prevents duplicate auth state updates
+      // REVISED: Simply call the login method from the context.
+      // The context handles state updates, and the page handles redirection.
       await login({ email, password });
-
-      // If we get here, login was successful
-      // The AuthContext will handle token storage and user state
-      console.log('[Login] login successful via AuthContext');
-
-      if (onSuccess) {
-        if (!redirectedRef.current) {
-          redirectedRef.current = true;
-          // Get the role from the current user state
-          const currentUser = tokenManager.get() ? await AuthAPI.whoami() : null;
-          const isAdmin = currentUser?.ok ? currentUser.data.is_admin : false;
-          onSuccess(isAdmin ? 'admin' : 'user');
-        }
-      } else {
-        // Let AuthContext handle the redirect via the login page's useEffect
-        console.log('[Login] letting AuthContext handle redirect');
-      }
+      
+      // On success, the AuthContext state will change, triggering the
+      // redirect effect in the parent page component. No need to do anything here.
+      
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      const message = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
       setError(message);
-      setIsLoading(false); // Reset loading state on error
+      setIsLoading(false); // Only set loading to false on error
     }
-    // Note: Don't reset isLoading here if redirect is successful
   };
 
   return (

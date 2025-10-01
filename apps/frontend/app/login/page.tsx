@@ -7,69 +7,49 @@ import { useRouter } from 'next/navigation';
 import Login from '../../components/Login';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 
-function UserPageContent() {
+function LoginPageContent() {
     const { isAuthenticated, isAdmin, isLoading } = useAuth();
     const router = useRouter();
-    const redirectedRef = useRef(false); // ✅ prevent redirect loops
+    const hasRedirected = useRef(false);
 
     useEffect(() => {
-        console.log('Auth state changed:', { isAuthenticated, isAdmin, isLoading });
-        // Don't check authentication until loading is complete
-        if (isLoading) return;
+        // Wait until the initial auth check is complete
+        if (isLoading) {
+            return;
+        }
 
-        if (isAuthenticated && !redirectedRef.current) {
-            console.log('User is authenticated, redirecting...');
-            redirectedRef.current = true; // ✅ prevent multiple redirects
-            if (isAdmin) {
-                // Redirect admins to admin dashboard
-                console.log('Redirecting admin to /admin/dashboard');
-                router.replace('/admin/dashboard');
-            } else {
-                // Redirect users to their dashboard
-                console.log('Redirecting user to /dashboard');
-                router.replace('/dashboard');
-            }
-        } else if (!isAuthenticated) {
-            console.log('User not authenticated, showing login form');
+        // If authenticated, redirect the user away from the login page
+        if (isAuthenticated && !hasRedirected.current) {
+            hasRedirected.current = true;
+            const destination = isAdmin ? '/admin/dashboard' : '/dashboard';
+            console.log(`User is authenticated. Redirecting to ${destination}`);
+            router.replace(destination);
         }
     }, [isAuthenticated, isAdmin, isLoading, router]);
 
-    const handleLoginSuccess = (role: 'admin' | 'user') => {
-        console.log('Login success, role:', role);
-        if (!redirectedRef.current) {
-            redirectedRef.current = true; // ✅ prevent multiple redirects
-            if (role === 'admin') {
-                console.log('Redirecting admin to /admin/dashboard');
-                router.replace('/admin/dashboard');
-            } else {
-                console.log('Redirecting user to /dashboard');
-                router.replace('/dashboard');
-            }
-        }
-    };
+    // Render nothing while loading or if about to redirect, to prevent UI flicker
+    if (isLoading || isAuthenticated) {
+        return null; // Or a loading spinner
+    }
 
-    // ✅ KEY FIX: Don't render anything while loading or redirecting
-    if (isLoading) return null;           // wait for auth to resolve
-    if (isAuthenticated) return null;     // prevent paint before redirect
-
+    // Render the login form only if the user is not authenticated
     return (
         <Login
-            onSuccess={handleLoginSuccess}
             onNavigate={(page: string) => {
-                if (page === 'signup') {
-                    router.push('/signup');
-                } else if (page === 'reset-password') {
-                    router.push('/reset-password');
-                }
+                if (page === 'signup') router.push('/signup');
             }}
         />
     );
 }
 
-export default function UserLoginPage() {
+export default function LoginPage() {
+    // IMPORTANT ARCHITECTURAL NOTE:
+    // AuthProvider should ideally be placed in your root layout (`app/layout.tsx`)
+    // to provide auth context to the entire application. Placing it here works
+    // for this specific page but is not a scalable pattern.
     return (
         <AuthProvider>
-            <UserPageContent />
+            <LoginPageContent />
         </AuthProvider>
     );
 }

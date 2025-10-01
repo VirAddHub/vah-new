@@ -6,6 +6,12 @@ import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jw
 
 const router = Router();
 
+// ADDED: Define a schema for login input validation
+const loginSchema = z.object({
+    email: z.string().email("Invalid email format.").trim().toLowerCase(),
+    password: z.string().min(1, "Password is required."),
+});
+
 // Test database connection endpoint
 router.get("/test-db", async (req, res) => {
     try {
@@ -286,24 +292,24 @@ router.post("/signup", async (req, res) => {
 // --- LOGIN ---
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body || {};
+        // REVISED: Use Zod for robust validation and parsing
+        const validation = loginSchema.safeParse(req.body);
 
-        if (!email || !password) {
+        if (!validation.success) {
             return res.status(400).json({
                 ok: false,
-                error: "missing_fields",
-                message: "Email and password are required"
+                error: "validation_error",
+                message: validation.error.issues.map((e: any) => e.message).join(', ')
             });
         }
 
-        // Normalize email: trim and lowercase
-        const normalizedEmail = email.trim().toLowerCase();
+        const { email, password } = validation.data;
 
         // Get user from database
         const pool = getPool();
         const user = await pool.query(
             'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2',
-            [normalizedEmail, 'active']
+            [email, 'active'] // Use the validated and normalized email
         );
 
         if (!user.rows[0]) {
@@ -316,11 +322,7 @@ router.post("/login", async (req, res) => {
 
         const userData = user.rows[0];
 
-        // Verify password using the password column
-        let isValidPassword = false;
-        if (userData.password) {
-            isValidPassword = await bcrypt.compare(password, userData.password);
-        }
+        const isValidPassword = await bcrypt.compare(password, userData.password);
 
         if (!isValidPassword) {
             return res.status(401).json({
@@ -338,16 +340,18 @@ router.post("/login", async (req, res) => {
             role: userData.role
         });
 
-        // Return user data with token (without password)
+        // REVISED: The user object in the response should match the payload for consistency
         res.json({
             ok: true,
             data: {
-                user_id: userData.id,
-                email: userData.email,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
-                is_admin: userData.is_admin,
-                role: userData.role,
+                user: { // Nest user data inside a user object
+                    user_id: userData.id,
+                    email: userData.email,
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    is_admin: userData.is_admin,
+                    role: userData.role,
+                },
                 token: token
             }
         });
@@ -382,7 +386,7 @@ router.get("/whoami", async (req, res) => {
         // Extract token from Authorization header
         const authHeader = req.headers.authorization;
         const token = extractTokenFromHeader(authHeader);
-        
+
         if (!token) {
             return res.status(401).json({
                 ok: false,

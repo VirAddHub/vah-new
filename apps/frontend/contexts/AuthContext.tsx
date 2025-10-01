@@ -149,25 +149,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const response = await AuthAPI.login(credentials.email, credentials.password);
 
             if (response.ok) {
-                // Set user data from the response
-                const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
+                // REVISED: The response now has a nested user object
+                const rawUser = response.data.user;
                 const apiUser: ApiUser = isApiUser(rawUser)
                     ? rawUser
                     : {
-                        user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
-                        email: String(rawUser?.email ?? ''),
-                        first_name: rawUser?.first_name,
-                        last_name: rawUser?.last_name,
-                        is_admin: !!rawUser?.is_admin,
-                        role: rawUser?.role ?? 'user',
-                        kyc_status: rawUser?.kyc_status,
+                        user_id: String((rawUser as any)?.user_id ?? (rawUser as any)?.id ?? ''),
+                        email: String((rawUser as any)?.email ?? ''),
+                        first_name: (rawUser as any)?.first_name,
+                        last_name: (rawUser as any)?.last_name,
+                        is_admin: !!(rawUser as any)?.is_admin,
+                        role: (rawUser as any)?.role ?? 'user',
+                        kyc_status: (rawUser as any)?.kyc_status,
                     };
-                const userData = apiUser;
-                const clientUser = toClientUser(userData);
+                const clientUser = toClientUser(apiUser);
                 clientAuthManager.setUser(clientUser);
                 setUser(clientUser as any);
                 
-                // ✅ CRITICAL: Update status to 'authed' to prevent flicker
+                // Update status to 'authed' to prevent flicker
                 setStatus('authed');
 
                 // Store token and user safely
@@ -178,7 +177,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
-                    userId: userData.user_id
+                    userId: apiUser.user_id
                 });
             } else {
                 throw new Error('message' in response ? response.message : 'Login failed');
@@ -203,17 +202,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const response = await AuthAPI.login(credentials.email, credentials.password);
 
             if (response.ok) {
-                const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
+                const rawUser = response.data.user;
                 const apiUser: ApiUser = isApiUser(rawUser)
                     ? rawUser
                     : {
-                        user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
-                        email: String(rawUser?.email ?? ''),
-                        first_name: rawUser?.first_name,
-                        last_name: rawUser?.last_name,
-                        is_admin: !!rawUser?.is_admin,
-                        role: rawUser?.role ?? 'user',
-                        kyc_status: rawUser?.kyc_status,
+                        user_id: String((rawUser as any)?.user_id ?? (rawUser as any)?.id ?? ''),
+                        email: String((rawUser as any)?.email ?? ''),
+                        first_name: (rawUser as any)?.first_name,
+                        last_name: (rawUser as any)?.last_name,
+                        is_admin: !!(rawUser as any)?.is_admin,
+                        role: (rawUser as any)?.role ?? 'user',
+                        kyc_status: (rawUser as any)?.kyc_status,
                     };
                 const userData = apiUser;
                 if (userData?.is_admin) {
@@ -221,7 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     clientAuthManager.setUser(clientUser);
                     setUser(clientUser as any);
                     
-                    // ✅ CRITICAL: Update status to 'authed' to prevent flicker
+                    // Update status to 'authed' to prevent flicker
                     setStatus('authed');
 
                     // Store token and user safely
