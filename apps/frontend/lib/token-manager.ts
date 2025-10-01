@@ -5,6 +5,16 @@ const KEY = 'vah_jwt';
 const USER_KEY = 'vah_user';
 const EVT = 'vah_jwt_change';
 
+// Safe JSON helpers without changing existing exports
+export function safeParse<T>(raw: string | null, fallback: T): T {
+  if (!raw) return fallback;
+  try { return JSON.parse(raw) as T; } catch { return fallback; }
+}
+
+export function safeStringify(value: unknown): string {
+  try { return JSON.stringify(value); } catch { return 'null'; }
+}
+
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   try { return window.localStorage.getItem(KEY); } catch { return null; }
@@ -47,7 +57,7 @@ export const tokenManager = {
     window.dispatchEvent(new Event(EVT));
   },
   onChange(cb: () => void) {
-    if (typeof window === 'undefined') return () => {};
+    if (typeof window === 'undefined') return () => { };
     const handler = () => cb();
     window.addEventListener(EVT, handler);
     return () => window.removeEventListener(EVT, handler);
@@ -67,6 +77,6 @@ export function setStoredUser(user: any | null): void {
   if (!user) {
     try { localStorage.removeItem(USER_KEY); } catch { }
   } else {
-    try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch { }
+    try { localStorage.setItem(USER_KEY, safeStringify(user)); } catch { }
   }
 }

@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
+
 import { useState, useEffect } from 'react';
 import { AdminDashboard } from '../../../components/admin/AdminDashboard';
 import { AuthProvider, useAuth } from '../../../contexts/AuthContext';

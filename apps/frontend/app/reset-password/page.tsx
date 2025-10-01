@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
+
 import { ForgotPasswordPage } from '@/components/ForgotPasswordPage';
 import { useRouter } from 'next/navigation';
 

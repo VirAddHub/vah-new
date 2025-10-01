@@ -1,5 +1,8 @@
 // apps/frontend/app/settings/profile/page.tsx
 "use client";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
 import { useEffect, useState } from "react";
 import { getMe, patchMe } from "@/lib/api";
 

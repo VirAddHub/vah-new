@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
+
 import { EnhancedUserDashboard } from '../../components/EnhancedUserDashboard';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import { RouteGuard } from '../../components/RouteGuard';

@@ -3,7 +3,7 @@
 import { apiClient, ApiResponse } from './apiClient';
 import { parseJSONSafe } from './parse-json-safe';
 import { apiUrl } from './api-url';
-import { tokenManager } from './token-manager';
+import { tokenManager, safeStringify } from './token-manager';
 // import { isOk, ApiErr } from './apiClient'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
@@ -77,7 +77,7 @@ export class ClientAuthManager {
   setUser(user: User) {
     this.user = user;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', safeStringify(user));
     }
   }
 
