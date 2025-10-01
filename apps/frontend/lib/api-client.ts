@@ -264,6 +264,7 @@ function normalizeUser(input: any): User {
     return {
         user_id: String(input?.user_id ?? input?.id ?? ''),
         email: String(input?.email ?? ''),
+        name: input?.name ? String(input.name) : undefined,
         role,
         is_admin: Boolean(input?.is_admin),
         first_name: input?.first_name ? String(input.first_name) : undefined,

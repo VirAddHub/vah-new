@@ -11,14 +11,15 @@ import type { User as ClientUser } from '../lib/client-auth';
 
 // Map API user -> Client user (storage)
 function toClientUser(u: ApiUser | WhoAmI): ClientUser {
-  // Normalize role to 'user' | 'admin' if possible
-  const role = (u.role === 'admin' || u.role === 'user') ? (u.role as Role) : undefined;
-  return {
-    id: (u as ApiUser).user_id ?? (u as WhoAmI).user_id,
-    email: u.email,
-    is_admin: u.is_admin,
-    role
-  };
+    // Normalize role to 'user' | 'admin' if possible
+    const role = (u.role === 'admin' || u.role === 'user') ? (u.role as Role) : undefined;
+    return {
+        id: (u as ApiUser).user_id ?? (u as WhoAmI).user_id,
+        email: u.email,
+        name: u.name,
+        is_admin: u.is_admin,
+        role
+    };
 }
 
 // Client-safe logging functions
