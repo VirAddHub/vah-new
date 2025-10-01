@@ -173,11 +173,18 @@ export const apiClient = {
         });
 
         // If login successful, store the JWT token
-        if (resp.ok && resp.data && resp.data.data && 'token' in resp.data.data) {
-            const token = resp.data.data.token as string;
+        // Backend returns: { ok: true, data: { user: {...}, token: "..." } }
+        if (resp.ok && resp.data && 'token' in resp.data) {
+            const token = resp.data.token as string;
             console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
+
+            // Also store user data if present
+            if (resp.data.user) {
+                setStoredUser(resp.data.user);
+                console.log('✅ User data stored:', resp.data.user);
+            }
 
             // Verify token was stored
             const storedToken = getToken();
@@ -201,12 +208,36 @@ export const apiClient = {
             console.error('❌ LOGIN FAILED - No token in response:', resp);
         }
 
+        // Backend returns { ok: true, data: { user: {...}, token: "..." } }
+        // We need to return { ok: true, data: { user: {...} } } for the frontend
+        if (resp.ok && resp.data && resp.data.user) {
+            return { ok: true, data: { user: resp.data.user } };
+        }
+
         return coerceUserResponse(resp);
     },
 
     async whoami(): Promise<ApiResponse<{ user: User }>> {
         const resp = await authFetch('auth/whoami', { method: 'GET' });
         const data = await parseResponseSafe(resp);
+
+        // Backend returns: { ok: true, data: { user_id, email, is_admin, role } }
+        // Convert to frontend format: { ok: true, data: { user: { id, email, ... } } }
+        if (resp.ok && data && data.data) {
+            const userData = data.data;
+            return {
+                ok: true,
+                data: {
+                    user: {
+                        id: userData.user_id,
+                        email: userData.email,
+                        is_admin: userData.is_admin,
+                        role: userData.role
+                    }
+                }
+            };
+        }
+
         return coerceUserResponse({ ok: resp.ok, data, status: resp.status } as ApiResponse<any>);
     },
 

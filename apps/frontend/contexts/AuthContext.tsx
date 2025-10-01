@@ -111,14 +111,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     return;
                 }
                 const json = await res.json();
+                console.log('🔍 AuthContext Init - Whoami response:', json);
+
+                // Backend returns: { ok: true, data: { user_id, email, is_admin, role } }
                 const apiUser = json?.data || json?.user || null;
                 if (!apiUser) {
+                    console.log('❌ AuthContext Init - No user data in response');
                     setUser(null as any);
                     setStatus('guest');
                     setIsLoading(false);
                     setAuthInitialized(true);
                     return;
                 }
+
                 // shape-normalise minimal fields used in UI
                 const clientUser = {
                     id: String(apiUser.user_id ?? apiUser.id ?? ''),
@@ -128,6 +133,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     is_admin: !!apiUser.is_admin,
                     role: apiUser.role === 'admin' ? 'admin' : 'user',
                 };
+
+                console.log('✅ AuthContext Init - User authenticated:', clientUser);
                 setUser(clientUser as any);
                 setStatus('authed');
                 setIsLoading(false);
@@ -165,7 +172,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 const clientUser = toClientUser(apiUser);
                 clientAuthManager.setUser(clientUser);
                 setUser(clientUser as any);
-                
+
                 // Update status to 'authed' to prevent flicker
                 setStatus('authed');
 
@@ -223,7 +230,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const clientUser = toClientUser(userData);
                     clientAuthManager.setUser(clientUser);
                     setUser(clientUser as any);
-                    
+
                     // Update status to 'authed' to prevent flicker
                     setStatus('authed');
 

@@ -40,6 +40,33 @@ import devRouter from "./server/routes/dev";
 import robustPasswordResetRouter from "./server/routes/profile/reset-password-request";
 import authRouter from "./server/routes/auth";
 
+// Legacy routes (CommonJS requires - will be converted to ES modules eventually)
+// Use path.join to resolve paths correctly - need to go back to project root
+import * as path from 'path';
+// When running from dist/src/server.js, go back to project root then into routes
+const projectRoot = path.join(__dirname, '../..');
+const routesDir = path.join(projectRoot, 'routes');
+const addressRouter = require(path.join(routesDir, 'address'));
+const adminAuditRouter = require(path.join(routesDir, 'admin-audit'));
+const adminForwardAuditRouter = require(path.join(routesDir, 'admin-forward-audit'));
+const adminMailBulkRouter = require(path.join(routesDir, 'admin-mail-bulk'));
+const adminMailRouter = require(path.join(routesDir, 'admin-mail'));
+const adminRepairRouter = require(path.join(routesDir, 'admin-repair'));
+const debugRouterLegacy = require(path.join(routesDir, 'debug'));
+const downloadsRouter = require(path.join(routesDir, 'downloads'));
+const emailPrefsRouter = require(path.join(routesDir, 'email-prefs'));
+const filesRouter = require(path.join(routesDir, 'files'));
+const gdprExportRouter = require(path.join(routesDir, 'gdpr-export'));
+const kycStartRouter = require(path.join(routesDir, 'kyc-start'));
+const mailForwardRouter = require(path.join(routesDir, 'mail-forward'));
+const mailSearchRouter = require(path.join(routesDir, 'mail-search'));
+const metricsRouter = require(path.join(routesDir, 'metrics'));
+const notificationsRouter = require(path.join(routesDir, 'notifications'));
+const profileResetRouter = require(path.join(routesDir, 'profile-reset'));
+const webhooksGcRouter = require(path.join(routesDir, 'webhooks-gc'));
+const webhooksOnedriveRouter = require(path.join(routesDir, 'webhooks-onedrive'));
+// Note: webhooks-postmark and webhooks-sumsub are already imported above
+
 // --- cookie options helper
 const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
 
@@ -277,23 +304,63 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // Stub other routes to prevent crashes
-    app.use('/api/admin-mail', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-mail-bulk', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-gc', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/webhooks-onedrive', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/email-prefs', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/gdpr-export', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/downloads', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/notifications', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-search', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/files', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/mail-forward', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-repair', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/admin-forward-audit', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/debug', (_req, res) => res.json({ ok: true, message: 'stub' }));
-    app.use('/api/metrics', (_req, res) => res.json({ ok: true, message: 'stub' }));
+    // Mount legacy routes (all functional now!)
+    app.use('/api', addressRouter);
+    logger.info('[mount] /api (address routes) mounted');
+
+    app.use('/api/admin-audit', adminAuditRouter);
+    logger.info('[mount] /api/admin-audit mounted');
+
+    app.use('/api/admin-forward-audit', adminForwardAuditRouter);
+    logger.info('[mount] /api/admin-forward-audit mounted');
+
+    app.use('/api/admin-mail-bulk', adminMailBulkRouter);
+    logger.info('[mount] /api/admin-mail-bulk mounted');
+
+    app.use('/api/admin-mail', adminMailRouter);
+    logger.info('[mount] /api/admin-mail mounted');
+
+    app.use('/api/admin-repair', adminRepairRouter);
+    logger.info('[mount] /api/admin-repair mounted');
+
+    app.use('/api/debug', debugRouterLegacy);
+    logger.info('[mount] /api/debug mounted');
+
+    app.use('/api/downloads', downloadsRouter);
+    logger.info('[mount] /api/downloads mounted');
+
+    app.use('/api/email-prefs', emailPrefsRouter);
+    logger.info('[mount] /api/email-prefs mounted');
+
+    app.use('/api/files', filesRouter);
+    logger.info('[mount] /api/files mounted');
+
+    app.use('/api/gdpr-export', gdprExportRouter);
+    logger.info('[mount] /api/gdpr-export mounted');
+
+    app.use('/api/kyc', kycStartRouter);
+    logger.info('[mount] /api/kyc mounted');
+
+    app.use('/api/mail/forward', mailForwardRouter);
+    logger.info('[mount] /api/mail/forward mounted');
+
+    app.use('/api/mail-search', mailSearchRouter);
+    logger.info('[mount] /api/mail-search mounted');
+
+    app.use('/api/metrics', metricsRouter);
+    logger.info('[mount] /api/metrics mounted');
+
+    app.use('/api/notifications', notificationsRouter);
+    logger.info('[mount] /api/notifications mounted');
+
+    app.use('/api', profileResetRouter);
+    logger.info('[mount] /api (profile-reset routes) mounted');
+
+    app.use('/api/webhooks-gc', webhooksGcRouter);
+    logger.info('[mount] /api/webhooks-gc mounted');
+
+    app.use('/api/webhooks-onedrive', webhooksOnedriveRouter);
+    logger.info('[mount] /api/webhooks-onedrive mounted');
 
     // 404 handler that still returns CORS
     app.use((req, res) => {
