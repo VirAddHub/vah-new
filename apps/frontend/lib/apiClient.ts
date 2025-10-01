@@ -5,10 +5,10 @@ export type {
     ApiOk,
     ApiErr,
     ApiResponse,
-    User,
     MailItem,
     ForwardingRequest,
 } from './api-client';
+export type { User } from '../types/user';
 export { safe } from './api-client';
 
 import { API_BASE } from './config';
