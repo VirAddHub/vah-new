@@ -203,13 +203,13 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
 
           <div className="mt-6 space-y-2 text-center">
             <p>
-            <button
-              type="button"
-              onClick={() => window.location.href = '/reset-password'}
-              className="text-primary hover:underline text-sm"
-            >
-              Forgot password?
-            </button>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/reset-password'}
+                className="text-primary hover:underline text-sm"
+              >
+                Forgot password?
+              </button>
             </p>
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
