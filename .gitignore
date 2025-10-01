@@ -125,3 +125,7 @@ apps/frontend/out/
 
 # local history/scratch
 .history/replace-map.txt
+
+# Documentation files - keep local but don't push
+COMPLETE_FLOW_DOCUMENTATION.md
+MISSING_IMPLEMENTATIONS.md
