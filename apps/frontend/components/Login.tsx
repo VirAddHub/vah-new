@@ -83,49 +83,25 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       // Debug logs to trace the flow
       console.log('[Login] submitting', { email, passLen: password.length });
 
-      // Real authentication - call your actual API
-      const result = await AuthAPI.login(email, password);
-      console.log('[Login] api login result', result);
+      // Use AuthContext login method instead of direct API call
+      // This prevents duplicate auth state updates
+      await login({ email, password });
 
-      if (!result.ok) {
-        // Handle specific error cases
-        setError(result.message || 'Login failed');
-        return;
-      }
-
-      // Now result.data is { token, user }
-      const { user } = result.data;
-      const isAdmin = !!user?.is_admin;
-
-      // Debug logging to see what we're getting
-      console.log('[Login] User data:', user);
-      console.log('[Login] isAdmin:', isAdmin);
-      console.log('[Login] user.is_admin:', user?.is_admin);
-
-      // Optimistic set (helps guard during next paint)
-      setStoredUser(user);
-      localStorage.setItem('auth_bootstrap', '1');
-
-      // Store token safely
-      if (result?.data?.token) {
-        setToken(result.data.token);
-        tokenManager.set(result.data.token);
-        console.debug('[login] token saved');
-      }
+      // If we get here, login was successful
+      // The AuthContext will handle token storage and user state
+      console.log('[Login] login successful via AuthContext');
 
       if (onSuccess) {
         if (!redirectedRef.current) {
           redirectedRef.current = true;
+          // Get the role from the current user state
+          const currentUser = tokenManager.get() ? await AuthAPI.whoami() : null;
+          const isAdmin = currentUser?.ok ? currentUser.data.is_admin : false;
           onSuccess(isAdmin ? 'admin' : 'user');
         }
       } else {
-        // Save token before navigating
-        if (result?.data?.token && !didRoute.current) {
-          didRoute.current = true;
-          // Small delay to let AuthContext effect see the token
-          setTimeout(() => router.replace('/dashboard'), 0);
-          return;
-        }
+        // Let AuthContext handle the redirect via the login page's useEffect
+        console.log('[Login] letting AuthContext handle redirect');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';

@@ -166,6 +166,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 const clientUser = toClientUser(userData);
                 clientAuthManager.setUser(clientUser);
                 setUser(clientUser as any);
+                
+                // ✅ CRITICAL: Update status to 'authed' to prevent flicker
+                setStatus('authed');
 
                 // Store token and user safely
                 if (response?.data?.token) {
@@ -217,6 +220,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const clientUser = toClientUser(userData);
                     clientAuthManager.setUser(clientUser);
                     setUser(clientUser as any);
+                    
+                    // ✅ CRITICAL: Update status to 'authed' to prevent flicker
+                    setStatus('authed');
 
                     // Store token and user safely
                     if (response?.data?.token) {
@@ -266,6 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } finally {
             clientAuthManager.clearAuth();
             setUser(null);
+            setStatus('guest'); // ✅ CRITICAL: Update status to 'guest' on logout
             setIsLoading(false);
         }
     };
