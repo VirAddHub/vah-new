@@ -21,12 +21,13 @@ export function middleware(req: NextRequest) {
 
   if (isInternal(pathname)) return NextResponse.next();
 
-  // Primary session check: Use the 'sid' cookie set by the backend.
-  const hasSession = !!req.cookies.get('sid') || !!req.cookies.get('vah_session');
+  // Check for JWT token in cookies (since middleware can't access localStorage)
+  const jwtToken = req.cookies.get('vah_jwt')?.value;
+  const hasValidToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined';
   const isLogin = pathname === '/login';
 
   // SCENARIO 1: Not logged in → Force to /login (with next parameter)
-  if (!hasSession && !isLogin) {
+  if (!hasValidToken && !isLogin) {
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('next', pathname + search);
     const res = NextResponse.redirect(loginUrl);
@@ -35,7 +36,7 @@ export function middleware(req: NextRequest) {
   }
 
   // SCENARIO 2: Logged in but landed on /login → Send them to next (or /dashboard)
-  if (hasSession && isLogin) {
+  if (hasValidToken && isLogin) {
     const next = req.nextUrl.searchParams.get('next') || '/dashboard';
     if (next !== pathname) { // Prevent redirecting to the page you are already on
       const res = NextResponse.redirect(new URL(next, req.url));

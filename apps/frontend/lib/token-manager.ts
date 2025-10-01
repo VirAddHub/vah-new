@@ -23,9 +23,17 @@ export function getToken(): string | null {
 export function setToken(token: string | null) {
   if (typeof window === 'undefined') return;
   if (!token) {
-    try { window.localStorage.removeItem(KEY); } catch { }
+    try { 
+      window.localStorage.removeItem(KEY); 
+      // Also clear the cookie for middleware
+      document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    } catch { }
   } else {
-    try { window.localStorage.setItem(KEY, token); } catch { }
+    try { 
+      window.localStorage.setItem(KEY, token); 
+      // Also set cookie for middleware to access
+      document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    } catch { }
   }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(EVT));
@@ -34,7 +42,11 @@ export function setToken(token: string | null) {
 
 export function clearToken() {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.removeItem(KEY); } catch { }
+  try { 
+    window.localStorage.removeItem(KEY); 
+    // Also clear the cookie for middleware
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  } catch { }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(EVT));
   }
@@ -49,11 +61,15 @@ export const tokenManager = {
   set(token: string) {
     if (typeof window === 'undefined') return;
     localStorage.setItem(KEY, token);
+    // Also set cookie for middleware to access
+    document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     window.dispatchEvent(new Event(EVT));
   },
   clear() {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(KEY);
+    // Also clear the cookie for middleware
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.dispatchEvent(new Event(EVT));
   },
   onChange(cb: () => void) {
