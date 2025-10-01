@@ -6,6 +6,8 @@ import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager, isApiUser, toClientUser } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
+import { parseJSONSafe } from '../lib/parse-json-safe';
+import { getToken, setToken, getStoredUser, setStoredUser } from '../lib/token-manager';
 import type { ApiUser, WhoAmI, Role } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
@@ -88,7 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 if (firstBoot) {
                     // Trust localStorage once; clear the flag
                     localStorage.removeItem('auth_bootstrap');
-                    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+                    const userData = getStoredUser<any>();
                     if (userData) {
                         setUser(userData);
                         clientAuthManager.markInitialized(); // ✅ Mark client auth as initialized
@@ -141,20 +143,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 // Set user data from the response
                 const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
                 const apiUser: ApiUser = isApiUser(rawUser)
-                  ? rawUser
-                  : {
-                      user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
-                      email: String(rawUser?.email ?? ''),
-                      first_name: rawUser?.first_name,
-                      last_name: rawUser?.last_name,
-                      is_admin: !!rawUser?.is_admin,
-                      role: rawUser?.role ?? 'user',
-                      kyc_status: rawUser?.kyc_status,
+                    ? rawUser
+                    : {
+                        user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                        email: String(rawUser?.email ?? ''),
+                        first_name: rawUser?.first_name,
+                        last_name: rawUser?.last_name,
+                        is_admin: !!rawUser?.is_admin,
+                        role: rawUser?.role ?? 'user',
+                        kyc_status: rawUser?.kyc_status,
                     };
                 const userData = apiUser;
                 const clientUser = toClientUser(userData);
                 clientAuthManager.setUser(clientUser);
                 setUser(clientUser as any);
+                
+                // Store token and user safely
+                if (response?.data?.token) {
+                    setToken(response.data.token);
+                }
+                setStoredUser(clientUser);
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
@@ -185,21 +193,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (response.ok) {
                 const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
                 const apiUser: ApiUser = isApiUser(rawUser)
-                  ? rawUser
-                  : {
-                      user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
-                      email: String(rawUser?.email ?? ''),
-                      first_name: rawUser?.first_name,
-                      last_name: rawUser?.last_name,
-                      is_admin: !!rawUser?.is_admin,
-                      role: rawUser?.role ?? 'user',
-                      kyc_status: rawUser?.kyc_status,
+                    ? rawUser
+                    : {
+                        user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                        email: String(rawUser?.email ?? ''),
+                        first_name: rawUser?.first_name,
+                        last_name: rawUser?.last_name,
+                        is_admin: !!rawUser?.is_admin,
+                        role: rawUser?.role ?? 'user',
+                        kyc_status: rawUser?.kyc_status,
                     };
                 const userData = apiUser;
                 if (userData?.is_admin) {
                     const clientUser = toClientUser(userData);
                     clientAuthManager.setUser(clientUser);
                     setUser(clientUser as any);
+                    
+                    // Store token and user safely
+                    if (response?.data?.token) {
+                        setToken(response.data.token);
+                    }
+                    setStoredUser(clientUser);
 
                     await logAuthEvent('admin_login_success', {
                         email: credentials.email,

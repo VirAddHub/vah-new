@@ -10,6 +10,8 @@ import { Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "@/lib/apiClient";
 import { AuthAPI } from "@/lib/api-client";
+import { parseJSONSafe } from '../lib/parse-json-safe';
+import { setToken, setStoredUser } from '../lib/token-manager';
 import type { User } from "../types/user";
 
 type Role = 'admin' | 'user';
@@ -93,8 +95,13 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       console.log('[Login] user.is_admin:', user?.is_admin);
 
       // Optimistic set (helps guard during next paint)
-      localStorage.setItem('user', JSON.stringify(user));
+      setStoredUser(user);
       localStorage.setItem('auth_bootstrap', '1');
+      
+      // Store token safely
+      if (result?.data?.token) {
+        setToken(result.data.token);
+      }
 
       if (onSuccess) {
         if (!redirectedRef.current) {

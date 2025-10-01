@@ -1,6 +1,7 @@
 'use client';
 
 import { apiClient, ApiResponse } from './apiClient';
+import { parseJSONSafe } from './parse-json-safe';
 // import { isOk, ApiErr } from './apiClient'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
@@ -28,9 +29,9 @@ export interface ApiUser {
 
 // Type guard to check if object is ApiUser
 export function isApiUser(obj: any): obj is ApiUser {
-  return obj && typeof obj === 'object' && 
-         typeof obj.user_id === 'string' && 
-         typeof obj.email === 'string';
+  return obj && typeof obj === 'object' &&
+    typeof obj.user_id === 'string' &&
+    typeof obj.email === 'string';
 }
 
 // Map API user -> Client user (storage)
@@ -55,7 +56,7 @@ export class ClientAuthManager {
   constructor() {
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('auth_token');
-      this.user = JSON.parse(localStorage.getItem('user') || 'null');
+      this.user = parseJSONSafe(localStorage.getItem('user'), null);
     }
   }
 

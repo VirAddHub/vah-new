@@ -258,6 +258,18 @@ import type { Role } from '../types/user';
 import type { User } from './client-auth';
 export type { User } from './client-auth';
 
+// Safe response parser to avoid "undefined is not valid JSON" crashes
+async function parseResponseSafe(res: Response): Promise<any> {
+  const ct = res.headers.get('content-type') || '';
+  const text = await res.text();
+  if (!text.trim()) return null;
+  if (ct.includes('application/json')) {
+    try { return JSON.parse(text); } catch { return null; }
+  }
+  // Non-JSON payloads: return raw text
+  return text;
+}
+
 // Normalize backend payload to our strict User type
 function normalizeUser(input: any): User {
     const rawRole = typeof input?.role === 'string' ? input.role.toLowerCase() : undefined;
