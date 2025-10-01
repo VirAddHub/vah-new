@@ -107,10 +107,12 @@ const adminApi = {
         body: { email: string; first_name?: string; last_name?: string; reactivate?: boolean },
     ) => post<{ restored: number }>(`/api/admin/users/${id}/restore`, body),
 
-    updateUser: (id: string, payload: any) => put(`/api/admin/users/${id}`, payload),
+    updateUser: (id: string | number, payload: any) => patch(`/api/admin/users/${id}`, payload),
     suspendUser: (id: string) => put(`/api/admin/users/${id}/suspend`, {}),
     activateUser: (id: string) => put(`/api/admin/users/${id}/activate`, {}),
     updateKyc: (id: string, status: string) => put(`/api/admin/users/${id}/kyc-status`, { status }),
+
+    getPlans: () => get<any[]>('/api/admin/plans'),
 
     analytics: (timeRange: string) =>
         get<any>(`/api/admin/analytics?range=${encodeURIComponent(timeRange)}`),

@@ -56,6 +56,11 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
     reactivate: true
   });
 
+  // Change plan modal state
+  const [planModal, setPlanModal] = useState<null | { id: string | number; email: string; currentPlan?: string }>(null);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
 
@@ -71,6 +76,27 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
   }, []);
 
   useEffect(() => { loadUserStats(); }, [loadUserStats]);
+
+  // Load available plans when plan modal opens
+  useEffect(() => {
+    if (planModal) {
+      loadPlans();
+    }
+  }, [planModal]);
+
+  const loadPlans = async () => {
+    try {
+      const res = await adminApi.getPlans();
+      if (res.ok && res.data) {
+        setAvailablePlans(res.data);
+        if (planModal?.currentPlan) {
+          setSelectedPlan(planModal.currentPlan);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load plans:', error);
+    }
+  };
 
   // Handle user deletion with double confirmation
   async function handleDeleteUser(id: string | number) {
@@ -256,7 +282,11 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${u.activity_status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
                         <span className="text-xs text-muted-foreground">
-                          {u.activity_status === 'online' ? 'Online' : u.last_active_at ? new Date(u.last_active_at).toLocaleString() : 'Never'}
+                          {u.activity_status === 'online'
+                            ? 'Online'
+                            : (u.last_active_at && !isNaN(new Date(u.last_active_at).getTime()))
+                              ? new Date(u.last_active_at).toLocaleString()
+                              : 'Never'}
                         </span>
                       </div>
                     </TableCell>
@@ -277,25 +307,37 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                       {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
-                      {u.deleted_at ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRestoreModal({ id: u.id })}
-                          disabled={isMutating}
-                        >
-                          Restore
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setDeleteModal({ id: u.id, email: u.email })}
-                          disabled={isMutating}
-                        >
-                          Delete
-                        </Button>
-                      )}
+                      <div className="flex gap-2">
+                        {u.deleted_at ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRestoreModal({ id: u.id })}
+                            disabled={isMutating}
+                          >
+                            Restore
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPlanModal({ id: u.id, email: u.email, currentPlan: u.plan_status })}
+                              disabled={isMutating}
+                            >
+                              Plan
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeleteModal({ id: u.id, email: u.email })}
+                              disabled={isMutating}
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -415,6 +457,82 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
               </Button>
               <Button onClick={handleRestoreUser} disabled={isMutating || !restoreForm.email.trim()}>
                 {isMutating ? 'Restoring…' : 'Restore'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Plan Modal */}
+      {planModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="font-semibold text-lg mb-2">Change User Plan</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Change plan for {planModal.email}
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Select Plan</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 bg-background"
+                  value={selectedPlan}
+                  onChange={(e) => setSelectedPlan(e.target.value)}
+                >
+                  <option value="">-- Select a plan --</option>
+                  {availablePlans
+                    .filter(p => p.active && !p.retired_at)
+                    .map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} - £{(plan.price_pence / 100).toFixed(2)}/{plan.interval}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPlanModal(null);
+                  setSelectedPlan('');
+                }}
+                disabled={isMutating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!selectedPlan) {
+                    toast({ title: "Error", description: "Please select a plan", variant: "destructive" });
+                    return;
+                  }
+
+                  setIsMutating(true);
+                  try {
+                    // TODO: Create endpoint to change user plan
+                    // For now, just update plan_status
+                    const res = await adminApi.updateUser(planModal.id, {
+                      plan_status: selectedPlan
+                    });
+
+                    if (res.ok) {
+                      toast({ title: "Success", description: "User plan updated" });
+                      setPlanModal(null);
+                      setSelectedPlan('');
+                      onRefresh();
+                    } else {
+                      toast({ title: "Error", description: res.message || "Failed to update plan", variant: "destructive" });
+                    }
+                  } catch (error) {
+                    toast({ title: "Error", description: "Failed to update plan", variant: "destructive" });
+                  } finally {
+                    setIsMutating(false);
+                  }
+                }}
+                disabled={isMutating || !selectedPlan}
+              >
+                {isMutating ? 'Updating...' : 'Update Plan'}
               </Button>
             </div>
           </div>
