@@ -6,7 +6,7 @@ import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
-import type { User } from '../types/user';
+import type { User as AuthUser } from '../types/user';
 
 // Client-safe logging functions
 const logAuthEvent = async (event: string, data?: any) => {
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.ok) {
                 // Set user data from the response
-                const userData: User = response.data.user;
+                const userData: AuthUser = response.data.user;
                 clientAuthManager.setUser(userData);
                 setUser(userData);
 
