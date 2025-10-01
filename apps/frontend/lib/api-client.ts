@@ -127,12 +127,12 @@ function normalizeUserPayload(input: unknown): User | null {
     if (!id || !email) return null;
 
     return {
-        user_id: id,
+        id: id,
         email,
-        first_name: first_name || null,
-        last_name: last_name || null,
+        name: u.name || null,
         is_admin: u.is_admin === true || u.role === 'admin',
         role: u.role || (u.is_admin ? 'admin' : 'user'),
+        kyc_status: u.kyc_status || null,
     };
 }
 
@@ -254,7 +254,9 @@ export const apiClient = {
 };
 
 // Export AuthAPI for components that need it
-import type { User, Role } from '../types/user';
+import type { Role } from '../types/user';
+import type { User } from './client-auth';
+export type { User } from './client-auth';
 
 // Normalize backend payload to our strict User type
 function normalizeUser(input: any): User {
@@ -262,13 +264,12 @@ function normalizeUser(input: any): User {
     const role: Role = rawRole === 'admin' ? 'admin' : 'user';
 
     return {
-        user_id: String(input?.user_id ?? input?.id ?? ''),
+        id: String(input?.user_id ?? input?.id ?? ''),
         email: String(input?.email ?? ''),
         name: input?.name ? String(input.name) : undefined,
         role,
         is_admin: Boolean(input?.is_admin),
-        first_name: input?.first_name ? String(input.first_name) : undefined,
-        last_name: input?.last_name ? String(input.last_name) : undefined,
+        kyc_status: input?.kyc_status ? String(input.kyc_status) : undefined,
     };
 }
 

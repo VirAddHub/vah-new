@@ -6,7 +6,7 @@ import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
-import type { User as ApiUser, WhoAmI, Role } from '../types/user';
+import type { ApiUser, WhoAmI, Role } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
 // Map API user -> Client user (storage)
@@ -18,7 +18,8 @@ function toClientUser(u: ApiUser | WhoAmI): ClientUser {
         email: u.email,
         name: u.name,
         is_admin: u.is_admin,
-        role
+        role,
+        kyc_status: u.kyc_status
     };
 }
 

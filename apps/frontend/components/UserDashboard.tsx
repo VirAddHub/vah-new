@@ -254,7 +254,7 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
             <CardContent>
               <div className="text-2xl font-bold">Active</div>
               <p className="text-xs text-muted-foreground">
-                {user?.kyc_status || 'KYC pending'}
+                {user?.kyc_status ?? 'KYC pending'}
               </p>
             </CardContent>
           </Card>

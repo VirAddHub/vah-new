@@ -10,6 +10,8 @@ export type User = {
   role?: 'admin' | 'user';
   name?: string;
   is_admin?: boolean;
+  /** Optional – present after KYC calls */
+  kyc_status?: string; // 'pending' | 'approved' | 'rejected' | string
 };
 
 export class ClientAuthManager {
