@@ -91,18 +91,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
         (async () => {
             try {
                 const token = tokenManager.get();
+                console.log('🔍 AuthContext Init - Token exists:', !!token);
                 if (!token) {
+                    console.log('🔍 AuthContext Init - No token, setting guest status');
                     setUser(null as any);
                     setStatus('guest');
                     setIsLoading(false);
                     setAuthInitialized(true);
                     return;
                 }
+                console.log('🔍 AuthContext Init - Making whoami call with token:', token.substring(0, 20) + '...');
                 const res = await fetch(apiUrl('auth/whoami'), {
                     headers: { Authorization: `Bearer ${token}` },
                     credentials: 'include',
                 });
+                console.log('🔍 AuthContext Init - Whoami response status:', res.status, res.ok);
                 if (!res.ok) {
+                    console.log('🔍 AuthContext Init - Whoami failed, clearing token and setting guest status');
                     tokenManager.clear();
                     setUser(null as any);
                     setStatus('guest');
