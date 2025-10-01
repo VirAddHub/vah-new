@@ -14,6 +14,7 @@ export interface MailItem {
     status: 'received' | 'scanned' | 'forwarded' | 'archived';
     forwarding_status?: string;
     scan_url?: string;
+    is_read?: boolean;
     created_at: string;
     updated_at: string;
 }
