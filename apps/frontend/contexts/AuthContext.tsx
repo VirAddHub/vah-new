@@ -4,24 +4,11 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getErrorMessage, getErrorStack } from '../lib/errors';
 import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
-import { clientAuthManager } from '../lib/client-auth';
+import { clientAuthManager, isApiUser, toClientUser } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
 import type { ApiUser, WhoAmI, Role } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
-// Map API user -> Client user (storage)
-function toClientUser(u: ApiUser | WhoAmI): ClientUser {
-    // Normalize role to 'user' | 'admin' if possible
-    const role = (u.role === 'admin' || u.role === 'user') ? (u.role as Role) : undefined;
-    return {
-        id: (u as ApiUser).user_id ?? (u as WhoAmI).user_id,
-        email: u.email,
-        name: u.name,
-        is_admin: u.is_admin,
-        role,
-        kyc_status: u.kyc_status
-    };
-}
 
 // Client-safe logging functions
 const logAuthEvent = async (event: string, data?: any) => {
@@ -152,10 +139,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.ok) {
                 // Set user data from the response
-                const userData = response.data.user as ApiUser;
+                const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
+                const apiUser: ApiUser = isApiUser(rawUser)
+                  ? rawUser
+                  : {
+                      user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                      email: String(rawUser?.email ?? ''),
+                      first_name: rawUser?.first_name,
+                      last_name: rawUser?.last_name,
+                      is_admin: !!rawUser?.is_admin,
+                      role: rawUser?.role ?? 'user',
+                      kyc_status: rawUser?.kyc_status,
+                    };
+                const userData = apiUser;
                 const clientUser = toClientUser(userData);
                 clientAuthManager.setUser(clientUser);
-                setUser(clientUser as unknown as any); // if your local state expects client user
+                setUser(clientUser as any);
 
                 await logAuthEvent('user_login_success', {
                     email: credentials.email,
@@ -184,11 +183,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const response = await AuthAPI.login(credentials.email, credentials.password);
 
             if (response.ok) {
-                const userData = response.data.user as ApiUser;
+                const rawUser = (response as any)?.data?.user ?? (response as any)?.data;
+                const apiUser: ApiUser = isApiUser(rawUser)
+                  ? rawUser
+                  : {
+                      user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                      email: String(rawUser?.email ?? ''),
+                      first_name: rawUser?.first_name,
+                      last_name: rawUser?.last_name,
+                      is_admin: !!rawUser?.is_admin,
+                      role: rawUser?.role ?? 'user',
+                      kyc_status: rawUser?.kyc_status,
+                    };
+                const userData = apiUser;
                 if (userData?.is_admin) {
                     const clientUser = toClientUser(userData);
                     clientAuthManager.setUser(clientUser);
-                    setUser(clientUser as unknown as any);
+                    setUser(clientUser as any);
 
                     await logAuthEvent('admin_login_success', {
                         email: credentials.email,

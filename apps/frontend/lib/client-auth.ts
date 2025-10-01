@@ -14,6 +14,38 @@ export type User = {
   kyc_status?: string; // 'pending' | 'approved' | 'rejected' | string
 };
 
+// API user shape (what backend returns)
+export interface ApiUser {
+  user_id: string;
+  email: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  is_admin: boolean;
+  role?: string;
+  kyc_status?: string;
+}
+
+// Type guard to check if object is ApiUser
+export function isApiUser(obj: any): obj is ApiUser {
+  return obj && typeof obj === 'object' && 
+         typeof obj.user_id === 'string' && 
+         typeof obj.email === 'string';
+}
+
+// Map API user -> Client user (storage)
+export function toClientUser(u: ApiUser): User {
+  const role = (u.role === 'admin' || u.role === 'user') ? (u.role as 'admin' | 'user') : undefined;
+  return {
+    id: u.user_id,
+    email: u.email,
+    name: u.name,
+    is_admin: u.is_admin,
+    role,
+    kyc_status: u.kyc_status
+  };
+}
+
 export class ClientAuthManager {
   private token: string | null = null;
   private user: User | null = null;
