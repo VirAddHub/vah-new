@@ -12,6 +12,7 @@ import { apiClient } from "@/lib/apiClient";
 import { AuthAPI } from "@/lib/api-client";
 import { parseJSONSafe } from '../lib/parse-json-safe';
 import { setToken, setStoredUser } from '../lib/token-manager';
+import { tokenManager } from '../lib/token-manager';
 import { apiUrl } from '../lib/api-url';
 import type { User } from "../types/user";
 
@@ -47,7 +48,10 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     return 'user'; // Just return user role, no API calls
 
     try {
-      const res = await fetch(apiUrl('auth/whoami'), { credentials: 'include' });
+      const res = await fetch(apiUrl('auth/whoami'), { 
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${tokenManager.get() || ''}` }
+      });
       if (!res.ok) throw new Error('Failed to fetch session');
       const data = await res.json();
       const role = (data?.role || data?.user?.role || 'user') as Role;

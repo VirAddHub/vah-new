@@ -186,7 +186,7 @@ export const apiClient = {
             // Sanity check: verify token works with whoami
             try {
                 console.log('🔍 WHOAMI DEBUG - Testing token with whoami endpoint...');
-                const whoamiResp = await legacyReq(apiUrl('auth/whoami'), { method: 'GET' });
+                const whoamiResp = await authFetch('auth/whoami', { method: 'GET' });
                 console.log('🔍 WHOAMI DEBUG - Whoami response:', whoamiResp);
                 if (!whoamiResp.ok) {
                     console.warn('⚠️ Login successful but whoami failed - token may be invalid');
@@ -204,15 +204,17 @@ export const apiClient = {
     },
 
     async whoami(): Promise<ApiResponse<{ user: User }>> {
-        const resp = await legacyReq(apiUrl('auth/whoami'), { method: 'GET' });
-        return coerceUserResponse(resp);
+        const resp = await authFetch('auth/whoami', { method: 'GET' });
+        const data = await parseResponseSafe(resp);
+        return coerceUserResponse({ ok: resp.ok, data, status: resp.status } as ApiResponse<any>);
     },
 
     async logout(): Promise<ApiResponse<{ message: string }>> {
-        const resp = await legacyReq(apiUrl('auth/logout'), { method: 'POST' });
+        const resp = await authFetch('auth/logout', { method: 'POST' });
+        const data = await parseResponseSafe(resp);
         // Always clear the token on logout, regardless of API response
         clearToken();
-        return resp;
+        return { ok: resp.ok, data, status: resp.status } as ApiResponse<{ message: string }>;
     },
 
     async signup(
@@ -257,18 +259,37 @@ export const apiClient = {
 import type { Role } from '../types/user';
 import type { User } from './client-auth';
 import { apiUrl } from './api-url';
+import { tokenManager } from './token-manager';
 export type { User } from './client-auth';
+
+// Auth-aware fetch wrapper
+async function authFetch(inputPath: string, init: RequestInit = {}) {
+  const url = apiUrl(inputPath);
+  const token = tokenManager.get();
+  const headers = new Headers(init.headers || {});
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  // Keep existing Content-Type if caller set it
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  const res = await fetch(url, { ...init, headers, credentials: 'include' });
+  // optional: clear token on 401 to avoid loops
+  if (res.status === 401) tokenManager.clear();
+  return res;
+}
 
 // Safe response parser to avoid "undefined is not valid JSON" crashes
 async function parseResponseSafe(res: Response): Promise<any> {
-    const ct = res.headers.get('content-type') || '';
-    const text = await res.text();
-    if (!text.trim()) return null;
-    if (ct.includes('application/json')) {
-        try { return JSON.parse(text); } catch { return null; }
-    }
-    // Non-JSON payloads: return raw text
-    return text;
+  const ct = res.headers.get('content-type') || '';
+  const text = await res.text();
+  if (!text.trim()) return null;
+  if (ct.includes('application/json')) {
+    try { return JSON.parse(text); } catch { return null; }
+  }
+  // Non-JSON payloads: return raw text
+  return text;
 }
 
 // Normalize backend payload to our strict User type
@@ -306,8 +327,13 @@ export const AuthAPI = {
         if (!token) return { ok: false, message: 'No token in response' };
 
         setToken(token);
+        // Also store in tokenManager for consistency
+        tokenManager.set(token);
+        console.debug('[auth] token stored');
 
-        const who = await api(apiUrl('auth/whoami'), { method: 'GET' });
+        const whoRes = await authFetch('auth/whoami', { method: 'GET' });
+        const whoData = await parseResponseSafe(whoRes);
+        const who = { res: whoRes, data: whoData };
         if (!who.res.ok || !who.data?.ok) {
             return { ok: false, message: who.data?.message || who.data?.error || `HTTP ${who.res.status}` };
         }
@@ -317,7 +343,8 @@ export const AuthAPI = {
     },
 
     async whoami(): Promise<{ ok: true; data: User } | Fail> {
-        const { res, data } = await api(apiUrl('auth/whoami'), { method: 'GET' });
+        const res = await authFetch('auth/whoami', { method: 'GET' });
+        const data = await parseResponseSafe(res);
         if (!res.ok || !data?.ok) {
             return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
         }

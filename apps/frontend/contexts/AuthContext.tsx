@@ -8,6 +8,8 @@ import { clientAuthManager, isApiUser, toClientUser } from '../lib/client-auth';
 import { authGuard } from '../lib/auth-guard';
 import { parseJSONSafe } from '../lib/parse-json-safe';
 import { getToken, setToken, getStoredUser, setStoredUser } from '../lib/token-manager';
+import { tokenManager } from '../lib/token-manager';
+import { apiUrl } from '../lib/api-url';
 import type { ApiUser, WhoAmI, Role } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
@@ -157,7 +159,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 const clientUser = toClientUser(userData);
                 clientAuthManager.setUser(clientUser);
                 setUser(clientUser as any);
-                
+
                 // Store token and user safely
                 if (response?.data?.token) {
                     setToken(response.data.token);
@@ -208,7 +210,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     const clientUser = toClientUser(userData);
                     clientAuthManager.setUser(clientUser);
                     setUser(clientUser as any);
-                    
+
                     // Store token and user safely
                     if (response?.data?.token) {
                         setToken(response.data.token);
