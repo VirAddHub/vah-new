@@ -1,7 +1,7 @@
 // ---- Types ----------------------------------------------------
 
 import { UnknownRecord } from './types';
-import { setToken, clearToken, getToken } from './token-manager';
+import { setToken, clearToken, getToken, setStoredUser } from './token-manager';
 import { addCSRFHeader } from './csrf-protection';
 
 export type ApiOk<T> = { ok: true; data: T };
@@ -179,6 +179,12 @@ export const apiClient = {
             console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
+
+            // Also store user data if present
+            if (resp.data.user) {
+                setStoredUser(resp.data.user);
+                console.log('✅ User data stored:', resp.data.user);
+            }
 
             // Verify token was stored
             const storedToken = getToken();
