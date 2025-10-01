@@ -14,6 +14,7 @@ import { parseJSONSafe } from '../lib/parse-json-safe';
 import { setToken, setStoredUser } from '../lib/token-manager';
 import { tokenManager } from '../lib/token-manager';
 import { apiUrl } from '../lib/api-url';
+import { useRouter } from 'next/navigation';
 import type { User } from "../types/user";
 
 type Role = 'admin' | 'user';
@@ -31,6 +32,8 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
   const [error, setError] = useState('');
   const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
   const redirectedRef = useRef(false); // ✅ prevent redirect loops
+  const didRoute = useRef(false);
+  const router = useRouter();
   const { login } = useAuth();
 
   // Cleanup timeout on unmount to prevent DOM errors
@@ -48,7 +51,7 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
     return 'user'; // Just return user role, no API calls
 
     try {
-      const res = await fetch(apiUrl('auth/whoami'), { 
+      const res = await fetch(apiUrl('auth/whoami'), {
         credentials: 'include',
         headers: { Authorization: `Bearer ${tokenManager.get() || ''}` }
       });
@@ -106,6 +109,8 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
       // Store token safely
       if (result?.data?.token) {
         setToken(result.data.token);
+        tokenManager.set(result.data.token);
+        console.debug('[login] token saved');
       }
 
       if (onSuccess) {
@@ -114,14 +119,12 @@ export default function Login({ onSuccess, onNavigate }: LoginProps) {
           onSuccess(isAdmin ? 'admin' : 'user');
         }
       } else {
-        // CIRCUIT BREAKER: Deterministic redirect
-        if (!redirectedRef.current) {
-          redirectedRef.current = true;
-          // Use setTimeout to prevent DOM manipulation errors during rapid state changes
-          const timeout = setTimeout(() => {
-            window.location.href = isAdmin ? '/admin/dashboard?logged=1' : '/dashboard?logged=1';
-          }, 100);
-          setRedirectTimeout(timeout);
+        // Save token before navigating
+        if (result?.data?.token && !didRoute.current) {
+          didRoute.current = true;
+          // Small delay to let AuthContext effect see the token
+          setTimeout(() => router.replace('/dashboard'), 0);
+          return;
         }
       }
     } catch (err) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { getErrorMessage, getErrorStack } from '../lib/errors';
 import { apiClient } from '../lib/apiClient';
 import { AuthAPI } from '../lib/api-client';
@@ -12,6 +12,8 @@ import { tokenManager } from '../lib/token-manager';
 import { apiUrl } from '../lib/api-url';
 import type { ApiUser, WhoAmI, Role } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
+
+type AuthStatus = 'loading' | 'authed' | 'guest';
 
 
 // Client-safe logging functions
@@ -58,6 +60,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isAdmin: boolean;
     isLoading: boolean;
+    loading: boolean;
+    status: AuthStatus;
     login: (credentials: { email: string; password: string }) => Promise<void>;
     adminLogin: (credentials: { email: string; password: string }) => Promise<void>;
     logout: () => Promise<void>;
@@ -74,65 +78,68 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authInitialized, setAuthInitialized] = useState(false); // ✅ Guard against re-initialization
+    const [status, setStatus] = useState<AuthStatus>('loading');
+    const ranOnceRef = useRef(false);
 
     const isAuthenticated = !!user;
     const isAdmin = Boolean(user?.is_admin);
 
     // Initialize auth state on mount - ONLY ONCE
     useEffect(() => {
-        // 🛑 GUARD CLAUSE: Don't run if we've already initialized
-        if (authInitialized) return;
-
-        const initializeAuth = async () => {
+        if (ranOnceRef.current) return;
+        ranOnceRef.current = true;
+        (async () => {
             try {
-                // Check if this is a fresh login redirect
-                const url = new URL(window.location.href);
-                const firstBoot = url.searchParams.get('logged') === '1' || localStorage.getItem('auth_bootstrap') === '1';
-
-                if (firstBoot) {
-                    // Trust localStorage once; clear the flag
-                    localStorage.removeItem('auth_bootstrap');
-                    const userData = getStoredUser<any>();
-                    if (userData) {
-                        setUser(userData);
-                        clientAuthManager.markInitialized(); // ✅ Mark client auth as initialized
-                    }
+                const token = tokenManager.get();
+                if (!token) {
+                    setUser(null as any);
+                    setStatus('guest');
                     setIsLoading(false);
-                    setAuthInitialized(true); // ✅ Mark as initialized
+                    setAuthInitialized(true);
                     return;
                 }
-
-                // Always try to check auth, even if localStorage says we're not authenticated
-                // This handles cases where the session cookie is still valid
-                // ✅ CRITICAL: Never initiate redirects from AuthContext - middleware handles this
-                try {
-                    const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
-                    setUser(userData);
-                } catch (error) {
-                    // Only clear auth if we're sure there's no valid session
-                    console.log('No valid session found, user will need to login again');
-                    // ✅ Don't redirect here - let middleware handle unauthenticated users
+                const res = await fetch(apiUrl('auth/whoami'), {
+                    headers: { Authorization: `Bearer ${token}` },
+                    credentials: 'include',
+                });
+                if (!res.ok) {
+                    tokenManager.clear();
+                    setUser(null as any);
+                    setStatus('guest');
+                    setIsLoading(false);
+                    setAuthInitialized(true);
+                    return;
                 }
-            } catch (error) {
-                console.error('Auth initialization failed:', error);
-                clientAuthManager.clearAuth();
-            } finally {
+                const json = await res.json();
+                const apiUser = json?.data || json?.user || null;
+                if (!apiUser) {
+                    setUser(null as any);
+                    setStatus('guest');
+                    setIsLoading(false);
+                    setAuthInitialized(true);
+                    return;
+                }
+                // shape-normalise minimal fields used in UI
+                const clientUser = {
+                    id: String(apiUser.user_id ?? apiUser.id ?? ''),
+                    email: apiUser.email,
+                    first_name: apiUser.first_name,
+                    last_name: apiUser.last_name,
+                    is_admin: !!apiUser.is_admin,
+                    role: apiUser.role === 'admin' ? 'admin' : 'user',
+                };
+                setUser(clientUser as any);
+                setStatus('authed');
                 setIsLoading(false);
-                setAuthInitialized(true); // ✅ Mark as initialized
+                setAuthInitialized(true);
+            } catch (e) {
+                setUser(null as any);
+                setStatus('guest');
+                setIsLoading(false);
+                setAuthInitialized(true);
             }
-        };
-
-        // Add a timeout to prevent infinite loading
-        const timeout = setTimeout(() => {
-            console.warn('Auth initialization timeout, setting loading to false');
-            setIsLoading(false);
-            setAuthInitialized(true); // ✅ Mark as initialized even on timeout
-        }, 5000);
-
-        initializeAuth().finally(() => {
-            clearTimeout(timeout);
-        });
-    }, []); // ✅ Empty dependency array - run only once on mount
+        })();
+    }, []);
 
     const login = async (credentials: { email: string; password: string }) => {
         setIsLoading(true);
@@ -278,11 +285,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     };
 
+    const loading = status === 'loading';
+    const isAuthenticated = status === 'authed';
+
     const value: AuthContextType = {
         user,
         isAuthenticated,
         isAdmin,
         isLoading,
+        loading,
+        status,
         login,
         adminLogin,
         logout,

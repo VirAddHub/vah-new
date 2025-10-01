@@ -266,6 +266,12 @@ export type { User } from './client-auth';
 async function authFetch(inputPath: string, init: RequestInit = {}) {
   const url = apiUrl(inputPath);
   const token = tokenManager.get();
+  
+  // Don't call whoami when there's no token
+  if (!token && inputPath === 'auth/whoami') {
+    return new Response(JSON.stringify({ ok: false, error: 'no_token' }), { status: 401 }) as any;
+  }
+  
   const headers = new Headers(init.headers || {});
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -282,14 +288,14 @@ async function authFetch(inputPath: string, init: RequestInit = {}) {
 
 // Safe response parser to avoid "undefined is not valid JSON" crashes
 async function parseResponseSafe(res: Response): Promise<any> {
-  const ct = res.headers.get('content-type') || '';
-  const text = await res.text();
-  if (!text.trim()) return null;
-  if (ct.includes('application/json')) {
-    try { return JSON.parse(text); } catch { return null; }
-  }
-  // Non-JSON payloads: return raw text
-  return text;
+    const ct = res.headers.get('content-type') || '';
+    const text = await res.text();
+    if (!text.trim()) return null;
+    if (ct.includes('application/json')) {
+        try { return JSON.parse(text); } catch { return null; }
+    }
+    // Non-JSON payloads: return raw text
+    return text;
 }
 
 // Normalize backend payload to our strict User type
