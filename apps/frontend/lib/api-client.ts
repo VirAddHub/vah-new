@@ -285,3 +285,46 @@ export const apiClient = {
         return legacyReq<T>(path, { method: 'DELETE' });
     },
 };
+
+// Export AuthAPI for components that need it
+export const AuthAPI = {
+    async login(email: string, password: string) {
+        const res = await legacyReq('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+        });
+
+        // Enhanced debug logging for login response
+        console.log('🔍 LOGIN DEBUG - Full response:', res);
+        console.log('🔍 LOGIN DEBUG - Response structure:', {
+            ok: res.ok,
+            status: 'status' in res ? res.status : 'N/A',
+            hasData: res.ok && !!res.data,
+            hasToken: res.ok && res.data && res.data.data && 'token' in res.data.data,
+            dataKeys: res.ok && res.data ? Object.keys(res.data) : [],
+            dataDataKeys: res.ok && res.data && res.data.data ? Object.keys(res.data.data) : [],
+            fullData: res.ok ? res.data : null
+        });
+
+        // If login successful, store the JWT token
+        if (res.ok && res.data && res.data.data && 'token' in res.data.data) {
+            const token = res.data.data.token as string;
+            console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
+            setToken(token);
+            console.log('✅ JWT token stored successfully in localStorage');
+        } else {
+            console.error('❌ LOGIN FAILED - No token in response:', res);
+        }
+
+        return res;
+    },
+
+    async whoami() {
+        return legacyReq('/api/auth/whoami', { method: 'GET' });
+    },
+
+    async logout() {
+        clearToken();
+        return { ok: true } as const;
+    },
+};
