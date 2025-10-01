@@ -46,6 +46,7 @@ import billingRouter from "./server/routes/billing";
 import paymentsRouter from "./server/routes/payments";
 import adminUsersRouter from "./server/routes/admin-users";
 import adminForwardingRouter from "./server/routes/admin-forwarding";
+import adminStatsRouter from "./server/routes/admin-stats";
 import kycRouter from "./server/routes/kyc";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
@@ -332,6 +333,8 @@ async function start() {
     logger.info('[mount] /api/admin (users) mounted');
     app.use('/api/admin', adminForwardingRouter);
     logger.info('[mount] /api/admin (forwarding) mounted');
+    app.use('/api/admin', adminStatsRouter);
+    logger.info('[mount] /api/admin (stats) mounted');
     app.use('/api/kyc', kycRouter);
     logger.info('[mount] /api/kyc mounted');
 

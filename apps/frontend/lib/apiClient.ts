@@ -19,6 +19,7 @@ import type {
     MailItem,
     ForwardingRequest,
 } from './api-client';
+import { getToken } from './token-manager';
 
 type ReqInit = RequestInit & { headers?: HeadersInit };
 
@@ -28,9 +29,11 @@ const j = (v: any) =>
 async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> {
     const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
     const isForm = init.body instanceof FormData;
+    const token = getToken();
 
     const headers: HeadersInit = {
         accept: 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(init.headers || {}),
         ...(!isForm && init.body && typeof init.body === 'object'
             ? { 'content-type': 'application/json' }
