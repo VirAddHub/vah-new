@@ -180,12 +180,6 @@ export const apiClient = {
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
 
-            // Also store user data if present
-            if (resp.data.user) {
-                setStoredUser(resp.data.user);
-                console.log('✅ User data stored:', resp.data.user);
-            }
-
             // Verify token was stored
             const storedToken = getToken();
             console.log('🔍 TOKEN DEBUG - Verification - stored token exists:', !!storedToken);
