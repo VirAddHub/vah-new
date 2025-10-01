@@ -26,22 +26,12 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 u.email,
                 u.first_name,
                 u.last_name,
-                u.phone,
                 u.is_admin,
-                u.plan_id,
                 u.plan_status,
                 u.kyc_status,
-                u.kyc_verified_at,
-                u.company_reg_no,
-                u.gocardless_customer_id,
-                u.gocardless_mandate_id,
                 u.created_at,
-                u.updated_at,
-                u.deleted_at,
-                p.name as plan_name,
-                p.price_pence
+                u.updated_at
             FROM "user" u
-            LEFT JOIN plans p ON u.plan_id = p.id
         `;
 
         const params: any[] = [];
@@ -96,13 +86,8 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(`
-            SELECT
-                u.*,
-                p.name as plan_name,
-                p.price_pence,
-                p.billing_cycle
+            SELECT u.*
             FROM "user" u
-            LEFT JOIN plans p ON u.plan_id = p.id
             WHERE u.id = $1
         `, [userId]);
 
@@ -134,12 +119,9 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         email,
         first_name,
         last_name,
-        phone,
         is_admin,
-        plan_id,
         plan_status,
-        kyc_status,
-        company_reg_no
+        kyc_status
     } = req.body;
 
     try {
@@ -159,17 +141,9 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             updates.push(`last_name = $${paramIndex++}`);
             values.push(last_name);
         }
-        if (typeof phone === 'string') {
-            updates.push(`phone = $${paramIndex++}`);
-            values.push(phone);
-        }
         if (typeof is_admin === 'boolean') {
             updates.push(`is_admin = $${paramIndex++}`);
             values.push(is_admin);
-        }
-        if (typeof plan_id === 'number') {
-            updates.push(`plan_id = $${paramIndex++}`);
-            values.push(plan_id);
         }
         if (typeof plan_status === 'string') {
             updates.push(`plan_status = $${paramIndex++}`);
@@ -178,10 +152,6 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
             values.push(kyc_status);
-        }
-        if (typeof company_reg_no === 'string') {
-            updates.push(`company_reg_no = $${paramIndex++}`);
-            values.push(company_reg_no);
         }
 
         updates.push(`updated_at = $${paramIndex++}`);

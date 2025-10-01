@@ -19,6 +19,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
     if (!payload) {
         // Invalid or expired token - continue without setting req.user
+        console.warn('[JWT] Token verification failed for path:', req.path);
         return next();
     }
 
@@ -29,6 +30,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         email: payload.email,
         is_admin: payload.is_admin
     };
+    console.log('[JWT] Authenticated user:', req.user.id, req.user.email, 'is_admin:', req.user.is_admin);
     next();
 }
 
