@@ -1,84 +1,36 @@
-// middleware.ts
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export const config = {
-  // Only guard truly protected pages
-  matcher: ['/admin/:path*', '/dashboard'],
-};
+const AUTH_COOKIE = "vah_jwt";
 
-function isInternal(pathname: string) {
-  // Guard against internal Next.js paths, API routes, and assets
-  return (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.') // General check for static files
-  );
-}
+export function middleware(req: NextRequest) {
+  const { pathname, origin, searchParams } = req.nextUrl;
+  const isAuthed = Boolean(req.cookies.get(AUTH_COOKIE)?.value);
 
-export async function middleware(req: NextRequest) {
-  const { pathname, search } = req.nextUrl;
+  const isAuthRoute =
+    pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/");
+  const isProtected =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/") ||
+    pathname === "/admin" || pathname.startsWith("/admin/");
 
-  if (isInternal(pathname)) return NextResponse.next();
-
-  // Check for JWT token in cookies (since middleware can't access localStorage)
-  const jwtToken = req.cookies.get('vah_jwt')?.value;
-  const hasToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined';
-  const isLogin = pathname === '/login';
-
-  // If no token at all, redirect to login
-  if (!hasToken && !isLogin) {
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('next', pathname + search);
-    const res = NextResponse.redirect(loginUrl);
-    res.headers.set('x-loop-guard', 'mw->login');
-    return res;
+  if (isAuthed && isAuthRoute) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
-  // If we have a token, validate it with the backend
-  if (hasToken) {
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const whoamiResponse = await fetch(`${backendUrl}/api/auth/whoami`, {
-        headers: {
-          'Authorization': `Bearer ${jwtToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const isValidToken = whoamiResponse.ok;
-
-      if (!isValidToken) {
-        // Token is invalid/expired, clear it and redirect to login
-        const loginUrl = new URL('/login', req.url);
-        loginUrl.searchParams.set('next', pathname + search);
-        const res = NextResponse.redirect(loginUrl);
-        res.headers.set('x-loop-guard', 'mw->login-invalid-token');
-        // Clear the invalid token cookie
-        res.cookies.set('vah_jwt', '', { expires: new Date(0), path: '/' });
-        return res;
-      }
-
-      // Token is valid - if on login page, redirect to dashboard
-      // TEMPORARILY DISABLED FOR TESTING - uncomment to re-enable
-      // if (isLogin) {
-      //   const next = req.nextUrl.searchParams.get('next') || '/dashboard';
-      //   if (next !== pathname) {
-      //     const res = NextResponse.redirect(new URL(next, req.url));
-      //     res.headers.set('x-loop-guard', 'login->next');
-      //     return res;
-      //   }
-      // }
-    } catch (error) {
-      // Network error or other issue - treat as invalid token
-      console.error('Middleware token validation failed:', error);
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('next', pathname + search);
-      const res = NextResponse.redirect(loginUrl);
-      res.headers.set('x-loop-guard', 'mw->login-validation-error');
-      return res;
+  if (!isAuthed && isProtected) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    if (pathname !== "/login") {
+      url.searchParams.set("next", pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ""));
     }
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/login", "/signup", "/auth/:path*", "/dashboard/:path*", "/admin/:path*"],
+};
