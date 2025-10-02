@@ -31,7 +31,7 @@ const isoToMs = (iso: string) => {
 // Extract user ID from filename using userID_date pattern ONLY
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
-  
+
   // ONLY pattern: userID_date (e.g., user44_12_04_2022.pdf, user39_12_03_1990.pdf)
   const patterns = [
     /user(\d+)_\d{1,2}_\d{1,2}_\d{4}/i,     // user44_12_04_2022.pdf, user39_12_03_1990.pdf
@@ -39,7 +39,7 @@ const extractUserIdFromName = (name: string, path: string): number | null => {
     /user(\d+)_\d{1,2}_\d{1,2}_\d{2}/i,      // user44_12_04_22.pdf (2-digit year)
     /user(\d+)_\d{2}_\d{2}_\d{2}/i           // user44_12_04_22.pdf (strict 2-digit format)
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
@@ -49,7 +49,7 @@ const extractUserIdFromName = (name: string, path: string): number | null => {
       }
     }
   }
-  
+
   return null;
 };
 
@@ -122,10 +122,10 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime);
     const event = pick(body.event) ?? 'created';
 
-    // Clean up placeholder text from Zapier
-    const cleanName = name.includes('↳') ? 'unknown_file.pdf' : name;
-    const cleanPath = path.includes('↳') ? '/' : path;
-    const cleanItemId = itemId.includes('↳') ? `placeholder_${Date.now()}` : itemId;
+    // Clean up placeholder text from Zapier (with null checks)
+    const cleanName = (name && name.includes('↳')) ? 'unknown_file.pdf' : name;
+    const cleanPath = (path && path.includes('↳')) ? '/' : path;
+    const cleanItemId = (itemId && itemId.includes('↳')) ? `placeholder_${Date.now()}` : itemId;
 
     // Try to extract userId from filename if not provided
     const userIdFromFile = extractUserIdFromName(cleanName, cleanPath);
