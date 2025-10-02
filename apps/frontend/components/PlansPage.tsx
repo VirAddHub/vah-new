@@ -13,6 +13,7 @@ interface PlansPageProps {
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
     const [processingPayment, setProcessingPayment] = useState(false);
+    const [paymentError, setPaymentError] = useState<string | null>(null);
     
     // Use the plans hook for consistent data fetching
     const { plans, loading, error, refetch } = usePlans();
@@ -21,7 +22,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
     const handleSelectPlan = async (planId?: string) => {
         try {
             setProcessingPayment(true);
-            setError(null);
+            setPaymentError(null);
 
             const response = await apiClient.post('/api/payments/redirect-flows', {
                 plan_id: planId || 'default',
@@ -32,11 +33,11 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 // Redirect to payment
                 window.location.href = response.data.redirect_url;
             } else {
-                setError('Failed to start payment process');
+                setPaymentError('Failed to start payment process');
             }
         } catch (err) {
             console.error('Payment flow error:', err);
-            setError('Failed to start payment process');
+            setPaymentError('Failed to start payment process');
         } finally {
             setProcessingPayment(false);
         }
@@ -214,9 +215,9 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     </div>
 
                                     {/* Error Display */}
-                                    {error && (
+                                    {(error || paymentError) && (
                                         <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
-                                            {error}
+                                            {error || paymentError}
                                         </div>
                                     )}
 
