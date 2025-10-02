@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { apiClient, logAdminAction, validateEmail, validatePassword } from "../../lib";
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
+import { usePlans } from "../../hooks/usePlans";
 
 interface UserCreationFormProps {
     onSuccess: (user: any) => void;
@@ -94,6 +95,9 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+    // Use plans hook to get real-time pricing data
+    const { plans, loading: plansLoading } = usePlans();
 
     const handleInputChange = (field: keyof UserFormData, value: string | boolean) => {
         setFormData(prev => ({
@@ -513,9 +517,17 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="basic">Basic - £19.99/month</SelectItem>
-                                                        <SelectItem value="premium">Premium - £39.99/month</SelectItem>
-                                                        <SelectItem value="professional">Professional - £79.99/month</SelectItem>
+                                                        {plansLoading ? (
+                                                            <SelectItem value="" disabled>Loading plans...</SelectItem>
+                                                        ) : plans.length === 0 ? (
+                                                            <SelectItem value="" disabled>No plans available</SelectItem>
+                                                        ) : (
+                                                            plans.map((plan) => (
+                                                                <SelectItem key={plan.id} value={plan.id}>
+                                                                    {plan.name} - {plan.priceFormatted}/{plan.interval}
+                                                                </SelectItem>
+                                                            ))
+                                                        )}
                                                     </SelectContent>
                                                 </Select>
                                             </div>

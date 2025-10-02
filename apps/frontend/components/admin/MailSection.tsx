@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { apiClient, safe, adminApi } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 
 const logAdminAction = async (action: string, data?: any) => {
     try {
@@ -63,7 +64,6 @@ type MailSectionProps = Record<string, never>;
 
 export function MailSection({ }: MailSectionProps) {
     const [selectedTab, setSelectedTab] = useState("received");
-    const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [tagFilter, setTagFilter] = useState("all");
     const [loading, setLoading] = useState(false);
@@ -74,15 +74,15 @@ export function MailSection({ }: MailSectionProps) {
     const [limit] = useState(20);
     const [hasMore, setHasMore] = useState(true);
 
-    // Debounced search
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
+    // Use debounced search hook
+    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, isSearching } = useDebouncedSearch({
+        delay: 300,
+        minLength: 0,
+        onSearch: async (query) => {
+            // Search is handled by the loadMailItems function
+            await loadMailItems();
+        }
+    });
 
     // Load mail items based on current tab and filters
     const loadMailItems = async () => {
@@ -401,7 +401,13 @@ export function MailSection({ }: MailSectionProps) {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-10"
+                                    disabled={isSearching}
                                 />
+                                {isSearching && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="flex gap-2">
