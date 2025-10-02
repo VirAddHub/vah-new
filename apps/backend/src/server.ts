@@ -33,6 +33,7 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 // --- routes that need raw body (webhooks)
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { postmarkWebhook } from "./server/routes/webhooks-postmark";
+import onedriveWebhook from "./server/routes/webhooks-onedrive";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
@@ -77,7 +78,7 @@ const metricsRouter = require(path.join(routesDir, 'metrics'));
 const notificationsRouter = require(path.join(routesDir, 'notifications'));
 const profileResetRouter = require(path.join(routesDir, 'profile-reset'));
 const webhooksGcRouter = require(path.join(routesDir, 'webhooks-gc'));
-const webhooksOnedriveRouter = require(path.join(routesDir, 'webhooks-onedrive'));
+    // Mount legacy routes that need raw body handling
 // Note: webhooks-postmark and webhooks-sumsub are already imported above
 
 // --- cookie options helper
@@ -412,7 +413,7 @@ async function start() {
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
 
-    app.use('/api/webhooks-onedrive', express.raw({ type: 'application/json' }), webhooksOnedriveRouter);
+    app.use('/api/webhooks-onedrive', onedriveWebhook);
     logger.info('[mount] /api/webhooks-onedrive mounted');
 
     // 404 handler that still returns CORS
