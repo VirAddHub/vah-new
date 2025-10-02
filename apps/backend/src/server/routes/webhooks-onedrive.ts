@@ -32,21 +32,21 @@ const isoToMs = (iso: string) => {
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
   
-  // Try multiple patterns:
-  // 1. user22_sara.pdf -> 22
-  // 2. user_22_document.pdf -> 22  
-  // 3. 22_sara.pdf -> 22
-  // 4. sara_user22.pdf -> 22
-  // 5. user22.pdf -> 22
+  // Primary pattern: userID_date (e.g., 22_2025-10-02.pdf, 22_20251002.pdf)
+  // Secondary patterns for backward compatibility
   
   const patterns = [
-    /user(\d+)[._-]/i,           // user22_sara.pdf
-    /user_(\d+)[._-]/i,          // user_22_document.pdf
-    /^(\d+)[._-]/i,              // 22_sara.pdf
-    /[._-](\d+)[._-]/i,          // sara_user22.pdf
-    /user(\d+)\./i,              // user22.pdf
-    /(\d+)_/i,                   // 22_anything
-    /_(\d+)\./i                  // anything_22.pdf
+    /^(\d+)_\d{4}[-_]?\d{2}[-_]?\d{2}/i,    // 22_2025-10-02.pdf, 22_20251002.pdf
+    /^(\d+)_\d{4}[-_]?\d{2}/i,               // 22_2025-10.pdf
+    /^(\d+)_\d{8}/i,                         // 22_20251002.pdf
+    /^(\d+)_\d{6}/i,                         // 22_251002.pdf
+    /user(\d+)[._-]/i,                       // user22_sara.pdf (backward compatibility)
+    /user_(\d+)[._-]/i,                      // user_22_document.pdf
+    /^(\d+)[._-]/i,                          // 22_sara.pdf
+    /[._-](\d+)[._-]/i,                      // sara_user22.pdf
+    /user(\d+)\./i,                          // user22.pdf
+    /(\d+)_/i,                               // 22_anything
+    /_(\d+)\./i                              // anything_22.pdf
   ];
   
   for (const pattern of patterns) {
@@ -119,7 +119,7 @@ router.post('/', async (req: any, res) => {
 
   try {
     const pool = getPool();
-    
+
     // Extract OneDrive data (handle placeholder text from Zapier)
     const userId = pick(body.userId);
     const itemId = pick(body.itemId);
@@ -139,7 +139,7 @@ router.post('/', async (req: any, res) => {
     // Try to extract userId from filename if not provided
     const userIdFromFile = extractUserIdFromName(cleanName, cleanPath);
     const finalUserId = userId || userIdFromFile;
-    
+
     console.log('[OneDrive Webhook] User ID extraction:', {
       userIdFromFile,
       finalUserId,
@@ -159,17 +159,18 @@ router.post('/', async (req: any, res) => {
         originalPath: path,
         cleanPath
       });
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'missing_userId', 
+      return res.status(400).json({
+        ok: false,
+        error: 'missing_userId',
         message: 'userId not provided and could not extract from filename',
         filename: cleanName,
         path: cleanPath,
         suggestions: [
           'Add userId to webhook payload',
-          'Use filename pattern: user22_filename.pdf',
-          'Use filename pattern: 22_filename.pdf',
-          'Use filename pattern: filename_user22.pdf'
+          'Use filename pattern: 22_2025-10-02.pdf (userID_date)',
+          'Use filename pattern: 22_20251002.pdf (userID_date)',
+          'Use filename pattern: user22_filename.pdf (backward compatibility)',
+          'Use filename pattern: 22_filename.pdf'
         ]
       });
     }
@@ -181,9 +182,9 @@ router.post('/', async (req: any, res) => {
     // Verify user exists
     const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [finalUserId]);
     if (userRows.length === 0) {
-      return res.status(404).json({ 
-        ok: false, 
-        error: 'user_not_found', 
+      return res.status(404).json({
+        ok: false,
+        error: 'user_not_found',
         userId: finalUserId,
         message: `User ${finalUserId} does not exist`
       });
@@ -203,11 +204,11 @@ router.post('/', async (req: any, res) => {
         `UPDATE mail_item SET deleted = true, updated_at = $1 WHERE idempotency_key = $2`,
         [now, idempotencyKey]
       );
-      
-      return res.status(200).json({ 
-        ok: true, 
-        action: 'marked_deleted', 
-        itemId: cleanItemId, 
+
+      return res.status(200).json({
+        ok: true,
+        action: 'marked_deleted',
+        itemId: cleanItemId,
         userId: finalUserId,
         userName: `${user.first_name} ${user.last_name}`
       });
@@ -276,10 +277,10 @@ router.post('/', async (req: any, res) => {
 
   } catch (error: any) {
     console.error('[OneDrive Webhook] Error:', error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: 'internal_error', 
-      message: error.message 
+    return res.status(500).json({
+      ok: false,
+      error: 'internal_error',
+      message: error.message
     });
   }
 });
