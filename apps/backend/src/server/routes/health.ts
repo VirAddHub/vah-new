@@ -41,7 +41,7 @@ async function healthCheck(req: Request, res: Response) {
             await pool.query('SELECT 1 as health_check');
             dbLatency = Date.now() - dbStart;
             dbStatus = 'up';
-        } catch (dbError) {
+        } catch (dbError: any) {
             dbStatus = 'down';
             console.warn('[Health Check] Database check failed:', dbError.message);
         }
@@ -63,7 +63,7 @@ async function healthCheck(req: Request, res: Response) {
             }
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('[Health Check] Error:', error);
         res.status(500).json({
             ok: false,
@@ -84,7 +84,7 @@ async function healthCheckMinimal(req: Request, res: Response) {
         const pool = getPool();
         await pool.query('SELECT 1');
         res.status(200).json({ status: 'ok' });
-    } catch (error) {
+    } catch (error: any) {
         res.status(503).json({ status: 'error' });
     }
 }
