@@ -92,6 +92,10 @@ apps/frontend/out/
 **/scripts/create-users-via-api.mjs
 **/login.json
 
+# All .mjs files (user creation scripts, etc.)
+*.mjs
+**/*.mjs
+
 # cookies/tokens captured locally
 **/bff.cookies.txt
 **/*.cookies.txt
