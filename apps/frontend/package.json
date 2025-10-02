@@ -59,7 +59,7 @@
         "nodemailer": "^6.9.0",
         "pg": "^8.11.0",
         "postcss": "^8.4.0",
-        "postmark": "^3.0.0",
+        "postmark": "^4.0.5",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-hook-form": "^7.47.0",
