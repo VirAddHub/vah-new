@@ -301,12 +301,19 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                         </div>
                         {u.last_login_at && u.last_login_at > 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            Last login: {new Date(u.last_login_at).toLocaleString('en-GB', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            Last login: {(() => {
+                              try {
+                                const date = new Date(u.last_login_at);
+                                return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString('en-GB', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                });
+                              } catch (e) {
+                                return 'Invalid Date';
+                              }
+                            })()}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">Never logged in</span>
@@ -334,7 +341,14 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
                     </TableCell>
                     <TableCell>
-                      {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                      {u.created_at ? (() => {
+                        try {
+                          const date = new Date(u.created_at);
+                          return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
+                        } catch (e) {
+                          return 'Invalid Date';
+                        }
+                      })() : "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
