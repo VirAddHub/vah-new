@@ -1,6 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
-const { getPool } = require("../src/server/db");
+const { getPool } = require("../dist/src/server/db");
 
 const router = express.Router();
 
