@@ -412,7 +412,7 @@ async function start() {
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
 
-    app.use('/api/webhooks-onedrive', webhooksOnedriveRouter);
+    app.use('/api/webhooks-onedrive', express.raw({ type: 'application/json' }), webhooksOnedriveRouter);
     logger.info('[mount] /api/webhooks-onedrive mounted');
 
     // 404 handler that still returns CORS
