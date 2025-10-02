@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { toDateOrNull, nowMs } from '../helpers/time';
 
 const router = Router();
 
@@ -229,7 +230,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         is_admin,
         plan_id,
         plan_status,
-        kyc_status
+        kyc_status,
+        expires_at,
+        last_login_at,
+        last_active_at
     } = req.body;
 
     try {
@@ -269,8 +273,28 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             values.push(kyc_status);
         }
 
+        // Handle timestamp fields with proper date conversion
+        const expiresAtDate = toDateOrNull(expires_at);
+        if (expiresAtDate !== null) {
+            updates.push(`expires_at = $${paramIndex++}`);
+            values.push(expiresAtDate);
+        }
+
+        const lastLoginAtDate = toDateOrNull(last_login_at);
+        if (lastLoginAtDate !== null) {
+            updates.push(`last_login_at = $${paramIndex++}`);
+            values.push(lastLoginAtDate);
+        }
+
+        const lastActiveAtDate = toDateOrNull(last_active_at);
+        if (lastActiveAtDate !== null) {
+            updates.push(`last_active_at = $${paramIndex++}`);
+            values.push(lastActiveAtDate);
+        }
+
+        // Always update the updated_at timestamp (use milliseconds for bigint field)
         updates.push(`updated_at = $${paramIndex++}`);
-        values.push(Date.now());
+        values.push(nowMs());
 
         values.push(userId);
 
