@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
+import { usePricing } from "@/hooks/usePlans";
 import {
     ArrowRight,
     Mail,
@@ -21,40 +22,29 @@ interface HomePageProps {
 export function HomePage({ onNavigate }: HomePageProps) {
     const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
     const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-    const [loading, setLoading] = useState(true);
+    
+    // Use the pricing hook to get real-time data
+    const { 
+        monthlyPrice, 
+        annualPrice, 
+        monthlySavingsPct, 
+        loading: pricingLoading, 
+        error: pricingError,
+        hasApiData 
+    } = usePricing();
 
     const isAnnual = billing === "annual";
-    const monthlyPrice = 9.99;
-    const annualPrice = 89.99;
-    const monthlySavingsPct = useMemo(() => {
-        const saved = monthlyPrice * 12 - annualPrice;
-        const pct = (saved / (monthlyPrice * 12)) * 100;
-        return Math.round(pct);
-    }, []);
 
-    // Load marketing data (plans and health status)
+    // Load marketing data (health status)
     useEffect(() => {
         const loadData = async () => {
             try {
-                setLoading(true);
-                const [plansResponse, healthResponse] = await Promise.all([
-                    apiClient.get('/api/plans'),
-                    apiClient.get('/api/health')
-                ]);
-
-                if (plansResponse.ok) {
-                    // Store plans data for potential use
-                    console.log('Plans loaded:', plansResponse.data);
-                }
-
+                const healthResponse = await apiClient.get('/api/health');
                 if (healthResponse.ok) {
-                    // Store health data for potential use
                     console.log('Health status:', healthResponse.data);
                 }
             } catch (error) {
-                console.error('Failed to load marketing data:', error);
-            } finally {
-                setLoading(false);
+                console.error('Failed to load health data:', error);
             }
         };
 

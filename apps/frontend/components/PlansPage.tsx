@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Info, Loader2, CreditCard } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
+import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
 
 interface PlansPageProps {
@@ -11,35 +12,10 @@ interface PlansPageProps {
 
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
-    const [plans, setPlans] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [processingPayment, setProcessingPayment] = useState(false);
-
-    // Load plans from API
-    useEffect(() => {
-        const loadPlans = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const response = await apiClient.get('/api/plans');
-                if (response.ok) {
-                    // Filter only active plans
-                    const activePlans = (response.data || []).filter((p: any) => p.active && !p.retired_at);
-                    setPlans(activePlans);
-                } else {
-                    setError('Failed to load pricing plans');
-                }
-            } catch (err) {
-                console.error('Failed to load plans:', err);
-                setError('Failed to load pricing plans');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadPlans();
-    }, []);
+    
+    // Use the plans hook for consistent data fetching
+    const { plans, loading, error, refetch } = usePlans();
 
     // Handle plan selection and payment flow
     const handleSelectPlan = async (planId?: string) => {
