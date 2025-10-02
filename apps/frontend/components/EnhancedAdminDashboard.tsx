@@ -206,7 +206,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         } finally {
             setLoading(false);
         }
-    }, [setUsers, setMetrics, setError, setLoading]);
+    }, [userFilters, setUsers, setMetrics, setError, setLoading]);
 
     // Load all data on mount once
     useEffect(() => {
