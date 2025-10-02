@@ -160,7 +160,8 @@ router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res:
         updates.push(`updated_by = $${paramIndex++}`);
         values.push(adminId);
 
-        updates.push(`updated_at = NOW()`);
+        updates.push(`updated_at = $${paramIndex++}`);
+        values.push(Date.now());
 
         values.push(requestId);
 
@@ -176,18 +177,19 @@ router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res:
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'update_forwarding_request', 'mail_item', $2, $3, NOW())
-        `, [adminId, requestId, JSON.stringify(req.body)]);
+            VALUES ($1, 'update_forwarding_request', 'mail_item', $2, $3, $4)
+        `, [adminId, requestId, JSON.stringify(req.body), Date.now()]);
 
         // Create notification for user if status changed to Fulfilled or Dispatched
         if (forwarding_status === 'Fulfilled' || forwarding_status === 'Dispatched') {
             const mail = result.rows[0];
             await pool.query(`
                 INSERT INTO notification (user_id, type, title, body, read, created_at)
-                VALUES ($1, 'forwarding_update', 'Mail Forwarded', $2, false, NOW())
+                VALUES ($1, 'forwarding_update', 'Mail Forwarded', $2, false, $3)
             `, [
                 mail.user_id,
-                `Your mail has been ${forwarding_status.toLowerCase()}${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`
+                `Your mail has been ${forwarding_status.toLowerCase()}${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`,
+                Date.now()
             ]);
         }
 
@@ -226,10 +228,10 @@ router.post('/forwarding/requests/:id/fulfill', requireAdmin, async (req: Reques
                 forwarding_status = 'Fulfilled',
                 notes = COALESCE(notes, '') || $1,
                 updated_by = $2,
-                updated_at = NOW()
-            WHERE id = $3
+                updated_at = $3
+            WHERE id = $4
             RETURNING *
-        `, ['\n' + fulfillmentNotes, adminId, requestId]);
+        `, ['\n' + fulfillmentNotes, adminId, Date.now(), requestId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'not_found' });
@@ -240,17 +242,18 @@ router.post('/forwarding/requests/:id/fulfill', requireAdmin, async (req: Reques
         // Create notification for user
         await pool.query(`
             INSERT INTO notification (user_id, type, title, body, read, created_at)
-            VALUES ($1, 'forwarding_fulfilled', 'Mail Forwarded', $2, false, NOW())
+            VALUES ($1, 'forwarding_fulfilled', 'Mail Forwarded', $2, false, $3)
         `, [
             mail.user_id,
-            `Your mail has been forwarded${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`
+            `Your mail has been forwarded${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`,
+            Date.now()
         ]);
 
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'fulfill_forwarding_request', 'mail_item', $2, $3, NOW())
-        `, [adminId, requestId, JSON.stringify({ tracking_number, carrier, notes })]);
+            VALUES ($1, 'fulfill_forwarding_request', 'mail_item', $2, $3, $4)
+        `, [adminId, requestId, JSON.stringify({ tracking_number, carrier, notes }), Date.now()]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

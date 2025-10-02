@@ -20,11 +20,16 @@ router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
         const totalUsers = parseInt(userCountResult.rows[0].total);
 
         // Get user growth (users created in last 30 days vs previous 30 days)
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = Date.now() - (60 * 24 * 60 * 60 * 1000);
+
         const recentUsersResult = await pool.query(
-            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= NOW() - INTERVAL \'30 days\''
+            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1',
+            [thirtyDaysAgo]
         );
         const previousUsersResult = await pool.query(
-            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= NOW() - INTERVAL \'60 days\' AND created_at < NOW() - INTERVAL \'30 days\''
+            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1 AND created_at < $2',
+            [sixtyDaysAgo, thirtyDaysAgo]
         );
 
         const recentUsers = parseInt(recentUsersResult.rows[0].count);
@@ -39,10 +44,12 @@ router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
 
         // Get mail growth
         const recentMailResult = await pool.query(
-            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= NOW() - INTERVAL \'30 days\''
+            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1',
+            [thirtyDaysAgo]
         );
         const previousMailResult = await pool.query(
-            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= NOW() - INTERVAL \'60 days\' AND created_at < NOW() - INTERVAL \'30 days\''
+            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1 AND created_at < $2',
+            [sixtyDaysAgo, thirtyDaysAgo]
         );
 
         const recentMail = parseInt(recentMailResult.rows[0].count);

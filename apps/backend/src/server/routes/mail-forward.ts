@@ -74,8 +74,8 @@ router.post('/forward', async (req: Request, res: Response) => {
 
         // Update mail item status
         await pool.query(
-            `UPDATE mail_item SET forwarding_status = $1, updated_at = NOW() WHERE id = $2`,
-            ['Requested', m.id]
+            `UPDATE mail_item SET forwarding_status = $1, updated_at = $2 WHERE id = $3`,
+            ['Requested', Date.now(), m.id]
         );
 
         // Audit successful request
