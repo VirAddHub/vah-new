@@ -28,25 +28,16 @@ const isoToMs = (iso: string) => {
   return isNaN(date.getTime()) ? null : date.getTime();
 };
 
-// Extract user ID from filename (multiple patterns supported)
+// Extract user ID from filename using userID_date pattern ONLY
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
   
-  // Primary pattern: userID_date (e.g., 22_2025-10-02.pdf, 22_20251002.pdf)
-  // Secondary patterns for backward compatibility
-  
+  // ONLY pattern: userID_date (e.g., 22_2025-10-02.pdf, 22_20251002.pdf)
   const patterns = [
     /^(\d+)_\d{4}[-_]?\d{2}[-_]?\d{2}/i,    // 22_2025-10-02.pdf, 22_20251002.pdf
     /^(\d+)_\d{4}[-_]?\d{2}/i,               // 22_2025-10.pdf
     /^(\d+)_\d{8}/i,                         // 22_20251002.pdf
-    /^(\d+)_\d{6}/i,                         // 22_251002.pdf
-    /user(\d+)[._-]/i,                       // user22_sara.pdf (backward compatibility)
-    /user_(\d+)[._-]/i,                      // user_22_document.pdf
-    /^(\d+)[._-]/i,                          // 22_sara.pdf
-    /[._-](\d+)[._-]/i,                      // sara_user22.pdf
-    /user(\d+)\./i,                          // user22.pdf
-    /(\d+)_/i,                               // 22_anything
-    /_(\d+)\./i                              // anything_22.pdf
+    /^(\d+)_\d{6}/i                          // 22_251002.pdf
   ];
   
   for (const pattern of patterns) {
@@ -169,8 +160,8 @@ router.post('/', async (req: any, res) => {
           'Add userId to webhook payload',
           'Use filename pattern: 22_2025-10-02.pdf (userID_date)',
           'Use filename pattern: 22_20251002.pdf (userID_date)',
-          'Use filename pattern: user22_filename.pdf (backward compatibility)',
-          'Use filename pattern: 22_filename.pdf'
+          'Use filename pattern: 22_2025-10.pdf (userID_date)',
+          'Use filename pattern: 22_251002.pdf (userID_date)'
         ]
       });
     }
