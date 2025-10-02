@@ -216,6 +216,13 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
           <Button variant="outline" onClick={onRefresh} disabled={loading}>
             Refresh
           </Button>
+          <Button 
+            variant={showDeleted ? "default" : "outline"} 
+            onClick={() => setShowDeleted(!showDeleted)}
+            size="sm"
+          >
+            {showDeleted ? "Hide Deleted" : "Show Deleted"}
+          </Button>
           <Input
             placeholder="Search name or email…"
             value={q}
@@ -273,8 +280,13 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                 </TableRow>
               ) : (
                 paginatedUsers.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell>{u.email}</TableCell>
+                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-red-50" : ""}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{u.email}</span>
+                        {u.deleted_at && <Badge variant="destructive" className="text-xs">Deleted</Badge>}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
                     </TableCell>
