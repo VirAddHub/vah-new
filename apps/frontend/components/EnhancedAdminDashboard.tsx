@@ -95,6 +95,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const [error, setError] = useState<string | null>(null);
     const [systemStatus, setSystemStatus] = useState<'operational' | 'degraded' | 'down'>('operational');
 
+    // User filters state
+    const [userFilters, setUserFilters] = useState({
+        search: '',
+        status: '',
+        plan_id: '',
+        kyc_status: '',
+        activity: '',
+    });
+
     // Throttle repeated requests
     const usersLastLoadedAtRef = useRef<number | null>(null);
 
@@ -156,9 +165,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             setLoading(true);
             setError(null);
 
-            // Fetch all users using adminService
-            console.debug('[Users] Making API call via adminService.getUsers()');
-            const usersResponse = await adminService.getUsers();
+            // Fetch all users using adminService with filters
+            console.debug('[Users] Making API call via adminService.getUsers() with filters:', userFilters);
+            const usersResponse = await adminService.getUsers(userFilters);
             console.debug('[Users] API response:', usersResponse);
 
             if (usersResponse.ok) {
@@ -238,6 +247,14 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, [activeSection, loading, users.length, loadAdminData]);
 
+    // Reload data when filters change
+    useEffect(() => {
+        if (activeSection === 'users') {
+            console.debug('[Users] Filters changed, reloading data');
+            void loadAdminData();
+        }
+    }, [userFilters, activeSection, loadAdminData]);
+
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
@@ -248,6 +265,17 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
+
+    const handleFiltersChange = useCallback((filters: {
+        search: string;
+        status: string;
+        plan_id: string;
+        kyc_status: string;
+        activity: string;
+    }) => {
+        console.debug('[Users] Filters changed:', filters);
+        setUserFilters(filters);
+    }, []);
 
     const renderContent = () => {
         // Show loading state for overview when data is being loaded initially
@@ -266,7 +294,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "overview":
                 return <OverviewSection metrics={metrics} overview={overview} systemStatus={systemStatus} />;
             case "users":
-                return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} />;
+                return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} onFiltersChange={handleFiltersChange} />;
             case "mail":
                 return <MailSection />;
             case "forwarding":

@@ -7,6 +7,7 @@ import { Input } from "../ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { useToast } from "../ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 type AdminUser = {
   id: string;
@@ -28,15 +29,28 @@ interface UsersSectionProps {
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
+  onFiltersChange?: (filters: {
+    search: string;
+    status: string;
+    plan_id: string;
+    kyc_status: string;
+    activity: string;
+  }) => void;
 }
 
-export default function UsersSection({ users, loading, error, onRefresh }: UsersSectionProps) {
+export default function UsersSection({ users, loading, error, onRefresh, onFiltersChange }: UsersSectionProps) {
   const { toast } = useToast();
 
   // Search and pagination state
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [planFilter, setPlanFilter] = useState<string>("");
+  const [kycFilter, setKycFilter] = useState<string>("");
+  const [activityFilter, setActivityFilter] = useState<string>("");
 
   // Deleted users view toggle
   const [showDeleted, setShowDeleted] = useState(false);
@@ -69,6 +83,19 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
   useEffect(() => {
     setPage(1);
   }, [q]);
+
+  // Call onFiltersChange when any filter changes
+  useEffect(() => {
+    if (onFiltersChange) {
+      onFiltersChange({
+        search: q,
+        status: statusFilter,
+        plan_id: planFilter,
+        kyc_status: kycFilter,
+        activity: activityFilter,
+      });
+    }
+  }, [q, statusFilter, planFilter, kycFilter, activityFilter, onFiltersChange]);
 
   // Load user stats
   const loadUserStats = useCallback(async () => {
@@ -207,6 +234,80 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
         </div>
       )}
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Status:</label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Plan:</label>
+          <Select value={planFilter} onValueChange={setPlanFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="1">Virtual Annual</SelectItem>
+              <SelectItem value="2">Virtual Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">KYC:</label>
+          <Select value={kycFilter} onValueChange={setKycFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="verified">Verified</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Activity:</label>
+          <Select value={activityFilter} onValueChange={setActivityFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="offline">Offline</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => {
+            setStatusFilter("");
+            setPlanFilter("");
+            setKycFilter("");
+            setActivityFilter("");
+          }}
+        >
+          Clear Filters
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -225,7 +326,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             {showDeleted ? "Hide Deleted" : "Show Deleted"}
           </Button>
           <Input
-            placeholder="Search name or email…"
+            placeholder="Search ID, name or email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-60"
@@ -262,6 +363,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Activity</TableHead>
@@ -275,13 +377,16 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
             <TableBody>
               {paginatedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-muted-foreground">
+                  <TableCell colSpan={9} className="text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedUsers.map((u) => (
                   <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-red-50" : ""}>
+                    <TableCell className="font-mono text-sm">
+                      {u.id}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{u.email}</span>

@@ -28,8 +28,29 @@ export const adminService = {
     /**
      * Get all users (admin only)
      */
-    async getUsers(): Promise<{ ok: boolean; data: AdminUser[] }> {
-        const { data } = await api('/api/admin/users', { method: 'GET' });
+    async getUsers(filters?: {
+        search?: string;
+        status?: string;
+        plan_id?: string;
+        kyc_status?: string;
+        activity?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ ok: boolean; data: AdminUser[] }> {
+        const params = new URLSearchParams();
+        
+        if (filters?.search) params.append('search', filters.search);
+        if (filters?.status) params.append('status', filters.status);
+        if (filters?.plan_id) params.append('plan_id', filters.plan_id);
+        if (filters?.kyc_status) params.append('kyc_status', filters.kyc_status);
+        if (filters?.activity) params.append('activity', filters.activity);
+        if (filters?.page) params.append('page', filters.page.toString());
+        if (filters?.limit) params.append('limit', filters.limit.toString());
+
+        const queryString = params.toString();
+        const url = queryString ? `/api/admin/users?${queryString}` : '/api/admin/users';
+        
+        const { data } = await api(url, { method: 'GET' });
         return data;
     },
 

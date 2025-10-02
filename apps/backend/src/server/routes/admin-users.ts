@@ -13,7 +13,7 @@ const router = Router();
  */
 router.get('/users', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const { page = '1', limit = '100', search } = req.query;
+    const { page = '1', limit = '100', search, status, plan_id, kyc_status, activity } = req.query;
 
     const pageNum = parseInt(page as string) || 1;
     const limitNum = parseInt(limit as string) || 100;
@@ -56,9 +56,51 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
         // Filter out soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NULL';
 
+        // Search functionality - now supports ID, email, and name
         if (search) {
-            whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
-            params.push(`%${search}%`);
+            // Check if search is a number (ID search)
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                whereClause += ` AND u.id = $${paramIndex}`;
+                params.push(searchNum);
+            } else {
+                // Text search for email, first_name, last_name
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+                params.push(`%${search}%`);
+            }
+            paramIndex++;
+        }
+
+        // Status filter
+        if (status) {
+            whereClause += ` AND u.status = $${paramIndex}`;
+            params.push(String(status));
+            paramIndex++;
+        }
+
+        // Plan filter
+        if (plan_id) {
+            whereClause += ` AND u.plan_id = $${paramIndex}`;
+            params.push(parseInt(String(plan_id)));
+            paramIndex++;
+        }
+
+        // KYC status filter
+        if (kyc_status) {
+            whereClause += ` AND u.kyc_status = $${paramIndex}`;
+            params.push(String(kyc_status));
+            paramIndex++;
+        }
+
+        // Activity filter
+        if (activity) {
+            if (activity === 'online') {
+                whereClause += ` AND u.last_active_at > $${paramIndex}`;
+                params.push(onlineThreshold);
+            } else if (activity === 'offline') {
+                whereClause += ` AND (u.last_active_at IS NULL OR u.last_active_at <= $${paramIndex})`;
+                params.push(onlineThreshold);
+            }
             paramIndex++;
         }
 
@@ -67,11 +109,52 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
 
         const result = await pool.query(query, params);
 
-        // Get total count (excluding deleted users)
-        const countQuery = search
-            ? 'SELECT COUNT(*) FROM "user" WHERE deleted_at IS NULL AND (email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1)'
-            : 'SELECT COUNT(*) FROM "user" WHERE deleted_at IS NULL';
-        const countParams = search ? [`%${search}%`] : [];
+        // Get total count with same filters
+        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NULL';
+        const countParams: any[] = [];
+        let countParamIndex = 1;
+
+        if (search) {
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                countQuery += ` AND u.id = $${countParamIndex}`;
+                countParams.push(searchNum);
+            } else {
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
+                countParams.push(`%${search}%`);
+            }
+            countParamIndex++;
+        }
+
+        if (status) {
+            countQuery += ` AND u.status = $${countParamIndex}`;
+            countParams.push(String(status));
+            countParamIndex++;
+        }
+
+        if (plan_id) {
+            countQuery += ` AND u.plan_id = $${countParamIndex}`;
+            countParams.push(parseInt(String(plan_id)));
+            countParamIndex++;
+        }
+
+        if (kyc_status) {
+            countQuery += ` AND u.kyc_status = $${countParamIndex}`;
+            countParams.push(String(kyc_status));
+            countParamIndex++;
+        }
+
+        if (activity) {
+            if (activity === 'online') {
+                countQuery += ` AND u.last_active_at > $${countParamIndex}`;
+                countParams.push(onlineThreshold);
+            } else if (activity === 'offline') {
+                countQuery += ` AND (u.last_active_at IS NULL OR u.last_active_at <= $${countParamIndex})`;
+                countParams.push(onlineThreshold);
+            }
+            countParamIndex++;
+        }
+
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
