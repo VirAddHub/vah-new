@@ -305,10 +305,10 @@ router.post("/login", async (req, res) => {
 
         const { email, password } = validation.data;
 
-        // Get user from database
+        // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2',
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
             [email, 'active'] // Use the validated and normalized email
         );
 
@@ -405,14 +405,31 @@ router.get("/whoami", async (req, res) => {
             });
         }
 
-        // Return user data from token
+        // Verify user still exists and is not deleted
+        const pool = getPool();
+        const user = await pool.query(
+            'SELECT id, email, is_admin, role FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            [payload.id]
+        );
+
+        if (!user.rows[0]) {
+            return res.status(401).json({
+                ok: false,
+                error: "user_deleted",
+                message: "User account has been deleted"
+            });
+        }
+
+        const userData = user.rows[0];
+
+        // Return user data from database (not token)
         res.json({
             ok: true,
             data: {
-                user_id: payload.id,
-                email: payload.email,
-                is_admin: payload.is_admin,
-                role: payload.role
+                user_id: userData.id,
+                email: userData.email,
+                is_admin: userData.is_admin,
+                role: userData.role
             }
         });
     } catch (error) {
