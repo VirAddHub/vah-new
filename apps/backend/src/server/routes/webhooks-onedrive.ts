@@ -104,12 +104,38 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime);
     const event = pick(body.event) ?? 'created';
 
+    // Debug logging
+    console.log('[OneDrive Webhook] Received payload:', {
+      userId,
+      itemId,
+      name,
+      path,
+      mimeType,
+      size,
+      webUrl,
+      event,
+      fullBody: body
+    });
+
     // Try to extract userId from filename if not provided
     const userIdFromFile = extractUserIdFromName(name, path);
     const finalUserId = userId || userIdFromFile;
+    
+    console.log('[OneDrive Webhook] User ID extraction:', {
+      userIdFromFile,
+      finalUserId,
+      name,
+      path
+    });
 
     // Validation
     if (!finalUserId) {
+      console.log('[OneDrive Webhook] Validation failed: missing userId', {
+        userId,
+        userIdFromFile,
+        name,
+        path
+      });
       return res.status(400).json({ 
         ok: false, 
         error: 'missing_userId', 
@@ -119,15 +145,16 @@ router.post('/', async (req: any, res) => {
       });
     }
     if (!itemId) {
+      console.log('[OneDrive Webhook] Validation failed: missing itemId', { itemId });
       return res.status(400).json({ ok: false, error: 'missing_itemId' });
     }
 
     // Verify user exists
     const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [finalUserId]);
     if (userRows.length === 0) {
-      return res.status(404).json({ 
-        ok: false, 
-        error: 'user_not_found', 
+      return res.status(404).json({
+        ok: false,
+        error: 'user_not_found',
         userId: finalUserId,
         message: `User ${finalUserId} does not exist`
       });
@@ -147,11 +174,11 @@ router.post('/', async (req: any, res) => {
         `UPDATE mail_item SET deleted = true, updated_at = $1 WHERE idempotency_key = $2`,
         [now, idempotencyKey]
       );
-      
-      return res.status(200).json({ 
-        ok: true, 
-        action: 'marked_deleted', 
-        itemId, 
+
+      return res.status(200).json({
+        ok: true,
+        action: 'marked_deleted',
+        itemId,
         userId: finalUserId,
         userName: `${user.first_name} ${user.last_name}`
       });
@@ -220,10 +247,10 @@ router.post('/', async (req: any, res) => {
 
   } catch (error: any) {
     console.error('[OneDrive Webhook] Error:', error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: 'internal_error', 
-      message: error.message 
+    return res.status(500).json({
+      ok: false,
+      error: 'internal_error',
+      message: error.message
     });
   }
 });
