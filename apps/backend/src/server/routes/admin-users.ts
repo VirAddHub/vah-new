@@ -286,8 +286,8 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'update_user', 'user', $2, $3, $4)
-        `, [adminId, userId, JSON.stringify(req.body), Date.now()]);
+            VALUES ($1, 'update_user', 'user', $2, $3, NOW())
+        `, [adminId, userId, JSON.stringify(req.body)]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
@@ -366,8 +366,8 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
-            VALUES ($1, $2, $3, $4, $5)
-        `, [adminId, 'delete_user', 'user', userId, now]);
+            VALUES ($1, $2, $3, $4, NOW())
+        `, [adminId, 'delete_user', 'user', userId]);
 
         return res.json({ ok: true });
     } catch (error: any) {
