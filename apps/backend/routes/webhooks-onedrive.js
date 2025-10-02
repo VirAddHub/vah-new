@@ -53,9 +53,13 @@ router.post("/", async (req, res) => {
     console.log('Header signature:', headerSig);
     console.log('Expected secret exists:', !!process.env.MAKE_ONEDRIVE_HMAC_SECRET);
     
-    if (!verifyHmac(raw, headerSig)) {
+    // For Zapier: Skip HMAC verification if no signature header is provided
+    // This allows Zapier to work without complex signature generation
+    if (headerSig && !verifyHmac(raw, headerSig)) {
         console.log('[OneDrive Webhook] Signature verification failed');
         return res.status(401).json({ ok: false, error: "bad_signature" });
+    } else if (!headerSig) {
+        console.log('[OneDrive Webhook] No signature header - allowing Zapier request');
     }
 
     let b;
@@ -78,9 +82,9 @@ router.post("/", async (req, res) => {
      */
     const event = String(b.event || "").toLowerCase();
     let userId = Number(b.userId || 0);
-    
+
     const pool = getPool();
-    
+
     try {
         if (!userId && b.userCrn) {
             const userResult = await pool.query("SELECT id FROM \"user\" WHERE company_reg_no = $1", [String(b.userCrn)]);
@@ -100,7 +104,7 @@ router.post("/", async (req, res) => {
         // upsert file by item_id
         const existingResult = await pool.query(`SELECT id, mail_item_id FROM file WHERE item_id=$1`, [String(b.itemId || "")]);
         const existing = existingResult.rows[0];
-        
+
         if (existing) {
             await pool.query(`
                 UPDATE file SET
@@ -121,7 +125,7 @@ router.post("/", async (req, res) => {
                 Number(b.size || 0), b.mimeType || null, b.eTag || null, modifiedAt, b.webUrl || null, now, now
             ]);
         }
-        
+
         const fileResult = await pool.query(`SELECT * FROM file WHERE item_id=$1`, [String(b.itemId || "")]);
         const fileRow = fileResult.rows[0];
 
@@ -132,7 +136,7 @@ router.post("/", async (req, res) => {
             const linkResult = await pool.query(`SELECT id FROM mail_item WHERE file_id = $1`, [fileRow.id]);
             mailId = linkResult.rows[0]?.id || 0;
         }
-        
+
         if (!mailId) {
             const mailResult = await pool.query(`
                 INSERT INTO mail_item (created_at, user_id, subject, sender_name, tag, status, notes,
@@ -175,7 +179,7 @@ router.post("/", async (req, res) => {
         } catch (_) { }
 
         return res.json({ ok: true, mail_item_id: mailId, file_id: fileRow.id });
-        
+
     } catch (error) {
         console.error('[OneDrive webhook] Error:', error);
         return res.status(500).json({ ok: false, error: "internal_error", message: error.message });
