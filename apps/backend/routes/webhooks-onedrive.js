@@ -50,6 +50,8 @@ router.post("/", async (req, res) => {
     console.log('[OneDrive Webhook Debug]');
     console.log('Headers:', req.headers);
     console.log('Raw body length:', raw ? raw.length : 'null');
+    console.log('Raw body type:', typeof raw);
+    console.log('Raw body content:', raw ? raw.toString('utf8').substring(0, 200) : 'null');
     console.log('Header signature:', headerSig);
     console.log('Expected secret exists:', !!process.env.MAKE_ONEDRIVE_HMAC_SECRET);
 
