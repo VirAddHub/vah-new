@@ -37,6 +37,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 u.created_at,
                 u.updated_at,
                 u.last_active_at,
+                u.last_login_at,
                 p.name as plan_name,
                 p.interval as plan_interval,
                 p.price_pence as plan_price,

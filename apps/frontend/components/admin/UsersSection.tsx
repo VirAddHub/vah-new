@@ -19,6 +19,7 @@ type AdminUser = {
   created_at?: string;
   deleted_at?: string;
   last_active_at?: number;
+  last_login_at?: number;
   activity_status?: 'online' | 'offline';
 };
 
@@ -216,8 +217,8 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
           <Button variant="outline" onClick={onRefresh} disabled={loading}>
             Refresh
           </Button>
-          <Button 
-            variant={showDeleted ? "default" : "outline"} 
+          <Button
+            variant={showDeleted ? "default" : "outline"}
             onClick={() => setShowDeleted(!showDeleted)}
             size="sm"
           >
@@ -298,9 +299,9 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                             {u.activity_status === 'online' ? 'Online' : 'Offline'}
                           </span>
                         </div>
-                        {u.last_active_at && u.last_active_at > 0 ? (
+                        {u.last_login_at && u.last_login_at > 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            Last: {new Date(u.last_active_at).toLocaleString('en-GB', {
+                            Last login: {new Date(u.last_login_at).toLocaleString('en-GB', {
                               month: 'short',
                               day: 'numeric',
                               hour: '2-digit',

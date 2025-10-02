@@ -332,6 +332,13 @@ router.post("/login", async (req, res) => {
             });
         }
 
+        // Update last_login_at timestamp
+        const now = Date.now();
+        await pool.query(
+            'UPDATE "user" SET last_login_at = $1, last_active_at = $2 WHERE id = $3',
+            [now, now, userData.id]
+        );
+
         // Generate JWT token
         const token = generateToken({
             id: userData.id,
