@@ -41,6 +41,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 p.interval as plan_interval,
                 p.price_pence as plan_price,
                 CASE
+                    WHEN u.last_active_at IS NULL THEN 'offline'
                     WHEN u.last_active_at > ${onlineThreshold} THEN 'online'
                     ELSE 'offline'
                 END as activity_status

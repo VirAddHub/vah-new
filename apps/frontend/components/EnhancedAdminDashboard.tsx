@@ -93,6 +93,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [systemStatus, setSystemStatus] = useState<'operational' | 'degraded' | 'down'>('operational');
 
     // Throttle repeated requests
     const usersLastLoadedAtRef = useRef<number | null>(null);
@@ -211,6 +212,22 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         void loadAllData();
     }, []); // Only run once on mount
 
+    // Check system health
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const response = await fetch('/api/healthz');
+                setSystemStatus(response.ok ? 'operational' : 'down');
+            } catch (error) {
+                setSystemStatus('down');
+            }
+        };
+
+        checkHealth();
+        const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, []);
+
     // Fetch when Users tab becomes active (only if no data loaded yet)
     useEffect(() => {
         if (activeSection !== 'users') return;
@@ -247,7 +264,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
         switch (activeSection) {
             case "overview":
-                return <OverviewSection metrics={metrics} overview={overview} />;
+                return <OverviewSection metrics={metrics} overview={overview} systemStatus={systemStatus} />;
             case "users":
                 return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} />;
             case "mail":
@@ -263,7 +280,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "settings":
                 return <SettingsSection />;
             default:
-                return <OverviewSection metrics={metrics} overview={overview} />;
+                return <OverviewSection metrics={metrics} overview={overview} systemStatus={systemStatus} />;
         }
     };
 
@@ -396,7 +413,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 }
 
 // Enhanced Section Components
-function OverviewSection({ metrics, overview }: { metrics: any; overview: any }) {
+function OverviewSection({ metrics, overview, systemStatus }: { metrics: any; overview: any; systemStatus: 'operational' | 'degraded' | 'down' }) {
     const totals = safe(metrics?.totals, {});
     const systemHealth = safe(metrics?.system_health, {});
     const recentActivity = safe(metrics?.recent_activity, []);
@@ -409,10 +426,19 @@ function OverviewSection({ metrics, overview }: { metrics: any; overview: any })
                     <p className="text-muted-foreground">Real-time system status and key performance metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="gap-2">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${(systemHealth as any)?.status === 'operational' ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                        {(systemHealth as any)?.status === 'operational' ? 'System Operational' : 'System Issues'}
+                    <Badge variant="outline" className={`gap-2 ${
+                        systemStatus === 'operational' ? 'border-green-500' :
+                        systemStatus === 'degraded' ? 'border-yellow-500' :
+                        'border-red-500'
+                    }`}>
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                            systemStatus === 'operational' ? 'bg-green-500' :
+                            systemStatus === 'degraded' ? 'bg-yellow-500' :
+                            'bg-red-500'
+                        }`} />
+                        {systemStatus === 'operational' ? 'System Operational' :
+                         systemStatus === 'degraded' ? 'System Degraded' :
+                         'System Down'}
                     </Badge>
                 </div>
             </div>

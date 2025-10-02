@@ -56,17 +56,23 @@ export default function PlansSection() {
   const loadPlans = async () => {
     setLoading(true);
     try {
+      console.log('[PlansSection] Fetching plans from /api/admin/plans...');
       const res = await apiClient.get("/api/admin/plans");
+      console.log('[PlansSection] Response:', res);
+
       if (res.ok && res.data) {
+        console.log('[PlansSection] Plans data:', res.data);
         setPlans(res.data);
       } else {
+        console.error('[PlansSection] Failed to load plans:', res);
         toast({
           title: "Error",
-          description: "Failed to load plans",
+          description: res.message || "Failed to load plans",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('[PlansSection] Error loading plans:', error);
       toast({
         title: "Error",
         description: "Failed to load plans",
