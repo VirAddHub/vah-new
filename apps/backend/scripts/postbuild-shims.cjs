@@ -38,6 +38,22 @@ module.exports = require('../../lib/${module}');
         console.log('[shims] wrote', path.relative(root, path.join(serverDir, `${module}.js`)));
     }
 
+    // Copy JavaScript files from routes directory
+    const routesSourceDir = path.join(root, 'routes');
+    const routesDestDir = path.join(serverDir, 'routes');
+    
+    if (fs.existsSync(routesSourceDir)) {
+        fs.mkdirSync(routesDestDir, { recursive: true });
+        
+        const routeFiles = fs.readdirSync(routesSourceDir).filter(file => file.endsWith('.js'));
+        for (const file of routeFiles) {
+            const sourcePath = path.join(routesSourceDir, file);
+            const destPath = path.join(routesDestDir, file);
+            fs.copyFileSync(sourcePath, destPath);
+            console.log('[shims] copied', path.relative(root, sourcePath), 'to', path.relative(root, destPath));
+        }
+    }
+
 } catch (e) {
     console.error('[shims] failed:', e?.message || e);
     process.exit(1);
