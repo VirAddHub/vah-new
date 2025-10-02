@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { API_BASE } from '@/lib/config';
+import { useSimpleDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -203,6 +204,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                 } else if (company.company_type === 'llp') {
                     updateFormData('business_type', 'llp');
                 }
+                
+                // Clear any previous errors
+                setErrors(prev => ({ ...prev, company_number: '' }));
             } else {
                 setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
             }
@@ -213,6 +217,20 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
             setIsSearching(false);
         }
     };
+
+    // Auto-verify company number when manually entered (debounced)
+    useEffect(() => {
+        if (!isManualEntry || !formData.company_number.trim()) return;
+
+        const timer = setTimeout(async () => {
+            // Only auto-verify if company number looks valid (8 digits for UK companies)
+            if (formData.company_number.match(/^\d{8}$/)) {
+                await handleCompaniesHouseSearch();
+            }
+        }, 1000); // 1 second delay for manual entry
+
+        return () => clearTimeout(timer);
+    }, [formData.company_number, isManualEntry]);
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -497,31 +515,25 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         <Label htmlFor="company_number" className="flex items-center gap-2">
                                             Company Number <span className="text-destructive">*</span>
                                         </Label>
-                                        <div className="flex gap-2">
+                                        <div className="relative">
                                             <Input
                                                 id="company_number"
                                                 value={formData.company_number}
                                                 onChange={(e) => updateFormData('company_number', e.target.value)}
                                                 placeholder="12345678"
-                                                className={`flex-1 ${errors.company_number ? 'border-destructive' : ''}`}
+                                                className={`flex-1 ${errors.company_number ? 'border-destructive' : ''} ${isManualEntry && isSearching ? 'pr-10' : ''}`}
                                                 readOnly={!isManualEntry}
                                             />
-                                            {isManualEntry && (
-                                                <Button
-                                                    type="button"
-                                                    onClick={handleCompaniesHouseSearch}
-                                                    variant="outline"
-                                                    className="h-9"
-                                                    disabled={isSearching}
-                                                >
-                                                    {isSearching ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        'Verify'
-                                                    )}
-                                                </Button>
+                                            {isManualEntry && isSearching && (
+                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                                             )}
                                         </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {isManualEntry 
+                                                ? 'Enter an 8-digit company number and we\'ll automatically verify it'
+                                                : 'Selected from Companies House. You can edit if needed.'
+                                            }
+                                        </p>
                                         {errors.company_number && (
                                             <p className="text-sm text-destructive">{errors.company_number}</p>
                                         )}
