@@ -23,6 +23,14 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
         // Consider user online if active in last 5 minutes
         const onlineThreshold = Date.now() - (5 * 60 * 1000);
 
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        // Add onlineThreshold as the first parameter
+        params.push(onlineThreshold);
+        const onlineThresholdParam = `$${paramIndex}`;
+        paramIndex++;
+
         let query = `
             SELECT
                 u.id,
@@ -43,15 +51,12 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 p.price_pence as plan_price,
                 CASE
                     WHEN u.last_active_at IS NULL THEN 'offline'
-                    WHEN u.last_active_at > ${onlineThreshold} THEN 'online'
+                    WHEN u.last_active_at > ${onlineThresholdParam} THEN 'online'
                     ELSE 'offline'
                 END as activity_status
             FROM "user" u
             LEFT JOIN plans p ON u.plan_id = p.id
         `;
-
-        const params: any[] = [];
-        let paramIndex = 1;
 
         // Filter out soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NULL';
@@ -222,6 +227,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         first_name,
         last_name,
         is_admin,
+        plan_id,
         plan_status,
         kyc_status
     } = req.body;
@@ -246,6 +252,13 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof is_admin === 'boolean') {
             updates.push(`is_admin = $${paramIndex++}`);
             values.push(is_admin);
+        }
+        if (plan_id !== undefined && plan_id !== null) {
+            const planIdNum = parseInt(String(plan_id));
+            if (!isNaN(planIdNum)) {
+                updates.push(`plan_id = $${paramIndex++}`);
+                values.push(planIdNum);
+            }
         }
         if (typeof plan_status === 'string') {
             updates.push(`plan_status = $${paramIndex++}`);

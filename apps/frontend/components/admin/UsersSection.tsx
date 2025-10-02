@@ -646,10 +646,9 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
 
                   setIsMutating(true);
                   try {
-                    // TODO: Create endpoint to change user plan
-                    // For now, just update plan_status
+                    // Update user's plan_id to change their plan
                     const res = await adminApi.updateUser(planModal.id, {
-                      plan_status: selectedPlan
+                      plan_id: parseInt(selectedPlan)
                     });
 
                     if (res.ok) {
