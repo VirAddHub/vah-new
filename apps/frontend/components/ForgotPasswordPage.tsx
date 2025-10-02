@@ -354,7 +354,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           <div className="text-sm">
             <p className="font-medium text-blue-900 mb-1">Security Tip</p>
             <p className="text-blue-800">
-              Choose a password that's unique to VirtualAddressHub and includes a mix of letters, numbers, and symbols.
+              Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.
             </p>
           </div>
         </div>
@@ -384,8 +384,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         {/* Message Alert */}
         {message && (
           <Alert className={`mt-4 ${message.type === 'error'
-              ? 'border-red-200 bg-red-50'
-              : 'border-green-200 bg-green-50'
+            ? 'border-red-200 bg-red-50'
+            : 'border-green-200 bg-green-50'
             }`}>
             {message.type === 'error' ? (
               <AlertCircle className="h-4 w-4" />
