@@ -28,11 +28,38 @@ const isoToMs = (iso: string) => {
   return isNaN(date.getTime()) ? null : date.getTime();
 };
 
-// Extract user ID from filename (e.g., "user22_2022.pdf" -> 22)
+// Extract user ID from filename (multiple patterns supported)
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
-  const match = text.match(/user(\d+)[._-]/i);
-  return match ? Number(match[1]) : null;
+  
+  // Try multiple patterns:
+  // 1. user22_sara.pdf -> 22
+  // 2. user_22_document.pdf -> 22  
+  // 3. 22_sara.pdf -> 22
+  // 4. sara_user22.pdf -> 22
+  // 5. user22.pdf -> 22
+  
+  const patterns = [
+    /user(\d+)[._-]/i,           // user22_sara.pdf
+    /user_(\d+)[._-]/i,          // user_22_document.pdf
+    /^(\d+)[._-]/i,              // 22_sara.pdf
+    /[._-](\d+)[._-]/i,          // sara_user22.pdf
+    /user(\d+)\./i,              // user22.pdf
+    /(\d+)_/i,                   // 22_anything
+    /_(\d+)\./i                  // anything_22.pdf
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const userId = Number(match[1]);
+      if (userId > 0 && userId < 10000) { // Reasonable user ID range
+        return userId;
+      }
+    }
+  }
+  
+  return null;
 };
 
 // ---- Per-route raw capture ----
@@ -93,7 +120,7 @@ router.post('/', async (req: any, res) => {
   try {
     const pool = getPool();
     
-    // Extract OneDrive data
+    // Extract OneDrive data (handle placeholder text from Zapier)
     const userId = pick(body.userId);
     const itemId = pick(body.itemId);
     const name = pick(body.name) ?? '(unnamed)';
@@ -104,21 +131,50 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime);
     const event = pick(body.event) ?? 'created';
 
+    // Clean up placeholder text from Zapier
+    const cleanName = name.includes('↳') ? 'unknown_file.pdf' : name;
+    const cleanPath = path.includes('↳') ? '/' : path;
+    const cleanItemId = itemId.includes('↳') ? `placeholder_${Date.now()}` : itemId;
+
     // Try to extract userId from filename if not provided
-    const userIdFromFile = extractUserIdFromName(name, path);
+    const userIdFromFile = extractUserIdFromName(cleanName, cleanPath);
     const finalUserId = userId || userIdFromFile;
+    
+    console.log('[OneDrive Webhook] User ID extraction:', {
+      userIdFromFile,
+      finalUserId,
+      originalName: name,
+      cleanName,
+      originalPath: path,
+      cleanPath
+    });
 
     // Validation
     if (!finalUserId) {
+      console.log('[OneDrive Webhook] Validation failed: missing userId', {
+        userId,
+        userIdFromFile,
+        originalName: name,
+        cleanName,
+        originalPath: path,
+        cleanPath
+      });
       return res.status(400).json({ 
         ok: false, 
         error: 'missing_userId', 
         message: 'userId not provided and could not extract from filename',
-        filename: name,
-        path: path
+        filename: cleanName,
+        path: cleanPath,
+        suggestions: [
+          'Add userId to webhook payload',
+          'Use filename pattern: user22_filename.pdf',
+          'Use filename pattern: 22_filename.pdf',
+          'Use filename pattern: filename_user22.pdf'
+        ]
       });
     }
-    if (!itemId) {
+    if (!cleanItemId) {
+      console.log('[OneDrive Webhook] Validation failed: missing itemId', { itemId, cleanItemId });
       return res.status(400).json({ ok: false, error: 'missing_itemId' });
     }
 
@@ -138,7 +194,7 @@ router.post('/', async (req: any, res) => {
     const receivedAtMs = isoToMs(lastModifiedDateTime) ?? now;
 
     // Create idempotency key from OneDrive itemId
-    const idempotencyKey = `onedrive_${itemId}`;
+    const idempotencyKey = `onedrive_${cleanItemId}`;
 
     // Handle different events
     if (event === 'deleted') {
@@ -151,7 +207,7 @@ router.post('/', async (req: any, res) => {
       return res.status(200).json({ 
         ok: true, 
         action: 'marked_deleted', 
-        itemId, 
+        itemId: cleanItemId, 
         userId: finalUserId,
         userName: `${user.first_name} ${user.last_name}`
       });
@@ -182,7 +238,7 @@ router.post('/', async (req: any, res) => {
       [
         idempotencyKey,           // $1: idempotency_key
         finalUserId,              // $2: user_id
-        name,                     // $3: subject (use filename as subject)
+        cleanName,                // $3: subject (use filename as subject)
         'OneDrive Scan',          // $4: sender_name
         new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date (YYYY-MM-DD)
         webUrl,                   // $6: scan_file_url
@@ -190,7 +246,7 @@ router.post('/', async (req: any, res) => {
         true,                     // $8: scanned (true for OneDrive files)
         'received',               // $9: status
         'OneDrive',               // $10: tag
-        `OneDrive path: ${path}`, // $11: notes
+        `OneDrive path: ${cleanPath}`, // $11: notes
         receivedAtMs,             // $12: received_at_ms
         now,                      // $13: created_at
         now                       // $14: updated_at
@@ -212,10 +268,10 @@ router.post('/', async (req: any, res) => {
       mailItemId: mailItem.id,
       userId: finalUserId,
       userName: `${user.first_name} ${user.last_name}`,
-      itemId,
+      itemId: cleanItemId,
       subject: mailItem.subject,
       status: mailItem.status,
-      message: `File "${name}" added to ${user.first_name}'s inbox`
+      message: `File "${cleanName}" added to ${user.first_name}'s inbox`
     });
 
   } catch (error: any) {
