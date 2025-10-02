@@ -320,7 +320,7 @@ async function start() {
     app.use('/api/auth', authRouter);
     logger.info('[mount] /api/auth mounted');
     app.use('/api/profile', profileRouter);
-    app.use(robustPasswordResetRouter); // Mount robust password reset
+    app.use('/api/profile', robustPasswordResetRouter); // Mount robust password reset
     app.use('/api/profile', passwordResetRouter); // Mount password reset endpoints
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);

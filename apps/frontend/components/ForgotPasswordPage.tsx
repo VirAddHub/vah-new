@@ -81,6 +81,16 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       return;
     }
 
+    if (!/[A-Za-z]/.test(password)) {
+      setMessage({ type: 'error', text: 'Password must contain at least one letter' });
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setMessage({ type: 'error', text: 'Password must contain at least one number' });
+      return;
+    }
+
     if (password !== confirmPassword) {
       setMessage({ type: 'error', text: 'Passwords do not match' });
       return;
@@ -105,10 +115,20 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         onNavigate('login');
       }, 2000);
 
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = 'Failed to reset password. Please try again or request a new reset link.';
+
+      if (error?.error === 'weak_password') {
+        errorMessage = 'Password must be at least 8 characters with at least one letter and one number';
+      } else if (error?.error === 'invalid_or_expired_token') {
+        errorMessage = 'This reset link is invalid or has expired. Please request a new one.';
+      } else if (error?.error === 'invalid_token') {
+        errorMessage = 'Invalid reset token. Please request a new reset link.';
+      }
+
       setMessage({
         type: 'error',
-        text: 'Failed to reset password. Please try again or request a new reset link.'
+        text: errorMessage
       });
     } finally {
       setLoading(false);
@@ -291,7 +311,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             autoFocus
           />
           <p className="text-sm text-muted-foreground mt-1">
-            Must be at least 8 characters long
+            Must be at least 8 characters with at least one letter and one number
           </p>
         </div>
 

@@ -24,8 +24,8 @@ const Body = z.object({
   email: z.string().email(),
 });
 
-// POST /api/profile/reset-password-request
-router.post('/api/profile/reset-password-request', limiter, async (req, res) => {
+// POST /reset-password-request
+router.post('/reset-password-request', limiter, async (req, res) => {
   // 1) Validate quickly
   const parsed = Body.safeParse(req.body);
   // Always reply **immediately** (prevents 90–100s proxy timeouts)
