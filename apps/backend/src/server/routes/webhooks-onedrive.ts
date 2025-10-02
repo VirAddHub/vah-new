@@ -170,6 +170,93 @@ router.post('/', async (req: any, res) => {
                                  (name && name.includes('↳')) || 
                                  (path && path.includes('↳'));
       
+      // TEMPORARY WORKAROUND: If Zapier is sending placeholder data, 
+      // try to extract userId from webUrl or other fields
+      if (isZapierPlaceholder && webUrl) {
+        console.log('[OneDrive Webhook] Attempting to extract userId from webUrl:', webUrl);
+        
+        // Try to extract userId from webUrl path
+        const urlMatch = webUrl.match(/\/Documents\/Scanned_Mail\/user(\d+)_/);
+        if (urlMatch) {
+          const extractedUserId = Number(urlMatch[1]);
+          console.log('[OneDrive Webhook] Extracted userId from webUrl:', extractedUserId);
+          
+          // Verify user exists
+          const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [extractedUserId]);
+          if (userRows.length > 0) {
+            const user = userRows[0];
+            const now = nowMs();
+            const receivedAtMs = isoToMs(lastModifiedDateTime) ?? now;
+            
+            // Create a generic filename since we don't have the real one
+            const genericName = `onedrive_file_${Date.now()}.pdf`;
+            const idempotencyKey = `onedrive_${itemId || `placeholder_${Date.now()}`}`;
+            
+            // Insert mail item
+            const result = await pool.query(
+              `INSERT INTO mail_item (
+                idempotency_key, user_id, subject, sender_name, received_date,
+                scan_file_url, file_size, scanned, status, tag, notes,
+                received_at_ms, created_at, updated_at
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+              ON CONFLICT (idempotency_key) DO UPDATE SET
+                user_id = EXCLUDED.user_id,
+                subject = EXCLUDED.subject,
+                sender_name = EXCLUDED.sender_name,
+                received_date = EXCLUDED.received_date,
+                scan_file_url = EXCLUDED.scan_file_url,
+                file_size = EXCLUDED.file_size,
+                scanned = EXCLUDED.scanned,
+                status = EXCLUDED.status,
+                tag = EXCLUDED.tag,
+                notes = EXCLUDED.notes,
+                received_at_ms = EXCLUDED.received_at_ms,
+                updated_at = EXCLUDED.updated_at
+              RETURNING id, subject, status`,
+              [
+                idempotencyKey,
+                extractedUserId,
+                genericName,
+                'OneDrive Scan',
+                new Date(receivedAtMs).toISOString().split('T')[0],
+                webUrl,
+                size,
+                true,
+                'received',
+                'OneDrive',
+                `OneDrive file (extracted from URL: ${webUrl})`,
+                receivedAtMs,
+                now,
+                now
+              ]
+            );
+            
+            const mailItem = result.rows[0];
+            
+            // Log webhook event
+            await pool.query(
+              `INSERT INTO webhook_log (source, event_type, payload_json, created_at, received_at_ms)
+               VALUES ($1, $2, $3, $4, $5)`,
+              ['onedrive', event, JSON.stringify(body), now, now]
+            );
+            
+            return res.status(200).json({
+              ok: true,
+              action: 'created_or_updated_workaround',
+              mailItemId: mailItem.id,
+              userId: extractedUserId,
+              userName: `${user.first_name} ${user.last_name}`,
+              itemId: idempotencyKey,
+              subject: mailItem.subject,
+              status: mailItem.status,
+              message: `File added to ${user.first_name}'s inbox (extracted userId from URL)`,
+              workaround: true
+            });
+          }
+        }
+      }
+      
       return res.status(400).json({
         ok: false,
         error: 'missing_userId',
@@ -183,7 +270,8 @@ router.post('/', async (req: any, res) => {
           'Check Zapier OneDrive trigger configuration',
           'Ensure "File Name" field is mapped to "name" in webhook',
           'Ensure "File Path" field is mapped to "path" in webhook',
-          'Test with a real file upload, not placeholder data'
+          'Test with a real file upload, not placeholder data',
+          'TEMPORARY: Upload file to /Documents/Scanned_Mail/user22_10_02_2025.pdf path'
         ] : [
           'Add userId to webhook payload',
           'Use filename pattern: user44_12_04_2022.pdf (userID_date)',
