@@ -355,14 +355,13 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
 
     try {
         const now = Date.now();
-        const nowTimestamp = new Date().toISOString();
 
         // Soft delete - just mark as deleted
         await pool.query(`
             UPDATE "user"
             SET deleted_at = $1, updated_at = $2
             WHERE id = $3
-        `, [nowTimestamp, now, userId]);
+        `, [now, now, userId]);
 
         // Log admin action
         await pool.query(`
