@@ -1,6 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
-const { db } = require("../server/db");
+const { getPool } = require("../src/server/db");
 
 const router = express.Router();
 
@@ -38,7 +38,7 @@ function verifyHmac(raw, headerSig) {
 const RETENTION_DAYS = Number(process.env.STORAGE_RETENTION_DAYS || 365);
 const MS_DAY = 24 * 60 * 60 * 1000;
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     if (!basicAuthOk(req) || !ipAllowed(req)) {
         return res.status(401).json({ ok: false, error: "unauthorized" });
     }
@@ -69,94 +69,108 @@ router.post("/", (req, res) => {
      */
     const event = String(b.event || "").toLowerCase();
     let userId = Number(b.userId || 0);
-    if (!userId && b.userCrn) {
-        const u = db.prepare("SELECT id FROM user WHERE company_reg_no = ?").get(String(b.userCrn));
-        userId = u?.id || 0;
-    }
-    if (!userId) return res.status(400).json({ ok: false, error: "user_not_found" });
-
-    const now = Date.now();
-    const modifiedAt = b.modifiedAt ? Number(b.modifiedAt) || Date.parse(b.modifiedAt) || now : now;
-    const expiresAt = (b.scanDate ? (Number(b.scanDate) || Date.parse(b.scanDate)) : now) + RETENTION_DAYS * MS_DAY;
-
-    if (event === "deleted") {
-        db.prepare(`UPDATE file SET deleted=1, updated_at=? WHERE item_id=?`).run(now, String(b.itemId || ""));
-        return res.json({ ok: true, action: "marked_deleted" });
-    }
-
-    // upsert file by item_id
-    const existing = db.prepare(`SELECT id, mail_item_id FROM file WHERE item_id=?`).get(String(b.itemId || ""));
-    if (existing) {
-        db.prepare(`
-      UPDATE file SET
-        user_id=?, path=?, name=?, size=?, mime=?, etag=?, modified_at=?, web_url=?,
-        updated_at=?, deleted=0
-      WHERE id=?
-    `).run(
-            userId, b.path || null, b.name || null, Number(b.size || 0), b.mimeType || null, b.eTag || null,
-            modifiedAt, b.webUrl || null, now, existing.id
-        );
-    } else {
-        db.prepare(`
-      INSERT INTO file (user_id, mail_item_id, drive_id, item_id, path, name, size, mime, etag,
-                        modified_at, web_url, deleted, created_at, updated_at)
-      VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).run(
-            userId, b.driveId || null, b.itemId || null, b.path || null, b.name || null,
-            Number(b.size || 0), b.mimeType || null, b.eTag || null, modifiedAt, b.webUrl || null, now, now
-        );
-    }
-    const fileRow = db.prepare(`SELECT * FROM file WHERE item_id=?`).get(String(b.itemId || ""));
-
-    // link/create mail_item
-    let mailId = Number(b.mailItemId || 0);
-    if (!mailId) {
-        // If a mail_item already links this file, use it; else create a new one
-        const link = db.prepare(`SELECT id FROM mail_item WHERE file_id = ?`).get(fileRow.id);
-        mailId = link?.id || 0;
-    }
-    if (!mailId) {
-        const info = db.prepare(`
-      INSERT INTO mail_item (created_at, user_id, subject, sender_name, tag, status, notes,
-                             deleted, file_id, forwarding_status, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'No', ?)
-    `).run(
-            now,
-            userId,
-            b.name || "Scanned Mail",
-            "Scan",
-            "Scan",
-            "scanned",                        // consistent with your statuses
-            `OneDrive path: ${b.path || ""}`,
-            fileRow.id,
-            expiresAt
-        );
-        mailId = info.lastInsertRowid;
-    } else {
-        db.prepare(`
-      UPDATE mail_item SET file_id = COALESCE(file_id, ?),
-                           expires_at = COALESCE(expires_at, ?)
-      WHERE id=?
-    `).run(fileRow.id, expiresAt, mailId);
-    }
-
-    // Link back from file -> mail_item if not set
-    db.prepare(`UPDATE file SET mail_item_id = COALESCE(mail_item_id, ?) WHERE id = ?`)
-        .run(mailId, fileRow.id);
-
-    // In-app notification: "You've got mail"
+    
+    const pool = getPool();
+    
     try {
-        const { notify } = require("../lib/notify");
-        notify({
-            userId,
-            type: "mail",
-            title: "You've got new scanned mail",
-            body: b.name || "New file",
-            meta: { mail_item_id: mailId, file_id: fileRow.id }
-        });
-    } catch (_) { }
+        if (!userId && b.userCrn) {
+            const userResult = await pool.query("SELECT id FROM \"user\" WHERE company_reg_no = $1", [String(b.userCrn)]);
+            userId = userResult.rows[0]?.id || 0;
+        }
+        if (!userId) return res.status(400).json({ ok: false, error: "user_not_found" });
 
-    return res.json({ ok: true, mail_item_id: mailId, file_id: fileRow.id });
+        const now = Date.now();
+        const modifiedAt = b.modifiedAt ? Number(b.modifiedAt) || Date.parse(b.modifiedAt) || now : now;
+        const expiresAt = (b.scanDate ? (Number(b.scanDate) || Date.parse(b.scanDate)) : now) + RETENTION_DAYS * MS_DAY;
+
+        if (event === "deleted") {
+            await pool.query(`UPDATE file SET deleted=true, updated_at=$1 WHERE item_id=$2`, [now, String(b.itemId || "")]);
+            return res.json({ ok: true, action: "marked_deleted" });
+        }
+
+        // upsert file by item_id
+        const existingResult = await pool.query(`SELECT id, mail_item_id FROM file WHERE item_id=$1`, [String(b.itemId || "")]);
+        const existing = existingResult.rows[0];
+        
+        if (existing) {
+            await pool.query(`
+                UPDATE file SET
+                    user_id=$1, path=$2, name=$3, size=$4, mime=$5, etag=$6, modified_at=$7, web_url=$8,
+                    updated_at=$9, deleted=false
+                WHERE id=$10
+            `, [
+                userId, b.path || null, b.name || null, Number(b.size || 0), b.mimeType || null, b.eTag || null,
+                modifiedAt, b.webUrl || null, now, existing.id
+            ]);
+        } else {
+            await pool.query(`
+                INSERT INTO file (user_id, mail_item_id, drive_id, item_id, path, name, size, mime, etag,
+                                  modified_at, web_url, deleted, created_at, updated_at)
+                VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11, $12)
+            `, [
+                userId, b.driveId || null, b.itemId || null, b.path || null, b.name || null,
+                Number(b.size || 0), b.mimeType || null, b.eTag || null, modifiedAt, b.webUrl || null, now, now
+            ]);
+        }
+        
+        const fileResult = await pool.query(`SELECT * FROM file WHERE item_id=$1`, [String(b.itemId || "")]);
+        const fileRow = fileResult.rows[0];
+
+        // link/create mail_item
+        let mailId = Number(b.mailItemId || 0);
+        if (!mailId) {
+            // If a mail_item already links this file, use it; else create a new one
+            const linkResult = await pool.query(`SELECT id FROM mail_item WHERE file_id = $1`, [fileRow.id]);
+            mailId = linkResult.rows[0]?.id || 0;
+        }
+        
+        if (!mailId) {
+            const mailResult = await pool.query(`
+                INSERT INTO mail_item (created_at, user_id, subject, sender_name, tag, status, notes,
+                                       deleted, file_id, scanned, expires_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, true, $9)
+                RETURNING id
+            `, [
+                now,
+                userId,
+                b.name || "Scanned Mail",
+                "Scan",
+                "Scan",
+                "scanned",                        // consistent with your statuses
+                `OneDrive path: ${b.path || ""}`,
+                fileRow.id,
+                expiresAt
+            ]);
+            mailId = mailResult.rows[0].id;
+        } else {
+            await pool.query(`
+                UPDATE mail_item SET file_id = COALESCE(file_id, $1),
+                                     expires_at = COALESCE(expires_at, $2)
+                WHERE id=$3
+            `, [fileRow.id, expiresAt, mailId]);
+        }
+
+        // Link back from file -> mail_item if not set
+        await pool.query(`UPDATE file SET mail_item_id = COALESCE(mail_item_id, $1) WHERE id = $2`, [mailId, fileRow.id]);
+
+        // In-app notification: "You've got mail"
+        try {
+            const { notify } = require("../lib/notify");
+            notify({
+                userId,
+                type: "mail",
+                title: "You've got new scanned mail",
+                body: b.name || "New file",
+                meta: { mail_item_id: mailId, file_id: fileRow.id }
+            });
+        } catch (_) { }
+
+        return res.json({ ok: true, mail_item_id: mailId, file_id: fileRow.id });
+        
+    } catch (error) {
+        console.error('[OneDrive webhook] Error:', error);
+        return res.status(500).json({ ok: false, error: "internal_error", message: error.message });
+    }
 });
 
 module.exports = router;
