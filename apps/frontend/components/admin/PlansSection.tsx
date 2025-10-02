@@ -67,7 +67,7 @@ export default function PlansSection() {
         console.error('[PlansSection] Failed to load plans:', res);
         toast({
           title: "Error",
-          description: res.message || "Failed to load plans",
+          description: (res as any).message || "Failed to load plans",
           variant: "destructive",
         });
       }
@@ -98,7 +98,7 @@ export default function PlansSection() {
       } else {
         toast({
           title: "Error",
-          description: res.message || "Failed to create plan",
+          description: (res as any).message || "Failed to create plan",
           variant: "destructive",
         });
       }
@@ -124,7 +124,7 @@ export default function PlansSection() {
       } else {
         toast({
           title: "Error",
-          description: res.message || "Failed to update plan",
+          description: (res as any).message || "Failed to update plan",
           variant: "destructive",
         });
       }
