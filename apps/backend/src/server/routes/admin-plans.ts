@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { pricingService } from '../services/pricing';
 
 const router = Router();
 
@@ -144,6 +145,9 @@ router.post('/plans', requireAdmin, async (req: Request, res: Response) => {
             new Date().toISOString()
         ]);
 
+        // Clear pricing cache after creating new plan
+        pricingService.clearCache();
+
         return res.status(201).json({
             ok: true,
             data: result.rows[0]
@@ -267,6 +271,9 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
+
+        // Clear pricing cache after updating plan
+        pricingService.clearCache();
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

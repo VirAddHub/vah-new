@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { pricingService } from '../services/pricing';
 
 const router = Router();
 
