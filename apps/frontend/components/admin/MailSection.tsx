@@ -79,18 +79,18 @@ export function MailSection({ }: MailSectionProps) {
         delay: 300,
         minLength: 0,
         onSearch: async (query) => {
-            // Search is handled by the loadMailItems function
-            await loadMailItems();
+            // Use the query parameter directly instead of debouncedSearchTerm
+            await loadMailItems(query);
         }
     });
 
     // Load mail items based on current tab and filters
-    const loadMailItems = async () => {
+    const loadMailItems = async (searchQuery?: string) => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
                 status: selectedTab === "all" ? "" : selectedTab,
-                q: debouncedSearchTerm || "",
+                q: searchQuery || debouncedSearchTerm || "",
                 tag: tagFilter === "all" ? "" : tagFilter,
                 page: String(Math.floor(offset / limit) + 1),
                 page_size: String(limit)
