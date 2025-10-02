@@ -7,11 +7,5 @@ ALTER TABLE mail_item ADD COLUMN IF NOT EXISTS expires_at bigint;
 CREATE INDEX IF NOT EXISTS idx_mail_item_expires_at ON mail_item(expires_at);
 
 -- Set default expires_at for existing records (1 year from now)
--- Using a DO block to calculate the timestamp
-DO $$
-DECLARE
-    default_expires_at bigint;
-BEGIN
-    default_expires_at := EXTRACT(EPOCH FROM NOW()) * 1000 + (365 * 24 * 60 * 60 * 1000);
-    UPDATE mail_item SET expires_at = default_expires_at WHERE expires_at IS NULL;
-END $$;
+-- Using a fixed timestamp: January 1, 2026 (well in the future)
+UPDATE mail_item SET expires_at = 1735689600000 WHERE expires_at IS NULL;
