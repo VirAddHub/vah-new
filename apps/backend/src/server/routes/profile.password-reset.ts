@@ -94,7 +94,7 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
  */
 passwordResetRouter.post('/reset-password', limiter, async (req, res) => {
   const token = String(req.body?.token ?? '');
-  const newPassword = String(req.body?.newPassword ?? '');
+  const newPassword = String(req.body?.newPassword ?? req.body?.password ?? '');
 
   // Server-side strength (mirror your FE rules)
   if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
