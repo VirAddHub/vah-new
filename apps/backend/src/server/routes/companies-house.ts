@@ -51,7 +51,7 @@ router.get('/search', async (req: Request, res: Response) => {
             });
         }
 
-        const data = await response.json();
+        const data = await response.json() as any;
 
         return res.json({
             ok: true,
@@ -118,7 +118,7 @@ router.get('/company/:number', async (req: Request, res: Response) => {
             });
         }
 
-        const data = await response.json();
+        const data = await response.json() as any;
 
         return res.json({
             ok: true,
