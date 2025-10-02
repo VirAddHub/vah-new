@@ -298,7 +298,7 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                             {u.activity_status === 'online' ? 'Online' : 'Offline'}
                           </span>
                         </div>
-                        {u.last_active_at && !isNaN(new Date(u.last_active_at).getTime()) ? (
+                        {u.last_active_at && u.last_active_at > 0 ? (
                           <span className="text-xs text-muted-foreground">
                             Last: {new Date(u.last_active_at).toLocaleString('en-GB', {
                               month: 'short',
