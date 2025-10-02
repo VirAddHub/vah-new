@@ -41,10 +41,10 @@ module.exports = require('../../lib/${module}');
     // Copy JavaScript files from routes directory
     const routesSourceDir = path.join(root, 'routes');
     const routesDestDir = path.join(serverDir, 'routes');
-    
+
     if (fs.existsSync(routesSourceDir)) {
         fs.mkdirSync(routesDestDir, { recursive: true });
-        
+
         const routeFiles = fs.readdirSync(routesSourceDir).filter(file => file.endsWith('.js'));
         for (const file of routeFiles) {
             const sourcePath = path.join(routesSourceDir, file);

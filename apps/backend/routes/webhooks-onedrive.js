@@ -45,14 +45,14 @@ router.post("/", async (req, res) => {
 
     const headerSig = req.header("x-vah-signature");
     const raw = req.body; // Buffer (because express.raw)
-    
+
     // Debug logging for signature verification
     console.log('[OneDrive Webhook Debug]');
     console.log('Headers:', req.headers);
     console.log('Raw body length:', raw ? raw.length : 'null');
     console.log('Header signature:', headerSig);
     console.log('Expected secret exists:', !!process.env.MAKE_ONEDRIVE_HMAC_SECRET);
-    
+
     // For Zapier: Skip HMAC verification if no signature header is provided
     // This allows Zapier to work without complex signature generation
     if (headerSig && !verifyHmac(raw, headerSig)) {

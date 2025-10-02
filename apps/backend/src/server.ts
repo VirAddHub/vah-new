@@ -33,7 +33,6 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 // --- routes that need raw body (webhooks)
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { postmarkWebhook } from "./server/routes/webhooks-postmark";
-import onedriveWebhook from "../routes/webhooks-onedrive";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
@@ -310,9 +309,8 @@ async function start() {
         }
     });
 
-    // Mount webhooks FIRST with raw parser (before other routes)
+    // Mount Postmark webhook FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
-    app.use('/api/webhooks-onedrive', express.raw({ type: 'application/json' }), onedriveWebhook);
 
     // JWT authentication middleware - extracts and verifies JWT tokens
     const { authenticateJWT } = require('./middleware/auth');
