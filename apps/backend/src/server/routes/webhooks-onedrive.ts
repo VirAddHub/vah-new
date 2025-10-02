@@ -32,12 +32,12 @@ const isoToMs = (iso: string) => {
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
   
-  // ONLY pattern: userID_date (e.g., 22_2025-10-02.pdf, 22_20251002.pdf)
+  // ONLY pattern: userID_date (e.g., user44_12_04_2022.pdf, user39_12_03_1990.pdf)
   const patterns = [
-    /^(\d+)_\d{4}[-_]?\d{2}[-_]?\d{2}/i,    // 22_2025-10-02.pdf, 22_20251002.pdf
-    /^(\d+)_\d{4}[-_]?\d{2}/i,               // 22_2025-10.pdf
-    /^(\d+)_\d{8}/i,                         // 22_20251002.pdf
-    /^(\d+)_\d{6}/i                          // 22_251002.pdf
+    /user(\d+)_\d{1,2}_\d{1,2}_\d{4}/i,     // user44_12_04_2022.pdf, user39_12_03_1990.pdf
+    /user(\d+)_\d{2}_\d{2}_\d{4}/i,          // user44_12_04_2022.pdf (strict 2-digit format)
+    /user(\d+)_\d{1,2}_\d{1,2}_\d{2}/i,      // user44_12_04_22.pdf (2-digit year)
+    /user(\d+)_\d{2}_\d{2}_\d{2}/i           // user44_12_04_22.pdf (strict 2-digit format)
   ];
   
   for (const pattern of patterns) {
@@ -158,10 +158,10 @@ router.post('/', async (req: any, res) => {
         path: cleanPath,
         suggestions: [
           'Add userId to webhook payload',
-          'Use filename pattern: 22_2025-10-02.pdf (userID_date)',
-          'Use filename pattern: 22_20251002.pdf (userID_date)',
-          'Use filename pattern: 22_2025-10.pdf (userID_date)',
-          'Use filename pattern: 22_251002.pdf (userID_date)'
+          'Use filename pattern: user44_12_04_2022.pdf (userID_date)',
+          'Use filename pattern: user39_12_03_1990.pdf (userID_date)',
+          'Use filename pattern: user22_10_02_2025.pdf (userID_date)',
+          'Use filename pattern: user44_12_04_22.pdf (userID_date with 2-digit year)'
         ]
       });
     }
