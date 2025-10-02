@@ -36,8 +36,8 @@
         "dist",
         "app",
         "lib/**",
-        "routes",
-        "routes/**/*",
-        "**/*.test.ts"
+        "routes/**",
+        "**/*.test.ts",
+        "**/*.js"
     ]
 }
