@@ -191,33 +191,20 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
     }
   }
 
-  // Local filtering of users prop
-  const filteredUsers = useMemo(() => {
-    let filtered = users;
-
-    // Apply search filter
-    if (q.trim()) {
-      const searchTerm = q.trim().toLowerCase();
-      filtered = filtered.filter((u: any) =>
-        u.email?.toLowerCase().includes(searchTerm) ||
-        u.first_name?.toLowerCase().includes(searchTerm) ||
-        u.last_name?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // Apply deleted filter
+  // Server-side filtering - no local filtering needed
+  // Just filter deleted users based on showDeleted toggle
+  const displayUsers = useMemo(() => {
     if (!showDeleted) {
-      filtered = filtered.filter((u: any) => !u.deleted_at);
+      return users.filter((u: any) => !u.deleted_at);
     }
+    return users;
+  }, [users, showDeleted]);
 
-    return filtered;
-  }, [users, q, showDeleted]);
-
-  // Pagination helpers
-  const totalFiltered = filteredUsers.length;
+  // Pagination helpers - paginate the display users
+  const totalFiltered = displayUsers.length;
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const paginatedUsers = displayUsers.slice(startIndex, endIndex);
   const hasNext = useMemo(() => endIndex < totalFiltered, [endIndex, totalFiltered]);
   const hasPrev = useMemo(() => page > 1, [page]);
 

@@ -208,17 +208,10 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, [userFilters, setUsers, setMetrics, setError, setLoading]);
 
-    // Load all data on mount once
+    // Load overview data on mount once
     useEffect(() => {
-        const loadAllData = async () => {
-            console.debug('[Admin] Loading all data on mount');
-            await Promise.all([
-                loadAdminData(),
-                loadOverview()
-            ]);
-        };
-
-        void loadAllData();
+        console.debug('[Admin] Loading overview on mount');
+        void loadOverview();
     }, []); // Only run once on mount
 
     // Check system health
@@ -237,23 +230,13 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch when Users tab becomes active (only if no data loaded yet)
-    useEffect(() => {
-        if (activeSection !== 'users') return;
-        // Only fetch if not already loading and no users data
-        if (!loading && users.length === 0) {
-            console.debug('[Users] Tab activated, triggering fetch');
-            void loadAdminData();
-        }
-    }, [activeSection, loading, users.length, loadAdminData]);
-
-    // Reload data when filters change
+    // Load users data when section becomes active OR when filters change
     useEffect(() => {
         if (activeSection === 'users') {
-            console.debug('[Users] Filters changed, reloading data');
+            console.debug('[Users] Section active or filters changed, loading data');
             void loadAdminData();
         }
-    }, [userFilters, activeSection, loadAdminData]);
+    }, [activeSection, userFilters, loadAdminData]); // Load when section becomes active or filters change
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
