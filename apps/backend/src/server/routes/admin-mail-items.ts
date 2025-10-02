@@ -1,5 +1,5 @@
-// src/server/routes/admin-forwarding.ts
-// Admin forwarding request management endpoints
+// src/server/routes/admin-mail-items.ts
+// Admin mail items management endpoints
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
@@ -8,12 +8,12 @@ import { requireAdmin } from '../../middleware/auth';
 const router = Router();
 
 /**
- * GET /api/admin/forwarding/requests
- * Get all forwarding requests (admin only)
+ * GET /api/admin/mail-items
+ * Get all mail items (admin only)
  */
-router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const { status, limit = '100', offset = '0' } = req.query;
+    const { status, user_id, limit = '100', offset = '0' } = req.query;
 
     const limitNum = parseInt(limit as string) || 100;
     const offsetNum = parseInt(offset as string) || 0;
@@ -21,33 +21,31 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
     try {
         let query = `
             SELECT
-                m.id,
-                m.user_id,
-                m.subject,
-                m.sender_name,
-                m.tag,
-                m.status,
-                m.forwarding_status,
-                m.notes,
-                m.expires_at,
-                m.created_at,
-                m.updated_at,
+                m.*,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
-                f.name as file_name
+                f.name as file_name,
+                f.size as file_size,
+                f.web_url as file_url
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.forwarding_status != 'No'
+            WHERE m.deleted = false
         `;
 
         const params: any[] = [];
         let paramIndex = 1;
 
         if (status && status !== 'all') {
-            query += ` AND m.forwarding_status = $${paramIndex}`;
+            query += ` AND m.status = $${paramIndex}`;
             params.push(status);
+            paramIndex++;
+        }
+
+        if (user_id) {
+            query += ` AND m.user_id = $${paramIndex}`;
+            params.push(parseInt(user_id as string));
             paramIndex++;
         }
 
@@ -57,10 +55,22 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
         const result = await pool.query(query, params);
 
         // Get total count
-        const countQuery = status && status !== 'all'
-            ? `SELECT COUNT(*) FROM mail_item WHERE forwarding_status = $1 AND forwarding_status != 'No'`
-            : `SELECT COUNT(*) FROM mail_item WHERE forwarding_status != 'No'`;
-        const countParams = status && status !== 'all' ? [status] : [];
+        let countQuery = 'SELECT COUNT(*) FROM mail_item m WHERE m.deleted = false';
+        const countParams: any[] = [];
+        let countParamIndex = 1;
+
+        if (status && status !== 'all') {
+            countQuery += ` AND m.status = $${countParamIndex}`;
+            countParams.push(status);
+            countParamIndex++;
+        }
+
+        if (user_id) {
+            countQuery += ` AND m.user_id = $${countParamIndex}`;
+            countParams.push(parseInt(user_id as string));
+            countParamIndex++;
+        }
+
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
@@ -74,20 +84,20 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/forwarding-requests] error:', error);
+        console.error('[GET /api/admin/mail-items] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
 
 /**
- * GET /api/admin/forwarding/requests/:id
- * Get specific forwarding request (admin only)
+ * GET /api/admin/mail-items/:id
+ * Get specific mail item (admin only)
  */
-router.get('/forwarding/requests/:id', requireAdmin, async (req: Request, res: Response) => {
-    const requestId = parseInt(req.params.id);
+router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) => {
+    const mailId = parseInt(req.params.id);
     const pool = getPool();
 
-    if (!requestId) {
+    if (!mailId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
@@ -100,12 +110,14 @@ router.get('/forwarding/requests/:id', requireAdmin, async (req: Request, res: R
                 u.last_name,
                 u.phone,
                 f.name as file_name,
-                f.web_url as file_url
+                f.size as file_size,
+                f.web_url as file_url,
+                f.mime as file_mime
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
             WHERE m.id = $1
-        `, [requestId]);
+        `, [mailId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'not_found' });
@@ -113,34 +125,56 @@ router.get('/forwarding/requests/:id', requireAdmin, async (req: Request, res: R
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/admin/forwarding-requests/:id] error:', error);
+        console.error('[GET /api/admin/mail-items/:id] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
 
 /**
- * PATCH /api/admin/forwarding/requests/:id
- * Update forwarding request status (admin only)
+ * PUT /api/admin/mail-items/:id
+ * Update mail item (admin only)
  */
-router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res: Response) => {
-    const requestId = parseInt(req.params.id);
+router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) => {
+    const mailId = parseInt(req.params.id);
     const adminId = req.user!.id;
     const pool = getPool();
 
-    if (!requestId) {
+    if (!mailId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
-    const { forwarding_status, notes, tracking_number } = req.body;
+    const {
+        status,
+        subject,
+        sender_name,
+        tag,
+        notes,
+        forwarding_status
+    } = req.body;
 
     try {
         const updates: string[] = [];
         const values: any[] = [];
         let paramIndex = 1;
 
-        if (typeof forwarding_status === 'string') {
-            updates.push(`forwarding_status = $${paramIndex++}`);
-            values.push(forwarding_status);
+        if (typeof status === 'string') {
+            updates.push(`status = $${paramIndex++}`);
+            values.push(status);
+        }
+
+        if (typeof subject === 'string') {
+            updates.push(`subject = $${paramIndex++}`);
+            values.push(subject);
+        }
+
+        if (typeof sender_name === 'string') {
+            updates.push(`sender_name = $${paramIndex++}`);
+            values.push(sender_name);
+        }
+
+        if (typeof tag === 'string') {
+            updates.push(`tag = $${paramIndex++}`);
+            values.push(tag);
         }
 
         if (typeof notes === 'string') {
@@ -148,13 +182,9 @@ router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res:
             values.push(notes);
         }
 
-        // Add tracking number to notes if provided
-        if (typeof tracking_number === 'string') {
-            const existingMail = await pool.query('SELECT notes FROM mail_item WHERE id = $1', [requestId]);
-            const existingNotes = existingMail.rows[0]?.notes || '';
-            const newNotes = existingNotes + `\nTracking: ${tracking_number}`;
-            updates.push(`notes = $${paramIndex++}`);
-            values.push(newNotes);
+        if (typeof forwarding_status === 'string') {
+            updates.push(`forwarding_status = $${paramIndex++}`);
+            values.push(forwarding_status);
         }
 
         updates.push(`updated_by = $${paramIndex++}`);
@@ -163,7 +193,7 @@ router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res:
         updates.push(`updated_at = $${paramIndex++}`);
         values.push(Date.now());
 
-        values.push(requestId);
+        values.push(mailId);
 
         if (updates.length === 2) { // Only updated_by and updated_at
             return res.status(400).json({ ok: false, error: 'no_changes' });
@@ -174,64 +204,57 @@ router.patch('/forwarding/requests/:id', requireAdmin, async (req: Request, res:
             values
         );
 
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'update_forwarding_request', 'mail_item', $2, $3, $4)
-        `, [adminId, requestId, JSON.stringify(req.body), Date.now()]);
-
-        // Create notification for user if status changed to Fulfilled or Dispatched
-        if (forwarding_status === 'Fulfilled' || forwarding_status === 'Dispatched') {
-            const mail = result.rows[0];
-            await pool.query(`
-                INSERT INTO notification (user_id, type, title, body, read, created_at)
-                VALUES ($1, 'forwarding_update', 'Mail Forwarded', $2, false, $3)
-            `, [
-                mail.user_id,
-                `Your mail has been ${forwarding_status.toLowerCase()}${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`,
-                Date.now()
-            ]);
-        }
+            VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, $4)
+        `, [adminId, mailId, JSON.stringify(req.body), Date.now()]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[PATCH /api/admin/forwarding-requests/:id] error:', error);
+        console.error('[PUT /api/admin/mail-items/:id] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
 
 /**
- * POST /api/admin/forwarding/requests/:id/fulfill
- * Mark forwarding request as fulfilled (admin only)
+ * POST /api/admin/mail-items/:id/log-physical-dispatch
+ * Log physical dispatch for mail item (admin only)
  */
-router.post('/forwarding/requests/:id/fulfill', requireAdmin, async (req: Request, res: Response) => {
-    const requestId = parseInt(req.params.id);
+router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: Request, res: Response) => {
+    const mailId = parseInt(req.params.id);
     const adminId = req.user!.id;
-    const { tracking_number, carrier, notes } = req.body;
+    const { tracking_number, courier, dispatched_at } = req.body;
     const pool = getPool();
 
-    if (!requestId) {
+    if (!mailId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
     try {
-        // Build fulfillment notes
-        const fulfillmentNotes = [
-            notes || 'Forwarding request fulfilled',
+        // Build dispatch notes
+        const dispatchNotes = [
+            'Physically dispatched',
             tracking_number ? `Tracking: ${tracking_number}` : '',
-            carrier ? `Carrier: ${carrier}` : ''
+            courier ? `Courier: ${courier}` : '',
+            dispatched_at ? `Dispatched at: ${new Date(dispatched_at).toISOString()}` : ''
         ].filter(Boolean).join('\n');
 
         const result = await pool.query(`
             UPDATE mail_item
             SET
-                forwarding_status = 'Fulfilled',
+                forwarded_physically = true,
+                status = 'dispatched',
                 notes = COALESCE(notes, '') || $1,
                 updated_by = $2,
                 updated_at = $3
             WHERE id = $4
             RETURNING *
-        `, ['\n' + fulfillmentNotes, adminId, Date.now(), requestId]);
+        `, ['\n' + dispatchNotes, adminId, Date.now(), mailId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'not_found' });
@@ -242,22 +265,22 @@ router.post('/forwarding/requests/:id/fulfill', requireAdmin, async (req: Reques
         // Create notification for user
         await pool.query(`
             INSERT INTO notification (user_id, type, title, body, read, created_at)
-            VALUES ($1, 'forwarding_fulfilled', 'Mail Forwarded', $2, false, $3)
+            VALUES ($1, 'mail_dispatched', 'Mail Dispatched', $2, false, $3)
         `, [
             mail.user_id,
-            `Your mail has been forwarded${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`,
+            `Your mail has been physically dispatched${tracking_number ? ` (Tracking: ${tracking_number})` : ''}.`,
             Date.now()
         ]);
 
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'fulfill_forwarding_request', 'mail_item', $2, $3, $4)
-        `, [adminId, requestId, JSON.stringify({ tracking_number, carrier, notes }), Date.now()]);
+            VALUES ($1, 'log_physical_dispatch', 'mail_item', $2, $3, $4)
+        `, [adminId, mailId, JSON.stringify({ tracking_number, courier, dispatched_at }), Date.now()]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/admin/forwarding-requests/:id/fulfill] error:', error);
+        console.error('[POST /api/admin/mail-items/:id/log-physical-dispatch] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });

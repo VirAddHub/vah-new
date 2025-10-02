@@ -47,10 +47,10 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
   const [pageSize] = useState(20);
 
   // Filter state
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [planFilter, setPlanFilter] = useState<string>("");
-  const [kycFilter, setKycFilter] = useState<string>("");
-  const [activityFilter, setActivityFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("__all__");
+  const [planFilter, setPlanFilter] = useState<string>("__all__");
+  const [kycFilter, setKycFilter] = useState<string>("__all__");
+  const [activityFilter, setActivityFilter] = useState<string>("__all__");
 
   // Deleted users view toggle
   const [showDeleted, setShowDeleted] = useState(false);
@@ -89,10 +89,10 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
     if (onFiltersChange) {
       onFiltersChange({
         search: q,
-        status: statusFilter,
-        plan_id: planFilter,
-        kyc_status: kycFilter,
-        activity: activityFilter,
+        status: statusFilter === "__all__" ? "" : statusFilter,
+        plan_id: planFilter === "__all__" ? "" : planFilter,
+        kyc_status: kycFilter === "__all__" ? "" : kycFilter,
+        activity: activityFilter === "__all__" ? "" : activityFilter,
       });
     }
   }, [q, statusFilter, planFilter, kycFilter, activityFilter, onFiltersChange]);
@@ -243,7 +243,7 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
@@ -258,7 +258,7 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="1">Virtual Annual</SelectItem>
               <SelectItem value="2">Virtual Monthly</SelectItem>
             </SelectContent>
@@ -272,7 +272,7 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="verified">Verified</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
@@ -287,21 +287,21 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="online">Online</SelectItem>
               <SelectItem value="offline">Offline</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => {
-            setStatusFilter("");
-            setPlanFilter("");
-            setKycFilter("");
-            setActivityFilter("");
+            setStatusFilter("__all__");
+            setPlanFilter("__all__");
+            setKycFilter("__all__");
+            setActivityFilter("__all__");
           }}
         >
           Clear Filters

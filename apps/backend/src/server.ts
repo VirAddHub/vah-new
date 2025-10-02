@@ -49,6 +49,7 @@ import adminUsersRouter from "./server/routes/admin-users";
 import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminStatsRouter from "./server/routes/admin-stats";
 import adminPlansRouter from "./server/routes/admin-plans";
+import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import companiesHouseRouter from "./server/routes/companies-house";
 import kycRouter from "./server/routes/kyc";
 
@@ -341,6 +342,8 @@ async function start() {
     logger.info('[mount] /api/admin (stats) mounted');
     app.use('/api/admin', adminPlansRouter);
     logger.info('[mount] /api/admin (plans) mounted');
+    app.use('/api/admin', adminMailItemsRouter);
+    logger.info('[mount] /api/admin (mail-items) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api/kyc', kycRouter);
