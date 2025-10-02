@@ -73,6 +73,7 @@ import {
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import UsersSection from "./admin/UsersSection";
+import PlansSection from "./admin/PlansSection";
 import { DebugInfo } from "./DebugInfo";
 
 interface AdminDashboardProps {
@@ -81,7 +82,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "analytics" | "settings";
+type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "settings";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -226,6 +227,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
+        { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
@@ -254,6 +256,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <ForwardingSection />;
             case "billing":
                 return <BillingSection />;
+            case "plans":
+                return <PlansSection />;
             case "analytics":
                 return <AnalyticsSection />;
             case "settings":
