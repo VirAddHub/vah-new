@@ -279,26 +279,43 @@ export default function UsersSection({ users, loading, error, onRefresh }: Users
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${u.activity_status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                        <span className="text-xs text-muted-foreground">
-                          {u.activity_status === 'online'
-                            ? 'Online'
-                            : (u.last_active_at && !isNaN(new Date(u.last_active_at).getTime()))
-                              ? new Date(u.last_active_at).toLocaleString()
-                              : 'Never'}
-                        </span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${u.activity_status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className="text-xs font-medium">
+                            {u.activity_status === 'online' ? 'Online' : 'Offline'}
+                          </span>
+                        </div>
+                        {u.last_active_at && !isNaN(new Date(u.last_active_at).getTime()) ? (
+                          <span className="text-xs text-muted-foreground">
+                            Last: {new Date(u.last_active_at).toLocaleString('en-GB', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Never logged in</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={u.status === "active" ? "default" : "secondary"}>
+                      <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
                         {u.status || "active"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={u.plan_status === "active" ? "default" : "outline"}>
-                        {u.plan_status || "—"}
-                      </Badge>
+                      {u.plan_name ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium">{u.plan_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            £{((u.plan_price || 0) / 100).toFixed(2)}/{u.plan_interval}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No plan</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>

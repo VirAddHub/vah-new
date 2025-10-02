@@ -32,15 +32,20 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 u.is_admin,
                 u.status,
                 u.plan_status,
+                u.plan_id,
                 u.kyc_status,
                 u.created_at,
                 u.updated_at,
                 u.last_active_at,
+                p.name as plan_name,
+                p.interval as plan_interval,
+                p.price_pence as plan_price,
                 CASE
                     WHEN u.last_active_at > ${onlineThreshold} THEN 'online'
                     ELSE 'offline'
                 END as activity_status
             FROM "user" u
+            LEFT JOIN plans p ON u.plan_id = p.id
         `;
 
         const params: any[] = [];
@@ -207,18 +212,20 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 
     try {
+        const now = Date.now();
+
         // Soft delete - just mark as deleted
         await pool.query(`
             UPDATE "user"
-            SET deleted_at = $1, updated_at = $1
-            WHERE id = $2
-        `, [Date.now(), userId]);
+            SET deleted_at = $1, updated_at = $2
+            WHERE id = $3
+        `, [now, now, userId]);
 
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
-            VALUES ($1, 'delete_user', 'user', $2, $3)
-        `, [adminId, userId, Date.now()]);
+            VALUES ($1, $2, $3, $4, $5)
+        `, [adminId, 'delete_user', 'user', userId, now]);
 
         return res.json({ ok: true });
     } catch (error: any) {

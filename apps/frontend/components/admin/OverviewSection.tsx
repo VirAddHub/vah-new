@@ -65,17 +65,37 @@ export function OverviewSection() {
 
     // API Data fetching
     const { data: adminStats, isLoading: statsLoading, refetch: refetchStats } = useApiData('/api/admin/stats');
-    const { data: systemHealth, isLoading: healthLoading, refetch: refetchHealth } = useApiData('/api/admin/health');
+    const [systemStatus, setSystemStatus] = useState<'operational' | 'degraded' | 'down'>('operational');
     const { data: recentActivity, isLoading: activityLoading, refetch: refetchActivity } = useApiData('/api/admin/activity');
     const { data: pendingActions, isLoading: pendingLoading, refetch: refetchPending } = useApiData('/api/admin/pending');
+
+    // Check system health
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const response = await fetch('/api/healthz');
+                setSystemStatus(response.ok ? 'operational' : 'down');
+            } catch (error) {
+                setSystemStatus('down');
+            }
+        };
+
+        checkHealth();
+        const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, []);
 
     const handleRefreshAll = async () => {
         setLoading(true);
         try {
             await logAdminAction('admin_overview_refresh');
+
+            // Check health immediately
+            const healthResponse = await fetch('/api/healthz');
+            setSystemStatus(healthResponse.ok ? 'operational' : 'down');
+
             await Promise.all([
                 refetchStats(),
-                refetchHealth(),
                 refetchActivity(),
                 refetchPending()
             ]);
@@ -108,7 +128,6 @@ export function OverviewSection() {
     };
 
     const stats = adminStats as AdminStats | null;
-    const health = (systemHealth as SystemHealth[] | null) || [];
     const activity = (recentActivity as RecentActivity[] | null) || [];
 
     return (
@@ -119,9 +138,22 @@ export function OverviewSection() {
                     <p className="text-muted-foreground">Real-time system status and key performance metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        System Operational
+                    <Badge
+                        variant="outline"
+                        className={`gap-2 ${
+                            systemStatus === 'operational' ? 'border-green-500' :
+                            systemStatus === 'degraded' ? 'border-yellow-500' :
+                            'border-red-500'
+                        }`}
+                    >
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                            systemStatus === 'operational' ? 'bg-green-500' :
+                            systemStatus === 'degraded' ? 'bg-yellow-500' :
+                            'bg-red-500'
+                        }`} />
+                        {systemStatus === 'operational' ? 'System Operational' :
+                         systemStatus === 'degraded' ? 'System Degraded' :
+                         'System Down'}
                     </Badge>
                     <Button
                         variant="outline"
@@ -213,37 +245,6 @@ export function OverviewSection() {
                     </Card>
                 </div>
             )}
-
-            {/* System Status */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">System Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {health.length === 0 ? (
-                        <div className="text-center text-muted-foreground py-8">
-                            No system health data available
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {health.map((item: any, index: number) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className={item.status === "operational" ? "text-green-500" : "text-yellow-500"}>
-                                            {item.status === "operational" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                                        </div>
-                                        <span className="text-sm">{item.label}</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-xs text-muted-foreground">Uptime</div>
-                                        <div className="text-sm font-medium">{item.uptime}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
 
             {/* Recent Activity */}
             <Card>
