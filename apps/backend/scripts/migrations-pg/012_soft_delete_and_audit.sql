@@ -20,4 +20,19 @@ CREATE TABLE IF NOT EXISTS admin_audit (
 -- Create indexes for admin audit queries
 CREATE INDEX IF NOT EXISTS idx_admin_audit_admin_id ON admin_audit(admin_id);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created_at ON admin_audit(created_at);
-CREATE INDEX IF NOT EXISTS idx_admin_audit_target ON admin_audit(target_type, target_id);
+
+-- Create composite index for target queries (only if both columns exist)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'admin_audit' 
+        AND column_name = 'target_type'
+    ) AND EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'admin_audit' 
+        AND column_name = 'target_id'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_admin_audit_target ON admin_audit(target_type, target_id);
+    END IF;
+END $$;

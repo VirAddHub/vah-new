@@ -28,7 +28,15 @@ CREATE INDEX IF NOT EXISTS export_job_token_idx  ON public.export_job (token);
 CREATE INDEX IF NOT EXISTS export_job_expires_at_idx ON public.export_job (expires_at);
 CREATE INDEX IF NOT EXISTS export_job_status_type_idx ON public.export_job (status, type);
 
--- Add status check constraint to prevent invalid values
-ALTER TABLE public.export_job
-  ADD CONSTRAINT export_job_status_chk
-  CHECK (status IN ('pending','running','done','failed'));
+-- Add status check constraint to prevent invalid values (if it doesn't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'export_job_status_chk'
+    ) THEN
+        ALTER TABLE public.export_job
+        ADD CONSTRAINT export_job_status_chk
+        CHECK (status IN ('pending','running','done','failed'));
+    END IF;
+END $$;
