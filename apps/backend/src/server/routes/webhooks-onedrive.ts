@@ -111,6 +111,19 @@ router.post('/', async (req: any, res) => {
   try {
     const pool = getPool();
 
+    // Debug logging
+    console.log('[OneDrive Webhook] Received payload:', {
+      userId: body.userId,
+      itemId: body.itemId,
+      name: body.name,
+      path: body.path,
+      mimeType: body.mimeType,
+      size: body.size,
+      webUrl: body.webUrl,
+      event: body.event,
+      fullBody: body
+    });
+
     // Extract OneDrive data (handle placeholder text from Zapier)
     const userId = pick(body.userId);
     const itemId = pick(body.itemId);
@@ -148,15 +161,30 @@ router.post('/', async (req: any, res) => {
         originalName: name,
         cleanName,
         originalPath: path,
-        cleanPath
+        cleanPath,
+        fullPayload: body
       });
+      
+      // Check if Zapier is sending placeholder data
+      const isZapierPlaceholder = name === '(unnamed)' || path === '/' || 
+                                 (name && name.includes('↳')) || 
+                                 (path && path.includes('↳'));
+      
       return res.status(400).json({
         ok: false,
         error: 'missing_userId',
-        message: 'userId not provided and could not extract from filename',
+        message: isZapierPlaceholder 
+          ? 'Zapier is sending placeholder data instead of real OneDrive file information'
+          : 'userId not provided and could not extract from filename',
         filename: cleanName,
         path: cleanPath,
-        suggestions: [
+        isZapierPlaceholder,
+        zapierFix: isZapierPlaceholder ? [
+          'Check Zapier OneDrive trigger configuration',
+          'Ensure "File Name" field is mapped to "name" in webhook',
+          'Ensure "File Path" field is mapped to "path" in webhook',
+          'Test with a real file upload, not placeholder data'
+        ] : [
           'Add userId to webhook payload',
           'Use filename pattern: user44_12_04_2022.pdf (userID_date)',
           'Use filename pattern: user39_12_03_1990.pdf (userID_date)',
