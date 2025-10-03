@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { AdminDashboard } from '../../../components/admin/AdminDashboard';
+import { EnhancedAdminDashboard } from '../../../components/EnhancedAdminDashboard';
 import { AuthProvider, useAuth } from '../../../contexts/AuthContext';
 
 function AdminPageContent() {
@@ -33,7 +33,7 @@ function AdminPageContent() {
 
     if (showDashboard) {
         return (
-            <AdminDashboard
+            <EnhancedAdminDashboard
                 onLogout={handleLogout}
                 onNavigate={(page: string, data?: any) => {
                     console.log('Navigate to:', page, data);

@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { selectPaged } from '../db-helpers';
 
 const router = Router();
 
@@ -16,15 +17,17 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 /**
  * GET /api/forwarding/requests
- * List all forwarding requests for current user
+ * List all forwarding requests for current user (with pagination support)
+ * Query params: ?page=1&pageSize=20
  */
 router.get('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const pool = getPool();
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 20;
 
     try {
-        const result = await pool.query(`
-            SELECT
+        const result = await selectPaged(
+            `SELECT
                 fr.*,
                 mi.item_id as letter_id,
                 mi.sender_name,
@@ -32,10 +35,13 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
             FROM forwarding_request fr
             LEFT JOIN mail_item mi ON fr.mail_item_id = mi.id
             WHERE fr.user_id = $1
-            ORDER BY fr.created_at DESC
-        `, [userId]);
+            ORDER BY fr.created_at DESC`,
+            [userId],
+            page,
+            pageSize
+        );
 
-        return res.json({ ok: true, data: result.rows });
+        return res.json({ ok: true, ...result });
     } catch (error: any) {
         console.error('[GET /api/forwarding/requests] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

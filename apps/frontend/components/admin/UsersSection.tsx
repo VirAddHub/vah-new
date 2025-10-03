@@ -28,6 +28,11 @@ interface UsersSectionProps {
   users: any[];
   loading: boolean;
   error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  isValidating: boolean;
   onFiltersChange?: (filters: {
     search: string;
     status: string;
@@ -37,13 +42,11 @@ interface UsersSectionProps {
   }) => void;
 }
 
-export default function UsersSection({ users, loading, error, onFiltersChange }: UsersSectionProps) {
+export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange }: UsersSectionProps) {
   const { toast } = useToast();
 
-  // Search and pagination state
+  // Search state
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
@@ -80,8 +83,8 @@ export default function UsersSection({ users, loading, error, onFiltersChange }:
 
   // Reset page when search changes
   useEffect(() => {
-    setPage(1);
-  }, [q]);
+    onPageChange(1);
+  }, [q, onPageChange]);
 
   // Call onFiltersChange when any filter changes
   useEffect(() => {
@@ -491,7 +494,7 @@ export default function UsersSection({ users, loading, error, onFiltersChange }:
             disabled={!hasPrev || loading}
             onClick={() => {
               const next = Math.max(1, page - 1);
-              setPage(next);
+              onPageChange(next);
             }}
           >
             Previous
@@ -501,7 +504,7 @@ export default function UsersSection({ users, loading, error, onFiltersChange }:
             disabled={!hasNext || loading}
             onClick={() => {
               const next = page + 1;
-              setPage(next);
+              onPageChange(next);
             }}
           >
             Next

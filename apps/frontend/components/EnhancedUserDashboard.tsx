@@ -13,6 +13,7 @@ import {
     plansService,
     emailPrefsService
 } from "../lib/services";
+import { usePaged } from "../hooks/usePaged";
 import { VAHLogo } from "./VAHLogo";
 
 import { Button } from "./ui/button";
@@ -143,65 +144,88 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const [mailDetails, setMailDetails] = useState<Record<string, any>>({});
     const { toast } = useToast();
 
-    // State management
-    const [mailItems, setMailItems] = useState<any[]>([]);
+    // Pagination state
+    const [mailPage, setMailPage] = useState(1);
+    const [forwardingPage, setForwardingPage] = useState(1);
+    const [invoicesPage, setInvoicesPage] = useState(1);
+
+    // SWR hooks for paginated data with auto-refresh
+    const {
+        items: mailItems,
+        total: mailTotal,
+        isLoading: mailLoading,
+        isValidating: mailValidating,
+        error: mailError,
+        mutate: refetchMail
+    } = usePaged<any>(
+        `/api/mail-items?page=${mailPage}&pageSize=20`,
+        { refreshMs: 15000 }
+    );
+
+    const {
+        items: forwardingRequests,
+        total: forwardingTotal,
+        isLoading: forwardingLoading,
+        isValidating: forwardingValidating,
+        error: forwardingError,
+        mutate: refetchForwarding
+    } = usePaged<any>(
+        `/api/forwarding/requests?page=${forwardingPage}&pageSize=20`,
+        { refreshMs: 20000 }
+    );
+
+    const {
+        items: invoices,
+        total: invoicesTotal,
+        isLoading: invoicesLoading,
+        isValidating: invoicesValidating,
+        error: invoicesError,
+        mutate: refetchInvoices
+    } = usePaged<any>(
+        `/api/billing/invoices?page=${invoicesPage}&pageSize=20`,
+        { refreshMs: 30000 }
+    );
+
+    // State management for non-paginated data
     const [profile, setProfile] = useState<any>(null);
     const [subscription, setSubscription] = useState<any>(null);
     const [supportTickets, setSupportTickets] = useState<any[]>([]);
-    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
     const [billing, setBilling] = useState<any>(null);
-    const [invoices, setInvoices] = useState<any[]>([]);
     const [plans, setPlans] = useState<any[]>([]);
     const [kycStatus, setKycStatus] = useState<any>(null);
     const [emailPrefs, setEmailPrefs] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load data on mount using new service layer
+    // Load non-paginated data on mount
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
                 const [
-                    mailResponse,
                     profileResponse,
                     subscriptionResponse,
-                    forwardingResponse,
                     billingResponse,
-                    invoicesResponse,
                     plansResponse,
                     kycResponse,
                     emailPrefsResponse
                 ] = await Promise.all([
-                    mailService.getMailItems(),
                     profileService.getProfile(),
                     billingService.getSubscriptionStatus(),
-                    forwardingService.getForwardingRequests(),
                     billingService.getBillingOverview(),
-                    billingService.getInvoices(),
                     plansService.getPlans(),
                     kycService.getStatus(),
                     emailPrefsService.getPreferences()
                 ]);
 
-                // Handle data with correct shapes using safe helper
-                if (mailResponse.ok) {
-                    setMailItems(safe(mailResponse.data, []));
-                }
                 if (profileResponse.ok) {
                     setProfile(profileResponse.data);
                 }
                 if (subscriptionResponse.ok) {
                     setSubscription(subscriptionResponse.data);
                 }
-                if (forwardingResponse.ok) {
-                    setForwardingRequests(safe(forwardingResponse.data, []));
-                }
                 if (billingResponse.ok) {
                     setBilling(billingResponse.data);
-                }
-                if (invoicesResponse.ok) {
-                    setInvoices(safe(invoicesResponse.data, []));
                 }
                 if (plansResponse.ok) {
                     setPlans(safe(plansResponse.data, []));
@@ -218,10 +242,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         loadData();
     }, []);
 
-    // Refetch functions using new service layer
-    const refetchMail = () =>
-        mailService.getMailItems().then(r => r.ok && setMailItems(r.data));
-
+    // Refetch functions for non-paginated data
     const refetchProfile = () =>
         profileService.getProfile().then(r => r.ok && setProfile(r.data));
 
@@ -230,11 +251,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const refetchTickets = () =>
         supportService.getTickets().then(r => r.ok && setSupportTickets(r.data));
-    const refetchForwarding = () =>
-        forwardingService.getForwardingRequests().then(r => r.ok && setForwardingRequests(r.data));
+
     const refetchBilling = () => billingService.getBillingOverview().then(r => r.ok && setBilling(r.data));
-    const refetchInvoices = () =>
-        billingService.getInvoices().then(r => r.ok && setInvoices(r.data));
+
     const refetchPlans = () =>
         plansService.getPlans().then(r => r.ok && setPlans(r.data));
     const refetchKyc = () =>
@@ -486,19 +505,27 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
         switch (activeSection) {
             case "inbox":
-                if (loading) return <SkeletonBlock label="Loading mail..." />;
-                if (error) return <ErrorBlock label="Failed to load mail" detail={error} retry={refetchMail} />;
+                if (mailLoading && !mailValidating) return <SkeletonBlock label="Loading mail..." />;
+                if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError.message} retry={() => refetchMail()} />;
 
                 return (
                     <div className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h1 className="text-2xl font-bold">Inbox</h1>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-bold">Inbox</h1>
+                                {mailValidating && !mailLoading && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        <span>Refreshing...</span>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex gap-2">
                                 <Badge variant="secondary" className="text-xs">
                                     {mailItems.filter(item => !item.isRead).length} unread
                                 </Badge>
                                 <Badge variant="outline" className="text-xs">
-                                    {mailItems.length} total
+                                    {mailTotal} total
                                 </Badge>
                             </div>
                         </div>
@@ -740,22 +767,57 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 </CardContent>
                             </Card>
                         )}
+
+                        {/* Pagination Controls */}
+                        {mailTotal > 20 && (
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Showing {Math.min((mailPage - 1) * 20 + 1, mailTotal)}-{Math.min(mailPage * 20, mailTotal)} of {mailTotal}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setMailPage(p => Math.max(1, p - 1))}
+                                        disabled={mailPage === 1}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setMailPage(p => p + 1)}
+                                        disabled={mailPage * 20 >= mailTotal}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
 
             case "forwarding":
                 return (
                     <div className="space-y-6">
-                        <h1 className="text-2xl font-bold">Forwarding</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold">Forwarding</h1>
+                            {forwardingValidating && !forwardingLoading && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span>Refreshing...</span>
+                                </div>
+                            )}
+                        </div>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Mail Forwarding Requests</CardTitle>
+                                <CardTitle>Mail Forwarding Requests ({forwardingTotal})</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {loading ? (
+                                {forwardingLoading && !forwardingValidating ? (
                                     <SkeletonBlock label="Loading forwarding requests..." />
-                                ) : error ? (
-                                    <ErrorBlock label="Failed to load forwarding requests" detail={error} retry={refetchForwarding} />
+                                ) : forwardingError ? (
+                                    <ErrorBlock label="Failed to load forwarding requests" detail={forwardingError.message} retry={() => refetchForwarding()} />
                                 ) : forwardingRequests.length === 0 ? (
                                     <p className="text-muted-foreground">No forwarding requests found.</p>
                                 ) : (
@@ -789,6 +851,33 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             ))}
                                         </TableBody>
                                     </Table>
+                                )}
+
+                                {/* Pagination Controls */}
+                                {forwardingTotal > 20 && (
+                                    <div className="flex items-center justify-between gap-4 mt-4">
+                                        <div className="text-sm text-muted-foreground">
+                                            Showing {Math.min((forwardingPage - 1) * 20 + 1, forwardingTotal)}-{Math.min(forwardingPage * 20, forwardingTotal)} of {forwardingTotal}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setForwardingPage(p => Math.max(1, p - 1))}
+                                                disabled={forwardingPage === 1}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setForwardingPage(p => p + 1)}
+                                                disabled={forwardingPage * 20 >= forwardingTotal}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -896,10 +985,22 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Invoices</CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle>Invoices ({invoicesTotal})</CardTitle>
+                                    {invoicesValidating && !invoicesLoading && (
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            <span>Refreshing...</span>
+                                        </div>
+                                    )}
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                {invoices.length === 0 ? (
+                                {invoicesLoading && !invoicesValidating ? (
+                                    <SkeletonBlock label="Loading invoices..." />
+                                ) : invoicesError ? (
+                                    <ErrorBlock label="Failed to load invoices" detail={invoicesError.message} retry={() => refetchInvoices()} />
+                                ) : invoices.length === 0 ? (
                                     <p className="text-muted-foreground">No invoices found.</p>
                                 ) : (
                                     <Table>
@@ -936,6 +1037,33 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             ))}
                                         </TableBody>
                                     </Table>
+                                )}
+
+                                {/* Pagination Controls */}
+                                {invoicesTotal > 20 && (
+                                    <div className="flex items-center justify-between gap-4 mt-4">
+                                        <div className="text-sm text-muted-foreground">
+                                            Showing {Math.min((invoicesPage - 1) * 20 + 1, invoicesTotal)}-{Math.min(invoicesPage * 20, invoicesTotal)} of {invoicesTotal}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setInvoicesPage(p => Math.max(1, p - 1))}
+                                                disabled={invoicesPage === 1}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setInvoicesPage(p => p + 1)}
+                                                disabled={invoicesPage * 20 >= invoicesTotal}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -1081,10 +1209,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                 <p className="text-muted-foreground">
                                                     Your KYC verification is being reviewed. This usually takes 1-2 business days.
                                                 </p>
-                                            <Button variant="outline" onClick={() => refetchKyc()}>
-                                                <ShieldCheck className="h-4 w-4 mr-2" />
-                                                Check Status
-                                            </Button>
+                                                <Button variant="outline" onClick={() => refetchKyc()}>
+                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                    Check Status
+                                                </Button>
                                             </div>
                                         )}
 
@@ -1114,6 +1242,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                             </div>
                                         )}
                                     </div>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -1151,7 +1280,6 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                         </div>
                                     </div>
                                 </div>
-                                )}
                             </CardContent>
                         </Card>
                     </div>

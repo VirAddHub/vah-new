@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
+import { selectPaged } from '../db-helpers';
 
 const router = Router();
 
@@ -90,15 +91,17 @@ router.get('/billing', requireAuth, async (req: Request, res: Response) => {
 
 /**
  * GET /api/billing/invoices
- * Get all invoices for current user
+ * Get all invoices for current user (with pagination support)
+ * Query params: ?page=1&pageSize=20
  */
 router.get('/billing/invoices', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const pool = getPool();
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 20;
 
     try {
-        const result = await pool.query(`
-            SELECT
+        const result = await selectPaged(
+            `SELECT
                 id,
                 user_id,
                 amount_pence as amount,
@@ -111,10 +114,13 @@ router.get('/billing/invoices', requireAuth, async (req: Request, res: Response)
                 token
             FROM invoices
             WHERE user_id = $1
-            ORDER BY created_at DESC
-        `, [userId]);
+            ORDER BY created_at DESC`,
+            [userId],
+            page,
+            pageSize
+        );
 
-        return res.json({ ok: true, data: result.rows });
+        return res.json({ ok: true, ...result });
     } catch (error: any) {
         console.error('[GET /api/billing/invoices] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

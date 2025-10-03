@@ -11,13 +11,15 @@ const router = Router();
 /**
  * GET /api/admin/users
  * Get all users (admin only)
+ * Query params: ?page=1&pageSize=50 (or legacy: limit=50)
  */
 router.get('/users', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const { page = '1', limit = '100', search, status, plan_id, kyc_status, activity } = req.query;
+    const { page = '1', pageSize, limit = '100', search, status, plan_id, kyc_status, activity } = req.query;
 
     const pageNum = parseInt(page as string) || 1;
-    const limitNum = parseInt(limit as string) || 100;
+    // Support both pageSize (new) and limit (legacy)
+    const limitNum = parseInt((pageSize || limit) as string) || 100;
     const offset = (pageNum - 1) * limitNum;
 
     try {
@@ -166,7 +168,11 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
 
         return res.json({
             ok: true,
-            data: result.rows,
+            items: result.rows,
+            total,
+            page: pageNum,
+            pageSize: limitNum,
+            // Legacy pagination object for backwards compatibility
             pagination: {
                 page: pageNum,
                 limit: limitNum,

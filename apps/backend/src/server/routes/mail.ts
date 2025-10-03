@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { selectPaged } from '../db-helpers';
 
 const router = Router();
 
@@ -16,15 +17,17 @@ function requireAuth(req: Request, res: Response, next: Function) {
 
 /**
  * GET /api/mail-items
- * Get all mail items for current user
+ * Get all mail items for current user (with pagination support)
+ * Query params: ?page=1&pageSize=20
  */
 router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const pool = getPool();
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 20;
 
     try {
-        const result = await pool.query(`
-            SELECT
+        const result = await selectPaged(
+            `SELECT
                 m.*,
                 f.name as file_name,
                 f.size as file_size,
@@ -32,10 +35,13 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
             WHERE m.user_id = $1 AND m.deleted = false
-            ORDER BY m.created_at DESC
-        `, [userId]);
+            ORDER BY m.created_at DESC`,
+            [userId],
+            page,
+            pageSize
+        );
 
-        return res.json({ ok: true, data: result.rows });
+        return res.json({ ok: true, ...result });
     } catch (error: any) {
         console.error('[GET /api/mail-items] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

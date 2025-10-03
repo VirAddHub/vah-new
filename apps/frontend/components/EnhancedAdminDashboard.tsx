@@ -27,6 +27,7 @@ import {
     forwardingService,
     billingService
 } from "../lib/services";
+import { usePaged } from "../hooks/usePaged";
 import {
     Mail,
     Users,
@@ -87,12 +88,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    // Data loading state
-    const [users, setUsers] = useState<any[]>([]);
-    const [metrics, setMetrics] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [systemStatus, setSystemStatus] = useState<'operational' | 'degraded' | 'down'>('operational');
+    // Pagination state
+    const [usersPage, setUsersPage] = useState(1);
 
     // User filters state
     const [userFilters, setUserFilters] = useState({
@@ -102,6 +99,36 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         kyc_status: '',
         activity: '',
     });
+
+    // Build query params for users
+    const usersQueryParams = {
+        page: usersPage,
+        pageSize: 50,
+        ...(userFilters.search && { search: userFilters.search }),
+        ...(userFilters.status && { status: userFilters.status }),
+        ...(userFilters.plan_id && { plan_id: userFilters.plan_id }),
+        ...(userFilters.kyc_status && { kyc_status: userFilters.kyc_status }),
+        ...(userFilters.activity && { activity: userFilters.activity }),
+    };
+
+    // SWR hook for paginated users with auto-refresh
+    const {
+        items: users,
+        total: usersTotal,
+        isLoading: usersLoading,
+        isValidating: usersValidating,
+        error: usersError,
+        mutate: refetchUsers
+    } = usePaged<any>(
+        activeSection === 'users' ? ['/api/admin/users', usersQueryParams] : null,
+        { refreshMs: 20000 }
+    );
+
+    // Data loading state for other sections
+    const [metrics, setMetrics] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [systemStatus, setSystemStatus] = useState<'operational' | 'degraded' | 'down'>('operational');
 
     // Throttle repeated requests
     const usersLastLoadedAtRef = useRef<number | null>(null);
@@ -149,63 +176,31 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }
     }, []);
 
-    // Load admin data using new service layer with throttling
-    const loadAdminData = useCallback(async () => {
-        // Throttle rapid requests
-        const now = Date.now();
-        if (usersLastLoadedAtRef.current && (now - usersLastLoadedAtRef.current) < 2000) {
-            console.debug('[Users] loadAdminData: throttled');
-            return;
+    // Calculate metrics from users data (from SWR)
+    useEffect(() => {
+        if (users && users.length > 0) {
+            const totalUsers = users.length;
+            const activeUsers = users.filter((u: any) => u.status === 'active').length;
+            const pendingKyc = users.filter((u: any) => u.kyc_status === 'pending').length;
+            const suspendedUsers = users.filter((u: any) => u.status === 'suspended').length;
+
+            setMetrics({
+                totals: {
+                    users: totalUsers,
+                    active_users: activeUsers,
+                    pending_kyc: pendingKyc,
+                    suspended_users: suspendedUsers,
+                    monthly_revenue_pence: 0,
+                    mail_processed: 0,
+                    active_forwards: 0
+                },
+                system_health: {
+                    status: 'operational'
+                },
+                recent_activity: []
+            });
         }
-        usersLastLoadedAtRef.current = now;
-
-        try {
-            console.debug('[Users] loadAdminData: start');
-            setLoading(true);
-            setError(null);
-
-            // Fetch all users using adminService with filters
-            console.debug('[Users] Making API call via adminService.getUsers() with filters:', userFilters);
-            const usersResponse = await adminService.getUsers(userFilters);
-            console.debug('[Users] API response:', usersResponse);
-
-            if (usersResponse.ok) {
-                const userData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
-                console.debug('[Users] loadAdminData: success', { count: userData.length });
-                setUsers(userData);
-
-                // Calculate real metrics from user data
-                const totalUsers = userData.length;
-                const activeUsers = userData.filter((u: any) => u.status === 'active').length;
-                const pendingKyc = userData.filter((u: any) => u.kyc_status === 'pending').length;
-                const suspendedUsers = userData.filter((u: any) => u.status === 'suspended').length;
-
-                // Set calculated metrics
-                setMetrics({
-                    totals: {
-                        users: totalUsers,
-                        active_users: activeUsers,
-                        pending_kyc: pendingKyc,
-                        suspended_users: suspendedUsers,
-                        monthly_revenue_pence: 0, // Will be loaded by overview
-                        mail_processed: 0, // Will be loaded by overview
-                        active_forwards: 0  // Will be loaded by overview
-                    },
-                    system_health: {
-                        status: 'operational'
-                    },
-                    recent_activity: [] // TODO: Fetch from activity log
-                });
-            } else {
-                setError('Failed to load users data');
-            }
-        } catch (err) {
-            console.debug('[Users] loadAdminData: error', err);
-            setError('Failed to load admin data');
-        } finally {
-            setLoading(false);
-        }
-    }, [userFilters, setUsers, setMetrics, setError, setLoading]);
+    }, [users]);
 
     // Load overview data on mount once
     useEffect(() => {
@@ -229,13 +224,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         return () => clearInterval(interval);
     }, []);
 
-    // Load users data when section becomes active OR when filters change
-    useEffect(() => {
-        if (activeSection === 'users') {
-            console.debug('[Users] Section active or filters changed, loading data');
-            void loadAdminData();
-        }
-    }, [activeSection, userFilters, loadAdminData]); // Load when section becomes active or filters change
+    // SWR will automatically fetch users data when the query key changes (filters or page)
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
@@ -276,7 +265,17 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "overview":
                 return <OverviewSection metrics={metrics} overview={overview} systemStatus={systemStatus} />;
             case "users":
-                return <UsersSection users={users} loading={loading} error={error} onRefresh={loadAdminData} onFiltersChange={handleFiltersChange} />;
+                return <UsersSection
+                    users={users}
+                    loading={usersLoading}
+                    error={usersError?.message || null}
+                    onFiltersChange={handleFiltersChange}
+                    total={usersTotal}
+                    page={usersPage}
+                    pageSize={50}
+                    onPageChange={setUsersPage}
+                    isValidating={usersValidating}
+                />;
             case "mail":
                 return <MailSection />;
             case "forwarding":
@@ -433,19 +432,17 @@ function OverviewSection({ metrics, overview, systemStatus }: { metrics: any; ov
                     <p className="text-muted-foreground">Real-time system status and key performance metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`gap-2 ${
-                        systemStatus === 'operational' ? 'border-green-500' :
-                        systemStatus === 'degraded' ? 'border-yellow-500' :
-                        'border-red-500'
-                    }`}>
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${
-                            systemStatus === 'operational' ? 'bg-green-500' :
-                            systemStatus === 'degraded' ? 'bg-yellow-500' :
-                            'bg-red-500'
-                        }`} />
+                    <Badge variant="outline" className={`gap-2 ${systemStatus === 'operational' ? 'border-green-500' :
+                            systemStatus === 'degraded' ? 'border-yellow-500' :
+                                'border-red-500'
+                        }`}>
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${systemStatus === 'operational' ? 'bg-green-500' :
+                                systemStatus === 'degraded' ? 'bg-yellow-500' :
+                                    'bg-red-500'
+                            }`} />
                         {systemStatus === 'operational' ? 'System Operational' :
-                         systemStatus === 'degraded' ? 'System Degraded' :
-                         'System Down'}
+                            systemStatus === 'degraded' ? 'System Degraded' :
+                                'System Down'}
                     </Badge>
                 </div>
             </div>
