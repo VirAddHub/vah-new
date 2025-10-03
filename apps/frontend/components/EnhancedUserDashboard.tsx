@@ -33,6 +33,15 @@ import {
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarProvider,
+} from "./ui/sidebar";
+import {
     Inbox,
     Truck,
     CreditCard,
@@ -44,9 +53,29 @@ import {
     LogOut,
     Menu,
     X,
+    Eye,
+    Download,
+    Forward,
+    Building,
+    FileText,
+    FileArchive,
+    AlertTriangle,
+    Loader2,
+    User,
 } from "lucide-react";
 
 type MenuId = "inbox" | "forwarding" | "billing" | "certificates" | "kyc" | "settings" | "support";
+
+type MailStatus = "unread" | "read" | "forwarded";
+type MailTag = "HMRC" | "Companies House" | "Bank" | "Legal" | "Other";
+
+// Component interfaces
+interface BannerProps {
+    title: string;
+    message: string;
+    actionLabel: string;
+    onAction: () => void;
+}
 
 interface UserDashboardProps {
     onLogout: () => void;
@@ -54,9 +83,65 @@ interface UserDashboardProps {
     onGoBack: () => void;
 }
 
+// Responsive Banner Component
+const Banner: React.FC<BannerProps> = ({
+    title,
+    message,
+    actionLabel,
+    onAction
+}) => (
+    <Alert className="mb-6">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <p className="font-medium">{title}</p>
+                    <p className="text-sm">{message}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={onAction} className="w-full sm:w-auto">
+                    {actionLabel}
+                </Button>
+            </div>
+        </AlertDescription>
+    </Alert>
+);
+
+const SkeletonBlock = ({ label }: { label: string }) => (
+    <Card>
+        <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-muted-foreground">{label}</span>
+            </div>
+        </CardContent>
+    </Card>
+);
+
+const ErrorBlock = ({
+    label,
+    detail,
+    retry
+}: {
+    label: string;
+    detail: string;
+    retry: () => void;
+}) => (
+    <Card>
+        <CardContent className="py-8 text-center">
+            <p className="text-destructive font-medium">{label}</p>
+            <p className="text-sm text-muted-foreground mt-1">{detail}</p>
+            <Button variant="outline" size="sm" onClick={retry} className="mt-3">
+                Try Again
+            </Button>
+        </CardContent>
+    </Card>
+);
+
 export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
     const [activeSection, setActiveSection] = useState<MenuId>("inbox");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
+    const [mailDetails, setMailDetails] = useState<Record<string, any>>({});
     const { toast } = useToast();
 
     // State management
@@ -162,6 +247,37 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const hasForwardingAddress = Boolean(profile?.address);
     const planActive = subscription?.status === "active" || subscription?.plan?.status === "active";
 
+    // Banners Component
+    const Banners = () => {
+        const banners = [];
+
+        if (!hasForwardingAddress) {
+            banners.push(
+                <Banner
+                    key="forwarding"
+                    title="Set Up Forwarding Address"
+                    message="Add your forwarding address to receive physical mail."
+                    actionLabel="Add Address"
+                    onAction={() => setActiveSection("forwarding")}
+                />
+            );
+        }
+
+        if (!planActive) {
+            banners.push(
+                <Banner
+                    key="billing"
+                    title="Subscription Issue"
+                    message="Your plan needs attention. Update payment details."
+                    actionLabel="Fix Billing"
+                    onAction={() => setActiveSection("billing")}
+                />
+            );
+        }
+
+        return <>{banners}</>;
+    };
+
     // Menu items
     const menuItems: {
         id: MenuId;
@@ -193,15 +309,25 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     };
 
     const openMail = async (id: string) => {
+        // Toggle expansion
+        if (expandedMailId === id) {
+            setExpandedMailId(null);
+            return;
+        }
+
         try {
-            const response = await mailService.getMailItem(Number(id));
-            if (response.ok) {
-                await mailService.updateMailItem(Number(id), { is_read: true });
-                refetchMail();
-                toast({ title: "Success", description: `Opened "${response.data.description ?? "Mail"}".` });
-            } else {
-                throw new Error("Mail not found");
+            // If we don't have details yet, fetch them
+            if (!mailDetails[id]) {
+                const response = await mailService.getMailItem(Number(id));
+                if (response.ok && response.data) {
+                    setMailDetails(prev => ({ ...prev, [id]: response.data }));
+                    await mailService.updateMailItem(Number(id), { is_read: true });
+                    refetchMail();
+                } else {
+                    throw new Error("Mail not found");
+                }
             }
+            setExpandedMailId(id);
         } catch {
             toast({ title: "Error", description: "Failed to open mail.", variant: "destructive" });
         }
@@ -211,11 +337,14 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await mailService.getScanUrl(Number(id));
             if (response.ok) {
+                const blob = await fetch(response.url).then(r => r.blob());
+                const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
-                a.href = response.url;
+                a.href = url;
                 a.download = `mail-${id}.pdf`;
                 document.body.appendChild(a);
                 a.click();
+                window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
                 toast({ title: "Download", description: "Downloading scan…" });
             } else {
@@ -371,53 +500,261 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
         switch (activeSection) {
             case "inbox":
+                if (loading) return <SkeletonBlock label="Loading mail..." />;
+                if (error) return <ErrorBlock label="Failed to load mail" detail={error} retry={refetchMail} />;
+
                 return (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Mail Inbox</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {mailItems.length === 0 ? (
-                                <p className="text-muted-foreground">No mail items found.</p>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Sender</TableHead>
-                                            <TableHead>Description</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {(Array.isArray(mailItems) ? mailItems : []).map((item: any) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
-                                                <TableCell>{item.sender}</TableCell>
-                                                <TableCell>{item.description}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={item.isRead ? "secondary" : "default"}>
-                                                        {item.isRead ? "Read" : "New"}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex gap-2">
-                                                        <Button size="sm" onClick={() => openMail(item.id)}>
-                                                            View
+                    <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h1 className="text-2xl font-bold">Inbox</h1>
+                            <div className="flex gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                    {mailItems.filter(item => !item.isRead).length} unread
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                    {mailItems.length} total
+                                </Badge>
+                            </div>
+                        </div>
+
+                        {mailItems.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <Inbox className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                                    <h3 className="text-lg font-medium mb-2">No mail yet</h3>
+                                    <p className="text-muted-foreground">
+                                        Your mail will appear here when it arrives at your virtual address.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardContent className="p-0">
+                                    {/* Desktop Table */}
+                                    <div className="hidden sm:block overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Description</TableHead>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Type</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {mailItems.map((item) => (
+                                                    <>
+                                                        <TableRow
+                                                            key={item.id}
+                                                            className={`cursor-pointer hover:bg-muted/50 ${expandedMailId === item.id ? 'bg-muted/30' : ''}`}
+                                                            onClick={() => openMail(item.id)}
+                                                        >
+                                                            <TableCell className="font-medium">
+                                                                {item.description || "Mail Item"}
+                                                            </TableCell>
+                                                            <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {item.tag || "Other"}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge
+                                                                    variant={!item.isRead ? "default" : "secondary"}
+                                                                    className="text-xs"
+                                                                >
+                                                                    {item.isRead ? "read" : "unread"}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => openMail(item.id)}
+                                                                        className="h-7 px-2"
+                                                                    >
+                                                                        <Eye className="h-3 w-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => downloadMailPdf(item.id)}
+                                                                        className="h-7 px-2"
+                                                                    >
+                                                                        <Download className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        {expandedMailId === item.id && mailDetails[item.id] && (
+                                                            <TableRow key={`${item.id}-details`}>
+                                                                <TableCell colSpan={5} className="bg-muted/20">
+                                                                    <div className="p-4 space-y-4">
+                                                                        <div className="flex justify-between items-start">
+                                                                            <div className="space-y-2 flex-1">
+                                                                                <h3 className="font-semibold">Mail Details</h3>
+                                                                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                                                                    <div>
+                                                                                        <span className="text-muted-foreground">Received:</span>
+                                                                                        <p className="font-medium">{new Date(item.createdAt).toLocaleString()}</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <span className="text-muted-foreground">Type:</span>
+                                                                                        <p className="font-medium">{item.tag || "Other"}</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <span className="text-muted-foreground">Status:</span>
+                                                                                        <p className="font-medium capitalize">{item.isRead ? "read" : "unread"}</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <span className="text-muted-foreground">Description:</span>
+                                                                                        <p className="font-medium">{item.description || "Mail Item"}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={() => downloadMailPdf(item.id)}
+                                                                            >
+                                                                                <Download className="h-4 w-4 mr-2" />
+                                                                                Download PDF
+                                                                            </Button>
+                                                                        </div>
+
+                                                                        {mailDetails[item.id].scanUrl && (
+                                                                            <div className="border rounded-lg overflow-hidden bg-card">
+                                                                                <div className="p-2 bg-muted/50 text-sm font-medium">
+                                                                                    Mail Scan Preview
+                                                                                </div>
+                                                                                <div className="p-4 flex justify-center">
+                                                                                    <img
+                                                                                        src={mailDetails[item.id].scanUrl}
+                                                                                        alt="Mail scan"
+                                                                                        className="max-w-full h-auto max-h-96 rounded border"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {!mailDetails[item.id].scanUrl && (
+                                                                            <div className="border rounded-lg p-8 text-center text-muted-foreground">
+                                                                                <FileArchive className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                                                                <p>No scan preview available</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    {/* Mobile Cards */}
+                                    <div className="sm:hidden space-y-3 p-4">
+                                        {mailItems.map((item) => (
+                                            <Card
+                                                key={item.id}
+                                                className={`border ${expandedMailId === item.id ? 'ring-2 ring-primary/20' : ''}`}
+                                            >
+                                                <CardContent className="p-4">
+                                                    <div
+                                                        className="cursor-pointer"
+                                                        onClick={() => openMail(item.id)}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <h3 className="font-medium text-sm break-words">
+                                                                {item.description || "Mail Item"}
+                                                            </h3>
+                                                            <Badge
+                                                                variant={!item.isRead ? "default" : "secondary"}
+                                                                className="text-xs ml-2"
+                                                            >
+                                                                {item.isRead ? "read" : "unread"}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
+                                                            <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {item.tag || "Other"}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+
+                                                    {expandedMailId === item.id && mailDetails[item.id] && (
+                                                        <div className="mt-4 pt-4 border-t space-y-3">
+                                                            <div className="space-y-2 text-sm">
+                                                                <div>
+                                                                    <span className="text-muted-foreground text-xs">Received:</span>
+                                                                    <p className="font-medium">{new Date(item.createdAt).toLocaleString()}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-muted-foreground text-xs">Type:</span>
+                                                                    <p className="font-medium">{item.tag || "Other"}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-muted-foreground text-xs">Status:</span>
+                                                                    <p className="font-medium capitalize">{item.isRead ? "read" : "unread"}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            {mailDetails[item.id].scanUrl && (
+                                                                <div className="border rounded-lg overflow-hidden bg-card">
+                                                                    <div className="p-2 bg-muted/50 text-xs font-medium">
+                                                                        Mail Scan Preview
+                                                                    </div>
+                                                                    <div className="p-3 flex justify-center">
+                                                                        <img
+                                                                            src={mailDetails[item.id].scanUrl}
+                                                                            alt="Mail scan"
+                                                                            className="max-w-full h-auto rounded border"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {!mailDetails[item.id].scanUrl && (
+                                                                <div className="border rounded-lg p-6 text-center text-muted-foreground">
+                                                                    <FileArchive className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                                    <p className="text-xs">No scan preview available</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex gap-2 mt-3">
+                                                        <Button
+                                                            size="sm"
+                                                            variant={expandedMailId === item.id ? "default" : "outline"}
+                                                            onClick={() => openMail(item.id)}
+                                                            className="flex-1 h-8 text-xs"
+                                                        >
+                                                            <Eye className="h-3 w-3 mr-1" />
+                                                            {expandedMailId === item.id ? "Close" : "View"}
                                                         </Button>
-                                                        <Button size="sm" variant="outline" onClick={() => downloadMailPdf(item.id)}>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => downloadMailPdf(item.id)}
+                                                            className="flex-1 h-8 text-xs"
+                                                        >
+                                                            <Download className="h-3 w-3 mr-1" />
                                                             Download
                                                         </Button>
                                                     </div>
-                                                </TableCell>
-                                            </TableRow>
+                                                </CardContent>
+                                            </Card>
                                         ))}
-                                    </TableBody>
-                                </Table>
-                            )}
-                        </CardContent>
-                    </Card>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 );
 
             case "forwarding":
@@ -984,117 +1321,106 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="flex flex-col lg:flex-row">
-                {/* Mobile Header */}
-                <div className="lg:hidden bg-card border-b border-border p-4">
-                    <div className="flex items-center justify-between">
-                        <button
-                            onClick={() => onNavigate?.('home')}
-                            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-                        >
-                            <VAHLogo size="sm" showText={false} />
-                            <div>
-                                <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
-                                <p className="text-xs text-muted-foreground">Dashboard</p>
+            <SidebarProvider>
+                <div className="flex flex-col lg:flex-row">
+                    {/* Mobile Header */}
+                    <div className="lg:hidden bg-card border-b border-border p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <VAHLogo size="sm" showText={false} />
+                                <div>
+                                    <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
+                                    <p className="text-xs text-muted-foreground">Dashboard</p>
+                                </div>
                             </div>
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                className="p-2"
-                            >
-                                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={onLogout}
-                                className="text-xs"
-                            >
-                                <LogOut className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Mobile Menu */}
-                    {mobileMenuOpen && (
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                            {menuItems.map((item) => (
+                            <div className="flex items-center gap-2">
                                 <Button
-                                    key={item.id}
-                                    variant={activeSection === item.id ? "default" : "outline"}
+                                    variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                        setActiveSection(item.id);
-                                        setMobileMenuOpen(false);
-                                    }}
-                                    className="justify-start text-xs h-9 break-words"
+                                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                    className="p-2"
                                 >
-                                    {item.icon}
-                                    <span className="ml-2">{item.label}</span>
+                                    {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                                 </Button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Desktop Sidebar */}
-                <div className="hidden lg:flex w-64 shrink-0 bg-card border-r border-border">
-                    <div className="w-full p-6">
-                        <button
-                            onClick={() => onNavigate?.('home')}
-                            className="flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity"
-                        >
-                            <VAHLogo size="sm" showText={false} />
-                            <div>
-                                <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
-                                <p className="text-xs text-muted-foreground">Dashboard</p>
-                            </div>
-                        </button>
-                        <div className="space-y-2">
-                            {menuItems.map((item) => (
                                 <Button
-                                    key={item.id}
-                                    variant={activeSection === item.id ? "default" : "ghost"}
-                                    onClick={() => setActiveSection(item.id)}
-                                    className="w-full justify-start"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={onLogout}
+                                    className="text-xs"
                                 >
-                                    {item.icon}
-                                    <span className="ml-2">{item.label}</span>
+                                    <LogOut className="h-4 w-4" />
                                 </Button>
-                            ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* Main Content */}
-                <div className="flex-1 flex flex-col min-h-screen">
-                    {/* Desktop Header */}
-                    <div className="hidden lg:flex items-center justify-between p-6 bg-card border-b border-border">
-                        <div>
-                            <h1 className="text-2xl font-bold">{menuItems.find(m => m.id === activeSection)?.label}</h1>
-                            <p className="text-muted-foreground">Manage your virtual address and mail</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                Refresh
-                            </Button>
-                            <Button variant="outline" onClick={onLogout}>
-                                <LogOut className="h-4 w-4 mr-2" />
-                                Logout
-                            </Button>
-                        </div>
+                        {/* Mobile Menu */}
+                        {mobileMenuOpen && (
+                            <div className="mt-4 grid grid-cols-2 gap-2">
+                                {menuItems.map((item) => (
+                                    <Button
+                                        key={item.id}
+                                        variant={activeSection === item.id ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => {
+                                            setActiveSection(item.id);
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="justify-start text-xs h-9 break-words"
+                                    >
+                                        {item.icon}
+                                        <span className="ml-2 truncate">{item.label}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Content Area */}
-                    <div className="flex-1 p-6">
+                    {/* Desktop Sidebar */}
+                    <Sidebar className="hidden lg:flex w-64 shrink-0">
+                        <SidebarHeader className="p-6">
+                            <div className="flex items-center gap-3">
+                                <VAHLogo size="md" showText={false} />
+                                <div>
+                                    <h2 className="font-semibold">VirtualAddressHub</h2>
+                                    <p className="text-sm text-muted-foreground">Dashboard</p>
+                                </div>
+                            </div>
+                        </SidebarHeader>
+                        <SidebarContent>
+                            <SidebarMenu>
+                                {menuItems.map((item) => (
+                                    <SidebarMenuItem key={item.id}>
+                                        <SidebarMenuButton
+                                            onClick={() => setActiveSection(item.id)}
+                                            isActive={activeSection === item.id}
+                                        >
+                                            {item.icon}
+                                            <span>{item.label}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+
+                            <div className="mt-auto p-4">
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={onLogout}
+                                >
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    Sign Out
+                                </Button>
+                            </div>
+                        </SidebarContent>
+                    </Sidebar>
+
+                    {/* Main Content */}
+                    <div className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
+                        <Banners />
                         {renderContent()}
                     </div>
                 </div>
-            </div>
+            </SidebarProvider>
         </div>
     );
 }
