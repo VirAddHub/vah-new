@@ -173,54 +173,69 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     // Simple API call functions
     const loadMailItems = async () => {
+        console.log('[EnhancedUserDashboard] loadMailItems - Starting...');
         setMailLoading(true);
         setMailError(null);
         try {
             const response = await mailService.getMailItems();
+            console.log('[EnhancedUserDashboard] loadMailItems - Response:', response);
             if (response.ok) {
                 setMailItems(response.data || []);
                 setMailTotal(response.data?.length || 0);
+                console.log('[EnhancedUserDashboard] loadMailItems - Success, items:', response.data?.length);
             } else {
                 setMailError('Failed to load mail');
+                console.error('[EnhancedUserDashboard] loadMailItems - Failed:', response);
             }
         } catch (error: any) {
             setMailError(error.message || 'Failed to load mail');
+            console.error('[EnhancedUserDashboard] loadMailItems - Error:', error);
         } finally {
             setMailLoading(false);
         }
     };
 
     const loadForwardingRequests = async () => {
+        console.log('[EnhancedUserDashboard] loadForwardingRequests - Starting...');
         setForwardingLoading(true);
         setForwardingError(null);
         try {
             const response = await forwardingService.getForwardingRequests();
+            console.log('[EnhancedUserDashboard] loadForwardingRequests - Response:', response);
             if (response.ok) {
                 setForwardingRequests(response.data || []);
                 setForwardingTotal(response.data?.length || 0);
+                console.log('[EnhancedUserDashboard] loadForwardingRequests - Success, items:', response.data?.length);
             } else {
                 setForwardingError('Failed to load forwarding requests');
+                console.error('[EnhancedUserDashboard] loadForwardingRequests - Failed:', response);
             }
         } catch (error: any) {
             setForwardingError(error.message || 'Failed to load forwarding requests');
+            console.error('[EnhancedUserDashboard] loadForwardingRequests - Error:', error);
         } finally {
             setForwardingLoading(false);
         }
     };
 
     const loadInvoices = async () => {
+        console.log('[EnhancedUserDashboard] loadInvoices - Starting...');
         setInvoicesLoading(true);
         setInvoicesError(null);
         try {
             const response = await billingService.getInvoices();
+            console.log('[EnhancedUserDashboard] loadInvoices - Response:', response);
             if (response.ok) {
                 setInvoices(response.data || []);
                 setInvoicesTotal(response.data?.length || 0);
+                console.log('[EnhancedUserDashboard] loadInvoices - Success, items:', response.data?.length);
             } else {
                 setInvoicesError('Failed to load invoices');
+                console.error('[EnhancedUserDashboard] loadInvoices - Failed:', response);
             }
         } catch (error: any) {
             setInvoicesError(error.message || 'Failed to load invoices');
+            console.error('[EnhancedUserDashboard] loadInvoices - Error:', error);
         } finally {
             setInvoicesLoading(false);
         }

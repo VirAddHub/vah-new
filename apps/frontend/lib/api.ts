@@ -20,10 +20,12 @@ export async function api(path: string, init: RequestInit = {}) {
     // console.debug('🌐 API ->', url, Object.fromEntries(headers.entries()));
   }
 
+  console.log('[api] Making request:', { url, method: init.method || 'GET', hasToken: !!token });
   const res = await fetch(url, { ...init, headers, credentials: 'include' });
 
   // Don't throw here; let callers read both json + status
   const data = await safeJson(res);
+  console.log('[api] Response:', { url, status: res.status, ok: res.ok, data });
   return { res, data };
 }
 
