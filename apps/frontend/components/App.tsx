@@ -95,7 +95,7 @@ export function App() {
       case 'signup':
         return <SignupPage onNavigate={navigate} initialBilling={signupData?.initialBilling} />;
       case 'dashboard':
-        return <UserDashboard onNavigate={navigate} onLogout={() => navigate('home')} />;
+        return <UserDashboard onNavigate={navigate} onLogout={() => navigate('home')} onGoBack={() => navigate('home')} />;
       case 'billing':
         return <BillingDashboard onNavigate={navigate} />;
       case 'kyc':
