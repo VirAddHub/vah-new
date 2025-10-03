@@ -121,8 +121,10 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
             } else {
                 // unified ApiErr shape: { ok:false, error, code? }
                 // fallback in case legacy API still returns { message }
-                // @ts-expect-error – tolerate legacy shape briefly
-                const legacyMsg = (response as any)?.message as string | undefined;
+                const legacyMsg =
+                  typeof (response as any)?.message === 'string'
+                    ? ((response as any).message as string)
+                    : undefined;
                 setErrorMsg(response.error || legacyMsg || "Unable to send message. Please try again.");
             }
         } catch (err: unknown) {
