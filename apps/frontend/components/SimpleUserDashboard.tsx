@@ -18,7 +18,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
 
     useEffect(() => {
         console.log('SimpleUserDashboard: Component mounted');
-        
+
         // Get user from localStorage
         const storedUser = localStorage.getItem('vah_user');
         if (storedUser) {
@@ -30,7 +30,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                 console.error('SimpleUserDashboard: Failed to parse user:', e);
             }
         }
-        
+
         setLoading(false);
     }, []);
 

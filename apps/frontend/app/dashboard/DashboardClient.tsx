@@ -11,7 +11,7 @@ export default function DashboardClient() {
 
     useEffect(() => {
         console.log('DashboardClient: Checking authentication...');
-        
+
         // Check if user is authenticated
         const token = localStorage.getItem('vah_jwt');
         const storedUser = localStorage.getItem('vah_user');
