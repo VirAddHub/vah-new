@@ -1,14 +1,33 @@
 "use client";
 
 import { SWRConfig } from 'swr';
-import { flexFetcher } from '@/lib/swr';
-import { autoRefresh } from '@/lib/swrAutoRefresh';
+
+// Simple fetcher function defined inline to avoid serialization issues
+async function fetcher(url: string) {
+    const res = await fetch(url, {
+        headers: {
+            accept: 'application/json',
+        },
+        credentials: 'include',
+    });
+
+    if (!res.ok) {
+        const error = new Error('An error occurred while fetching the data.');
+        // @ts-ignore
+        error.info = await res.json().catch(() => ({}));
+        // @ts-ignore
+        error.status = res.status;
+        throw error;
+    }
+
+    return res.json();
+}
 
 export function SWRProvider({ children }: { children: React.ReactNode }) {
     return (
         <SWRConfig
             value={{
-                fetcher: flexFetcher,
+                fetcher,
                 revalidateIfStale: true,
                 revalidateOnFocus: true,
                 revalidateOnReconnect: true,
@@ -16,11 +35,6 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
                 dedupingInterval: 1000,
                 keepPreviousData: true,
                 loadingTimeout: 3000,
-                use: [
-                    autoRefresh({ prefix: '/api/mail-items', intervalMs: 15000 }),
-                    autoRefresh({ prefix: '/api/billing', intervalMs: 20000 }),
-                    autoRefresh({ prefix: '/api/admin', intervalMs: 20000 }),
-                ],
             }}
         >
             {children}

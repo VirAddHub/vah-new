@@ -1,6 +1,6 @@
 # 🎉 SWR Search Delay Fix - COMPLETE
 
-**Date:** 2025-10-03  
+**Date:** 2025-10-03
 **Status:** ✅ **COMPLETE**  
 **Issue:** 15-20 second search delay in admin users search  
 **Solution:** Proper debouncing + SWR optimization
@@ -142,18 +142,18 @@ const swrKey = debouncedQuery
 // In SWRProvider.tsx
 <SWRConfig
   value={{
-    fetcher: flexFetcher,
-    revalidateIfStale: true,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+  fetcher: flexFetcher,
+  revalidateIfStale: true,
+  revalidateOnFocus: true,
+  revalidateOnReconnect: true,
     focusThrottleInterval: 15000,
     dedupingInterval: 1000,
     keepPreviousData: true,
-    use: [
-      autoRefresh({ prefix: '/api/mail-items', intervalMs: 15000 }),
-      autoRefresh({ prefix: '/api/billing', intervalMs: 20000 }),
-      autoRefresh({ prefix: '/api/admin', intervalMs: 20000 }),
-    ],
+  use: [
+    autoRefresh({ prefix: '/api/mail-items', intervalMs: 15000 }),
+    autoRefresh({ prefix: '/api/billing', intervalMs: 20000 }),
+    autoRefresh({ prefix: '/api/admin', intervalMs: 20000 }),
+  ],
   }}
 >
 ```
@@ -249,6 +249,6 @@ const swrKey = debouncedQuery
 
 ---
 
-**Last Updated:** 2025-10-03  
+**Last Updated:** 2025-10-03
 **Status:** ✅ Complete  
 **Impact:** Major UX improvement - search is now instant
