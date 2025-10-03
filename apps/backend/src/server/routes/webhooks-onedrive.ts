@@ -164,34 +164,34 @@ router.post('/', async (req: any, res) => {
         cleanPath,
         fullPayload: body
       });
-      
+
       // Check if Zapier is sending placeholder data
-      const isZapierPlaceholder = name === '(unnamed)' || path === '/' || 
-                                 (name && name.includes('↳')) || 
-                                 (path && path.includes('↳'));
-      
+      const isZapierPlaceholder = name === '(unnamed)' || path === '/' ||
+        (name && name.includes('↳')) ||
+        (path && path.includes('↳'));
+
       // TEMPORARY WORKAROUND: If Zapier is sending placeholder data, 
       // try to extract userId from webUrl or other fields
       if (isZapierPlaceholder && webUrl) {
         console.log('[OneDrive Webhook] Attempting to extract userId from webUrl:', webUrl);
-        
+
         // Try to extract userId from webUrl path
         const urlMatch = webUrl.match(/\/Documents\/Scanned_Mail\/user(\d+)_/);
         if (urlMatch) {
           const extractedUserId = Number(urlMatch[1]);
           console.log('[OneDrive Webhook] Extracted userId from webUrl:', extractedUserId);
-          
+
           // Verify user exists
           const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [extractedUserId]);
           if (userRows.length > 0) {
             const user = userRows[0];
             const now = nowMs();
             const receivedAtMs = isoToMs(lastModifiedDateTime) ?? now;
-            
+
             // Create a generic filename since we don't have the real one
             const genericName = `onedrive_file_${Date.now()}.pdf`;
             const idempotencyKey = `onedrive_${itemId || `placeholder_${Date.now()}`}`;
-            
+
             // Insert mail item
             const result = await pool.query(
               `INSERT INTO mail_item (
@@ -231,16 +231,16 @@ router.post('/', async (req: any, res) => {
                 now
               ]
             );
-            
+
             const mailItem = result.rows[0];
-            
+
             // Log webhook event
             await pool.query(
               `INSERT INTO webhook_log (source, event_type, payload_json, created_at, received_at_ms)
                VALUES ($1, $2, $3, $4, $5)`,
               ['onedrive', event, JSON.stringify(body), now, now]
             );
-            
+
             return res.status(200).json({
               ok: true,
               action: 'created_or_updated_workaround',
@@ -256,11 +256,11 @@ router.post('/', async (req: any, res) => {
           }
         }
       }
-      
+
       return res.status(400).json({
         ok: false,
         error: 'missing_userId',
-        message: isZapierPlaceholder 
+        message: isZapierPlaceholder
           ? 'Zapier is sending placeholder data instead of real OneDrive file information'
           : 'userId not provided and could not extract from filename',
         filename: cleanName,
