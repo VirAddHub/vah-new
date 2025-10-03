@@ -160,24 +160,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     handleDownloadPdf,
   } = useMailManager(setMailItems);
 
+  // Load mail items function
+  const loadMailItems = async () => {
+    setMailLoading(true);
+    setMailError(null);
+    try {
+      const res = await mailApi.list();
+      if (isOk(res)) {
+        setMailItems(res.data);
+      } else {
+        setMailError(res.error);
+      }
+    } catch (error: any) {
+      setMailError(error.message || 'Failed to load mail');
+    } finally {
+      setMailLoading(false);
+    }
+  };
+
   // Load mail items on mount
   useEffect(() => {
-    const loadMailItems = async () => {
-      setMailLoading(true);
-      setMailError(null);
-      try {
-        const res = await mailApi.list();
-        if (isOk(res)) {
-          setMailItems(res.data);
-        } else {
-          setMailError(res.error);
-        }
-      } catch (error: any) {
-        setMailError(error.message || 'Failed to load mail');
-      } finally {
-        setMailLoading(false);
-      }
-    };
     loadMailItems();
   }, []);
 
@@ -274,7 +276,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     switch (activeSection) {
       case "inbox":
         if (mailLoading) return <SkeletonBlock label="Loading mail..." />;
-        if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError} retry={refetchMail} />;
+        if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError} retry={loadMailItems} />;
 
         return (
           <div className="space-y-6">
