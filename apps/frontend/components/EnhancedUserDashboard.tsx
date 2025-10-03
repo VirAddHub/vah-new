@@ -1064,70 +1064,70 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 ) : error ? (
                                     <ErrorBlock label="Failed to load KYC status" detail={error} retry={refetchKyc} />
                                 ) : (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-medium">Status:</span>
-                                        <Badge
-                                            variant={
-                                                kycStatusValue === 'approved' ? 'default' :
-                                                    kycStatusValue === 'pending' ? 'secondary' :
-                                                        kycStatusValue === 'rejected' ? 'destructive' : 'outline'
-                                            }
-                                        >
-                                            {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
-                                        </Badge>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium">Status:</span>
+                                            <Badge
+                                                variant={
+                                                    kycStatusValue === 'approved' ? 'default' :
+                                                        kycStatusValue === 'pending' ? 'secondary' :
+                                                            kycStatusValue === 'rejected' ? 'destructive' : 'outline'
+                                                }
+                                            >
+                                                {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
+                                            </Badge>
+                                        </div>
+
+                                        {kycStatusValue === 'not_started' && (
+                                            <div className="space-y-4">
+                                                <p className="text-muted-foreground">
+                                                    Complete your KYC verification to access all features and services.
+                                                </p>
+                                                <Button onClick={startKyc} className="w-full">
+                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                    Start KYC Verification
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {kycStatusValue === 'pending' && (
+                                            <div className="space-y-4">
+                                                <p className="text-muted-foreground">
+                                                    Your KYC verification is being reviewed. This usually takes 1-2 business days.
+                                                </p>
+                                                <Button variant="outline" onClick={() => refetchKyc()}>
+                                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                                    Check Status
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {kycStatusValue === 'approved' && (
+                                            <div className="space-y-4">
+                                                <p className="text-green-600 font-medium">
+                                                    ✅ Your identity has been verified successfully!
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    You now have access to all features and services.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {kycStatusValue === 'rejected' && (
+                                            <div className="space-y-4">
+                                                <p className="text-red-600 font-medium">
+                                                    ❌ Your KYC verification was rejected.
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Please contact support for assistance or try again.
+                                                </p>
+                                                <Button onClick={startKyc} variant="outline">
+                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                    Try Again
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-
-                                    {kycStatusValue === 'not_started' && (
-                                        <div className="space-y-4">
-                                            <p className="text-muted-foreground">
-                                                Complete your KYC verification to access all features and services.
-                                            </p>
-                                            <Button onClick={startKyc} className="w-full">
-                                                <ShieldCheck className="h-4 w-4 mr-2" />
-                                                Start KYC Verification
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {kycStatusValue === 'pending' && (
-                                        <div className="space-y-4">
-                                            <p className="text-muted-foreground">
-                                                Your KYC verification is being reviewed. This usually takes 1-2 business days.
-                                            </p>
-                                            <Button variant="outline" onClick={() => refetchKyc()}>
-                                                <RefreshCw className="h-4 w-4 mr-2" />
-                                                Check Status
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {kycStatusValue === 'approved' && (
-                                        <div className="space-y-4">
-                                            <p className="text-green-600 font-medium">
-                                                ✅ Your identity has been verified successfully!
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                You now have access to all features and services.
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {kycStatusValue === 'rejected' && (
-                                        <div className="space-y-4">
-                                            <p className="text-red-600 font-medium">
-                                                ❌ Your KYC verification was rejected.
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Please contact support for assistance or try again.
-                                            </p>
-                                            <Button onClick={startKyc} variant="outline">
-                                                <ShieldCheck className="h-4 w-4 mr-2" />
-                                                Try Again
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
                             </CardContent>
                         </Card>
 

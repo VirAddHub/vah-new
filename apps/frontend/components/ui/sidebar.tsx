@@ -114,30 +114,30 @@ const Sidebar = React.forwardRef<
         return <div ref={ref} className={cn("flex h-full w-[--sidebar-width] flex-col bg-sidebar", className)} {...props} />
     }
 
-  if (isMobile) {
-    return (
-      <Sheet open={openMobile}>
-        <SheetContent
-          data-sidebar="sidebar"
-          data-mobile="true"
-          className="w-[--sidebar-width-mobile] bg-sidebar p-0 [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          onClick={(e) => {
-            // Close sidebar when clicking on the content area
-            if (e.target === e.currentTarget) {
-              setOpenMobile(false)
-            }
-          }}
-        >
-          <div ref={ref} className="flex h-full w-full flex-col" {...props} />
-        </SheetContent>
-      </Sheet>
-    )
-  }
+    if (isMobile) {
+        return (
+            <Sheet open={openMobile}>
+                <SheetContent
+                    data-sidebar="sidebar"
+                    data-mobile="true"
+                    className="w-[--sidebar-width-mobile] bg-sidebar p-0 [&>button]:hidden"
+                    style={
+                        {
+                            "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE,
+                        } as React.CSSProperties
+                    }
+                    onClick={(e) => {
+                        // Close sidebar when clicking on the content area
+                        if (e.target === e.currentTarget) {
+                            setOpenMobile(false)
+                        }
+                    }}
+                >
+                    <div ref={ref} className="flex h-full w-full flex-col" {...props} />
+                </SheetContent>
+            </Sheet>
+        )
+    }
 
     return (
         <div

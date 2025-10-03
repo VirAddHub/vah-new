@@ -176,13 +176,18 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
             return res.status(404).json({ ok: false, error: 'no_file_url' });
         }
 
-        // Record download in downloads table
-        await pool.query(`
-            INSERT INTO download (user_id, file_id, download_url, expires_at, created_at)
-            SELECT $1, f.id, $2, $3, $4
-            FROM file f
-            WHERE f.item_id = $5
-        `, [userId, mail.web_url, Date.now() + 3600000, Date.now(), mail.item_id]);
+        // Record download in downloads table (optional - table may not exist yet)
+        try {
+            await pool.query(`
+                INSERT INTO download (user_id, file_id, download_url, expires_at, created_at)
+                SELECT $1, f.id, $2, $3, $4
+                FROM file f
+                WHERE f.item_id = $5
+            `, [userId, mail.web_url, Date.now() + 3600000, Date.now(), mail.item_id]);
+        } catch (downloadError: any) {
+            // Table may not exist yet - log but don't fail the request
+            console.warn('[GET /api/mail-items/:id/scan-url] Could not record download (table may not exist):', downloadError.message);
+        }
 
         return res.json({
             ok: true,

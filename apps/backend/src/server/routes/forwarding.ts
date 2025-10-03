@@ -1,0 +1,175 @@
+// src/server/routes/forwarding.ts
+// User-facing forwarding requests API
+
+import { Router, Request, Response } from 'express';
+import { getPool } from '../db';
+
+const router = Router();
+
+// Middleware to require authentication
+function requireAuth(req: Request, res: Response, next: Function) {
+    if (!req.user?.id) {
+        return res.status(401).json({ ok: false, error: 'unauthenticated' });
+    }
+    next();
+}
+
+/**
+ * GET /api/forwarding/requests
+ * List all forwarding requests for current user
+ */
+router.get('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+
+    try {
+        const result = await pool.query(`
+            SELECT
+                fr.*,
+                mi.item_id as letter_id,
+                mi.sender_name,
+                mi.created_at as received_at
+            FROM forwarding_request fr
+            LEFT JOIN mail_item mi ON fr.mail_item_id = mi.id
+            WHERE fr.user_id = $1
+            ORDER BY fr.created_at DESC
+        `, [userId]);
+
+        return res.json({ ok: true, data: result.rows });
+    } catch (error: any) {
+        console.error('[GET /api/forwarding/requests] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/forwarding/requests/:id
+ * Get specific forwarding request
+ */
+router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const requestId = parseInt(req.params.id);
+    const pool = getPool();
+
+    if (!requestId) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT
+                fr.*,
+                mi.item_id as letter_id,
+                mi.sender_name,
+                mi.created_at as received_at
+            FROM forwarding_request fr
+            LEFT JOIN mail_item mi ON fr.mail_item_id = mi.id
+            WHERE fr.id = $1 AND fr.user_id = $2
+        `, [requestId, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        return res.json({ ok: true, data: result.rows[0] });
+    } catch (error: any) {
+        console.error('[GET /api/forwarding/requests/:id] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/forwarding/requests
+ * Create new forwarding request
+ */
+router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const {
+        letter_id,
+        to_name,
+        address1,
+        address2,
+        city,
+        state,
+        postal,
+        country,
+        reason,
+        method
+    } = req.body;
+
+    const pool = getPool();
+
+    if (!letter_id || !to_name || !address1 || !city || !postal) {
+        return res.status(400).json({ ok: false, error: 'missing_required_fields' });
+    }
+
+    try {
+        // Find mail_item by item_id (letter_id is the external ID)
+        const mailResult = await pool.query(`
+            SELECT id, user_id, expires_at
+            FROM mail_item
+            WHERE item_id = $1 AND user_id = $2
+        `, [letter_id, userId]);
+
+        if (mailResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
+        }
+
+        const mailItem = mailResult.rows[0];
+
+        // Check if mail has expired
+        if (mailItem.expires_at && Date.now() > Number(mailItem.expires_at)) {
+            return res.status(403).json({ ok: false, error: 'expired', message: 'Forwarding period has expired for this item' });
+        }
+
+        // Create forwarding request
+        const insertResult = await pool.query(`
+            INSERT INTO forwarding_request (
+                user_id,
+                mail_item_id,
+                to_name,
+                address1,
+                address2,
+                city,
+                state,
+                postal,
+                country,
+                reason,
+                method,
+                status,
+                created_at,
+                updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING *
+        `, [
+            userId,
+            mailItem.id,
+            to_name,
+            address1 || null,
+            address2 || null,
+            city,
+            state || null,
+            postal,
+            country || 'US',
+            reason || null,
+            method || 'standard',
+            'pending',
+            Date.now(),
+            Date.now()
+        ]);
+
+        // Update mail_item forwarding status
+        await pool.query(`
+            UPDATE mail_item
+            SET forwarding_status = $1, updated_at = $2
+            WHERE id = $3
+        `, ['Requested', Date.now(), mailItem.id]);
+
+        return res.json({ ok: true, data: insertResult.rows[0] });
+    } catch (error: any) {
+        console.error('[POST /api/forwarding/requests] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+export default router;

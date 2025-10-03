@@ -53,6 +53,8 @@ import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import companiesHouseRouter from "./server/routes/companies-house";
 import kycRouter from "./server/routes/kyc";
+import forwardingRouter from "./server/routes/forwarding";
+import emailPrefsRouterNew from "./server/routes/email-prefs";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -68,7 +70,7 @@ const adminMailRouter = require(path.join(routesDir, 'admin-mail'));
 const adminRepairRouter = require(path.join(routesDir, 'admin-repair'));
 const debugRouterLegacy = require(path.join(routesDir, 'debug'));
 const downloadsRouter = require(path.join(routesDir, 'downloads'));
-const emailPrefsRouter = require(path.join(routesDir, 'email-prefs'));
+// const emailPrefsRouter = require(path.join(routesDir, 'email-prefs')); // Now using TypeScript version
 const filesRouter = require(path.join(routesDir, 'files'));
 const gdprExportRouter = require(path.join(routesDir, 'gdpr-export'));
 const kycStartRouter = require(path.join(routesDir, 'kyc-start'));
@@ -335,6 +337,10 @@ async function start() {
     logger.info('[mount] /api/billing mounted');
     app.use('/api/payments', paymentsRouter);
     logger.info('[mount] /api/payments mounted');
+    app.use('/api', forwardingRouter);
+    logger.info('[mount] /api (forwarding routes) mounted');
+    app.use('/api/email-prefs', emailPrefsRouterNew);
+    logger.info('[mount] /api/email-prefs (new) mounted');
     app.use('/api/admin', adminUsersRouter);
     logger.info('[mount] /api/admin (users) mounted');
     app.use('/api/admin', adminForwardingRouter);
@@ -383,8 +389,9 @@ async function start() {
     app.use('/api/downloads', downloadsRouter);
     logger.info('[mount] /api/downloads mounted');
 
-    app.use('/api/email-prefs', emailPrefsRouter);
-    logger.info('[mount] /api/email-prefs mounted');
+    // NOTE: /api/email-prefs is now mounted from the new TypeScript route above (emailPrefsRouterNew)
+    // app.use('/api/email-prefs', emailPrefsRouter);
+    // logger.info('[mount] /api/email-prefs mounted');
 
     app.use('/api/files', filesRouter);
     logger.info('[mount] /api/files mounted');
