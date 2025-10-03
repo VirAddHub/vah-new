@@ -10,6 +10,7 @@ import {
 } from "../hooks/useApi";
 import { VAHLogo } from "./VAHLogo";
 import type { MailItem } from "../types";
+import { isOk } from "../types/api";
 import MailCard from "./patterns/MailCard";
 
 import { Button } from "./ui/button";
@@ -166,7 +167,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       setMailError(null);
       try {
         const res = await mailApi.list();
-        if (res.ok) {
+        if (isOk(res)) {
           setMailItems(res.data);
         } else {
           setMailError(res.error);
