@@ -105,10 +105,10 @@
     "connect-pg-simple": "10.0.0",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
-    "csurf": "^1.2.2",
     "dayjs": "1.11.18",
     "drizzle-kit": "^0.31.5",
     "drizzle-orm": "0.44.5",
+    "esbuild": "^0.25.10",
     "express": "5.1.0",
     "express-rate-limit": "8.1.0",
     "express-session": "1.18.2",
@@ -136,7 +136,6 @@
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cookie-parser": "1.4.9",
     "@types/cors": "2.8.19",
-    "@types/csurf": "1.11.5",
     "@types/express": "5.0.3",
     "@types/express-session": "^1.18.2",
     "@types/jest": "^30.0.0",
@@ -161,6 +160,9 @@
     "redoc-cli/@babel/traverse": "^7.23.2",
     "redoc-cli/dompurify": "^3.2.4",
     "redoc-cli/elliptic": "^6.6.1",
-    "redoc-cli/sha.js": "^2.4.12"
+    "redoc-cli/sha.js": "^2.4.12",
+    "esbuild": "^0.25.0",
+    "@esbuild-kit/core-utils/esbuild": "^0.25.0",
+    "@esbuild-kit/esm-loader/esbuild": "^0.25.0"
   }
 }
