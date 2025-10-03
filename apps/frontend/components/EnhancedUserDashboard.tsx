@@ -138,6 +138,8 @@ const ErrorBlock = ({
 );
 
 export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
+    console.log('EnhancedUserDashboard: Component rendering...');
+    
     const [activeSection, setActiveSection] = useState<MenuId>("inbox");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
@@ -162,13 +164,6 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         { refreshMs: 15000 }
     );
 
-    // Debug logging
-    console.log('EnhancedUserDashboard Debug:', {
-        mailItems: mailItems?.length || 0,
-        mailLoading,
-        mailError,
-        mailValidating
-    });
 
     const {
         items: forwardingRequests,

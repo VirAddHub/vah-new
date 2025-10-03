@@ -10,11 +10,17 @@ export default function DashboardClient() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        console.log('DashboardClient: Checking authentication...');
+        
         // Check if user is authenticated
         const token = localStorage.getItem('vah_jwt');
         const storedUser = localStorage.getItem('vah_user');
 
+        console.log('DashboardClient: Token exists:', !!token);
+        console.log('DashboardClient: Stored user exists:', !!storedUser);
+
         if (!token) {
+            console.log('DashboardClient: No token, redirecting to login');
             // Not authenticated, redirect to login
             router.push('/login');
             return;
@@ -22,7 +28,9 @@ export default function DashboardClient() {
 
         if (storedUser) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                console.log('DashboardClient: User parsed successfully:', parsedUser);
+                setUser(parsedUser);
             } catch (e) {
                 console.error('Failed to parse stored user:', e);
             }
