@@ -13,7 +13,6 @@ import {
     plansService,
     emailPrefsService
 } from "../lib/services";
-import { usePaged } from "../hooks/usePaged";
 import { VAHLogo } from "./VAHLogo";
 
 import { Button } from "./ui/button";
@@ -151,48 +150,94 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     const [forwardingPage, setForwardingPage] = useState(1);
     const [invoicesPage, setInvoicesPage] = useState(1);
 
-    // SWR hooks for paginated data with auto-refresh
-    const {
-        items: mailItems,
-        total: mailTotal,
-        isLoading: mailLoading,
-        isValidating: mailValidating,
-        error: mailError,
-        mutate: refetchMail
-    } = usePaged<any>(
-        `/api/mail-items?page=${mailPage}&pageSize=20`,
-        { refreshMs: 15000 }
-    );
+    // Simple state for data
+    const [mailItems, setMailItems] = useState<any[]>([]);
+    const [mailLoading, setMailLoading] = useState(false);
+    const [mailError, setMailError] = useState<string | null>(null);
+    const [mailTotal, setMailTotal] = useState(0);
 
+    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
+    const [forwardingLoading, setForwardingLoading] = useState(false);
+    const [forwardingError, setForwardingError] = useState<string | null>(null);
+    const [forwardingTotal, setForwardingTotal] = useState(0);
 
-    const {
-        items: forwardingRequests,
-        total: forwardingTotal,
-        isLoading: forwardingLoading,
-        isValidating: forwardingValidating,
-        error: forwardingError,
-        mutate: refetchForwarding
-    } = usePaged<any>(
-        `/api/forwarding/requests?page=${forwardingPage}&pageSize=20`,
-        { refreshMs: 20000 }
-    );
-
-    const {
-        items: invoices,
-        total: invoicesTotal,
-        isLoading: invoicesLoading,
-        isValidating: invoicesValidating,
-        error: invoicesError,
-        mutate: refetchInvoices
-    } = usePaged<any>(
-        `/api/billing/invoices?page=${invoicesPage}&pageSize=20`,
-        { refreshMs: 30000 }
-    );
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [invoicesLoading, setInvoicesLoading] = useState(false);
+    const [invoicesError, setInvoicesError] = useState<string | null>(null);
+    const [invoicesTotal, setInvoicesTotal] = useState(0);
 
     // State management for non-paginated data
     const [profile, setProfile] = useState<any>(null);
     const [subscription, setSubscription] = useState<any>(null);
     const [supportTickets, setSupportTickets] = useState<any[]>([]);
+
+    // Simple API call functions
+    const loadMailItems = async () => {
+        setMailLoading(true);
+        setMailError(null);
+        try {
+            const response = await mailService.getMailItems(mailPage, 20);
+            if (response.success) {
+                setMailItems(response.data?.items || []);
+                setMailTotal(response.data?.total || 0);
+            } else {
+                setMailError(response.error || 'Failed to load mail');
+            }
+        } catch (error: any) {
+            setMailError(error.message || 'Failed to load mail');
+        } finally {
+            setMailLoading(false);
+        }
+    };
+
+    const loadForwardingRequests = async () => {
+        setForwardingLoading(true);
+        setForwardingError(null);
+        try {
+            const response = await forwardingService.getRequests(forwardingPage, 20);
+            if (response.success) {
+                setForwardingRequests(response.data?.items || []);
+                setForwardingTotal(response.data?.total || 0);
+            } else {
+                setForwardingError(response.error || 'Failed to load forwarding requests');
+            }
+        } catch (error: any) {
+            setForwardingError(error.message || 'Failed to load forwarding requests');
+        } finally {
+            setForwardingLoading(false);
+        }
+    };
+
+    const loadInvoices = async () => {
+        setInvoicesLoading(true);
+        setInvoicesError(null);
+        try {
+            const response = await billingService.getInvoices(invoicesPage, 20);
+            if (response.success) {
+                setInvoices(response.data?.items || []);
+                setInvoicesTotal(response.data?.total || 0);
+            } else {
+                setInvoicesError(response.error || 'Failed to load invoices');
+            }
+        } catch (error: any) {
+            setInvoicesError(error.message || 'Failed to load invoices');
+        } finally {
+            setInvoicesLoading(false);
+        }
+    };
+
+    // Load data when component mounts or page changes
+    useEffect(() => {
+        loadMailItems();
+    }, [mailPage]);
+
+    useEffect(() => {
+        loadForwardingRequests();
+    }, [forwardingPage]);
+
+    useEffect(() => {
+        loadInvoices();
+    }, [invoicesPage]);
     const [billing, setBilling] = useState<any>(null);
     const [plans, setPlans] = useState<any[]>([]);
     const [kycStatus, setKycStatus] = useState<any>(null);
@@ -234,7 +279,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     setPlans(safe(plansResponse.data, []));
                 }
                 if (kycResponse.ok) setKycStatus(kycResponse.data);
-                if (emailPrefsResponse.ok) setEmailPrefs(emailPrefsResponse.prefs);
+                if (emailPrefsResponse.ok && emailPrefsResponse.data) {
+                    setEmailPrefs(emailPrefsResponse.data.prefs);
+                }
             } catch (err) {
                 setError('Failed to load data');
                 console.error('Error loading data:', err);
@@ -508,7 +555,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
         switch (activeSection) {
             case "inbox":
-                if (mailLoading && !mailValidating) return <SkeletonBlock label="Loading mail..." />;
+                if (mailLoading) return <SkeletonBlock label="Loading mail..." />;
                 if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError.message} retry={() => refetchMail()} />;
 
                 return (
@@ -516,7 +563,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
                                 <h1 className="text-2xl font-bold">Inbox</h1>
-                                {mailValidating && !mailLoading && (
+                                {mailLoading && (
                                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                         <Loader2 className="h-3 w-3 animate-spin" />
                                         <span>Refreshing...</span>
@@ -805,7 +852,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     <div className="space-y-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold">Forwarding</h1>
-                            {forwardingValidating && !forwardingLoading && (
+                            {forwardingLoading && (
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                     <span>Refreshing...</span>
@@ -817,7 +864,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 <CardTitle>Mail Forwarding Requests ({forwardingTotal})</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {forwardingLoading && !forwardingValidating ? (
+                                {forwardingLoading ? (
                                     <SkeletonBlock label="Loading forwarding requests..." />
                                 ) : forwardingError ? (
                                     <ErrorBlock label="Failed to load forwarding requests" detail={forwardingError.message} retry={() => refetchForwarding()} />
@@ -990,7 +1037,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <CardTitle>Invoices ({invoicesTotal})</CardTitle>
-                                    {invoicesValidating && !invoicesLoading && (
+                                    {invoicesLoading && (
                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                             <Loader2 className="h-3 w-3 animate-spin" />
                                             <span>Refreshing...</span>
@@ -999,7 +1046,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {invoicesLoading && !invoicesValidating ? (
+                                {invoicesLoading ? (
                                     <SkeletonBlock label="Loading invoices..." />
                                 ) : invoicesError ? (
                                     <ErrorBlock label="Failed to load invoices" detail={invoicesError.message} retry={() => refetchInvoices()} />
