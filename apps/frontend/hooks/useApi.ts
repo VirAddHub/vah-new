@@ -3,6 +3,7 @@ import { apiClient } from '../lib/apiClient';
 import { mailService, profileService, billingService, supportService, forwardingService } from '../lib/services';
 import { UserProfile } from '../lib/services/profile.service';
 import { SubscriptionStatus } from '../lib/services/billing.service';
+import { MailItem } from '../lib/services/mail.service';
 
 // Generic hook for API calls
 function useApiCall<T>(
@@ -39,8 +40,15 @@ function useApiCall<T>(
 
 // Mail Items Hook
 export function useMailItems() {
-  return useApiCall(
-    () => mailService.getMailItems(1, 50),
+  return useApiCall<MailItem[]>(
+    async () => {
+      const response = await mailService.getMailItems();
+      return {
+        success: response.ok,
+        data: response.data,
+        error: response.ok ? undefined : 'Failed to fetch mail items'
+      };
+    },
     []
   );
 }
@@ -78,7 +86,14 @@ export function useSubscription() {
 // Support Tickets Hook
 export function useSupportTickets() {
   return useApiCall(
-    () => supportService.getTickets(),
+    async () => {
+      const response = await supportService.getTickets();
+      return {
+        success: response.ok,
+        data: response.data,
+        error: response.ok ? undefined : 'Failed to fetch support tickets'
+      };
+    },
     []
   );
 }
@@ -92,11 +107,11 @@ export function useRequestForwarding() {
     setLoading(true);
     setError(null);
     try {
-      const response = await forwardingService.createRequest(data);
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to create forwarding request');
+      const response = await forwardingService.createForwardingRequest(data);
+      if (!response.ok) {
+        throw new Error('Failed to create forwarding request');
       }
-      return response;
+      return { success: true, data: response.data };
     } catch (err: any) {
       setError(err.message || 'Failed to create forwarding request');
       throw err;

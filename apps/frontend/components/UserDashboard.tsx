@@ -9,6 +9,7 @@ import {
 } from "../hooks/useApi";
 import { mailApi } from "../services/api";
 import { VAHLogo } from "./VAHLogo";
+import { MailItem } from "../lib/services/mail.service";
 
 import { Button } from "./ui/button";
 import {
@@ -58,13 +59,13 @@ import {
 } from "lucide-react";
 
 // Types
-type MenuId =
-  | "inbox"
-  | "forwarding"
-  | "billing"
-  | "invoices"
-  | "certificates"
-  | "settings"
+type MenuId = 
+  | "inbox" 
+  | "forwarding" 
+  | "billing" 
+  | "invoices" 
+  | "certificates" 
+  | "settings" 
   | "support";
 
 type MailStatus = "unread" | "read" | "forwarded";
@@ -141,8 +142,8 @@ const ErrorBlock = ({
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const [activeSection, setActiveSection] = useState<MenuId>("inbox");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
-  const [mailDetails, setMailDetails] = useState<Record<string, any>>({});
+  const [expandedMailId, setExpandedMailId] = useState<number | null>(null);
+  const [mailDetails, setMailDetails] = useState<Record<number, any>>({});
   const { toast } = useToast();
 
   // API hooks
@@ -183,6 +184,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const hasForwardingAddress = Boolean(profile?.forwarding_address);
   const planActive = subscription?.plan_status === "active";
 
+  // Robust unread calculation - support multiple backends
+  const unreadCount = (mailItems as MailItem[]).filter(
+    (item) => {
+      const byStatus = item.status ? item.status === "received" : undefined;
+      const byFlag = item.is_read;
+      // If backend uses status, prefer it; otherwise treat falsy read flag as unread
+      return byStatus ?? !Boolean(byFlag);
+    }
+  ).length;
+
   // Menu items
   const menuItems: {
     id: MenuId;
@@ -199,7 +210,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     ];
 
   // Actions
-  const openMail = async (id: string) => {
+  const openMail = async (id: number) => {
     // Toggle expansion
     if (expandedMailId === id) {
       setExpandedMailId(null);
@@ -209,10 +220,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     try {
       // If we don't have details yet, fetch them
       if (!mailDetails[id]) {
-        const response = await mailApi.getMailItem(id);
+        const response = await mailApi.getMailItem(String(id));
         if (response?.success && response.data) {
           setMailDetails(prev => ({ ...prev, [id]: response.data }));
-          await mailApi.markAsRead(id);
+          await mailApi.markAsRead(String(id));
           refetchMail();
         } else {
           throw new Error("Mail not found");
@@ -228,9 +239,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   };
 
-  const downloadMailPdf = async (id: string) => {
+  const downloadMailPdf = async (id: number) => {
     try {
-      const blob = await mailApi.downloadScan(id);
+      const blob = await mailApi.downloadScan(String(id));
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -296,15 +307,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <h1 className="text-2xl font-bold">Inbox</h1>
               <div className="flex gap-2">
                 <Badge variant="secondary" className="text-xs">
-                  {mailItems.filter(item => item.status === "unread").length} unread
+                  {unreadCount} unread
                 </Badge>
                 <Badge variant="outline" className="text-xs">
-                  {mailItems.length} total
+                  {mailItems?.length || 0} total
                 </Badge>
               </div>
             </div>
 
-            {mailItems.length === 0 ? (
+            {!mailItems || mailItems.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Inbox className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -331,7 +342,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {mailItems.map((item) => (
+                          {(mailItems || []).map((item) => (
                             <>
                               <TableRow
                                 key={item.id}
@@ -341,15 +352,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <TableCell className="font-medium">
                                   {item.description || "Mail Item"}
                                 </TableCell>
-                                <TableCell>{new Date(item.receivedDate).toLocaleDateString()}</TableCell>
+                                <TableCell>{new Date(item.received_at).toLocaleDateString()}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-xs">
-                                    {item.tag || "Other"}
+                                    {item.subject || "Mail"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <Badge
-                                    variant={item.status === "unread" ? "default" : "secondary"}
+                                    variant={item.status === "received" ? "default" : "secondary"}
                                     className="text-xs"
                                   >
                                     {item.status}
@@ -386,11 +397,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <div className="grid grid-cols-2 gap-3 text-sm">
                                             <div>
                                               <span className="text-muted-foreground">Received:</span>
-                                              <p className="font-medium">{new Date(item.receivedDate).toLocaleString()}</p>
+                                              <p className="font-medium">{new Date(item.received_at).toLocaleString()}</p>
                                             </div>
                                             <div>
                                               <span className="text-muted-foreground">Type:</span>
-                                              <p className="font-medium">{item.tag || "Other"}</p>
+                                              <p className="font-medium">{item.subject || "Other"}</p>
                                             </div>
                                             <div>
                                               <span className="text-muted-foreground">Status:</span>
@@ -447,7 +458,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Mobile Cards */}
                 <div className="sm:hidden space-y-3">
-                  {mailItems.map((item) => (
+                  {(mailItems || []).map((item) => (
                     <Card
                       key={item.id}
                       className={`border ${expandedMailId === item.id ? 'ring-2 ring-primary/20 bg-muted/30' : ''}`}
@@ -463,7 +474,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               {item.description || "Mail Item"}
                             </h3>
                             <Badge
-                              variant={item.status === "unread" ? "default" : "secondary"}
+                              variant={item.status === "received" ? "default" : "secondary"}
                               className="shrink-0"
                             >
                               {item.status}
@@ -471,10 +482,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           </div>
                           <div className="flex justify-between items-center gap-2 text-muted-foreground">
                             <span className="text-sm">
-                              {new Date(item.receivedDate).toLocaleDateString()}
+                              {new Date(item.received_at).toLocaleDateString()}
                             </span>
                             <Badge variant="outline" className="shrink-0">
-                              {item.tag || "Other"}
+                              {item.subject || "Other"}
                             </Badge>
                           </div>
                         </div>
@@ -486,12 +497,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               <div>
                                 <p className="text-xs text-muted-foreground mb-1">Received</p>
                                 <p className="text-sm font-medium">
-                                  {new Date(item.receivedDate).toLocaleDateString()}
+                                  {new Date(item.received_at).toLocaleDateString()}
                                 </p>
                               </div>
                               <div>
                                 <p className="text-xs text-muted-foreground mb-1">Type</p>
-                                <p className="text-sm font-medium">{item.tag || "Other"}</p>
+                                <p className="text-sm font-medium">{item.subject || "Other"}</p>
                               </div>
                             </div>
 

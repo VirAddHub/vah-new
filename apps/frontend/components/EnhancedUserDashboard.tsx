@@ -439,7 +439,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 country: 'GB'
             });
             if (response.ok) {
-                    loadForwardingRequests();
+                loadForwardingRequests();
                 toast({ title: "Success", description: "Forwarding request created" });
             } else {
                 throw new Error("Failed to create forwarding request");

@@ -6,8 +6,8 @@ export const mailApi = {
       const response = await apiClient.get(`/mail-items/${id}`);
       return {
         success: response.ok,
-        data: response.data,
-        error: response.ok ? null : response.data?.error || 'Failed to fetch mail item'
+        data: response.ok ? response.data : null,
+        error: response.ok ? null : response.message || 'Failed to fetch mail item'
       };
     } catch (error: any) {
       return {
@@ -23,8 +23,8 @@ export const mailApi = {
       const response = await apiClient.patch(`/mail-items/${id}`, { is_read: true });
       return {
         success: response.ok,
-        data: response.data,
-        error: response.ok ? null : response.data?.error || 'Failed to mark as read'
+        data: response.ok ? response.data : null,
+        error: response.ok ? null : response.message || 'Failed to mark as read'
       };
     } catch (error: any) {
       return {
