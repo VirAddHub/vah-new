@@ -49,7 +49,13 @@ export const billingService = {
      */
     async getInvoices(): Promise<{ ok: boolean; data: Invoice[] }> {
         const { data } = await api('/api/billing/invoices', { method: 'GET' });
-        return data;
+        console.log('[billingService.getInvoices] api() returned data:', data);
+        // Backend returns: { ok: true, data: [...], total, page } or { ok: true, items: [...] }
+        // We need to return: { ok: boolean, data: Invoice[] }
+        return {
+            ok: data.ok ?? false,
+            data: Array.isArray(data.data) ? data.data : (Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []))
+        };
     },
 
     /**

@@ -36,7 +36,13 @@ export const mailService = {
      */
     async getMailItems(): Promise<MailItemsResponse> {
         const { data } = await api('/api/mail-items', { method: 'GET' });
-        return data;
+        console.log('[mailService.getMailItems] api() returned data:', data);
+        // Backend returns: { ok: true, data: [...], total, page }
+        // We need to return: { ok: boolean, data: MailItem[] }
+        return {
+            ok: data.ok ?? false,
+            data: Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
+        };
     },
 
     /**

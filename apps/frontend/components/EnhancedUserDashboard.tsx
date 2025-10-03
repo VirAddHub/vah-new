@@ -180,9 +180,11 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             const response = await mailService.getMailItems();
             console.log('[EnhancedUserDashboard] loadMailItems - Response:', response);
             if (response.ok) {
-                setMailItems(response.data || []);
-                setMailTotal(response.data?.length || 0);
-                console.log('[EnhancedUserDashboard] loadMailItems - Success, items:', response.data?.length);
+                // Service now guarantees response.data is always an array
+                const items = Array.isArray(response.data) ? response.data : [];
+                setMailItems(items);
+                setMailTotal(items.length);
+                console.log('[EnhancedUserDashboard] loadMailItems - Success, items:', items.length);
             } else {
                 setMailError('Failed to load mail');
                 console.error('[EnhancedUserDashboard] loadMailItems - Failed:', response);
@@ -203,9 +205,11 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             const response = await forwardingService.getForwardingRequests();
             console.log('[EnhancedUserDashboard] loadForwardingRequests - Response:', response);
             if (response.ok) {
-                setForwardingRequests(response.data || []);
-                setForwardingTotal(response.data?.length || 0);
-                console.log('[EnhancedUserDashboard] loadForwardingRequests - Success, items:', response.data?.length);
+                // Service now guarantees response.data is always an array
+                const items = Array.isArray(response.data) ? response.data : [];
+                setForwardingRequests(items);
+                setForwardingTotal(items.length);
+                console.log('[EnhancedUserDashboard] loadForwardingRequests - Success, items:', items.length);
             } else {
                 setForwardingError('Failed to load forwarding requests');
                 console.error('[EnhancedUserDashboard] loadForwardingRequests - Failed:', response);
@@ -226,9 +230,11 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             const response = await billingService.getInvoices();
             console.log('[EnhancedUserDashboard] loadInvoices - Response:', response);
             if (response.ok) {
-                setInvoices(response.data || []);
-                setInvoicesTotal(response.data?.length || 0);
-                console.log('[EnhancedUserDashboard] loadInvoices - Success, items:', response.data?.length);
+                // Service now guarantees response.data is always an array
+                const items = Array.isArray(response.data) ? response.data : [];
+                setInvoices(items);
+                setInvoicesTotal(items.length);
+                console.log('[EnhancedUserDashboard] loadInvoices - Success, items:', items.length);
             } else {
                 setInvoicesError('Failed to load invoices');
                 console.error('[EnhancedUserDashboard] loadInvoices - Failed:', response);

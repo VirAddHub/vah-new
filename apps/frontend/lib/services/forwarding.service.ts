@@ -34,7 +34,13 @@ export const forwardingService = {
      */
     async getForwardingRequests(): Promise<ForwardingRequestsResponse> {
         const { data } = await api('/api/forwarding/requests', { method: 'GET' });
-        return data;
+        console.log('[forwardingService.getForwardingRequests] api() returned data:', data);
+        // Backend returns: { ok: true, data: [...], total, page } or { ok: true, items: [...] }
+        // We need to return: { ok: boolean, data: ForwardingRequest[] }
+        return {
+            ok: data.ok ?? false,
+            data: Array.isArray(data.data) ? data.data : (Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []))
+        };
     },
 
     /**
