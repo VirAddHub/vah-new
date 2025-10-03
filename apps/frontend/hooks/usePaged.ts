@@ -12,7 +12,7 @@ export type PagedResponse<T> = {
 
 export interface UsePagedOptions {
     /**
-     * Refresh interval in milliseconds
+     * Refresh interval in milliseconds (background polling only)
      * @default 15000 (15 seconds)
      */
     refreshMs?: number;
@@ -26,12 +26,24 @@ export interface UsePagedOptions {
 /**
  * Hook for fetching paginated data with automatic background refresh
  *
+ * KEY BEHAVIOR:
+ * - Page/filter changes: fetch immediately (key changes)
+ * - Background refresh: every `refreshMs` (default 15s)
+ * - User actions: INSTANT fetch (not delayed by refreshMs)
+ *
+ * USE CASES:
+ * - Non-search lists (inbox, activity, notifications)
+ * - Lists with dropdown filters (not free-text search)
+ *
+ * DON'T USE FOR:
+ * - Search with text input (use `useSearch` instead)
+ *
  * @param key - SWR key (URL string or [url, params] tuple)
  * @param opts - Configuration options
  *
  * @example
  * ```tsx
- * const { items, total, isLoading, error } = usePaged<MailItem>(
+ * const { items, total, isLoading, isValidating } = usePaged<MailItem>(
  *   `/api/mail-items?page=${page}&pageSize=20`,
  *   { refreshMs: 15000 }
  * );
@@ -44,11 +56,11 @@ export function usePaged<T>(
     const { refreshMs = 15000, swrConfig = {} } = opts || {};
 
     const swr = useSWR<PagedResponse<T>>(key, {
-        refreshInterval: refreshMs,
-        refreshWhenHidden: false,
-        refreshWhenOffline: false,
-        keepPreviousData: true,
-        revalidateOnFocus: true,
+        keepPreviousData: true,          // Keep old data while fetching (no flash)
+        refreshInterval: refreshMs,      // Background polling interval
+        refreshWhenHidden: false,        // Don't poll when tab is hidden
+        refreshWhenOffline: false,       // Don't poll when offline
+        revalidateOnFocus: true,         // Fetch when tab regains focus
         ...swrConfig,
     });
 

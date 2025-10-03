@@ -27,7 +27,7 @@ import {
     forwardingService,
     billingService
 } from "../lib/services";
-import { usePaged } from "../hooks/usePaged";
+import useSWR from "swr";
 import {
     Mail,
     Users,
@@ -100,7 +100,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         activity: '',
     });
 
-    // Build query params for users
+    // Build query params for users - include ALL filters in key for immediate fetch
     const usersQueryParams = {
         page: usersPage,
         pageSize: 50,
@@ -111,18 +111,26 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         ...(userFilters.activity && { activity: userFilters.activity }),
     };
 
-    // SWR hook for paginated users with auto-refresh
+    // Use SWR directly with proper key that triggers immediate fetch on any change
+    // Note: The search input in UsersSection will handle debouncing before calling onFiltersChange
+    const usersKey = activeSection === 'users' ? ['/api/admin/users', usersQueryParams] : null;
+
     const {
-        items: users,
-        total: usersTotal,
+        data: usersData,
         isLoading: usersLoading,
         isValidating: usersValidating,
         error: usersError,
         mutate: refetchUsers
-    } = usePaged<any>(
-        activeSection === 'users' ? ['/api/admin/users', usersQueryParams] : null,
-        { refreshMs: 20000 }
-    );
+    } = useSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
+        keepPreviousData: true,
+        refreshInterval: 20000,
+        refreshWhenHidden: false,
+        refreshWhenOffline: false,
+        revalidateOnFocus: true,
+    });
+
+    const users = usersData?.items ?? [];
+    const usersTotal = usersData?.total ?? 0;
 
     // Data loading state for other sections
     const [metrics, setMetrics] = useState<any>(null);

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "../ui/badge";
 import { useToast } from "../ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 type AdminUser = {
   id: string;
@@ -45,8 +46,11 @@ interface UsersSectionProps {
 export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange }: UsersSectionProps) {
   const { toast } = useToast();
 
-  // Search state
+  // Search state (raw input)
   const [q, setQ] = useState("");
+
+  // Debounce search query (300ms delay)
+  const debouncedQ = useDebouncedValue(q, 300);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
@@ -81,16 +85,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
 
-  // Reset page when search changes
+  // Reset page when search changes (after debounce)
   useEffect(() => {
     onPageChange(1);
-  }, [q, onPageChange]);
+  }, [debouncedQ, onPageChange]);
 
-  // Call onFiltersChange when any filter changes
+  // Call onFiltersChange when any filter changes (use debounced query)
   useEffect(() => {
     if (onFiltersChange) {
       onFiltersChange({
-        search: q,
+        search: debouncedQ,
         status: statusFilter === "__all__" ? "" : statusFilter,
         plan_id: planFilter === "__all__" ? "" : planFilter,
         kyc_status: kycFilter === "__all__" ? "" : kycFilter,

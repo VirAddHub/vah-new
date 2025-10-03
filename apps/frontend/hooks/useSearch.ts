@@ -7,7 +7,6 @@ import { useDebouncedValue } from './useDebouncedValue';
 export type SearchResponse<T> = {
     items: T[];
     total: number;
-    query: string;
 };
 
 export interface UseSearchOptions {
@@ -18,7 +17,7 @@ export interface UseSearchOptions {
     debounceMs?: number;
 
     /**
-     * Refresh interval in milliseconds
+     * Refresh interval in milliseconds (background polling only)
      * @default 30000 (30 seconds)
      */
     refreshMs?: number;
@@ -31,7 +30,12 @@ export interface UseSearchOptions {
 
 /**
  * Hook for debounced search with automatic background refresh
- * Returns null key (no fetch) if query is empty after debouncing
+ *
+ * KEY BEHAVIOR:
+ * - User types: debounced by `debounceMs` (default 300ms)
+ * - After typing stops: fetches immediately
+ * - Background refresh: every `refreshMs` (default 30s)
+ * - Page/filter changes: fetch immediately (no debounce)
  *
  * @param rawQuery - The raw search query (will be debounced)
  * @param page - Current page number
@@ -41,9 +45,9 @@ export interface UseSearchOptions {
  * @example
  * ```tsx
  * const [query, setQuery] = useState('');
- * const { data, isLoading, isValidating } = useSearch<MailItem>(
+ * const { data, items, total, isLoading, isValidating } = useSearch<MailItem>(
  *   query,
- *   1,
+ *   page,
  *   20,
  *   { debounceMs: 300, refreshMs: 30000 }
  * );
@@ -61,20 +65,20 @@ export function useSearch<T>(
         swrConfig = {},
     } = opts || {};
 
-    // Debounce the query to avoid excessive API calls
-    const query = useDebouncedValue(rawQuery.trim(), debounceMs);
+    // Debounce ONLY the query to avoid excessive API calls while typing
+    const q = useDebouncedValue(rawQuery.trim(), debounceMs);
 
-    // Only fetch if there's a query
-    const key = query
-        ? (['/api/search', { q: query, page, pageSize }] as const)
+    // Include q, page, pageSize in key so ANY change triggers immediate fetch
+    const key = q
+        ? (['/api/search', { q, page, pageSize }] as const)
         : null;
 
     const swr = useSWR<SearchResponse<T>>(key, {
-        refreshInterval: refreshMs,
-        refreshWhenHidden: false,
-        refreshWhenOffline: false,
-        keepPreviousData: true,
-        revalidateOnFocus: true,
+        keepPreviousData: true,          // Keep old data while fetching (no flash)
+        refreshInterval: refreshMs,      // Background polling interval
+        refreshWhenHidden: false,        // Don't poll when tab is hidden
+        refreshWhenOffline: false,       // Don't poll when offline
+        revalidateOnFocus: true,         // Fetch when tab regains focus
         ...swrConfig,
     });
 
@@ -82,7 +86,7 @@ export function useSearch<T>(
         ...swr,
         items: swr.data?.items ?? [],
         total: swr.data?.total ?? 0,
-        query: query,
-        isSearching: !!query,
+        query: q,
+        isSearching: !!q,
     };
 }
