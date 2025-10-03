@@ -1,0 +1,6 @@
+{
+    "event": "created",
+    "itemId": "{{OneDrive File ID}}",
+    "name": "{{OneDrive File Name}}",
+    "path": "{{OneDrive File Path}}"
+}
