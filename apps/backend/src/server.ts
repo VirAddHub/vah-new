@@ -80,7 +80,7 @@ const metricsRouter = require(path.join(routesDir, 'metrics'));
 const notificationsRouter = require(path.join(routesDir, 'notifications'));
 const profileResetRouter = require(path.join(routesDir, 'profile-reset'));
 const webhooksGcRouter = require(path.join(routesDir, 'webhooks-gc'));
-    // Mount legacy routes that need raw body handling
+// Mount legacy routes that need raw body handling
 // Note: webhooks-postmark and webhooks-sumsub are already imported above
 
 // --- cookie options helper
