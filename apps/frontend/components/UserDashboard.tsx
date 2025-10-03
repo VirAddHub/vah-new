@@ -60,13 +60,13 @@ import {
 } from "lucide-react";
 
 // Types
-type MenuId = 
-  | "inbox" 
-  | "forwarding" 
-  | "billing" 
-  | "invoices" 
-  | "certificates" 
-  | "settings" 
+type MenuId =
+  | "inbox"
+  | "forwarding"
+  | "billing"
+  | "invoices"
+  | "certificates"
+  | "settings"
   | "support";
 
 type MailStatus = "unread" | "read" | "forwarded";
@@ -719,5 +719,4 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       </SidebarProvider>
     </div>
   );
-}
 }
