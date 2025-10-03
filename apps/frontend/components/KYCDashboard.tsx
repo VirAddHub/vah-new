@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { isOk } from '@/types/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -87,10 +88,16 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
 
       const response = await apiClient.submitBusinessInfo(businessInfo as unknown as Record<string, unknown>);
 
-      if (response.ok) {
+      if (isOk(response)) {
         setSuccess('Business information submitted successfully!');
       } else {
-        setError(response.message || 'Failed to submit business information');
+        // unified ApiErr shape: { ok:false, error, code? }
+        // fallback in case legacy API still returns { message }
+        const legacyMsg =
+          typeof (response as any)?.message === 'string'
+            ? ((response as any).message as string)
+            : undefined;
+        setError(response.error || legacyMsg || 'Failed to submit business information');
       }
     } catch (err) {
       console.error('Failed to submit business info:', err);
