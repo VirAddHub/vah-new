@@ -1,5 +1,5 @@
-import { toast } from "sonner";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useToast } from "./ui/use-toast";
 import {
   useMailItems,
   useProfile,
@@ -143,6 +143,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
   const [mailDetails, setMailDetails] = useState<Record<string, any>>({});
+  const { toast } = useToast();
 
   // API hooks
   const { 
@@ -219,7 +220,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       }
       setExpandedMailId(id);
     } catch {
-      toast.error("Failed to open mail.");
+      toast({
+        title: "Error",
+        description: "Failed to open mail.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -234,9 +239,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast("Downloading scan…");
+      toast({
+        title: "Downloading",
+        description: "Downloading scan…",
+      });
     } catch {
-      toast.error("Failed to download PDF.");
+      toast({
+        title: "Error",
+        description: "Failed to download PDF.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -278,7 +290,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         if (mailLoading) return <SkeletonBlock label="Loading mail..." />;
         if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError} retry={refetchMail} />;
 
-        return (
+    return (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h1 className="text-2xl font-bold">Inbox</h1>
@@ -289,15 +301,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <Badge variant="outline" className="text-xs">
                   {mailItems.length} total
                 </Badge>
-              </div>
-            </div>
+        </div>
+      </div>
 
             {mailItems.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Inbox className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-medium mb-2">No mail yet</h3>
-                  <p className="text-muted-foreground">
+              <p className="text-muted-foreground">
                     Your mail will appear here when it arrives at your virtual address.
                   </p>
                 </CardContent>
@@ -345,23 +357,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                  <Button 
+              <Button
                                     size="sm" 
-                                    variant="outline" 
+                variant="outline"
                                     onClick={() => openMail(item.id)}
                                     className="h-7 px-2"
-                                  >
+              >
                                     <Eye className="h-3 w-3" />
-                                  </Button>
-                                  <Button 
+              </Button>
+              <Button
                                     size="sm" 
-                                    variant="outline" 
+                variant="outline"
                                     onClick={() => downloadMailPdf(item.id)}
                                     className="h-7 px-2"
                                   >
                                     <Download className="h-3 w-3" />
-                                  </Button>
-                                </div>
+              </Button>
+            </div>
                               </TableCell>
                             </TableRow>
                             {expandedMailId === item.id && mailDetails[item.id] && (
@@ -387,8 +399,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <div>
                                             <span className="text-muted-foreground">Description:</span>
                                             <p className="font-medium">{item.description || "Mail Item"}</p>
-                                          </div>
-                                        </div>
+          </div>
+        </div>
                                       </div>
                                       <Button
                                         variant="outline"
@@ -398,8 +410,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         <Download className="h-4 w-4 mr-2" />
                                         Download PDF
                                       </Button>
-                                    </div>
-                                    
+      </div>
+
                                     {mailDetails[item.id].scanUrl && (
                                       <div className="border rounded-lg overflow-hidden bg-card">
                                         <div className="p-2 bg-muted/50 text-sm font-medium">
@@ -412,9 +424,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                             className="max-w-full h-auto max-h-96 rounded border"
                                           />
                                         </div>
-                                      </div>
-                                    )}
-                                    
+          </div>
+        )}
+
                                     {!mailDetails[item.id].scanUrl && (
                                       <div className="border rounded-lg p-8 text-center text-muted-foreground">
                                         <FileArchive className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -430,8 +442,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       </TableBody>
                     </Table>
                     </div>
-                  </CardContent>
-                </Card>
+            </CardContent>
+          </Card>
 
                 {/* Mobile Cards */}
                 <div className="sm:hidden space-y-3">
@@ -481,8 +493,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <p className="text-xs text-muted-foreground mb-1">Type</p>
                                 <p className="text-sm font-medium">{item.tag || "Other"}</p>
                               </div>
-                            </div>
-                            
+        </div>
+
                             {mailDetails[item.id].scanUrl && (
                               <div className="border rounded-lg overflow-hidden bg-background">
                                 <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
@@ -493,9 +505,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     src={mailDetails[item.id].scanUrl} 
                                     alt="Mail scan"
                                     className="w-full h-auto rounded border"
-                                  />
-                                </div>
-                              </div>
+                  />
+                </div>
+              </div>
                             )}
                             
                             {!mailDetails[item.id].scanUrl && (
@@ -534,7 +546,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 </div>
               </>
             )}
-          </div>
+            </div>
         );
 
       case "billing":
@@ -544,9 +556,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Card>
               <CardHeader>
                 <CardTitle>Current Plan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+          </CardHeader>
+          <CardContent>
+              <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <p className="font-medium">Digital Mailbox Plan</p>
@@ -600,8 +612,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <h2 className="font-semibold text-sm">VirtualAddressHub</h2>
                   <p className="text-xs text-muted-foreground">Dashboard</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
+                    </div>
+                    <div className="flex items-center gap-2">
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -610,16 +622,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 >
                   {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                   onClick={onLogout}
                   className="text-xs"
-                >
+                      >
                   <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                      </Button>
+                    </div>
+                  </div>
             
             {/* Mobile Menu */}
             {mobileMenuOpen && (
@@ -641,7 +653,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 ))}
               </div>
             )}
-          </div>
+            </div>
 
           {/* Desktop Sidebar */}
           <Sidebar className="hidden lg:flex w-64 shrink-0">
@@ -651,8 +663,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <div>
                   <h2 className="font-semibold">VirtualAddressHub</h2>
                   <p className="text-sm text-muted-foreground">Dashboard</p>
-                </div>
-              </div>
+                    </div>
+                  </div>
             </SidebarHeader>
             <SidebarContent>
               <SidebarMenu>
@@ -670,8 +682,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </SidebarMenu>
               
               <div className="mt-auto p-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full" 
                   onClick={onLogout}
                 >
@@ -687,7 +699,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Banners />
             {renderSection()}
           </div>
-        </div>
+      </div>
       </SidebarProvider>
     </div>
   );
