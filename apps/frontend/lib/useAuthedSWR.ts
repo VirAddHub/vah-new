@@ -27,12 +27,25 @@ function makeFetcher(token?: string | null) {
             url = `${API}${path}?${searchParams.toString()}`;
         }
 
+        console.log('useAuthedSWR: Making request to:', url);
+        console.log('useAuthedSWR: Token exists:', !!token);
+
         const res = await fetch(url, {
             headers: { Authorization: `Bearer ${token}` },
             credentials: "omit",
         });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        return res.json();
+        
+        console.log('useAuthedSWR: Response status:', res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('useAuthedSWR: API Error:', res.status, errorText);
+            throw new Error(`${res.status} ${res.statusText}: ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('useAuthedSWR: Response data:', data);
+        return data;
     };
 }
 
@@ -43,6 +56,13 @@ export function useAuthedSWR<T = any>(key: string | readonly [string, any] | nul
     const fetcher = useMemo(() => makeFetcher(token), [token]);
     const gatedKey = isAuthenticated && token && key ? key : null;
 
+    console.log('useAuthedSWR: Hook called with:', {
+        key,
+        isAuthenticated,
+        hasToken: !!token,
+        gatedKey,
+        willFetch: !!gatedKey
+    });
 
     return useSWR<T>(gatedKey, fetcher, {
         revalidateOnFocus: true,
