@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { EnhancedUserDashboard } from '@/components/EnhancedUserDashboard';
+import { SimpleUserDashboard } from '@/components/SimpleUserDashboard';
 
 export default function DashboardClient() {
     const router = useRouter();
@@ -70,7 +70,7 @@ export default function DashboardClient() {
     };
 
     return (
-        <EnhancedUserDashboard
+        <SimpleUserDashboard
             onLogout={handleLogout}
             onNavigate={handleNavigate}
             onGoBack={handleGoBack}

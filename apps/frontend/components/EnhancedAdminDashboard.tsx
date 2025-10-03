@@ -457,12 +457,12 @@ function OverviewSection({ metrics, overview, systemStatus }: { metrics: any; ov
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline" className={`gap-2 ${systemStatus === 'operational' ? 'border-green-500' :
-                            systemStatus === 'degraded' ? 'border-yellow-500' :
-                                'border-red-500'
+                        systemStatus === 'degraded' ? 'border-yellow-500' :
+                            'border-red-500'
                         }`}>
                         <div className={`w-2 h-2 rounded-full animate-pulse ${systemStatus === 'operational' ? 'bg-green-500' :
-                                systemStatus === 'degraded' ? 'bg-yellow-500' :
-                                    'bg-red-500'
+                            systemStatus === 'degraded' ? 'bg-yellow-500' :
+                                'bg-red-500'
                             }`} />
                         {systemStatus === 'operational' ? 'System Operational' :
                             systemStatus === 'degraded' ? 'System Degraded' :
