@@ -77,7 +77,7 @@ export const forwardingService = {
      * Bulk forward multiple mail items
      */
     async bulkForward(ids: number[]): Promise<{ ok: boolean; forwarded: number[]; errors: any[] }> {
-        const { data } = await api('/api/forward/bulk', {
+        const { data } = await api('/api/forwarding/requests/bulk', { // Fixed: Correct backend path
             method: 'POST',
             body: JSON.stringify({ ids }),
         });

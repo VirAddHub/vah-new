@@ -20,7 +20,7 @@ function requireAuth(req: Request, res: Response, next: Function) {
  * GET /api/billing
  * Get billing overview for current user
  */
-router.get('/billing', requireAuth, async (req: Request, res: Response) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 

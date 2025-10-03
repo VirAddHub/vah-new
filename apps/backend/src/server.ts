@@ -55,6 +55,7 @@ import companiesHouseRouter from "./server/routes/companies-house";
 import kycRouter from "./server/routes/kyc";
 import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
+import supportRouter from "./server/routes/support";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -357,6 +358,8 @@ async function start() {
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api/kyc', kycRouter);
     logger.info('[mount] /api/kyc mounted');
+    app.use('/api/support', supportRouter);
+    logger.info('[mount] /api/support mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {

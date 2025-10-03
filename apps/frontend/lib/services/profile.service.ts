@@ -29,7 +29,7 @@ export const profileService = {
      */
     async updateProfile(updates: Partial<UserProfile>): Promise<{ ok: boolean; data: UserProfile }> {
         const { data } = await api('/api/profile', {
-            method: 'POST',
+            method: 'PATCH', // Fixed: Backend expects PATCH, not POST
             body: JSON.stringify(updates),
         });
         return data;
@@ -37,10 +37,12 @@ export const profileService = {
 
     /**
      * Update forwarding address
+     * Note: Backend endpoint /api/profile/address does NOT exist
+     * Using PATCH /api/profile instead
      */
     async updateForwardingAddress(address: string): Promise<{ ok: boolean; forwarding_address: string }> {
-        const { data } = await api('/api/profile/address', {
-            method: 'PUT',
+        const { data } = await api('/api/profile', {
+            method: 'PATCH', // Fixed: Use PATCH /api/profile with forwarding_address field
             body: JSON.stringify({ forwarding_address: address }),
         });
         return data;
@@ -61,7 +63,7 @@ export const profileService = {
      * Reset password with token
      */
     async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean }> {
-        const { data } = await api('/api/profile/reset-password', {
+        const { data } = await api('/api/auth/reset-password/confirm', { // Fixed: Backend endpoint is in /api/auth, not /api/profile
             method: 'POST',
             body: JSON.stringify({ token, password: newPassword }),
         });

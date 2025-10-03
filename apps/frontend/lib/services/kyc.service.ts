@@ -18,7 +18,7 @@ export const kycService = {
      * Upload KYC documents
      */
     async uploadDocuments(formData: FormData): Promise<{ ok: boolean; data: { sdk_token: string } }> {
-        const { data } = await api('/api/kyc/upload', {
+        const { data } = await api('/api/kyc/upload-documents', { // Fixed: Backend endpoint is /api/kyc/upload-documents, not /api/kyc/upload
             method: 'POST',
             body: formData,
         });

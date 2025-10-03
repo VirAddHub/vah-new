@@ -33,10 +33,11 @@ export const emailPrefsService = {
 
     /**
      * Update email preferences
+     * Note: Backend only has POST endpoint, not PATCH
      */
     async updatePreferences(prefs: Partial<EmailPreferences>): Promise<{ ok: boolean }> {
         const { data } = await api('/api/email-prefs', {
-            method: 'PATCH',
+            method: 'POST', // Fixed: Backend only supports POST, not PATCH
             body: JSON.stringify(prefs),
         });
         return data;

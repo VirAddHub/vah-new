@@ -183,4 +183,56 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
     }
 });
 
+/**
+ * POST /api/forwarding/requests/bulk
+ * Bulk forward multiple mail items
+ */
+router.post('/requests/bulk', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { ids } = req.body;
+    const pool = getPool();
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ ok: false, error: 'invalid_ids' });
+    }
+
+    try {
+        const forwarded: number[] = [];
+        const errors: any[] = [];
+
+        for (const id of ids) {
+            try {
+                const mailResult = await pool.query(`
+                    SELECT id, user_id
+                    FROM mail_item
+                    WHERE id = $1 AND user_id = $2 AND deleted = false
+                `, [id, userId]);
+
+                if (mailResult.rows.length === 0) {
+                    errors.push({ id, error: 'not_found' });
+                    continue;
+                }
+
+                const mailItem = mailResult.rows[0];
+
+                // Update mail item to mark as forwarding requested
+                await pool.query(`
+                    UPDATE mail_item
+                    SET forwarding_status = $1, updated_at = $2
+                    WHERE id = $3
+                `, ['Requested', Date.now(), mailItem.id]);
+
+                forwarded.push(id);
+            } catch (error: any) {
+                errors.push({ id, error: error.message });
+            }
+        }
+
+        return res.json({ ok: true, forwarded, errors });
+    } catch (error: any) {
+        console.error('[POST /api/forwarding/requests/bulk] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
 export default router;

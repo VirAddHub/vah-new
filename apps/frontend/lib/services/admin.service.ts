@@ -67,11 +67,12 @@ export const adminService = {
 
     /**
      * Update user KYC status (admin only)
+     * Note: Uses general user update endpoint, not dedicated KYC endpoint
      */
     async updateKYCStatus(id: number, status: string): Promise<{ ok: boolean }> {
-        const { data } = await api(`/api/admin/users/${id}/kyc-status`, {
-            method: 'PUT',
-            body: JSON.stringify({ status }),
+        const { data } = await api(`/api/admin/users/${id}`, { // Fixed: Use general update endpoint
+            method: 'PATCH', // Fixed: Backend expects PATCH, not PUT
+            body: JSON.stringify({ kyc_status: status }), // Fixed: Field name is kyc_status
         });
         return data;
     },

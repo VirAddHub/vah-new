@@ -187,6 +187,51 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/admin/users/stats
+ * Get user statistics (admin only)
+ * IMPORTANT: This route MUST come before /users/:id to avoid being caught by the :id parameter
+ */
+router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => {
+    const pool = getPool();
+
+    try {
+        // Get total users
+        const totalResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NULL');
+        const total = parseInt(totalResult.rows[0].count);
+
+        // Get active users
+        const activeResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['active']);
+        const active = parseInt(activeResult.rows[0].count);
+
+        // Get suspended users
+        const suspendedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['suspended']);
+        const suspended = parseInt(suspendedResult.rows[0].count);
+
+        // Get pending users
+        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['pending']);
+        const pending = parseInt(pendingResult.rows[0].count);
+
+        // Get deleted users
+        const deletedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NOT NULL');
+        const deleted = parseInt(deletedResult.rows[0].count);
+
+        return res.json({
+            ok: true,
+            data: {
+                total,
+                active,
+                suspended,
+                pending,
+                deleted
+            }
+        });
+    } catch (error: any) {
+        console.error('[GET /api/admin/users/stats] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
  * GET /api/admin/users/:id
  * Get specific user (admin only)
  */
@@ -322,50 +367,6 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[PATCH /api/admin/users/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
-    }
-});
-
-/**
- * GET /api/admin/users/stats
- * Get user statistics (admin only)
- */
-router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => {
-    const pool = getPool();
-
-    try {
-        // Get total users
-        const totalResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NULL');
-        const total = parseInt(totalResult.rows[0].count);
-
-        // Get active users
-        const activeResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['active']);
-        const active = parseInt(activeResult.rows[0].count);
-
-        // Get suspended users
-        const suspendedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['suspended']);
-        const suspended = parseInt(suspendedResult.rows[0].count);
-
-        // Get pending users
-        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['pending']);
-        const pending = parseInt(pendingResult.rows[0].count);
-
-        // Get deleted users
-        const deletedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NOT NULL');
-        const deleted = parseInt(deletedResult.rows[0].count);
-
-        return res.json({
-            ok: true,
-            data: {
-                total,
-                active,
-                suspended,
-                pending,
-                deleted
-            }
-        });
-    } catch (error: any) {
-        console.error('[GET /api/admin/users/stats] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
