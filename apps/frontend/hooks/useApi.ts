@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../lib/apiClient';
 import { mailService, profileService, billingService, supportService, forwardingService } from '../lib/services';
+import { UserProfile } from '../lib/services/profile.service';
 
 // Generic hook for API calls
 function useApiCall<T>(
@@ -45,8 +46,15 @@ export function useMailItems() {
 
 // Profile Hook
 export function useProfile() {
-  return useApiCall(
-    () => profileService.getProfile(),
+  return useApiCall<UserProfile>(
+    async () => {
+      const response = await profileService.getProfile();
+      return {
+        success: response.ok,
+        data: response.data,
+        error: response.ok ? undefined : 'Failed to fetch profile'
+      };
+    },
     []
   );
 }
