@@ -3,10 +3,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ToastProvider } from '@/components/ui/use-toast';
-import dynamic from 'next/dynamic';
 import { SWRProvider } from '@/components/SWRProvider';
-
-const Providers = dynamic(() => import('@/components/Providers'), { ssr: false });
+import { Providers } from '@/components/Providers';
 
 const inter = Inter({
     subsets: ['latin'],
