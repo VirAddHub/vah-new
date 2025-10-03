@@ -20,12 +20,12 @@ COMMENT ON COLUMN "user".kyc_verified_at_ms IS 'KYC verified timestamp in ms';
 COMMENT ON COLUMN "user".kyc_rejection_reason IS 'Reason if KYC was rejected';
 
 -- Billing cycle expected by code
-ALTER TABLE plan
+ALTER TABLE plans
   ADD COLUMN IF NOT EXISTS billing_cycle text;
 
 -- Backfill from existing interval column if present
-UPDATE plan
-SET billing_cycle = COALESCE(billing_cycle, billing_interval)
+UPDATE plans
+SET billing_cycle = COALESCE(billing_cycle, interval)
 WHERE billing_cycle IS NULL;
 
 -- Compatibility view for code paths that expect 'state' instead of 'status'
