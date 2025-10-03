@@ -385,7 +385,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 
     try {
-        const now = Date.now();
+        const now = new Date().toISOString();
 
         // Soft delete - just mark as deleted
         await pool.query(`
@@ -398,7 +398,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
             VALUES ($1, $2, $3, $4, $5)
-        `, [adminId, 'delete_user', 'user', userId, Date.now()]);
+        `, [adminId, 'delete_user', 'user', userId, now]);
 
         return res.json({ ok: true });
     } catch (error: any) {
