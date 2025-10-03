@@ -3,15 +3,8 @@
 import { UnknownRecord } from './types';
 import { setToken, clearToken, getToken, setStoredUser } from './token-manager';
 import { addCSRFHeader } from './csrf-protection';
-
-export type ApiOk<T> = { ok: true; data: T };
-export type ApiErr = { ok: false; message: string; code?: string; status?: number };
-export type ApiResponse<T> = ApiOk<T> | ApiErr;
-
-// Type guard function to safely check if response is successful
-export function isOk<T>(r: ApiResponse<T> | unknown): r is ApiOk<T> {
-    return !!r && typeof r === "object" && (r as UnknownRecord).ok === true;
-}
+import type { ApiResponse } from '../types/api';
+import { isOk } from '../types/api';
 
 // User interface is now imported from ../types/user
 

@@ -1,24 +1,15 @@
 // apps/frontend/lib/apiClient.ts
 
 // Re-export types & helpers for components
-export type {
-    ApiOk,
-    ApiErr,
-    ApiResponse,
-    MailItem,
-    ForwardingRequest,
-} from './api-client';
 export type { User } from '../types/user';
 export { safe } from './api-client';
 
 import { API_BASE } from './config';
 import { apiClient as legacyClient } from './api-client';
-import type {
-    ApiResponse,
-    User,
-    MailItem,
-    ForwardingRequest,
-} from './api-client';
+import type { ApiResponse } from '../types/api';
+import type { MailItem, MailItemDetails } from '../types/mail';
+import type { User } from '../types/user';
+import type { ForwardingRequest } from './api-client';
 import { getToken } from './token-manager';
 
 type ReqInit = RequestInit & { headers?: HeadersInit };
@@ -155,14 +146,18 @@ const mapMailDetails = (raw: any): MailItemDetails => ({
     pages: raw.pages ?? null,
 });
 
+// --- helpers: ensure shape matches shared ApiErr exactly ---
+const ok = <T,>(data: T): ApiResponse<T> => ({ ok: true, data });
+const err = <T = never>(error: string, code?: number): ApiResponse<T> => ({ ok: false, error, code });
+
 export const mailApi = {
     async list(): Promise<ApiResponse<MailItem[]>> {
         try {
             const data = await get('/api/mail-items');
             const items = Array.isArray(data?.data ?? data) ? (data.data ?? data) : [];
-            return { ok: true, data: items.map(mapMailItem) };
+            return ok(items.map(mapMailItem));
         } catch (e: any) {
-            return { ok: false, error: e?.message ?? 'Failed to load mail', code: e?.status };
+            return err(e?.message ?? 'Failed to load mail', e?.status);
         }
     },
 
@@ -170,9 +165,9 @@ export const mailApi = {
         try {
             const data = await get(`/api/mail-items/${id}`);
             const obj = data?.data ?? data;
-            return { ok: true, data: mapMailDetails(obj) };
+            return ok(mapMailDetails(obj));
         } catch (e: any) {
-            return { ok: false, error: e?.message ?? 'Mail not found', code: e?.status };
+            return err(e?.message ?? 'Mail not found', e?.status);
         }
     },
 
@@ -180,9 +175,9 @@ export const mailApi = {
         try {
             const data = await patch(`/api/mail-items/${id}`, { is_read: true });
             const obj = data?.data ?? data ?? {};
-            return { ok: true, data: { id: String(obj.id ?? id), status: 'read' } };
+            return ok({ id: String(obj.id ?? id), status: 'read' });
         } catch (e: any) {
-            return { ok: false, error: e?.message ?? 'Failed to mark as read', code: e?.status };
+            return err(e?.message ?? 'Failed to mark as read', e?.status);
         }
     },
 
