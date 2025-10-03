@@ -17,14 +17,61 @@ function resolveToken(ctx: ReturnType<typeof useAuth>): string | null {
 }
 
 function makeFetcher(token?: string | null) {
-  return async (path: string) => {
+  return async (keyOrTuple: string | readonly [string, any]) => {
     if (!token) throw new Error("No token");
-    const res = await fetch(`${API}${path}`, {
+
+    // Handle both string keys and [url, params] tuples
+    let url: string;
+    if (typeof keyOrTuple === 'string') {
+      url = keyOrTuple;
+    } else if (Array.isArray(keyOrTuple)) {
+      const [path, params] = keyOrTuple;
+      const searchParams = new URLSearchParams();
+
+      // Convert params object to URLSearchParams
+      Object.entries(params || {}).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+
+      url = searchParams.toString() ? `${path}?${searchParams.toString()}` : path;
+    } else {
+      throw new Error('Invalid key format');
+    }
+
+    console.log('[useAuthedSWR] Fetching:', `${API}${url}`);
+    const res = await fetch(`${API}${url}`, {
       headers: { Authorization: `Bearer ${token}` },
-      // keep credentials out unless you use cookies; header is enough
+      credentials: 'include', // Include cookies for session
     });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    return res.json();
+    if (!res.ok) {
+      console.error('[useAuthedSWR] Error:', res.status, res.statusText);
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+    const rawData = await res.json();
+    console.log('[useAuthedSWR] Raw response:', rawData);
+
+    // Handle wrapped response format: { ok, items, total } or { ok, data }
+    let data = rawData;
+    if (rawData?.ok === true) {
+      // If response has { ok: true, items, total } - use items/total directly
+      if (rawData.items !== undefined) {
+        data = {
+          items: rawData.items,
+          total: rawData.total ?? rawData.count ?? 0,
+          page: rawData.page,
+          pageSize: rawData.pageSize,
+        };
+      }
+      // If response has { ok: true, data } - unwrap the data
+      else if (rawData.data !== undefined) {
+        data = rawData.data;
+      }
+    }
+
+    console.log('[useAuthedSWR] Normalized response:', data);
+    return data;
   };
 }
 

@@ -13,7 +13,7 @@ const fallbackAllowlist = [
     'http://localhost:3000',
 ];
 
-// Allow Vercel preview: https://vah-frontend-final-*.vercel.app
+// Allow Vercel preview URLs
 function isAllowed(origin: string | undefined): boolean {
     // Always allow no-origin (health checks, curl, Render probes)
     if (!origin) return true;
@@ -22,7 +22,11 @@ function isAllowed(origin: string | undefined): boolean {
     const origins = allowList.length > 0 ? allowList : fallbackAllowlist;
 
     if (origins.includes(origin)) return true;
+
+    // Allow Vercel preview URLs for both old and new frontend names
     if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
+    if (/^https:\/\/vah-new-frontend-[\w-]+\.vercel\.app$/.test(origin)) return true;
+
     return false;
 }
 

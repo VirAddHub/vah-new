@@ -27,7 +27,7 @@ import {
     forwardingService,
     billingService
 } from "../lib/services";
-import useSWR from "swr";
+import { useAuthedSWR } from "../lib/useAuthedSWR";
 import {
     Mail,
     Users,
@@ -111,9 +111,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         ...(userFilters.activity && { activity: userFilters.activity }),
     };
 
-    // Use SWR directly with proper key that triggers immediate fetch on any change
+    // Use authenticated SWR with proper key that triggers immediate fetch on any change
     // Note: The search input in UsersSection will handle debouncing before calling onFiltersChange
-    const usersKey = activeSection === 'users' ? ['/api/admin/users', usersQueryParams] : null;
+    const usersKey: readonly [string, any] | null = activeSection === 'users'
+        ? ['/api/admin/users', usersQueryParams] as const
+        : null;
+
+    console.log('[EnhancedAdminDashboard] activeSection:', activeSection);
+    console.log('[EnhancedAdminDashboard] usersKey:', usersKey);
+    console.log('[EnhancedAdminDashboard] usersQueryParams:', usersQueryParams);
 
     const {
         data: usersData,
@@ -121,7 +127,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         isValidating: usersValidating,
         error: usersError,
         mutate: refetchUsers
-    } = useSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
+    } = useAuthedSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
         keepPreviousData: true,
         refreshInterval: 20000,
         refreshWhenHidden: false,
@@ -131,6 +137,11 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     const users = usersData?.items ?? [];
     const usersTotal = usersData?.total ?? 0;
+
+    console.log('[EnhancedAdminDashboard] usersData:', usersData);
+    console.log('[EnhancedAdminDashboard] users:', users);
+    console.log('[EnhancedAdminDashboard] usersLoading:', usersLoading);
+    console.log('[EnhancedAdminDashboard] usersError:', usersError);
 
     // Data loading state for other sections
     const [metrics, setMetrics] = useState<any>(null);
