@@ -20,7 +20,8 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
-import { apiClient } from "@/lib/apiClient";
+import { contactApi } from "@/lib/apiClient";
+import { isOk } from "@/types/api";
 
 interface ContactPageProps {
     onNavigate?: (page: string) => void;
@@ -97,10 +98,10 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
         setIsSubmitting(true);
         try {
-            // Call the contact API using the correct endpoint
-            const response = await apiClient.post('/api/contact', formData);
+            // Call the contact API using the unified client
+            const response = await contactApi.send(formData);
 
-            if (response.ok) {
+            if (isOk(response)) {
                 setIsSubmitted(true);
                 setFormData({
                     name: "",
@@ -112,10 +113,20 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     website: "",
                 });
             } else {
-                setErrorMsg(response.message || "Unable to send message. Please try again.");
+                // unified ApiErr shape: { ok:false, error, code? }
+                // fallback in case legacy API still returns { message }
+                // @ts-expect-error – tolerate legacy shape briefly
+                const legacyMsg = (response as any)?.message as string | undefined;
+                setErrorMsg(response.error || legacyMsg || "Unable to send message. Please try again.");
             }
         } catch (err: unknown) {
-            const msg = (err as { message?: string })?.message ?? "Something went wrong. Please try again in a moment.";
+            // prefer server error payload if available
+            const msg =
+              // axios style: response.data.error
+              (err as any)?.response?.data?.error
+              // fetch style: message
+              ?? (err as Error)?.message
+              ?? "Something went wrong. Please try again in a moment.";
             setErrorMsg(msg);
         } finally {
             setIsSubmitting(false);

@@ -196,6 +196,22 @@ export const mailApi = {
     },
 };
 
+// ---- Contact API ----
+export const contactApi = {
+    async send(payload: { name: string; email: string; message: string; inquiryType?: string; website?: string }): Promise<ApiResponse<{ sent: true }>> {
+        try {
+            const data = await post('/api/contact', payload);
+            // Accept either {ok:true,data:{...}} or plain {sent:true} from server
+            const body = data?.data ?? data;
+            if (body?.ok === true && body?.data) return { ok: true, data: body.data };
+            if (body?.sent === true) return { ok: true, data: { sent: true } };
+            return { ok: false, error: body?.error ?? 'Failed to send message' };
+        } catch (e: any) {
+            return err(e?.response?.data?.error ?? e?.message ?? 'Failed to send message', e?.response?.status);
+        }
+    },
+};
+
 // ---- User-domain helpers so components get typed data ----
 const userDomain = {
     getKycStatus: () =>
