@@ -18,7 +18,14 @@ export const metadata: Metadata = {
     title: 'VirtualAddressHub',
     description: 'Your professional London business address with secure digital mail.',
     manifest: '/manifest.json',
-    themeColor: '#0A7AFF',
+    icons: {
+        icon: '/icons/icon-192.png',
+        apple: '/icons/icon-192.png',
+        other: [
+            { rel: 'mask-icon', url: '/icons/maskable-512.png' }
+        ]
+    },
+    themeColor: '#111827',
 };
 
 export const viewport: Viewport = {
