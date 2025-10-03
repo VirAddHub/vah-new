@@ -760,12 +760,17 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "forwarding":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">Forwarding</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Mail Forwarding Requests</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {forwardingRequests.length === 0 ? (
+                                {loading ? (
+                                    <SkeletonBlock label="Loading forwarding requests..." />
+                                ) : error ? (
+                                    <ErrorBlock label="Failed to load forwarding requests" detail={error} retry={refetchForwarding} />
+                                ) : forwardingRequests.length === 0 ? (
                                     <p className="text-muted-foreground">No forwarding requests found.</p>
                                 ) : (
                                     <Table>
@@ -839,12 +844,17 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "billing":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">Billing</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Current Subscription</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {subscription ? (
+                                {loading ? (
+                                    <SkeletonBlock label="Loading subscription..." />
+                                ) : error ? (
+                                    <ErrorBlock label="Failed to load subscription" detail={error} retry={refetchSubscription} />
+                                ) : subscription ? (
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Plan:</span>
@@ -949,6 +959,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "certificates":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">Certificates</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Available Certificates</CardTitle>
@@ -1042,11 +1053,17 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "kyc":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">KYC Verification</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>KYC Verification Status</CardTitle>
                             </CardHeader>
                             <CardContent>
+                                {loading ? (
+                                    <SkeletonBlock label="Loading KYC status..." />
+                                ) : error ? (
+                                    <ErrorBlock label="Failed to load KYC status" detail={error} retry={refetchKyc} />
+                                ) : (
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">Status:</span>
@@ -1148,6 +1165,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                         </div>
                                     </div>
                                 </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -1156,6 +1174,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "settings":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">Settings</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Profile Settings</CardTitle>
@@ -1233,6 +1252,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             case "support":
                 return (
                     <div className="space-y-6">
+                        <h1 className="text-2xl font-bold">Support</h1>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Support Tickets</CardTitle>
