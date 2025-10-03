@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   MOBILE-FIRST FOUNDATION
+   ======================================== */
+
+/* Safe area insets for notched devices (iPhone X+, etc.) */
+:root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+}
+
 /* Montserrat for Corporate/Tech Aesthetic - Multi-layer font loading strategy */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
@@ -28,10 +40,24 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Respect user's motion preferences (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 body {
     margin: 0;
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
 }
 
 img,

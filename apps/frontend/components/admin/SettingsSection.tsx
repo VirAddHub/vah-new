@@ -18,7 +18,6 @@ import {
     CreditCard,
     Globe,
     Save,
-    RefreshCcw,
     AlertTriangle,
     CheckCircle,
     Server,
@@ -90,17 +89,6 @@ export function SettingsSection({ }: SettingsSectionProps) {
         if (systemSettings) setSettings(systemSettings);
     }, [systemSettings]);
 
-    const handleRefresh = async () => {
-        setLoading(true);
-        try {
-            await logAdminAction('admin_settings_refresh');
-            await refetchSettings();
-        } catch (error) {
-            await logAdminAction('admin_settings_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSaveSettings = async (section: string) => {
         setSaving(true);
@@ -179,15 +167,6 @@ export function SettingsSection({ }: SettingsSectionProps) {
                     <p className="text-muted-foreground">Configure system-wide settings and preferences</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleRefresh}
-                        disabled={loading}
-                    >
-                        <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
                 </div>
             </div>
 
@@ -495,7 +474,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                         onClick={handleClearCache}
                                         disabled={loading}
                                     >
-                                        <RefreshCcw className="h-4 w-4" />
+                                        <Database className="h-4 w-4" />
                                         Clear Cache
                                     </Button>
                                 </div>

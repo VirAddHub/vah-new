@@ -18,7 +18,6 @@ import {
     Trash2,
     Download,
     Search,
-    RefreshCcw,
     Mail,
     Package,
     FileText,

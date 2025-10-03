@@ -8,7 +8,6 @@ import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import {
-    RefreshCcw,
     Truck,
     Package,
     MapPin,
@@ -147,9 +146,6 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
 
     const requestsData = requests;
 
-    const handleRefresh = async () => {
-        await loadRequests();
-    };
 
     const onSearchChange = (val: string) => {
         setPage(1);
@@ -347,15 +343,6 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                     >
                         <Download className="h-4 w-4" />
                         {isExporting ? 'Exporting…' : 'Export'}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleRefresh}
-                        disabled={isFetchingRequests || isMutating}
-                    >
-                        <RefreshCcw className={`h-4 w-4 ${isFetchingRequests ? 'animate-spin' : ''}`} />
-                        {isFetchingRequests ? "Refreshing…" : "Refresh"}
                     </Button>
                 </div>
             </div>

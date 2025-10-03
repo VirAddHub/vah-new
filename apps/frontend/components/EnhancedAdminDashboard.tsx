@@ -37,7 +37,6 @@ import {
     Shield,
     Activity,
     Check,
-    RefreshCcw,
     Play,
     RotateCcw,
     Trash2,
@@ -342,9 +341,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
                         {/* Quick Actions - Desktop Only */}
                         <div className="hidden lg:flex items-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 px-2">
-                                <RefreshCcw className="h-4 w-4" />
-                            </Button>
                             <Button variant="ghost" size="sm" className="h-8 px-2">
                                 <Download className="h-4 w-4" />
                             </Button>
@@ -681,10 +677,6 @@ function ForwardingSection() {
                     <h1 className="text-3xl font-bold">Forwarding Management</h1>
                     <p className="text-muted-foreground">Track and manage mail forwarding requests</p>
                 </div>
-                <Button variant="outline" className="gap-2">
-                    <RefreshCcw className="h-4 w-4" />
-                    Refresh
-                </Button>
             </div>
 
             {/* Forwarding Queue */}

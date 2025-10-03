@@ -21,7 +21,6 @@ import {
     CheckCircle,
     UserCheck,
     UserX,
-    RefreshCcw,
 } from "lucide-react";
 import { apiClient, logAdminAction, validateEmail } from "../../lib";
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
@@ -618,7 +617,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                 <Button type="submit" disabled={loading}>
                                     {loading ? (
                                         <>
-                                            <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+                                            <div className="h-4 w-4 mr-2 animate-spin border-2 border-gray-300 border-t-blue-600 rounded-full" />
                                             Updating...
                                         </>
                                     ) : (

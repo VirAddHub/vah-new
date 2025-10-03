@@ -14,7 +14,6 @@ import {
   CheckCircle,
   AlertTriangle,
   Clock,
-  RefreshCcw,
   Building,
   FileText,
   User
@@ -151,7 +150,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <RefreshCcw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-gray-300 border-t-blue-600 rounded-full" />
           <p>Loading KYC information...</p>
         </div>
       </div>
@@ -171,15 +170,6 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
             </div>
           </div>
         </div>

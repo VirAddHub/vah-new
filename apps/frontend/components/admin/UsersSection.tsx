@@ -28,7 +28,6 @@ interface UsersSectionProps {
   users: any[];
   loading: boolean;
   error: string | null;
-  onRefresh: () => void;
   onFiltersChange?: (filters: {
     search: string;
     status: string;
@@ -38,7 +37,7 @@ interface UsersSectionProps {
   }) => void;
 }
 
-export default function UsersSection({ users, loading, error, onRefresh, onFiltersChange }: UsersSectionProps) {
+export default function UsersSection({ users, loading, error, onFiltersChange }: UsersSectionProps) {
   const { toast } = useToast();
 
   // Search and pagination state
@@ -152,7 +151,7 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
 
       // Refresh data from parent
-      await Promise.all([onRefresh(), loadUserStats()]);
+      await Promise.all([loadUserStats()]);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
     } finally {
@@ -179,7 +178,7 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
 
       // Refresh data from parent
-      await Promise.all([onRefresh(), loadUserStats()]);
+      await Promise.all([loadUserStats()]);
 
       // Close modal
       setRestoreModal(null);
@@ -302,9 +301,6 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
           <p className="text-sm text-muted-foreground">Total: {users.length}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onRefresh} disabled={loading}>
-            Refresh
-          </Button>
           <Button
             variant={showDeleted ? "default" : "outline"}
             onClick={() => setShowDeleted(!showDeleted)}
@@ -330,17 +326,11 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
       {error && (
         <div className="text-center py-2">
           <div className="text-sm text-red-600 mb-2">{error}</div>
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            Retry
-          </Button>
         </div>
       )}
       {!loading && !error && users.length === 0 && (
         <div className="text-center py-2">
-          <div className="text-sm text-muted-foreground mb-2">No users yet. Click Refresh to load.</div>
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            Refresh
-          </Button>
+          <div className="text-sm text-muted-foreground mb-2">No users yet.</div>
         </div>
       )}
 
@@ -655,7 +645,6 @@ export default function UsersSection({ users, loading, error, onRefresh, onFilte
                       toast({ title: "Success", description: "User plan updated" });
                       setPlanModal(null);
                       setSelectedPlan('');
-                      onRefresh();
                     } else {
                       toast({ title: "Error", description: res.message || "Failed to update plan", variant: "destructive" });
                     }

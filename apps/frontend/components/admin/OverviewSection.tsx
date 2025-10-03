@@ -17,7 +17,6 @@ import {
     AlertCircle,
     ArrowUp,
     ArrowDown,
-    RefreshCcw,
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
@@ -85,27 +84,6 @@ export function OverviewSection() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleRefreshAll = async () => {
-        setLoading(true);
-        try {
-            await logAdminAction('admin_overview_refresh');
-
-            // Check health immediately
-            const healthResponse = await fetch('/api/healthz');
-            setSystemStatus(healthResponse.ok ? 'operational' : 'down');
-
-            await Promise.all([
-                refetchStats(),
-                refetchActivity(),
-                refetchPending()
-            ]);
-            setLastRefresh(new Date());
-        } catch (error) {
-            await logAdminAction('admin_overview_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleViewAllActivity = async () => {
         try {
@@ -155,15 +133,6 @@ export function OverviewSection() {
                          systemStatus === 'degraded' ? 'System Degraded' :
                          'System Down'}
                     </Badge>
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleRefreshAll}
-                        disabled={loading}
-                    >
-                        <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
                 </div>
             </div>
 

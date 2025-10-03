@@ -31,7 +31,6 @@ import {
     Shield,
     Activity,
     Check,
-    RefreshCcw,
     Play,
     RotateCcw,
     Trash2,
@@ -171,20 +170,6 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
 
-    const handleRefresh = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            await logAdminAction('admin_dashboard_refresh');
-            // Trigger data refetch for all sections
-            window.location.reload(); // Simple refresh for now
-        } catch (err) {
-            setError('Failed to refresh dashboard');
-            await logAdminAction('admin_dashboard_refresh_error', { error: err instanceof Error ? err.message : String(err) });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleExport = async () => {
         setLoading(true);
@@ -289,15 +274,6 @@ export function AdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboar
 
                         {/* Quick Actions - Desktop Only */}
                         <div className="hidden lg:flex items-center gap-1">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2"
-                                onClick={handleRefresh}
-                                disabled={loading}
-                            >
-                                <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"

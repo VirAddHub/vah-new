@@ -49,7 +49,6 @@ import {
     HelpCircle,
     FileDown,
     ShieldCheck,
-    RefreshCw,
     LogOut,
     Menu,
     X,
@@ -294,19 +293,6 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         ];
 
     // Actions
-    const handleRefresh = () => {
-        refetchMail();
-        refetchProfile();
-        refetchSubscription();
-        refetchTickets();
-        refetchForwarding();
-        refetchBilling();
-        refetchInvoices();
-        refetchPlans();
-        refetchKyc();
-        refetchEmailPrefs();
-        toast({ title: "Success", description: "Dashboard refreshed" });
-    };
 
     const openMail = async (id: string) => {
         // Toggle expansion
@@ -484,7 +470,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         if (loading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <RefreshCw className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin" />
                     <span className="ml-2">Loading...</span>
                 </div>
             );
@@ -1095,10 +1081,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                 <p className="text-muted-foreground">
                                                     Your KYC verification is being reviewed. This usually takes 1-2 business days.
                                                 </p>
-                                                <Button variant="outline" onClick={() => refetchKyc()}>
-                                                    <RefreshCw className="h-4 w-4 mr-2" />
-                                                    Check Status
-                                                </Button>
+                                            <Button variant="outline" onClick={() => refetchKyc()}>
+                                                <ShieldCheck className="h-4 w-4 mr-2" />
+                                                Check Status
+                                            </Button>
                                             </div>
                                         )}
 

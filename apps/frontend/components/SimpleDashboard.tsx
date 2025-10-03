@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
-import { LogOut, Mail, Truck, Settings, RefreshCw, User, CreditCard, FileText } from "lucide-react";
+import { LogOut, Mail, Truck, Settings, User, CreditCard, FileText } from "lucide-react";
 
 interface SimpleDashboardProps {
     onLogout: () => void;
@@ -378,15 +378,6 @@ export function SimpleDashboard({ onLogout, onNavigate, onGoBack }: SimpleDashbo
                             <div><strong>Role:</strong> {userData?.role || user?.role || 'N/A'}</div>
                             <div><strong>Is Admin:</strong> {userData?.is_admin ? 'Yes' : 'No'}</div>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-4"
-                            onClick={() => window.location.reload()}
-                        >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Refresh Page
-                        </Button>
                     </CardContent>
                 </Card>
             </main>

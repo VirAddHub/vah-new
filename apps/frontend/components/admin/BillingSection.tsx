@@ -18,7 +18,6 @@ import {
     AlertTriangle,
     CheckCircle,
     Clock,
-    RefreshCcw,
 } from "lucide-react";
 import { apiClient, safe, adminApi } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
@@ -135,24 +134,6 @@ export function BillingSection({ }: BillingSectionProps) {
     const billing = billingMetrics;
     const transactionsData = transactions;
 
-    const handleRefresh = async () => {
-        setLoading(true);
-        try {
-            await logAdminAction('admin_billing_refresh');
-            await Promise.all([
-                loadBillingMetrics(),
-                loadTransactions(),
-                loadInvoices()
-            ]);
-        } catch (error) {
-            await logAdminAction('admin_billing_refresh_error', {
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleExportReports = async () => {
         setLoading(true);
@@ -232,7 +213,7 @@ export function BillingSection({ }: BillingSectionProps) {
             case "completed": return <CheckCircle className="h-4 w-4 text-green-500" />;
             case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
             case "failed": return <AlertTriangle className="h-4 w-4 text-red-500" />;
-            case "refunded": return <RefreshCcw className="h-4 w-4 text-blue-500" />;
+            case "refunded": return <CreditCard className="h-4 w-4 text-blue-500" />;
             default: return <Clock className="h-4 w-4 text-gray-500" />;
         }
     };
@@ -283,15 +264,6 @@ export function BillingSection({ }: BillingSectionProps) {
                     >
                         <Download className="h-4 w-4" />
                         Export Reports
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleRefresh}
-                        disabled={loading}
-                    >
-                        <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
                     </Button>
                 </div>
             </div>
@@ -452,7 +424,7 @@ export function BillingSection({ }: BillingSectionProps) {
                                                         onClick={() => handleRefundTransaction(transaction.id)}
                                                         disabled={isMutating}
                                                     >
-                                                        <RefreshCcw className="h-4 w-4" />
+                                                        <CreditCard className="h-4 w-4" />
                                                     </Button>
                                                 )}
                                             </div>

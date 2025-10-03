@@ -12,7 +12,6 @@ import {
     Mail,
     DollarSign,
     Download,
-    RefreshCcw,
     Calendar,
     Activity,
 } from "lucide-react";
@@ -85,17 +84,6 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
     useEffect(() => {
         loadAnalytics();
     }, [timeRange]);
-    const handleRefresh = async () => {
-        setLoading(true);
-        try {
-            await logAdminAction('admin_analytics_refresh', { timeRange });
-            await loadAnalytics();
-        } catch (error) {
-            await logAdminAction('admin_analytics_refresh_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleExportAnalytics = async () => {
         setLoading(true);
@@ -171,15 +159,6 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     >
                         <Download className="h-4 w-4" />
                         Export
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleRefresh}
-                        disabled={loading}
-                    >
-                        <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
                     </Button>
                 </div>
             </div>

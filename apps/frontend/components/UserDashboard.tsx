@@ -16,7 +16,6 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  RefreshCcw,
   CreditCard,
   Shield
 } from 'lucide-react';
@@ -70,27 +69,6 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
     loadUserData();
   }, []);
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      const [mailResponse, forwardingResponse] = await Promise.all([
-        apiClient.getMailItems(),
-        apiClient.getForwardingRequests()
-      ]);
-
-      if (mailResponse.ok) {
-        setMailItems(mailResponse.data.items || []);
-      }
-
-      if (forwardingResponse.ok) {
-        setForwardingRequests(forwardingResponse.data.items || []);
-      }
-    } catch (err) {
-      console.error('Failed to refresh data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateForwardingRequest = () => {
     onNavigate?.('forwarding-request');
@@ -158,7 +136,7 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <RefreshCcw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-gray-300 border-t-blue-600 rounded-full" />
           <p>Loading your dashboard...</p>
         </div>
       </div>
@@ -193,15 +171,6 @@ export function UserDashboard({ onNavigate, onLogout }: UserDashboardProps) {
               >
                 <Shield className="h-4 w-4" />
                 KYC
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleRefresh}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
               </Button>
               <Button variant="outline" onClick={onLogout}>
                 Logout
