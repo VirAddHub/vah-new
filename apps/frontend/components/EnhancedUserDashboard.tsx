@@ -173,75 +173,54 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     // Simple API call functions
     const loadMailItems = async () => {
-        console.log('[EnhancedUserDashboard] loadMailItems - Starting...');
         setMailLoading(true);
         setMailError(null);
         try {
             const response = await mailService.getMailItems();
-            console.log('[EnhancedUserDashboard] loadMailItems - Response:', response);
             if (response.ok) {
-                // Service now guarantees response.data is always an array
-                const items = Array.isArray(response.data) ? response.data : [];
-                setMailItems(items);
-                setMailTotal(items.length);
-                console.log('[EnhancedUserDashboard] loadMailItems - Success, items:', items.length);
+                setMailItems(response.data || []);
+                setMailTotal(response.data?.length || 0);
             } else {
                 setMailError('Failed to load mail');
-                console.error('[EnhancedUserDashboard] loadMailItems - Failed:', response);
             }
         } catch (error: any) {
             setMailError(error.message || 'Failed to load mail');
-            console.error('[EnhancedUserDashboard] loadMailItems - Error:', error);
         } finally {
             setMailLoading(false);
         }
     };
 
     const loadForwardingRequests = async () => {
-        console.log('[EnhancedUserDashboard] loadForwardingRequests - Starting...');
         setForwardingLoading(true);
         setForwardingError(null);
         try {
             const response = await forwardingService.getForwardingRequests();
-            console.log('[EnhancedUserDashboard] loadForwardingRequests - Response:', response);
             if (response.ok) {
-                // Service now guarantees response.data is always an array
-                const items = Array.isArray(response.data) ? response.data : [];
-                setForwardingRequests(items);
-                setForwardingTotal(items.length);
-                console.log('[EnhancedUserDashboard] loadForwardingRequests - Success, items:', items.length);
+                setForwardingRequests(response.data || []);
+                setForwardingTotal(response.data?.length || 0);
             } else {
                 setForwardingError('Failed to load forwarding requests');
-                console.error('[EnhancedUserDashboard] loadForwardingRequests - Failed:', response);
             }
         } catch (error: any) {
             setForwardingError(error.message || 'Failed to load forwarding requests');
-            console.error('[EnhancedUserDashboard] loadForwardingRequests - Error:', error);
         } finally {
             setForwardingLoading(false);
         }
     };
 
     const loadInvoices = async () => {
-        console.log('[EnhancedUserDashboard] loadInvoices - Starting...');
         setInvoicesLoading(true);
         setInvoicesError(null);
         try {
             const response = await billingService.getInvoices();
-            console.log('[EnhancedUserDashboard] loadInvoices - Response:', response);
             if (response.ok) {
-                // Service now guarantees response.data is always an array
-                const items = Array.isArray(response.data) ? response.data : [];
-                setInvoices(items);
-                setInvoicesTotal(items.length);
-                console.log('[EnhancedUserDashboard] loadInvoices - Success, items:', items.length);
+                setInvoices(response.data || []);
+                setInvoicesTotal(response.data?.length || 0);
             } else {
                 setInvoicesError('Failed to load invoices');
-                console.error('[EnhancedUserDashboard] loadInvoices - Failed:', response);
             }
         } catch (error: any) {
             setInvoicesError(error.message || 'Failed to load invoices');
-            console.error('[EnhancedUserDashboard] loadInvoices - Error:', error);
         } finally {
             setInvoicesLoading(false);
         }
@@ -394,10 +373,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             // If we don't have details yet, fetch them
             if (!mailDetails[id]) {
-                const response = await mailService.getMailItem(Number(id));
+                const response = await mailService.getMailItem(String(id));
                 if (response.ok && response.data) {
                     setMailDetails(prev => ({ ...prev, [id]: response.data }));
-                    await mailService.updateMailItem(Number(id), { is_read: true });
+                    await mailService.updateMailItem(String(id), { is_read: true });
                     loadMailItems();
                 } else {
                     throw new Error("Mail not found");
@@ -411,7 +390,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     const downloadMailPdf = async (id: string) => {
         try {
-            const response = await mailService.getScanUrl(Number(id));
+            const response = await mailService.getScanUrl(String(id));
             if (response.ok) {
                 const urlToFetch = response.url;
                 if (!urlToFetch) throw new Error("No download URL available");
