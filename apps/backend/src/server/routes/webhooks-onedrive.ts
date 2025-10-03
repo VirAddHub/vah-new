@@ -236,9 +236,9 @@ router.post('/', async (req: any, res) => {
 
             // Log webhook event
             await pool.query(
-              `INSERT INTO webhook_log (source, event_type, payload_json, created_at, received_at_ms)
-               VALUES ($1, $2, $3, $4, $5)`,
-              ['onedrive', event, JSON.stringify(body), now, now]
+              `INSERT INTO webhook_log (source, provider, event_type, payload_json, created_at, received_at_ms)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              ['onedrive', 'zapier', event, JSON.stringify(body), now, now]
             );
 
             return res.status(200).json({
@@ -365,9 +365,9 @@ router.post('/', async (req: any, res) => {
 
     // Log webhook event
     await pool.query(
-      `INSERT INTO webhook_log (source, event_type, payload_json, created_at, received_at_ms)
-       VALUES ($1, $2, $3, $4, $5)`,
-      ['onedrive', event, JSON.stringify(body), now, now]
+      `INSERT INTO webhook_log (source, provider, event_type, payload_json, created_at, received_at_ms)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      ['onedrive', 'zapier', event, JSON.stringify(body), now, now]
     );
 
     return res.status(200).json({
