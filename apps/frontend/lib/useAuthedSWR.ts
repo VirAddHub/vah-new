@@ -4,13 +4,14 @@
 import useSWR, { SWRConfiguration } from "swr";
 import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { tokenManager } from "@/lib/token-manager";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://vah-api-staging.onrender.com";
 
 function makeFetcher(token?: string | null) {
     return async (key: string | readonly [string, any]) => {
         if (!token) throw new Error("No token");
-        
+
         // Handle both string keys and [url, params] tuple keys
         let url: string;
         if (typeof key === 'string') {
@@ -25,7 +26,7 @@ function makeFetcher(token?: string | null) {
             });
             url = `${API}${path}?${searchParams.toString()}`;
         }
-        
+
         const res = await fetch(url, {
             headers: { Authorization: `Bearer ${token}` },
             credentials: "omit",
@@ -37,9 +38,10 @@ function makeFetcher(token?: string | null) {
 
 /** Gate requests until token exists; minimal retries; revalidate on focus. */
 export function useAuthedSWR<T = any>(key: string | readonly [string, any] | null, config?: SWRConfiguration) {
-    const { token } = useAuth();
+    const { isAuthenticated } = useAuth();
+    const token = tokenManager.get();
     const fetcher = useMemo(() => makeFetcher(token), [token]);
-    const gatedKey = token && key ? key : null;
+    const gatedKey = isAuthenticated && token && key ? key : null;
     return useSWR<T>(gatedKey, fetcher, {
         revalidateOnFocus: true,
         shouldRetryOnError: (err: any) => !String(err?.message || "").startsWith("401"),
