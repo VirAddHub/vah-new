@@ -102,6 +102,8 @@ app.use(cors({
         const allowedOrigins = [
             'https://vah-new-frontend-75d6.vercel.app',
             'https://vah-frontend-final.vercel.app',
+            'https://virtualaddresshub.co.uk',
+            'https://www.virtualaddresshub.co.uk',
             'http://localhost:3000',
             'http://localhost:3001'
         ];

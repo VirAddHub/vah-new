@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#111827"/>
+  
+  <!-- Mail/envelope icon -->
+  <rect x="128" y="180" width="256" height="180" rx="8" fill="#ffffff"/>
+  <path d="M128 200L256 280L384 200V180H128V200Z" fill="#111827"/>
+  
+  <!-- Building/skyline silhouette -->
+  <rect x="80" y="320" width="40" height="80" fill="#ffffff"/>
+  <rect x="140" y="300" width="50" height="100" fill="#ffffff"/>
+  <rect x="210" y="280" width="60" height="120" fill="#ffffff"/>
+  <rect x="290" y="310" width="45" height="90" fill="#ffffff"/>
+  <rect x="355" y="290" width="40" height="110" fill="#ffffff"/>
+  
+  <!-- VAH text -->
+  <text x="256" y="450" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#ffffff">VAH</text>
+</svg>

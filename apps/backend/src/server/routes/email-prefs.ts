@@ -25,9 +25,9 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
             SELECT
-                email_pref_marketing AS marketing,
-                email_pref_product AS product,
-                email_pref_security AS security,
+                COALESCE(email_pref_marketing, false) AS marketing,
+                COALESCE(email_pref_product, true) AS product,
+                COALESCE(email_pref_system, true) AS security,
                 email_unsubscribed_at AS "unsubscribedAt",
                 email_bounced_at AS "bouncedAt"
             FROM "user"

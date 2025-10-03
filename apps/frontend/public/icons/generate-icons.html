@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VAH Icon Generator</title>
+</head>
+
+<body>
+    <h1>VAH Icon Generator</h1>
+    <p>Right-click on each icon below and "Save image as" to download the PNG files:</p>
+
+    <!-- 192x192 Icon -->
+    <h3>192x192 Icon</h3>
+    <canvas id="icon192" width="192" height="192" style="border: 1px solid #ccc;"></canvas>
+
+    <!-- 512x512 Icon -->
+    <h3>512x512 Icon</h3>
+    <canvas id="icon512" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+
+    <!-- Maskable 512x512 Icon -->
+    <h3>Maskable 512x512 Icon</h3>
+    <canvas id="maskable512" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+
+    <script>
+        function drawIcon(canvas, size, isMaskable = false) {
+            const ctx = canvas.getContext('2d');
+            const center = size / 2;
+            const radius = isMaskable ? size / 2.5 : size / 2;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Background circle
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Mail envelope
+            const mailWidth = size * 0.5;
+            const mailHeight = size * 0.35;
+            const mailX = center - mailWidth / 2;
+            const mailY = center - mailHeight / 2;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(mailX, mailY, mailWidth, mailHeight);
+
+            // Mail envelope flap
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.moveTo(mailX, mailY + size * 0.04);
+            ctx.lineTo(center, mailY + size * 0.16);
+            ctx.lineTo(mailX + mailWidth, mailY + size * 0.04);
+            ctx.closePath();
+            ctx.fill();
+
+            // Building skyline
+            const buildings = [
+                { x: size * 0.15, y: size * 0.62, w: size * 0.08, h: size * 0.15 },
+                { x: size * 0.27, y: size * 0.58, w: size * 0.1, h: size * 0.19 },
+                { x: size * 0.41, y: size * 0.54, w: size * 0.12, h: size * 0.23 },
+                { x: size * 0.56, y: size * 0.6, w: size * 0.09, h: size * 0.17 },
+                { x: size * 0.69, y: size * 0.56, w: size * 0.08, h: size * 0.21 }
+            ];
+
+            ctx.fillStyle = '#ffffff';
+            buildings.forEach(building => {
+                ctx.fillRect(building.x, building.y, building.w, building.h);
+            });
+
+            // VAH text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.09}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('VAH', center, size * 0.88);
+        }
+
+        // Generate all icons
+        drawIcon(document.getElementById('icon192'), 192);
+        drawIcon(document.getElementById('icon512'), 512);
+        drawIcon(document.getElementById('maskable512'), 512, true);
+
+        console.log('Icons generated! Right-click to save as PNG files.');
+    </script>
+</body>
+
+</html>

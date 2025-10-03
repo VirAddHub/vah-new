@@ -1,7 +1,8 @@
 // hooks/usePaged.ts
 // Hook for paginated lists with automatic background refresh
 
-import useSWR, { SWRConfiguration } from 'swr';
+import { useAuthedSWR } from '@/lib/useAuthedSWR';
+import { SWRConfiguration } from 'swr';
 
 export type PagedResponse<T> = {
     items: T[];
@@ -55,7 +56,7 @@ export function usePaged<T>(
 ) {
     const { refreshMs = 15000, swrConfig = {} } = opts || {};
 
-    const swr = useSWR<PagedResponse<T>>(key, {
+    const swr = useAuthedSWR<PagedResponse<T>>(key, {
         keepPreviousData: true,          // Keep old data while fetching (no flash)
         refreshInterval: refreshMs,      // Background polling interval
         refreshWhenHidden: false,        // Don't poll when tab is hidden

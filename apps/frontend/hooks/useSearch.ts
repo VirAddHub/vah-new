@@ -1,7 +1,8 @@
 // hooks/useSearch.ts
 // Hook for debounced search with automatic background refresh
 
-import useSWR, { SWRConfiguration } from 'swr';
+import { useAuthedSWR } from '@/lib/useAuthedSWR';
+import { SWRConfiguration } from 'swr';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export type SearchResponse<T> = {
@@ -73,7 +74,7 @@ export function useSearch<T>(
         ? (['/api/search', { q, page, pageSize }] as const)
         : null;
 
-    const swr = useSWR<SearchResponse<T>>(key, {
+    const swr = useAuthedSWR<SearchResponse<T>>(key, {
         keepPreviousData: true,          // Keep old data while fetching (no flash)
         refreshInterval: refreshMs,      // Background polling interval
         refreshWhenHidden: false,        // Don't poll when tab is hidden

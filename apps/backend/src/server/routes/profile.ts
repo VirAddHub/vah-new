@@ -27,7 +27,9 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             SELECT
                 id,
                 email,
-                name,
+                state,
+                first_name,
+                last_name,
                 phone,
                 company_name,
                 address_line1,
@@ -37,13 +39,14 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 postal_code,
                 country,
                 kyc_status,
-                kyc_verified_at,
+                kyc_verified_at_ms,
+                kyc_rejection_reason,
                 plan_id,
                 subscription_status,
                 created_at,
                 updated_at,
                 last_login_at
-            FROM "user"
+            FROM user_profile_view
             WHERE id = $1
         `, [userId]);
 

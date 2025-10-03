@@ -26,7 +26,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
         const result = await pool.query(`
             SELECT
                 kyc_status,
-                kyc_verified_at,
+                COALESCE(kyc_verified_at_ms, kyc_verified_at) AS kyc_verified_at,
                 kyc_rejection_reason,
                 sumsub_applicant_id
             FROM "user"
