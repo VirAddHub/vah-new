@@ -132,6 +132,75 @@ const adminApi = {
     updateMailItem: (id: string, payload: any) => patch(`/api/admin/mail-items/${id}`, payload),
 };
 
+// ---- Mail API (unified) ----
+import type { MailItem, MailItemDetails } from '../types/mail';
+import type { ApiResponse } from '../types/api';
+
+// --- mappers (normalize fields) ---
+const mapMailItem = (raw: any): MailItem => ({
+  id: String(raw.id),
+  subject: raw.subject ?? '',
+  sender_name: raw.sender_name ?? raw.sender ?? null,
+  received_at: raw.received_at ?? raw.received_date ?? raw.received ?? new Date().toISOString(),
+  status: raw.status ?? 'received',
+  tag: raw.tag ?? null,
+  scan_url: raw.scan_url ?? raw.scanUrl ?? null,
+  is_read: typeof raw.is_read === 'boolean' ? raw.is_read : (raw.status === 'read'),
+});
+
+const mapMailDetails = (raw: any): MailItemDetails => ({
+  ...mapMailItem(raw),
+  file_size: raw.file_size ?? null,
+  notes: raw.notes ?? null,
+  pages: raw.pages ?? null,
+});
+
+export const mailApi = {
+  async list(): Promise<ApiResponse<MailItem[]>> {
+    try {
+      const data = await get('/api/mail-items');
+      const items = Array.isArray(data?.data ?? data) ? (data.data ?? data) : [];
+      return { ok: true, data: items.map(mapMailItem) };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Failed to load mail', code: e?.status };
+    }
+  },
+
+  async get(id: string): Promise<ApiResponse<MailItemDetails>> {
+    try {
+      const data = await get(`/api/mail-items/${id}`);
+      const obj = data?.data ?? data;
+      return { ok: true, data: mapMailDetails(obj) };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Mail not found', code: e?.status };
+    }
+  },
+
+  async markRead(id: string): Promise<ApiResponse<{ id: string; status: 'read' }>> {
+    try {
+      const data = await patch(`/api/mail-items/${id}`, { is_read: true });
+      const obj = data?.data ?? data ?? {};
+      return { ok: true, data: { id: String(obj.id ?? id), status: 'read' } };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Failed to mark as read', code: e?.status };
+    }
+  },
+
+  async downloadScan(id: string): Promise<Blob> {
+    const response = await fetch(`${API_BASE}/api/mail-items/${id}/scan-url`, {
+      headers: {
+        authorization: `Bearer ${getToken()}`,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to get download URL');
+    const { url } = await response.json();
+    
+    const blobResponse = await fetch(url);
+    if (!blobResponse.ok) throw new Error('Failed to download file');
+    return blobResponse.blob();
+  },
+};
+
 // ---- User-domain helpers so components get typed data ----
 const userDomain = {
     getKycStatus: () =>
@@ -193,10 +262,11 @@ export const apiClient = {
     get, post, put, patch, delete: del,
     ...billing,
     adminApi,
+    mailApi,
     ...userDomain,
 };
 
-export { adminApi };
+export { adminApi, mailApi };
 
 // Export fetchJson for advanced usage
 export { fetchJson };

@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "./ui/use-toast";
+import { useMailManager } from "../hooks/useMailManager";
+import { mailApi } from "../lib/apiClient";
 import {
-  useMailItems,
   useProfile,
   useSubscription,
   useSupportTickets,
   useRequestForwarding,
 } from "../hooks/useApi";
-import { mailApi } from "../services/api";
 import { VAHLogo } from "./VAHLogo";
-import { MailItem } from "../lib/services/mail.service";
+import type { MailItem } from "../types";
+import MailCard from "./patterns/MailCard";
 
 import { Button } from "./ui/button";
 import {
@@ -142,17 +143,42 @@ const ErrorBlock = ({
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const [activeSection, setActiveSection] = useState<MenuId>("inbox");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedMailId, setExpandedMailId] = useState<number | null>(null);
-  const [mailDetails, setMailDetails] = useState<Record<number, any>>({});
+  const [mailItems, setMailItems] = useState<MailItem[]>([]);
+  const [mailLoading, setMailLoading] = useState(true);
+  const [mailError, setMailError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // API hooks
+  // Use the new mail manager hook
   const {
-    data: mailItems = [],
-    loading: mailLoading,
-    error: mailError,
-    refetch: refetchMail,
-  } = useMailItems();
+    expandedMailId,
+    mailDetails,
+    loadingId,
+    downloadingId,
+    errors,
+    handleToggleMail,
+    handleDownloadPdf,
+  } = useMailManager(setMailItems);
+
+  // Load mail items on mount
+  useEffect(() => {
+    const loadMailItems = async () => {
+      setMailLoading(true);
+      setMailError(null);
+      try {
+        const res = await mailApi.list();
+        if (res.ok) {
+          setMailItems(res.data);
+        } else {
+          setMailError(res.error);
+        }
+      } catch (error: any) {
+        setMailError(error.message || 'Failed to load mail');
+      } finally {
+        setMailLoading(false);
+      }
+    };
+    loadMailItems();
+  }, []);
 
   const {
     data: profile,
@@ -185,9 +211,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const planActive = subscription?.plan_status === "active";
 
   // Robust unread calculation - support multiple backends
-  const unreadCount = (mailItems as MailItem[]).filter(
+  const unreadCount = mailItems.filter(
     (item) => {
-      const byStatus = item.status ? item.status === "received" : undefined;
+      const byStatus = item.status ? item.status === "received" || item.status === "unread" : undefined;
       const byFlag = item.is_read;
       // If backend uses status, prefer it; otherwise treat falsy read flag as unread
       return byStatus ?? !Boolean(byFlag);
@@ -209,59 +235,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       { id: "support", label: "Support", icon: <HelpCircle className="h-4 w-4" /> },
     ];
 
-  // Actions
-  const openMail = async (id: number) => {
-    // Toggle expansion
-    if (expandedMailId === id) {
-      setExpandedMailId(null);
-      return;
-    }
-
-    try {
-      // If we don't have details yet, fetch them
-      if (!mailDetails[id]) {
-        const response = await mailApi.getMailItem(String(id));
-        if (response?.success && response.data) {
-          setMailDetails(prev => ({ ...prev, [id]: response.data }));
-          await mailApi.markAsRead(String(id));
-          refetchMail();
-        } else {
-          throw new Error("Mail not found");
-        }
-      }
-      setExpandedMailId(id);
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to open mail.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const downloadMailPdf = async (id: number) => {
-    try {
-      const blob = await mailApi.downloadScan(String(id));
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `mail-${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast({
-        title: "Downloading",
-        description: "Downloading scan…",
-      });
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to download PDF.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Actions are now handled by useMailManager hook
 
   // Banners Component
   const Banners = () => {
@@ -327,6 +301,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </Card>
             ) : (
               <>
+                {/* Mobile Cards */}
+                <div className="space-y-3 sm:hidden">
+                  {mailItems.map(item => (
+                    <MailCard
+                      key={item.id}
+                      item={item}
+                      isExpanded={expandedMailId === item.id}
+                      isLoading={loadingId === item.id}
+                      isDownloading={downloadingId === item.id}
+                      details={mailDetails[item.id]}
+                      error={errors[item.id] ?? null}
+                      onToggle={handleToggleMail}
+                      onDownload={handleDownloadPdf}
+                    />
+                  ))}
+                </div>
+
                 {/* Desktop Table */}
                 <Card className="hidden sm:block">
                   <CardContent className="p-0">
@@ -347,20 +338,20 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               <TableRow
                                 key={item.id}
                                 className={`cursor-pointer hover:bg-muted/50 ${expandedMailId === item.id ? 'bg-muted/30' : ''}`}
-                                onClick={() => openMail(item.id)}
+                                onClick={() => handleToggleMail(item)}
                               >
                                 <TableCell className="font-medium">
-                                  {item.description || "Mail Item"}
+                                  {item.subject || "Mail Item"}
                                 </TableCell>
                                 <TableCell>{new Date(item.received_at).toLocaleDateString()}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-xs">
-                                    {item.subject || "Mail"}
+                                    {item.tag || "Mail"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <Badge
-                                    variant={item.status === "received" ? "default" : "secondary"}
+                                    variant={item.status === "received" || item.status === "unread" ? "default" : "secondary"}
                                     className="text-xs"
                                   >
                                     {item.status}
@@ -371,18 +362,20 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => openMail(item.id)}
+                                      onClick={() => handleToggleMail(item)}
                                       className="h-7 px-2"
+                                      disabled={loadingId === item.id}
                                     >
-                                      <Eye className="h-3 w-3" />
+                                      {loadingId === item.id ? <Eye className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => downloadMailPdf(item.id)}
+                                      onClick={() => handleDownloadPdf(item.id)}
                                       className="h-7 px-2"
+                                      disabled={downloadingId === item.id}
                                     >
-                                      <Download className="h-3 w-3" />
+                                      {downloadingId === item.id ? <Download className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                                     </Button>
                                   </div>
                                 </TableCell>
@@ -401,36 +394,48 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                             </div>
                                             <div>
                                               <span className="text-muted-foreground">Type:</span>
-                                              <p className="font-medium">{item.subject || "Other"}</p>
+                                              <p className="font-medium">{item.tag || "Other"}</p>
                                             </div>
                                             <div>
                                               <span className="text-muted-foreground">Status:</span>
                                               <p className="font-medium capitalize">{item.status}</p>
                                             </div>
                                             <div>
-                                              <span className="text-muted-foreground">Description:</span>
-                                              <p className="font-medium">{item.description || "Mail Item"}</p>
+                                              <span className="text-muted-foreground">Sender:</span>
+                                              <p className="font-medium">{item.sender_name || "Unknown"}</p>
                                             </div>
                                           </div>
+                                          {mailDetails[item.id]?.notes && (
+                                            <div className="mt-3">
+                                              <span className="text-muted-foreground">Notes:</span>
+                                              <p className="font-medium">{mailDetails[item.id].notes}</p>
+                                            </div>
+                                          )}
+                                          {errors[item.id] && (
+                                            <div className="mt-3">
+                                              <p className="text-destructive text-sm">{errors[item.id]}</p>
+                                            </div>
+                                          )}
                                         </div>
                                         <Button
                                           variant="outline"
                                           size="sm"
-                                          onClick={() => downloadMailPdf(item.id)}
+                                          onClick={() => handleDownloadPdf(item.id)}
+                                          disabled={downloadingId === item.id}
                                         >
-                                          <Download className="h-4 w-4 mr-2" />
+                                          {downloadingId === item.id ? <Download className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
                                           Download PDF
                                         </Button>
                                       </div>
 
-                                      {mailDetails[item.id].scanUrl && (
+                                      {mailDetails[item.id].scan_url && (
                                         <div className="border rounded-lg overflow-hidden bg-card">
                                           <div className="p-2 bg-muted/50 text-sm font-medium">
                                             Mail Scan Preview
                                           </div>
                                           <div className="p-4 flex justify-center">
                                             <img
-                                              src={mailDetails[item.id].scanUrl}
+                                              src={mailDetails[item.id].scan_url}
                                               alt="Mail scan"
                                               className="max-w-full h-auto max-h-96 rounded border"
                                             />
@@ -438,7 +443,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         </div>
                                       )}
 
-                                      {!mailDetails[item.id].scanUrl && (
+                                      {!mailDetails[item.id].scan_url && (
                                         <div className="border rounded-lg p-8 text-center text-muted-foreground">
                                           <FileArchive className="h-12 w-12 mx-auto mb-2 opacity-50" />
                                           <p>No scan preview available</p>
@@ -714,4 +719,5 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       </SidebarProvider>
     </div>
   );
+}
 }

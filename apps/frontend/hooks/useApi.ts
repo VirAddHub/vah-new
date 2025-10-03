@@ -3,7 +3,7 @@ import { apiClient } from '../lib/apiClient';
 import { mailService, profileService, billingService, supportService, forwardingService } from '../lib/services';
 import { UserProfile } from '../lib/services/profile.service';
 import { SubscriptionStatus } from '../lib/services/billing.service';
-import { MailItem } from '../lib/services/mail.service';
+import { MailItem } from '../types';
 
 // Generic hook for API calls
 function useApiCall<T>(

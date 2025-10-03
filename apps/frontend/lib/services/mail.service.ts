@@ -1,8 +1,16 @@
-// lib/services/mail.service.ts
-// Mail management API service
+// TEMP SHIM — deprecate this file after migration.
+// Re-export from the unified client to keep legacy imports working.
+import { mailApi } from '../apiClient';
 
-import { api } from '../api';
+export const getMailItems = () => mailApi.list();
+export const getMailItem = (id: string) => mailApi.get(id);
+export const updateMailItem = (id: string, _data: any) => mailApi.get(id);
+export const getScanUrl = async (id: string) => {
+  // return an object for legacy callers; prefer mailApi.downloadScan for Blob
+  return { url: URL.createObjectURL(await mailApi.downloadScan(id)) };
+};
 
+// Legacy interface exports for backward compatibility
 export interface MailItem {
     id: number;
     user_id: number;
@@ -25,75 +33,13 @@ export interface MailItemsResponse {
 }
 
 export interface ScanUrlResponse {
-    ok: boolean;
     url: string;
     expires_at: number;
 }
 
 export const mailService = {
-    /**
-     * Get all mail items for current user
-     */
-    async getMailItems(): Promise<MailItemsResponse> {
-        const { data } = await api('/api/mail-items', { method: 'GET' });
-        console.log('[mailService.getMailItems] api() returned data:', data);
-        // Backend returns: { ok: true, data: [...], total, page }
-        // We need to return: { ok: boolean, data: MailItem[] }
-        return {
-            ok: data.ok ?? false,
-            data: Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
-        };
-    },
-
-    /**
-     * Get a specific mail item
-     */
-    async getMailItem(id: number): Promise<{ ok: boolean; data: MailItem }> {
-        const { data } = await api(`/api/mail-items/${id}`, { method: 'GET' });
-        return data;
-    },
-
-    /**
-     * Update mail item (e.g., mark as read, archive)
-     */
-    async updateMailItem(id: number, updates: Partial<MailItem>): Promise<{ ok: boolean; data: MailItem }> {
-        const { data } = await api(`/api/mail-items/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(updates),
-        });
-        return data;
-    },
-
-    /**
-     * Get secure scan URL for a mail item
-     */
-    async getScanUrl(id: number): Promise<ScanUrlResponse> {
-        const { data } = await api(`/api/mail-items/${id}/scan-url`, { method: 'GET' });
-        return data;
-    },
-
-    /**
-     * Search mail items
-     */
-    async searchMail(query: string, limit = 20, offset = 0): Promise<MailItemsResponse> {
-        const { data } = await api(`/api/mail-search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`, {
-            method: 'GET',
-        });
-        return data;
-    },
-
-    /**
-     * Forward a mail item
-     */
-    async forwardMail(mailItemId: number, recipient: string, notes?: string): Promise<{ ok: boolean }> {
-        const { data } = await api('/api/mail/forward', {
-            method: 'POST',
-            body: JSON.stringify({
-                mail_item_id: mailItemId,
-                recipient,
-                notes,
-            }),
-        });
-        return data;
-    },
+    getMailItems,
+    getMailItem,
+    updateMailItem,
+    getScanUrl,
 };
