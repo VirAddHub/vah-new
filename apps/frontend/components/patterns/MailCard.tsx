@@ -1,6 +1,7 @@
 import { Eye, Download } from 'lucide-react';
-import { Button, Card, CardContent } from '@/components/ui';
-import type { MailItem, MailItemDetails } from '@/types';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import type { MailItem, MailItemDetails } from '../../types';
 
 interface Props {
   item: MailItem;

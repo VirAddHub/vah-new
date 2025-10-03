@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { mailApi } from '@/lib/apiClient';
-import type { MailItem, MailItemDetails } from '@/types';
+import { mailApi } from '../lib/apiClient';
+import type { MailItem, MailItemDetails } from '../types';
 
 const triggerBrowserDownload = (blob: Blob, filename: string) => {
   const url = window.URL.createObjectURL(blob);
@@ -86,13 +85,12 @@ export const useMailManager = (setMailItems: SetMailItems) => {
           setMailItems(prev =>
             prev.map(m => (m.id === id ? { ...m, status: prevStatus, is_read: prevStatus === 'read' } : m))
           );
-          toast.error('Could not mark as read');
+          // Let parent component handle toast notifications
         }
       }
     } catch (e: any) {
       if (e?.name === 'CanceledError' || e?.message === 'canceled') return;
       setItemError(id, 'Failed to open mail.');
-      toast.error('Failed to open mail.');
       setExpandedMailId(null);
     } finally {
       setLoadingId(null);
@@ -103,12 +101,10 @@ export const useMailManager = (setMailItems: SetMailItems) => {
   const handleDownloadPdf = useCallback(async (id: string) => {
     setItemError(id, null);
     setDownloadingId(id);
-    toast.info('Preparing your download...');
     try {
       const blob = await mailApi.downloadScan(id);
       triggerBrowserDownload(blob, `mail-${id}.pdf`);
     } catch (e) {
-      toast.error('Failed to download PDF.');
       setItemError(id, 'Failed to download PDF.');
     } finally {
       setDownloadingId(null);
