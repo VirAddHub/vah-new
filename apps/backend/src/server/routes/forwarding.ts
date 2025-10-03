@@ -28,14 +28,19 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
     try {
         const result = await selectPaged(
             `SELECT
-                fr.*,
+                mi.id,
+                mi.user_id,
                 mi.item_id as letter_id,
                 mi.sender_name,
-                mi.created_at as received_at
-            FROM forwarding_request fr
-            LEFT JOIN mail_item mi ON fr.mail_item_id = mi.id
-            WHERE fr.user_id = $1
-            ORDER BY fr.created_at DESC`,
+                mi.description,
+                mi.forwarding_status,
+                mi.created_at as received_at,
+                mi.updated_at
+            FROM mail_item mi
+            WHERE mi.user_id = $1 
+            AND mi.forwarding_status IS NOT NULL 
+            AND mi.forwarding_status != 'No'
+            ORDER BY mi.created_at DESC`,
             [userId],
             page,
             pageSize

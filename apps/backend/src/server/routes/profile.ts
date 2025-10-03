@@ -27,7 +27,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             SELECT
                 id,
                 email,
-                state,
+                status as state,
                 first_name,
                 last_name,
                 phone,
@@ -39,14 +39,14 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 postal_code,
                 country,
                 kyc_status,
-                kyc_verified_at_ms,
+                COALESCE(kyc_verified_at_ms, kyc_verified_at) as kyc_verified_at_ms,
                 kyc_rejection_reason,
                 plan_id,
                 subscription_status,
                 created_at,
                 updated_at,
                 last_login_at
-            FROM user_profile_view
+            FROM "user"
             WHERE id = $1
         `, [userId]);
 
