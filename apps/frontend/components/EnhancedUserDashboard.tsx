@@ -162,6 +162,14 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         { refreshMs: 15000 }
     );
 
+    // Debug logging
+    console.log('EnhancedUserDashboard Debug:', {
+        mailItems: mailItems?.length || 0,
+        mailLoading,
+        mailError,
+        mailValidating
+    });
+
     const {
         items: forwardingRequests,
         total: forwardingTotal,

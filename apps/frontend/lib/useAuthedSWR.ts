@@ -42,6 +42,16 @@ export function useAuthedSWR<T = any>(key: string | readonly [string, any] | nul
     const token = tokenManager.get();
     const fetcher = useMemo(() => makeFetcher(token), [token]);
     const gatedKey = isAuthenticated && token && key ? key : null;
+    
+    // Debug logging
+    console.log('useAuthedSWR Debug:', {
+        key,
+        isAuthenticated,
+        hasToken: !!token,
+        gatedKey,
+        willFetch: !!gatedKey
+    });
+    
     return useSWR<T>(gatedKey, fetcher, {
         revalidateOnFocus: true,
         shouldRetryOnError: (err: any) => !String(err?.message || "").startsWith("401"),
