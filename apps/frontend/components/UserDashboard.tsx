@@ -181,7 +181,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Derived state
   const hasForwardingAddress = Boolean(profile?.forwarding_address);
-  const planActive = subscription?.data?.status === "active" || subscription?.data?.plan?.status === "active";
+  const planActive = subscription?.plan_status === "active";
 
   // Menu items
   const menuItems: {

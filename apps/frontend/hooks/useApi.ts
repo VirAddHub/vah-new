@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../lib/apiClient';
 import { mailService, profileService, billingService, supportService, forwardingService } from '../lib/services';
 import { UserProfile } from '../lib/services/profile.service';
+import { SubscriptionStatus } from '../lib/services/billing.service';
 
 // Generic hook for API calls
 function useApiCall<T>(
@@ -61,8 +62,15 @@ export function useProfile() {
 
 // Subscription Hook
 export function useSubscription() {
-  return useApiCall(
-    () => billingService.getSubscriptionStatus(),
+  return useApiCall<SubscriptionStatus['data']>(
+    async () => {
+      const response = await billingService.getSubscriptionStatus();
+      return {
+        success: response.ok,
+        data: response.data,
+        error: response.ok ? undefined : 'Failed to fetch subscription status'
+      };
+    },
     []
   );
 }
