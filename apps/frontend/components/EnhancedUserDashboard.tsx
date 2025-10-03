@@ -176,12 +176,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         setMailLoading(true);
         setMailError(null);
         try {
-            const response = await mailService.getMailItems(mailPage, 20);
-            if (response.success) {
-                setMailItems(response.data?.items || []);
-                setMailTotal(response.data?.total || 0);
+            const response = await mailService.getMailItems();
+            if (response.ok) {
+                setMailItems(response.data || []);
+                setMailTotal(response.data?.length || 0);
             } else {
-                setMailError(response.error || 'Failed to load mail');
+                setMailError('Failed to load mail');
             }
         } catch (error: any) {
             setMailError(error.message || 'Failed to load mail');
@@ -194,12 +194,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         setForwardingLoading(true);
         setForwardingError(null);
         try {
-            const response = await forwardingService.getRequests(forwardingPage, 20);
-            if (response.success) {
-                setForwardingRequests(response.data?.items || []);
-                setForwardingTotal(response.data?.total || 0);
+            const response = await forwardingService.getForwardingRequests();
+            if (response.ok) {
+                setForwardingRequests(response.data || []);
+                setForwardingTotal(response.data?.length || 0);
             } else {
-                setForwardingError(response.error || 'Failed to load forwarding requests');
+                setForwardingError('Failed to load forwarding requests');
             }
         } catch (error: any) {
             setForwardingError(error.message || 'Failed to load forwarding requests');
@@ -212,12 +212,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         setInvoicesLoading(true);
         setInvoicesError(null);
         try {
-            const response = await billingService.getInvoices(invoicesPage, 20);
-            if (response.success) {
-                setInvoices(response.data?.items || []);
-                setInvoicesTotal(response.data?.total || 0);
+            const response = await billingService.getInvoices();
+            if (response.ok) {
+                setInvoices(response.data || []);
+                setInvoicesTotal(response.data?.length || 0);
             } else {
-                setInvoicesError(response.error || 'Failed to load invoices');
+                setInvoicesError('Failed to load invoices');
             }
         } catch (error: any) {
             setInvoicesError(error.message || 'Failed to load invoices');
@@ -280,10 +280,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 }
                 if (kycResponse.ok) setKycStatus(kycResponse.data);
                 if (emailPrefsResponse.ok) {
-                    setEmailPrefs(
-                        // support either shape: { data: { prefs } } or { data }
-                        (emailPrefsResponse.data?.prefs ?? emailPrefsResponse.data ?? null)
-                    );
+                    setEmailPrefs(emailPrefsResponse.prefs ?? null);
                 }
             } catch (err) {
                 setError('Failed to load data');
@@ -380,7 +377,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 if (response.ok && response.data) {
                     setMailDetails(prev => ({ ...prev, [id]: response.data }));
                     await mailService.updateMailItem(Number(id), { is_read: true });
-                    refetchMail();
+                    loadMailItems();
                 } else {
                     throw new Error("Mail not found");
                 }
@@ -395,7 +392,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await mailService.getScanUrl(Number(id));
             if (response.ok) {
-                const urlToFetch = response.url ?? response.data?.url;
+                const urlToFetch = response.url;
                 if (!urlToFetch) throw new Error("No download URL available");
                 const blob = await fetch(urlToFetch).then(r => r.blob());
                 const url = window.URL.createObjectURL(blob);
@@ -442,7 +439,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 country: 'GB'
             });
             if (response.ok) {
-                refetchForwarding();
+                    loadForwardingRequests();
                 toast({ title: "Success", description: "Forwarding request created" });
             } else {
                 throw new Error("Failed to create forwarding request");
@@ -470,7 +467,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await billingService.getInvoiceLink(Number(invoiceId));
             if (response.ok) {
-                const urlToOpen = response.url ?? response.data?.url;
+                const urlToOpen = response.url;
                 if (!urlToOpen) throw new Error("No invoice URL");
                 window.open(urlToOpen, '_blank');
                 toast({ title: "Download", description: "Opening invoice..." });
@@ -563,7 +560,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         switch (activeSection) {
             case "inbox":
                 if (mailLoading) return <SkeletonBlock label="Loading mail..." />;
-                if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError.message} retry={() => refetchMail()} />;
+                if (mailError) return <ErrorBlock label="Failed to load mail" detail={mailError} retry={loadMailItems} />;
 
                 return (
                     <div className="space-y-6">
@@ -874,7 +871,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 {forwardingLoading ? (
                                     <SkeletonBlock label="Loading forwarding requests..." />
                                 ) : forwardingError ? (
-                                    <ErrorBlock label="Failed to load forwarding requests" detail={forwardingError.message} retry={() => refetchForwarding()} />
+                                    <ErrorBlock label="Failed to load forwarding requests" detail={forwardingError} retry={loadForwardingRequests} />
                                 ) : forwardingRequests.length === 0 ? (
                                     <p className="text-muted-foreground">No forwarding requests found.</p>
                                 ) : (
@@ -1056,7 +1053,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 {invoicesLoading ? (
                                     <SkeletonBlock label="Loading invoices..." />
                                 ) : invoicesError ? (
-                                    <ErrorBlock label="Failed to load invoices" detail={invoicesError.message} retry={() => refetchInvoices()} />
+                                    <ErrorBlock label="Failed to load invoices" detail={invoicesError} retry={loadInvoices} />
                                 ) : invoices.length === 0 ? (
                                     <p className="text-muted-foreground">No invoices found.</p>
                                 ) : (
