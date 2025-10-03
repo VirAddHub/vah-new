@@ -212,6 +212,33 @@ export const contactApi = {
     },
 };
 
+// ---- Support API ----
+export type SupportInfo = {
+    email?: string;
+    whatsapp?: string;
+    hours?: string;
+    phone?: string;
+    [k: string]: unknown;
+};
+
+export const supportApi = {
+    async get(): Promise<ApiResponse<SupportInfo>> {
+        try {
+            const { data } = await apiClient.get('/support'); // AxiosResponse
+            const body = data?.data ?? data;
+            if (body?.ok === true && body?.data) return { ok: true, data: body.data as SupportInfo };
+            if (body && typeof body === 'object') return { ok: true, data: body as SupportInfo };
+            return { ok: false, error: body?.error ?? 'Failed to load support info' };
+        } catch (e: any) {
+            return {
+                ok: false,
+                error: e?.response?.data?.error ?? 'Failed to load support info',
+                code: e?.response?.status,
+            };
+        }
+    },
+};
+
 // ---- User-domain helpers so components get typed data ----
 const userDomain = {
     getKycStatus: () =>
