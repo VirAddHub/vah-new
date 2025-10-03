@@ -1,8 +1,15 @@
 'use client';
 
 import { useAuth } from '../contexts/AuthContext';
+import dynamic from 'next/dynamic';
 
-export function AuthGate({ children }: { children: React.ReactNode }) {
+// Create a client-only version of AuthGate
+const ClientAuthGate = dynamic(() => Promise.resolve(AuthGateInner), { 
+    ssr: false,
+    loading: () => <div>Loading...</div>
+});
+
+function AuthGateInner({ children }: { children: React.ReactNode }) {
     const { loading } = useAuth();
 
     // Show loading spinner while checking authentication
@@ -19,4 +26,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     // Just render children - let middleware handle redirects
     return <>{children}</>;
+}
+
+export function AuthGate({ children }: { children: React.ReactNode }) {
+    return <ClientAuthGate>{children}</ClientAuthGate>;
 }
