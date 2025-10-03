@@ -62,6 +62,8 @@ interface AuthContextType {
     isLoading: boolean;
     loading: boolean;
     status: AuthStatus;
+    token?: string | null;           // ← add (optional to avoid breaking older imports)
+    getToken?: () => string | null;  // keep if you have it
     login: (credentials: { email: string; password: string }) => Promise<void>;
     adminLogin: (credentials: { email: string; password: string }) => Promise<void>;
     logout: () => Promise<void>;
@@ -319,6 +321,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading,
         loading,
         status,
+        token: tokenManager.get(),                           // ← ensure provided
+        getToken: () => tokenManager.get(),                  // keep if you had it
         login,
         adminLogin,
         logout,

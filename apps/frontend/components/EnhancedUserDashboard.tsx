@@ -138,7 +138,7 @@ const ErrorBlock = ({
 
 export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
     console.log('EnhancedUserDashboard: Component rendering...');
-    
+
     const [activeSection, setActiveSection] = useState<MenuId>("inbox");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
@@ -279,8 +279,11 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                     setPlans(safe(plansResponse.data, []));
                 }
                 if (kycResponse.ok) setKycStatus(kycResponse.data);
-                if (emailPrefsResponse.ok && emailPrefsResponse.data) {
-                    setEmailPrefs(emailPrefsResponse.data.prefs);
+                if (emailPrefsResponse.ok) {
+                    setEmailPrefs(
+                        // support either shape: { data: { prefs } } or { data }
+                        (emailPrefsResponse.data?.prefs ?? emailPrefsResponse.data ?? null)
+                    );
                 }
             } catch (err) {
                 setError('Failed to load data');
@@ -392,7 +395,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await mailService.getScanUrl(Number(id));
             if (response.ok) {
-                const blob = await fetch(response.url).then(r => r.blob());
+                const urlToFetch = response.url ?? response.data?.url;
+                if (!urlToFetch) throw new Error("No download URL available");
+                const blob = await fetch(urlToFetch).then(r => r.blob());
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
@@ -465,7 +470,9 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
         try {
             const response = await billingService.getInvoiceLink(Number(invoiceId));
             if (response.ok) {
-                window.open(response.url, '_blank');
+                const urlToOpen = response.url ?? response.data?.url;
+                if (!urlToOpen) throw new Error("No invoice URL");
+                window.open(urlToOpen, '_blank');
                 toast({ title: "Download", description: "Opening invoice..." });
             } else {
                 throw new Error("Failed to get invoice link");
@@ -572,7 +579,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                             </div>
                             <div className="flex gap-2">
                                 <Badge variant="secondary" className="text-xs">
-                                    {mailItems.filter(item => !item.isRead).length} unread
+                                    {mailItems.filter(item => !(item.isRead ?? item.is_read)).length} unread
                                 </Badge>
                                 <Badge variant="outline" className="text-xs">
                                     {mailTotal} total
@@ -624,10 +631,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                             </TableCell>
                                                             <TableCell>
                                                                 <Badge
-                                                                    variant={!item.isRead ? "default" : "secondary"}
+                                                                    variant={!(item.isRead ?? item.is_read) ? "default" : "secondary"}
                                                                     className="text-xs"
                                                                 >
-                                                                    {item.isRead ? "read" : "unread"}
+                                                                    {(item.isRead ?? item.is_read) ? "read" : "unread"}
                                                                 </Badge>
                                                             </TableCell>
                                                             <TableCell>
@@ -669,7 +676,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                                                     </div>
                                                                                     <div>
                                                                                         <span className="text-muted-foreground">Status:</span>
-                                                                                        <p className="font-medium capitalize">{item.isRead ? "read" : "unread"}</p>
+                                                                                        <p className="font-medium capitalize">{(item.isRead ?? item.is_read) ? "read" : "unread"}</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <span className="text-muted-foreground">Description:</span>
@@ -735,10 +742,10 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                                 {item.description || "Mail Item"}
                                                             </h3>
                                                             <Badge
-                                                                variant={!item.isRead ? "default" : "secondary"}
+                                                                variant={!(item.isRead ?? item.is_read) ? "default" : "secondary"}
                                                                 className="text-xs ml-2"
                                                             >
-                                                                {item.isRead ? "read" : "unread"}
+                                                                {(item.isRead ?? item.is_read) ? "read" : "unread"}
                                                             </Badge>
                                                         </div>
                                                         <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
@@ -762,7 +769,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                                                 </div>
                                                                 <div>
                                                                     <span className="text-muted-foreground text-xs">Status:</span>
-                                                                    <p className="font-medium capitalize">{item.isRead ? "read" : "unread"}</p>
+                                                                    <p className="font-medium capitalize">{(item.isRead ?? item.is_read) ? "read" : "unread"}</p>
                                                                 </div>
                                                             </div>
 
