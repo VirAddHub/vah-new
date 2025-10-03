@@ -20,7 +20,7 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
-import { contactApi } from "@/lib/apiClient";
+import { contactApi, apiClient } from "@/lib/apiClient";
 import { isOk } from "@/types/api";
 
 interface ContactPageProps {
@@ -63,12 +63,26 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         const loadSupportInfo = async () => {
             try {
                 setLoadingSupport(true);
-                const response = await apiClient.get('/api/support');
-                if (response.ok) {
-                    setSupportInfo(response.data);
+                // apiClient already has a base (e.g. /api/bff), so call the logical path:
+                const { data } = await apiClient.get('/support');
+                // Accept both unified ApiResponse and plain JSON bodies:
+                const body = data?.data ?? data;
+                if (typeof body?.ok === 'boolean') {
+                    if (isOk(body)) {
+                        setSupportInfo(body.data);
+                    } else {
+                        setErrorMsg(body.error || 'Unable to load support info.');
+                    }
+                } else {
+                    // Plain object (no { ok }): treat as the payload itself
+                    setSupportInfo(body);
                 }
-            } catch (error) {
-                console.error('Failed to load support information:', error);
+            } catch (err: any) {
+                setErrorMsg(
+                    err?.response?.data?.error ??
+                    (err as Error)?.message ??
+                    'Unable to load support info.'
+                );
             } finally {
                 setLoadingSupport(false);
             }
