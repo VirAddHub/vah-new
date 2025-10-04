@@ -15,12 +15,20 @@ function requireAuth(req: Request, res: Response, next: Function) {
     next();
 }
 
+// Middleware to disable caching for mail endpoints
+function noCache(req: Request, res: Response, next: Function) {
+    res.setHeader('Cache-Control', 'no-store, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+}
+
 /**
  * GET /api/mail-items
  * Get all mail items for current user (with pagination support)
  * Query params: ?page=1&pageSize=20
  */
-router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAuth, noCache, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -52,7 +60,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
  * GET /api/mail-items/:id
  * Get specific mail item
  */
-router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items/:id', requireAuth, noCache, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const pool = getPool();
@@ -89,7 +97,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
  * PATCH /api/mail-items/:id
  * Update mail item (user can only mark as read)
  */
-router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+router.patch('/mail-items/:id', requireAuth, noCache, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const { is_read } = req.body;
@@ -145,7 +153,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
  * GET /api/mail-items/:id/scan-url
  * Get download URL for mail scan
  */
-router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/scan-url', requireAuth, noCache, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const pool = getPool();
