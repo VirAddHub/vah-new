@@ -146,7 +146,7 @@ export const apiClient = {
     // Always return ApiResponse<{ user: User }>
     async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
         if (!email || !password) {
-            return { ok: false, message: 'Email and password are required', status: 400 };
+            return { ok: false, error: 'Email and password are required', code: 400 };
         }
         const resp = await legacyReq(apiUrl('auth/login'), {
             method: 'POST',
@@ -239,7 +239,7 @@ export const apiClient = {
         const data = await parseResponseSafe(resp);
         // Always clear the token on logout, regardless of API response
         clearToken();
-        return { ok: resp.ok, data, status: resp.status } as ApiResponse<{ message: string }>;
+        return { ok: resp.ok, data, code: resp.status } as ApiResponse<{ message: string }>;
     },
 
     async signup(
@@ -348,7 +348,7 @@ function normalizeUser(input: any): User {
 
 // REVISED: The API now returns a nested user object, so we adjust the type.
 type LoginOk = { ok: true; data: { token: string; user: User } };
-type Fail = { ok: false; message?: string; error?: string };
+type Fail = { ok: false; error: string; code?: number };
 
 export const AuthAPI = {
     async login(email: string, password: string): Promise<LoginOk | Fail> {
@@ -358,14 +358,14 @@ export const AuthAPI = {
         });
 
         if (!res.ok || !data?.ok) {
-            return { ok: false, message: data?.message || data?.error || `HTTP ${res.status}` };
+            return { ok: false, error: data?.message || data?.error || `HTTP ${res.status}`, code: res.status };
         }
 
         const token = data?.data?.token;
         const rawUser = data?.data?.user;
 
         if (!token || !rawUser) {
-            return { ok: false, message: 'Invalid response from server' };
+            return { ok: false, error: 'Invalid response from server', code: 500 };
         }
 
         setToken(token);
@@ -383,7 +383,7 @@ export const AuthAPI = {
         const res = await authFetch('auth/whoami', { method: 'GET' });
         const data = await parseResponseSafe(res);
         if (!res.ok || !data?.ok) {
-            return { ok: false, message: data?.message || data?.error || `Auth failed (${res.status})` };
+            return { ok: false, error: data?.message || data?.error || `Auth failed (${res.status})`, code: res.status };
         }
         return { ok: true, data: normalizeUser(data.data) };
     },
