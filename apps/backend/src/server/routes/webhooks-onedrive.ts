@@ -58,25 +58,72 @@ const detectTag = (filename: string, sender?: string, subject?: string): string 
   return 'General';
 };
 
-// Extract user ID from filename using userID_date pattern ONLY
-const extractUserIdFromName = (name: string, path: string): number | null => {
-  const text = `${name} ${path}`;
+// Parse date from UK or ISO format to ISO string
+const parseDateTolerant = (s?: string): string | null => {
+  if (!s) return null;
+  const t = s.replace(/_/g, '-').replace(/\//g, '-');
 
-  // ONLY pattern: userID_date (e.g., user44_12_04_2022.pdf, user39_12_03_1990.pdf)
-  const patterns = [
-    /user(\d+)_\d{1,2}_\d{1,2}_\d{4}/i,     // user44_12_04_2022.pdf, user39_12_03_1990.pdf
-    /user(\d+)_\d{2}_\d{2}_\d{4}/i,          // user44_12_04_2022.pdf (strict 2-digit format)
-    /user(\d+)_\d{1,2}_\d{1,2}_\d{2}/i,      // user44_12_04_22.pdf (2-digit year)
-    /user(\d+)_\d{2}_\d{2}_\d{2}/i           // user44_12_04_22.pdf (strict 2-digit format)
-  ];
+  // ISO first (YYYY-MM-DD)
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
 
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const userId = Number(match[1]);
-      if (userId > 0 && userId < 10000) { // Reasonable user ID range
-        return userId;
-      }
+  // UK fallback (DD-MM-YYYY)
+  m = t.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+
+  return null;
+};
+
+// Extract userID, date, and tag from filename
+// Supports: user4_10-10-2024_companieshouse.pdf (UK format)
+//           user4_2024-10-10_hmrc.pdf (ISO format)
+//           user4_10_10_2024_barclays.pdf (underscores)
+type FilenameData = {
+  userId: number;
+  dateIso: string;
+  tag: string;
+} | null;
+
+const extractFromFilename = (name: string): FilenameData => {
+  const n = name.toLowerCase();
+
+  // UK date format: user4_10-10-2024_companieshouse.pdf or user4_10_10_2024_companieshouse.pdf
+  const ukPattern = /^user(\d+)[_\-](\d{2})[\/_\-](\d{2})[\/_\-](\d{4})[_\-]([a-z0-9\-]+)\.pdf$/i;
+  const ukMatch = n.match(ukPattern);
+  if (ukMatch) {
+    const [, id, dd, mm, yyyy, tag] = ukMatch;
+    const userId = Number(id);
+    if (userId > 0 && userId < 10000) {
+      return {
+        userId,
+        dateIso: `${yyyy}-${mm}-${dd}`,
+        tag: tag.replace(/-/g, ' ').toUpperCase() // "companieshouse" → "COMPANIES HOUSE"
+      };
+    }
+  }
+
+  // ISO date format: user4_2024-10-10_hmrc.pdf or user4_2024_10_10_hmrc.pdf
+  const isoPattern = /^user(\d+)[_\-](\d{4})[\/_\-](\d{2})[\/_\-](\d{2})[_\-]([a-z0-9\-]+)\.pdf$/i;
+  const isoMatch = n.match(isoPattern);
+  if (isoMatch) {
+    const [, id, yyyy, mm, dd, tag] = isoMatch;
+    const userId = Number(id);
+    if (userId > 0 && userId < 10000) {
+      return {
+        userId,
+        dateIso: `${yyyy}-${mm}-${dd}`,
+        tag: tag.replace(/-/g, ' ').toUpperCase()
+      };
+    }
+  }
+
+  // Fallback: old pattern without tag (just extract userId)
+  const oldPattern = /user(\d+)[_\-]\d{1,2}[\/_\-]\d{1,2}[\/_\-]\d{2,4}/i;
+  const oldMatch = n.match(oldPattern);
+  if (oldMatch) {
+    const userId = Number(oldMatch[1]);
+    if (userId > 0 && userId < 10000) {
+      return { userId, dateIso: new Date().toISOString().split('T')[0], tag: 'GENERAL' };
     }
   }
 
@@ -175,32 +222,34 @@ router.post('/', async (req: any, res) => {
     const cleanPath = (path && path.includes('↳')) ? '/' : path;
     const cleanItemId = (itemId && itemId.includes('↳')) ? `placeholder_${Date.now()}` : itemId;
 
-    // Determine final tag: provided tag > auto-detected > fallback
-    const tag = providedTag || detectTag(cleanName, sender, subject);
+    // Extract userId, date, and tag from filename
+    const filenameData = extractFromFilename(cleanName);
 
-    // Try to extract userId from filename if not provided
-    const userIdFromFile = extractUserIdFromName(cleanName, cleanPath);
-    const finalUserId = userId || userIdFromFile;
+    // Determine final values with priority: webhook payload > filename extraction > fallback
+    const finalUserId = userId || filenameData?.userId || null;
+    const tag = providedTag || filenameData?.tag || detectTag(cleanName, sender, subject);
+    const receivedDate = filenameData?.dateIso || null;
 
     console.log('[OneDrive Webhook] Processing details:', {
-      userIdFromFile,
+      filenameData,
       finalUserId,
       originalName: name,
       cleanName,
       originalPath: path,
       cleanPath,
       providedTag,
-      detectedTag: tag,
+      finalTag: tag,
+      receivedDate,
       sender,
       subject,
-      tagSource: providedTag ? 'zapier' : 'auto-detected'
+      tagSource: providedTag ? 'zapier' : (filenameData?.tag ? 'filename' : 'auto-detected')
     });
 
     // Validation
     if (!finalUserId) {
       console.log('[OneDrive Webhook] Validation failed: missing userId', {
         userId,
-        userIdFromFile,
+        filenameData,
         originalName: name,
         cleanName,
         originalPath: path,
@@ -317,10 +366,10 @@ router.post('/', async (req: any, res) => {
           'TEMPORARY: Upload file to /Documents/Scanned_Mail/user22_10_02_2025.pdf path'
         ] : [
           'Add userId to webhook payload',
-          'Use filename pattern: user44_12_04_2022.pdf (userID_date)',
-          'Use filename pattern: user39_12_03_1990.pdf (userID_date)',
-          'Use filename pattern: user22_10_02_2025.pdf (userID_date)',
-          'Use filename pattern: user44_12_04_22.pdf (userID_date with 2-digit year)'
+          'Use filename pattern: user4_10-10-2024_companieshouse.pdf (UK date + tag)',
+          'Use filename pattern: user4_2024-10-10_hmrc.pdf (ISO date + tag)',
+          'Use filename pattern: user4_10_10_2024_barclays.pdf (underscores)',
+          'Tags: companieshouse, hmrc, bank, insurance, utilities, general'
         ]
       });
     }
@@ -342,7 +391,11 @@ router.post('/', async (req: any, res) => {
 
     const user = userRows[0];
     const now = nowMs();
-    const receivedAtMs = isoToMs(lastModifiedDateTime) ?? now;
+
+    // Use extracted date from filename if available, otherwise use lastModifiedDateTime
+    const receivedAtMs = receivedDate
+      ? new Date(receivedDate).getTime()
+      : isoToMs(lastModifiedDateTime) ?? now;
 
     // Create idempotency key from OneDrive itemId
     const idempotencyKey = `onedrive_${cleanItemId}`;
