@@ -198,7 +198,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 console.log('User is authenticated. Redirecting to /dashboard');
                 window.location.href = '/dashboard';
             } else {
-                throw new Error('message' in response ? response.message : 'Login failed');
+                const errorMessage = ('message' in response && typeof response.message === 'string')
+                    ? response.message
+                    : 'Login failed';
+                throw new Error(errorMessage);
             }
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {

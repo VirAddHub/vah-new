@@ -10,8 +10,8 @@ export const getScanUrl = async (id: string) => {
     try {
         const blob = await mailApi.downloadScan(id);
         return { ok: true, url: URL.createObjectURL(blob) };
-    } catch (error) {
-        return { ok: false, url: '', error: error.message };
+    } catch (error: any) {
+        return { ok: false, url: '', error: error?.message ?? 'Failed to get scan URL' };
     }
 };
 

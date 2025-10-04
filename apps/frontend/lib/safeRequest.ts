@@ -18,7 +18,7 @@ export async function safeGet<T = unknown>(url: string): Promise<SafeResp<T>> {
 export async function safePost<T = unknown>(url: string, data?: unknown): Promise<SafeResp<T>> {
   try {
     const res = await apiClient.post(url, data);
-    if (!res.ok) return { ok: false, data: null, status: res.status, error: res.message };
+    if (!res.ok) return { ok: false, data: null, status: res.code, error: res.error };
     return { ok: true, data: res.data as T };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Request failed';
@@ -29,7 +29,7 @@ export async function safePost<T = unknown>(url: string, data?: unknown): Promis
 export async function safePut<T = unknown>(url: string, data?: unknown): Promise<SafeResp<T>> {
   try {
     const res = await apiClient.put(url, data);
-    if (!res.ok) return { ok: false, data: null, status: res.status, error: res.message };
+    if (!res.ok) return { ok: false, data: null, status: res.code, error: res.error };
     return { ok: true, data: res.data as T };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Request failed';
@@ -40,7 +40,7 @@ export async function safePut<T = unknown>(url: string, data?: unknown): Promise
 export async function safeDelete<T = unknown>(url: string): Promise<SafeResp<T>> {
   try {
     const res = await apiClient.delete(url);
-    if (!res.ok) return { ok: false, data: null, status: res.status, error: res.message };
+    if (!res.ok) return { ok: false, data: null, status: res.code, error: res.error };
     return { ok: true, data: res.data as T };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Request failed';

@@ -2,6 +2,7 @@
 
 // Re-export types & helpers for components
 export type { User } from '../types/user';
+export type { ApiResponse } from '../types/api';
 export { safe } from './api-client';
 
 import { API_BASE } from './config';
@@ -124,8 +125,6 @@ const adminApi = {
 };
 
 // ---- Mail API (unified) ----
-import type { MailItem, MailItemDetails } from '../types/mail';
-import type { ApiResponse } from '../types/api';
 
 // --- mappers (normalize fields) ---
 const mapMailItem = (raw: any): MailItem => ({
@@ -154,7 +153,8 @@ export const mailApi = {
     async list(): Promise<ApiResponse<MailItem[]>> {
         try {
             const data = await get('/api/mail-items');
-            const items = Array.isArray(data?.data ?? data) ? (data.data ?? data) : [];
+            if (!data.ok) return data as ApiResponse<MailItem[]>;
+            const items = Array.isArray(data.data ?? data) ? (data.data ?? data) : [];
             return ok(items.map(mapMailItem));
         } catch (e: any) {
             return err(e?.message ?? 'Failed to load mail', e?.status);
@@ -164,7 +164,8 @@ export const mailApi = {
     async get(id: string): Promise<ApiResponse<MailItemDetails>> {
         try {
             const data = await get(`/api/mail-items/${id}`);
-            const obj = data?.data ?? data;
+            if (!data.ok) return data as ApiResponse<MailItemDetails>;
+            const obj = data.data ?? data;
             return ok(mapMailDetails(obj));
         } catch (e: any) {
             return err(e?.message ?? 'Mail not found', e?.status);
@@ -174,7 +175,8 @@ export const mailApi = {
     async markRead(id: string): Promise<ApiResponse<{ id: string; status: 'read' }>> {
         try {
             const data = await patch(`/api/mail-items/${id}`, { is_read: true });
-            const obj = data?.data ?? data ?? {};
+            if (!data.ok) return data as ApiResponse<{ id: string; status: 'read' }>;
+            const obj = data.data ?? data ?? {};
             return ok({ id: String(obj.id ?? id), status: 'read' });
         } catch (e: any) {
             return err(e?.message ?? 'Failed to mark as read', e?.status);
@@ -201,8 +203,9 @@ export const contactApi = {
     async send(payload: { name: string; email: string; message: string; inquiryType?: string; website?: string }): Promise<ApiResponse<{ sent: true }>> {
         try {
             const data = await post('/api/contact', payload);
+            if (!data.ok) return data as ApiResponse<{ sent: true }>;
             // Accept either {ok:true,data:{...}} or plain {sent:true} from server
-            const body = data?.data ?? data;
+            const body = data.data ?? data;
             if (body?.ok === true && body?.data) return { ok: true, data: body.data };
             if (body?.sent === true) return { ok: true, data: { sent: true } };
             return { ok: false, error: body?.error ?? 'Failed to send message' };
@@ -224,11 +227,11 @@ export type SupportInfo = {
 export const supportApi = {
     async get(): Promise<ApiResponse<SupportInfo>> {
         try {
-            const { data } = await apiClient.get('/support'); // AxiosResponse
-            const body = data?.data ?? data;
-            if (body?.ok === true && body?.data) return { ok: true, data: body.data as SupportInfo };
+            const data = await get<SupportInfo>('/support');
+            if (!data.ok) return data;
+            const body = data.data ?? data;
             if (body && typeof body === 'object') return { ok: true, data: body as SupportInfo };
-            return { ok: false, error: body?.error ?? 'Failed to load support info' };
+            return { ok: false, error: 'Failed to load support info' };
         } catch (e: any) {
             return {
                 ok: false,

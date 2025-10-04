@@ -28,6 +28,36 @@ const isoToMs = (iso: string) => {
   return isNaN(date.getTime()) ? null : date.getTime();
 };
 
+// Auto-detect tag from filename/sender/subject
+const detectTag = (filename: string, sender?: string, subject?: string): string => {
+  const text = `${filename} ${sender || ''} ${subject || ''}`.toUpperCase();
+
+  // Check for HMRC
+  if (text.includes('HMRC') || text.includes('HM REVENUE') || text.includes('TAX')) {
+    return 'HMRC';
+  }
+
+  // Check for Companies House
+  if (text.includes('COMPANIES HOUSE') || text.includes('COMPANIESHOUSE')) {
+    return 'COMPANIES HOUSE';
+  }
+
+  // Check for other common senders
+  if (text.includes('BANK') || text.includes('BARCLAYS') || text.includes('LLOYDS') || text.includes('HSBC')) {
+    return 'Bank';
+  }
+
+  if (text.includes('INSURANCE')) {
+    return 'Insurance';
+  }
+
+  if (text.includes('UTILITY') || text.includes('ELECTRIC') || text.includes('GAS') || text.includes('WATER')) {
+    return 'Utilities';
+  }
+
+  return 'General';
+};
+
 // Extract user ID from filename using userID_date pattern ONLY
 const extractUserIdFromName = (name: string, path: string): number | null => {
   const text = `${name} ${path}`;
@@ -135,22 +165,35 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime);
     const event = pick(body.event) ?? 'created';
 
+    // Tag: Use provided tag, or auto-detect from filename/sender/subject
+    const providedTag = pick(body.tag);
+    const sender = pick(body.sender);
+    const subject = pick(body.subject);
+
     // Clean up placeholder text from Zapier (with null checks)
     const cleanName = (name && name.includes('↳')) ? 'unknown_file.pdf' : name;
     const cleanPath = (path && path.includes('↳')) ? '/' : path;
     const cleanItemId = (itemId && itemId.includes('↳')) ? `placeholder_${Date.now()}` : itemId;
 
+    // Determine final tag: provided tag > auto-detected > fallback
+    const tag = providedTag || detectTag(cleanName, sender, subject);
+
     // Try to extract userId from filename if not provided
     const userIdFromFile = extractUserIdFromName(cleanName, cleanPath);
     const finalUserId = userId || userIdFromFile;
 
-    console.log('[OneDrive Webhook] User ID extraction:', {
+    console.log('[OneDrive Webhook] Processing details:', {
       userIdFromFile,
       finalUserId,
       originalName: name,
       cleanName,
       originalPath: path,
-      cleanPath
+      cleanPath,
+      providedTag,
+      detectedTag: tag,
+      sender,
+      subject,
+      tagSource: providedTag ? 'zapier' : 'auto-detected'
     });
 
     // Validation
@@ -224,7 +267,7 @@ router.post('/', async (req: any, res) => {
                 size,
                 true,
                 'received',
-                'OneDrive',
+                tag,
                 `OneDrive file (extracted from URL: ${webUrl})`,
                 receivedAtMs,
                 now,
@@ -353,7 +396,7 @@ router.post('/', async (req: any, res) => {
         size,                     // $7: file_size
         true,                     // $8: scanned (true for OneDrive files)
         'received',               // $9: status
-        'OneDrive',               // $10: tag
+        tag,                      // $10: tag (provided, auto-detected, or 'General')
         `OneDrive path: ${cleanPath}`, // $11: notes
         receivedAtMs,             // $12: received_at_ms
         now,                      // $13: created_at

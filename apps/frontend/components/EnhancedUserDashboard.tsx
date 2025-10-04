@@ -442,8 +442,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
         try {
             // Get user's saved address
-            const addressResponse = await userService.getAddresses();
-            if (!addressResponse.ok || !addressResponse.data || addressResponse.data.length === 0) {
+            const addressResponse = await apiClient.get<{ data: any[] }>('/api/user/addresses');
+            if (!addressResponse.ok || !addressResponse.data?.data || addressResponse.data.data.length === 0) {
                 toast({
                     title: "No Address Found",
                     description: "Please add a forwarding address in Settings first.",
@@ -452,16 +452,16 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 return;
             }
 
-            const address = addressResponse.data[0];
+            const address = addressResponse.data.data[0];
 
             const payload: CreateForwardingPayload = {
                 mail_item_id: Number(mailItem.id),
                 to_name: `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'User',
-                address1: address.line1 || '',
-                address2: address.line2 || null,
+                address1: address.line1 || address.address1 || '',
+                address2: address.line2 || address.address2 || null,
                 city: address.city || '',
                 state: address.state || null,
-                postal: address.postalCode || '',
+                postal: address.postalCode || address.postal || '',
                 country: address.country || 'GB',
                 reason: isFree ? 'Free forwarding (HMRC/Companies House)' : 'Paid forwarding',
                 method: 'standard' as const,
