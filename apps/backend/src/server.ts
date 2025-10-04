@@ -337,7 +337,7 @@ async function start() {
     // NEW: Mount missing endpoints
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
-    app.use('/api', billingRouter);
+    app.use('/api/billing', billingRouter);
     logger.info('[mount] /api/billing mounted');
     app.use('/api/payments', paymentsRouter);
     logger.info('[mount] /api/payments mounted');
