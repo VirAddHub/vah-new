@@ -1280,119 +1280,119 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                         <h1 className="text-2xl font-bold">KYC Verification</h1>
                         <FeatureBanner feature="sumsub">
                             <Card>
-                            <CardHeader>
-                                <CardTitle>KYC Verification Status</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {loading ? (
-                                    <SkeletonBlock label="Loading KYC status..." />
-                                ) : error ? (
-                                    <ErrorBlock label="Failed to load KYC status" detail={error} retry={refetchKyc} />
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Status:</span>
-                                            <Badge
-                                                variant={
-                                                    kycStatusValue === 'approved' ? 'default' :
-                                                        kycStatusValue === 'pending' ? 'secondary' :
-                                                            kycStatusValue === 'rejected' ? 'destructive' : 'outline'
-                                                }
-                                            >
-                                                {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
-                                            </Badge>
-                                        </div>
-
-                                        {kycStatusValue === 'not_started' && (
-                                            <div className="space-y-4">
-                                                <p className="text-muted-foreground">
-                                                    Complete your KYC verification to access all features and services.
-                                                </p>
-                                                <Button onClick={startKyc} className="w-full">
-                                                    <ShieldCheck className="h-4 w-4 mr-2" />
-                                                    Start KYC Verification
-                                                </Button>
+                                <CardHeader>
+                                    <CardTitle>KYC Verification Status</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {loading ? (
+                                        <SkeletonBlock label="Loading KYC status..." />
+                                    ) : error ? (
+                                        <ErrorBlock label="Failed to load KYC status" detail={error} retry={refetchKyc} />
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium">Status:</span>
+                                                <Badge
+                                                    variant={
+                                                        kycStatusValue === 'approved' ? 'default' :
+                                                            kycStatusValue === 'pending' ? 'secondary' :
+                                                                kycStatusValue === 'rejected' ? 'destructive' : 'outline'
+                                                    }
+                                                >
+                                                    {kycStatusValue === 'not_started' ? 'Not Started' : kycStatusValue}
+                                                </Badge>
                                             </div>
-                                        )}
 
-                                        {kycStatusValue === 'pending' && (
-                                            <div className="space-y-4">
-                                                <p className="text-muted-foreground">
-                                                    Your KYC verification is being reviewed. This usually takes 1-2 business days.
-                                                </p>
-                                                <Button variant="outline" onClick={() => refetchKyc()}>
-                                                    <ShieldCheck className="h-4 w-4 mr-2" />
-                                                    Check Status
-                                                </Button>
+                                            {kycStatusValue === 'not_started' && (
+                                                <div className="space-y-4">
+                                                    <p className="text-muted-foreground">
+                                                        Complete your KYC verification to access all features and services.
+                                                    </p>
+                                                    <Button onClick={startKyc} className="w-full">
+                                                        <ShieldCheck className="h-4 w-4 mr-2" />
+                                                        Start KYC Verification
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {kycStatusValue === 'pending' && (
+                                                <div className="space-y-4">
+                                                    <p className="text-muted-foreground">
+                                                        Your KYC verification is being reviewed. This usually takes 1-2 business days.
+                                                    </p>
+                                                    <Button variant="outline" onClick={() => refetchKyc()}>
+                                                        <ShieldCheck className="h-4 w-4 mr-2" />
+                                                        Check Status
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {kycStatusValue === 'approved' && (
+                                                <div className="space-y-4">
+                                                    <p className="text-green-600 font-medium">
+                                                        ✅ Your identity has been verified successfully!
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        You now have access to all features and services.
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {kycStatusValue === 'rejected' && (
+                                                <div className="space-y-4">
+                                                    <p className="text-red-600 font-medium">
+                                                        ❌ Your KYC verification was rejected.
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Please contact support for assistance or try again.
+                                                    </p>
+                                                    <Button onClick={startKyc} variant="outline">
+                                                        <ShieldCheck className="h-4 w-4 mr-2" />
+                                                        Try Again
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Required Documents</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                                <span className="text-xs">1</span>
                                             </div>
-                                        )}
-
-                                        {kycStatusValue === 'approved' && (
-                                            <div className="space-y-4">
-                                                <p className="text-green-600 font-medium">
-                                                    ✅ Your identity has been verified successfully!
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    You now have access to all features and services.
-                                                </p>
+                                            <div>
+                                                <p className="font-medium">Government ID</p>
+                                                <p className="text-sm text-muted-foreground">Passport, driving license, or national ID</p>
                                             </div>
-                                        )}
-
-                                        {kycStatusValue === 'rejected' && (
-                                            <div className="space-y-4">
-                                                <p className="text-red-600 font-medium">
-                                                    ❌ Your KYC verification was rejected.
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Please contact support for assistance or try again.
-                                                </p>
-                                                <Button onClick={startKyc} variant="outline">
-                                                    <ShieldCheck className="h-4 w-4 mr-2" />
-                                                    Try Again
-                                                </Button>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                                <span className="text-xs">2</span>
                                             </div>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Required Documents</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                            <span className="text-xs">1</span>
+                                            <div>
+                                                <p className="font-medium">Proof of Address</p>
+                                                <p className="text-sm text-muted-foreground">Utility bill or bank statement (less than 3 months old)</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-medium">Government ID</p>
-                                            <p className="text-sm text-muted-foreground">Passport, driving license, or national ID</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                                <span className="text-xs">3</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">Selfie Verification</p>
+                                                <p className="text-sm text-muted-foreground">Take a selfie holding your ID document</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                            <span className="text-xs">2</span>
-                                        </div>
-                                        <div>
-                                            <p className="font-medium">Proof of Address</p>
-                                            <p className="text-sm text-muted-foreground">Utility bill or bank statement (less than 3 months old)</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                            <span className="text-xs">3</span>
-                                        </div>
-                                        <div>
-                                            <p className="font-medium">Selfie Verification</p>
-                                            <p className="text-sm text-muted-foreground">Take a selfie holding your ID document</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
                         </FeatureBanner>
                     </div>
                 );

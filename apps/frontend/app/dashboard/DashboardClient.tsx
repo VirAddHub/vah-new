@@ -33,10 +33,10 @@ export default function DashboardClient() {
                     <FileArchive className="h-16 w-16 mx-auto mb-6 text-muted-foreground" />
                     <h1 className="text-2xl font-bold mb-4">We'll be right back</h1>
                     <p className="text-muted-foreground mb-6">
-                        We're doing a quick upgrade to make your experience better. 
+                        We're doing a quick upgrade to make your experience better.
                         You can still view and download your mail while we work.
                     </p>
-                    <Button 
+                    <Button
                         onClick={() => router.push('/my-mail')}
                         className="w-full"
                     >

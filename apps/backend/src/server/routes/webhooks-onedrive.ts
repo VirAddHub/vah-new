@@ -218,9 +218,9 @@ router.post('/', async (req: any, res) => {
     Object.assign(body, payload);
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: "Bad payload", 
+      return res.status(400).json({
+        ok: false,
+        error: "Bad payload",
         issues: e.issues.map(issue => ({
           field: issue.path.join('.'),
           message: issue.message

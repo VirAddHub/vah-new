@@ -122,19 +122,19 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                 // unified ApiErr shape: { ok:false, error, code? }
                 // fallback in case legacy API still returns { message }
                 const legacyMsg =
-                  typeof (response as any)?.message === 'string'
-                    ? ((response as any).message as string)
-                    : undefined;
+                    typeof (response as any)?.message === 'string'
+                        ? ((response as any).message as string)
+                        : undefined;
                 setErrorMsg(response.error || legacyMsg || "Unable to send message. Please try again.");
             }
         } catch (err: unknown) {
             // prefer server error payload if available
             const msg =
-              // axios style: response.data.error
-              (err as any)?.response?.data?.error
-              // fetch style: message
-              ?? (err as Error)?.message
-              ?? "Something went wrong. Please try again in a moment.";
+                // axios style: response.data.error
+                (err as any)?.response?.data?.error
+                // fetch style: message
+                ?? (err as Error)?.message
+                ?? "Something went wrong. Please try again in a moment.";
             setErrorMsg(msg);
         } finally {
             setIsSubmitting(false);

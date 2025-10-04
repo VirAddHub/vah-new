@@ -251,10 +251,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // JSON parse error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err instanceof SyntaxError && 'body' in err) {
-    return res.status(400).json({ ok: false, error: "Invalid JSON" });
-  }
-  next(err);
+    if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({ ok: false, error: "Invalid JSON" });
+    }
+    next(err);
 });
 
 // Database initialization
@@ -353,13 +353,13 @@ async function start() {
     logger.info('[mount] /api/billing mounted');
     app.use('/api/payments', paymentsRouter);
     logger.info('[mount] /api/payments mounted');
-    
+
     // Mount safe stubs for integrations until providers are wired
     app.use('/api/payments', paymentsStubRouter);
     logger.info('[mount] /api/payments (stubs) mounted');
     app.use('/api/kyc', kycStubRouter);
     logger.info('[mount] /api/kyc (stubs) mounted');
-    
+
     app.use('/api', forwardingRouter);
     logger.info('[mount] /api (forwarding routes) mounted');
     app.use('/api/email-prefs', emailPrefsRouterNew);
