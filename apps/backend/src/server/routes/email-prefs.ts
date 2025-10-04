@@ -29,7 +29,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 COALESCE(email_pref_product, true) AS product,
                 COALESCE(email_pref_system, true) AS security,
                 email_unsubscribed_at AS "unsubscribedAt",
-                email_bounced_at AS "bouncedAt"
+                NULL AS "bouncedAt"
             FROM "user"
             WHERE id = $1
         `, [userId]);

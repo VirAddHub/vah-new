@@ -94,7 +94,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
  * Get all invoices for current user (with pagination support)
  * Query params: ?page=1&pageSize=20
  */
-router.get('/billing/invoices', requireAuth, async (req: Request, res: Response) => {
+router.get('/invoices', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;

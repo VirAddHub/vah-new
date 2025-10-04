@@ -37,7 +37,7 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
                 mi.user_id,
                 mi.item_id as letter_id,
                 mi.sender_name,
-                mi.description,
+                COALESCE(mi.description, mi.subject, 'Mail Item') as description,
                 mi.forwarding_status,
                 mi.created_at as received_at,
                 mi.updated_at
