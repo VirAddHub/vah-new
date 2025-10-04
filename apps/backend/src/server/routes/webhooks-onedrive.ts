@@ -1,10 +1,23 @@
 import { Router } from 'express';
 import express from 'express';
 import crypto from 'crypto';
+import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
 
 const router = Router();
+
+// Webhook payload validation schema
+const OneDrivePayload = z.object({
+  userId: z.string().min(1).optional(),
+  name: z.string().min(1),
+  webUrl: z.string().url().optional(),
+  tag: z.string().optional(),
+  sender: z.string().optional(),
+  subject: z.string().optional(),
+  path: z.string().optional(),
+  itemId: z.string().optional(),
+});
 
 // Optional auth envs
 const EXPECTED_SHARED_SECRET = process.env.ONEDRIVE_WEBHOOK_SECRET || '';
@@ -100,7 +113,7 @@ const extractFromFilename = (name: string): FilenameData => {
   const uk = base.match(/^user\d+[_\-](\d{2})[\/_\-](\d{2})[\/_\-](\d{4})/);
   const iso = base.match(/^user\d+[_\-](\d{4})[\/_\-](\d{2})[\/_\-](\d{2})/);
   let dateIso: string | null = null;
-  
+
   if (uk) {
     const [, dd, mm, yyyy] = uk;
     dateIso = `${yyyy}-${mm}-${dd}`;
@@ -113,7 +126,7 @@ const extractFromFilename = (name: string): FilenameData => {
   const parts = base.split(/[_\-]/).filter(Boolean);
   const last = parts[parts.length - 1];
   const tagRaw = last?.replace(/\.pdf$/, "") || null;
-  
+
   // If tagRaw is just a date (4 digits), treat as no tag
   const isDateOnly = tagRaw ? /^\d{4}$/.test(tagRaw) : false;
   const finalTagRaw = isDateOnly ? null : tagRaw;
@@ -131,14 +144,14 @@ const extractFromFilename = (name: string): FilenameData => {
 // Normalize tag from raw filename token
 const normaliseTag = (tagRaw?: string | null): string => {
   const t = (tagRaw || "").toLowerCase();
-  
+
   if (t.includes("hmrc")) return "HMRC";
   if (t.includes("companies")) return "COMPANIES HOUSE";
   if (/(bank|barclays|hsbc|lloyds|natwest|monzo|starling)/.test(t)) return "BANK";
   if (/(insur|policy)/.test(t)) return "INSURANCE";
   if (/(util|gas|electric|water|octopus|ovo|thames)/.test(t)) return "UTILITIES";
   if (!t) return "GENERAL";
-  
+
   // Convert kebab-case to proper case
   return t.replace(/-/g, ' ').toUpperCase();
 };
@@ -196,6 +209,25 @@ router.post('/', async (req: any, res) => {
   const body = req.parsedBody;
   if (!body || typeof body !== 'object') {
     return res.status(400).json({ ok: false, error: 'invalid_json' });
+  }
+
+  // Validate payload with Zod
+  try {
+    const payload = OneDrivePayload.parse(body);
+    // Use validated payload
+    Object.assign(body, payload);
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: "Bad payload", 
+        issues: e.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
+    }
+    return res.status(500).json({ ok: false, error: "Internal error" });
   }
 
   try {

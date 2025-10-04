@@ -249,6 +249,14 @@ if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV =
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// JSON parse error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({ ok: false, error: "Invalid JSON" });
+  }
+  next(err);
+});
+
 // Database initialization
 async function initializeDatabase() {
     try {
