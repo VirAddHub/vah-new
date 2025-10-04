@@ -115,7 +115,7 @@ const extractFromFilename = (name: string): FilenameData => {
   const tagRaw = last?.replace(/\.pdf$/, "") || null;
   
   // If tagRaw is just a date (4 digits), treat as no tag
-  const isDateOnly = /^\d{4}$/.test(tagRaw);
+  const isDateOnly = tagRaw ? /^\d{4}$/.test(tagRaw) : false;
   const finalTagRaw = isDateOnly ? null : tagRaw;
 
   // 4) Normalize tag
