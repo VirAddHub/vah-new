@@ -136,7 +136,7 @@ function coerceUserResponse(resp: ApiResponse<any>): ApiResponse<{ user: User }>
 
     const user = normalizeUserPayload(resp.data);
     if (!user) {
-        return { ok: false, message: 'Invalid user data received', status: 500 };
+        return { ok: false, error: 'Invalid user data received', code: 500 };
     }
 
     return { ok: true, data: { user } };
