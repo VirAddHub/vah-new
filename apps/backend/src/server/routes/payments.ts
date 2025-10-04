@@ -30,7 +30,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
                 u.gocardless_customer_id,
                 u.gocardless_mandate_id,
                 p.name as plan_name,
-                COALESCE(p.billing_interval, p.interval, 'monthly') as billing_cycle,
+                p.billing_interval as billing_cycle,
                 p.price_pence
             FROM "user" u
             LEFT JOIN plans p ON u.plan_id = p.id
