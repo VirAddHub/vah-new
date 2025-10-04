@@ -140,6 +140,7 @@ const ErrorBlock = ({
 
 export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
     console.log('EnhancedUserDashboard: Component rendering...');
+    console.log('EnhancedUserDashboard: Props:', { onLogout: !!onLogout, onNavigate: !!onNavigate, onGoBack: !!onGoBack });
 
     const [activeSection, setActiveSection] = useState<MenuId>("inbox");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -175,17 +176,22 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
 
     // Simple API call functions
     const loadMailItems = async () => {
+        console.log('[EnhancedUserDashboard] loadMailItems - Starting...');
         setMailLoading(true);
         setMailError(null);
         try {
             const response = await mailService.getMailItems();
+            console.log('[EnhancedUserDashboard] loadMailItems - Response:', response);
             if (response.ok) {
+                console.log('[EnhancedUserDashboard] loadMailItems - Success, items:', response.data?.length || 0);
                 setMailItems(response.data || []);
                 setMailTotal(response.data?.length || 0);
             } else {
-                setMailError('Failed to load mail');
+                console.log('[EnhancedUserDashboard] loadMailItems - Failed:', response.error);
+                setMailError(response.error || 'Failed to load mail');
             }
         } catch (error: any) {
+            console.log('[EnhancedUserDashboard] loadMailItems - Error:', error);
             setMailError(error.message || 'Failed to load mail');
         } finally {
             setMailLoading(false);
