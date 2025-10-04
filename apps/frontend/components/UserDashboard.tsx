@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   FileCheck,
@@ -79,17 +79,114 @@ const mockMailItems = [
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock user data
-  const virtualAddress = {
-    line1: "71-75 Shelton Street",
-    line2: "Covent Garden",
-    city: "London",
-    postcode: "WC2H 9JQ",
-    country: "United Kingdom"
+  // Get virtual address from user profile or use default
+  const getVirtualAddress = () => {
+    if (userProfile?.virtual_address) {
+      return userProfile.virtual_address;
+    }
+    
+    // Fallback to stored user data
+    try {
+      const storedUser = localStorage.getItem('vah_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.virtual_address) {
+          return user.virtual_address;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stored user address:', error);
+    }
+    
+    // Default fallback address
+    return {
+      line1: "71-75 Shelton Street",
+      line2: "Covent Garden",
+      city: "London",
+      postcode: "WC2H 9JQ",
+      country: "United Kingdom"
+    };
   };
 
-  const userName = "John Smith";
+  const virtualAddress = getVirtualAddress();
+
+  // Get user name from profile or fallback to stored user data
+  const getUserName = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name} ${userProfile.last_name}`;
+    }
+
+    // Fallback to stored user data from localStorage
+    try {
+      const storedUser = localStorage.getItem('vah_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.first_name && user.last_name) {
+          return `${user.first_name} ${user.last_name}`;
+        }
+        if (user.name) {
+          return user.name;
+        }
+        if (user.email) {
+          return user.email.split('@')[0]; // Use email prefix as fallback
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stored user data:', error);
+    }
+
+    return "User"; // Final fallback
+  };
+
+  // Load user profile on component mount
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to get user data from localStorage first (from login) for immediate display
+        const storedUser = localStorage.getItem('vah_user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setUserProfile(user);
+        }
+        
+        // Fetch fresh user profile from API
+        const token = localStorage.getItem('vah_jwt');
+        if (token) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+          const response = await fetch(`${apiUrl}/api/profile`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.ok && data.data) {
+              setUserProfile(data.data);
+              // Update localStorage with fresh data
+              localStorage.setItem('vah_user', JSON.stringify(data.data));
+            }
+          } else {
+            console.warn('Failed to fetch user profile, using stored data');
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+        // Continue with stored data if API fails
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
 
   // Select/Deselect functions
   const toggleSelectMail = (id: string) => {
@@ -116,6 +213,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const item = mockMailItems.find(m => m.id === id);
     return item?.category === "HMRC" || item?.category === "Companies House";
   });
+
+  // Show loading state while fetching user data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,7 +292,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         {/* Welcome Message */}
         <div>
-          <h1 className="mb-2">Welcome back, {userName}</h1>
+          <h1 className="mb-2">
+            {loading ? (
+              "Welcome back..."
+            ) : (
+              `Welcome back, ${getUserName()}`
+            )}
+          </h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
