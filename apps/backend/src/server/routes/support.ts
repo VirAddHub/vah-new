@@ -15,6 +15,28 @@ function requireAuth(req: Request, res: Response, next: Function) {
 }
 
 /**
+ * GET /api/support
+ * Get support information (contact details, hours, etc.)
+ */
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        // Return static support information
+        const supportInfo = {
+            email: 'support@virtualaddresshub.co.uk',
+            phone: '+44 20 1234 5678',
+            hours: 'Monday - Friday: 9:00 AM - 6:00 PM GMT',
+            whatsapp: '+44 20 1234 5678',
+            address: '123 Business Street, London, SW1A 1AA, United Kingdom'
+        };
+
+        return res.json({ ok: true, data: supportInfo });
+    } catch (error: any) {
+        console.error('[GET /api/support] error:', error);
+        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
+    }
+});
+
+/**
  * GET /api/support/tickets
  * Get all support tickets for current user
  */

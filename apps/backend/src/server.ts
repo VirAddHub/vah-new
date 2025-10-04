@@ -56,6 +56,7 @@ import kycRouter from "./server/routes/kyc";
 import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
+import contactRouter from "./server/routes/contact";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -360,6 +361,8 @@ async function start() {
     logger.info('[mount] /api/kyc mounted');
     app.use('/api/support', supportRouter);
     logger.info('[mount] /api/support mounted');
+    app.use('/api/contact', contactRouter);
+    logger.info('[mount] /api/contact mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
