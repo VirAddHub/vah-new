@@ -34,8 +34,8 @@ type InquiryType =
     | "billing";
 
 // For development/demo purposes, we'll use a mock endpoint
-// In production, replace with your actual API endpoint
-const API_BASE = ""; // e.g. https://api.virtualaddresshub.co.uk
+import { API_BASE } from "@/lib/config";
+
 const CONTACT_ENDPOINT = API_BASE
     ? `${API_BASE}/api/contact`
     : "/api/contact";
