@@ -148,7 +148,7 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
             RETURNING *`,
             [userId, mail_item_id, to_name, address1, address2, city, state, postal, country,
-             reason, method, 'pending', now, now]
+                reason, method, 'pending', now, now]
         );
 
         // 3) Update mail status
