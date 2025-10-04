@@ -117,7 +117,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
             });
 
             if (!response.ok) {
-                throw new Error(response.message);
+                throw new Error('Failed to generate report');
             }
             const blob = new Blob([JSON.stringify(response.data)], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);

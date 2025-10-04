@@ -438,7 +438,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           </div>
                                           <div className="p-4 flex justify-center">
                                             <img
-                                              src={mailDetails[item.id].scan_url}
+                                              src={mailDetails[item.id]?.scan_url || ''}
                                               alt="Mail scan"
                                               className="max-w-full h-auto max-h-96 rounded border"
                                             />
@@ -446,7 +446,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         </div>
                                       )}
 
-                                      {!mailDetails[item.id].scan_url && (
+                                      {!mailDetails[item.id]?.scan_url && (
                                         <div className="border rounded-lg p-8 text-center text-muted-foreground">
                                           <FileArchive className="h-12 w-12 mx-auto mb-2 opacity-50" />
                                           <p>No scan preview available</p>
@@ -475,11 +475,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         {/* Header - Always Visible */}
                         <div
                           className="cursor-pointer active:opacity-70 transition-opacity"
-                          onClick={() => openMail(item.id)}
+                          onClick={() => handleToggleMail(item)}
                         >
                           <div className="flex justify-between items-start gap-2 mb-2">
                             <h3 className="font-medium flex-1 break-words pr-2">
-                              {item.description || "Mail Item"}
+                              {item.subject || "Mail Item"}
                             </h3>
                             <Badge
                               variant={item.status === "received" ? "default" : "secondary"}
@@ -514,14 +514,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               </div>
                             </div>
 
-                            {mailDetails[item.id].scanUrl && (
+                            {mailDetails[item.id].scan_url && (
                               <div className="border rounded-lg overflow-hidden bg-background">
                                 <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
                                   Mail Scan Preview
                                 </div>
                                 <div className="p-3">
                                   <img
-                                    src={mailDetails[item.id].scanUrl}
+                                    src={mailDetails[item.id].scan_url || ''}
                                     alt="Mail scan"
                                     className="w-full h-auto rounded border"
                                   />
@@ -529,7 +529,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               </div>
                             )}
 
-                            {!mailDetails[item.id].scanUrl && (
+                            {!mailDetails[item.id].scan_url && (
                               <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/20">
                                 <FileArchive className="h-10 w-10 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No scan preview available</p>
@@ -543,7 +543,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           <Button
                             size="default"
                             variant={expandedMailId === item.id ? "default" : "outline"}
-                            onClick={() => openMail(item.id)}
+                            onClick={() => handleToggleMail(item)}
                             className="flex-1 h-10"
                           >
                             <Eye className="h-4 w-4 mr-2" />
@@ -552,7 +552,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           <Button
                             size="default"
                             variant="outline"
-                            onClick={() => downloadMailPdf(item.id)}
+                            onClick={() => handleDownloadPdf(item.id)}
                             className="flex-1 h-10"
                           >
                             <Download className="h-4 w-4 mr-2" />

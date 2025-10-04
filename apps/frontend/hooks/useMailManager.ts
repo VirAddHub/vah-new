@@ -83,7 +83,7 @@ export const useMailManager = (setMailItems: SetMailItems) => {
         if (!mark.ok) {
           // rollback on failure
           setMailItems(prev =>
-            prev.map(m => (m.id === id ? { ...m, status: prevStatus, is_read: prevStatus === 'read' } : m))
+            prev.map(m => (m.id === id ? { ...m, status: prevStatus, is_read: false } : m))
           );
           // Let parent component handle toast notifications
         }

@@ -75,12 +75,12 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
                 }
             }
             const errorMsg = (data && (data.message || data.error)) || res.statusText;
-            return { ok: false, message: errorMsg, status: res.status };
+            return { ok: false, error: errorMsg, code: res.status };
         }
 
         return { ok: true, data };
     } catch (error: any) {
-        return { ok: false, message: error.message, status: 500 };
+        return { ok: false, error: error.message, code: 500 };
     }
 }
 

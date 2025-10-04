@@ -99,7 +99,7 @@ export function BillingSection({ }: BillingSectionProps) {
                 setTransactions(data?.items ?? []);
             } else {
                 setTransactions([]);
-                console.error('Failed to fetch transactions:', resp.message);
+                console.error('Failed to fetch transactions:', resp);
             }
         } catch (err) {
             console.error('Failed to fetch transactions:', err);
@@ -143,7 +143,7 @@ export function BillingSection({ }: BillingSectionProps) {
             const response = await apiClient.get(`/api/admin/billing/export?timeRange=${timeRange}`);
 
             if (!response.ok) {
-                throw new Error(response.message);
+                throw new Error('Failed to export invoices');
             }
             const blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);

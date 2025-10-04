@@ -153,7 +153,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
     try {
       const res = await adminApi.deleteUser(id);
-      if (!res.ok) throw new Error(res.message || 'delete_failed');
+      if (!res.ok) throw new Error('delete_failed');
 
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
 
@@ -180,7 +180,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
     try {
       const res = await adminApi.restoreUser(restoreModal.id, restoreForm);
-      if (!res.ok) throw new Error(res.message || 'restore_failed');
+      if (!res.ok) throw new Error('restore_failed');
 
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
 
@@ -653,7 +653,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       setPlanModal(null);
                       setSelectedPlan('');
                     } else {
-                      toast({ title: "Error", description: res.message || "Failed to update plan", variant: "destructive" });
+                      toast({ title: "Error", description: "Failed to update plan", variant: "destructive" });
                     }
                   } catch (error) {
                     toast({ title: "Error", description: "Failed to update plan", variant: "destructive" });

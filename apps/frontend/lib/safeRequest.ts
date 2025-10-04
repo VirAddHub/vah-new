@@ -7,7 +7,7 @@ export type SafeResp<T> =
 export async function safeGet<T = unknown>(url: string): Promise<SafeResp<T>> {
   try {
     const res = await apiClient.get(url);
-    if (!res.ok) return { ok: false, data: null, status: res.status, error: res.message };
+    if (!res.ok) return { ok: false, data: null, status: res.code, error: res.error };
     return { ok: true, data: res.data as T };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Request failed';

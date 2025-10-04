@@ -17,7 +17,7 @@ export function useApiData<T = unknown>(url: string) {
       if (result.ok) {
         setData(result.data as T);
       } else {
-        setError(result.message);
+        setError(result.error);
       }
     } catch (err) {
       setError(err);

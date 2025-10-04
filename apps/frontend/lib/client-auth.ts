@@ -125,8 +125,8 @@ export class ClientAuthManager {
       }
 
       // ✅ ERROR CASE: TypeScript now knows this is ApiErr branch
-      const errorResponse = response as { ok: false; message: string };
-      const msg = errorResponse.message || 'Auth failed';
+      const errorResponse = response as { ok: false; error: string };
+      const msg = errorResponse.error || 'Auth failed';
       console.error('Whoami check failed:', msg);
       this.clearAuth();
       throw new Error(msg);

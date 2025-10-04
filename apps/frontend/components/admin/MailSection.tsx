@@ -257,7 +257,7 @@ export function MailSection({ }: MailSectionProps) {
             const response = await apiClient.get(`/api/admin/mail-items/export?status=${statusFilter}&tag=${tagFilter}&search=${searchTerm}&tab=${selectedTab}`);
 
             if (!response.ok) {
-                throw new Error(response.message);
+                throw new Error('Failed to export mail items');
             }
             const blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);

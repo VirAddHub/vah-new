@@ -133,6 +133,36 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             return res.status(403).json({ ok: false, error: 'expired', message: 'Forwarding period has expired for this item' });
         }
 
+        // Check if the mail is HMRC or Companies House (free forwarding)
+        const mailTagResult = await pool.query(`
+            SELECT tag FROM mail_item WHERE id = $1
+        `, [mailItem.id]);
+
+        const tag = mailTagResult.rows[0]?.tag?.toUpperCase() || '';
+        const isFree = tag === 'HMRC' || tag === 'COMPANIES HOUSE';
+
+        // If not free, mark as billable and add £2 charge to next invoice
+        if (!isFree) {
+            await pool.query(`
+                UPDATE mail_item
+                SET is_billable_forward = true
+                WHERE id = $1
+            `, [mailItem.id]);
+
+            // Create a pending charge record that will be added to next invoice
+            // This could also trigger a GoCardless payment or be added to next subscription payment
+            await pool.query(`
+                INSERT INTO forwarding_charge (
+                    user_id,
+                    mail_item_id,
+                    amount_pence,
+                    status,
+                    created_at
+                ) VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT DO NOTHING
+            `, [userId, mailItem.id, 200, 'pending', Date.now()]);
+        }
+
         // Create forwarding request
         const insertResult = await pool.query(`
             INSERT INTO forwarding_request (

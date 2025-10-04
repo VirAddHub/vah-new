@@ -45,7 +45,7 @@ export function useMailItems() {
       const response = await mailService.getMailItems();
       return {
         success: response.ok,
-        data: response.data,
+        data: response.ok ? response.data : undefined,
         error: response.ok ? undefined : 'Failed to fetch mail items'
       };
     },
@@ -60,7 +60,7 @@ export function useProfile() {
       const response = await profileService.getProfile();
       return {
         success: response.ok,
-        data: response.data,
+        data: response.ok ? response.data : undefined,
         error: response.ok ? undefined : 'Failed to fetch profile'
       };
     },
@@ -75,7 +75,7 @@ export function useSubscription() {
       const response = await billingService.getSubscriptionStatus();
       return {
         success: response.ok,
-        data: response.data,
+        data: response.ok ? response.data : undefined,
         error: response.ok ? undefined : 'Failed to fetch subscription status'
       };
     },
@@ -90,7 +90,7 @@ export function useSupportTickets() {
       const response = await supportService.getTickets();
       return {
         success: response.ok,
-        data: response.data,
+        data: response.ok ? response.data : undefined,
         error: response.ok ? undefined : 'Failed to fetch support tickets'
       };
     },
