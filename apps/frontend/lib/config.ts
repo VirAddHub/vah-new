@@ -5,6 +5,11 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ??
   "https://vah-api-staging.onrender.com"; // sensible default for staging
 
+// Dashboard mode - controls what features are available
+export type DashboardMode = "full" | "inbox-only" | "maintenance";
+export const DASHBOARD_MODE: DashboardMode =
+  (process.env.NEXT_PUBLIC_DASHBOARD_MODE as DashboardMode) || "inbox-only";
+
 // Feature flags for integrations
 export const FEATURES = {
   gocardless: process.env.NEXT_PUBLIC_FEATURE_GOCARDLESS === "true",
