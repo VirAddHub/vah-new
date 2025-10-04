@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { apiClient, safe, forwardingApi } from "../lib/apiClient";
 import { isOk } from "../types/api";
 import type { CreateForwardingPayload } from "../types/api";
+import { FeatureBanner } from "./FeatureBanner";
 import {
     mailService,
     forwardingService,
@@ -430,8 +431,12 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
             } else {
                 throw new Error("Failed to start KYC");
             }
-        } catch {
-            toast({ title: "Error", description: "Failed to start KYC verification.", variant: "destructive" });
+        } catch (error: any) {
+            if (error?.response?.status === 501) {
+                toast({ title: "KYC Not Available", description: "KYC verification isn't enabled yet. Please check back later." });
+            } else {
+                toast({ title: "Error", description: "Failed to start KYC verification.", variant: "destructive" });
+            }
         }
     };
 
@@ -1273,7 +1278,8 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                 return (
                     <div className="space-y-6">
                         <h1 className="text-2xl font-bold">KYC Verification</h1>
-                        <Card>
+                        <FeatureBanner feature="sumsub">
+                            <Card>
                             <CardHeader>
                                 <CardTitle>KYC Verification Status</CardTitle>
                             </CardHeader>
@@ -1387,6 +1393,7 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
                                 </div>
                             </CardContent>
                         </Card>
+                        </FeatureBanner>
                     </div>
                 );
 

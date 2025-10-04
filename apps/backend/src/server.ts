@@ -52,6 +52,10 @@ import adminStatsRouter from "./server/routes/admin-stats";
 import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import companiesHouseRouter from "./server/routes/companies-house";
+
+// Safe stubs for integrations until providers are wired
+import paymentsStubRouter from "./server/routes/payments-stub";
+import kycStubRouter from "./server/routes/kyc-stub";
 import kycRouter from "./server/routes/kyc";
 import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
@@ -341,6 +345,13 @@ async function start() {
     logger.info('[mount] /api/billing mounted');
     app.use('/api/payments', paymentsRouter);
     logger.info('[mount] /api/payments mounted');
+    
+    // Mount safe stubs for integrations until providers are wired
+    app.use('/api/payments', paymentsStubRouter);
+    logger.info('[mount] /api/payments (stubs) mounted');
+    app.use('/api/kyc', kycStubRouter);
+    logger.info('[mount] /api/kyc (stubs) mounted');
+    
     app.use('/api', forwardingRouter);
     logger.info('[mount] /api (forwarding routes) mounted');
     app.use('/api/email-prefs', emailPrefsRouterNew);
