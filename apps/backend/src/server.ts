@@ -347,6 +347,13 @@ async function start() {
     app.use('/api', debugEmailRouter);
 
     // NEW: Mount missing endpoints
+    // Disable ETags for mail routes to prevent 304 responses
+    app.use('/api', (req, res, next) => {
+        if (req.path.startsWith('/mail-items')) {
+            res.setHeader('ETag', '');
+        }
+        next();
+    });
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
     app.use('/api/billing', billingRouter);

@@ -20,15 +20,27 @@ function noCache(req: Request, res: Response, next: Function) {
     res.setHeader('Cache-Control', 'no-store, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('Vary', 'Authorization'); // avoid shared cache collisions
     next();
 }
+
+// Middleware to disable conditional requests (ETags, If-Modified-Since)
+function noConditional(req: Request, res: Response, next: Function) {
+    delete req.headers['if-none-match'];
+    delete req.headers['if-modified-since'];
+    next();
+}
+
+// Apply no-cache and no-conditional middlewares to all mail routes
+router.use(noCache);
+router.use(noConditional);
 
 /**
  * GET /api/mail-items
  * Get all mail items for current user (with pagination support)
  * Query params: ?page=1&pageSize=20
  */
-router.get('/mail-items', requireAuth, noCache, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -60,7 +72,7 @@ router.get('/mail-items', requireAuth, noCache, async (req: Request, res: Respon
  * GET /api/mail-items/:id
  * Get specific mail item
  */
-router.get('/mail-items/:id', requireAuth, noCache, async (req: Request, res: Response) => {
+router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const pool = getPool();
@@ -97,7 +109,7 @@ router.get('/mail-items/:id', requireAuth, noCache, async (req: Request, res: Re
  * PATCH /api/mail-items/:id
  * Update mail item (user can only mark as read)
  */
-router.patch('/mail-items/:id', requireAuth, noCache, async (req: Request, res: Response) => {
+router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const { is_read } = req.body;
@@ -153,7 +165,7 @@ router.patch('/mail-items/:id', requireAuth, noCache, async (req: Request, res: 
  * GET /api/mail-items/:id/scan-url
  * Get download URL for mail scan
  */
-router.get('/mail-items/:id/scan-url', requireAuth, noCache, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
     const pool = getPool();
