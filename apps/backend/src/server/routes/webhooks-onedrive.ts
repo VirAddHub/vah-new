@@ -84,50 +84,63 @@ type FilenameData = {
   tag: string;
 } | null;
 
+// Robust filename parser that expects tag at the end
 const extractFromFilename = (name: string): FilenameData => {
-  const n = name.toLowerCase();
+  const n = name.toLowerCase().replace(/\s+/g, "");
+  const base = n.replace(/\.pdf$/, "");
 
-  // UK date format: user4_10-10-2024_companieshouse.pdf or user4_10_10_2024_companieshouse.pdf
-  const ukPattern = /^user(\d+)[_\-](\d{2})[\/_\-](\d{2})[\/_\-](\d{4})[_\-]([a-z0-9\-]+)\.pdf$/i;
-  const ukMatch = n.match(ukPattern);
-  if (ukMatch) {
-    const [, id, dd, mm, yyyy, tag] = ukMatch;
-    const userId = Number(id);
-    if (userId > 0 && userId < 10000) {
-      return {
-        userId,
-        dateIso: `${yyyy}-${mm}-${dd}`,
-        tag: tag.replace(/-/g, ' ').toUpperCase() // "companieshouse" → "COMPANIES HOUSE"
-      };
-    }
+  // 1) Extract userId
+  const idMatch = base.match(/^user(\d+)/);
+  const userId = idMatch ? Number(idMatch[1]) : null;
+  if (!userId || userId <= 0 || userId >= 10000) {
+    return null;
   }
 
-  // ISO date format: user4_2024-10-10_hmrc.pdf or user4_2024_10_10_hmrc.pdf
-  const isoPattern = /^user(\d+)[_\-](\d{4})[\/_\-](\d{2})[\/_\-](\d{2})[_\-]([a-z0-9\-]+)\.pdf$/i;
-  const isoMatch = n.match(isoPattern);
-  if (isoMatch) {
-    const [, id, yyyy, mm, dd, tag] = isoMatch;
-    const userId = Number(id);
-    if (userId > 0 && userId < 10000) {
-      return {
-        userId,
-        dateIso: `${yyyy}-${mm}-${dd}`,
-        tag: tag.replace(/-/g, ' ').toUpperCase()
-      };
-    }
+  // 2) Extract date (UK or ISO format)
+  const uk = base.match(/^user\d+[_\-](\d{2})[\/_\-](\d{2})[\/_\-](\d{4})/);
+  const iso = base.match(/^user\d+[_\-](\d{4})[\/_\-](\d{2})[\/_\-](\d{2})/);
+  let dateIso: string | null = null;
+  
+  if (uk) {
+    const [, dd, mm, yyyy] = uk;
+    dateIso = `${yyyy}-${mm}-${dd}`;
+  } else if (iso) {
+    const [, yyyy, mm, dd] = iso;
+    dateIso = `${yyyy}-${mm}-${dd}`;
   }
 
-  // Fallback: old pattern without tag (just extract userId)
-  const oldPattern = /user(\d+)[_\-]\d{1,2}[\/_\-]\d{1,2}[\/_\-]\d{2,4}/i;
-  const oldMatch = n.match(oldPattern);
-  if (oldMatch) {
-    const userId = Number(oldMatch[1]);
-    if (userId > 0 && userId < 10000) {
-      return { userId, dateIso: new Date().toISOString().split('T')[0], tag: 'GENERAL' };
-    }
-  }
+  // 3) Extract tag = last token after last _ or - (ignore any middle bits)
+  const parts = base.split(/[_\-]/).filter(Boolean);
+  const last = parts[parts.length - 1];
+  const tagRaw = last?.replace(/\.pdf$/, "") || null;
+  
+  // If tagRaw is just a date (4 digits), treat as no tag
+  const isDateOnly = /^\d{4}$/.test(tagRaw);
+  const finalTagRaw = isDateOnly ? null : tagRaw;
 
-  return null;
+  // 4) Normalize tag
+  const tag = normaliseTag(finalTagRaw);
+
+  return {
+    userId,
+    dateIso: dateIso || new Date().toISOString().split('T')[0],
+    tag
+  };
+};
+
+// Normalize tag from raw filename token
+const normaliseTag = (tagRaw?: string | null): string => {
+  const t = (tagRaw || "").toLowerCase();
+  
+  if (t.includes("hmrc")) return "HMRC";
+  if (t.includes("companies")) return "COMPANIES HOUSE";
+  if (/(bank|barclays|hsbc|lloyds|natwest|monzo|starling)/.test(t)) return "BANK";
+  if (/(insur|policy)/.test(t)) return "INSURANCE";
+  if (/(util|gas|electric|water|octopus|ovo|thames)/.test(t)) return "UTILITIES";
+  if (!t) return "GENERAL";
+  
+  // Convert kebab-case to proper case
+  return t.replace(/-/g, ' ').toUpperCase();
 };
 
 // ---- Per-route raw capture ----
@@ -366,9 +379,10 @@ router.post('/', async (req: any, res) => {
           'TEMPORARY: Upload file to /Documents/Scanned_Mail/user22_10_02_2025.pdf path'
         ] : [
           'Add userId to webhook payload',
-          'Use filename pattern: user4_10-10-2024_companieshouse.pdf (UK date + tag)',
-          'Use filename pattern: user4_2024-10-10_hmrc.pdf (ISO date + tag)',
-          'Use filename pattern: user4_10_10_2024_barclays.pdf (underscores)',
+          'Use filename pattern: user4_10-10-2024_companieshouse.pdf (UK date + tag at end)',
+          'Use filename pattern: user4_2024-10-10_hmrc.pdf (ISO date + tag at end)',
+          'Use filename pattern: user4_10_10_2024_barclays.pdf (underscores + tag at end)',
+          'With extra words: user4_10-10-2024_bank_statement_companieshouse.pdf (last token = tag)',
           'Tags: companieshouse, hmrc, bank, insurance, utilities, general'
         ]
       });
