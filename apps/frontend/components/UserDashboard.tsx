@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useToast } from "./ui/use-toast";
 import { useMailManager } from "../hooks/useMailManager";
 import { mailApi } from "../lib/apiClient";
@@ -149,16 +149,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [mailError, setMailError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Use the new mail manager hook
-  const {
-    expandedMailId,
-    mailDetails,
-    loadingId,
-    downloadingId,
-    errors,
-    handleToggleMail,
-    handleDownloadPdf,
-  } = useMailManager(setMailItems);
+  // Mail viewing state
+  const [expandedMailId, setExpandedMailId] = useState<string | null>(null);
+  const [mailDetails, setMailDetails] = useState<Record<string, any>>({});
 
   // Load mail items function
   const loadMailItems = async () => {
@@ -182,6 +175,53 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   useEffect(() => {
     loadMailItems();
   }, []);
+
+  // View Mail Function (Toggle Expand/Collapse)
+  const openMail = async (id: string) => {
+    // Toggle expansion - if already open, close it
+    if (expandedMailId === id) {
+      setExpandedMailId(null);
+      return;
+    }
+
+    try {
+      // If we don't have details yet, fetch them
+      if (!mailDetails[id]) {
+        const response = await mailApi.get(id);
+        if (response?.ok && response.data) {
+          setMailDetails(prev => ({ ...prev, [id]: response.data }));
+          await mailApi.markRead(id);
+          loadMailItems(); // Refresh the list to update read status
+        } else {
+          throw new Error("Mail not found");
+        }
+      }
+      setExpandedMailId(id);
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to open mail.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Download Mail Function
+  const downloadMailPdf = async (id: string) => {
+    try {
+      await mailApi.downloadScan(id);
+      toast({
+        title: "Success",
+        description: "Download started…",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to download PDF.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const {
     data: profile,
@@ -306,18 +346,97 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <>
                 {/* Mobile Cards */}
                 <div className="space-y-3 sm:hidden">
-                  {mailItems.map(item => (
-                    <MailCard
+                  {mailItems.map((item) => (
+                    <Card 
                       key={item.id}
-                      item={item}
-                      isExpanded={expandedMailId === item.id}
-                      isLoading={loadingId === item.id}
-                      isDownloading={downloadingId === item.id}
-                      details={mailDetails[item.id]}
-                      error={errors[item.id] ?? null}
-                      onToggle={handleToggleMail}
-                      onDownload={handleDownloadPdf}
-                    />
+                      className={`border ${
+                        expandedMailId === item.id 
+                          ? 'ring-2 ring-primary/20 bg-muted/30' 
+                          : ''
+                      }`}
+                    >
+                      <CardContent className="p-4 space-y-3">
+                        
+                        {/* Header - Click to expand */}
+                        <div 
+                          className="cursor-pointer active:opacity-70 transition-opacity"
+                          onClick={() => openMail(item.id)}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-2">
+                            <h3 className="font-medium flex-1 break-words pr-2">
+                              {item.description || item.subject || "Mail Item"}
+                            </h3>
+                            <Badge 
+                              variant={item.is_read ? "secondary" : "default"}
+                              className="shrink-0"
+                            >
+                              {item.is_read ? "Read" : "Unread"}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center gap-2 text-muted-foreground">
+                            <span className="text-sm">
+                              {new Date(item.received_at).toLocaleDateString()}
+                            </span>
+                            <Badge variant="outline" className="shrink-0">
+                              {item.tag || "Other"}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {/* Expanded Details */}
+                        {expandedMailId === item.id && mailDetails[item.id] && (
+                          <div className="pt-3 border-t space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            
+                            {/* Scan Preview Image */}
+                            {mailDetails[item.id].scan_url && (
+                              <div className="border rounded-lg overflow-hidden bg-background">
+                                <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
+                                  Mail Scan Preview
+                                </div>
+                                <div className="p-3">
+                                  <img 
+                                    src={mailDetails[item.id].scan_url} 
+                                    alt="Mail scan"
+                                    className="w-full h-auto rounded border"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* No Scan Placeholder */}
+                            {!mailDetails[item.id].scan_url && (
+                              <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/20">
+                                <FileArchive className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No scan preview available</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button 
+                            size="default" 
+                            variant={expandedMailId === item.id ? "default" : "outline"}
+                            onClick={() => openMail(item.id)}
+                            className="flex-1 h-10"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            {expandedMailId === item.id ? "Close" : "View"}
+                          </Button>
+                          <Button 
+                            size="default" 
+                            variant="outline" 
+                            onClick={() => downloadMailPdf(item.id)}
+                            className="flex-1 h-10"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                        
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
 
@@ -336,28 +455,28 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(mailItems || []).map((item) => (
+                          {mailItems.map((item) => (
                             <>
                               <TableRow
                                 key={item.id}
                                 className={`cursor-pointer hover:bg-muted/50 ${expandedMailId === item.id ? 'bg-muted/30' : ''}`}
-                                onClick={() => handleToggleMail(item)}
+                                onClick={() => openMail(item.id)}
                               >
                                 <TableCell className="font-medium">
-                                  {item.subject || "Mail Item"}
+                                  {item.description || item.subject || "Mail Item"}
                                 </TableCell>
                                 <TableCell>{new Date(item.received_at).toLocaleDateString()}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-xs">
-                                    {item.tag || "Mail"}
+                                    {item.tag || "Other"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <Badge
-                                    variant={item.status === "received" || item.status === "unread" ? "default" : "secondary"}
+                                    variant={item.is_read ? "secondary" : "default"}
                                     className="text-xs"
                                   >
-                                    {item.status}
+                                    {item.is_read ? "Read" : "Unread"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -365,88 +484,44 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleToggleMail(item)}
+                                      onClick={() => openMail(item.id)}
                                       className="h-7 px-2"
-                                      disabled={loadingId === item.id}
                                     >
-                                      {loadingId === item.id ? <Eye className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                                      <Eye className="h-3 w-3" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleDownloadPdf(item.id)}
+                                      onClick={() => downloadMailPdf(item.id)}
                                       className="h-7 px-2"
-                                      disabled={downloadingId === item.id}
                                     >
-                                      {downloadingId === item.id ? <Download className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                      <Download className="h-3 w-3" />
                                     </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
+                              
+                              {/* Expanded Row */}
                               {expandedMailId === item.id && mailDetails[item.id] && (
                                 <TableRow key={`${item.id}-details`}>
                                   <TableCell colSpan={5} className="bg-muted/20">
                                     <div className="p-4 space-y-4">
-                                      <div className="flex justify-between items-start">
-                                        <div className="space-y-2 flex-1">
-                                          <h3 className="font-semibold">Mail Details</h3>
-                                          <div className="grid grid-cols-2 gap-3 text-sm">
-                                            <div>
-                                              <span className="text-muted-foreground">Received:</span>
-                                              <p className="font-medium">{new Date(item.received_at).toLocaleString()}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Type:</span>
-                                              <p className="font-medium">{item.tag || "Other"}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Status:</span>
-                                              <p className="font-medium capitalize">{item.status}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Sender:</span>
-                                              <p className="font-medium">{item.sender_name || "Unknown"}</p>
-                                            </div>
-                                          </div>
-                                          {mailDetails[item.id]?.notes && (
-                                            <div className="mt-3">
-                                              <span className="text-muted-foreground">Notes:</span>
-                                              <p className="font-medium">{mailDetails[item.id].notes}</p>
-                                            </div>
-                                          )}
-                                          {errors[item.id] && (
-                                            <div className="mt-3">
-                                              <p className="text-destructive text-sm">{errors[item.id]}</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleDownloadPdf(item.id)}
-                                          disabled={downloadingId === item.id}
-                                        >
-                                          {downloadingId === item.id ? <Download className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-                                          Download PDF
-                                        </Button>
-                                      </div>
-
                                       {mailDetails[item.id].scan_url && (
                                         <div className="border rounded-lg overflow-hidden bg-card">
                                           <div className="p-2 bg-muted/50 text-sm font-medium">
                                             Mail Scan Preview
                                           </div>
                                           <div className="p-4 flex justify-center">
-                                            <img
-                                              src={mailDetails[item.id]?.scan_url || ''}
+                                            <img 
+                                              src={mailDetails[item.id].scan_url} 
                                               alt="Mail scan"
                                               className="max-w-full h-auto max-h-96 rounded border"
                                             />
                                           </div>
                                         </div>
                                       )}
-
-                                      {!mailDetails[item.id]?.scan_url && (
+                                      
+                                      {!mailDetails[item.id].scan_url && (
                                         <div className="border rounded-lg p-8 text-center text-muted-foreground">
                                           <FileArchive className="h-12 w-12 mx-auto mb-2 opacity-50" />
                                           <p>No scan preview available</p>
@@ -464,105 +539,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </CardContent>
                 </Card>
 
-                {/* Mobile Cards */}
-                <div className="sm:hidden space-y-3">
-                  {(mailItems || []).map((item) => (
-                    <Card
-                      key={item.id}
-                      className={`border ${expandedMailId === item.id ? 'ring-2 ring-primary/20 bg-muted/30' : ''}`}
-                    >
-                      <CardContent className="p-4 space-y-3">
-                        {/* Header - Always Visible */}
-                        <div
-                          className="cursor-pointer active:opacity-70 transition-opacity"
-                          onClick={() => handleToggleMail(item)}
-                        >
-                          <div className="flex justify-between items-start gap-2 mb-2">
-                            <h3 className="font-medium flex-1 break-words pr-2">
-                              {item.subject || "Mail Item"}
-                            </h3>
-                            <Badge
-                              variant={item.status === "received" ? "default" : "secondary"}
-                              className="shrink-0"
-                            >
-                              {item.status}
-                            </Badge>
-                          </div>
-                          <div className="flex justify-between items-center gap-2 text-muted-foreground">
-                            <span className="text-sm">
-                              {new Date(item.received_at).toLocaleDateString()}
-                            </span>
-                            <Badge variant="outline" className="shrink-0">
-                              {item.subject || "Other"}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {/* Expanded Details */}
-                        {expandedMailId === item.id && mailDetails[item.id] && (
-                          <div className="pt-3 border-t space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">Received</p>
-                                <p className="text-sm font-medium">
-                                  {new Date(item.received_at).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">Type</p>
-                                <p className="text-sm font-medium">{item.subject || "Other"}</p>
-                              </div>
-                            </div>
-
-                            {mailDetails[item.id].scan_url && (
-                              <div className="border rounded-lg overflow-hidden bg-background">
-                                <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
-                                  Mail Scan Preview
-                                </div>
-                                <div className="p-3">
-                                  <img
-                                    src={mailDetails[item.id].scan_url || ''}
-                                    alt="Mail scan"
-                                    className="w-full h-auto rounded border"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {!mailDetails[item.id].scan_url && (
-                              <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/20">
-                                <FileArchive className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No scan preview available</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            size="default"
-                            variant={expandedMailId === item.id ? "default" : "outline"}
-                            onClick={() => handleToggleMail(item)}
-                            className="flex-1 h-10"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            {expandedMailId === item.id ? "Close" : "View"}
-                          </Button>
-                          <Button
-                            size="default"
-                            variant="outline"
-                            onClick={() => handleDownloadPdf(item.id)}
-                            className="flex-1 h-10"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
               </>
             )}
           </div>

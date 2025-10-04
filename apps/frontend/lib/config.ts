@@ -8,7 +8,7 @@ export const API_BASE =
 // Dashboard mode - controls what features are available
 export type DashboardMode = "full" | "inbox-only" | "maintenance";
 export const DASHBOARD_MODE: DashboardMode =
-  (process.env.NEXT_PUBLIC_DASHBOARD_MODE as DashboardMode) || "inbox-only";
+  (process.env.NEXT_PUBLIC_DASHBOARD_MODE as DashboardMode) || "full";
 
 // Feature flags for integrations
 export const FEATURES = {

@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DASHBOARD_MODE } from '@/lib/config';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileArchive, ArrowRight } from 'lucide-react';
+import { UserDashboard } from '@/components/UserDashboard';
 
 export default function DashboardClient() {
     const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         // Check if user is authenticated
@@ -17,34 +16,44 @@ export default function DashboardClient() {
             router.push('/login');
             return;
         }
-
-        // If in inbox-only mode, redirect to the simple mail page
-        if (DASHBOARD_MODE === "inbox-only") {
-            router.push('/my-mail');
-            return;
-        }
+        
+        setIsAuthenticated(true);
+        setIsLoading(false);
     }, [router]);
 
-    // Show maintenance message
+    const handleLogout = () => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        router.push('/login');
+    };
+
+    const handleNavigate = (page: string) => {
+        // Handle navigation to different pages
+        console.log('Navigate to:', page);
+    };
+
+    const handleGoBack = () => {
+        // Handle going back
+        console.log('Go back');
+    };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return null; // Will redirect to login
+    }
+
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <Card className="max-w-xl w-full">
-                <CardContent className="p-8 text-center">
-                    <FileArchive className="h-16 w-16 mx-auto mb-6 text-muted-foreground" />
-                    <h1 className="text-2xl font-bold mb-4">We'll be right back</h1>
-                    <p className="text-muted-foreground mb-6">
-                        We're doing a quick upgrade to make your experience better.
-                        You can still view and download your mail while we work.
-                    </p>
-                    <Button
-                        onClick={() => router.push('/my-mail')}
-                        className="w-full"
-                    >
-                        View My Mail
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        <UserDashboard
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            onGoBack={handleGoBack}
+        />
     );
 }
