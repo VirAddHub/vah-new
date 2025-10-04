@@ -10,6 +10,7 @@ export type MailStatus =
 export interface MailItem {
   id: string;                // always string in FE
   subject: string;
+  description?: string | null; // mail description
   sender_name?: string | null;
   received_at: string;       // canonical ISO name
   status: MailStatus;
