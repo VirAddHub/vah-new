@@ -3,6 +3,7 @@ import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-reac
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { ScrollToTopButton } from '../ScrollToTopButton';
+import { usePlans } from '@/hooks/usePlans';
 
 interface SignupStep3Props {
     onComplete: () => void;
@@ -17,6 +18,25 @@ interface SignupStep3Props {
 export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error }: SignupStep3Props) {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'direct_debit' | 'card'>('direct_debit');
     const [isProcessing, setIsProcessing] = useState(false);
+    const { plans } = usePlans();
+
+    // Get dynamic pricing from plans data
+    const getPlanPrice = (interval: 'monthly' | 'annual') => {
+        const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
+        if (plan) {
+            return (plan.price_pence / 100).toFixed(2);
+        }
+        // Fallback to hardcoded prices if plans not loaded
+        return interval === 'annual' ? '89.99' : '9.99';
+    };
+
+    const getMonthlyEquivalent = () => {
+        const plan = plans?.find(p => p.interval === 'year');
+        if (plan) {
+            return ((plan.price_pence / 100) / 12).toFixed(2);
+        }
+        return '7.50'; // Fallback
+    };
 
     const isAnnual = billing === 'annual';
     const planName = isAnnual ? 'Annual Plan' : 'Monthly Plan';
@@ -24,10 +44,10 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
         ? 'Annual subscription (2 months free)'
         : 'Monthly subscription';
 
-    const displayPrice = isAnnual ? '£89.99' : '£9.99';
+    const displayPrice = isAnnual ? `£${getPlanPrice('annual')}` : `£${getPlanPrice('monthly')}`;
     const priceUnit = isAnnual ? '/year' : '/month';
     const totalDescription = isAnnual
-        ? '£89.99 today for 12 months (≈ £7.50/month)'
+        ? `£${getPlanPrice('annual')} today for 12 months (≈ £${getMonthlyEquivalent()}/month)`
         : 'Recurring monthly payment';
 
     const handlePayment = async () => {

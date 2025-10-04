@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Check, Shield, Mail, Truck, FileText } from 'lucide-react';
 import { ScrollToTopButton } from '../ScrollToTopButton';
+import { usePlans } from '@/hooks/usePlans';
 
 interface SignupStep1Props {
     onNext: (selectedPlan: { billing: 'monthly' | 'annual'; price: string }) => void;
@@ -10,6 +11,25 @@ interface SignupStep1Props {
 
 export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: SignupStep1Props) {
     const [billing, setBilling] = useState<'monthly' | 'annual'>(initialBilling);
+    const { plans, loading } = usePlans();
+
+    // Get dynamic pricing from plans data
+    const getPlanPrice = (interval: 'monthly' | 'annual') => {
+        const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
+        if (plan) {
+            return (plan.price_pence / 100).toFixed(2);
+        }
+        // Fallback to hardcoded prices if plans not loaded
+        return interval === 'annual' ? '89.99' : '9.99';
+    };
+
+    const getMonthlyEquivalent = () => {
+        const plan = plans?.find(p => p.interval === 'year');
+        if (plan) {
+            return ((plan.price_pence / 100) / 12).toFixed(2);
+        }
+        return '7.50'; // Fallback
+    };
 
     const planFeatures = [
         'Professional London business address',
@@ -142,18 +162,18 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             <div className="mt-4">
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-4xl font-extrabold text-primary">
-                                        {billing === 'monthly' ? '£9.99/month' : '£89.99/year'}
+                                        {billing === 'monthly' ? `£${getPlanPrice('monthly')}/month` : `£${getPlanPrice('annual')}/year`}
                                     </span>
                                 </div>
                                 {billing === 'annual' && (
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        ≈ £7.50/month • 2 months free
+                                        ≈ £{getMonthlyEquivalent()}/month • 2 months free
                                     </p>
                                 )}
                                 <p className="text-sm text-muted-foreground mt-1">
                                     {billing === 'monthly'
                                         ? 'Billed monthly • Cancel anytime'
-                                        : 'Billed yearly • ≈ £7.50/month • Cancel at renewal'
+                                        : `Billed yearly • ≈ £${getMonthlyEquivalent()}/month • Cancel at renewal`
                                     }
                                 </p>
                             </div>
