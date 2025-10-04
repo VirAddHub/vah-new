@@ -24,7 +24,8 @@ import {
     Search,
     Filter,
 } from "lucide-react";
-import { apiClient, safe, adminApi } from "../../lib/apiClient";
+import { apiClient, safe, adminApi, adminForwardingApi } from "../../lib/apiClient";
+import { isOk } from "../../types/api";
 import { useApiData } from "../../lib/client-hooks";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -86,30 +87,28 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const loadRequests = useCallback(async () => {
         setIsFetchingRequests(true);
         try {
-            const params = new URLSearchParams({
-                page: String(page),
-                page_size: String(pageSize),
+            const res = await adminForwardingApi.list({
+                page,
+                page_size: pageSize,
+                q: q || undefined,
+                status: (status && status !== "all") ? status : undefined
             });
-            if (q) params.set("q", q);
-            if (status && status !== "all") params.set("status", status);
 
-            const resp = await adminApi.forwardingQueue(params);
-            if (resp.ok) {
-                const data = resp.data as { items?: any[]; total?: number };
-                const items = data.items ?? [];
+            if (isOk(res)) {
+                const items = res.data || [];
                 setRequests(items);
-                setTotal(data.total ?? items.length);
+                setTotal(items.length);
 
                 // Compute stats from items
                 const counts = {
-                    total: data.total ?? items.length,
+                    total: items.length,
                     pending: items.filter(i => i.status === 'pending').length,
                     fulfilled: items.filter(i => i.status === 'fulfilled').length,
                     canceled: items.filter(i => i.status === 'canceled').length,
                 };
                 setStats(counts);
             } else {
-                console.error("forwardingQueue failed:", resp);
+                console.error("adminForwardingApi.list failed:", res.error);
                 setRequests([]);
                 setTotal(0);
                 setStats(null);
@@ -480,11 +479,23 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                         <div>
                                             <div className="font-medium">#{request.mailItemId}</div>
                                             <div className="text-sm text-muted-foreground">{request.mailSubject}</div>
+                                            {request.mailSender && (
+                                                <div className="text-xs text-muted-foreground">From: {request.mailSender}</div>
+                                            )}
+                                            {request.mailTag && (
+                                                <Badge variant="outline" className="mt-1 text-xs">
+                                                    {request.mailTag}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="max-w-xs">
-                                            <div className="text-sm font-medium">{request.destination}</div>
+                                            <div className="text-sm font-medium">{request.destinationDetails?.toName || 'Unknown'}</div>
+                                            <div className="text-xs text-muted-foreground">{request.destination}</div>
+                                            {request.userPhone && (
+                                                <div className="text-xs text-muted-foreground">📞 {request.userPhone}</div>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -510,7 +521,14 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                                             <span className="text-muted-foreground">-</span>
                                         )}
                                     </TableCell>
-                                    <TableCell>{request.cost}</TableCell>
+                                    <TableCell>
+                                        <div>
+                                            <div className="font-medium">{request.cost}</div>
+                                            {request.isBillable && (
+                                                <div className="text-xs text-yellow-600">Billable</div>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{request.createdAt}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">

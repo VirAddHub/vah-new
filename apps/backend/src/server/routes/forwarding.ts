@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 
 const router = Router();
+const pool = getPool();
 
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -14,6 +15,10 @@ function requireAuth(req: Request, res: Response, next: Function) {
     }
     next();
 }
+
+// Helper to normalize tags
+const normalizeTag = (tag: string | null | undefined): string =>
+    (tag || '').trim().toUpperCase();
 
 /**
  * GET /api/forwarding/requests
@@ -92,124 +97,92 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
 /**
  * POST /api/forwarding/requests
  * Create new forwarding request
+ * Body: { mail_item_id, to_name, address1, address2?, city, state?, postal, country?, reason?, method? }
+ * Returns: { ok: true, data: { forwarding_request, pricing, mail_tag, charge_amount } }
  */
 router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+    const userId = req.user!.id as number;
     const {
-        letter_id,
+        mail_item_id,
         to_name,
         address1,
-        address2,
+        address2 = null,
         city,
-        state,
+        state = null,
         postal,
-        country,
-        reason,
-        method
-    } = req.body;
+        country = 'GB',
+        reason = null,
+        method = 'standard',
+    } = req.body ?? {};
 
-    const pool = getPool();
-
-    if (!letter_id || !to_name || !address1 || !city || !postal) {
-        return res.status(400).json({ ok: false, error: 'missing_required_fields' });
+    if (!mail_item_id || !to_name || !address1 || !city || !postal) {
+        return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
 
     try {
-        // Find mail_item by item_id (letter_id is the external ID)
-        const mailResult = await pool.query(`
-            SELECT id, user_id, expires_at
-            FROM mail_item
-            WHERE item_id = $1 AND user_id = $2
-        `, [letter_id, userId]);
-
-        if (mailResult.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
-        }
-
-        const mailItem = mailResult.rows[0];
+        // 1) Check ownership and fetch tag
+        const mail = await pool.query(
+            `SELECT id, user_id, tag, expires_at FROM mail_item WHERE id = $1 LIMIT 1`,
+            [mail_item_id]
+        );
+        const row = mail.rows[0];
+        if (!row) return res.status(404).json({ ok: false, error: 'Mail item not found' });
+        if (row.user_id !== userId) return res.status(403).json({ ok: false, error: 'Not allowed' });
 
         // Check if mail has expired
-        if (mailItem.expires_at && Date.now() > Number(mailItem.expires_at)) {
+        if (row.expires_at && Date.now() > Number(row.expires_at)) {
             return res.status(403).json({ ok: false, error: 'expired', message: 'Forwarding period has expired for this item' });
         }
 
-        // Check if the mail is HMRC or Companies House (free forwarding)
-        const mailTagResult = await pool.query(`
-            SELECT tag FROM mail_item WHERE id = $1
-        `, [mailItem.id]);
+        const tag = normalizeTag(row.tag);
+        const isFree = ['HMRC', 'COMPANIES HOUSE'].includes(tag);
 
-        const tag = mailTagResult.rows[0]?.tag?.toUpperCase() || '';
-        const isFree = tag === 'HMRC' || tag === 'COMPANIES HOUSE';
+        const now = Date.now();
 
-        // If not free, mark as billable and add £2 charge to next invoice
+        // 2) Create forwarding_request
+        const fr = await pool.query(
+            `INSERT INTO forwarding_request (
+                user_id, mail_item_id, to_name,
+                address1, address2, city, state, postal, country,
+                reason, method, status, created_at, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+            RETURNING *`,
+            [userId, mail_item_id, to_name, address1, address2, city, state, postal, country,
+             reason, method, 'pending', now, now]
+        );
+
+        // 3) Update mail status
+        await pool.query(
+            `UPDATE mail_item SET forwarding_status = 'Requested', updated_at = $1 WHERE id = $2`,
+            [now, mail_item_id]
+        );
+
+        // 4) If not free, mark mail billable & create pending charge (idempotent via unique index)
         if (!isFree) {
-            await pool.query(`
-                UPDATE mail_item
-                SET is_billable_forward = true
-                WHERE id = $1
-            `, [mailItem.id]);
+            await pool.query(
+                `UPDATE mail_item SET is_billable_forward = TRUE WHERE id = $1`,
+                [mail_item_id]
+            );
 
-            // Create a pending charge record that will be added to next invoice
-            // This could also trigger a GoCardless payment or be added to next subscription payment
-            await pool.query(`
-                INSERT INTO forwarding_charge (
-                    user_id,
-                    mail_item_id,
-                    amount_pence,
-                    status,
-                    created_at
-                ) VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT DO NOTHING
-            `, [userId, mailItem.id, 200, 'pending', Date.now()]);
+            await pool.query(
+                `INSERT INTO forwarding_charge (user_id, mail_item_id, amount_pence, status, created_at)
+                 VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+                [userId, mail_item_id, 200, 'pending', now]
+            );
         }
 
-        // Create forwarding request
-        const insertResult = await pool.query(`
-            INSERT INTO forwarding_request (
-                user_id,
-                mail_item_id,
-                to_name,
-                address1,
-                address2,
-                city,
-                state,
-                postal,
-                country,
-                reason,
-                method,
-                status,
-                created_at,
-                updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-            RETURNING *
-        `, [
-            userId,
-            mailItem.id,
-            to_name,
-            address1 || null,
-            address2 || null,
-            city,
-            state || null,
-            postal,
-            country || 'US',
-            reason || null,
-            method || 'standard',
-            'pending',
-            Date.now(),
-            Date.now()
-        ]);
-
-        // Update mail_item forwarding status
-        await pool.query(`
-            UPDATE mail_item
-            SET forwarding_status = $1, updated_at = $2
-            WHERE id = $3
-        `, ['Requested', Date.now(), mailItem.id]);
-
-        return res.json({ ok: true, data: insertResult.rows[0] });
-    } catch (error: any) {
-        console.error('[POST /api/forwarding/requests] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.json({
+            ok: true,
+            data: {
+                forwarding_request: fr.rows[0],
+                pricing: isFree ? 'free' : 'billable_200',
+                mail_tag: tag,
+                charge_amount: isFree ? 0 : 200,
+            },
+        });
+    } catch (e: any) {
+        console.error('[POST /api/forwarding/requests] error:', e);
+        return res.status(500).json({ ok: false, error: 'Failed to create forwarding request' });
     }
 });
 

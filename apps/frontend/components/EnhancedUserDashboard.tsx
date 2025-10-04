@@ -2,7 +2,9 @@
 
 import { useToast } from "./ui/use-toast";
 import { useMemo, useState, useEffect } from "react";
-import { apiClient, safe } from "../lib/apiClient";
+import { apiClient, safe, forwardingApi } from "../lib/apiClient";
+import { isOk } from "../types/api";
+import type { CreateForwardingPayload } from "../types/api";
 import {
     mailService,
     forwardingService,
@@ -428,24 +430,67 @@ export function EnhancedUserDashboard({ onLogout, onNavigate, onGoBack }: UserDa
     };
 
     // Forwarding Management
-    const createForwardingRequest = async (mailItemId: string, destinationAddress: string) => {
+    const requestForward = async (mailItem: any) => {
+        const tag = (mailItem.tag || '').toUpperCase();
+        const isFree = ['HMRC', 'COMPANIES HOUSE'].includes(tag);
+
+        const message = isFree
+            ? `Request forwarding for this ${mailItem.tag || 'letter'}? This is included in your plan at no extra charge.`
+            : `Request forwarding for this letter? A £2.00 charge will be added to your next Direct Debit payment.`;
+
+        if (!confirm(message)) return;
+
         try {
-            const response = await forwardingService.createForwardingRequest({
-                letter_id: Number(mailItemId),
-                to_name: 'User',
-                address1: destinationAddress,
-                city: '',
-                postal: '',
-                country: 'GB'
-            });
-            if (response.ok) {
-                loadForwardingRequests();
-                toast({ title: "Success", description: "Forwarding request created" });
-            } else {
-                throw new Error("Failed to create forwarding request");
+            // Get user's saved address
+            const addressResponse = await userService.getAddresses();
+            if (!addressResponse.ok || !addressResponse.data || addressResponse.data.length === 0) {
+                toast({
+                    title: "No Address Found",
+                    description: "Please add a forwarding address in Settings first.",
+                    variant: "destructive"
+                });
+                return;
             }
-        } catch {
-            toast({ title: "Error", description: "Failed to create forwarding request.", variant: "destructive" });
+
+            const address = addressResponse.data[0];
+
+            const payload: CreateForwardingPayload = {
+                mail_item_id: Number(mailItem.id),
+                to_name: `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim() || 'User',
+                address1: address.line1 || '',
+                address2: address.line2 || null,
+                city: address.city || '',
+                state: address.state || null,
+                postal: address.postalCode || '',
+                country: address.country || 'GB',
+                reason: isFree ? 'Free forwarding (HMRC/Companies House)' : 'Paid forwarding',
+                method: 'standard' as const,
+            };
+
+            const res = await forwardingApi.create(payload);
+
+            if (isOk(res)) {
+                toast({
+                    title: "Success",
+                    description: res.data.pricing === 'free'
+                        ? "Forwarding requested — no charge"
+                        : "Forwarding requested — £2 will be added to your next payment"
+                });
+                loadMailItems();
+                loadForwardingRequests();
+            } else {
+                toast({
+                    title: "Error",
+                    description: res.error || "Failed to create forwarding request",
+                    variant: "destructive"
+                });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to request forwarding.",
+                variant: "destructive"
+            });
         }
     };
 

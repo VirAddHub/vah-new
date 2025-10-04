@@ -294,6 +294,52 @@ const userDomain = {
         get<{ subscription: any }>('/api/payments/subscriptions/status'),
 };
 
+// ---- Forwarding API ----
+import type { CreateForwardingPayload, ForwardingResponse } from '../types/api';
+import { isOk } from '../types/api';
+
+const forwardingApi = {
+    async create(payload: CreateForwardingPayload): Promise<ApiResponse<ForwardingResponse>> {
+        try {
+            const res = await post<ForwardingResponse>('/api/forwarding/requests', payload);
+            return res;
+        } catch (e: any) {
+            return {
+                ok: false,
+                error: e?.response?.data?.error ?? 'Failed to create forwarding request',
+                code: e?.response?.status
+            };
+        }
+    },
+};
+
+const adminForwardingApi = {
+    async list(params?: { page?: number; page_size?: number; status?: string; q?: string }): Promise<ApiResponse<any[]>> {
+        try {
+            const searchParams = new URLSearchParams();
+            if (params?.page) searchParams.set('page', String(params.page));
+            if (params?.page_size) searchParams.set('page_size', String(params.page_size));
+            if (params?.status) searchParams.set('status', params.status);
+            if (params?.q) searchParams.set('q', params.q);
+
+            const res = await get<any>(`/api/admin/forwarding/requests?${searchParams.toString()}`);
+            if (isOk(res) && Array.isArray(res.data)) {
+                return { ok: true, data: res.data };
+            }
+            if (isOk(res) && res.data?.data && Array.isArray(res.data.data)) {
+                return { ok: true, data: res.data.data };
+            }
+            return { ok: false, error: 'Invalid response format' };
+        } catch (e: any) {
+            return {
+                ok: false,
+                error: e?.response?.data?.error ?? 'Failed to load forwarding requests',
+                code: e?.response?.status
+            };
+        }
+    },
+};
+
 // ---- Unified export ----
 export const apiClient = {
     ...legacyClient,
@@ -302,9 +348,11 @@ export const apiClient = {
     adminApi,
     mailApi,
     ...userDomain,
+    forwardingApi,
+    adminForwardingApi,
 };
 
-export { adminApi };
+export { adminApi, forwardingApi, adminForwardingApi };
 
 // Export fetchJson for advanced usage
 export { fetchJson };

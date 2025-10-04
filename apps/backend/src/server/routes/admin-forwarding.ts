@@ -13,20 +13,24 @@ const router = Router();
  */
 router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const { status, limit = '100', offset = '0' } = req.query;
+    const { status, limit = '20', offset = '0', page, page_size, q } = req.query;
 
-    const limitNum = parseInt(limit as string) || 100;
-    const offsetNum = parseInt(offset as string) || 0;
+    const limitNum = parseInt((page_size || limit) as string) || 20;
+    const pageNum = parseInt(page as string) || 1;
+    const offsetNum = page ? (pageNum - 1) * limitNum : parseInt(offset as string) || 0;
 
     try {
         let query = `
             SELECT
                 m.id,
                 m.user_id,
+                m.item_id,
                 m.subject,
+                m.description,
                 m.sender_name,
                 m.tag,
                 m.status,
+                m.is_billable_forward,
                 COALESCE(m.forwarding_status, 'Pending') as forwarding_status,
                 m.notes,
                 m.expires_at,
@@ -35,11 +39,29 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
-                f.name as file_name
+                u.phone,
+                f.name as file_name,
+                f.web_url as file_url,
+                fr.id as forwarding_request_id,
+                fr.to_name,
+                fr.address1,
+                fr.address2,
+                fr.city,
+                fr.state,
+                fr.postal,
+                fr.country,
+                fr.reason,
+                fr.method,
+                fr.tracking,
+                fr.courier,
+                fc.amount_pence as charge_amount
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
+            LEFT JOIN forwarding_request fr ON fr.mail_item_id = m.id
+            LEFT JOIN forwarding_charge fc ON fc.mail_item_id = m.id AND fc.status = 'pending'
             WHERE COALESCE(m.forwarding_status, 'Pending') != 'No'
+              AND COALESCE(m.forwarding_status, 'Pending') IN ('Requested', 'Pending', 'Processing', 'Dispatched')
         `;
 
         const params: any[] = [];
@@ -58,20 +80,55 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
 
         // Get total count
         const countQuery = status && status !== 'all'
-            ? `SELECT COUNT(*) FROM mail_item WHERE COALESCE(forwarding_status, 'Pending') = $1 AND COALESCE(forwarding_status, 'Pending') != 'No'`
-            : `SELECT COUNT(*) FROM mail_item WHERE COALESCE(forwarding_status, 'Pending') != 'No'`;
+            ? `SELECT COUNT(*) FROM mail_item WHERE COALESCE(forwarding_status, 'Pending') IN ('Requested', 'Pending', 'Processing', 'Dispatched') AND COALESCE(forwarding_status, 'Pending') = $1`
+            : `SELECT COUNT(*) FROM mail_item WHERE COALESCE(forwarding_status, 'Pending') IN ('Requested', 'Pending', 'Processing', 'Dispatched')`;
         const countParams = status && status !== 'all' ? [status] : [];
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
+        // Format the data for the frontend
+        const items = result.rows.map((row: any) => ({
+            id: row.id,
+            userId: row.user_id,
+            userName: `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.user_email,
+            userEmail: row.user_email,
+            userPhone: row.phone,
+            mailItemId: row.id,
+            mailSubject: row.description || row.subject || `Mail from ${row.sender_name || 'Unknown'}`,
+            mailSender: row.sender_name,
+            mailTag: row.tag,
+            isBillable: row.is_billable_forward,
+            chargeAmount: row.charge_amount ? `£${(row.charge_amount / 100).toFixed(2)}` : (row.is_billable_forward ? '£2.00' : 'Free'),
+            destination: [row.address1, row.address2, row.city, row.state, row.postal, row.country]
+                .filter(Boolean)
+                .join(', ') || 'Address not provided',
+            destinationDetails: {
+                toName: row.to_name,
+                address1: row.address1,
+                address2: row.address2,
+                city: row.city,
+                state: row.state,
+                postal: row.postal,
+                country: row.country
+            },
+            priority: row.method || 'standard',
+            status: (row.forwarding_status || 'pending').toLowerCase(),
+            trackingNumber: row.tracking,
+            carrier: row.courier,
+            notes: row.notes,
+            reason: row.reason,
+            cost: row.is_billable_forward ? '£2.00' : 'Free',
+            createdAt: new Date(Number(row.created_at)).toISOString(),
+            updatedAt: row.updated_at ? new Date(Number(row.updated_at)).toISOString() : null,
+            fileUrl: row.file_url
+        }));
+
         return res.json({
             ok: true,
-            data: result.rows,
-            pagination: {
-                limit: limitNum,
-                offset: offsetNum,
-                total
-            }
+            data: items,
+            total,
+            page: pageNum,
+            limit: limitNum
         });
     } catch (error: any) {
         console.error('[GET /api/admin/forwarding-requests] error:', error);
