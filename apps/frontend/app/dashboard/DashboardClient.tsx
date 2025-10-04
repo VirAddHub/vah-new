@@ -16,7 +16,7 @@ export default function DashboardClient() {
             router.push('/login');
             return;
         }
-        
+
         setIsAuthenticated(true);
         setIsLoading(false);
     }, [router]);

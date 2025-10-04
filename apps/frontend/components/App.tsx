@@ -13,7 +13,6 @@ import { KYCPolicyPage } from './KYCPolicyPage';
 import { HelpPage } from './HelpPage';
 import ContactPage from './ContactPage';
 import { SignupPage } from './SignupPage';
-import { UserDashboard } from './UserDashboard';
 import { BillingDashboard } from './BillingDashboard';
 import { KYCDashboard } from './KYCDashboard';
 import { FontLoader } from './FontLoader';
@@ -95,7 +94,20 @@ export function App() {
       case 'signup':
         return <SignupPage onNavigate={navigate} initialBilling={signupData?.initialBilling} />;
       case 'dashboard':
-        return <UserDashboard onNavigate={navigate} onLogout={() => navigate('home')} onGoBack={() => navigate('home')} />;
+        return (
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+              <p className="text-muted-foreground mb-4">User dashboard coming soon</p>
+              <button
+                onClick={() => navigate('home')}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        );
       case 'billing':
         return <BillingDashboard onNavigate={navigate} />;
       case 'kyc':
