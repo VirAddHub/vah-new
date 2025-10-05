@@ -847,6 +847,9 @@ function MailDetailDialog({
             className="w-full h-full border-0 rounded bg-white"
             title={mailItem.subject || `mail-${mailItem.id}`}
             style={{ width: '100%', height: '100%', border: 0 }}
+            referrerPolicy="no-referrer"
+            allow="fullscreen"
+            loading="eager"
           />
         ) : (
           <div className="flex items-center justify-center h-full">
