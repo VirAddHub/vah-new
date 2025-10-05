@@ -214,6 +214,71 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return item?.category === "HMRC" || item?.category === "Companies House";
   });
 
+  // Download functions
+  const downloadSingle = async (mailId: string) => {
+    try {
+      const token = localStorage.getItem('vah_jwt');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+      
+      const response = await fetch(`${apiUrl}/api/mail-items/${mailId}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mail_scan_${mailId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error('Failed to download mail scan');
+      }
+    } catch (error) {
+      console.error('Error downloading mail scan:', error);
+    }
+  };
+
+  const downloadSelected = async () => {
+    if (selectedMail.length === 0) return;
+    
+    try {
+      const token = localStorage.getItem('vah_jwt');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+      
+      if (selectedMail.length === 1) {
+        // Single item - download as PDF directly
+        await downloadSingle(selectedMail[0]);
+      } else {
+        // Multiple items - download as ZIP
+        const response = await fetch(`${apiUrl}/api/mail-items/bulk-download`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ mail_ids: selectedMail })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.data.download_url) {
+            // Open download URL
+            window.open(data.data.download_url, '_blank');
+          }
+        } else {
+          console.error('Failed to download selected mail scans');
+        }
+      }
+    } catch (error) {
+      console.error('Error downloading selected mail scans:', error);
+    }
+  };
+
   // Show loading state while fetching user data
   if (loading) {
     return (
@@ -324,10 +389,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Badge variant="default" className="text-sm">
                         {selectedMail.length} selected
                       </Badge>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Selected
-                      </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={downloadSelected}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Selected
+                  </Button>
                       <Button size="sm" variant="default">
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
@@ -434,17 +503,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 </div>
                               </div>
 
-                              {/* Individual Actions */}
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="outline">
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download Scan
-                                </Button>
-                                <Button size="sm" variant="default">
-                                  <Truck className="h-3 w-3 mr-1" />
-                                  Request Forwarding
-                                </Button>
-                              </div>
+                          {/* Individual Actions */}
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => downloadSingle(item.id)}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download Scan
+                            </Button>
+                            <Button size="sm" variant="default">
+                              <Truck className="h-3 w-3 mr-1" />
+                              Request Forwarding
+                            </Button>
+                          </div>
                             </div>
                           </div>
                         </div>
@@ -512,17 +585,22 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 </span>
                               </div>
 
-                              {/* Actions */}
-                              <div className="grid grid-cols-2 gap-2">
-                                <Button size="sm" variant="outline" className="w-full h-9">
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download
-                                </Button>
-                                <Button size="sm" variant="default" className="w-full h-9">
-                                  <Truck className="h-3 w-3 mr-1" />
-                                  Forward
-                                </Button>
-                              </div>
+                          {/* Actions */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full h-9"
+                              onClick={() => downloadSingle(item.id)}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                            <Button size="sm" variant="default" className="w-full h-9">
+                              <Truck className="h-3 w-3 mr-1" />
+                              Forward
+                            </Button>
+                          </div>
                             </div>
                           </div>
                         </div>
@@ -567,7 +645,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    <Button size="default" variant="outline" className="w-full h-10">
+                    <Button 
+                      size="default" 
+                      variant="outline" 
+                      className="w-full h-10"
+                      onClick={downloadSelected}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
