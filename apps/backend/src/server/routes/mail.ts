@@ -7,6 +7,46 @@ import { selectPaged } from '../db-helpers';
 
 const router = Router();
 
+/** Resolve a downloadable URL for a mail item, regardless of source */
+async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean = false) {
+    const pool = getPool();
+    
+    // Authorization: owner or admin
+    const params: any[] = [mailId];
+    let where = `m.id = $1`;
+    if (!isAdmin) {
+        params.push(userId);
+        where += ` AND m.user_id = $2`;
+    }
+
+    const result = await pool.query(`
+        SELECT
+            m.id,
+            m.user_id,
+            -- Check file table first, then webhook columns on the mail_item row
+            COALESCE(f.public_url, f.web_url, m.scan_file_url, m.file_url) AS url,
+            COALESCE(f.file_name, m.file_name, m.subject) AS filename
+        FROM mail_item m
+        LEFT JOIN file f ON f.id = m.file_id
+        WHERE ${where}
+    `, params);
+
+    if (result.rows.length === 0) {
+        return { ok: false as const, error: 'not_found' };
+    }
+
+    const row = result.rows[0];
+    if (!row.url) {
+        return { ok: false as const, error: 'no_file_url' };
+    }
+
+    return {
+        ok: true as const,
+        url: row.url as string,
+        filename: (row.filename ?? `mail_item_${mailId}.pdf`) as string,
+    };
+}
+
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
     if (!req.user?.id) {
@@ -166,44 +206,22 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
  * Get download URL for mail scan
  */
 router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Response) => {
-    const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
-    const pool = getPool();
-
-    if (!mailId) {
-        return res.status(400).json({ ok: false, error: 'invalid_id' });
-    }
-
     try {
-        const result = await pool.query(`
-            SELECT
-                m.id,
-                m.user_id,
-                m.expires_at,
-                COALESCE(f.web_url, m.scan_file_url) as web_url,
-                COALESCE(f.name, m.subject) as name,
-                f.item_id
-            FROM mail_item m
-            LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.id = $1 AND m.user_id = $2
-        `, [mailId, userId]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: 'not_found' });
+        const { id } = req.params;
+        const userId = req.user!.id;
+        const isAdmin = req.user!.is_admin || false;
+        
+        const result = await resolveScanUrl(id, userId.toString(), isAdmin);
+        if (!result.ok) {
+            return res.status(result.error === 'not_found' ? 404 : 400).json(result);
         }
 
-        const mail = result.rows[0];
-
-        // Check if mail has expired (for downloads, we're more lenient than forwarding)
-        // Allow downloads even after expiry, but warn
-        const expired = mail.expires_at && Date.now() > Number(mail.expires_at);
-
-        if (!mail.web_url) {
-            return res.status(404).json({ ok: false, error: 'no_file_url' });
-        }
-
+        // no-store so the signed/temporary URLs aren't cached
+        res.setHeader('Cache-Control', 'no-store, private');
+        
         // Record download in downloads table (optional - table may not exist yet)
         try {
+            const pool = getPool();
             await pool.query(`
                 INSERT INTO download (user_id, file_id, download_url, expires_at, created_at, ip_address, user_agent)
                 SELECT $1, f.id, $2, $3, $4, $5, $6
@@ -211,16 +229,16 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
                 WHERE f.item_id = $7
             `, [
                 userId,
-                mail.web_url,
+                result.url,
                 Date.now() + 3600000,
                 Date.now(),
                 req.ip || req.headers['x-forwarded-for'] || 'unknown',
                 req.headers['user-agent'] || 'unknown',
-                mail.item_id
+                id
             ]);
 
             // Log successful scan URL request for audit
-            console.log(`[SCAN-URL AUDIT] user_id=${userId}, mail_item_id=${mailId}, action=scan_url_request, ip=${req.ip || 'unknown'}`);
+            console.log(`[SCAN-URL AUDIT] user_id=${userId}, mail_item_id=${id}, action=scan_url_request, ip=${req.ip || 'unknown'}`);
         } catch (downloadError: any) {
             // Table may not exist yet - log but don't fail the request
             console.warn('[GET /api/mail-items/:id/scan-url] Could not record download (table may not exist):', downloadError.message);
@@ -228,9 +246,9 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
 
         return res.json({
             ok: true,
-            url: mail.web_url,
-            expired: expired,
-            filename: mail.name || `mail-${mailId}.pdf`
+            url: result.url,
+            filename: result.filename,
+            expired: false // We can add expiry logic later if needed
         });
     } catch (error: any) {
         console.error('[GET /api/mail-items/:id/scan-url] error:', error);
@@ -243,72 +261,33 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
  * Download alias - redirects to signed URL or proxies the file
  */
 router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
-    const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
-    const pool = getPool();
-
-    if (!mailId) {
-        return res.status(400).json({ ok: false, error: 'invalid_id' });
-    }
-
     try {
-        // Get the mail item and its file info
-        const result = await pool.query(`
-            SELECT
-                m.id,
-                m.user_id,
-                m.expires_at,
-                COALESCE(f.web_url, m.scan_file_url) as web_url,
-                COALESCE(f.name, m.subject) as name,
-                f.item_id
-            FROM mail_item m
-            LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.id = $1 AND m.user_id = $2
-        `, [mailId, userId]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: 'not_found' });
+        const { id } = req.params;
+        const userId = req.user!.id;
+        const isAdmin = req.user!.is_admin || false;
+        
+        const result = await resolveScanUrl(id, userId.toString(), isAdmin);
+        if (!result.ok) {
+            return res.status(result.error === 'not_found' ? 404 : 400).json(result);
         }
 
-        const mail = result.rows[0];
+        res.setHeader('Cache-Control', 'no-store, private');
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
 
-        if (!mail.web_url) {
-            return res.status(404).json({ ok: false, error: 'no_file_url' });
+        const mode = process.env.DOWNLOAD_REDIRECT_MODE ?? 'redirect';
+        if (mode === 'redirect') {
+            // Simple, fast path
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${result.filename.replace(/"/g, '')}"`
+            );
+            return res.redirect(302, result.url);
         }
 
-        // Record download in downloads table (optional - table may not exist yet)
-        try {
-            await pool.query(`
-                INSERT INTO download (user_id, file_id, download_url, expires_at, created_at, ip_address, user_agent)
-                SELECT $1, f.id, $2, $3, $4, $5, $6
-                FROM file f
-                WHERE f.item_id = $7
-            `, [
-                userId,
-                mail.web_url,
-                Date.now() + 3600000,
-                Date.now(),
-                req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                req.headers['user-agent'] || 'unknown',
-                mail.item_id
-            ]);
-
-            // Log successful download for audit
-            console.log(`[DOWNLOAD AUDIT] user_id=${userId}, mail_item_id=${mailId}, action=download, ip=${req.ip || 'unknown'}`);
-        } catch (downloadError: any) {
-            // Table may not exist yet - log but don't fail the request
-            console.warn('[GET /api/mail-items/:id/download] Could not record download (table may not exist):', downloadError.message);
-        }
-
-        // Option 1: Redirect to the signed URL (simpler, lets browser handle it)
-        if (process.env.DOWNLOAD_REDIRECT_MODE === 'redirect') {
-            return res.redirect(302, mail.web_url);
-        }
-
-        // Option 2: Proxy the file (more control, but uses more server resources)
+        // Proxy mode (optional): stream bytes through your server
         try {
             const fetch = (await import('node-fetch')).default;
-            const fileResponse = await fetch(mail.web_url, {
+            const fileResponse = await fetch(result.url, {
                 headers: {
                     'Authorization': req.headers.authorization || '',
                     'User-Agent': req.headers['user-agent'] || 'VAH-Download-Proxy/1.0'
@@ -322,7 +301,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             // Set appropriate headers with hardening
             const contentType = fileResponse.headers.get('content-type') || 'application/pdf';
             const contentLength = fileResponse.headers.get('content-length');
-            const filename = mail.name || `mail_scan_${mailId}.pdf`;
+            const filename = result.filename;
 
             // Sanitize filename for safe download
             const safeFilename = filename.replace(/[^\w\-_\.]/g, '_');
