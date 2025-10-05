@@ -347,6 +347,15 @@ router.post("/login", async (req, res) => {
             role: userData.role
         });
 
+        // Set HttpOnly cookie for iframe authentication (cross-site)
+        res.cookie('vah_session', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+            maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+        });
+
         // REVISED: The user object in the response should match the payload for consistency
         res.json({
             ok: true,

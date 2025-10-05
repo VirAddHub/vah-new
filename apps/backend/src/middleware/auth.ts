@@ -4,12 +4,17 @@ import { getPool } from '../server/db';
 
 /**
  * Optional JWT authentication middleware
- * Verifies JWT token if present and attaches user to req.user
+ * Verifies JWT token if present (from header or cookie) and attaches user to req.user
  * Does NOT require authentication - just sets req.user if valid token exists
  */
 export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
-    const token = extractTokenFromHeader(authHeader);
+    const headerToken = extractTokenFromHeader(authHeader);
+
+    // Also check for JWT in cookie (for iframe authentication)
+    const cookieToken = req.cookies?.vah_session;
+
+    const token = headerToken || cookieToken;
 
     if (!token) {
         // No token provided - continue without setting req.user

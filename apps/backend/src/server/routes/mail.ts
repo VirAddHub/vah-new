@@ -268,7 +268,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         const { id } = req.params;
         const userId = req.user!.id;
         const isAdmin = req.user!.is_admin || false;
-        
+
         // Parse query parameters
         const mode = String(req.query.mode || '');
         const dispositionQ = String(req.query.disposition || '');
@@ -284,7 +284,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
 
         // Use proxy mode if explicitly requested or if environment variable is set
         const useProxy = mode === 'proxy' || process.env.DOWNLOAD_REDIRECT_MODE === 'proxy';
-        
+
         if (!useProxy) {
             // Simple redirect path
             res.setHeader(
@@ -320,7 +320,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             res.setHeader('Content-Disposition', `${disposition}; filename="${safeFilename}"`);
             res.setHeader('Cache-Control', 'no-store, private');
             res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-            
+
             // Add CSP headers for iframe embedding
             res.setHeader(
                 'Content-Security-Policy',

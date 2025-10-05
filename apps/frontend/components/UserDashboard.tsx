@@ -172,7 +172,33 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return item?.tag === "HMRC" || item?.tag === "COMPANIES HOUSE";
   });
 
-  // Open handler - calls scan-url API and opens in new tab
+  // Mark mail item as read
+  const markAsRead = useCallback(async (item: MailItem) => {
+    try {
+      const token = getToken();
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ is_read: true })
+      });
+
+      if (res.ok) {
+        // Update the SWR cache to reflect the change
+        await refreshMail();
+      }
+    } catch (e) {
+      console.error('Error marking item as read:', e);
+      // Don't show error to user - this is a background operation
+    }
+  }, [refreshMail]);
+
+  // Open handler - calls scan-url API and opens in new tab, also marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
       const token = getToken();
@@ -190,6 +216,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const json = await res.json();
       if (json?.ok && json?.url) {
         window.open(json.url, '_blank');
+
+        // Auto-mark as read when opened (if not already read)
+        if (!item.is_read) {
+          await markAsRead(item);
+        }
       } else {
         console.error('scan-url failed', json);
         alert('Unable to open file for this item.');
@@ -198,7 +229,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       console.error('Error opening file:', e);
       alert('Unable to open file for this item.');
     }
-  }, []);
+  }, [markAsRead]);
 
   // Download handler - uses browser navigation for redirect
   const onDownload = useCallback((item: MailItem) => {
@@ -211,14 +242,20 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return `${API_BASE}/api/mail-items/${item.id}/download?mode=proxy&disposition=inline`;
   }, []);
 
-  // Handle mail detail view with debouncing
+  // Handle mail detail view with debouncing and auto-mark as read
   const handleViewDetails = useCallback(async (item: MailItem) => {
     // Debounce rapid clicks to avoid spamming scan-url
     if (selectedMailDetail === String(item.id)) {
       return; // Already viewing this item
     }
+
+    // Auto-mark as read when viewing (if not already read)
+    if (!item.is_read) {
+      await markAsRead(item);
+    }
+
     setSelectedMailDetail(String(item.id));
-  }, [selectedMailDetail]);
+  }, [selectedMailDetail, markAsRead]);
 
   // Get user name helper
   const getUserName = () => {
@@ -718,7 +755,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       {selectedMailDetail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-background rounded-lg max-w-6xl max-h-[95vh] w-full flex flex-col">
-            <MailDetailDialog 
+            <MailDetailDialog
               mailItem={mailItems.find((item: MailItem) => String(item.id) === selectedMailDetail)}
               onClose={() => setSelectedMailDetail(null)}
               onOpen={onOpen}
@@ -733,13 +770,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 }
 
 // Mail Detail Dialog Component
-function MailDetailDialog({ 
-  mailItem, 
-  onClose, 
-  onOpen, 
-  onDownload, 
-  getProxyUrl 
-}: { 
+function MailDetailDialog({
+  mailItem,
+  onClose,
+  onOpen,
+  onDownload,
+  getProxyUrl
+}: {
   mailItem: MailItem | undefined;
   onClose: () => void;
   onOpen: (item: MailItem) => void;
