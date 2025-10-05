@@ -27,7 +27,7 @@ echo ""
 # Test 1: List mail items
 echo "1️⃣ Testing mail items list..."
 curl -s -H "Authorization: Bearer $TOKEN" \
-     "$API_BASE/api/mail-items" | jq '.data | length' 2>/dev/null || echo "Failed"
+     "$API_BASE/api/mail-items" | jq '.items | length' 2>/dev/null || echo "Failed"
 echo ""
 
 # Test 2: Get scan URL
@@ -55,7 +55,7 @@ echo ""
 echo "✅ Testing complete!"
 echo ""
 echo "Summary:"
-echo "- Mail items: $(curl -s -H "Authorization: Bearer $TOKEN" "$API_BASE/api/mail-items" | jq '.data | length' 2>/dev/null || echo 'Failed') items found"
+echo "- Mail items: $(curl -s -H "Authorization: Bearer $TOKEN" "$API_BASE/api/mail-items" | jq '.items | length' 2>/dev/null || echo 'Failed') items found"
 echo "- Scan URL: $(curl -s -H "Authorization: Bearer $TOKEN" "$API_BASE/api/mail-items/$MAIL_ID/scan-url" | jq '.ok' 2>/dev/null || echo 'Failed')"
 echo "- Download alias: $HTTP_CODE"
 echo "- Test endpoint: $HTTP_CODE"
