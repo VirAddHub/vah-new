@@ -48,11 +48,22 @@ router.get('/mail-items/:id/download', requireAuth, async (req, res) => {
         // Record download in downloads table (optional - table may not exist yet)
         try {
             await pool.query(`
-                INSERT INTO download (user_id, file_id, download_url, expires_at, created_at)
-                SELECT $1, f.id, $2, $3, $4
+                INSERT INTO download (user_id, file_id, download_url, expires_at, created_at, ip_address, user_agent)
+                SELECT $1, f.id, $2, $3, $4, $5, $6
                 FROM file f
-                WHERE f.item_id = $5
-            `, [userId, mail.web_url, Date.now() + 3600000, Date.now(), mail.item_id]);
+                WHERE f.item_id = $7
+            `, [
+                userId, 
+                mail.web_url, 
+                Date.now() + 3600000, 
+                Date.now(), 
+                req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                req.headers['user-agent'] || 'unknown',
+                mail.item_id
+            ]);
+            
+            // Log successful download for audit
+            console.log(`[DOWNLOAD AUDIT] user_id=${userId}, mail_item_id=${mailId}, action=download, ip=${req.ip || 'unknown'}`);
         } catch (downloadError) {
             // Table may not exist yet - log but don't fail the request
             console.warn('[GET /api/mail-items/:id/download] Could not record download (table may not exist):', downloadError.message);
@@ -76,13 +87,18 @@ router.get('/mail-items/:id/download', requireAuth, async (req, res) => {
                 return res.status(502).json({ ok: false, error: 'file_fetch_failed' });
             }
 
-            // Set appropriate headers
-            const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
+            // Set appropriate headers with hardening
+            const contentType = fileResponse.headers.get('content-type') || 'application/pdf';
             const contentLength = fileResponse.headers.get('content-length');
             const filename = mail.name || `mail_scan_${mailId}.pdf`;
+            
+            // Sanitize filename for safe download
+            const safeFilename = filename.replace(/[^\w\-_\.]/g, '_');
 
             res.setHeader('Content-Type', contentType);
-            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(safeFilename)}`);
+            res.setHeader('Cache-Control', 'no-store, private');
+            res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
             if (contentLength) {
                 res.setHeader('Content-Length', contentLength);
             }
