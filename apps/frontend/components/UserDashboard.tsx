@@ -337,7 +337,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     );
   }
 
-        return (
+  return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -422,7 +422,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Mail Inbox Section */}
             <Card>
               <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-primary" />
                     <CardTitle>Mail Inbox</CardTitle>
@@ -434,7 +434,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="default" className="text-sm">
                         {selectedMail.length} selected
-                </Badge>
+                      </Badge>
                       <Button
                         size="sm"
                         variant="outline"
@@ -449,7 +449,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       </Button>
                     </div>
                   )}
-              </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
 
@@ -466,7 +466,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     )}
                     {isAllSelected ? "Deselect All" : "Select All"}
                   </button>
-            </div>
+                </div>
 
                 {/* Select All - Mobile */}
                 <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
@@ -481,8 +481,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <CheckSquare className="h-4 w-4 mr-2 text-primary" />
                         Deselect All ({mockMailItems.length})
                       </>
-            ) : (
-              <>
+                    ) : (
+                      <>
                         <Square className="h-4 w-4 mr-2" />
                         Select All ({mockMailItems.length})
                       </>
@@ -528,9 +528,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     {isGovernment && (
                                       <Badge variant="outline" className="text-xs border-primary/50 text-primary">
                                         Free Forwarding
-                            </Badge>
+                                      </Badge>
                                     )}
-                          </div>
+                                  </div>
                                   <p className="text-sm text-muted-foreground truncate">
                                     {item.description}
                                   </p>
@@ -580,7 +580,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                     return (
                       <div
-                                key={item.id}
+                        key={item.id}
                         className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
                       >
                         <div className="space-y-3">
@@ -633,24 +633,24 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                               {/* Actions */}
                               <div className="grid grid-cols-2 gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
+                                <Button
+                                  size="sm"
+                                  variant="outline"
                                   className="w-full h-9"
                                   onClick={() => downloadSingle(item.id)}
-                                    >
+                                >
                                   <Download className="h-3 w-3 mr-1" />
                                   Download
-                                    </Button>
+                                </Button>
                                 <Button size="sm" variant="default" className="w-full h-9">
                                   <Truck className="h-3 w-3 mr-1" />
                                   Forward
-                                    </Button>
-                                  </div>
+                                </Button>
+                              </div>
                             </div>
-                                          </div>
-                                          </div>
-                                        </div>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -663,10 +663,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <p className="text-sm text-muted-foreground">
                       Your mail will appear here when it arrives at your virtual address
                     </p>
-                                        </div>
-                                      )}
-                  </CardContent>
-                </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Free Forwarding Notice */}
             <Alert className="border-primary/30 bg-primary/5">
@@ -691,9 +691,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                <Button
+                    <Button
                       size="default"
-                  variant="outline"
+                      variant="outline"
                       className="w-full h-10"
                       onClick={downloadSelected}
                     >
@@ -703,7 +703,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Button size="default" variant="default" className="w-full h-10">
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding ({selectedMail.length})
-                </Button>
+                    </Button>
                   </div>
 
                   {selectedHasGovernment && (
@@ -711,8 +711,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       ✓ Free forwarding available for HMRC/Companies House items
                     </p>
                   )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             )}
 
             {/* Help Text */}
@@ -744,7 +744,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <p className="text-xs font-medium">{virtualAddress.city}</p>
                   <p className="text-xs font-medium">{virtualAddress.postcode}</p>
                   <p className="text-xs font-medium">{virtualAddress.country}</p>
-            </div>
+                </div>
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">

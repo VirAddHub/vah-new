@@ -49,9 +49,9 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
         const result = await selectPaged(
             `SELECT
                 m.*,
-                f.name as file_name,
-                f.size as file_size,
-                f.web_url as file_url
+                COALESCE(f.name, m.subject) as file_name,
+                COALESCE(f.size, m.file_size) as file_size,
+                COALESCE(f.web_url, m.scan_file_url) as file_url
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
             WHERE m.user_id = $1 AND m.deleted = false

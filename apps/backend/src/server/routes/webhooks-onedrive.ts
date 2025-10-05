@@ -505,6 +505,15 @@ router.post('/', async (req: any, res) => {
 
     const mailItem = result.rows[0];
 
+    console.log('[OneDrive Webhook] Successfully inserted mail item:', {
+      mailItemId: mailItem.id,
+      userId: finalUserId,
+      subject: mailItem.subject,
+      status: mailItem.status,
+      tag: tag,
+      receivedDate: new Date(receivedAtMs).toISOString().split('T')[0]
+    });
+
     // Log webhook event
     await pool.query(
       `INSERT INTO webhook_log (source, provider, event_type, payload_json, created_at, received_at_ms)
