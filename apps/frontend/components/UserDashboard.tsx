@@ -247,33 +247,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     });
     if (!res.ok) return false;
 
-    const data = await res.json(); // expected { url, filename? }
-    if (!data?.url) return false;
+    const data = await res.json(); // expected { ok, url, filename? }
+    if (!data?.ok || !data?.url) return false;
 
-    const fileRes = await fetch(data.url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: headers,
-    });
-    if (!fileRes.ok) throw new Error('Failed to fetch file from signed URL');
-
-    await downloadBlob(fileRes, data.filename || `mail-${mailId}.pdf`);
+    // Let the browser handle the download (works cross-origin)
+    const a = document.createElement('a');
+    a.href = data.url;
+    if (data.filename) a.download = data.filename; // may be ignored cross-origin, fine
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     return true;
   };
 
   // --- optional backend alias: /api/mail-items/:id/download (302 redirect or proxy)
-  const downloadViaAlias = async (mailId: number | string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}/api/mail-items/${mailId}/download`, {
-      method: 'GET',
-      credentials: 'include',
-      headers,
-    });
-    if (!res.ok) return false;
-    await downloadBlob(res, `mail-${mailId}.pdf`);
+  const downloadViaAlias = (mailId: number | string) => {
+    // One-liner: browser follows 302 and downloads
+    window.location.href = `${API_BASE}/api/mail-items/${mailId}/download`;
     return true;
   };
 
