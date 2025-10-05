@@ -11,23 +11,15 @@ import {
   Square,
   Mail,
   AlertCircle,
-  LogOut,
-  User,
-  Settings,
-  Menu,
-  X,
   Eye,
   Calendar,
   ArrowLeft,
   RefreshCw
 } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Separator } from "./ui/separator";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -76,7 +68,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -179,11 +170,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       };
-    if (token) headers.Authorization = `Bearer ${token}`;
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
         method: 'PATCH',
-      headers,
+        headers,
         body: JSON.stringify({ is_read: true })
       });
 
@@ -230,17 +221,49 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [markAsRead]);
 
-  // Download handler - creates temporary link to trigger download
-  const onDownload = useCallback((item: MailItem) => {
-    // Create a temporary link element to trigger download
-    const link = document.createElement('a');
-    link.href = `${API_BASE}/api/mail-items/${item.id}/download`;
-    link.download = `mail-item-${item.id}.pdf`; // Suggest filename
-    link.target = '_blank'; // Open in new tab as fallback
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Robust download handler - fetch → blob → download
+  const downloadFile = useCallback(async (downloadUrl: string, fallbackName = 'document.pdf') => {
+    const token = getToken();
+    const headers: Record<string, string> = {
+      'Accept': '*/*',
+      'Content-Type': 'application/json'
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const resp = await fetch(`${downloadUrl}?disposition=attachment`, {
+      method: 'GET',
+      credentials: 'include',          // sends cookies
+      headers
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    // Try filename from Content-Disposition
+    const cd = resp.headers.get('content-disposition') || '';
+    const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd);
+    const fileName = decodeURIComponent(m?.[1] || m?.[2] || fallbackName);
+
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }, []);
+
+  const onDownload = useCallback(async (item: MailItem) => {
+    try {
+      await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Unable to download file. Please try again.');
+    }
+  }, [downloadFile]);
 
   // Get user name helper
   const getUserName = () => {
@@ -287,65 +310,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="container mx-auto px-4 flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <VAHLogo className="h-8 w-8" />
-            <span className="hidden sm:inline-block text-muted-foreground">|</span>
-            <span className="hidden sm:inline-block font-medium">Dashboard</span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')}>
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="sm" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </nav>
-
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-card">
-            <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')} className="justify-start">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')} className="justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-              <Separator className="my-2" />
-              <Button variant="ghost" size="sm" onClick={onLogout} className="justify-start">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </nav>
-          </div>
-        )}
-      </header>
-
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
 
@@ -366,9 +330,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <CardTitle>Mail Inbox</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <CardTitle>Mail Inbox</CardTitle>
                       <Badge variant="secondary">{totalItems} items</Badge>
                       {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                     </div>
@@ -460,78 +424,78 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
                 ) : (
                   <>
-                {/* Mail Items List - Desktop */}
-                <div className="hidden sm:block">
-                  <div className="divide-y">
+                    {/* Mail Items List - Desktop */}
+                    <div className="hidden sm:block">
+                      <div className="divide-y">
                         {mailItems.map((item: MailItem) => {
                           const isSelected = selectedMail.includes(String(item.id));
                           const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                      return (
-                        <div
-                          key={item.id}
+                          return (
+                            <div
+                              key={item.id}
                               className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
-                            }`}
-                        >
-                          <div className="flex items-start gap-4">
-                            {/* Checkbox */}
-                            <button
+                                }`}
+                            >
+                              <div className="flex items-start gap-4">
+                                {/* Checkbox */}
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleSelectMail(String(item.id));
                                   }}
-                              className="mt-1 flex-shrink-0"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-primary" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                              )}
-                            </button>
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                                  )}
+                                </button>
 
                                 {/* Mail Info - Clickable */}
                                 <div
                                   className="flex-1 min-w-0 space-y-2 cursor-pointer group"
                                   onClick={() => onOpen(item)}
                                 >
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-medium truncate group-hover:text-primary transition-colors">
                                           Inbox Item
                                         </h4>
                                         {!item.is_read && (
-                                      <Badge variant="default" className="text-xs">New</Badge>
-                                    )}
-                                    {isGovernment && (
-                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                        Free Forwarding
-                                      </Badge>
-                                    )}
+                                          <Badge variant="default" className="text-xs">New</Badge>
+                                        )}
+                                        {isGovernment && (
+                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                            Free Forwarding
+                                          </Badge>
+                                        )}
                                         <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
                                           <FileCheck className="h-3 w-3" />
                                           <span className="font-medium">Open</span>
                                         </div>
-                                  </div>
+                                      </div>
                                       <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
                                         From: {item.sender_name || 'Unknown Sender'}
-                                  </p>
-                                </div>
-                                <div className="flex-shrink-0 text-right">
-                                  <p className="text-sm text-muted-foreground">
+                                      </p>
+                                    </div>
+                                    <div className="flex-shrink-0 text-right">
+                                      <p className="text-sm text-muted-foreground">
                                         {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric'
                                         }) : 'Unknown Date'}
-                                  </p>
+                                      </p>
                                       {item.tag && (
-                                  <Badge variant="secondary" className="mt-1 text-xs">
+                                        <Badge variant="secondary" className="mt-1 text-xs">
                                           {item.tag}
-                                  </Badge>
+                                        </Badge>
                                       )}
-                                </div>
-                              </div>
+                                    </div>
+                                  </div>
 
                                   {/* Action Buttons */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -544,109 +508,109 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       Open
                                     </Button>
                                     <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
-                                  <Download className="h-3 w-3 mr-1" />
+                                      <Download className="h-3 w-3 mr-1" />
                                       Download
-                                </Button>
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* Mail Items List - Mobile */}
-                <div className="sm:hidden divide-y">
+                    {/* Mail Items List - Mobile */}
+                    <div className="sm:hidden divide-y">
                       {mailItems.map((item: MailItem) => {
                         const isSelected = selectedMail.includes(String(item.id));
                         const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                    return (
-                      <div
-                        key={item.id}
-                        className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
-                      >
-                        <div className="space-y-3">
-                          {/* Header with checkbox */}
-                          <div className="flex items-start gap-3">
-                            <button
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
+                          >
+                            <div className="space-y-3">
+                              {/* Header with checkbox */}
+                              <div className="flex items-start gap-3">
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleSelectMail(String(item.id));
                                   }}
-                              className="mt-1 flex-shrink-0"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-primary" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </button>
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
 
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
                                   onClick={() => onOpen(item)}
                                 >
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="flex-1 min-w-0">
                                       <h4 className="font-medium break-words mb-1">
                                         Inbox Item
                                       </h4>
-                                  <p className="text-sm text-muted-foreground break-words">
+                                      <p className="text-sm text-muted-foreground break-words">
                                         Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
                                           day: 'numeric',
                                           month: 'short',
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
-                                  </p>
-                                </div>
+                                      </p>
+                                    </div>
                                     {!item.is_read && (
-                                  <Badge variant="default" className="text-xs flex-shrink-0">
-                                    New
-                                  </Badge>
-                                )}
-                              </div>
-
-                              {/* Badges */}
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                    {item.tag && (
-                                <Badge variant="secondary" className="text-xs">
-                                        {item.tag}
-                                </Badge>
+                                      <Badge variant="default" className="text-xs flex-shrink-0">
+                                        New
+                                      </Badge>
                                     )}
-                                {isGovernment && (
-                                  <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                    Free Forwarding
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                      }) : 'Unknown Date'}
-                                </span>
-                              </div>
+                                  </div>
 
-                              {/* Actions */}
+                                  {/* Badges */}
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    {item.tag && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {item.tag}
+                                      </Badge>
+                                    )}
+                                    {isGovernment && (
+                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                        Free Forwarding
+                                      </Badge>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      }) : 'Unknown Date'}
+                                    </span>
+                                  </div>
+
+                                  {/* Actions */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                     <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       Open
                                     </Button>
                                     <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download
-                                </Button>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                    </div>
                   </>
                 )}
               </CardContent>

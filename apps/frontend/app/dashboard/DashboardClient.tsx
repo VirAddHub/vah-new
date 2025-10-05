@@ -29,7 +29,23 @@ export default function DashboardClient() {
 
     const handleNavigate = (page: string) => {
         // Handle navigation to different pages
-        console.log('Navigate to:', page);
+        switch (page) {
+            case 'help':
+                router.push('/help');
+                break;
+            case 'dashboard-support':
+            case 'contact':
+                router.push('/contact');
+                break;
+            case 'dashboard-profile':
+                router.push('/settings/profile');
+                break;
+            case 'dashboard-settings':
+                router.push('/settings');
+                break;
+            default:
+                console.log('Navigate to:', page);
+        }
     };
 
     const handleGoBack = () => {
