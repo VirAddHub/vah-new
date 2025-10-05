@@ -282,8 +282,15 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         res.setHeader('Cache-Control', 'no-store, private');
         res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
 
-        // Use proxy mode if explicitly requested or if environment variable is set
-        const useProxy = mode === 'proxy' || process.env.DOWNLOAD_REDIRECT_MODE === 'proxy';
+        // Determine if client wants PDF inline
+        const wantsPdf =
+            (req.headers.accept || '').includes('application/pdf') ||
+            dispositionQ === 'inline';
+
+        // Prefer proxy when opening inline (avoids 302 to OneDrive across origins)
+        const useProxy = mode === 'proxy' || 
+                        process.env.DOWNLOAD_REDIRECT_MODE === 'proxy' ||
+                        (wantsPdf && !mode); // Default to proxy for inline PDFs
 
         if (!useProxy) {
             // Simple redirect path
