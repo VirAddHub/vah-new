@@ -217,11 +217,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Download utility functions
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
-  const authHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
   const extractFilename = (res: Response, fallback: string) => {
     const cd = res.headers.get('Content-Disposition') || '';
     const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
@@ -241,13 +236,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // --- real API first: /api/mail-items/:id/scan-url
   const downloadViaScanUrl = async (mailId: number | string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE}/api/mail-items/${mailId}/scan-url`, {
       method: 'GET',
       credentials: 'include',             // send cookies if auth is cookie-based
-      headers: {
-        ...authHeaders(),                 // send bearer if you have one
-        'Accept': 'application/json',
-      },
+      headers,
     });
     if (!res.ok) return false;
 
@@ -257,7 +253,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const fileRes = await fetch(data.url, {
       method: 'GET',
       credentials: 'include',
-      headers: { ...authHeaders() },
+      headers: headers,
     });
     if (!fileRes.ok) throw new Error('Failed to fetch file from signed URL');
 
@@ -267,10 +263,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // --- optional backend alias: /api/mail-items/:id/download (302 redirect or proxy)
   const downloadViaAlias = async (mailId: number | string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE}/api/mail-items/${mailId}/download`, {
       method: 'GET',
       credentials: 'include',
-      headers: { ...authHeaders() },
+      headers,
     });
     if (!res.ok) return false;
     await downloadBlob(res, `mail-${mailId}.pdf`);
@@ -280,10 +280,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // --- dev/test fallback only
   const downloadViaTest = async (mailId: number | string) => {
     const testFilename = `test_mail_${mailId}.pdf`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE}/api/test/download/${testFilename}`, {
       method: 'GET',
       credentials: 'include',
-      headers: { ...authHeaders() },
+      headers,
     });
     if (!res.ok) return false;
     await downloadBlob(res, `mail_scan_${mailId}.pdf`);
@@ -333,7 +337,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     );
   }
 
-  return (
+        return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -418,7 +422,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Mail Inbox Section */}
             <Card>
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-primary" />
                     <CardTitle>Mail Inbox</CardTitle>
@@ -430,7 +434,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="default" className="text-sm">
                         {selectedMail.length} selected
-                      </Badge>
+                </Badge>
                       <Button
                         size="sm"
                         variant="outline"
@@ -445,7 +449,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       </Button>
                     </div>
                   )}
-                </div>
+              </div>
               </CardHeader>
               <CardContent className="p-0">
 
@@ -462,7 +466,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     )}
                     {isAllSelected ? "Deselect All" : "Select All"}
                   </button>
-                </div>
+            </div>
 
                 {/* Select All - Mobile */}
                 <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
@@ -477,8 +481,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <CheckSquare className="h-4 w-4 mr-2 text-primary" />
                         Deselect All ({mockMailItems.length})
                       </>
-                    ) : (
-                      <>
+            ) : (
+              <>
                         <Square className="h-4 w-4 mr-2" />
                         Select All ({mockMailItems.length})
                       </>
@@ -524,9 +528,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     {isGovernment && (
                                       <Badge variant="outline" className="text-xs border-primary/50 text-primary">
                                         Free Forwarding
-                                      </Badge>
+                            </Badge>
                                     )}
-                                  </div>
+                          </div>
                                   <p className="text-sm text-muted-foreground truncate">
                                     {item.description}
                                   </p>
@@ -576,7 +580,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                     return (
                       <div
-                        key={item.id}
+                                key={item.id}
                         className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
                       >
                         <div className="space-y-3">
@@ -629,24 +633,24 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                               {/* Actions */}
                               <div className="grid grid-cols-2 gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
                                   className="w-full h-9"
                                   onClick={() => downloadSingle(item.id)}
-                                >
+                                    >
                                   <Download className="h-3 w-3 mr-1" />
                                   Download
-                                </Button>
+                                    </Button>
                                 <Button size="sm" variant="default" className="w-full h-9">
                                   <Truck className="h-3 w-3 mr-1" />
                                   Forward
-                                </Button>
-                              </div>
+                                    </Button>
+                                  </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
+                                          </div>
+                                          </div>
+                                        </div>
                     );
                   })}
                 </div>
@@ -659,10 +663,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <p className="text-sm text-muted-foreground">
                       Your mail will appear here when it arrives at your virtual address
                     </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                                        </div>
+                                      )}
+                  </CardContent>
+                </Card>
 
             {/* Free Forwarding Notice */}
             <Alert className="border-primary/30 bg-primary/5">
@@ -687,9 +691,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    <Button
+                <Button
                       size="default"
-                      variant="outline"
+                  variant="outline"
                       className="w-full h-10"
                       onClick={downloadSelected}
                     >
@@ -699,7 +703,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Button size="default" variant="default" className="w-full h-10">
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding ({selectedMail.length})
-                    </Button>
+                </Button>
                   </div>
 
                   {selectedHasGovernment && (
@@ -707,8 +711,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       ✓ Free forwarding available for HMRC/Companies House items
                     </p>
                   )}
-                </CardContent>
-              </Card>
+              </CardContent>
+            </Card>
             )}
 
             {/* Help Text */}
@@ -740,7 +744,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <p className="text-xs font-medium">{virtualAddress.city}</p>
                   <p className="text-xs font-medium">{virtualAddress.postcode}</p>
                   <p className="text-xs font-medium">{virtualAddress.country}</p>
-                </div>
+            </div>
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">
