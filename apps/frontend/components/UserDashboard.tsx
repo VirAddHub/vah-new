@@ -77,7 +77,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedMailDetail, setSelectedMailDetail] = useState<string | null>(null);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -180,11 +179,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       };
-      if (token) headers.Authorization = `Bearer ${token}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
         method: 'PATCH',
-        headers,
+      headers,
         body: JSON.stringify({ is_read: true })
       });
 
@@ -236,26 +235,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // Browser navigation so we follow 302 to signed URL without needing headers
     window.location.href = `${API_BASE}/api/mail-items/${item.id}/download`;
   }, []);
-
-  // Get proxy URL for iframe preview (same-origin, no CORS issues)
-  const getProxyUrl = useCallback((item: MailItem) => {
-    return `${API_BASE}/api/mail-items/${item.id}/download?mode=proxy&disposition=inline`;
-  }, []);
-
-  // Handle mail detail view with debouncing and auto-mark as read
-  const handleViewDetails = useCallback(async (item: MailItem) => {
-    // Debounce rapid clicks to avoid spamming scan-url
-    if (selectedMailDetail === String(item.id)) {
-      return; // Already viewing this item
-    }
-
-    // Auto-mark as read when viewing (if not already read)
-    if (!item.is_read) {
-      await markAsRead(item);
-    }
-
-    setSelectedMailDetail(String(item.id));
-  }, [selectedMailDetail, markAsRead]);
 
   // Get user name helper
   const getUserName = () => {
@@ -381,9 +360,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-primary" />
-                      <CardTitle>Mail Inbox</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <CardTitle>Mail Inbox</CardTitle>
                       <Badge variant="secondary">{totalItems} items</Badge>
                       {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
                     </div>
@@ -475,82 +454,82 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
                 ) : (
                   <>
-                    {/* Mail Items List - Desktop */}
-                    <div className="hidden sm:block">
-                      <div className="divide-y">
+                {/* Mail Items List - Desktop */}
+                <div className="hidden sm:block">
+                  <div className="divide-y">
                         {mailItems.map((item: MailItem) => {
                           const isSelected = selectedMail.includes(String(item.id));
                           const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                          return (
-                            <div
-                              key={item.id}
+                      return (
+                        <div
+                          key={item.id}
                               className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
-                                }`}
-                            >
-                              <div className="flex items-start gap-4">
-                                {/* Checkbox */}
-                                <button
+                            }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            {/* Checkbox */}
+                            <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleSelectMail(String(item.id));
                                   }}
-                                  className="mt-1 flex-shrink-0"
-                                >
-                                  {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
-                                  ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                                  )}
-                                </button>
+                              className="mt-1 flex-shrink-0"
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="h-5 w-5 text-primary" />
+                              ) : (
+                                <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                              )}
+                            </button>
 
                                 {/* Mail Info - Clickable */}
                                 <div
                                   className="flex-1 min-w-0 space-y-2 cursor-pointer group"
-                                  onClick={() => handleViewDetails(item)}
+                                  onClick={() => onOpen(item)}
                                 >
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-medium truncate group-hover:text-primary transition-colors">
                                           Inbox Item
                                         </h4>
                                         {!item.is_read && (
-                                          <Badge variant="default" className="text-xs">New</Badge>
-                                        )}
-                                        {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                            Free Forwarding
-                                          </Badge>
-                                        )}
+                                      <Badge variant="default" className="text-xs">New</Badge>
+                                    )}
+                                    {isGovernment && (
+                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                        Free Forwarding
+                                      </Badge>
+                                    )}
                                         <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
                                           <Eye className="h-3 w-3" />
                                           <span className="font-medium">View Details</span>
                                         </div>
-                                      </div>
+                                  </div>
                                       <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
                                         From: {item.sender_name || 'Unknown Sender'}
-                                      </p>
-                                    </div>
-                                    <div className="flex-shrink-0 text-right">
-                                      <p className="text-sm text-muted-foreground">
+                                  </p>
+                                </div>
+                                <div className="flex-shrink-0 text-right">
+                                  <p className="text-sm text-muted-foreground">
                                         {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                          day: 'numeric',
-                                          month: 'short',
-                                          year: 'numeric'
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
                                         }) : 'Unknown Date'}
-                                      </p>
+                                  </p>
                                       {item.tag && (
-                                        <Badge variant="secondary" className="mt-1 text-xs">
+                                  <Badge variant="secondary" className="mt-1 text-xs">
                                           {item.tag}
-                                        </Badge>
+                                  </Badge>
                                       )}
-                                    </div>
-                                  </div>
+                                </div>
+                              </div>
 
                                   {/* Action Buttons */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(item)}>
+                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       View Details
                                     </Button>
@@ -559,100 +538,96 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       Open
                                     </Button>
                                     <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
-                                      <Download className="h-3 w-3 mr-1" />
+                                  <Download className="h-3 w-3 mr-1" />
                                       Download
-                                    </Button>
-                                  </div>
-                                </div>
+                                </Button>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                    {/* Mail Items List - Mobile */}
-                    <div className="sm:hidden divide-y">
+                {/* Mail Items List - Mobile */}
+                <div className="sm:hidden divide-y">
                       {mailItems.map((item: MailItem) => {
                         const isSelected = selectedMail.includes(String(item.id));
                         const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                        return (
-                          <div
-                            key={item.id}
-                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
-                          >
-                            <div className="space-y-3">
-                              {/* Header with checkbox */}
-                              <div className="flex items-start gap-3">
-                                <button
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
+                      >
+                        <div className="space-y-3">
+                          {/* Header with checkbox */}
+                          <div className="flex items-start gap-3">
+                            <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleSelectMail(String(item.id));
                                   }}
-                                  className="mt-1 flex-shrink-0"
-                                >
-                                  {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
-                                  ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground" />
-                                  )}
-                                </button>
+                              className="mt-1 flex-shrink-0"
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="h-5 w-5 text-primary" />
+                              ) : (
+                                <Square className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </button>
 
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
-                                  onClick={() => handleViewDetails(item)}
+                                  onClick={() => onOpen(item)}
                                 >
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
                                       <h4 className="font-medium break-words mb-1">
                                         Inbox Item
                                       </h4>
-                                      <p className="text-sm text-muted-foreground break-words">
+                                  <p className="text-sm text-muted-foreground break-words">
                                         Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
                                           day: 'numeric',
                                           month: 'short',
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
-                                      </p>
-                                    </div>
+                                  </p>
+                                </div>
                                     {!item.is_read && (
-                                      <Badge variant="default" className="text-xs flex-shrink-0">
-                                        New
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  <Badge variant="default" className="text-xs flex-shrink-0">
+                                    New
+                                  </Badge>
+                                )}
+                              </div>
 
-                                  {/* Badges */}
-                                  <div className="flex flex-wrap gap-2 mb-3">
+                              {/* Badges */}
+                              <div className="flex flex-wrap gap-2 mb-3">
                                     {item.tag && (
-                                      <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs">
                                         {item.tag}
-                                      </Badge>
+                                </Badge>
                                     )}
-                                    {isGovernment && (
-                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                        Free Forwarding
-                                      </Badge>
-                                    )}
-                                    <span className="text-xs text-muted-foreground">
+                                {isGovernment && (
+                                  <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                    Free Forwarding
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground">
                                       {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
                                       }) : 'Unknown Date'}
-                                    </span>
-                                  </div>
+                                </span>
+                              </div>
 
-                                  {/* Actions */}
+                              {/* Actions */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => handleViewDetails(item)}>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       View Details
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
-                                      <FileCheck className="h-3 w-3 mr-1" />
-                                      Open
                                     </Button>
                                     <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
                                       <Download className="h-3 w-3 mr-1" />
@@ -660,12 +635,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     </Button>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                   </>
                 )}
               </CardContent>
@@ -755,118 +730,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         </div>
       </main>
 
-      {/* Mail Detail Modal - Simple PDF Preview Only */}
-      {selectedMailDetail && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg max-w-6xl max-h-[95vh] w-full flex flex-col">
-            <MailDetailDialog
-              mailItem={mailItems.find((item: MailItem) => String(item.id) === selectedMailDetail)}
-              onClose={() => setSelectedMailDetail(null)}
-              onOpen={onOpen}
-              onDownload={onDownload}
-              getProxyUrl={getProxyUrl}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Mail Detail Dialog Component
-function MailDetailDialog({
-  mailItem,
-  onClose,
-  onOpen,
-  onDownload,
-  getProxyUrl
-}: {
-  mailItem: MailItem | undefined;
-  onClose: () => void;
-  onOpen: (item: MailItem) => void;
-  onDownload: (item: MailItem) => void;
-  getProxyUrl: (item: MailItem) => string;
-}) {
-  const [proxyUrl, setProxyUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (mailItem) {
-      setLoading(true);
-      // Use proxy URL directly - no need to fetch scan-url for iframe
-      const url = getProxyUrl(mailItem);
-      setProxyUrl(url);
-      setLoading(false);
-    }
-  }, [mailItem, getProxyUrl]);
-
-  if (!mailItem) return null;
-
-  const isGovernment = mailItem.tag === "HMRC" || mailItem.tag === "COMPANIES HOUSE";
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <Eye className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Inbox Item</h2>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => onOpen(mailItem)}>
-            <FileCheck className="h-4 w-4 mr-2" />
-            Open in New Tab
-          </Button>
-          <div className="flex-1 sm:flex-none flex items-center gap-2">
-            <Button className="flex-1 sm:flex-none" onClick={() => onDownload(mailItem)}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Badge variant="outline" className="flex-shrink-0">
-              {isGovernment ? "Free" : "£2.50"}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* PDF Viewer - Full Height */}
-      <div className="flex-1 bg-muted/20 p-4 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading document...</p>
-            </div>
-          </div>
-        ) : proxyUrl ? (
-          <iframe
-            src={proxyUrl}
-            className="w-full h-full border-0 rounded bg-white"
-            title={`inbox-item-${mailItem.id}`}
-            style={{ width: '100%', height: '100%', border: 0 }}
-            referrerPolicy="no-referrer"
-            allow="fullscreen"
-            loading="eager"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <AlertCircle className="h-8 w-8 mx-auto mb-4 text-destructive" />
-              <p className="text-muted-foreground">Unable to load document preview</p>
-              <Button variant="outline" className="mt-4" onClick={() => onOpen(mailItem)}>
-                Open in New Tab
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
