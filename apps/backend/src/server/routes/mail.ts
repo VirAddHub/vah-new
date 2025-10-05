@@ -24,8 +24,8 @@ async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean =
             m.id,
             m.user_id,
             -- Check file table first, then webhook columns on the mail_item row
-            COALESCE(f.public_url, f.web_url, m.scan_file_url, m.file_url) AS url,
-            COALESCE(f.file_name, m.file_name, m.subject) AS filename
+            COALESCE(f.web_url, m.scan_file_url, m.file_url) AS url,
+            COALESCE(f.name, m.subject) AS filename
         FROM mail_item m
         LEFT JOIN file f ON f.id = m.file_id
         WHERE ${where}
