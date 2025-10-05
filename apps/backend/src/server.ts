@@ -390,6 +390,11 @@ async function start() {
     app.use('/api/contact', contactRouter);
     logger.info('[mount] /api/contact mounted');
 
+    // Test download routes (for testing file downloads)
+    const testDownloadsRouter = require(path.join(routesDir, 'test-downloads'));
+    app.use('/api/test', testDownloadsRouter);
+    logger.info('[mount] /api/test (downloads) mounted');
+
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
         app.use(devRouter);
