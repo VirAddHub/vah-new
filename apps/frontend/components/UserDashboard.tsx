@@ -28,7 +28,6 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 // import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
-import { openProtectedPdf } from '../lib/openProtectedPdf';
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -199,19 +198,36 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [refreshMail]);
 
-  // Open handler - uses openProtectedPdf utility for reliable PDF viewing
+  // Open handler - calls scan-url API and opens in new tab, also marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
-      const downloadUrl = `${API_BASE}/api/mail-items/${item.id}/download`;
-      await openProtectedPdf(downloadUrl);
+      const token = getToken();
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
+        headers
+      });
       
-      // Auto-mark as read when opened (if not already read)
-      if (!item.is_read) {
-        await markAsRead(item);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const json = await res.json();
+      if (json?.ok && json?.url) {
+        window.open(json.url, '_blank');
+        
+        // Auto-mark as read when opened (if not already read)
+        if (!item.is_read) {
+          await markAsRead(item);
+        }
+      } else {
+        console.error('scan-url failed', json);
+        alert('Unable to open file for this item.');
       }
     } catch (e) {
-      console.error('Error opening PDF:', e);
-      alert('Unable to open PDF. Please check if popups are allowed for this site.');
+      console.error('Error opening file:', e);
+      alert('Unable to open file for this item.');
     }
   }, [markAsRead]);
 
