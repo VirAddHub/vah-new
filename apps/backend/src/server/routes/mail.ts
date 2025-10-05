@@ -180,8 +180,8 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
                 m.id,
                 m.user_id,
                 m.expires_at,
-                f.web_url,
-                f.name,
+                COALESCE(f.web_url, m.scan_file_url) as web_url,
+                COALESCE(f.name, m.subject) as name,
                 f.item_id
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
@@ -258,8 +258,8 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
                 m.id,
                 m.user_id,
                 m.expires_at,
-                f.web_url,
-                f.name,
+                COALESCE(f.web_url, m.scan_file_url) as web_url,
+                COALESCE(f.name, m.subject) as name,
                 f.item_id
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
