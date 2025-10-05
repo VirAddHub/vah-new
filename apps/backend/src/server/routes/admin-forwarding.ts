@@ -20,6 +20,29 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
     const offsetNum = page ? (pageNum - 1) * limitNum : parseInt(offset as string) || 0;
 
     try {
+        // Check if forwarding_request table exists, if not return empty list
+        const tableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'forwarding_request'
+            );
+        `);
+
+        if (!tableCheck.rows[0].exists) {
+            console.warn('[GET /api/admin/forwarding/requests] forwarding_request table does not exist, returning empty list');
+            return res.json({
+                ok: true,
+                items: [],
+                pagination: {
+                    page: pageNum,
+                    pageSize: limitNum,
+                    total: 0,
+                    totalPages: 0
+                }
+            });
+        }
+
         let query = `
             SELECT
                 m.id,
@@ -132,6 +155,22 @@ router.get('/forwarding/requests', requireAdmin, async (req: Request, res: Respo
         });
     } catch (error: any) {
         console.error('[GET /api/admin/forwarding-requests] error:', error);
+
+        // Handle specific database errors gracefully
+        if (error.code === '42P01') { // relation does not exist
+            console.warn('[GET /api/admin/forwarding/requests] Table does not exist, returning empty list');
+            return res.json({
+                ok: true,
+                items: [],
+                pagination: {
+                    page: pageNum,
+                    pageSize: limitNum,
+                    total: 0,
+                    totalPages: 0
+                }
+            });
+        }
+
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });

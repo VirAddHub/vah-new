@@ -10,7 +10,7 @@ const router = Router();
 /** Resolve a downloadable URL for a mail item, regardless of source */
 async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean = false) {
     const pool = getPool();
-    
+
     // Authorization: owner or admin
     const params: any[] = [mailId];
     let where = `m.id = $1`;
@@ -24,7 +24,7 @@ async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean =
             m.id,
             m.user_id,
             -- Check file table first, then webhook columns on the mail_item row
-            COALESCE(f.web_url, m.scan_file_url, m.file_url) AS url,
+            COALESCE(f.web_url, m.scan_file_url) AS url,
             COALESCE(f.name, m.subject) AS filename
         FROM mail_item m
         LEFT JOIN file f ON f.id = m.file_id
@@ -210,7 +210,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
         const { id } = req.params;
         const userId = req.user!.id;
         const isAdmin = req.user!.is_admin || false;
-        
+
         const result = await resolveScanUrl(id, userId.toString(), isAdmin);
         if (!result.ok) {
             return res.status(result.error === 'not_found' ? 404 : 400).json(result);
@@ -218,7 +218,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
 
         // no-store so the signed/temporary URLs aren't cached
         res.setHeader('Cache-Control', 'no-store, private');
-        
+
         // Record download in downloads table (optional - table may not exist yet)
         try {
             const pool = getPool();
@@ -265,7 +265,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         const { id } = req.params;
         const userId = req.user!.id;
         const isAdmin = req.user!.is_admin || false;
-        
+
         const result = await resolveScanUrl(id, userId.toString(), isAdmin);
         if (!result.ok) {
             return res.status(result.error === 'not_found' ? 404 : 400).json(result);
