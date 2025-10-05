@@ -385,6 +385,14 @@ router.post("/login", async (req, res) => {
 // --- LOGOUT ---
 router.post("/logout", (req, res) => {
     try {
+        // Clear the HttpOnly cookie
+        res.clearCookie('vah_session', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
+        
         res.json({ ok: true, message: "Logged out successfully" });
     } catch (error) {
         console.error('[auth/logout] Error:', error);
