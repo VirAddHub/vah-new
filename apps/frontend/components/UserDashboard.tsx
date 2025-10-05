@@ -609,10 +609,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         Inbox Item
                                       </h4>
                                       <p className="text-sm text-muted-foreground break-words">
-                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', { 
-                                          day: 'numeric', 
-                                          month: 'short', 
-                                          year: 'numeric' 
+                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric'
                                         }) : 'Unknown Date'}
                                       </p>
                                     </div>

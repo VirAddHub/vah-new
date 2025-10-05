@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
+import { sendMailScanned } from '../../lib/mailer';
 
 const router = Router();
 
@@ -371,6 +372,20 @@ router.post('/', async (req: any, res) => {
 
             const mailItem = result.rows[0];
 
+            // Send email notification to user about new mail
+            try {
+              await sendMailScanned({
+                email: user.email,
+                name: user.first_name,
+                subject: `New mail received - ${tag}`,
+                cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
+              });
+              console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+            } catch (emailError) {
+              console.error('[OneDrive Webhook] Failed to send email notification:', emailError);
+              // Don't fail the webhook if email fails
+            }
+
             // Log webhook event
             await pool.query(
               `INSERT INTO webhook_log (source, provider, event_type, payload_json, created_at, received_at_ms)
@@ -513,6 +528,20 @@ router.post('/', async (req: any, res) => {
       tag: tag,
       receivedDate: new Date(receivedAtMs).toISOString().split('T')[0]
     });
+
+    // Send email notification to user about new mail
+    try {
+      await sendMailScanned({
+        email: user.email,
+        name: user.first_name,
+        subject: `New mail received - ${tag}`,
+        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
+      });
+      console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+    } catch (emailError) {
+      console.error('[OneDrive Webhook] Failed to send email notification:', emailError);
+      // Don't fail the webhook if email fails
+    }
 
     // Log webhook event
     await pool.query(
