@@ -1,6 +1,6 @@
 const express = require('express');
-const { requireAuth } = require('../middleware/auth');
-const { getPool } = require('../server/db');
+const { requireAuth } = require('../src/lib/authz');
+const { getPool } = require('../src/server/db');
 
 const router = express.Router();
 
@@ -53,15 +53,15 @@ router.get('/mail-items/:id/download', requireAuth, async (req, res) => {
                 FROM file f
                 WHERE f.item_id = $7
             `, [
-                userId, 
-                mail.web_url, 
-                Date.now() + 3600000, 
-                Date.now(), 
+                userId,
+                mail.web_url,
+                Date.now() + 3600000,
+                Date.now(),
                 req.ip || req.headers['x-forwarded-for'] || 'unknown',
                 req.headers['user-agent'] || 'unknown',
                 mail.item_id
             ]);
-            
+
             // Log successful download for audit
             console.log(`[DOWNLOAD AUDIT] user_id=${userId}, mail_item_id=${mailId}, action=download, ip=${req.ip || 'unknown'}`);
         } catch (downloadError) {
@@ -91,7 +91,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req, res) => {
             const contentType = fileResponse.headers.get('content-type') || 'application/pdf';
             const contentLength = fileResponse.headers.get('content-length');
             const filename = mail.name || `mail_scan_${mailId}.pdf`;
-            
+
             // Sanitize filename for safe download
             const safeFilename = filename.replace(/[^\w\-_\.]/g, '_');
 
