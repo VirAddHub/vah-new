@@ -7,7 +7,7 @@ import { selectPaged } from '../db-helpers';
 
 const router = Router();
 
-/** Resolve a downloadable URL for a mail item, regardless of source */
+/** Resolve a downloadable URL for a mail item, regardless of source - Fixed SQL query */
 async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean = false) {
     const pool = getPool();
 
