@@ -395,6 +395,11 @@ async function start() {
     app.use('/api/test', testDownloadsRouter);
     logger.info('[mount] /api/test (downloads) mounted');
 
+    // Mail download alias routes
+    const mailDownloadRouter = require(path.join(routesDir, 'mail-download'));
+    app.use('/api', mailDownloadRouter);
+    logger.info('[mount] /api (mail-download alias) mounted');
+
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
         app.use(devRouter);
