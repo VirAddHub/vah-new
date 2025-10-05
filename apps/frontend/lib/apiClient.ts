@@ -154,7 +154,8 @@ export const mailApi = {
         try {
             const data = await get('/api/mail-items');
             if (!data.ok) return data as ApiResponse<MailItem[]>;
-            const items = Array.isArray(data.data ?? data) ? (data.data ?? data) : [];
+            // Backend returns: { ok: true, items: [...], total: 123, page: 1, pageSize: 20 }
+            const items = Array.isArray((data as any).items) ? (data as any).items : [];
             return ok(items.map(mapMailItem));
         } catch (e: any) {
             return err(e?.message ?? 'Failed to load mail', e?.status);
@@ -165,6 +166,7 @@ export const mailApi = {
         try {
             const data = await get(`/api/mail-items/${id}`);
             if (!data.ok) return data as ApiResponse<MailItemDetails>;
+            // Backend returns: { ok: true, data: {...} }
             const obj = data.data ?? data;
             return ok(mapMailDetails(obj));
         } catch (e: any) {
@@ -256,7 +258,7 @@ const userDomain = {
 
     getProfile: () => get<{ user: User }>('/api/profile'),
 
-    getMailItems: () => get<{ items: MailItem[] }>('/api/mail-items'),
+    getMailItems: () => get<{ items: MailItem[]; total: number; page: number; pageSize: number }>('/api/mail-items'),
 
     getMailItem: (id: string) => get<{ description?: string }>(`/api/mail-items/${id}`),
 
