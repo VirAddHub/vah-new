@@ -50,7 +50,7 @@ const fetcher = (url: string) => {
   const headers: Record<string, string> = { 'Accept': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  return fetch(`${API_BASE}${url}`, { 
+  return fetch(`${API_BASE}${url}`, {
     headers,
     credentials: 'include'
   }).then(r => {
@@ -83,7 +83,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
     '/api/mail-items',
     fetcher,
-    { 
+    {
       refreshInterval: 15000, // Poll every 15 seconds
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
@@ -182,11 +182,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
         headers
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      
+
       const json = await res.json();
       if (json?.ok && json?.url) {
         window.open(json.url, '_blank');
@@ -206,37 +206,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     window.location.href = `${API_BASE}/api/mail-items/${item.id}/download`;
   }, []);
 
-  // Get scan URL for dialog preview
-  const getScanUrl = useCallback(async (item: MailItem) => {
-    try {
-      const token = getToken();
-      const headers: Record<string, string> = { 'Accept': 'application/json' };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
-        headers
-      });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      
-      const json = await res.json();
-      if (json?.ok && json?.url) {
-        return json.url;
-      } else {
-        throw new Error('No scan URL available');
-      }
-    } catch (e) {
-      console.error('Error getting scan URL:', e);
-      return null;
-    }
+  // Get proxy URL for iframe preview (same-origin, no CORS issues)
+  const getProxyUrl = useCallback((item: MailItem) => {
+    return `${API_BASE}/api/mail-items/${item.id}/download?mode=proxy&disposition=inline`;
   }, []);
 
-  // Handle mail detail view
+  // Handle mail detail view with debouncing
   const handleViewDetails = useCallback(async (item: MailItem) => {
+    // Debounce rapid clicks to avoid spamming scan-url
+    if (selectedMailDetail === String(item.id)) {
+      return; // Already viewing this item
+    }
     setSelectedMailDetail(String(item.id));
-  }, []);
+  }, [selectedMailDetail]);
 
   // Get user name helper
   const getUserName = () => {
@@ -263,9 +245,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   const handleRequestForwarding = () => {
     if (selectedMail.length > 0) {
-      onNavigate('dashboard-forwarding-confirm', { 
+      onNavigate('dashboard-forwarding-confirm', {
         selectedMailIds: selectedMail,
-        allMailItems: mailItems 
+        allMailItems: mailItems
       });
     }
   };
@@ -291,7 +273,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <span className="hidden sm:inline-block text-muted-foreground">|</span>
             <span className="hidden sm:inline-block font-medium">Dashboard</span>
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')}>
@@ -310,9 +292,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           </nav>
 
           {/* Mobile Menu Toggle */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
@@ -344,7 +326,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        
+
         {/* Welcome Message */}
         <div className="mb-8">
           <h1 className="mb-2">Welcome back, {getUserName()}</h1>
@@ -353,7 +335,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         {/* Two Column Layout: Main content + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-          
+
           {/* Left Column - Main Content */}
           <div className="space-y-6">
 
@@ -372,7 +354,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       Click on any mail item to view full details and scans
                     </p>
                   </div>
-                  
+
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -392,7 +374,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                
+
                 {/* Select All - Desktop */}
                 <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
                   <button
@@ -462,13 +444,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         {mailItems.map((item: MailItem) => {
                           const isSelected = selectedMail.includes(String(item.id));
                           const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
-                          
+
                           return (
                             <div
                               key={item.id}
-                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${
-                                isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
-                              }`}
+                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
+                                }`}
                             >
                               <div className="flex items-start gap-4">
                                 {/* Checkbox */}
@@ -487,7 +468,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 </button>
 
                                 {/* Mail Info - Clickable */}
-                                <div 
+                                <div
                                   className="flex-1 min-w-0 space-y-2 cursor-pointer group"
                                   onClick={() => handleViewDetails(item)}
                                 >
@@ -558,7 +539,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       {mailItems.map((item: MailItem) => {
                         const isSelected = selectedMail.includes(String(item.id));
                         const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
-                        
+
                         return (
                           <div
                             key={item.id}
@@ -580,8 +561,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <Square className="h-5 w-5 text-muted-foreground" />
                                   )}
                                 </button>
-                                
-                                <div 
+
+                                <div
                                   className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
                                   onClick={() => handleViewDetails(item)}
                                 >
@@ -600,7 +581,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       </Badge>
                                     )}
                                   </div>
-                                  
+
                                   {/* Badges */}
                                   <div className="flex flex-wrap gap-2 mb-3">
                                     {item.tag && (
@@ -670,7 +651,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       Clear
                     </Button>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 gap-2">
                     <Button size="default" variant="outline" className="w-full h-10">
                       <Download className="h-4 w-4 mr-2" />
@@ -742,7 +723,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               onClose={() => setSelectedMailDetail(null)}
               onOpen={onOpen}
               onDownload={onDownload}
-              getScanUrl={getScanUrl}
+              getProxyUrl={getProxyUrl}
             />
           </div>
         </div>
@@ -757,26 +738,26 @@ function MailDetailDialog({
   onClose, 
   onOpen, 
   onDownload, 
-  getScanUrl 
+  getProxyUrl 
 }: { 
   mailItem: MailItem | undefined;
   onClose: () => void;
   onOpen: (item: MailItem) => void;
   onDownload: (item: MailItem) => void;
-  getScanUrl: (item: MailItem) => Promise<string | null>;
+  getProxyUrl: (item: MailItem) => string;
 }) {
-  const [scanUrl, setScanUrl] = useState<string | null>(null);
+  const [proxyUrl, setProxyUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (mailItem) {
       setLoading(true);
-      getScanUrl(mailItem).then(url => {
-        setScanUrl(url);
-        setLoading(false);
-      });
+      // Use proxy URL directly - no need to fetch scan-url for iframe
+      const url = getProxyUrl(mailItem);
+      setProxyUrl(url);
+      setLoading(false);
     }
-  }, [mailItem, getScanUrl]);
+  }, [mailItem, getProxyUrl]);
 
   if (!mailItem) return null;
 
@@ -795,7 +776,7 @@ function MailDetailDialog({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => onOpen(mailItem)}>
@@ -823,11 +804,12 @@ function MailDetailDialog({
               <p className="text-muted-foreground">Loading document...</p>
             </div>
           </div>
-        ) : scanUrl ? (
+        ) : proxyUrl ? (
           <iframe
-            src={scanUrl}
+            src={proxyUrl}
             className="w-full h-full border-0 rounded bg-white"
-            title="Mail Scan Preview"
+            title={mailItem.subject || `mail-${mailItem.id}`}
+            style={{ width: '100%', height: '100%', border: 0 }}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

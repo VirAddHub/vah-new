@@ -259,12 +259,20 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
 /**
  * GET /api/mail-items/:id/download
  * Download alias - redirects to signed URL or proxies the file
+ * Query params:
+ * - mode=proxy: Stream file through server (for iframe embedding)
+ * - disposition=inline: Set Content-Disposition to inline (default: attachment)
  */
 router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const userId = req.user!.id;
         const isAdmin = req.user!.is_admin || false;
+        
+        // Parse query parameters
+        const mode = String(req.query.mode || '');
+        const dispositionQ = String(req.query.disposition || '');
+        const disposition = dispositionQ === 'inline' ? 'inline' : 'attachment';
 
         const result = await resolveScanUrl(id, userId.toString(), isAdmin);
         if (!result.ok) {
@@ -274,9 +282,11 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         res.setHeader('Cache-Control', 'no-store, private');
         res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
 
-        const mode = process.env.DOWNLOAD_REDIRECT_MODE ?? 'redirect';
-        if (mode === 'redirect') {
-            // Simple, fast path
+        // Use proxy mode if explicitly requested or if environment variable is set
+        const useProxy = mode === 'proxy' || process.env.DOWNLOAD_REDIRECT_MODE === 'proxy';
+        
+        if (!useProxy) {
+            // Simple redirect path
             res.setHeader(
                 'Content-Disposition',
                 `attachment; filename="${result.filename.replace(/"/g, '')}"`
@@ -284,7 +294,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             return res.redirect(302, result.url);
         }
 
-        // Proxy mode (optional): stream bytes through your server
+        // Proxy mode: stream bytes through server for iframe embedding
         try {
             const fetch = (await import('node-fetch')).default;
             const fileResponse = await fetch(result.url, {
@@ -304,12 +314,19 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             const filename = result.filename;
 
             // Sanitize filename for safe download
-            const safeFilename = filename.replace(/[^\w\-_\.]/g, '_');
+            const safeFilename = makeSafeFilename(filename);
 
             res.setHeader('Content-Type', contentType);
-            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(safeFilename)}`);
+            res.setHeader('Content-Disposition', `${disposition}; filename="${safeFilename}"`);
             res.setHeader('Cache-Control', 'no-store, private');
             res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+            
+            // Add CSP headers for iframe embedding
+            res.setHeader(
+                'Content-Security-Policy',
+                `default-src 'none'; frame-ancestors 'self' https://vah-new-frontend-*.vercel.app;`
+            );
+            res.setHeader('X-Frame-Options', 'ALLOWALL');
             if (contentLength) {
                 res.setHeader('Content-Length', contentLength);
             }
@@ -327,5 +344,12 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 });
+
+/**
+ * Helper function to make safe filenames for Content-Disposition headers
+ */
+function makeSafeFilename(name: string): string {
+    return name.replace(/[^\w.\- ]+/g, '_').slice(0, 140);
+}
 
 export default router;
