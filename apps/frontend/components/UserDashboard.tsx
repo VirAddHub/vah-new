@@ -208,15 +208,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
         headers
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      
+
       const json = await res.json();
       if (json?.ok && json?.url) {
         window.open(json.url, '_blank');
-        
+
         // Auto-mark as read when opened (if not already read)
         if (!item.is_read) {
           await markAsRead(item);
@@ -513,7 +513,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-medium truncate group-hover:text-primary transition-colors">
-                                          {item.subject || 'Untitled Document'}
+                                          Inbox Item
                                         </h4>
                                         {!item.is_read && (
                                           <Badge variant="default" className="text-xs">New</Badge>
@@ -606,10 +606,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex-1 min-w-0">
                                       <h4 className="font-medium break-words mb-1">
-                                        {item.subject || 'Untitled Document'}
+                                        Inbox Item
                                       </h4>
                                       <p className="text-sm text-muted-foreground break-words">
-                                        From: {item.sender_name || 'Unknown Sender'}
+                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', { 
+                                          day: 'numeric', 
+                                          month: 'short', 
+                                          year: 'numeric' 
+                                        }) : 'Unknown Date'}
                                       </p>
                                     </div>
                                     {!item.is_read && (
@@ -807,7 +811,7 @@ function MailDetailDialog({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <Eye className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">{mailItem.subject || 'Untitled Document'}</h2>
+            <h2 className="text-xl font-semibold">Inbox Item</h2>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -845,7 +849,7 @@ function MailDetailDialog({
           <iframe
             src={proxyUrl}
             className="w-full h-full border-0 rounded bg-white"
-            title={mailItem.subject || `mail-${mailItem.id}`}
+            title={`inbox-item-${mailItem.id}`}
             style={{ width: '100%', height: '100%', border: 0 }}
             referrerPolicy="no-referrer"
             allow="fullscreen"
