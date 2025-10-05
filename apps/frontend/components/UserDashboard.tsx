@@ -16,6 +16,9 @@ import {
   Settings,
   Menu,
   X,
+  Eye,
+  Calendar,
+  ArrowLeft,
   RefreshCw
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
@@ -23,11 +26,12 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 
 interface UserDashboardProps {
   onLogout: () => void;
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, data?: any) => void;
   onGoBack?: () => void;
 }
 
@@ -72,7 +76,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedMailDetail, setSelectedMailDetail] = useState<string | null>(null);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -159,6 +164,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   const isAllSelected = selectedMail.length === mailItems.length && mailItems.length > 0;
+  const isSomeSelected = selectedMail.length > 0;
+
+  // Check if selected items include HMRC or Companies House
+  const selectedHasGovernment = selectedMail.some(id => {
+    const item = mailItems.find((m: MailItem) => String(m.id) === id);
+    return item?.tag === "HMRC" || item?.tag === "COMPANIES HOUSE";
+  });
 
   // Open handler - calls scan-url API and opens in new tab
   const onOpen = useCallback(async (item: MailItem) => {
@@ -194,6 +206,38 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     window.location.href = `${API_BASE}/api/mail-items/${item.id}/download`;
   }, []);
 
+  // Get scan URL for dialog preview
+  const getScanUrl = useCallback(async (item: MailItem) => {
+    try {
+      const token = getToken();
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
+        headers
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const json = await res.json();
+      if (json?.ok && json?.url) {
+        return json.url;
+      } else {
+        throw new Error('No scan URL available');
+      }
+    } catch (e) {
+      console.error('Error getting scan URL:', e);
+      return null;
+    }
+  }, []);
+
+  // Handle mail detail view
+  const handleViewDetails = useCallback(async (item: MailItem) => {
+    setSelectedMailDetail(String(item.id));
+  }, []);
+
   // Get user name helper
   const getUserName = () => {
     if (userProfile?.first_name && userProfile?.last_name) {
@@ -206,6 +250,24 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return userProfile.email.split('@')[0];
     }
     return "User"; // Final fallback
+  };
+
+  // Mock virtual address (you can replace this with real data)
+  const virtualAddress = {
+    line1: "71-75 Shelton Street",
+    line2: "Covent Garden",
+    city: "London",
+    postcode: "WC2H 9JQ",
+    country: "United Kingdom"
+  };
+
+  const handleRequestForwarding = () => {
+    if (selectedMail.length > 0) {
+      onNavigate('dashboard-forwarding-confirm', { 
+        selectedMailIds: selectedMail,
+        allMailItems: mailItems 
+      });
+    }
   };
 
   if (loading) {
@@ -222,206 +284,563 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <VAHLogo className="h-8 w-8" />
-              <div>
-                <h1 className="text-xl font-semibold">Virtual Address Hub</h1>
-                <p className="text-sm text-muted-foreground">Welcome back, {getUserName()}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refreshMail()}
-                disabled={mailLoading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${mailLoading ? 'animate-spin' : ''}`} />
-                Refresh
+      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="container mx-auto px-4 flex h-16 items-center justify-between">
+          <div className="flex items-center gap-6">
+            <VAHLogo className="h-8 w-8" />
+            <span className="hidden sm:inline-block text-muted-foreground">|</span>
+            <span className="hidden sm:inline-block font-medium">Dashboard</span>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')}>
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')}>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+            <Separator orientation="vertical" className="h-6" />
+            <Button variant="ghost" size="sm" onClick={onLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </nav>
+
+          {/* Mobile Menu Toggle */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t bg-card">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')} className="justify-start">
+                <User className="h-4 w-4 mr-2" />
+                Profile
               </Button>
-              
-              <Button variant="outline" size="sm" onClick={onLogout}>
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')} className="justify-start">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              <Separator className="my-2" />
+              <Button variant="ghost" size="sm" onClick={onLogout} className="justify-start">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
-            </div>
+            </nav>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Mail Items</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalItems}</div>
-              <p className="text-xs text-muted-foreground">
-                {mailItems.filter((item: MailItem) => !item.is_read).length} unread
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent Items</CardTitle>
-              <FileCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mailItems.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Last 24 hours
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Forwarding Requests</CardTitle>
-              <Truck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                Pending requests
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Account Status</CardTitle>
-              <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Active</div>
-              <p className="text-xs text-muted-foreground">
-                All services enabled
-              </p>
-            </CardContent>
-          </Card>
+        
+        {/* Welcome Message */}
+        <div className="mb-8">
+          <h1 className="mb-2">Welcome back, {getUserName()}</h1>
+          <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
-        {/* Mail Items Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Mail className="h-5 w-5 mr-2" />
-                Mail Items
-                {mailLoading && <RefreshCw className="h-4 w-4 ml-2 animate-spin" />}
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectAll}
-                  disabled={mailItems.length === 0}
-                >
-                  {isAllSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-                  {isAllSelected ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {mailError ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Failed to load mail items: {mailError.message}
-                </AlertDescription>
-              </Alert>
-            ) : mailItems.length === 0 ? (
-              <div className="text-center py-8">
-                <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No mail items found</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  New mail will appear here automatically
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {mailItems.map((item: MailItem) => (
-                  <div
-                    key={item.id}
-                    className={`border rounded-lg p-4 hover:bg-muted/50 transition-colors ${
-                      selectedMail.includes(String(item.id)) ? 'bg-muted' : ''
-                    }`}
+        {/* Two Column Layout: Main content + Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+          
+          {/* Left Column - Main Content */}
+          <div className="space-y-6">
+
+            {/* Mail Inbox Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <CardTitle>Mail Inbox</CardTitle>
+                      <Badge variant="secondary">{totalItems} items</Badge>
+                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground hidden sm:block">
+                      Click on any mail item to view full details and scans
+                    </p>
+                  </div>
+                  
+                  {/* Bulk Actions - Show when items selected */}
+                  {isSomeSelected && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="default" className="text-sm">
+                        {selectedMail.length} selected
+                      </Badge>
+                      <Button size="sm" variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Selected
+                      </Button>
+                      <Button size="sm" variant="default" onClick={handleRequestForwarding}>
+                        <Truck className="h-4 w-4 mr-2" />
+                        Request Forwarding
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                
+                {/* Select All - Desktop */}
+                <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                    disabled={mailItems.length === 0}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleSelectMail(String(item.id))}
-                        >
-                          {selectedMail.includes(String(item.id)) ? (
-                            <CheckSquare className="h-4 w-4" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )}
-                        </Button>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-medium">
-                              {item.subject || 'Untitled Document'}
-                            </h3>
-                            {!item.is_read && (
-                              <Badge variant="secondary" className="text-xs">
-                                New
-                              </Badge>
-                            )}
-                            {item.tag && (
-                              <Badge variant="outline" className="text-xs">
-                                {item.tag}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            From: {item.sender_name || 'Unknown Sender'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Received: {item.received_date || 'Unknown Date'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onOpen(item)}
-                        >
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Open
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDownload(item)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
+                    {isAllSelected ? (
+                      <CheckSquare className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                    {isAllSelected ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
+
+                {/* Select All - Mobile */}
+                <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectAll}
+                    className="w-full"
+                    disabled={mailItems.length === 0}
+                  >
+                    {isAllSelected ? (
+                      <>
+                        <CheckSquare className="h-4 w-4 mr-2 text-primary" />
+                        Deselect All ({mailItems.length})
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-4 w-4 mr-2" />
+                        Select All ({mailItems.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Error State */}
+                {mailError ? (
+                  <div className="px-6 py-12 text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                    <h3 className="font-medium mb-2">Failed to load mail</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {mailError.message}
+                    </p>
+                    <Button onClick={() => refreshMail()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </Button>
+                  </div>
+                ) : mailItems.length === 0 ? (
+                  /* Empty State */
+                  <div className="px-6 py-12 text-center">
+                    <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="font-medium mb-2">No mail yet</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your mail will appear here when it arrives at your virtual address
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Mail Items List - Desktop */}
+                    <div className="hidden sm:block">
+                      <div className="divide-y">
+                        {mailItems.map((item: MailItem) => {
+                          const isSelected = selectedMail.includes(String(item.id));
+                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+                          
+                          return (
+                            <div
+                              key={item.id}
+                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${
+                                isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
+                              }`}
+                            >
+                              <div className="flex items-start gap-4">
+                                {/* Checkbox */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectMail(String(item.id));
+                                  }}
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                                  )}
+                                </button>
+
+                                {/* Mail Info - Clickable */}
+                                <div 
+                                  className="flex-1 min-w-0 space-y-2 cursor-pointer group"
+                                  onClick={() => handleViewDetails(item)}
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium truncate group-hover:text-primary transition-colors">
+                                          {item.subject || 'Untitled Document'}
+                                        </h4>
+                                        {!item.is_read && (
+                                          <Badge variant="default" className="text-xs">New</Badge>
+                                        )}
+                                        {isGovernment && (
+                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                            Free Forwarding
+                                          </Badge>
+                                        )}
+                                        <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
+                                          <Eye className="h-3 w-3" />
+                                          <span className="font-medium">View Details</span>
+                                        </div>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                                        From: {item.sender_name || 'Unknown Sender'}
+                                      </p>
+                                    </div>
+                                    <div className="flex-shrink-0 text-right">
+                                      <p className="text-sm text-muted-foreground">
+                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric'
+                                        }) : 'Unknown Date'}
+                                      </p>
+                                      {item.tag && (
+                                        <Badge variant="secondary" className="mt-1 text-xs">
+                                          {item.tag}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(item)}>
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View Details
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
+                                      <FileCheck className="h-3 w-3 mr-1" />
+                                      Open
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
+
+                    {/* Mail Items List - Mobile */}
+                    <div className="sm:hidden divide-y">
+                      {mailItems.map((item: MailItem) => {
+                        const isSelected = selectedMail.includes(String(item.id));
+                        const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+                        
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
+                          >
+                            <div className="space-y-3">
+                              {/* Header with checkbox */}
+                              <div className="flex items-start gap-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectMail(String(item.id));
+                                  }}
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+                                
+                                <div 
+                                  className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+                                  onClick={() => handleViewDetails(item)}
+                                >
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium break-words mb-1">
+                                        {item.subject || 'Untitled Document'}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground break-words">
+                                        From: {item.sender_name || 'Unknown Sender'}
+                                      </p>
+                                    </div>
+                                    {!item.is_read && (
+                                      <Badge variant="default" className="text-xs flex-shrink-0">
+                                        New
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Badges */}
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    {item.tag && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {item.tag}
+                                      </Badge>
+                                    )}
+                                    {isGovernment && (
+                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                        Free Forwarding
+                                      </Badge>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      }) : 'Unknown Date'}
+                                    </span>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => handleViewDetails(item)}>
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View Details
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                      <FileCheck className="h-3 w-3 mr-1" />
+                                      Open
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Free Forwarding Notice */}
+            <Alert className="border-primary/30 bg-primary/5">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription>
+                <strong className="text-foreground">Free Forwarding:</strong> All mail from HMRC and Companies House is forwarded to you at no extra charge. Select these items and use "Request Forwarding" to process them.
+              </AlertDescription>
+            </Alert>
+
+            {/* Bulk Actions Notice - Mobile */}
+            {isSomeSelected && (
+              <Card className="sm:hidden border-primary/30 bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckSquare className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{selectedMail.length} items selected</span>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedMail([])}>
+                      Clear
+                    </Button>
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button size="default" variant="outline" className="w-full h-10">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Selected ({selectedMail.length})
+                    </Button>
+                    <Button size="default" variant="default" className="w-full h-10" onClick={handleRequestForwarding}>
+                      <Truck className="h-4 w-4 mr-2" />
+                      Request Forwarding
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Help Text */}
+            <div className="text-center py-6 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
+              </p>
+            </div>
+          </div>
+
+          {/* Right Column - Virtual Address Sidebar */}
+          <aside className="lg:sticky lg:top-20 lg:self-start">
+            <Card className="border-0">
+              <CardHeader className="pb-3 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm truncate">Your Virtual Business Address</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-3">
+                {/* Address Display */}
+                <div className="bg-muted/50 rounded-lg p-2.5 space-y-0.5">
+                  <p className="text-xs font-medium">{virtualAddress.line1}</p>
+                  <p className="text-xs font-medium">{virtualAddress.line2}</p>
+                  <p className="text-xs font-medium">{virtualAddress.city}</p>
+                  <p className="text-xs font-medium">{virtualAddress.postcode}</p>
+                  <p className="text-xs font-medium">{virtualAddress.country}</p>
+                </div>
+
+                {/* Generate Certificate Button */}
+                <div className="space-y-1.5">
+                  <Button className="w-full" size="sm">
+                    <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                    Generate Certificate
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center leading-tight">
+                    Official proof of address
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+
+        </div>
       </main>
+
+      {/* Mail Detail Modal - Simple PDF Preview Only */}
+      {selectedMailDetail && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg max-w-6xl max-h-[95vh] w-full flex flex-col">
+            <MailDetailDialog 
+              mailItem={mailItems.find((item: MailItem) => String(item.id) === selectedMailDetail)}
+              onClose={() => setSelectedMailDetail(null)}
+              onOpen={onOpen}
+              onDownload={onDownload}
+              getScanUrl={getScanUrl}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mail Detail Dialog Component
+function MailDetailDialog({ 
+  mailItem, 
+  onClose, 
+  onOpen, 
+  onDownload, 
+  getScanUrl 
+}: { 
+  mailItem: MailItem | undefined;
+  onClose: () => void;
+  onOpen: (item: MailItem) => void;
+  onDownload: (item: MailItem) => void;
+  getScanUrl: (item: MailItem) => Promise<string | null>;
+}) {
+  const [scanUrl, setScanUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (mailItem) {
+      setLoading(true);
+      getScanUrl(mailItem).then(url => {
+        setScanUrl(url);
+        setLoading(false);
+      });
+    }
+  }, [mailItem, getScanUrl]);
+
+  if (!mailItem) return null;
+
+  const isGovernment = mailItem.tag === "HMRC" || mailItem.tag === "COMPANIES HOUSE";
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <Eye className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">{mailItem.subject || 'Untitled Document'}</h2>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => onOpen(mailItem)}>
+            <FileCheck className="h-4 w-4 mr-2" />
+            Open in New Tab
+          </Button>
+          <div className="flex-1 sm:flex-none flex items-center gap-2">
+            <Button className="flex-1 sm:flex-none" onClick={() => onDownload(mailItem)}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+            <Badge variant="outline" className="flex-shrink-0">
+              {isGovernment ? "Free" : "£2.50"}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* PDF Viewer - Full Height */}
+      <div className="flex-1 bg-muted/20 p-4 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading document...</p>
+            </div>
+          </div>
+        ) : scanUrl ? (
+          <iframe
+            src={scanUrl}
+            className="w-full h-full border-0 rounded bg-white"
+            title="Mail Scan Preview"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <AlertCircle className="h-8 w-8 mx-auto mb-4 text-destructive" />
+              <p className="text-muted-foreground">Unable to load document preview</p>
+              <Button variant="outline" className="mt-4" onClick={() => onOpen(mailItem)}>
+                Open in New Tab
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
