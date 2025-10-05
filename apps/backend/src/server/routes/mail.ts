@@ -320,13 +320,29 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             res.setHeader('Content-Disposition', `${disposition}; filename="${safeFilename}"`);
             res.setHeader('Cache-Control', 'no-store, private');
             res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+            
+            // Set cross-origin iframe-friendly headers for proxy mode
+            const allowedFrames = [
+                'https://vah-new-frontend-75d6.vercel.app',
+                'https://*.vercel.app'
+            ];
 
-            // Add CSP headers for iframe embedding
+            // Remove restrictive headers that would block cross-origin iframe embedding
+            res.removeHeader('X-Frame-Options');
+            res.removeHeader('Cross-Origin-Opener-Policy');
+            
+            // Allow cross-origin embedding
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            
+            // Minimal CSP that allows Vercel to frame this response
             res.setHeader(
                 'Content-Security-Policy',
-                `default-src 'none'; frame-ancestors 'self' https://vah-new-frontend-*.vercel.app;`
+                [
+                    "default-src 'none'",
+                    `frame-ancestors 'self' ${allowedFrames.join(' ')}`,
+                    "sandbox allow-same-origin allow-scripts"
+                ].join('; ')
             );
-            res.setHeader('X-Frame-Options', 'ALLOWALL');
             if (contentLength) {
                 res.setHeader('Content-Length', contentLength);
             }

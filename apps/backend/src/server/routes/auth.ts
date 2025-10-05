@@ -392,7 +392,7 @@ router.post("/logout", (req, res) => {
             sameSite: 'none',
             path: '/',
         });
-        
+
         res.json({ ok: true, message: "Logged out successfully" });
     } catch (error) {
         console.error('[auth/logout] Error:', error);
