@@ -14,13 +14,19 @@ import {
   Eye,
   Calendar,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  LogOut,
+  Settings,
+  User,
+  Bell,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
+import { PDFViewerModal } from "./PDFViewerModal";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -69,6 +75,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -189,10 +197,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [refreshMail]);
 
-  // Open handler - uses secure blob streaming, also marks as read
+  // Open handler - opens PDF modal, also marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
-      await openInline(`${API_BASE}/api/mail-items/${item.id}/download`);
+      setSelectedMailForPDF(item);
+      setShowPDFModal(true);
 
       // Auto-mark as read when opened (if not already read)
       if (!item.is_read) {
@@ -259,6 +268,76 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Header */}
+      <header className="bg-white border-b border-border sticky top-0 z-40">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Brand */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-8 w-8 text-primary" />
+                <span className="text-xl font-bold text-primary">VAH</span>
+              </div>
+              <div className="hidden sm:block text-sm text-muted-foreground">
+                Virtual Address Hub
+              </div>
+            </div>
+
+            {/* User Info and Actions */}
+            <div className="flex items-center gap-4">
+              {/* User Profile */}
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{getUserName()}</span>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onNavigate('settings')}
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onNavigate('profile')}
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onNavigate('help')}
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  Help
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                  className="flex items-center gap-2 text-destructive hover:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
 
@@ -645,6 +724,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         </div>
       </main>
 
+      {/* PDF Viewer Modal */}
+      <PDFViewerModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        mailItemId={selectedMailForPDF ? parseInt(String(selectedMailForPDF.id)) : null}
+        mailItemSubject={selectedMailForPDF?.subject || 'Mail Scan Preview'}
+        useBlobFallback={false} // Try iframe first, fallback to blob if needed
+      />
     </div>
   );
 }
