@@ -376,7 +376,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       {mailLoading && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
                     </div>
                     <p className="text-sm text-muted-foreground hidden sm:block">
-                      Click on any mail item to view full details and scans
+                      Click on any mail item to view full details
                     </p>
                   </div>
 
@@ -726,7 +726,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         isOpen={showPDFModal}
         onClose={() => setShowPDFModal(false)}
         mailItemId={selectedMailForPDF ? parseInt(String(selectedMailForPDF.id)) : null}
-        mailItemSubject={selectedMailForPDF?.subject || 'Mail Scan Preview'}
+        mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
         useBlobFallback
       />
     </div>

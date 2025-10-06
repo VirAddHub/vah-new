@@ -101,7 +101,7 @@ export default function PDFViewerModal({
                     {/* Custom Close Button */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 z-50 h-8 w-8 flex items-center justify-center bg-white/90 hover:bg-white shadow-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 rounded-md hover:shadow-xl"
+                        className="absolute top-4 left-4 z-50 h-8 w-8 flex items-center justify-center bg-white/90 hover:bg-white shadow-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 rounded-md hover:shadow-xl"
                         aria-label="Close PDF viewer"
                     >
                         <X className="h-4 w-4 text-gray-600 hover:text-gray-800" />
