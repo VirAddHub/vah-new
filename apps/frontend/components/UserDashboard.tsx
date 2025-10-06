@@ -226,7 +226,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Bulk download handler
   const onBulkDownload = useCallback(async () => {
     if (selectedMail.length === 0) return;
-
+    
     try {
       // Download each selected item
       for (const itemId of selectedMail) {
@@ -234,7 +234,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         if (item?.scan_url) {
           await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
           // Small delay between downloads to avoid overwhelming the browser
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
     } catch (err) {

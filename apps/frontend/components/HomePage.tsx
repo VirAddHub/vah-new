@@ -22,15 +22,15 @@ interface HomePageProps {
 export function HomePage({ onNavigate }: HomePageProps) {
     const handleNavClick = (page: string, data?: any) => onNavigate?.(page, data);
     const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-    
+
     // Use the pricing hook to get real-time data
-    const { 
-        monthlyPrice, 
-        annualPrice, 
-        monthlySavingsPct, 
-        loading: pricingLoading, 
+    const {
+        monthlyPrice,
+        annualPrice,
+        monthlySavingsPct,
+        loading: pricingLoading,
         error: pricingError,
-        hasApiData 
+        hasApiData
     } = usePricing();
 
     const isAnnual = billing === "annual";
