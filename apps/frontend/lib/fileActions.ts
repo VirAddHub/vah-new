@@ -23,7 +23,7 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     const apiBase = apiBaseRaw.replace(/\/+$/, '');
     const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
     const downloadUrl = `${baseWithApi}/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
-    
+
     const a = document.createElement("a");
     a.href = downloadUrl;
     a.download = fallback;

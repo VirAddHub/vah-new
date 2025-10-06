@@ -487,10 +487,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </li>
                         <li>✅ Unlimited Same-Day Mail Scanning</li>
                         <li>
-                            ✅ Free Forwarding for HMRC & Companies House
-                            Mail
-                        </li>
-                        <li>
                             ✅ Trusted by Founders, Agencies, Consultancies,
                             and Global Brands
                         </li>

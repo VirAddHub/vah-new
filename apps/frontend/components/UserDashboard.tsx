@@ -226,7 +226,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Bulk download handler
   const onBulkDownload = useCallback(async () => {
     if (selectedMail.length === 0) return;
-    
+
     try {
       // Download each selected item
       for (const itemId of selectedMail) {
@@ -661,12 +661,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             </Card>
 
             {/* Free Forwarding Notice */}
-            <Alert className="border-primary/30 bg-primary/5">
-              <AlertCircle className="h-4 w-4 text-primary" />
-              <AlertDescription>
-                <strong className="text-foreground">Free Forwarding:</strong> All mail from HMRC and Companies House is forwarded to you at no extra charge. Select these items and use "Request Forwarding" to process them.
-              </AlertDescription>
-            </Alert>
 
             {/* Bulk Actions Notice - Mobile */}
             {isSomeSelected && (
@@ -699,7 +693,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Help Text */}
             <div className="text-center py-6 space-y-2">
               <p className="text-sm text-muted-foreground">
-                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
+                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('contact')} className="text-primary hover:underline">Contact Support</button>
               </p>
             </div>
           </div>
