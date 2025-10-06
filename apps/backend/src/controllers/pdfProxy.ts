@@ -1,4 +1,11 @@
 import type { Response } from 'express';
+import {
+  fetchGraphFileByUserPath,
+  extractDocumentsPathFromSharePointUrl,
+  isSharePointPersonalUrl,
+} from '../lib/msGraph';
+
+const SHAREPOINT_UPN = process.env.MS_SHAREPOINT_USER_UPN || 'ops@virtualaddresshub.co.uk';
 
 /**
  * Fetches a PDF from a given HTTPS URL, buffers it, and serves it with
@@ -15,40 +22,47 @@ export async function streamPdfFromUrl(
   filename: string,
   disposition: 'inline' | 'attachment' = 'inline'
 ) {
-  // Basic validation
   if (!/^https?:\/\//i.test(fileUrl)) {
     res.status(400).send('Invalid file URL');
     return;
   }
 
   try {
-    // Follow redirects (Graph /content often 302 → CDN)
-    const upstream = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' });
+    let finalResp: Response | globalThis.Response;
 
-    if (!upstream.ok) {
-      const text = await safeText(upstream);
-      res.status(upstream.status || 502).send(text || 'Upstream fetch failed');
+    if (isSharePointPersonalUrl(fileUrl)) {
+      // 🔐 Use Graph with app permissions against the ops mailbox drive
+      const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
+      if (!documentsPath) {
+        res.status(502).send('Unable to resolve SharePoint path');
+        return;
+      }
+      finalResp = await fetchGraphFileByUserPath(SHAREPOINT_UPN, documentsPath, disposition);
+    } else {
+      // Non-SharePoint URL: fetch directly
+      finalResp = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' });
+    }
+
+    if (!finalResp.ok) {
+      const text = await safeText(finalResp);
+      res
+        .status(finalResp.status || 502)
+        .send(text || `Upstream fetch failed (${finalResp.status})`);
       return;
     }
 
-    // Buffer entire file to strip upstream headers entirely
-    const ab = await upstream.arrayBuffer();
+    const ab = await finalResp.arrayBuffer();
     const buf = Buffer.from(ab);
 
-    // Our own safe headers only
-    res.removeHeader('X-Frame-Options'); // ensure we never send this
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/pdf');
+    res.removeHeader('X-Frame-Options');
+    res.setHeader('Content-Type', finalResp.headers.get('content-type') || 'application/pdf');
     res.setHeader('Content-Length', String(buf.length));
     res.setHeader('Cache-Control', 'private, max-age=0, no-store, must-revalidate');
     res.setHeader('Content-Disposition', `${disposition}; filename="${sanitizeFilename(filename)}"`);
 
-    // Optional CORS (blob mode does not need it)
-    // res.setHeader('Access-Control-Allow-Origin', 'https://virtualaddresshub.co.uk');
-    // res.setHeader('Access-Control-Allow-Credentials', 'true');
-
     res.status(200).end(buf);
-  } catch (err) {
-    console.error('[pdfProxy] error fetching', fileUrl, err);
+  } catch (err: any) {
+    console.error('[pdfProxy] error', err?.message || err);
     res.status(502).send('Error retrieving the document');
   }
 }
