@@ -23,29 +23,29 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     const apiBase = apiBaseRaw.replace(/\/+$/, '');
     const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
     const downloadUrl = `${baseWithApi}/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
-    
+
     try {
         // Fetch with credentials to include vah_session cookie
         const response = await fetch(downloadUrl, {
             credentials: 'include',
             cache: 'no-store',
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text().catch(() => 'Download failed');
             throw new Error(errorText || `Download failed (${response.status})`);
         }
-        
+
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-        
+
         const a = document.createElement("a");
         a.href = blobUrl;
         a.download = fallback;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        
+
         // Clean up blob URL
         URL.revokeObjectURL(blobUrl);
     } catch (error) {

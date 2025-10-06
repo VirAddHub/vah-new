@@ -213,20 +213,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [markAsRead]);
 
-  // Download handler - uses secure blob streaming
-  const onDownload = useCallback(async (item: MailItem) => {
-    try {
-      await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
-    } catch (err) {
-      console.error('Download failed:', err);
-      alert('Unable to download file. Please try again.');
-    }
-  }, []);
 
   // Bulk download handler
   const onBulkDownload = useCallback(async () => {
     if (selectedMail.length === 0) return;
-    
+
     try {
       // Download each selected item
       for (const itemId of selectedMail) {
@@ -551,10 +542,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <FileCheck className="h-3 w-3 mr-1" />
                                       Open
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Download
-                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -639,13 +626,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                                   {/* Actions */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                    <Button size="sm" variant="outline" className="w-full h-9" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       Open
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Download
                                     </Button>
                                   </div>
                                 </div>
