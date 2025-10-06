@@ -19,6 +19,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 // Centralized environment config
 import { HOST, PORT } from './config/env';
+import { logGraphConfigAtStartup } from './config/azure';
 
 // CORS middleware
 import { corsMiddleware } from './cors';
@@ -523,6 +524,9 @@ async function start() {
         console.log(`[start] backend listening at http://${HOST}:${PORT}`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
+        
+        // Log Graph API configuration
+        logGraphConfigAtStartup();
     });
 
     // ---- Graceful shutdown (prevents crash loops) ----

@@ -4,8 +4,7 @@ import {
   extractDocumentsPathFromSharePointUrl,
   isSharePointPersonalUrl,
 } from '../lib/msGraph';
-
-const SHAREPOINT_UPN = process.env.MS_SHAREPOINT_USER_UPN || 'ops@virtualaddresshub.co.uk';
+import { AZURE_CONFIG } from '../config/azure';
 
 /**
  * Fetches a PDF from a given HTTPS URL, buffers it, and serves it with
@@ -41,8 +40,8 @@ export async function streamPdfFromUrl(
         res.status(502).send('Unable to resolve SharePoint path');
         return;
       }
-      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${SHAREPOINT_UPN}`);
-      finalResp = await fetchGraphFileByUserPath(SHAREPOINT_UPN, documentsPath, disposition);
+      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${AZURE_CONFIG.SHAREPOINT_USER_UPN}`);
+      finalResp = await fetchGraphFileByUserPath(AZURE_CONFIG.SHAREPOINT_USER_UPN, documentsPath, disposition);
     } else {
       console.log(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
       // Non-SharePoint URL: fetch directly
@@ -72,7 +71,7 @@ export async function streamPdfFromUrl(
       message: err?.message,
       stack: err?.stack,
       fileUrl,
-      SHAREPOINT_UPN
+      SHAREPOINT_USER_UPN: AZURE_CONFIG.SHAREPOINT_USER_UPN
     });
     res.status(502).send('Error retrieving the document');
   }
