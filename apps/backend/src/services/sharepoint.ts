@@ -18,58 +18,68 @@ function extractUPNFromSitePath(sitePath: string): string {
 
 // Encode each path segment safely for the :/path:/ form
 function encodeDrivePath(path: string): string {
-  return path
-    .split("/")
-    .filter(Boolean)
-    .map(seg => encodeURIComponent(seg))
-    .join("/");
+    return path
+        .split("/")
+        .filter(Boolean)
+        .map(seg => encodeURIComponent(seg))
+        .join("/");
 }
 
 // Fallback search by filename if path-based fetch fails with 404
 async function tryFetchByPathOrSearch(
-  token: string,
-  upnOrSite: { upn?: string; host?: string; sitePath?: string },
-  drivePath: string
+    token: string,
+    upnOrSite: { upn?: string; host?: string; sitePath?: string },
+    drivePath: string
 ) {
-  // 1) Try by path
-  const encodedPath = encodeDrivePath(drivePath);
-  const contentUrl = upnOrSite.upn
-    ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/${encodedPath}:/content`
-    : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root:/${encodedPath}:/content`;
+    // 1) Try by path
+    const encodedPath = encodeDrivePath(drivePath);
+    const contentUrl = upnOrSite.upn
+        ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/${encodedPath}:/content`
+        : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root:/${encodedPath}:/content`;
 
-  let r = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
-  if (r.ok) return r;
+    let r = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) return r;
 
-  // If not found, 404 -> search by filename
-  if (r.status === 404) {
-    console.log(`[GRAPH FALLBACK] Path not found, searching by filename...`);
-    const filename = drivePath.split("/").pop() || "";
-    const searchUrl = upnOrSite.upn
-      ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root/search(q='${encodeURIComponent(filename)}')`
-      : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root/search(q='${encodeURIComponent(filename)}')`;
-
-    console.log(`[GRAPH FALLBACK] Search URL: ${searchUrl}`);
-    const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (sr.ok) {
-      const data = await sr.json();
-      const match = (data.value || []).find((it: any) => it.name === filename);
-      if (match?.id) {
-        console.log(`[GRAPH FALLBACK] Found file by search: ${match.name} at ${match.parentReference?.path}`);
-        const byIdUrl = upnOrSite.upn
-          ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/items/${match.id}/content`
-          : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/items/${match.id}/content`;
-        r = await fetch(byIdUrl, { headers: { Authorization: `Bearer ${token}` } });
-        if (r.ok) return r;
-      } else {
-        console.log(`[GRAPH FALLBACK] No matching file found in search results`);
-      }
+    // If not found, 404 -> search by filename
+    if (r.status === 404) {
+        console.log(`[GRAPH FALLBACK] Path not found, searching by filename...`);
+        const filename = drivePath.split("/").pop() || "";
+    // Try different search approaches for OneDrive
+    let searchUrl: string;
+    if (upnOrSite.upn) {
+      // For OneDrive personal, try listing the folder first, then search
+      searchUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/Documents/Scanned_Mail:/children`;
     } else {
-      console.log(`[GRAPH FALLBACK] Search failed: ${sr.status}`);
+      searchUrl = `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root/search(q='${encodeURIComponent(filename)}')`;
     }
-  }
 
-  // Return original response (with its error body for logs)
-  return r;
+        console.log(`[GRAPH FALLBACK] Listing folder: ${searchUrl}`);
+        const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
+        if (sr.ok) {
+            const data = await sr.json();
+            console.log(`[GRAPH FALLBACK] Folder contents:`, data.value?.map((item: any) => item.name) || []);
+            
+            const match = (data.value || []).find((it: any) => it.name === filename);
+            if (match?.id) {
+                console.log(`[GRAPH FALLBACK] Found file by folder listing: ${match.name} at ${match.parentReference?.path}`);
+                const byIdUrl = upnOrSite.upn
+                    ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/items/${match.id}/content`
+                    : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/items/${match.id}/content`;
+                r = await fetch(byIdUrl, { headers: { Authorization: `Bearer ${token}` } });
+                if (r.ok) return r;
+            } else {
+                console.log(`[GRAPH FALLBACK] No matching file found in folder listing`);
+                console.log(`[GRAPH FALLBACK] Available files:`, data.value?.map((item: any) => item.name) || []);
+            }
+        } else {
+            console.log(`[GRAPH FALLBACK] Folder listing failed: ${sr.status}`);
+            const errorText = await sr.text().catch(() => "");
+            console.log(`[GRAPH FALLBACK] Error details: ${errorText}`);
+        }
+    }
+
+    // Return original response (with its error body for logs)
+    return r;
 }
 
 // In: https://.../personal/ops_.../Documents/Scanned_Mail/user4_1111_bilan.pdf
