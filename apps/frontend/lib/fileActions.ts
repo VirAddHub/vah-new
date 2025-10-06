@@ -18,8 +18,12 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     if (!match) throw new Error("Invalid mail item URL");
     const itemId = parseInt(match[1]);
 
-    // Use BFF route for safe headers
-    const downloadUrl = `${API_BASE}/api/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
+    // Use BFF route for safe headers - construct absolute backend URL
+    const apiBaseRaw = process.env.NEXT_PUBLIC_API_BASE || process.env.BACKEND_API_ORIGIN || '';
+    const apiBase = apiBaseRaw.replace(/\/+$/, '');
+    const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+    const downloadUrl = `${baseWithApi}/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
+    
     const a = document.createElement("a");
     a.href = downloadUrl;
     a.download = fallback;

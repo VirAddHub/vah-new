@@ -223,6 +223,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, []);
 
+  // Bulk download handler
+  const onBulkDownload = useCallback(async () => {
+    if (selectedMail.length === 0) return;
+    
+    try {
+      // Download each selected item
+      for (const itemId of selectedMail) {
+        const item = mailItems.find((m: MailItem) => String(m.id) === itemId);
+        if (item?.scan_url) {
+          await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
+          // Small delay between downloads to avoid overwhelming the browser
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+    } catch (err) {
+      console.error('Bulk download failed:', err);
+      alert('Some downloads may have failed. Please try again.');
+    }
+  }, [selectedMail, mailItems]);
+
   // Get user name helper
   const getUserName = () => {
     if (userProfile?.first_name && userProfile?.last_name) {
@@ -375,7 +395,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Badge variant="default" className="text-sm">
                         {selectedMail.length} selected
                       </Badge>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={onBulkDownload} disabled={selectedMail.length === 0}>
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
@@ -663,7 +683,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    <Button size="default" variant="outline" className="w-full h-10">
+                    <Button size="default" variant="outline" className="w-full h-10" onClick={onBulkDownload} disabled={selectedMail.length === 0}>
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>

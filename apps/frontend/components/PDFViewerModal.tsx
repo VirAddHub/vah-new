@@ -23,19 +23,15 @@ export default function PDFViewerModal({
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [viewerUrl, setViewerUrl] = React.useState<string | null>(null);
-    const [downloadName, setDownloadName] = React.useState<string>("document.pdf");
 
     const revokeUrl = React.useCallback(() => {
         try {
             if (viewerUrl && viewerUrl.startsWith("blob:")) {
                 URL.revokeObjectURL(viewerUrl);
             }
-        } catch {}
+        } catch { }
     }, [viewerUrl]);
 
-    React.useEffect(() => {
-        setDownloadName(((mailItemSubject?.trim() ? safeName(mailItemSubject) : "document") + ".pdf"));
-    }, [mailItemSubject]);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -97,34 +93,6 @@ export default function PDFViewerModal({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, mailItemId, useBlobFallback]);
 
-    const handleDownload = async () => {
-        try {
-            if (!mailItemId) return;
-            
-            // Build absolute backend URL for download
-            const apiBaseRaw =
-                process.env.NEXT_PUBLIC_API_BASE ||
-                process.env.BACKEND_API_ORIGIN ||
-                '';
-            const apiBase = apiBaseRaw.replace(/\/+$/, '');
-            const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
-            const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=attachment`;
-            
-            const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
-            if (!res.ok) throw new Error('Download failed');
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = downloadName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(blobUrl);
-        } catch (e: any) {
-            setError(e?.message || 'Download failed');
-        }
-    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
@@ -132,12 +100,9 @@ export default function PDFViewerModal({
                 <DialogHeader className="px-4 py-3 border-b">
                     <div className="flex items-center justify-between gap-3">
                         <DialogTitle className="truncate">{mailItemSubject || 'Document'}</DialogTitle>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={handleDownload}>Download PDF</Button>
-                            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                            <X className="h-4 w-4" />
+                        </Button>
                     </div>
                 </DialogHeader>
 
@@ -169,9 +134,6 @@ export default function PDFViewerModal({
     );
 }
 
-function safeName(s: string) {
-    return s.replace(/[^\p{L}\p{N}\-_., ]+/gu, '').slice(0, 120) || 'document';
-}
 
 async function safeText(res: Response) {
     try {

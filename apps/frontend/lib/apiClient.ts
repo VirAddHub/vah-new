@@ -186,17 +186,16 @@ export const mailApi = {
     },
 
     async downloadScan(id: string): Promise<Blob> {
-        const response = await fetch(`${API_BASE}/api/mail-items/${id}/scan-url`, {
-            headers: {
-                authorization: `Bearer ${getToken()}`,
-            },
+        // Use the backend BFF route directly for secure PDF streaming
+        const response = await fetch(`${API_BASE}/api/bff/mail/scan-url?mailItemId=${id}&disposition=attachment`, {
+            credentials: 'include', // Include vah_session cookie
+            cache: 'no-store',
         });
-        if (!response.ok) throw new Error('Failed to get download URL');
-        const { url } = await response.json();
-
-        const blobResponse = await fetch(url);
-        if (!blobResponse.ok) throw new Error('Failed to download file');
-        return blobResponse.blob();
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Download failed');
+            throw new Error(errorText || `Failed to download file (${response.status})`);
+        }
+        return response.blob();
     },
 };
 
