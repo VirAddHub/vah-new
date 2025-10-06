@@ -327,11 +327,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onNavigate('help')}
+                  onClick={() => onNavigate('contact')}
                   className="hidden sm:flex items-center gap-2"
                 >
                   <HelpCircle className="h-4 w-4" />
-                  Help
+                  Support
                 </Button>
 
                 <Button
