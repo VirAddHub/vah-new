@@ -28,17 +28,23 @@ export async function streamPdfFromUrl(
   }
 
   try {
+    console.log(`[pdfProxy] Processing fileUrl: ${fileUrl}`);
     let finalResp: Response | globalThis.Response;
 
     if (isSharePointPersonalUrl(fileUrl)) {
+      console.log(`[pdfProxy] Detected SharePoint URL, extracting path...`);
       // 🔐 Use Graph with app permissions against the ops mailbox drive
       const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
+      console.log(`[pdfProxy] Extracted documents path: ${documentsPath}`);
       if (!documentsPath) {
+        console.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
         res.status(502).send('Unable to resolve SharePoint path');
         return;
       }
+      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${SHAREPOINT_UPN}`);
       finalResp = await fetchGraphFileByUserPath(SHAREPOINT_UPN, documentsPath, disposition);
     } else {
+      console.log(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
       // Non-SharePoint URL: fetch directly
       finalResp = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' });
     }
@@ -62,7 +68,12 @@ export async function streamPdfFromUrl(
 
     res.status(200).end(buf);
   } catch (err: any) {
-    console.error('[pdfProxy] error', err?.message || err);
+    console.error('[pdfProxy] error details:', {
+      message: err?.message,
+      stack: err?.stack,
+      fileUrl,
+      SHAREPOINT_UPN
+    });
     res.status(502).send('Error retrieving the document');
   }
 }

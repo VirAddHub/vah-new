@@ -39,18 +39,18 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
 
         // Coerce potential string/bigint DB values to number for safe comparison
         const dbUserId =
-          typeof item.user_id === 'bigint' ? Number(item.user_id) :
-          typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
-          Number(item.user_id);
+            typeof item.user_id === 'bigint' ? Number(item.user_id) :
+                typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
+                    Number(item.user_id);
         const sessionUserId =
-          typeof user.id === 'bigint' ? Number(user.id) :
-          typeof user.id === 'string' ? parseInt(user.id as any, 10) :
-          Number(user.id);
+            typeof user.id === 'bigint' ? Number(user.id) :
+                typeof user.id === 'string' ? parseInt(user.id as any, 10) :
+                    Number(user.id);
 
         const isOwner = dbUserId === sessionUserId;
         const isPrivileged = !!(user.is_admin || (user as any).is_staff);
         console.log(`[BFF DEBUG] isOwner: ${isOwner}, isPrivileged: ${isPrivileged}, dbUserId: ${dbUserId}, sessionUserId: ${sessionUserId}`);
-        
+
         if (!isOwner && !isPrivileged) {
             console.warn('[bff:mail/scan-url] forbidden', { mailItemId, dbUserId, sessionUserId, isPrivileged });
             return res.status(403).send('Forbidden');
@@ -96,13 +96,13 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
         const item = rows[0];
 
         const dbUserId =
-          typeof item.user_id === 'bigint' ? Number(item.user_id) :
-          typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
-          Number(item.user_id);
+            typeof item.user_id === 'bigint' ? Number(item.user_id) :
+                typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
+                    Number(item.user_id);
         const sessionUserId =
-          typeof user.id === 'bigint' ? Number(user.id) :
-          typeof user.id === 'string' ? parseInt(user.id as any, 10) :
-          Number(user.id);
+            typeof user.id === 'bigint' ? Number(user.id) :
+                typeof user.id === 'string' ? parseInt(user.id as any, 10) :
+                    Number(user.id);
         const isOwner = dbUserId === sessionUserId;
         const isPrivileged = !!(user.is_admin || (user as any).is_staff);
         if (!isOwner && !isPrivileged) {
