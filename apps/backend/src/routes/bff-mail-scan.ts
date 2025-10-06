@@ -37,13 +37,23 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
 
         console.log(`[BFF DEBUG] Mail item user_id: ${item.user_id}, deleted: ${item.deleted}, has_scan_url: ${!!item.scan_file_url}`);
 
-        const isOwner = item.user_id === user.id;
+        // Coerce potential string/bigint DB values to number for safe comparison
+        const dbUserId =
+          typeof item.user_id === 'bigint' ? Number(item.user_id) :
+          typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
+          Number(item.user_id);
+        const sessionUserId =
+          typeof user.id === 'bigint' ? Number(user.id) :
+          typeof user.id === 'string' ? parseInt(user.id as any, 10) :
+          Number(user.id);
+
+        const isOwner = dbUserId === sessionUserId;
         const isPrivileged = !!(user.is_admin || (user as any).is_staff);
-        console.log(`[BFF DEBUG] isOwner: ${isOwner}, isPrivileged: ${isPrivileged}`);
+        console.log(`[BFF DEBUG] isOwner: ${isOwner}, isPrivileged: ${isPrivileged}, dbUserId: ${dbUserId}, sessionUserId: ${sessionUserId}`);
         
         if (!isOwner && !isPrivileged) {
-            console.log(`[BFF DEBUG] Access denied - user ${user.id} is not owner (${item.user_id}) and not privileged`);
-            return res.status(403).send(`Forbidden: Mail item ${mailItemId} belongs to user ${item.user_id}, but you are user ${user.id}`);
+            console.warn('[bff:mail/scan-url] forbidden', { mailItemId, dbUserId, sessionUserId, isPrivileged });
+            return res.status(403).send('Forbidden');
         }
         if (item.deleted) return res.status(410).send('Mail item deleted');
         if (!item.scan_file_url) return res.status(404).send('No scan available');
@@ -85,9 +95,20 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
         if (!rows.length) return res.status(404).send('Mail item not found');
         const item = rows[0];
 
-        const isOwner = item.user_id === user.id;
+        const dbUserId =
+          typeof item.user_id === 'bigint' ? Number(item.user_id) :
+          typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
+          Number(item.user_id);
+        const sessionUserId =
+          typeof user.id === 'bigint' ? Number(user.id) :
+          typeof user.id === 'string' ? parseInt(user.id as any, 10) :
+          Number(user.id);
+        const isOwner = dbUserId === sessionUserId;
         const isPrivileged = !!(user.is_admin || (user as any).is_staff);
-        if (!isOwner && !isPrivileged) return res.status(403).send('Forbidden');
+        if (!isOwner && !isPrivileged) {
+            console.warn('[bff:legacy-download] forbidden', { id, dbUserId, sessionUserId, isPrivileged });
+            return res.status(403).send('Forbidden');
+        }
         if (item.deleted) return res.status(410).send('Mail item deleted');
         if (!item.scan_file_url) return res.status(404).send('No scan available');
 
