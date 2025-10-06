@@ -36,59 +36,33 @@ export async function getGraphToken(): Promise<string> {
 
 export async function fetchGraphFileByUserPath(
   upn: string,
-  docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+  docPath: string, // e.g. "Scanned_Mail/user4_122_HMRC.pdf" (already normalized)
   disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
   console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
   const token = await getGraphToken();
   
-  // Try the original path first
   const safePath = docPath
-    .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
+    .split('/')                 // -> ["Scanned_Mail","user4_122_HMRC.pdf"]
     .map((seg) => encodeURIComponent(seg))
-    .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+    .join('/');                 // -> "Scanned_Mail/user4_122_HMRC.pdf"
 
-  let url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
     upn
   )}/drive/root:/${safePath}:/content`;
 
-  console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${safePath}:/content`);
+  console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${docPath}:/content`);
   console.log(`[msGraph] Graph API URL: ${url}`);
 
   // We follow redirects so we end at the CDN response
-  let r = await fetch(url, {
+  const r = await fetch(url, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
     redirect: 'follow',
     cache: 'no-store',
   });
   
-  console.log(`[msGraph] Path attempt failed: ${r.status} ${r.statusText}`);
-  
-  // If 404 and path starts with "Documents/", try without "Documents/" prefix
-  if (r.status === 404 && docPath.startsWith('Documents/')) {
-    const fallbackPath = docPath.replace(/^Documents\//, ''); // Remove "Documents/" prefix
-    const safeFallbackPath = fallbackPath
-      .split('/')
-      .map((seg) => encodeURIComponent(seg))
-      .join('/');
-    
-    url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
-      upn
-    )}/drive/root:/${safeFallbackPath}:/content`;
-    
-    console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${safeFallbackPath}:/content`);
-    console.log(`[msGraph] Graph API URL: ${url}`);
-    
-    r = await fetch(url, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
-      redirect: 'follow',
-      cache: 'no-store',
-    });
-    
-    console.log(`[msGraph] Fallback path result: ${r.status} ${r.statusText}`);
-  }
+  console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
   
   // If still 404, try to list the drive root to see what's available
   if (r.status === 404) {
@@ -117,33 +91,28 @@ export async function fetchGraphFileByUserPath(
 
 /** Extract "Documents/..." from a classic personal SharePoint URL */
 export function extractDocumentsPathFromSharePointUrl(u: string): string | null {
-    try {
-        const url = new URL(u);
-        console.log(`[msGraph] Analyzing SharePoint URL: ${u}`);
-        console.log(`[msGraph] URL hostname: ${url.hostname}`);
-        console.log(`[msGraph] URL pathname: ${url.pathname}`);
+  try {
+    const url = new URL(u);
+    const idParam = url.searchParams.get('id');
+    const source = idParam ? decodeURIComponent(idParam) : url.pathname;
 
-        // Handle both regular URLs and login_hint URLs
-        let pathname = url.pathname;
-        if (url.searchParams.has('id')) {
-            // Extract from id parameter for login_hint URLs
-            pathname = url.searchParams.get('id') || pathname;
-            console.log(`[msGraph] Using id parameter: ${pathname}`);
-        }
+    // prefer /Documents/... if present, else take everything after /personal/<seg>/
+    const ix = source.toLowerCase().indexOf('/documents/');
+    let path = ix !== -1 ? source.slice(ix + 1) : (source.match(/\/personal\/[^/]+\/(.*)$/i)?.[1] || '');
 
-        const ix = pathname.indexOf('/Documents/');
-        if (ix === -1) {
-            console.log(`[msGraph] No /Documents/ found in pathname`);
-            return null;
-        }
-        const path = pathname.slice(ix + 1); // drop leading slash
-        const decodedPath = decodeURIComponent(path.replace(/^\/+/, '')); // "Documents/xyz.pdf"
-        console.log(`[msGraph] Extracted path: ${decodedPath}`);
-        return decodedPath;
-    } catch (err) {
-        console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
-        return null;
+    path = decodeURIComponent(path).replace(/^\/+/, '');
+
+    // 🔧 tenant quirk: Scanned_Mail sits at root; drop leading "Documents/"
+    if (/^documents\/scanned_mail\//i.test(path)) {
+      path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…"
     }
+
+    console.log(`[msGraph] Extracted and normalized path: ${path}`);
+    return path || null;
+  } catch (err) {
+    console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
+    return null;
+  }
 }
 
 /** Convert a SharePoint 'personal' segment like
