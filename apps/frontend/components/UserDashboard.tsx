@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
+import { openInline, downloadFile } from "@/lib/fileActions";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -188,74 +189,22 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [refreshMail]);
 
-  // Open handler - calls scan-url API and opens in new tab, also marks as read
+  // Open handler - uses secure blob streaming, also marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
-      const token = getToken();
-      const headers: Record<string, string> = { 'Accept': 'application/json' };
-      if (token) headers.Authorization = `Bearer ${token}`;
+      await openInline(`${API_BASE}/api/mail-items/${item.id}/download`);
 
-      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}/scan-url`, {
-        headers
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+      // Auto-mark as read when opened (if not already read)
+      if (!item.is_read) {
+        await markAsRead(item);
       }
-
-      const json = await res.json();
-      if (json?.ok && json?.url) {
-        window.open(json.url, '_blank');
-
-        // Auto-mark as read when opened (if not already read)
-        if (!item.is_read) {
-          await markAsRead(item);
-        }
-      } else {
-        console.error('scan-url failed', json);
-        alert('Unable to open file for this item.');
-      }
-    } catch (e) {
-      console.error('Error opening file:', e);
+    } catch (err) {
+      console.error('Error opening file:', err);
       alert('Unable to open file for this item.');
     }
   }, [markAsRead]);
 
-  // Robust download handler - fetch → blob → download
-  const downloadFile = useCallback(async (downloadUrl: string, fallbackName = 'document.pdf') => {
-    const token = getToken();
-    const headers: Record<string, string> = {
-      'Accept': '*/*',
-      'Content-Type': 'application/json'
-    };
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const resp = await fetch(`${downloadUrl}?disposition=attachment`, {
-      method: 'GET',
-      credentials: 'include',          // sends cookies
-      headers
-    });
-
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-    // Try filename from Content-Disposition
-    const cd = resp.headers.get('content-disposition') || '';
-    const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd);
-    const fileName = decodeURIComponent(m?.[1] || m?.[2] || fallbackName);
-
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 30_000);
-  }, []);
-
+  // Download handler - uses secure blob streaming
   const onDownload = useCallback(async (item: MailItem) => {
     try {
       await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
@@ -263,7 +212,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       console.error('Download failed:', err);
       alert('Unable to download file. Please try again.');
     }
-  }, [downloadFile]);
+  }, []);
 
   // Get user name helper
   const getUserName = () => {
@@ -499,10 +448,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                                   {/* Action Buttons */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
-                                      <FileCheck className="h-3 w-3 mr-1" />
-                                      Open
-                                    </Button>
                                     <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
                                       <FileCheck className="h-3 w-3 mr-1" />
                                       Open

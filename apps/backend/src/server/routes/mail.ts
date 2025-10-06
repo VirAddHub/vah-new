@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
+import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 
 const router = Router();
 
@@ -258,113 +259,43 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
 
 /**
  * GET /api/mail-items/:id/download
- * Download alias - redirects to signed URL or proxies the file
+ * Stream file from SharePoint via Microsoft Graph (app-only authentication)
+ * Only authenticated VAH users who own the mail can access it
  * Query params:
- * - mode=proxy: Stream file through server (for iframe embedding)
  * - disposition=inline: Set Content-Disposition to inline (default: attachment)
  */
 router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
         const userId = req.user!.id;
-        const isAdmin = req.user!.is_admin || false;
+        const mailId = Number(req.params.id);
+        const disposition = (String(req.query.disposition || "inline") === "attachment") ? "attachment" : "inline";
 
-        // Parse query parameters
-        const mode = String(req.query.mode || '');
-        const dispositionQ = String(req.query.disposition || '');
-        const disposition = dispositionQ === 'inline' ? 'inline' : 'attachment';
-
-        const result = await resolveScanUrl(id, userId.toString(), isAdmin);
+        // Authorize - get mail item and verify ownership
+        const result = await resolveScanUrl(mailId.toString(), userId.toString(), false);
         if (!result.ok) {
             return res.status(result.error === 'not_found' ? 404 : 400).json(result);
         }
 
-        res.setHeader('Cache-Control', 'no-store, private');
-        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-
-        // Use proxy mode if explicitly requested or if environment variable is set
-        const useProxy = mode === 'proxy' || process.env.DOWNLOAD_REDIRECT_MODE === 'proxy';
-
-        if (!useProxy) {
-            // Simple redirect path
-            res.setHeader(
-                'Content-Disposition',
-                `attachment; filename="${result.filename.replace(/"/g, '')}"`
-            );
-            return res.redirect(302, result.url);
+        if (!result.url) {
+            return res.status(404).json({ ok: false, error: 'no_file_url' });
         }
 
-        // Proxy mode: stream bytes through server for iframe embedding
-        try {
-            const fetch = (await import('node-fetch')).default;
-            const fileResponse = await fetch(result.url, {
-                headers: {
-                    'Authorization': req.headers.authorization || '',
-                    'User-Agent': req.headers['user-agent'] || 'VAH-Download-Proxy/1.0'
-                }
-            });
+        // Extract SharePoint drive path from URL
+        const drivePath = extractDrivePathFromSharePointUrl(result.url);
 
-            if (!fileResponse.ok) {
-                return res.status(502).json({ ok: false, error: 'file_fetch_failed' });
-            }
+        // Stream file from SharePoint via Graph API
+        await streamSharePointFileByPath(res, drivePath, {
+            filename: `mail-${mailId}.pdf`,
+            disposition,
+        });
 
-            // Set appropriate headers with hardening
-            const contentType = fileResponse.headers.get('content-type') || 'application/pdf';
-            const contentLength = fileResponse.headers.get('content-length');
-            const filename = result.filename;
-
-            // Sanitize filename for safe download
-            const safeFilename = makeSafeFilename(filename);
-
-            res.setHeader('Content-Type', contentType);
-            res.setHeader('Content-Disposition', `${disposition}; filename="${safeFilename}"`);
-            res.setHeader('Cache-Control', 'no-store, private');
-            res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
-
-            // Set cross-origin iframe-friendly headers for proxy mode
-            const allowedFrames = [
-                'https://vah-new-frontend-75d6.vercel.app',
-                'https://*.vercel.app'
-            ];
-
-            // Remove restrictive headers that would block cross-origin iframe embedding
-            res.removeHeader('X-Frame-Options');
-            res.removeHeader('Cross-Origin-Opener-Policy');
-
-            // Allow cross-origin embedding
-            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-
-            // Minimal CSP that allows Vercel to frame this response
-            res.setHeader(
-                'Content-Security-Policy',
-                [
-                    "default-src 'none'",
-                    `frame-ancestors 'self' ${allowedFrames.join(' ')}`
-                ].join('; ')
-            );
-            if (contentLength) {
-                res.setHeader('Content-Length', contentLength);
-            }
-
-            // Stream the file
-            fileResponse.body?.pipe(res);
-
-        } catch (proxyError: any) {
-            console.error('[GET /api/mail-items/:id/download] Proxy error:', proxyError);
-            return res.status(502).json({ ok: false, error: 'proxy_failed' });
+    } catch (err: any) {
+        console.error('[GET /api/mail-items/:id/download] Error:', err);
+        if (!res.headersSent) {
+            res.status(500).json({ ok: false, error: 'internal_error', message: err.message });
         }
-
-    } catch (error: any) {
-        console.error('[GET /api/mail-items/:id/download] Error:', error);
-        return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 });
 
-/**
- * Helper function to make safe filenames for Content-Disposition headers
- */
-function makeSafeFilename(name: string): string {
-    return name.replace(/[^\w.\- ]+/g, '_').slice(0, 140);
-}
 
 export default router;
