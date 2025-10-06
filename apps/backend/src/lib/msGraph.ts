@@ -97,7 +97,7 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
         console.log(`[msGraph] Analyzing SharePoint URL: ${u}`);
         console.log(`[msGraph] URL hostname: ${url.hostname}`);
         console.log(`[msGraph] URL pathname: ${url.pathname}`);
-        
+
         // Handle both regular URLs and login_hint URLs
         let pathname = url.pathname;
         if (url.searchParams.has('id')) {
@@ -105,7 +105,7 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
             pathname = url.searchParams.get('id') || pathname;
             console.log(`[msGraph] Using id parameter: ${pathname}`);
         }
-        
+
         const ix = pathname.indexOf('/Documents/');
         if (ix === -1) {
             console.log(`[msGraph] No /Documents/ found in pathname`);
@@ -125,13 +125,13 @@ export function extractUPNFromSharePointUrl(u: string): string | null {
     try {
         const url = new URL(u);
         console.log(`[msGraph] Extracting UPN from SharePoint URL: ${u}`);
-        
+
         // Handle both regular URLs and login_hint URLs
         let pathname = url.pathname;
         if (url.searchParams.has('id')) {
             pathname = url.searchParams.get('id') || pathname;
         }
-        
+
         // Look for /personal/username pattern
         const personalMatch = pathname.match(/\/personal\/([^\/]+)/);
         if (personalMatch) {
@@ -140,18 +140,20 @@ export function extractUPNFromSharePointUrl(u: string): string | null {
             
             // Convert underscore format to email format
             // ops_virtualaddresshub_co_uk -> ops@virtualaddresshub.co.uk
-            const upn = username.replace(/_/g, '.').replace(/\.co\.uk$/, '.co.uk');
+            // Replace underscores with dots, then replace the last .co.uk with @co.uk
+            let upn = username.replace(/_/g, '.');
+            upn = upn.replace(/\.co\.uk$/, '@co.uk');
             console.log(`[msGraph] Converted to UPN: ${upn}`);
             return upn;
         }
-        
+
         // Fallback: try login_hint parameter
         const loginHint = url.searchParams.get('login_hint');
         if (loginHint) {
             console.log(`[msGraph] Using login_hint: ${loginHint}`);
             return loginHint;
         }
-        
+
         console.log(`[msGraph] No UPN found in URL`);
         return null;
     } catch (err) {

@@ -36,10 +36,10 @@ export async function streamPdfFromUrl(
       // 🔐 Use Graph with app permissions against the correct user's drive
       const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
       const upn = extractUPNFromSharePointUrl(fileUrl) || AZURE_CONFIG.SHAREPOINT_USER_UPN;
-      
+
       console.log(`[pdfProxy] Extracted documents path: ${documentsPath}`);
       console.log(`[pdfProxy] Extracted UPN: ${upn}`);
-      
+
       if (!documentsPath) {
         console.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
         res.status(502).send('Unable to resolve SharePoint path');
