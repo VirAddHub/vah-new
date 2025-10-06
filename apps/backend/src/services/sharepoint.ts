@@ -52,14 +52,27 @@ export async function streamSharePointFileByPath(
     let contentUrl: string;
     if (SITE_PATH.startsWith("/personal/")) {
         const upn = extractUPNFromSitePath(SITE_PATH);
+        const encodedPath = encodeDrivePath(drivePath);
         contentUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
             upn
-        )}/drive/root:/${encodeDrivePath(drivePath)}:/content`;
+        )}/drive/root:/${encodedPath}:/content`;
+        
+        console.log(`[GRAPH DEBUG] OneDrive personal drive detected`);
+        console.log(`[GRAPH DEBUG] UPN: ${upn}`);
+        console.log(`[GRAPH DEBUG] Drive path: ${drivePath}`);
+        console.log(`[GRAPH DEBUG] Encoded path: ${encodedPath}`);
+        console.log(`[GRAPH DEBUG] Graph URL: ${contentUrl}`);
     } else {
         // SharePoint site drive
-        contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodeDrivePath(
-            drivePath
-        )}:/content`;
+        const encodedPath = encodeDrivePath(drivePath);
+        contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodedPath}:/content`;
+        
+        console.log(`[GRAPH DEBUG] SharePoint site drive detected`);
+        console.log(`[GRAPH DEBUG] Host: ${HOST}`);
+        console.log(`[GRAPH DEBUG] Site path: ${SITE_PATH}`);
+        console.log(`[GRAPH DEBUG] Drive path: ${drivePath}`);
+        console.log(`[GRAPH DEBUG] Encoded path: ${encodedPath}`);
+        console.log(`[GRAPH DEBUG] Graph URL: ${contentUrl}`);
     }
 
     const upstream = await fetch(contentUrl, {

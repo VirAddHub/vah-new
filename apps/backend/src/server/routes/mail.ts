@@ -280,8 +280,14 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             return res.status(404).json({ ok: false, error: 'no_file_url' });
         }
 
+        // Debug logging
+        console.log(`[DOWNLOAD DEBUG] Mail ID: ${mailId}, User ID: ${userId}`);
+        console.log(`[DOWNLOAD DEBUG] File URL: ${result.url}`);
+        console.log(`[DOWNLOAD DEBUG] Filename: ${result.filename}`);
+
         // Extract SharePoint drive path from URL
         const drivePath = extractDrivePathFromSharePointUrl(result.url);
+        console.log(`[DOWNLOAD DEBUG] Extracted drive path: ${drivePath}`);
 
         // Stream file from SharePoint via Graph API
         await streamSharePointFileByPath(res, drivePath, {
