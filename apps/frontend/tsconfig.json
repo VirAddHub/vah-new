@@ -9,6 +9,7 @@
         ],
         "allowJs": true,
         "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
         "strict": true,
         "noEmit": true,
         "esModuleInterop": true,

@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
-import { PDFViewerModal } from "./PDFViewerModal";
+import PDFViewerModal from "@/components/PDFViewerModal";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -730,7 +730,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         onClose={() => setShowPDFModal(false)}
         mailItemId={selectedMailForPDF ? parseInt(String(selectedMailForPDF.id)) : null}
         mailItemSubject={selectedMailForPDF?.subject || 'Mail Scan Preview'}
-        useBlobFallback={false} // Try iframe first, fallback to blob if needed
+        useBlobFallback
       />
     </div>
   );
