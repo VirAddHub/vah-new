@@ -43,7 +43,7 @@ import { passwordResetRouter } from "./server/routes/profile.password-reset";
 import authRouter from "./server/routes/auth";
 
 // NEW: Import missing endpoints
-import mailRouter from "./server/routes/mail 2";
+import mailRouter from "./server/routes/mail";
 import billingRouter from "./server/routes/billing";
 import paymentsRouter from "./server/routes/payments";
 import adminUsersRouter from "./server/routes/admin-users";
