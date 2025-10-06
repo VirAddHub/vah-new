@@ -1,198 +1,179 @@
 import { graphBearer } from "../lib/graph";
 
 const HOST = process.env.GRAPH_SITE_HOST!;
-const _SITE_PATH = (process.env.GRAPH_SITE_PATH || "").replace(/\/+$/, ""); // strip trailing slash
-const SITE_PATH = decodeURIComponent(_SITE_PATH); // normalize
+const _SITE_PATH = (process.env.GRAPH_SITE_PATH || "").replace(/\/+$/, "");
+const SITE_PATH = decodeURIComponent(_SITE_PATH);
+const DEBUG = process.env.GRAPH_DEBUG === "1";
 
-// /personal/ops_virtualaddresshub_co_uk  ->  ops@virtualaddresshub.co.uk
-function extractUPNFromSitePath(sitePath: string): string {
+function log(...args: any[]) {
+    if (DEBUG) console.log(...args);
+}
+
+export function extractUPNFromSitePath(sitePath: string): string {
     const m = /^\/personal\/([^/]+)$/.exec(sitePath);
     if (!m) throw new Error(`Invalid OneDrive personal path: ${sitePath}`);
-    const alias = m[1]; // e.g., "ops_virtualaddresshub_co_uk"
+    const alias = m[1];
     const parts = alias.split("_").filter(Boolean);
     if (parts.length < 2) throw new Error(`Unexpected alias format: ${alias}`);
-    const user = parts.shift()!;              // "ops"
-    const domain = parts.join(".");           // "virtualaddresshub.co.uk"
+    const user = parts.shift()!;
+    const domain = parts.join(".");
     return `${user}@${domain}`;
 }
 
-// Encode each path segment safely for the :/path:/ form
+export function upnFromPersonalUrl(fullUrl: string): string | null {
+    try {
+        const u = new URL(fullUrl);
+        const segs = u.pathname.split("/").filter(Boolean);
+        if (segs[0] !== "personal") return null;
+        const alias = segs[1];
+        const parts = alias.split("_").filter(Boolean);
+        if (parts.length < 2) return null;
+        const user = parts.shift()!;
+        const domain = parts.join(".");
+        return `${user}@${domain}`;
+    } catch {
+        return null;
+    }
+}
+
 function encodeDrivePath(path: string): string {
     return path
         .split("/")
         .filter(Boolean)
-        .map(seg => encodeURIComponent(seg))
+        .map((seg) => encodeURIComponent(seg))
         .join("/");
 }
 
-// Map common folder name variations
-function normalizeFolderPath(drivePath: string): string {
-    // Common variations: Scanned_Mail vs Scanned Mail vs ScannedMail
-    return drivePath
-        .replace(/Documents\/Scanned_Mail\//g, 'Documents/Scanned Mail/')
-        .replace(/Documents\/ScannedMail\//g, 'Documents/Scanned Mail/');
-}
-
-// List parent folder for debugging when path not found
-async function listParentForDebug(token: string, upn: string, drivePath: string) {
-    const parent = drivePath.split("/").slice(0, -1).join("/") || "";
-    const listUrl = parent
-        ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root:/${encodeDrivePath(parent)}:/children`
-        : `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
-
-    const r = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` } });
-    const t = await r.text().catch(() => "");
-    console.log("[GRAPH LIST PARENT]", { parent, status: r.status, body: t.slice(0, 1000) });
-
-    if (r.ok) {
-        const data = JSON.parse(t);
-        console.log(`[GRAPH LIST PARENT] Folder contents:`, data.value?.map((item: any) => item.name) || []);
+export function extractDrivePathFromSharePointUrl(fullUrl: string): string {
+    const u = new URL(fullUrl);
+    const expected = SITE_PATH;
+    if (u.pathname.startsWith(expected + "/")) {
+        const rest = u.pathname.slice(expected.length + 1);
+        const decoded = decodeURIComponent(rest.replace(/^\/+/, ""));
+        log("[DOWNLOAD DEBUG] Extracted drive path:", decoded);
+        return decoded;
     }
+    const m = /\/Documents\/.+$/i.exec(u.pathname);
+    if (m) {
+        const decoded = decodeURIComponent(m[0].replace(/^\/+/, ""));
+        log("[DOWNLOAD DEBUG] Extracted drive path via fallback:", decoded);
+        return decoded;
+    }
+    throw new Error(`Unable to derive drive path from URL: ${fullUrl}`);
 }
 
-// Improved fallback with parent folder listing instead of search
-async function tryFetchByPathOrListParent(
+async function fetchOneDriveContentByPath(
     token: string,
-    upnOrSite: { upn?: string; host?: string; sitePath?: string; driveId?: string },
+    upn: string,
     drivePath: string
 ) {
-    // 1) Try by path
-    const encodedPath = encodeDrivePath(drivePath);
-    let contentUrl: string;
-    
-    if (upnOrSite.driveId) {
-        // Use driveId approach for OneDrive personal
-        contentUrl = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(upnOrSite.driveId)}/root:/${encodedPath}:/content`;
-    } else if (upnOrSite.upn) {
-        // Fallback to user approach
-        contentUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/${encodedPath}:/content`;
-    } else {
-        // SharePoint site drive
-        contentUrl = `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root:/${encodedPath}:/content`;
+    const driveResp = await fetch(
+        `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive`,
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!driveResp.ok) {
+        const d = await driveResp.text().catch(() => "");
+        throw new Error(`Graph drive lookup error ${driveResp.status}: ${d}`);
     }
+    const { id: driveId } = await driveResp.json();
+    log("[GRAPH DEBUG] driveId:", driveId);
 
-    let r = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
-    if (r.ok) return r;
-
-    // If not found, 404 -> list parent folder for debugging
-    if (r.status === 404) {
-        console.log(`[GRAPH FALLBACK] Path not found, listing parent folder for debugging...`);
-        if (upnOrSite.upn) {
-            await listParentForDebug(token, upnOrSite.upn, drivePath);
+    const candidates = new Set<string>([drivePath]);
+    if (/^Documents\/.+/i.test(drivePath)) {
+        candidates.add(drivePath.replace(/^Documents\//i, ""));
+        const segs = drivePath.split("/");
+        if (segs.length > 2) {
+            const first = segs[1];
+            if (first.includes("_")) {
+                candidates.add(drivePath.replace(first, first.replace(/_/g, " ")));
+            }
+            if (first.includes(" ")) {
+                candidates.add(drivePath.replace(first, first.replace(/ /g, "_")));
+            }
         }
     }
 
-    // Return original response (with its error body for logs)
-    return r;
-}
-
-// In: https://.../personal/ops_.../Documents/Scanned_Mail/user4_1111_bilan.pdf
-// Out: Documents/Scanned_Mail/user4_1111_bilan.pdf
-export function extractDrivePathFromSharePointUrl(fullUrl: string): string {
-    const u = new URL(fullUrl);
-    const expectedPrefix = SITE_PATH; // already has no trailing slash
-    // Normal case: after the /personal/... prefix
-    if (u.pathname.startsWith(expectedPrefix + "/")) {
-        const rest = u.pathname.slice(expectedPrefix.length + 1);
-        return decodeURIComponent(rest.replace(/^\/+/, ""));
+    let lastDetail = "";
+    for (const p of candidates) {
+        const encoded = encodeDrivePath(p);
+        const url = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(
+            driveId
+        )}/root:/${encoded}:/content`;
+        log("[GRAPH TRY]", { candidate: p, url });
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) return r;
+        lastDetail = await r.text().catch(() => "");
+        log("[GRAPH TRY RESULT]", { status: r.status, detail: lastDetail.slice(0, 500) });
     }
-    // Fallback: find /Documents/...
-    const m = /\/Documents\/.+$/i.exec(u.pathname);
-    if (m) return decodeURIComponent(m[0].replace(/^\/+/, ""));
-    throw new Error(`Unable to derive drive path from URL: ${fullUrl}`);
+
+    const first = [...candidates][0];
+    const parent = first.split("/").slice(0, -1).join("/");
+    if (parent) {
+        const listUrl = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(
+            driveId
+        )}/root:/${encodeDrivePath(parent)}:/children`;
+        const lr = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` } });
+        const txt = await lr.text().catch(() => "");
+        log("[GRAPH LIST PARENT]", { parent, status: lr.status, body: txt.slice(0, 1000) });
+    }
+
+    throw new Error(`Graph content error: all candidates failed. Last detail: ${lastDetail}`);
 }
 
 export async function streamSharePointFileByPath(
     res: any,
     drivePath: string,
-    opts?: { filename?: string; disposition?: "inline" | "attachment" }
+    opts: {
+        filename?: string;
+        disposition?: "inline" | "attachment";
+        fileUrl?: string;
+    } = {}
 ) {
     const token = await graphBearer();
+    const disp = opts?.disposition || "inline";
+    const name = opts?.filename || drivePath.split("/").pop() || "file";
 
-    // Build correct endpoint: OneDrive personal uses users/{UPN}/drive
-    let contentUrl: string;
-    let driveId: string | undefined;
-    let upn: string | undefined;
-    
     if (SITE_PATH.startsWith("/personal/")) {
-        upn = extractUPNFromSitePath(SITE_PATH);
+        const upnFromUrlVal = opts.fileUrl ? upnFromPersonalUrl(opts.fileUrl) : null;
+        const upn = upnFromUrlVal || extractUPNFromSitePath(SITE_PATH);
+        log("[GRAPH DEBUG] OneDrive personal drive detected");
+        log("[GRAPH DEBUG] UPN:", upn);
+        log("[GRAPH DEBUG] Drive path:", drivePath);
 
-        // Use driveId-based path for better OneDrive compatibility
-        console.log(`[GRAPH DEBUG] OneDrive personal drive detected`);
-        console.log(`[GRAPH DEBUG] UPN: ${upn}`);
-        console.log(`[GRAPH DEBUG] Drive path: ${drivePath}`);
-
-        // First get the drive ID
-        const userDriveResp = await fetch(
-            `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive`,
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!userDriveResp.ok) {
-            const detail = await userDriveResp.text().catch(() => "");
-            throw new Error(`Graph drive lookup error ${userDriveResp.status}: ${detail}`);
+        const upstream = await fetchOneDriveContentByPath(token, upn, drivePath);
+        if (!upstream.ok) {
+            const detail = await upstream.text().catch(() => "");
+            throw new Error(`Graph content error ${upstream.status}: ${detail}`);
         }
-        const { id } = await userDriveResp.json();
-        driveId = id;
-        console.log(`[GRAPH DEBUG] Drive ID: ${driveId}`);
 
-        // Then fetch by driveId + path
-        const encodedPath = encodeDrivePath(drivePath);
-        contentUrl = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId!)}/root:/${encodedPath}:/content`;
-
-        console.log(`[GRAPH DEBUG] Encoded path: ${encodedPath}`);
-        console.log(`[GRAPH DEBUG] Graph URL: ${contentUrl}`);
-    } else {
-        // SharePoint site drive
-        const encodedPath = encodeDrivePath(drivePath);
-        contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodedPath}:/content`;
-
-        console.log(`[GRAPH DEBUG] SharePoint site drive detected`);
-        console.log(`[GRAPH DEBUG] Host: ${HOST}`);
-        console.log(`[GRAPH DEBUG] Site path: ${SITE_PATH}`);
-        console.log(`[GRAPH DEBUG] Drive path: ${drivePath}`);
-        console.log(`[GRAPH DEBUG] Encoded path: ${encodedPath}`);
-        console.log(`[GRAPH DEBUG] Graph URL: ${contentUrl}`);
+        const ct = upstream.headers.get("content-type") || "application/pdf";
+        const len = upstream.headers.get("content-length");
+        res.setHeader("Content-Type", ct);
+        res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
+        res.setHeader("Cache-Control", "private, no-store");
+        if (len) res.setHeader("Content-Length", len);
+        // @ts-ignore
+        upstream.body.pipe(res);
+        return;
     }
 
-    console.log("[GRAPH FETCH]", {
-        upn,
-        drivePath,
-        url: contentUrl,
-    });
-
-    // Try original path first, then normalized path if it fails
-    let upstream = await tryFetchByPathOrListParent(token,
-        upn ? { upn, driveId } : { host: HOST, sitePath: SITE_PATH },
+    const contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodeDrivePath(
         drivePath
-    );
-
-    // If original path fails with 404, try normalized folder names
-    if (!upstream.ok && upstream.status === 404) {
-        const normalizedPath = normalizeFolderPath(drivePath);
-        if (normalizedPath !== drivePath) {
-            console.log(`[GRAPH FALLBACK] Trying normalized path: ${normalizedPath}`);
-            upstream = await tryFetchByPathOrListParent(token,
-                upn ? { upn, driveId } : { host: HOST, sitePath: SITE_PATH },
-                normalizedPath
-            );
-        }
-    }
-
+    )}:/content`;
+    log("[GRAPH DEBUG] SharePoint site drive detected");
+    log("[GRAPH DEBUG] Graph URL:", contentUrl);
+    const upstream = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
     if (!upstream.ok) {
         const detail = await upstream.text().catch(() => "");
         throw new Error(`Graph content error ${upstream.status}: ${detail}`);
     }
-
-    const ct = upstream.headers.get("content-type") || "application/octet-stream";
-    const name = opts?.filename || drivePath.split("/").pop() || "file";
-    const disp = opts?.disposition || "inline";
-
+    const ct = upstream.headers.get("content-type") || "application/pdf";
+    const len = upstream.headers.get("content-length");
     res.setHeader("Content-Type", ct);
     res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
     res.setHeader("Cache-Control", "private, no-store");
-    const len = upstream.headers.get("content-length");
     if (len) res.setHeader("Content-Length", len);
-
-    // @ts-ignore Readable stream piping in Node
+    // @ts-ignore
     upstream.body.pipe(res);
 }
+

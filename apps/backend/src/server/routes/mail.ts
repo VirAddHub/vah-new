@@ -289,10 +289,11 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         const drivePath = extractDrivePathFromSharePointUrl(result.url);
         console.log(`[DOWNLOAD DEBUG] Extracted drive path: ${drivePath}`);
 
-        // Stream file from SharePoint via Graph API
+        // Stream file from SharePoint via Graph API (pass fileUrl for per-file UPN)
         await streamSharePointFileByPath(res, drivePath, {
             filename: `mail-${mailId}.pdf`,
             disposition,
+            fileUrl: result.url,
         });
 
     } catch (err: any) {
