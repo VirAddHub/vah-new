@@ -35,35 +35,58 @@ export async function getGraphToken(): Promise<string> {
 }
 
 export async function fetchGraphFileByUserPath(
-  upn: string,
-  docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
-  disposition: 'inline' | 'attachment' = 'inline'
+    upn: string,
+    docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+    disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
-  console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
-  const token = await getGraphToken();
-  
-  // Encode segments but keep the "/" separators
-  const safePath = docPath
-    .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
-    .map((seg) => encodeURIComponent(seg))
-    .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+    console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
+    const token = await getGraphToken();
 
-  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
-    upn
-  )}/drive/root:/${safePath}:/content`;
+    // Encode segments but keep the "/" separators
+    const safePath = docPath
+        .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
+        .map((seg) => encodeURIComponent(seg))
+        .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
 
-  console.log(`[msGraph] Fetching (user path): users/${upn}/drive/root:/${safePath}:/content`);
-  console.log(`[msGraph] Graph API URL: ${url}`);
+    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+        upn
+    )}/drive/root:/${safePath}:/content`;
 
-  // We follow redirects so we end at the CDN response
-  const r = await fetch(url, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-    redirect: 'follow',
-    cache: 'no-store',
-  });
-  
+    console.log(`[msGraph] Fetching (user path): users/${upn}/drive/root:/${safePath}:/content`);
+    console.log(`[msGraph] Graph API URL: ${url}`);
+
+    // We follow redirects so we end at the CDN response
+    const r = await fetch(url, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        redirect: 'follow',
+        cache: 'no-store',
+    });
+
   console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
+  
+  // If 404, try to list the drive root to see what's available
+  if (r.status === 404) {
+    console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
+    try {
+      const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
+      const listResp = await fetch(listUrl, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      
+      if (listResp.ok) {
+        const listData = await listResp.json();
+        console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
+      } else {
+        console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
+      }
+    } catch (listErr) {
+      console.log(`[msGraph] Error listing drive contents:`, listErr);
+    }
+  }
+  
   return r;
 }
 
@@ -71,11 +94,21 @@ export async function fetchGraphFileByUserPath(
 export function extractDocumentsPathFromSharePointUrl(u: string): string | null {
     try {
         const url = new URL(u);
+        console.log(`[msGraph] Analyzing SharePoint URL: ${u}`);
+        console.log(`[msGraph] URL hostname: ${url.hostname}`);
+        console.log(`[msGraph] URL pathname: ${url.pathname}`);
+        
         const ix = url.pathname.indexOf('/Documents/');
-        if (ix === -1) return null;
+        if (ix === -1) {
+            console.log(`[msGraph] No /Documents/ found in pathname`);
+            return null;
+        }
         const path = url.pathname.slice(ix + 1); // drop leading slash
-        return decodeURIComponent(path.replace(/^\/+/, '')); // "Documents/xyz.pdf"
-    } catch {
+        const decodedPath = decodeURIComponent(path.replace(/^\/+/, '')); // "Documents/xyz.pdf"
+        console.log(`[msGraph] Extracted path: ${decodedPath}`);
+        return decodedPath;
+    } catch (err) {
+        console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
         return null;
     }
 }
