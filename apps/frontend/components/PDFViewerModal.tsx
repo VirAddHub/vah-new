@@ -54,10 +54,11 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                // Forward JWT via header so BFF can auth to backend
+                // Forward JWT via header so BFF can auth to backend and force no-store
                 const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
                 const res = await fetch(url, {
                     credentials: 'include',
+                    cache: 'no-store',
                     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
                 if (!res.ok) {
@@ -67,7 +68,10 @@ export default function PDFViewerModal({
 
                 const blob = await res.blob();
                 const bUrl = URL.createObjectURL(blob);
-                if (!cancelled) setViewerUrl(bUrl);
+                if (!cancelled) {
+                    if (process.env.NODE_ENV !== 'production') console.debug('[PDFViewerModal] viewerUrl', bUrl.slice(0, 10));
+                    setViewerUrl(bUrl);
+                }
             } catch (e: any) {
                 if (!cancelled) setError(e?.message || 'Failed to load document');
             } finally {
