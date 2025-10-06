@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -98,12 +96,7 @@ export default function PDFViewerModal({
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
             <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden">
                 <DialogHeader className="px-4 py-3 border-b">
-                    <div className="flex items-center justify-between gap-3">
-                        <DialogTitle className="truncate">{mailItemSubject || 'Document'}</DialogTitle>
-                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <DialogTitle className="truncate">{mailItemSubject || 'Document'}</DialogTitle>
                 </DialogHeader>
 
                 <div className="relative h-[calc(90vh-56px)] bg-muted">
