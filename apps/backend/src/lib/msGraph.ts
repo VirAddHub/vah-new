@@ -1,19 +1,19 @@
 import { AZURE_CONFIG, graphCredsPresent } from '../config/azure';
 
 export async function getGraphToken(): Promise<string> {
-  if (!graphCredsPresent()) {
-    throw new Error('[graph token] Missing required environment variables. Check GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET or MS_* equivalents');
-  }
+    if (!graphCredsPresent()) {
+        throw new Error('[graph token] Missing required environment variables. Check GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET or MS_* equivalents');
+    }
 
-  const tenant = AZURE_CONFIG.TENANT_ID!;
-  const clientId = AZURE_CONFIG.CLIENT_ID!;
-  const clientSecret = AZURE_CONFIG.CLIENT_SECRET!;
-  
-  console.log(`[msGraph] Getting token for tenant: ${tenant}, clientId: ${clientId}`);
+    const tenant = AZURE_CONFIG.TENANT_ID!;
+    const clientId = AZURE_CONFIG.CLIENT_ID!;
+    const clientSecret = AZURE_CONFIG.CLIENT_SECRET!;
 
-  const form = new URLSearchParams();
-  form.set('client_id', clientId);
-  form.set('client_secret', clientSecret);
+    console.log(`[msGraph] Getting token for tenant: ${tenant}, clientId: ${clientId}`);
+
+    const form = new URLSearchParams();
+    form.set('client_id', clientId);
+    form.set('client_secret', clientSecret);
     form.set('scope', 'https://graph.microsoft.com/.default');
     form.set('grant_type', 'client_credentials');
 
@@ -35,29 +35,36 @@ export async function getGraphToken(): Promise<string> {
 }
 
 export async function fetchGraphFileByUserPath(
-    upn: string,
-    docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
-    disposition: 'inline' | 'attachment' = 'inline'
+  upn: string,
+  docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+  disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
-    console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
-    const token = await getGraphToken();
-    // Graph endpoint: users/{UPN}/drive/root:/<path>:/content → 302 or 200
-    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
-        upn
-    )}/drive/root:/${encodeURIComponent(docPath)}:/content`;
+  console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
+  const token = await getGraphToken();
+  
+  // Encode segments but keep the "/" separators
+  const safePath = docPath
+    .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
 
-    console.log(`[msGraph] Graph API URL: ${url}`);
+  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+    upn
+  )}/drive/root:/${safePath}:/content`;
 
-    // We follow redirects so we end at the CDN response
-    const r = await fetch(url, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-        redirect: 'follow',
-        cache: 'no-store',
-    });
+  console.log(`[msGraph] Fetching (user path): users/${upn}/drive/root:/${safePath}:/content`);
+  console.log(`[msGraph] Graph API URL: ${url}`);
 
-    console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
-    return r;
+  // We follow redirects so we end at the CDN response
+  const r = await fetch(url, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+    redirect: 'follow',
+    cache: 'no-store',
+  });
+  
+  console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
+  return r;
 }
 
 /** Extract "Documents/..." from a classic personal SharePoint URL */
