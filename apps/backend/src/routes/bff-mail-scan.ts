@@ -43,7 +43,7 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         
         if (!isOwner && !isPrivileged) {
             console.log(`[BFF DEBUG] Access denied - user ${user.id} is not owner (${item.user_id}) and not privileged`);
-            return res.status(403).send('Forbidden');
+            return res.status(403).send(`Forbidden: Mail item ${mailItemId} belongs to user ${item.user_id}, but you are user ${user.id}`);
         }
         if (item.deleted) return res.status(410).send('Mail item deleted');
         if (!item.scan_file_url) return res.status(404).send('No scan available');
