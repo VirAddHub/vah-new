@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -94,8 +96,16 @@ export default function PDFViewerModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-primary/20 shadow-lg">
+            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-primary/20 shadow-lg [&>button]:hidden">
                 <div className="relative h-[90vh] bg-gradient-to-br from-background to-muted/30">
+                    {/* Custom Close Button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-50 h-8 w-8 flex items-center justify-center bg-white/90 hover:bg-white shadow-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 rounded-md hover:shadow-xl"
+                        aria-label="Close PDF viewer"
+                    >
+                        <X className="h-4 w-4 text-gray-600 hover:text-gray-800" />
+                    </button>
                     {loading && (
                         <div className="absolute inset-0 grid place-items-center">
                             <div className="flex flex-col items-center gap-3">
