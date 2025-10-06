@@ -35,59 +35,84 @@ export async function getGraphToken(): Promise<string> {
 }
 
 export async function fetchGraphFileByUserPath(
-    upn: string,
-    docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
-    disposition: 'inline' | 'attachment' = 'inline'
+  upn: string,
+  docPath: string, // e.g. "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+  disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
-    console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
-    const token = await getGraphToken();
+  console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
+  const token = await getGraphToken();
+  
+  // Try the original path first
+  const safePath = docPath
+    .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
 
-    // Encode segments but keep the "/" separators
-    const safePath = docPath
-        .split('/')                 // -> ["Documents","Scanned_Mail","user4_122_HMRC.pdf"]
-        .map((seg) => encodeURIComponent(seg))
-        .join('/');                 // -> "Documents/Scanned_Mail/user4_122_HMRC.pdf"
+  let url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+    upn
+  )}/drive/root:/${safePath}:/content`;
 
-    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
-        upn
-    )}/drive/root:/${safePath}:/content`;
+  console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${safePath}:/content`);
+  console.log(`[msGraph] Graph API URL: ${url}`);
 
-    console.log(`[msGraph] Fetching (user path): users/${upn}/drive/root:/${safePath}:/content`);
+  // We follow redirects so we end at the CDN response
+  let r = await fetch(url, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+    redirect: 'follow',
+    cache: 'no-store',
+  });
+  
+  console.log(`[msGraph] Path attempt failed: ${r.status} ${r.statusText}`);
+  
+  // If 404 and path starts with "Documents/", try without "Documents/" prefix
+  if (r.status === 404 && docPath.startsWith('Documents/')) {
+    const fallbackPath = docPath.replace(/^Documents\//, ''); // Remove "Documents/" prefix
+    const safeFallbackPath = fallbackPath
+      .split('/')
+      .map((seg) => encodeURIComponent(seg))
+      .join('/');
+    
+    url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+      upn
+    )}/drive/root:/${safeFallbackPath}:/content`;
+    
+    console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${safeFallbackPath}:/content`);
     console.log(`[msGraph] Graph API URL: ${url}`);
-
-    // We follow redirects so we end at the CDN response
-    const r = await fetch(url, {
+    
+    r = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'follow',
+      cache: 'no-store',
+    });
+    
+    console.log(`[msGraph] Fallback path result: ${r.status} ${r.statusText}`);
+  }
+  
+  // If still 404, try to list the drive root to see what's available
+  if (r.status === 404) {
+    console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
+    try {
+      const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
+      const listResp = await fetch(listUrl, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
-        redirect: 'follow',
         cache: 'no-store',
-    });
-
-    console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
-
-    // If 404, try to list the drive root to see what's available
-    if (r.status === 404) {
-        console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
-        try {
-            const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
-            const listResp = await fetch(listUrl, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
-                cache: 'no-store',
-            });
-
-            if (listResp.ok) {
-                const listData = await listResp.json();
-                console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
-            } else {
-                console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
-            }
-        } catch (listErr) {
-            console.log(`[msGraph] Error listing drive contents:`, listErr);
-        }
+      });
+      
+      if (listResp.ok) {
+        const listData = await listResp.json();
+        console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
+      } else {
+        console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
+      }
+    } catch (listErr) {
+      console.log(`[msGraph] Error listing drive contents:`, listErr);
     }
-
-    return r;
+  }
+  
+  return r;
 }
 
 /** Extract "Documents/..." from a classic personal SharePoint URL */
@@ -125,49 +150,49 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
  *  'ops_virtualaddresshub_co_uk' → 'ops@virtualaddresshub.co.uk'
  */
 export function upnFromPersonalSegment(seg: string): string | null {
-  if (!seg) return null;
+    if (!seg) return null;
 
-  // If it already looks like an email, just return it
-  if (seg.includes('@')) return seg;
+    // If it already looks like an email, just return it
+    if (seg.includes('@')) return seg;
 
-  // Split on underscores: first part = local, rest = domain parts
-  const parts = seg.split('_').filter(Boolean);
-  if (parts.length < 2) return null;
+    // Split on underscores: first part = local, rest = domain parts
+    const parts = seg.split('_').filter(Boolean);
+    if (parts.length < 2) return null;
 
-  const local = parts[0];
-  const domain = parts.slice(1).join('.'); // "virtualaddresshub.co.uk"
-  return `${local}@${domain}`;             // "ops@virtualaddresshub.co.uk"
+    const local = parts[0];
+    const domain = parts.slice(1).join('.'); // "virtualaddresshub.co.uk"
+    return `${local}@${domain}`;             // "ops@virtualaddresshub.co.uk"
 }
 
 /** Extract UPN from a SharePoint personal URL. Prefer login_hint, else derive from path */
 export function extractUpnFromSharePointUrl(u: string): string | null {
-  try {
-    const url = new URL(u);
+    try {
+        const url = new URL(u);
 
-    // 1) If login_hint/email query param is present, use it
-    const loginHint =
-      url.searchParams.get('login_hint') ||
-      url.searchParams.get('email') ||
-      url.searchParams.get('user');
-    if (loginHint) {
-      console.log(`[msGraph] Using login_hint: ${loginHint}`);
-      return decodeURIComponent(loginHint);
-    }
+        // 1) If login_hint/email query param is present, use it
+        const loginHint =
+            url.searchParams.get('login_hint') ||
+            url.searchParams.get('email') ||
+            url.searchParams.get('user');
+        if (loginHint) {
+            console.log(`[msGraph] Using login_hint: ${loginHint}`);
+            return decodeURIComponent(loginHint);
+        }
 
-    // 2) Fallback: derive from /personal/<seg>/...
-    const m = url.pathname.match(/\/personal\/([^/]+)/i);
-    if (!m) {
-      console.log(`[msGraph] No /personal/ segment found in URL`);
-      return null;
+        // 2) Fallback: derive from /personal/<seg>/...
+        const m = url.pathname.match(/\/personal\/([^/]+)/i);
+        if (!m) {
+            console.log(`[msGraph] No /personal/ segment found in URL`);
+            return null;
+        }
+
+        const upn = upnFromPersonalSegment(m[1]);
+        console.log(`[msGraph] Converted personal segment '${m[1]}' to UPN: ${upn}`);
+        return upn;
+    } catch (err) {
+        console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
+        return null;
     }
-    
-    const upn = upnFromPersonalSegment(m[1]);
-    console.log(`[msGraph] Converted personal segment '${m[1]}' to UPN: ${upn}`);
-    return upn;
-  } catch (err) {
-    console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
-    return null;
-  }
 }
 
 export function isSharePointPersonalUrl(u: string): boolean {
