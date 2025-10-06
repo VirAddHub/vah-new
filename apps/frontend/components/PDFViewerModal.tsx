@@ -26,9 +26,11 @@ export default function PDFViewerModal({
     const [downloadName, setDownloadName] = React.useState<string>("document.pdf");
 
     const revokeUrl = React.useCallback(() => {
-        if (viewerUrl && viewerUrl.startsWith("blob:")) {
-            URL.revokeObjectURL(viewerUrl);
-        }
+        try {
+            if (viewerUrl && viewerUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(viewerUrl);
+            }
+        } catch {}
     }, [viewerUrl]);
 
     React.useEffect(() => {
@@ -73,10 +75,11 @@ export default function PDFViewerModal({
                     throw new Error(txt || `Failed to load PDF (${res.status})`);
                 }
 
-                const blob = await res.blob();
+                const ab = await res.arrayBuffer();
+                const blob = new Blob([ab], { type: 'application/pdf' }); // ✅ force proper MIME
                 const bUrl = URL.createObjectURL(blob);
                 if (!cancelled) {
-                    if (process.env.NODE_ENV !== 'production') console.debug('[PDFViewerModal] viewerUrl', bUrl.slice(0, 10));
+                    console.debug('[PDFViewerModal] blob url:', bUrl.slice(0, 20), 'ct=application/pdf');
                     setViewerUrl(bUrl);
                 }
             } catch (e: any) {
@@ -97,21 +100,27 @@ export default function PDFViewerModal({
     const handleDownload = async () => {
         try {
             if (!mailItemId) return;
-            const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
-            const res = await fetch(`/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=attachment`, {
-                credentials: 'include',
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            });
+            
+            // Build absolute backend URL for download
+            const apiBaseRaw =
+                process.env.NEXT_PUBLIC_API_BASE ||
+                process.env.BACKEND_API_ORIGIN ||
+                '';
+            const apiBase = apiBaseRaw.replace(/\/+$/, '');
+            const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+            const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=attachment`;
+            
+            const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
             if (!res.ok) throw new Error('Download failed');
             const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
+            const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = blobUrl;
             a.download = downloadName;
             document.body.appendChild(a);
             a.click();
             a.remove();
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(blobUrl);
         } catch (e: any) {
             setError(e?.message || 'Download failed');
         }
@@ -142,12 +151,17 @@ export default function PDFViewerModal({
                         </div>
                     )}
                     {!loading && !error && viewerUrl && (
-                        <iframe
-                            title="PDF preview"
-                            src={viewerUrl}
+                        <object
+                            data={viewerUrl}
+                            type="application/pdf"
                             className="w-full h-full"
-                            sandbox="allow-scripts allow-same-origin allow-downloads"
-                        />
+                        >
+                            <iframe
+                                title="PDF preview"
+                                src={viewerUrl}
+                                className="w-full h-full border-0"
+                            />
+                        </object>
                     )}
                 </div>
             </DialogContent>

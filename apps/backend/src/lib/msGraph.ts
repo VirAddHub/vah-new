@@ -35,84 +35,84 @@ export async function getGraphToken(): Promise<string> {
 }
 
 export async function fetchGraphFileByUserPath(
-  upn: string,
-  docPath: string, // e.g. "Scanned_Mail/user4_122_HMRC.pdf" (already normalized)
-  disposition: 'inline' | 'attachment' = 'inline'
+    upn: string,
+    docPath: string, // e.g. "Scanned_Mail/user4_122_HMRC.pdf" (already normalized)
+    disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
-  console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
-  const token = await getGraphToken();
-  
-  const safePath = docPath
-    .split('/')                 // -> ["Scanned_Mail","user4_122_HMRC.pdf"]
-    .map((seg) => encodeURIComponent(seg))
-    .join('/');                 // -> "Scanned_Mail/user4_122_HMRC.pdf"
+    console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
+    const token = await getGraphToken();
 
-  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
-    upn
-  )}/drive/root:/${safePath}:/content`;
+    const safePath = docPath
+        .split('/')                 // -> ["Scanned_Mail","user4_122_HMRC.pdf"]
+        .map((seg) => encodeURIComponent(seg))
+        .join('/');                 // -> "Scanned_Mail/user4_122_HMRC.pdf"
 
-  console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${docPath}:/content`);
-  console.log(`[msGraph] Graph API URL: ${url}`);
+    const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+        upn
+    )}/drive/root:/${safePath}:/content`;
 
-  // We follow redirects so we end at the CDN response
-  const r = await fetch(url, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-    redirect: 'follow',
-    cache: 'no-store',
-  });
-  
-  console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
-  
-  // If still 404, try to list the drive root to see what's available
-  if (r.status === 404) {
-    console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
-    try {
-      const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
-      const listResp = await fetch(listUrl, {
+    console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${docPath}:/content`);
+    console.log(`[msGraph] Graph API URL: ${url}`);
+
+    // We follow redirects so we end at the CDN response
+    const r = await fetch(url, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
+        redirect: 'follow',
         cache: 'no-store',
-      });
-      
-      if (listResp.ok) {
-        const listData = await listResp.json();
-        console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
-      } else {
-        console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
-      }
-    } catch (listErr) {
-      console.log(`[msGraph] Error listing drive contents:`, listErr);
+    });
+
+    console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
+
+    // If still 404, try to list the drive root to see what's available
+    if (r.status === 404) {
+        console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
+        try {
+            const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
+            const listResp = await fetch(listUrl, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
+            });
+
+            if (listResp.ok) {
+                const listData = await listResp.json();
+                console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
+            } else {
+                console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
+            }
+        } catch (listErr) {
+            console.log(`[msGraph] Error listing drive contents:`, listErr);
+        }
     }
-  }
-  
-  return r;
+
+    return r;
 }
 
 /** Extract "Documents/..." from a classic personal SharePoint URL */
 export function extractDocumentsPathFromSharePointUrl(u: string): string | null {
-  try {
-    const url = new URL(u);
-    const idParam = url.searchParams.get('id');
-    const source = idParam ? decodeURIComponent(idParam) : url.pathname;
+    try {
+        const url = new URL(u);
+        const idParam = url.searchParams.get('id');
+        const source = idParam ? decodeURIComponent(idParam) : url.pathname;
 
-    // prefer /Documents/... if present, else take everything after /personal/<seg>/
-    const ix = source.toLowerCase().indexOf('/documents/');
-    let path = ix !== -1 ? source.slice(ix + 1) : (source.match(/\/personal\/[^/]+\/(.*)$/i)?.[1] || '');
+        // prefer /Documents/... if present, else take everything after /personal/<seg>/
+        const ix = source.toLowerCase().indexOf('/documents/');
+        let path = ix !== -1 ? source.slice(ix + 1) : (source.match(/\/personal\/[^/]+\/(.*)$/i)?.[1] || '');
 
-    path = decodeURIComponent(path).replace(/^\/+/, '');
+        path = decodeURIComponent(path).replace(/^\/+/, '');
 
-    // 🔧 tenant quirk: Scanned_Mail sits at root; drop leading "Documents/"
-    if (/^documents\/scanned_mail\//i.test(path)) {
-      path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…"
+        // 🔧 tenant quirk: Scanned_Mail sits at root; drop leading "Documents/"
+        if (/^documents\/scanned_mail\//i.test(path)) {
+            path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…"
+        }
+
+        console.log(`[msGraph] Extracted and normalized path: ${path}`);
+        return path || null;
+    } catch (err) {
+        console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
+        return null;
     }
-
-    console.log(`[msGraph] Extracted and normalized path: ${path}`);
-    return path || null;
-  } catch (err) {
-    console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
-    return null;
-  }
 }
 
 /** Convert a SharePoint 'personal' segment like
