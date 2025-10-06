@@ -5,7 +5,7 @@ export async function openInline(url: string) {
     const match = url.match(/\/api\/mail-items\/(\d+)\/download/);
     if (!match) throw new Error("Invalid mail item URL");
     const itemId = parseInt(match[1]);
-    
+
     // Use the new tab approach without blobs
     const newTabUrl = `${API_BASE}/api/mail-items/${itemId}/download?disposition=inline`;
     const tab = window.open(newTabUrl, "_blank", "noopener,noreferrer");
@@ -17,7 +17,7 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     const match = url.match(/\/api\/mail-items\/(\d+)\/download/);
     if (!match) throw new Error("Invalid mail item URL");
     const itemId = parseInt(match[1]);
-    
+
     // Use direct download without blob
     const downloadUrl = `${API_BASE}/api/mail-items/${itemId}/download?disposition=attachment`;
     const a = document.createElement("a");

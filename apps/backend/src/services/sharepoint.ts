@@ -168,6 +168,11 @@ export async function streamSharePointFileByPath(
             res.setHeader("Accept-Ranges", "bytes"); // Allow range requests for PDF viewer
             res.setHeader("Cache-Control", "private, no-store");
             res.setHeader("X-Frame-Options", "SAMEORIGIN"); // Allow iframe embedding on same origin
+            res.setHeader("Access-Control-Allow-Credentials", "true");
+            res.setHeader(
+                "Access-Control-Expose-Headers",
+                "Accept-Ranges, Content-Length, Content-Disposition, Content-Type"
+            );
             if (len) res.setHeader("Content-Length", len);
 
             const body = redirectResponse.body as any; // WHATWG ReadableStream in Node 18/20
@@ -193,6 +198,11 @@ export async function streamSharePointFileByPath(
         res.setHeader("Accept-Ranges", "bytes"); // Allow range requests for PDF viewer
         res.setHeader("Cache-Control", "private, no-store");
         res.setHeader("X-Frame-Options", "SAMEORIGIN"); // Allow iframe embedding on same origin
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader(
+            "Access-Control-Expose-Headers",
+            "Accept-Ranges, Content-Length, Content-Disposition, Content-Type"
+        );
         if (len) res.setHeader("Content-Length", len);
 
         const body = upstream.body as any; // WHATWG ReadableStream in Node 18/20
@@ -243,6 +253,11 @@ export async function streamSharePointFileByPath(
         res.setHeader("Accept-Ranges", "bytes"); // Allow range requests for PDF viewer
         res.setHeader("Cache-Control", "private, no-store");
         res.setHeader("X-Frame-Options", "SAMEORIGIN"); // Allow iframe embedding on same origin
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader(
+            "Access-Control-Expose-Headers",
+            "Accept-Ranges, Content-Length, Content-Disposition, Content-Type"
+        );
         if (len) res.setHeader("Content-Length", len);
 
         const body = redirectResponse.body as any; // WHATWG ReadableStream in Node 18/20
@@ -268,6 +283,11 @@ export async function streamSharePointFileByPath(
     res.setHeader("Accept-Ranges", "bytes"); // Allow range requests for PDF viewer
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("X-Frame-Options", "SAMEORIGIN"); // Allow iframe embedding on same origin
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+        "Access-Control-Expose-Headers",
+        "Accept-Ranges, Content-Length, Content-Disposition, Content-Type"
+    );
     if (len) res.setHeader("Content-Length", len);
 
     const body = upstream.body as any; // WHATWG ReadableStream in Node 18/20

@@ -302,7 +302,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <Settings className="h-4 w-4" />
                   Settings
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="sm"
