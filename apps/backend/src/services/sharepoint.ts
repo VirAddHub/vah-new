@@ -1,4 +1,5 @@
 import { graphBearer } from "../lib/graph";
+import { Readable } from "node:stream";
 
 const HOST = process.env.GRAPH_SITE_HOST!;
 const _SITE_PATH = (process.env.GRAPH_SITE_PATH || "").replace(/\/+$/, "");
@@ -153,22 +154,33 @@ export async function streamSharePointFileByPath(
                 throw new Error("Graph redirect missing location header");
             }
             log("[GRAPH DEBUG] Following redirect to:", redirectUrl);
-            
+
             // Fetch from the redirect URL
             const redirectResponse = await fetch(redirectUrl);
             if (!redirectResponse.ok) {
                 throw new Error(`Redirect fetch error ${redirectResponse.status}`);
             }
-            
+
             const ct = redirectResponse.headers.get("content-type") || "application/pdf";
             const len = redirectResponse.headers.get("content-length");
             res.setHeader("Content-Type", ct);
             res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
             res.setHeader("Cache-Control", "private, no-store");
             if (len) res.setHeader("Content-Length", len);
-            
-            // @ts-ignore - Node.js readable stream
-            redirectResponse.body.pipe(res);
+
+            const body = redirectResponse.body as any; // WHATWG ReadableStream in Node 18/20
+            if (!body) {
+                res.end();
+                return;
+            }
+
+            // If it's already a Node stream (rare), use it; otherwise convert from Web stream
+            if (typeof body.pipe === "function") {
+                body.pipe(res);
+            } else {
+                // Node 18+/20: convert WHATWG ReadableStream to Node Readable and pipe
+                Readable.fromWeb(body).pipe(res);
+            }
             return;
         }
 
@@ -178,9 +190,20 @@ export async function streamSharePointFileByPath(
         res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
         res.setHeader("Cache-Control", "private, no-store");
         if (len) res.setHeader("Content-Length", len);
-        
-        // @ts-ignore - Node.js readable stream
-        upstream.body.pipe(res);
+
+        const body = upstream.body as any; // WHATWG ReadableStream in Node 18/20
+        if (!body) {
+            res.end();
+            return;
+        }
+
+        // If it's already a Node stream (rare), use it; otherwise convert from Web stream
+        if (typeof body.pipe === "function") {
+            body.pipe(res);
+        } else {
+            // Node 18+/20: convert WHATWG ReadableStream to Node Readable and pipe
+            Readable.fromWeb(body).pipe(res);
+        }
         return;
     }
 
@@ -202,22 +225,33 @@ export async function streamSharePointFileByPath(
             throw new Error("Graph redirect missing location header");
         }
         log("[GRAPH DEBUG] Following redirect to:", redirectUrl);
-        
+
         // Fetch from the redirect URL
         const redirectResponse = await fetch(redirectUrl);
         if (!redirectResponse.ok) {
             throw new Error(`Redirect fetch error ${redirectResponse.status}`);
         }
-        
+
         const ct = redirectResponse.headers.get("content-type") || "application/pdf";
         const len = redirectResponse.headers.get("content-length");
         res.setHeader("Content-Type", ct);
         res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
         res.setHeader("Cache-Control", "private, no-store");
         if (len) res.setHeader("Content-Length", len);
-        
-        // @ts-ignore - Node.js readable stream
-        redirectResponse.body.pipe(res);
+
+        const body = redirectResponse.body as any; // WHATWG ReadableStream in Node 18/20
+        if (!body) {
+            res.end();
+            return;
+        }
+
+        // If it's already a Node stream (rare), use it; otherwise convert from Web stream
+        if (typeof body.pipe === "function") {
+            body.pipe(res);
+        } else {
+            // Node 18+/20: convert WHATWG ReadableStream to Node Readable and pipe
+            Readable.fromWeb(body).pipe(res);
+        }
         return;
     }
 
@@ -227,9 +261,20 @@ export async function streamSharePointFileByPath(
     res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
     res.setHeader("Cache-Control", "private, no-store");
     if (len) res.setHeader("Content-Length", len);
-    
-    // @ts-ignore - Node.js readable stream
-    upstream.body.pipe(res);
+
+    const body = upstream.body as any; // WHATWG ReadableStream in Node 18/20
+    if (!body) {
+        res.end();
+        return;
+    }
+
+    // If it's already a Node stream (rare), use it; otherwise convert from Web stream
+    if (typeof body.pipe === "function") {
+        body.pipe(res);
+    } else {
+        // Node 18+/20: convert WHATWG ReadableStream to Node Readable and pipe
+        Readable.fromWeb(body).pipe(res);
+    }
 }
 
 
