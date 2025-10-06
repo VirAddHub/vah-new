@@ -1,27 +1,29 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
 export async function openInline(url: string) {
-    const resp = await fetch(url, { method: "GET", credentials: "include", headers: { Accept: "application/pdf" } });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const blob = await resp.blob();
-    const href = URL.createObjectURL(blob);
-    const tab = window.open();
+    // Extract the mail item ID from the URL for the new tab approach
+    const match = url.match(/\/api\/mail-items\/(\d+)\/download/);
+    if (!match) throw new Error("Invalid mail item URL");
+    const itemId = parseInt(match[1]);
+    
+    // Use the new tab approach without blobs
+    const newTabUrl = `${API_BASE}/api/mail-items/${itemId}/download?disposition=inline`;
+    const tab = window.open(newTabUrl, "_blank", "noopener,noreferrer");
     if (!tab) throw new Error("Popup blocked — allow popups for VirtualAddressHub.");
-    tab.location.href = href;
-    setTimeout(() => URL.revokeObjectURL(href), 60_000);
 }
 
 export async function downloadFile(url: string, fallback = "document.pdf") {
-    const resp = await fetch(`${url}?disposition=attachment`, { method: "GET", credentials: "include" });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const cd = resp.headers.get("content-disposition") || "";
-    const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd);
-    const filename = decodeURIComponent(m?.[1] || m?.[2] || fallback);
-    const blob = await resp.blob();
-    const href = URL.createObjectURL(blob);
+    // Extract the mail item ID from the URL for the new approach
+    const match = url.match(/\/api\/mail-items\/(\d+)\/download/);
+    if (!match) throw new Error("Invalid mail item URL");
+    const itemId = parseInt(match[1]);
+    
+    // Use direct download without blob
+    const downloadUrl = `${API_BASE}/api/mail-items/${itemId}/download?disposition=attachment`;
     const a = document.createElement("a");
-    a.href = href;
-    a.download = filename;
+    a.href = downloadUrl;
+    a.download = fallback;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(href), 30_000);
 }
