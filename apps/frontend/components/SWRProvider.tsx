@@ -28,13 +28,12 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
         <SWRConfig
             value={{
                 fetcher,
-                revalidateIfStale: true,
-                revalidateOnFocus: true,
-                revalidateOnReconnect: true,
-                focusThrottleInterval: 15000,
-                dedupingInterval: 1000,
+                revalidateIfStale: false,
+                revalidateOnFocus: false,
+                revalidateOnReconnect: false,
+                refreshInterval: 0,
+                dedupingInterval: 60000,
                 keepPreviousData: true,
-                loadingTimeout: 3000,
             }}
         >
             {children}
