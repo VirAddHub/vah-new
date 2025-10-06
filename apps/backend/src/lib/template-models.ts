@@ -105,9 +105,9 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
 
   // MAIL
   [Templates.MailScanned]: (a) => ({
-    name: a.name,
+    first_name: a.name,
     subject: a.subjectLine,
-    cta_url: a.ctaUrl,
+    dashboard_link: a.ctaUrl,
   }),
   [Templates.MailForwarded]: (a) => ({
     name: a.name,
