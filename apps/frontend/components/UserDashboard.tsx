@@ -280,7 +280,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <header className="bg-white border-b border-border sticky top-0 z-40">
+      <header className="bg-white border-b border-border sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
@@ -354,7 +354,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         {/* Welcome Message */}
         <div className="mb-8">
-          <h1 className="mb-2">Welcome back, {getUserName()}</h1>
+          <h1 className="mb-2 text-2xl font-bold text-primary">Welcome back, {getUserName()}</h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
@@ -365,15 +365,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="space-y-6">
 
             {/* Mail Inbox Section */}
-            <Card>
-              <CardHeader>
+            <Card className="shadow-sm">
+              <CardHeader className="border-b border-primary/10">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-primary" />
-                      <CardTitle>Mail Inbox</CardTitle>
-                      <Badge variant="secondary">{totalItems} items</Badge>
-                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                      <CardTitle className="text-lg font-semibold">Mail Inbox</CardTitle>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">{totalItems} items</Badge>
+                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
                     </div>
                     <p className="text-sm text-muted-foreground hidden sm:block">
                       Click on any mail item to view full details and scans

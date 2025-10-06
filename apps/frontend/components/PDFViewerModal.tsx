@@ -94,28 +94,42 @@ export default function PDFViewerModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden">
-                <div className="relative h-[90vh] bg-muted">
+            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-primary/20 shadow-lg">
+                <div className="relative h-[90vh] bg-gradient-to-br from-background to-muted/30">
                     {loading && (
-                        <div className="absolute inset-0 grid place-items-center text-sm">Loading PDF…</div>
+                        <div className="absolute inset-0 grid place-items-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="text-sm text-primary font-medium">Loading PDF…</span>
+                            </div>
+                        </div>
                     )}
                     {error && (
-                        <div className="absolute inset-0 grid place-items-center px-4 text-sm text-red-600">
-                            {String(error)}
+                        <div className="absolute inset-0 grid place-items-center px-4">
+                            <div className="text-center">
+                                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <p className="text-sm text-red-600 font-medium">{String(error)}</p>
+                            </div>
                         </div>
                     )}
                     {!loading && !error && viewerUrl && (
-                        <object
-                            data={viewerUrl}
-                            type="application/pdf"
-                            className="w-full h-full"
-                        >
-                            <iframe
-                                title="PDF preview"
-                                src={viewerUrl}
-                                className="w-full h-full border-0"
-                            />
-                        </object>
+                        <div className="w-full h-full rounded-lg overflow-hidden shadow-inner border border-primary/10">
+                            <object
+                                data={viewerUrl}
+                                type="application/pdf"
+                                className="w-full h-full"
+                            >
+                                <iframe
+                                    title="PDF preview"
+                                    src={viewerUrl}
+                                    className="w-full h-full border-0"
+                                />
+                            </object>
+                        </div>
                     )}
                 </div>
             </DialogContent>
