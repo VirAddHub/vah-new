@@ -121,45 +121,53 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
     }
 }
 
-export function extractUPNFromSharePointUrl(u: string): string | null {
-    try {
-        const url = new URL(u);
-        console.log(`[msGraph] Extracting UPN from SharePoint URL: ${u}`);
+/** Convert a SharePoint 'personal' segment like
+ *  'ops_virtualaddresshub_co_uk' → 'ops@virtualaddresshub.co.uk'
+ */
+export function upnFromPersonalSegment(seg: string): string | null {
+  if (!seg) return null;
 
-        // Handle both regular URLs and login_hint URLs
-        let pathname = url.pathname;
-        if (url.searchParams.has('id')) {
-            pathname = url.searchParams.get('id') || pathname;
-        }
+  // If it already looks like an email, just return it
+  if (seg.includes('@')) return seg;
 
-        // Look for /personal/username pattern
-        const personalMatch = pathname.match(/\/personal\/([^\/]+)/);
-        if (personalMatch) {
-            const username = personalMatch[1];
-            console.log(`[msGraph] Found username in path: ${username}`);
-            
-            // Convert underscore format to email format
-            // ops_virtualaddresshub_co_uk -> ops@virtualaddresshub.co.uk
-            // Replace underscores with dots, then replace the last .co.uk with @co.uk
-            let upn = username.replace(/_/g, '.');
-            upn = upn.replace(/\.co\.uk$/, '@co.uk');
-            console.log(`[msGraph] Converted to UPN: ${upn}`);
-            return upn;
-        }
+  // Split on underscores: first part = local, rest = domain parts
+  const parts = seg.split('_').filter(Boolean);
+  if (parts.length < 2) return null;
 
-        // Fallback: try login_hint parameter
-        const loginHint = url.searchParams.get('login_hint');
-        if (loginHint) {
-            console.log(`[msGraph] Using login_hint: ${loginHint}`);
-            return loginHint;
-        }
+  const local = parts[0];
+  const domain = parts.slice(1).join('.'); // "virtualaddresshub.co.uk"
+  return `${local}@${domain}`;             // "ops@virtualaddresshub.co.uk"
+}
 
-        console.log(`[msGraph] No UPN found in URL`);
-        return null;
-    } catch (err) {
-        console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
-        return null;
+/** Extract UPN from a SharePoint personal URL. Prefer login_hint, else derive from path */
+export function extractUpnFromSharePointUrl(u: string): string | null {
+  try {
+    const url = new URL(u);
+
+    // 1) If login_hint/email query param is present, use it
+    const loginHint =
+      url.searchParams.get('login_hint') ||
+      url.searchParams.get('email') ||
+      url.searchParams.get('user');
+    if (loginHint) {
+      console.log(`[msGraph] Using login_hint: ${loginHint}`);
+      return decodeURIComponent(loginHint);
     }
+
+    // 2) Fallback: derive from /personal/<seg>/...
+    const m = url.pathname.match(/\/personal\/([^/]+)/i);
+    if (!m) {
+      console.log(`[msGraph] No /personal/ segment found in URL`);
+      return null;
+    }
+    
+    const upn = upnFromPersonalSegment(m[1]);
+    console.log(`[msGraph] Converted personal segment '${m[1]}' to UPN: ${upn}`);
+    return upn;
+  } catch (err) {
+    console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
+    return null;
+  }
 }
 
 export function isSharePointPersonalUrl(u: string): boolean {

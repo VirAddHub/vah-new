@@ -2,7 +2,7 @@ import type { Response } from 'express';
 import {
   fetchGraphFileByUserPath,
   extractDocumentsPathFromSharePointUrl,
-  extractUPNFromSharePointUrl,
+  extractUpnFromSharePointUrl,
   isSharePointPersonalUrl,
 } from '../lib/msGraph';
 import { AZURE_CONFIG } from '../config/azure';
@@ -35,11 +35,11 @@ export async function streamPdfFromUrl(
       console.log(`[pdfProxy] Detected SharePoint URL, extracting path and UPN...`);
       // 🔐 Use Graph with app permissions against the correct user's drive
       const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
-      const upn = extractUPNFromSharePointUrl(fileUrl) || AZURE_CONFIG.SHAREPOINT_USER_UPN;
-
+      const upn = extractUpnFromSharePointUrl(fileUrl) || AZURE_CONFIG.SHAREPOINT_USER_UPN;
+      
       console.log(`[pdfProxy] Extracted documents path: ${documentsPath}`);
-      console.log(`[pdfProxy] Extracted UPN: ${upn}`);
-
+      console.log(`[pdfProxy] Extracted UPN for Graph: ${upn}`);
+      
       if (!documentsPath) {
         console.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
         res.status(502).send('Unable to resolve SharePoint path');
