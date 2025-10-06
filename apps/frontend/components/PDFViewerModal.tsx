@@ -54,7 +54,12 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                const res = await fetch(url, { credentials: 'include' });
+                // Forward JWT via header so BFF can auth to backend
+                const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
+                const res = await fetch(url, {
+                    credentials: 'include',
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                });
                 if (!res.ok) {
                     const txt = await safeText(res);
                     throw new Error(txt || `Failed to load PDF (${res.status})`);
@@ -81,7 +86,11 @@ export default function PDFViewerModal({
     const handleDownload = async () => {
         try {
             if (!mailItemId) return;
-            const res = await fetch(`/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=attachment`, { credentials: 'include' });
+            const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
+            const res = await fetch(`/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=attachment`, {
+                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
             if (!res.ok) throw new Error('Download failed');
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);

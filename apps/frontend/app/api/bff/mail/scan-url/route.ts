@@ -16,11 +16,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Proxy to existing backend streaming endpoint: /api/mail-items/:id/download
+    const auth = req.headers.get('authorization') || '';
     const upstream = await fetch(
         `${API_BASE}/api/mail-items/${encodeURIComponent(mailItemId)}/download?disposition=${encodeURIComponent(disposition)}`,
         {
             headers: {
                 cookie: req.headers.get('cookie') || '',
+                authorization: auth,
             },
             redirect: 'manual',
         }
