@@ -17,6 +17,10 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
 
         const user = (req as any).user as { id: number; is_admin?: boolean; is_staff?: boolean };
 
+        // Debug logging
+        console.log(`[BFF DEBUG] User ID: ${user.id}, is_admin: ${user.is_admin}, is_staff: ${(user as any).is_staff}`);
+        console.log(`[BFF DEBUG] Requested mailItemId: ${mailItemId}`);
+
         const pool = getPool();
         const { rows } = await pool.query<{
             id: number; user_id: number; deleted: boolean; scan_file_url: string | null; subject: string | null;
@@ -31,9 +35,16 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         if (!rows.length) return res.status(404).send('Mail item not found');
         const item = rows[0];
 
+        console.log(`[BFF DEBUG] Mail item user_id: ${item.user_id}, deleted: ${item.deleted}, has_scan_url: ${!!item.scan_file_url}`);
+
         const isOwner = item.user_id === user.id;
         const isPrivileged = !!(user.is_admin || (user as any).is_staff);
-        if (!isOwner && !isPrivileged) return res.status(403).send('Forbidden');
+        console.log(`[BFF DEBUG] isOwner: ${isOwner}, isPrivileged: ${isPrivileged}`);
+        
+        if (!isOwner && !isPrivileged) {
+            console.log(`[BFF DEBUG] Access denied - user ${user.id} is not owner (${item.user_id}) and not privileged`);
+            return res.status(403).send('Forbidden');
+        }
         if (item.deleted) return res.status(410).send('Mail item deleted');
         if (!item.scan_file_url) return res.status(404).send('No scan available');
 

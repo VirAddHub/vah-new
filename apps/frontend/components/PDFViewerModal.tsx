@@ -48,13 +48,13 @@ export default function PDFViewerModal({
                 if (!isOpen || !mailItemId) return;
 
                 // Build absolute backend URL so the browser sends vah_session automatically
-        const apiBaseRaw =
-          process.env.NEXT_PUBLIC_API_BASE ||
-          process.env.BACKEND_API_ORIGIN ||
-          '';
-        const apiBase = apiBaseRaw.replace(/\/+$/, '');
-        const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
-        const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
+                const apiBaseRaw =
+                    process.env.NEXT_PUBLIC_API_BASE ||
+                    process.env.BACKEND_API_ORIGIN ||
+                    '';
+                const apiBase = apiBaseRaw.replace(/\/+$/, '');
+                const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+                const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
 
                 if (!useBlobFallback) {
                     if (!cancelled) setViewerUrl(url);
@@ -136,11 +136,11 @@ export default function PDFViewerModal({
                     {loading && (
                         <div className="absolute inset-0 grid place-items-center text-sm">Loading PDF…</div>
                     )}
-          {error && (
-            <div className="absolute inset-0 grid place-items-center px-4 text-sm text-red-600">
-              {String(error)}
-            </div>
-          )}
+                    {error && (
+                        <div className="absolute inset-0 grid place-items-center px-4 text-sm text-red-600">
+                            {String(error)}
+                        </div>
+                    )}
                     {!loading && !error && viewerUrl && (
                         <iframe
                             title="PDF preview"
