@@ -6,11 +6,18 @@
  */
 
 const { Client } = require('pg');
-require('dotenv').config({ path: './apps/backend/.env' });
 
 async function debugMailItem() {
+    // Use environment variable for database URL
+    const dbUrl = process.env.DATABASE_URL || process.env.RENDER_DATABASE_URL;
+    if (!dbUrl) {
+        console.log('❌ No DATABASE_URL found. Set it as an environment variable.');
+        console.log('   Example: DATABASE_URL="your_postgres_url" node debug-mail-item.js');
+        return;
+    }
+
     const client = new Client({
-        connectionString: process.env.DATABASE_URL
+        connectionString: dbUrl
     });
 
     try {
@@ -71,7 +78,7 @@ async function debugMailItem() {
             // Test path extraction
             const SITE_PATH = '/personal/ops_virtualaddresshub_co_uk';
             const expectedPrefix = SITE_PATH;
-            
+
             if (urlObj.pathname.startsWith(expectedPrefix + "/")) {
                 const rest = urlObj.pathname.slice(expectedPrefix.length + 1);
                 const drivePath = decodeURIComponent(rest.replace(/^\/+/, ""));
@@ -84,7 +91,7 @@ async function debugMailItem() {
                 const user = parts.shift();
                 const domain = parts.join('.');
                 const upn = `${user}@${domain}`;
-                
+
                 console.log('👤 UPN Analysis:');
                 console.log(`   Alias: ${alias}`);
                 console.log(`   User: ${user}`);
@@ -98,7 +105,7 @@ async function debugMailItem() {
                     .filter(Boolean)
                     .map(seg => encodeURIComponent(seg))
                     .join("/");
-                
+
                 const graphUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root:/${encodedPath}:/content`;
                 console.log('🌐 Graph API URL:');
                 console.log(`   ${graphUrl}`);

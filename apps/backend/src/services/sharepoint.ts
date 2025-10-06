@@ -18,11 +18,58 @@ function extractUPNFromSitePath(sitePath: string): string {
 
 // Encode each path segment safely for the :/path:/ form
 function encodeDrivePath(path: string): string {
-    return path
-        .split("/")
-        .filter(Boolean)
-        .map(seg => encodeURIComponent(seg))
-        .join("/");
+  return path
+    .split("/")
+    .filter(Boolean)
+    .map(seg => encodeURIComponent(seg))
+    .join("/");
+}
+
+// Fallback search by filename if path-based fetch fails with 404
+async function tryFetchByPathOrSearch(
+  token: string,
+  upnOrSite: { upn?: string; host?: string; sitePath?: string },
+  drivePath: string
+) {
+  // 1) Try by path
+  const encodedPath = encodeDrivePath(drivePath);
+  const contentUrl = upnOrSite.upn
+    ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/${encodedPath}:/content`
+    : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root:/${encodedPath}:/content`;
+
+  let r = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.ok) return r;
+
+  // If not found, 404 -> search by filename
+  if (r.status === 404) {
+    console.log(`[GRAPH FALLBACK] Path not found, searching by filename...`);
+    const filename = drivePath.split("/").pop() || "";
+    const searchUrl = upnOrSite.upn
+      ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root/search(q='${encodeURIComponent(filename)}')`
+      : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root/search(q='${encodeURIComponent(filename)}')`;
+
+    console.log(`[GRAPH FALLBACK] Search URL: ${searchUrl}`);
+    const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (sr.ok) {
+      const data = await sr.json();
+      const match = (data.value || []).find((it: any) => it.name === filename);
+      if (match?.id) {
+        console.log(`[GRAPH FALLBACK] Found file by search: ${match.name} at ${match.parentReference?.path}`);
+        const byIdUrl = upnOrSite.upn
+          ? `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/items/${match.id}/content`
+          : `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/items/${match.id}/content`;
+        r = await fetch(byIdUrl, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) return r;
+      } else {
+        console.log(`[GRAPH FALLBACK] No matching file found in search results`);
+      }
+    } else {
+      console.log(`[GRAPH FALLBACK] Search failed: ${sr.status}`);
+    }
+  }
+
+  // Return original response (with its error body for logs)
+  return r;
 }
 
 // In: https://.../personal/ops_.../Documents/Scanned_Mail/user4_1111_bilan.pdf
@@ -56,7 +103,7 @@ export async function streamSharePointFileByPath(
         contentUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
             upn
         )}/drive/root:/${encodedPath}:/content`;
-        
+
         console.log(`[GRAPH DEBUG] OneDrive personal drive detected`);
         console.log(`[GRAPH DEBUG] UPN: ${upn}`);
         console.log(`[GRAPH DEBUG] Drive path: ${drivePath}`);
@@ -66,7 +113,7 @@ export async function streamSharePointFileByPath(
         // SharePoint site drive
         const encodedPath = encodeDrivePath(drivePath);
         contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodedPath}:/content`;
-        
+
         console.log(`[GRAPH DEBUG] SharePoint site drive detected`);
         console.log(`[GRAPH DEBUG] Host: ${HOST}`);
         console.log(`[GRAPH DEBUG] Site path: ${SITE_PATH}`);
@@ -75,14 +122,18 @@ export async function streamSharePointFileByPath(
         console.log(`[GRAPH DEBUG] Graph URL: ${contentUrl}`);
     }
 
-    const upstream = await fetch(contentUrl, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-            // Accept can help Graph choose content flow; not strictly required:
-            Accept: "*/*",
-        },
-        // node-fetch follows Graph's 302 to the short-lived download URL automatically
+    console.log("[GRAPH FETCH]", {
+        upn: SITE_PATH.startsWith("/personal/") ? extractUPNFromSitePath(SITE_PATH) : null,
+        drivePath,
+        url: contentUrl,
     });
+
+    // Use fallback search if path-based fetch fails
+    const upn = SITE_PATH.startsWith("/personal/") ? extractUPNFromSitePath(SITE_PATH) : undefined;
+    const upstream = await tryFetchByPathOrSearch(token,
+        upn ? { upn } : { host: HOST, sitePath: SITE_PATH },
+        drivePath
+    );
 
     if (!upstream.ok) {
         const detail = await upstream.text().catch(() => "");
