@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -95,11 +95,7 @@ export default function PDFViewerModal({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
             <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden">
-                <DialogHeader className="px-4 py-3 border-b">
-                    <DialogTitle className="truncate">{mailItemSubject || 'Document'}</DialogTitle>
-                </DialogHeader>
-
-                <div className="relative h-[calc(90vh-56px)] bg-muted">
+                <div className="relative h-[90vh] bg-muted">
                     {loading && (
                         <div className="absolute inset-0 grid place-items-center text-sm">Loading PDF…</div>
                     )}
