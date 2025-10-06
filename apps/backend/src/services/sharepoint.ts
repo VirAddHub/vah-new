@@ -146,13 +146,40 @@ export async function streamSharePointFileByPath(
             throw new Error(`Graph content error ${upstream.status}: ${detail}`);
         }
 
+        // Handle redirects from Graph API to temporary download URLs
+        if (upstream.status === 302 || upstream.status === 307) {
+            const redirectUrl = upstream.headers.get("location");
+            if (!redirectUrl) {
+                throw new Error("Graph redirect missing location header");
+            }
+            log("[GRAPH DEBUG] Following redirect to:", redirectUrl);
+            
+            // Fetch from the redirect URL
+            const redirectResponse = await fetch(redirectUrl);
+            if (!redirectResponse.ok) {
+                throw new Error(`Redirect fetch error ${redirectResponse.status}`);
+            }
+            
+            const ct = redirectResponse.headers.get("content-type") || "application/pdf";
+            const len = redirectResponse.headers.get("content-length");
+            res.setHeader("Content-Type", ct);
+            res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
+            res.setHeader("Cache-Control", "private, no-store");
+            if (len) res.setHeader("Content-Length", len);
+            
+            // @ts-ignore - Node.js readable stream
+            redirectResponse.body.pipe(res);
+            return;
+        }
+
         const ct = upstream.headers.get("content-type") || "application/pdf";
         const len = upstream.headers.get("content-length");
         res.setHeader("Content-Type", ct);
         res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
         res.setHeader("Cache-Control", "private, no-store");
         if (len) res.setHeader("Content-Length", len);
-        // @ts-ignore
+        
+        // @ts-ignore - Node.js readable stream
         upstream.body.pipe(res);
         return;
     }
@@ -167,13 +194,42 @@ export async function streamSharePointFileByPath(
         const detail = await upstream.text().catch(() => "");
         throw new Error(`Graph content error ${upstream.status}: ${detail}`);
     }
+
+    // Handle redirects from Graph API to temporary download URLs
+    if (upstream.status === 302 || upstream.status === 307) {
+        const redirectUrl = upstream.headers.get("location");
+        if (!redirectUrl) {
+            throw new Error("Graph redirect missing location header");
+        }
+        log("[GRAPH DEBUG] Following redirect to:", redirectUrl);
+        
+        // Fetch from the redirect URL
+        const redirectResponse = await fetch(redirectUrl);
+        if (!redirectResponse.ok) {
+            throw new Error(`Redirect fetch error ${redirectResponse.status}`);
+        }
+        
+        const ct = redirectResponse.headers.get("content-type") || "application/pdf";
+        const len = redirectResponse.headers.get("content-length");
+        res.setHeader("Content-Type", ct);
+        res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
+        res.setHeader("Cache-Control", "private, no-store");
+        if (len) res.setHeader("Content-Length", len);
+        
+        // @ts-ignore - Node.js readable stream
+        redirectResponse.body.pipe(res);
+        return;
+    }
+
     const ct = upstream.headers.get("content-type") || "application/pdf";
     const len = upstream.headers.get("content-length");
     res.setHeader("Content-Type", ct);
     res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
     res.setHeader("Cache-Control", "private, no-store");
     if (len) res.setHeader("Content-Length", len);
-    // @ts-ignore
+    
+    // @ts-ignore - Node.js readable stream
     upstream.body.pipe(res);
 }
+
 
