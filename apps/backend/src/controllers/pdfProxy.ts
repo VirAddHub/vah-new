@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import {
   fetchGraphFileByUserPath,
   extractDocumentsPathFromSharePointUrl,
+  extractUPNFromSharePointUrl,
   isSharePointPersonalUrl,
 } from '../lib/msGraph';
 import { AZURE_CONFIG } from '../config/azure';
@@ -31,17 +32,21 @@ export async function streamPdfFromUrl(
     let finalResp: Response | globalThis.Response;
 
     if (isSharePointPersonalUrl(fileUrl)) {
-      console.log(`[pdfProxy] Detected SharePoint URL, extracting path...`);
-      // 🔐 Use Graph with app permissions against the ops mailbox drive
+      console.log(`[pdfProxy] Detected SharePoint URL, extracting path and UPN...`);
+      // 🔐 Use Graph with app permissions against the correct user's drive
       const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
+      const upn = extractUPNFromSharePointUrl(fileUrl) || AZURE_CONFIG.SHAREPOINT_USER_UPN;
+      
       console.log(`[pdfProxy] Extracted documents path: ${documentsPath}`);
+      console.log(`[pdfProxy] Extracted UPN: ${upn}`);
+      
       if (!documentsPath) {
         console.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
         res.status(502).send('Unable to resolve SharePoint path');
         return;
       }
-      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${AZURE_CONFIG.SHAREPOINT_USER_UPN}`);
-      finalResp = await fetchGraphFileByUserPath(AZURE_CONFIG.SHAREPOINT_USER_UPN, documentsPath, disposition);
+      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${upn}`);
+      finalResp = await fetchGraphFileByUserPath(upn, documentsPath, disposition);
     } else {
       console.log(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
       // Non-SharePoint URL: fetch directly

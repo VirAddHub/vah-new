@@ -63,31 +63,31 @@ export async function fetchGraphFileByUserPath(
         cache: 'no-store',
     });
 
-  console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
-  
-  // If 404, try to list the drive root to see what's available
-  if (r.status === 404) {
-    console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
-    try {
-      const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
-      const listResp = await fetch(listUrl, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      
-      if (listResp.ok) {
-        const listData = await listResp.json();
-        console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
-      } else {
-        console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
-      }
-    } catch (listErr) {
-      console.log(`[msGraph] Error listing drive contents:`, listErr);
+    console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
+
+    // If 404, try to list the drive root to see what's available
+    if (r.status === 404) {
+        console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
+        try {
+            const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
+            const listResp = await fetch(listUrl, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
+            });
+
+            if (listResp.ok) {
+                const listData = await listResp.json();
+                console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
+            } else {
+                console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
+            }
+        } catch (listErr) {
+            console.log(`[msGraph] Error listing drive contents:`, listErr);
+        }
     }
-  }
-  
-  return r;
+
+    return r;
 }
 
 /** Extract "Documents/..." from a classic personal SharePoint URL */
@@ -98,17 +98,64 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
         console.log(`[msGraph] URL hostname: ${url.hostname}`);
         console.log(`[msGraph] URL pathname: ${url.pathname}`);
         
-        const ix = url.pathname.indexOf('/Documents/');
+        // Handle both regular URLs and login_hint URLs
+        let pathname = url.pathname;
+        if (url.searchParams.has('id')) {
+            // Extract from id parameter for login_hint URLs
+            pathname = url.searchParams.get('id') || pathname;
+            console.log(`[msGraph] Using id parameter: ${pathname}`);
+        }
+        
+        const ix = pathname.indexOf('/Documents/');
         if (ix === -1) {
             console.log(`[msGraph] No /Documents/ found in pathname`);
             return null;
         }
-        const path = url.pathname.slice(ix + 1); // drop leading slash
+        const path = pathname.slice(ix + 1); // drop leading slash
         const decodedPath = decodeURIComponent(path.replace(/^\/+/, '')); // "Documents/xyz.pdf"
         console.log(`[msGraph] Extracted path: ${decodedPath}`);
         return decodedPath;
     } catch (err) {
         console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
+        return null;
+    }
+}
+
+export function extractUPNFromSharePointUrl(u: string): string | null {
+    try {
+        const url = new URL(u);
+        console.log(`[msGraph] Extracting UPN from SharePoint URL: ${u}`);
+        
+        // Handle both regular URLs and login_hint URLs
+        let pathname = url.pathname;
+        if (url.searchParams.has('id')) {
+            pathname = url.searchParams.get('id') || pathname;
+        }
+        
+        // Look for /personal/username pattern
+        const personalMatch = pathname.match(/\/personal\/([^\/]+)/);
+        if (personalMatch) {
+            const username = personalMatch[1];
+            console.log(`[msGraph] Found username in path: ${username}`);
+            
+            // Convert underscore format to email format
+            // ops_virtualaddresshub_co_uk -> ops@virtualaddresshub.co.uk
+            const upn = username.replace(/_/g, '.').replace(/\.co\.uk$/, '.co.uk');
+            console.log(`[msGraph] Converted to UPN: ${upn}`);
+            return upn;
+        }
+        
+        // Fallback: try login_hint parameter
+        const loginHint = url.searchParams.get('login_hint');
+        if (loginHint) {
+            console.log(`[msGraph] Using login_hint: ${loginHint}`);
+            return loginHint;
+        }
+        
+        console.log(`[msGraph] No UPN found in URL`);
+        return null;
+    } catch (err) {
+        console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
         return null;
     }
 }
