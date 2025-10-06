@@ -1,7 +1,9 @@
 import { Eye, Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
-import type { MailItem, MailItemDetails } from '../../types';
+import { PDFViewerModal } from '../PDFViewerModal';
+import { useState } from 'react';
+import type { MailItem, MailItemDetails } from '../../types/mail';
 
 interface Props {
   item: MailItem;
@@ -17,33 +19,33 @@ interface Props {
 export default function MailCard({
   item, isExpanded, isLoading, isDownloading, details, onToggle, onDownload, error
 }: Props) {
+  const [showPDFModal, setShowPDFModal] = useState(false);
+
+  const handleViewPDF = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowPDFModal(true);
+  };
+
   return (
-    <Card className={`transition-all ${isExpanded ? 'ring-2 ring-primary/20 bg-muted/30' : ''}`}>
+    <>
+    <Card className="transition-all">
       <CardContent className="p-4 space-y-3">
 
-        <button
-          type="button"
-          className="w-full text-left cursor-pointer active:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
-          onClick={() => onToggle(item)}
-          disabled={isLoading}
-          aria-expanded={isExpanded}
-          aria-controls={`mail-details-${item.id}`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <div className="font-medium truncate">{item.subject || 'No subject'}</div>
-              <div className="text-sm text-muted-foreground truncate">
-                {item.sender_name || 'Unknown sender'}
-              </div>
-            </div>
-            <div className="text-xs px-2 py-0.5 rounded-full border">
-              {item.status}
+        <div className="flex items-center justify-between">
+          <div className="min-w-0">
+            <div className="font-medium truncate">{item.subject || 'No subject'}</div>
+            <div className="text-sm text-muted-foreground truncate">
+              {item.sender_name || 'Unknown sender'}
             </div>
           </div>
-        </button>
+          <div className="text-xs px-2 py-0.5 rounded-full border">
+            {item.status}
+          </div>
+        </div>
 
-        {isExpanded && details && (
-          <div id={`mail-details-${item.id}`} className="pt-3 border-t space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+        {details && (
+          <div className="space-y-2">
             {details.notes && <p className="text-sm text-muted-foreground">{details.notes}</p>}
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
@@ -51,14 +53,14 @@ export default function MailCard({
 
         <div className="flex gap-2 pt-2">
           <Button
-            onClick={() => onToggle(item)}
-            variant={isExpanded ? 'default' : 'outline'}
+            onClick={handleViewPDF}
+            variant="outline"
             className="flex-1 h-10"
-            disabled={isLoading}
-            aria-label={isExpanded ? 'Close mail' : 'View mail'}
+            disabled={isLoading || !details?.scan_url}
+            aria-label="View PDF"
           >
             {isLoading ? <Eye className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
-            {isExpanded ? 'Close' : 'View'}
+            View Mail
           </Button>
 
           <Button
@@ -74,5 +76,14 @@ export default function MailCard({
         </div>
       </CardContent>
     </Card>
+
+    <PDFViewerModal
+      isOpen={showPDFModal}
+      onClose={() => setShowPDFModal(false)}
+      mailItemId={parseInt(item.id)}
+      mailItemSubject={item.subject || 'Mail Scan Preview'}
+      useBlobFallback={false} // Try iframe first, fallback to blob if needed
+    />
+    </>
   );
 }
