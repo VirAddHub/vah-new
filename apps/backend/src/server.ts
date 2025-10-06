@@ -61,6 +61,7 @@ import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
+import bffMailScanRouter from "./routes/bff-mail-scan";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -389,6 +390,12 @@ async function start() {
     logger.info('[mount] /api/support mounted');
     app.use('/api/contact', contactRouter);
     logger.info('[mount] /api/contact mounted');
+
+    // BFF mail scan routes (buffer and serve with safe headers)
+    app.use('/api/bff', bffMailScanRouter);
+    logger.info('[mount] /api/bff (mail scan) mounted');
+    app.use('/api', bffMailScanRouter); // compat for /api/legacy/mail-items/:id/download
+    logger.info('[mount] /api (legacy mail scan compat) mounted');
 
     // Test download routes (for testing file downloads)
     const testDownloadsRouter = require(path.join(routesDir, 'test-downloads'));

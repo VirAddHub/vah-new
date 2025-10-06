@@ -1,25 +1,37 @@
 import { NextRequest } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || process.env.BACKEND_API_ORIGIN;
+function resolveApiBase() {
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.BACKEND_API_ORIGIN ||
+    '';
+
+  // Trim trailing slash
+  const base = raw.replace(/\/+$/, '');
+
+  // If it already ends with /api, keep; otherwise append /api
+  if (base.endsWith('/api')) return base;
+  if (!base) return '/api'; // local dev fallback
+  return `${base}/api`;
+}
+
+const API_BASE = resolveApiBase();
 
 export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const mailItemId = searchParams.get('mailItemId');
-    const disposition = searchParams.get('disposition') || 'inline';
+  const { searchParams } = new URL(req.url);
+  const mailItemId = searchParams.get('mailItemId');
+  const disposition = searchParams.get('disposition') || 'inline';
+  if (!mailItemId) return new Response('mailItemId required', { status: 400 });
 
-    if (!mailItemId) return new Response('mailItemId required', { status: 400 });
-
-    if (!API_BASE) return new Response('API base not configured', { status: 500 });
-
-    // Always call backend BFF streamer
-    const upstream = await fetch(
-        `${API_BASE}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=${encodeURIComponent(disposition)}`,
-        {
-            headers: { cookie: req.headers.get('cookie') || '' },
-            redirect: 'manual',
-            cache: 'no-store',
-        }
-    );
+  // ✅ always hit /api/bff on the backend
+  const upstream = await fetch(
+    `${API_BASE}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=${encodeURIComponent(disposition)}`,
+    {
+      headers: { cookie: req.headers.get('cookie') || '' },
+      redirect: 'manual',
+      cache: 'no-store',
+    }
+  );
 
     const ct = upstream.headers.get('content-type') || '';
     const isPdf = ct.toLowerCase().includes('application/pdf');
