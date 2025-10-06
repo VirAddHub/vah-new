@@ -1,19 +1,44 @@
 import { graphBearer } from "../lib/graph";
 
 const HOST = process.env.GRAPH_SITE_HOST!;
-const SITE_PATH = process.env.GRAPH_SITE_PATH!; // e.g. /personal/ops_virtualaddresshub_co_uk
+const _SITE_PATH = (process.env.GRAPH_SITE_PATH || "").replace(/\/+$/, ""); // strip trailing slash
+const SITE_PATH = decodeURIComponent(_SITE_PATH); // normalize
+
+// /personal/ops_virtualaddresshub_co_uk  ->  ops@virtualaddresshub.co.uk
+function extractUPNFromSitePath(sitePath: string): string {
+    const m = /^\/personal\/([^/]+)$/.exec(sitePath);
+    if (!m) throw new Error(`Invalid OneDrive personal path: ${sitePath}`);
+    const alias = m[1]; // e.g., "ops_virtualaddresshub_co_uk"
+    const parts = alias.split("_").filter(Boolean);
+    if (parts.length < 2) throw new Error(`Unexpected alias format: ${alias}`);
+    const user = parts.shift()!;              // "ops"
+    const domain = parts.join(".");           // "virtualaddresshub.co.uk"
+    return `${user}@${domain}`;
+}
+
+// Encode each path segment safely for the :/path:/ form
+function encodeDrivePath(path: string): string {
+    return path
+        .split("/")
+        .filter(Boolean)
+        .map(seg => encodeURIComponent(seg))
+        .join("/");
+}
 
 // In: https://.../personal/ops_.../Documents/Scanned_Mail/user4_1111_bilan.pdf
 // Out: Documents/Scanned_Mail/user4_1111_bilan.pdf
 export function extractDrivePathFromSharePointUrl(fullUrl: string): string {
     const u = new URL(fullUrl);
-    const expectedPrefix = SITE_PATH.replace(/\/+$/, "");
+    const expectedPrefix = SITE_PATH; // already has no trailing slash
+    // Normal case: after the /personal/... prefix
     if (u.pathname.startsWith(expectedPrefix + "/")) {
-        return decodeURIComponent(u.pathname.slice(expectedPrefix.length + 1).replace(/^\/+/, ""));
+        const rest = u.pathname.slice(expectedPrefix.length + 1);
+        return decodeURIComponent(rest.replace(/^\/+/, ""));
     }
+    // Fallback: find /Documents/...
     const m = /\/Documents\/.+$/i.exec(u.pathname);
     if (m) return decodeURIComponent(m[0].replace(/^\/+/, ""));
-    throw new Error("Unable to derive drive path from SharePoint URL");
+    throw new Error(`Unable to derive drive path from URL: ${fullUrl}`);
 }
 
 export async function streamSharePointFileByPath(
@@ -22,10 +47,34 @@ export async function streamSharePointFileByPath(
     opts?: { filename?: string; disposition?: "inline" | "attachment" }
 ) {
     const token = await graphBearer();
-    const url = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodeURI(drivePath)}:/content`;
 
-    const upstream = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!upstream.ok) throw new Error(`Graph content error ${upstream.status}`);
+    // Build correct endpoint: OneDrive personal uses users/{UPN}/drive
+    let contentUrl: string;
+    if (SITE_PATH.startsWith("/personal/")) {
+        const upn = extractUPNFromSitePath(SITE_PATH);
+        contentUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(
+            upn
+        )}/drive/root:/${encodeDrivePath(drivePath)}:/content`;
+    } else {
+        // SharePoint site drive
+        contentUrl = `https://graph.microsoft.com/v1.0/sites/${HOST}:${SITE_PATH}:/drive/root:/${encodeDrivePath(
+            drivePath
+        )}:/content`;
+    }
+
+    const upstream = await fetch(contentUrl, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            // Accept can help Graph choose content flow; not strictly required:
+            Accept: "*/*",
+        },
+        // node-fetch follows Graph's 302 to the short-lived download URL automatically
+    });
+
+    if (!upstream.ok) {
+        const detail = await upstream.text().catch(() => "");
+        throw new Error(`Graph content error ${upstream.status}: ${detail}`);
+    }
 
     const ct = upstream.headers.get("content-type") || "application/octet-stream";
     const name = opts?.filename || drivePath.split("/").pop() || "file";
@@ -34,7 +83,9 @@ export async function streamSharePointFileByPath(
     res.setHeader("Content-Type", ct);
     res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
     res.setHeader("Cache-Control", "private, no-store");
+    const len = upstream.headers.get("content-length");
+    if (len) res.setHeader("Content-Length", len);
 
-    // @ts-ignore Node fetch Readable -> pipe
+    // @ts-ignore Readable stream piping in Node
     upstream.body.pipe(res);
 }
