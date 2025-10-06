@@ -44,21 +44,21 @@ async function tryFetchByPathOrSearch(
     if (r.status === 404) {
         console.log(`[GRAPH FALLBACK] Path not found, searching by filename...`);
         const filename = drivePath.split("/").pop() || "";
-    // Try different search approaches for OneDrive
-    let searchUrl: string;
-    if (upnOrSite.upn) {
-      // For OneDrive personal, try listing the folder first, then search
-      searchUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/Documents/Scanned_Mail:/children`;
-    } else {
-      searchUrl = `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root/search(q='${encodeURIComponent(filename)}')`;
-    }
+        // Try different search approaches for OneDrive
+        let searchUrl: string;
+        if (upnOrSite.upn) {
+            // For OneDrive personal, try listing the folder first, then search
+            searchUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upnOrSite.upn)}/drive/root:/Documents/Scanned_Mail:/children`;
+        } else {
+            searchUrl = `https://graph.microsoft.com/v1.0/sites/${upnOrSite.host}:${upnOrSite.sitePath}:/drive/root/search(q='${encodeURIComponent(filename)}')`;
+        }
 
         console.log(`[GRAPH FALLBACK] Listing folder: ${searchUrl}`);
         const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${token}` } });
         if (sr.ok) {
             const data = await sr.json();
             console.log(`[GRAPH FALLBACK] Folder contents:`, data.value?.map((item: any) => item.name) || []);
-            
+
             const match = (data.value || []).find((it: any) => it.name === filename);
             if (match?.id) {
                 console.log(`[GRAPH FALLBACK] Found file by folder listing: ${match.name} at ${match.parentReference?.path}`);
