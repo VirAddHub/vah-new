@@ -517,7 +517,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         </div>
                                       </div>
                                       <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                                        From: {item.sender_name || 'Unknown Sender'}
+                                        {item.sender_name || 'Unknown Sender'}
                                       </p>
                                     </div>
                                     <div className="flex-shrink-0 text-right">
