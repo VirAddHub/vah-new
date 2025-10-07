@@ -699,7 +699,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Building2 className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm truncate">Your Virtual Business Address</CardTitle>
+                    <CardTitle className="text-sm truncate">{userProfile?.company_name || 'Your Virtual Business Address'}</CardTitle>
                   </div>
                 </div>
               </CardHeader>
