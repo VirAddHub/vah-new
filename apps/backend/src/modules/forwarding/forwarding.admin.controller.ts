@@ -130,29 +130,30 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
         // build update
         const now = new Date();
+        const nowTimestamp = now.getTime(); // Convert to Unix timestamp in milliseconds
         const sets: string[] = ['status = $1', 'updated_at = $2'];
-        const vals: any[] = [nextStatus, now];
+        const vals: any[] = [nextStatus, nowTimestamp];
 
         // timestamps by status
         if (nextStatus === 'Reviewed') {
             sets.push('reviewed_at = $3', 'reviewed_by = $4');
-            vals.push(now, admin.id);
+            vals.push(nowTimestamp, admin.id);
         }
         if (nextStatus === 'Processing') {
             sets.push('processing_at = $3');
-            vals.push(now);
+            vals.push(nowTimestamp);
         }
         if (nextStatus === 'Dispatched') {
             sets.push('dispatched_at = $3');
-            vals.push(now);
+            vals.push(nowTimestamp);
         }
         if (nextStatus === 'Delivered') {
             sets.push('delivered_at = $3');
-            vals.push(now);
+            vals.push(nowTimestamp);
         }
         if (nextStatus === 'Cancelled') {
             sets.push('cancelled_at = $3');
-            vals.push(now);
+            vals.push(nowTimestamp);
         }
 
         // courier / tracking / notes (optional)
