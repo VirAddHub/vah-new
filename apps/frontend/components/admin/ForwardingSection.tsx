@@ -256,13 +256,14 @@ export function ForwardingSection() {
                                 <SelectValue placeholder="Filter by status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="">Active Requests (Default)</SelectItem>
                                 <SelectItem value="Requested">Requested</SelectItem>
                                 <SelectItem value="Reviewed">Reviewed</SelectItem>
                                 <SelectItem value="Processing">Processing</SelectItem>
                                 <SelectItem value="Dispatched">Dispatched</SelectItem>
-                                <SelectItem value="Delivered">Delivered</SelectItem>
+                                <SelectItem value="Delivered">Delivered (Completed)</SelectItem>
                                 <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                <SelectItem value="all">All Statuses</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
