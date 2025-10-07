@@ -42,6 +42,8 @@ import devRouter from "./server/routes/dev";
 import robustPasswordResetRouter from "./server/routes/profile/reset-password-request";
 import { passwordResetRouter } from "./server/routes/profile.password-reset";
 import authRouter from "./server/routes/auth";
+// import { internalRouter } from "./routes/internal"; // No longer needed - admin-driven system
+import migrateRouter from "./routes/migrate";
 
 // NEW: Import missing endpoints
 import mailRouter from "./server/routes/mail";
@@ -333,6 +335,10 @@ async function start() {
     // Mount Postmark webhook FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
 
+    // Internal routes removed - admin-driven system doesn't need cron/outbox
+    // app.use('/api/internal', internalRouter);
+    // logger.info('[mount] /api/internal mounted');
+
     // JWT authentication middleware - extracts and verifies JWT tokens
     const { authenticateJWT } = require('./middleware/auth');
     app.use('/api', authenticateJWT);
@@ -401,6 +407,7 @@ async function start() {
     // Test download routes (for testing file downloads)
     const testDownloadsRouter = require(path.join(routesDir, 'test-downloads'));
     app.use('/api/test', testDownloadsRouter);
+    app.use('/api', migrateRouter);
     logger.info('[mount] /api/test (downloads) mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
