@@ -34,10 +34,21 @@ function canMove(from: string, to: string): boolean {
     return nexts.includes(to);
 }
 
+// Status mapping for case-insensitive filtering
+const STATUS_MAP = new Map<string, string>([
+    ["requested", "Requested"],
+    ["reviewed", "Reviewed"],
+    ["processing", "Processing"],
+    ["dispatched", "Dispatched"],
+    ["delivered", "Delivered"],
+    ["cancelled", "Cancelled"],
+]);
+
 // List queue for admin (filterable)
 export async function adminListForwarding(req: Request, res: Response) {
     try {
-        const status = (req.query.status ?? '').toString();
+        const rawStatus = (req.query.status ?? '').toString().trim();
+        const status = rawStatus ? STATUS_MAP.get(rawStatus.toLowerCase()) : undefined;
         const q = (req.query.q ?? '').toString().trim();
         const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 50));
         const offset = Math.max(0, Number(req.query.offset) || 0);

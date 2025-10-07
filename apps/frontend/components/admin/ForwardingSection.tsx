@@ -85,7 +85,11 @@ export function ForwardingSection() {
         setIsFetchingRequests(true);
         try {
             // Use the new admin forwarding API
+            const token = localStorage.getItem('vah_jwt');
             const res = await fetch(`/api/admin/forwarding/requests?status=${encodeURIComponent(status)}&q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${(page - 1) * pageSize}`, {
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 credentials: 'include'
             });
 
@@ -98,13 +102,22 @@ export function ForwardingSection() {
                 // Compute stats from items
                 const counts = {
                     total: items.length,
-                    pending: items.filter(i => i.status === 'Requested').length,
-                    fulfilled: items.filter(i => i.status === 'Delivered').length,
-                    canceled: items.filter(i => i.status === 'Cancelled').length,
+                    pending: items.filter((i: any) => i.status === 'Requested').length,
+                    fulfilled: items.filter((i: any) => i.status === 'Delivered').length,
+                    canceled: items.filter((i: any) => i.status === 'Cancelled').length,
                 };
                 setStats(counts);
             } else {
-                console.error("Failed to load forwarding requests:", res.statusText);
+                console.error("Failed to load forwarding requests:", res.status, res.statusText);
+                if (res.status === 401) {
+                    alert("Session expired. Please log in again as an admin.");
+                    window.location.href = '/admin/login';
+                    return;
+                } else if (res.status === 403) {
+                    alert("Access denied. You need to be logged in as an admin to view forwarding requests.");
+                    window.location.href = '/admin/login';
+                    return;
+                }
                 setRequests([]);
                 setTotal(0);
                 setStats(null);
@@ -126,10 +139,12 @@ export function ForwardingSection() {
     const handleStatusUpdate = async (requestId: number, action: string, extraData?: any) => {
         setIsMutating(true);
         try {
+            const token = localStorage.getItem('vah_jwt');
             const response = await fetch(`/api/admin/forwarding/requests/${requestId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 credentials: 'include',
                 body: JSON.stringify({ action, ...extraData })
