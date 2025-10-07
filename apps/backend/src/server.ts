@@ -45,6 +45,7 @@ import authRouter from "./server/routes/auth";
 // import { internalRouter } from "./routes/internal"; // No longer needed - admin-driven system
 import migrateRouter from "./routes/migrate";
 import triggerMigrateRouter from "./routes/trigger-migrate";
+import webhookMigrateRouter from "./routes/webhook-migrate";
 
 // NEW: Import missing endpoints
 import mailRouter from "./server/routes/mail";
@@ -410,6 +411,7 @@ async function start() {
     app.use('/api/test', testDownloadsRouter);
     app.use('/api', migrateRouter);
     app.use('/api', triggerMigrateRouter);
+    app.use('/api', webhookMigrateRouter);
     logger.info('[mount] /api/test (downloads) mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
