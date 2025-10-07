@@ -53,9 +53,13 @@ export default function ForwardingPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-
+            const token = localStorage.getItem('vah_jwt');
+            
             // Load mail items
             const mailResponse = await fetch('/api/mail', {
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 credentials: 'include',
             });
             if (mailResponse.ok) {
@@ -65,6 +69,9 @@ export default function ForwardingPage() {
 
             // Load forwarding requests
             const forwardingResponse = await fetch('/api/forwarding/requests', {
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 credentials: 'include',
             });
             if (forwardingResponse.ok) {
@@ -87,10 +94,12 @@ export default function ForwardingPage() {
         if (!selectedMailForForwarding) return;
 
         try {
+            const token = localStorage.getItem('vah_jwt');
             const response = await fetch('/api/forwarding/requests', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 credentials: 'include',
                 body: JSON.stringify({

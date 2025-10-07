@@ -328,12 +328,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   const handleForwardingSubmit = async (data: any) => {
     if (!selectedMailForForwarding) return;
-
+    
     try {
+      const token = getToken();
       const response = await fetch('/api/forwarding/requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         credentials: 'include',
         body: JSON.stringify({
