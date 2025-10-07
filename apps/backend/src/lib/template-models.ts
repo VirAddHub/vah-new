@@ -120,4 +120,9 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     subject: a.subjectLine,
     cta_url: a.ctaUrl,
   }),
+  [Templates.ForwardingCompleted]: (a) => ({
+    name: a.name,
+    forwarding_address: a.forwardingAddress,
+    forwarded_date: a.forwardedDate,
+  }),
 };
