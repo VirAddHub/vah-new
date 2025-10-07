@@ -60,6 +60,7 @@
     "db:migrate:invoices": "node scripts/db-migrate-invoices.cjs",
     "invoices:backfill": "node scripts/backfill-invoices.cjs",
     "migrate:invoice-number": "node scripts/migrate-add-invoice-number.cjs",
+    "migrate:sql": "node ../../dist/src/scripts/migrate-sql.js ../../migrations",
     "db:seed:plans": "node scripts/db-seed-plans.cjs",
     "db:reset": "node scripts/db-reset.cjs && npm run db:init && npm run db:seed",
     "db:integrity": "node scripts/db-integrity.cjs",
