@@ -621,14 +621,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                                   {/* Action Buttons */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1" onClick={() => onOpen(item)}>
-                                      <FileCheck className="h-3 w-3 mr-1" />
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                      <Eye className="h-3 w-3 mr-1" />
                                       Open
                                     </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="flex-1" 
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 h-9"
                                       onClick={() => handleRequestForwarding(item)}
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
@@ -677,44 +677,41 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 >
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex-1 min-w-0">
-                                      <h4 className="font-medium break-words mb-1">
-                                        Inbox Item
-                                      </h4>
-                                      <p className="text-sm text-muted-foreground break-words">
-                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium break-words">
+                                          Inbox Item
+                                        </h4>
+                                        {!item.is_read && (
+                                          <Badge variant="default" className="text-xs">New</Badge>
+                                        )}
+                                        {isGovernment && (
+                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                            Free Forwarding
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {!shouldHideSender(item.sender_name) && (
+                                        <p className="text-sm text-muted-foreground break-words">
+                                          {item.sender_name}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex-shrink-0 text-right">
+                                      <p className="text-sm text-muted-foreground">
+                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
                                           day: 'numeric',
                                           month: 'short',
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
                                       </p>
+                                      {item.tag && (
+                                        <Badge variant="secondary" className="mt-1 text-xs">
+                                          {item.tag}
+                                        </Badge>
+                                      )}
                                     </div>
-                                    {!item.is_read && (
-                                      <Badge variant="default" className="text-xs flex-shrink-0">
-                                        New
-                                      </Badge>
-                                    )}
                                   </div>
 
-                                  {/* Badges */}
-                                  <div className="flex flex-wrap gap-2 mb-3">
-                                    {item.tag && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        {item.tag}
-                                      </Badge>
-                                    )}
-                                    {isGovernment && (
-                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                        Free Forwarding
-                                      </Badge>
-                                    )}
-                                    <span className="text-xs text-muted-foreground">
-                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                      }) : 'Unknown Date'}
-                                    </span>
-                                  </div>
 
                                   {/* Actions */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
