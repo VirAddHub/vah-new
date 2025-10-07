@@ -248,6 +248,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return "User"; // Final fallback
   };
 
+  // Hide noisy provider/system sender labels like "OneDrive Scan"
+  const shouldHideSender = (sender?: string) => {
+    if (!sender) return false;
+    const s = sender.toLowerCase();
+    return s.includes('onedrive') || s.includes('one drive') || s.includes('scan');
+  };
+
   // Mock virtual address (you can replace this with real data)
   const virtualAddress = {
     line1: "71-75 Shelton Street",
@@ -516,9 +523,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <span className="font-medium">Open</span>
                                         </div>
                                       </div>
-                                      <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                                        {item.sender_name || 'Unknown Sender'}
-                                      </p>
+                                      {!shouldHideSender(item.sender_name) && (
+                                        <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                                          {item.sender_name}
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="flex-shrink-0 text-right">
                                       <p className="text-sm text-muted-foreground">
