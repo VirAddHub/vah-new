@@ -43,6 +43,7 @@ const STATUS_MAP = new Map<string, string>([
     ["delivered", "Delivered"],
     ["cancelled", "Cancelled"],
     ["all", "all"], // Special case for showing all statuses
+    ["active", "active"], // Special case for showing active requests (excludes completed)
 ]);
 
 // List queue for admin (filterable)
@@ -62,6 +63,9 @@ export async function adminListForwarding(req: Request, res: Response) {
         if (status === 'all') {
             // Show all statuses including completed ones
             // No additional WHERE clause needed
+        } else if (status === 'active') {
+            // Show only active requests (exclude completed)
+            where += ` AND fr.status NOT IN ('Delivered', 'Cancelled')`;
         } else if (status) {
             values.push(status);
             where += ` AND fr.status = $${values.length}`;

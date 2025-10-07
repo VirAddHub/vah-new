@@ -205,7 +205,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 if (data.ok && Array.isArray(data.data)) {
                     const requests = data.data;
                     setForwardingRequests(requests);
-                    
+
                     // Calculate stats
                     const stats = {
                         total: requests.length,
@@ -348,9 +348,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
         switch (activeSection) {
             case "overview":
-                return <OverviewSection 
-                    metrics={metrics} 
-                    overview={overview} 
+                return <OverviewSection
+                    metrics={metrics}
+                    overview={overview}
                     systemStatus={systemStatus}
                     forwardingRequests={forwardingRequests}
                     forwardingStats={forwardingStats}
@@ -382,9 +382,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "settings":
                 return <SettingsSection />;
             default:
-                return <OverviewSection 
-                    metrics={metrics} 
-                    overview={overview} 
+                return <OverviewSection
+                    metrics={metrics}
+                    overview={overview}
                     systemStatus={systemStatus}
                     forwardingRequests={forwardingRequests}
                     forwardingStats={forwardingStats}
@@ -520,17 +520,17 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 }
 
 // Enhanced Section Components
-function OverviewSection({ 
-    metrics, 
-    overview, 
-    systemStatus, 
-    forwardingRequests, 
-    forwardingStats, 
-    isLoadingForwarding, 
-    onViewForwarding 
-}: { 
-    metrics: any; 
-    overview: any; 
+function OverviewSection({
+    metrics,
+    overview,
+    systemStatus,
+    forwardingRequests,
+    forwardingStats,
+    isLoadingForwarding,
+    onViewForwarding
+}: {
+    metrics: any;
+    overview: any;
     systemStatus: 'operational' | 'degraded' | 'down';
     forwardingRequests: any[];
     forwardingStats: any;
@@ -629,7 +629,7 @@ function OverviewSection({
                             <div className="text-sm text-muted-foreground">Dispatched</div>
                         </div>
                     </div>
-                    
+
                     {forwardingRequests.length > 0 && (
                         <div className="space-y-2">
                             <h4 className="font-medium text-sm text-muted-foreground">Recent Requests</h4>
@@ -639,9 +639,9 @@ function OverviewSection({
                                         <div className="flex items-center gap-2">
                                             <Badge variant={
                                                 request.status === 'Requested' ? 'default' :
-                                                request.status === 'Reviewed' ? 'secondary' :
-                                                request.status === 'Processing' ? 'outline' :
-                                                request.status === 'Dispatched' ? 'destructive' : 'secondary'
+                                                    request.status === 'Reviewed' ? 'secondary' :
+                                                        request.status === 'Processing' ? 'outline' :
+                                                            request.status === 'Dispatched' ? 'destructive' : 'secondary'
                                             }>
                                                 {request.status}
                                             </Badge>
@@ -655,7 +655,7 @@ function OverviewSection({
                             </div>
                         </div>
                     )}
-                    
+
                     {forwardingRequests.length === 0 && !isLoadingForwarding && (
                         <div className="text-center py-4 text-muted-foreground">
                             <Truck className="h-8 w-8 mx-auto mb-2 opacity-50" />

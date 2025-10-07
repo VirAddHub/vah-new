@@ -8,6 +8,7 @@ import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import {
     Truck,
     Package,
@@ -32,6 +33,7 @@ import {
 
 interface ForwardingRequest {
     id: number;
+    user_id: number;
     to_name: string;
     address1: string;
     address2?: string;
@@ -67,8 +69,7 @@ export function ForwardingSection() {
     const [isFetchingRequests, setIsFetchingRequests] = useState(false);
     const [isMutating, setIsMutating] = useState(false);
 
-    const [q, setQ] = useState("");
-    const [status, setStatus] = useState<"Requested" | "Reviewed" | "Processing" | "Dispatched" | "Delivered" | "Cancelled" | "all">("Requested");
+    const [status, setStatus] = useState<"active" | "Requested" | "Reviewed" | "Processing" | "Dispatched" | "Delivered" | "Cancelled" | "all">("active");
     const [page, setPage] = useState(1);
     const pageSize = 20;
 
@@ -81,12 +82,22 @@ export function ForwardingSection() {
     const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
     const [dispatchData, setDispatchData] = useState({ courier: "", tracking_number: "", admin_notes: "" });
 
-    const loadRequests = useCallback(async () => {
+    // Use debounced search hook (same pattern as MailSection)
+    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, isSearching } = useDebouncedSearch({
+        delay: 300,
+        minLength: 0,
+        onSearch: async (query) => {
+            await loadRequests(query);
+        }
+    });
+
+    const loadRequests = useCallback(async (searchQuery?: string) => {
         setIsFetchingRequests(true);
         try {
             // Use the new admin forwarding API
             const token = localStorage.getItem('vah_jwt');
-            const res = await fetch(`/api/admin/forwarding/requests?status=${encodeURIComponent(status)}&q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${(page - 1) * pageSize}`, {
+            const query = searchQuery || "";
+            const res = await fetch(`/api/admin/forwarding/requests?status=${encodeURIComponent(status)}&q=${encodeURIComponent(query)}&limit=${pageSize}&offset=${(page - 1) * pageSize}`, {
                 headers: {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
@@ -130,13 +141,21 @@ export function ForwardingSection() {
         } finally {
             setIsFetchingRequests(false);
         }
-    }, [page, q, status]);
+    }, [page, status]);
 
     useEffect(() => {
         loadRequests();
     }, [loadRequests]);
 
     const handleStatusUpdate = async (requestId: number, action: string, extraData?: any) => {
+        // Add confirmation for cancel action
+        if (action === 'cancel') {
+            const confirmed = window.confirm('Are you sure you want to cancel this forwarding request? This action cannot be undone.');
+            if (!confirmed) {
+                return;
+            }
+        }
+
         setIsMutating(true);
         try {
             const token = localStorage.getItem('vah_jwt');
@@ -230,7 +249,7 @@ export function ForwardingSection() {
                     <Button
                         variant="outline"
                         className="gap-2"
-                        onClick={loadRequests}
+                        onClick={() => loadRequests()}
                         disabled={isFetchingRequests}
                     >
                         <RefreshCw className={`h-4 w-4 ${isFetchingRequests ? 'animate-spin' : ''}`} />
@@ -243,20 +262,26 @@ export function ForwardingSection() {
             <Card>
                 <CardContent className="p-4">
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
+                        <div className="flex-1 flex gap-2">
                             <Input
                                 placeholder="Search by name, postal code, courier, or tracking..."
-                                value={q}
-                                onChange={(e) => setQ(e.target.value)}
-                                className="w-full"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="flex-1"
+                                disabled={isSearching}
                             />
+                            {isSearching && (
+                                <div className="flex items-center px-3">
+                                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                                </div>
+                            )}
                         </div>
                         <Select value={status} onValueChange={(value: any) => setStatus(value)}>
                             <SelectTrigger className="w-48">
                                 <SelectValue placeholder="Filter by status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Active Requests (Default)</SelectItem>
+                                <SelectItem value="active">Active Requests (Default)</SelectItem>
                                 <SelectItem value="Requested">Requested</SelectItem>
                                 <SelectItem value="Reviewed">Reviewed</SelectItem>
                                 <SelectItem value="Processing">Processing</SelectItem>
@@ -305,7 +330,7 @@ export function ForwardingSection() {
                             ) : (
                                 requests.map((request) => (
                                     <TableRow key={request.id}>
-                                        <TableCell className="font-medium">#{request.id}</TableCell>
+                                        <TableCell className="font-medium">#{request.user_id}</TableCell>
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{request.to_name}</div>
