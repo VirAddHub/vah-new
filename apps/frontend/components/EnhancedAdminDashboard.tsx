@@ -291,7 +291,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         }, 30000); // 30 seconds
 
         return () => clearInterval(interval);
-    }, [loadForwardingRequests]);
+    }, []); // Empty dependency array - only run once
 
     // Check system health
     useEffect(() => {
