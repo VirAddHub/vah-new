@@ -2,7 +2,7 @@
 // Admin endpoint to mark forwarding requests as completed
 
 import { Router, Request, Response } from 'express';
-import { getPool } from '../../db/pool';
+import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/require-admin';
 
 const router = Router();
