@@ -123,7 +123,8 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         city,
         state,
         postal_code,
-        country
+        country,
+        forwarding_address
     } = req.body;
 
     const pool = getPool();
@@ -166,6 +167,10 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     if (country !== undefined) {
         updates.push(`country = $${paramIndex++}`);
         values.push(country);
+    }
+    if (forwarding_address !== undefined) {
+        updates.push(`forwarding_address = $${paramIndex++}`);
+        values.push(forwarding_address);
     }
 
     if (updates.length === 0) {

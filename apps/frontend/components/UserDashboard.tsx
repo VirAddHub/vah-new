@@ -81,6 +81,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [certLoading, setCertLoading] = useState(false);
   const [showForwardingModal, setShowForwardingModal] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
+  const [forwardingAddress, setForwardingAddress] = useState<string>('');
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -130,6 +131,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             const data = await response.json();
             if (data.ok && data.data) {
               setUserProfile(data.data);
+              setForwardingAddress(data.data.forwarding_address || '');
               // Update localStorage with fresh data
               localStorage.setItem('vah_user', JSON.stringify(data.data));
             }
@@ -848,6 +850,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             setSelectedMailForForwarding(null);
           }}
           mailItem={selectedMailForForwarding}
+          forwardingAddress={forwardingAddress}
           onSubmit={handleForwardingSubmit}
         />
       )}

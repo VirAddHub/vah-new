@@ -57,7 +57,7 @@ export async function adminListForwarding(req: Request, res: Response) {
 
         const values: any[] = [];
         let where = 'WHERE 1=1';
-        
+
         // By default, exclude completed requests (Delivered and Cancelled)
         // Only show them if explicitly requested via status filter
         if (status === 'all') {

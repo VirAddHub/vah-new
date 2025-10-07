@@ -7,7 +7,12 @@ import { getMe, patchMe } from "@/lib/api";
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ name: "", avatarUrl: "", marketingOptIn: false });
+    const [form, setForm] = useState({ 
+        name: "", 
+        avatarUrl: "", 
+        marketingOptIn: false,
+        forwarding_address: ""
+    });
     const [msg, setMsg] = useState("");
 
     useEffect(() => {
@@ -17,7 +22,8 @@ export default function ProfilePage() {
                 setForm({
                     name: u.name ?? "",
                     avatarUrl: u.avatarUrl ?? "",
-                    marketingOptIn: !!u.marketingOptIn
+                    marketingOptIn: !!u.marketingOptIn,
+                    forwarding_address: u.forwarding_address ?? ""
                 });
             })
             .finally(() => setLoading(false));
@@ -49,6 +55,18 @@ export default function ProfilePage() {
                     <span>Avatar URL</span>
                     <input className="border rounded p-2" value={form.avatarUrl}
                         onChange={e => setForm({ ...form, avatarUrl: e.target.value })} />
+                </label>
+                <label className="grid gap-1">
+                    <span>Forwarding Address</span>
+                    <textarea 
+                        className="border rounded p-2 h-24" 
+                        value={form.forwarding_address}
+                        onChange={e => setForm({ ...form, forwarding_address: e.target.value })}
+                        placeholder="Enter your forwarding address (name, address lines, city, postal code, country)"
+                    />
+                    <p className="text-xs text-gray-500">
+                        This address will be used automatically when you request mail forwarding.
+                    </p>
                 </label>
                 <label className="inline-flex items-center gap-2">
                     <input type="checkbox" checked={form.marketingOptIn}

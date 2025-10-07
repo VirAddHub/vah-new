@@ -1,35 +1,21 @@
-// src/server/routes/admin-forwarding.ts
-// Admin forwarding request management endpoints
-
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { getPool } from '../../db/pool';
 import { requireAdmin } from '../../middleware/require-admin';
-import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
-import { getPool } from '../db';
-import { sendMailForwarded } from '../../lib/mailer';
+import { sendPostmarkEmail } from '../../lib/postmark';
 
 const router = Router();
-
-// Apply admin auth to all routes
-router.use(requireAdmin);
-
-// GET /api/admin/forwarding/requests?status=Requested&q=...&limit=50&offset=0
-router.get('/forwarding/requests', (req, res, next) => {
-    console.log('[admin-forwarding] GET /forwarding/requests called');
-    console.log('[admin-forwarding] User:', req.user);
-    next();
-}, adminListForwarding);
-
-// PATCH /api/admin/forwarding/requests/:id  { action, courier?, tracking_number?, admin_notes? }
-router.patch('/forwarding/requests/:id', adminUpdateForwarding);
 
 const CompleteForwardingSchema = z.object({
     mail_id: z.number().int().positive(),
     forwarded_date: z.string().optional() // ISO string, defaults to now
 });
 
-// POST /api/admin/forwarding/complete
-router.post('/forwarding/complete', async (req: Request, res: Response) => {
+/**
+ * POST /api/admin/forwarding/complete
+ * Complete a forwarding request and send confirmation email
+ */
+router.post('/complete', requireAdmin, async (req: Request, res: Response) => {
     const admin = req.user;
     if (!admin) {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
@@ -99,16 +85,24 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
         `, [mail_id]);
 
         // 4. Send confirmation email
-        try {
-            await sendMailForwarded({
-                email: user.email,
-                name: user.first_name || user.email,
-                tracking_number: undefined, // No tracking for completed forwarding
-                carrier: undefined, // No carrier for completed forwarding
-                cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/mail`
-            });
-        } catch (emailError) {
-            console.error('[admin-forwarding-complete] Email failed:', emailError);
+        const emailData = {
+            name: user.first_name || user.email,
+            forwarding_address: user.forwarding_address,
+            forwarded_date: forwardedDate.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            })
+        };
+
+        const emailResult = await sendPostmarkEmail({
+            to: user.email,
+            template: 'forwarding_completed',
+            data: emailData
+        });
+
+        if (!emailResult.success) {
+            console.error('[admin-forwarding-complete] Email failed:', emailResult.error);
             // Don't rollback - the forwarding is complete, just email failed
         }
 
@@ -122,7 +116,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
                 mail_id: mailItem.id,
                 user_email: user.email,
                 forwarded_date: forwardedDate.toISOString(),
-                email_sent: true
+                email_sent: emailResult.success
             }
         });
 

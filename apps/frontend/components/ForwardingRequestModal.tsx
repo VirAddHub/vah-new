@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -13,6 +13,7 @@ interface ForwardingRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   mailItem: any;
+  forwardingAddress?: string;
   onSubmit: (data: ForwardingRequestData) => Promise<void>;
 }
 
@@ -28,7 +29,7 @@ interface ForwardingRequestData {
   method?: string;
 }
 
-export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: ForwardingRequestModalProps) {
+export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAddress, onSubmit }: ForwardingRequestModalProps) {
   const [formData, setFormData] = useState<ForwardingRequestData>({
     to_name: "",
     address1: "",
@@ -40,6 +41,30 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
     reason: "",
     method: "standard"
   });
+
+  // Parse forwarding address when it changes
+  React.useEffect(() => {
+    if (forwardingAddress) {
+      const addressLines = forwardingAddress.split('\n');
+      const name = addressLines[0] || '';
+      const address1 = addressLines[1] || '';
+      const address2 = addressLines[2] || '';
+      const cityPostal = addressLines[addressLines.length - 2] || '';
+      const country = addressLines[addressLines.length - 1] || 'GB';
+      
+      const [city, postal] = cityPostal.split(',').map(s => s.trim());
+
+      setFormData(prev => ({
+        ...prev,
+        to_name: name,
+        address1,
+        address2,
+        city: city || '',
+        postal: postal || '',
+        country
+      }));
+    }
+  }, [forwardingAddress]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +115,16 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-sm text-blue-700 mb-2">Forwarding Address (from Profile)</h4>
+              <div className="text-sm text-blue-600 whitespace-pre-line">
+                {forwardingAddress || "No forwarding address configured. Please add one in Profile settings."}
+              </div>
+              <p className="text-xs text-blue-500 mt-1">
+                This address will be used automatically. To change it, update your Profile settings.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="to_name">Recipient Name *</Label>
@@ -99,6 +134,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                   onChange={(e) => handleChange("to_name", e.target.value)}
                   placeholder="Full name"
                   required
+                  disabled
+                  className="bg-gray-50"
                 />
               </div>
               <div>
@@ -124,6 +161,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                 onChange={(e) => handleChange("address1", e.target.value)}
                 placeholder="Street address, house number"
                 required
+                disabled
+                className="bg-gray-50"
               />
             </div>
 
@@ -134,6 +173,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                 value={formData.address2}
                 onChange={(e) => handleChange("address2", e.target.value)}
                 placeholder="Apartment, suite, unit, etc. (optional)"
+                disabled
+                className="bg-gray-50"
               />
             </div>
 
@@ -146,6 +187,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                   onChange={(e) => handleChange("city", e.target.value)}
                   placeholder="City"
                   required
+                  disabled
+                  className="bg-gray-50"
                 />
               </div>
               <div>
@@ -155,6 +198,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                   value={formData.state}
                   onChange={(e) => handleChange("state", e.target.value)}
                   placeholder="State or province"
+                  disabled
+                  className="bg-gray-50"
                 />
               </div>
               <div>
@@ -165,6 +210,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
                   onChange={(e) => handleChange("postal", e.target.value)}
                   placeholder="Postal code"
                   required
+                  disabled
+                  className="bg-gray-50"
                 />
               </div>
             </div>
@@ -172,8 +219,8 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, onSubmit }: 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="country">Country *</Label>
-                <Select value={formData.country} onValueChange={(value) => handleChange("country", value)}>
-                  <SelectTrigger>
+                <Select value={formData.country} onValueChange={(value) => handleChange("country", value)} disabled>
+                  <SelectTrigger className="bg-gray-50">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>

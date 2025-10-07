@@ -34,6 +34,7 @@ import {
 interface ForwardingRequest {
     id: number;
     user_id: number;
+    mail_item_id: number;
     to_name: string;
     address1: string;
     address2?: string;
@@ -184,6 +185,46 @@ export function ForwardingSection() {
         } catch (error) {
             console.error('Error updating request:', error);
             alert('Error updating request. Please try again.');
+        } finally {
+            setIsMutating(false);
+        }
+    };
+
+    const handleCompleteForwarding = async (mailItemId: number) => {
+        const confirmed = window.confirm('Are you sure you want to complete this forwarding? This will mark the mail as forwarded and send a confirmation email to the user.');
+        if (!confirmed) {
+            return;
+        }
+
+        setIsMutating(true);
+        try {
+            const token = localStorage.getItem('vah_jwt');
+            const response = await fetch('/api/admin/forwarding/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                credentials: 'include',
+                body: JSON.stringify({ mail_id: mailItemId })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.ok) {
+                    alert('Forwarding completed and confirmation email sent.');
+                    // Refresh the list
+                    loadRequests();
+                } else {
+                    alert('Failed to complete forwarding: ' + (result.error || 'Unknown error'));
+                }
+            } else {
+                const errorData = await response.json();
+                alert('Failed to complete forwarding: ' + (errorData.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error completing forwarding:', error);
+            alert('Error completing forwarding. Please try again.');
         } finally {
             setIsMutating(false);
         }
@@ -441,13 +482,24 @@ export function ForwardingSection() {
                                                     </>
                                                 )}
                                                 {request.status === 'Dispatched' && (
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => handleStatusUpdate(request.id, 'mark_delivered')}
-                                                        disabled={isMutating}
-                                                    >
-                                                        Delivered
-                                                    </Button>
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleStatusUpdate(request.id, 'mark_delivered')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Delivered
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="default"
+                                                            onClick={() => handleCompleteForwarding(request.mail_item_id)}
+                                                            disabled={isMutating}
+                                                            className="bg-green-600 hover:bg-green-700"
+                                                        >
+                                                            Complete Forwarding
+                                                        </Button>
+                                                    </>
                                                 )}
                                             </div>
                                         </TableCell>

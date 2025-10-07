@@ -97,39 +97,66 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
 
 /**
  * POST /api/forwarding/requests
- * Create new forwarding request
- * Body: { mail_item_id, to_name, address1, address2?, city, state?, postal, country?, reason?, method? }
+ * Create new forwarding request using stored forwarding address
+ * Body: { mail_item_id, reason?, method? }
  * Returns: { ok: true, data: { forwarding_request, pricing, mail_tag, charge_amount } }
  */
 router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id as number;
-    const {
-        mail_item_id,
-        to_name,
-        address1,
-        address2 = null,
-        city,
-        state = null,
-        postal,
-        country = 'GB',
-        reason = null,
-        method = 'standard',
-    } = req.body ?? {};
+    const { mail_item_id, reason = null, method = 'standard' } = req.body ?? {};
 
-    if (!mail_item_id || !to_name || !address1 || !city || !postal) {
-        return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    if (!mail_item_id) {
+        return res.status(400).json({ ok: false, error: 'Missing required field: mail_item_id' });
     }
 
     try {
+        // Get user's forwarding address
+        const userResult = await pool.query(`
+            SELECT forwarding_address, first_name, last_name
+            FROM "user" 
+            WHERE id = $1
+        `, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const user = userResult.rows[0];
+        
+        if (!user.forwarding_address) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'no_forwarding_address',
+                message: 'Please add your forwarding address in Profile before requesting forwarding.'
+            });
+        }
+
+        // Parse the stored forwarding address
+        const addressLines = user.forwarding_address.split('\n');
+        const name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const address1 = addressLines[1] || '';
+        const address2 = addressLines[2] || undefined;
+        const cityPostal = addressLines[addressLines.length - 2] || '';
+        const country = addressLines[addressLines.length - 1] || 'GB';
+        
+        const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
+
+        if (!address1 || !city || !postal) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'invalid_forwarding_address',
+                message: 'Your forwarding address is incomplete. Please update it in Profile.'
+            });
+        }
+
         const result = await createForwardingRequest({
             userId,
             mailItemId: mail_item_id,
             to: {
-                name: to_name,
+                name,
                 address1,
                 address2,
                 city,
-                state,
                 postal,
                 country,
             },

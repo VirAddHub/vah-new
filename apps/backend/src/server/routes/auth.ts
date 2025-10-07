@@ -240,21 +240,24 @@ router.post("/signup", async (req, res) => {
 
         // Insert using the `password` column (we know this exists from the schema)
         const now = Date.now();
+        // Construct forwarding address from individual fields
+        const forwardingAddress = `${i.forward_to_first_name} ${i.forward_to_last_name}\n${i.address_line1}${i.address_line2 ? '\n' + i.address_line2 : ''}\n${i.city}, ${i.postcode}\n${i.forward_country}`;
+
         const insertQuery = `
       INSERT INTO "user" (
         first_name, last_name, email, phone,
         business_type, country_of_incorporation, company_number, company_name,
         forward_to_first_name, forward_to_last_name, address_line1, address_line2,
-        city, postcode, forward_country,
+        city, postcode, forward_country, forwarding_address,
         password, created_at, updated_at, is_admin, role,
         billing, price
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,$12,
-        $13,$14,$15,
-        $16,$17,$18,$19,$20,
-        $21,$22
+        $13,$14,$15,$16,
+        $17,$18,$19,$20,$21,
+        $22,$23
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -263,7 +266,7 @@ router.post("/signup", async (req, res) => {
             i.first_name, i.last_name, email, i.phone ?? null,
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
-            i.city, i.postcode, i.forward_country,
+            i.city, i.postcode, i.forward_country, forwardingAddress,
             hash, now, now, false, 'user',
             i.billing ?? null, i.price ?? null
         ];
