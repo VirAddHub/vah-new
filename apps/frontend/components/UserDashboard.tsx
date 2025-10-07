@@ -621,9 +621,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                                   {/* Action Buttons */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
+                                    <Button size="sm" variant="outline" className="flex-1" onClick={() => onOpen(item)}>
                                       <FileCheck className="h-3 w-3 mr-1" />
                                       Open
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="flex-1" 
+                                      onClick={() => handleRequestForwarding(item)}
+                                    >
+                                      <Truck className="h-3 w-3 mr-1" />
+                                      Forward
                                     </Button>
                                   </div>
                                 </div>
