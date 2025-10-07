@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 import {
     Truck,
     Package,
@@ -23,41 +24,34 @@ import {
     Download,
     Search,
     Filter,
+    User,
+    Mail,
+    Calendar,
+    RefreshCw,
 } from "lucide-react";
-import { apiClient, safe, adminApi, adminForwardingApi } from "../../lib/apiClient";
-import { isOk } from "../../types/api";
-import { useApiData } from "../../lib/client-hooks";
-
-const logAdminAction = async (action: string, data?: any) => {
-    try {
-        await apiClient.post('/api/audit/admin-action', {
-            action,
-            data,
-            timestamp: new Date().toISOString(),
-            adminId: null // Will be set by backend
-        });
-    } catch (error) {
-        console.error('Failed to log admin action:', error);
-    }
-};
-import { getErrorMessage, getErrorStack } from "../../lib/errors";
 
 interface ForwardingRequest {
     id: number;
-    userId: number;
-    userName: string;
-    mailItemId: number;
-    mailSubject: string;
-    destination: string;
-    status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-    priority: "standard" | "express" | "urgent";
-    trackingNumber?: string;
-    carrier?: string;
-    estimatedDelivery?: string;
-    actualDelivery?: string;
-    cost: string;
-    createdAt: string;
-    updatedAt: string;
+    to_name: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state?: string;
+    postal: string;
+    country: string;
+    status: string;
+    subject: string;
+    tag?: string;
+    email: string;
+    courier?: string;
+    tracking_number?: string;
+    admin_notes?: string;
+    created_at: number;
+    reviewed_at?: number;
+    processing_at?: number;
+    dispatched_at?: number;
+    delivered_at?: number;
+    cancelled_at?: number;
 }
 
 interface ForwardingStats {
@@ -67,16 +61,14 @@ interface ForwardingStats {
     canceled: number;
 }
 
-type ForwardingSectionProps = Record<string, never>;
-
-export function ForwardingSection({ }: ForwardingSectionProps) {
-    const [requests, setRequests] = useState<any[]>([]);
+export function ForwardingSection() {
+    const [requests, setRequests] = useState<ForwardingRequest[]>([]);
     const [total, setTotal] = useState(0);
     const [isFetchingRequests, setIsFetchingRequests] = useState(false);
     const [isMutating, setIsMutating] = useState(false);
 
     const [q, setQ] = useState("");
-    const [status, setStatus] = useState<"pending" | "fulfilled" | "canceled" | "all">("pending");
+    const [status, setStatus] = useState<"Requested" | "Reviewed" | "Processing" | "Dispatched" | "Delivered" | "Cancelled" | "all">("Requested");
     const [page, setPage] = useState(1);
     const pageSize = 20;
 
@@ -84,31 +76,35 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
     const [stats, setStats] = useState<ForwardingStats | null>(null);
     const [isExporting, setIsExporting] = useState(false);
 
+    // Show modal for dispatch details
+    const [showDispatchModal, setShowDispatchModal] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
+    const [dispatchData, setDispatchData] = useState({ courier: "", tracking_number: "", admin_notes: "" });
+
     const loadRequests = useCallback(async () => {
         setIsFetchingRequests(true);
         try {
-            const res = await adminForwardingApi.list({
-                page,
-                page_size: pageSize,
-                q: q || undefined,
-                status: (status && status !== "all") ? status : undefined
+            // Use the new admin forwarding API
+            const res = await fetch(`/api/admin/forwarding/requests?status=${encodeURIComponent(status)}&q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${(page - 1) * pageSize}`, {
+                credentials: 'include'
             });
 
-            if (isOk(res)) {
-                const items = res.data || [];
+            if (res.ok) {
+                const data = await res.json();
+                const items = (data && data.ok && Array.isArray(data.data)) ? data.data : [];
                 setRequests(items);
                 setTotal(items.length);
 
                 // Compute stats from items
                 const counts = {
                     total: items.length,
-                    pending: items.filter(i => i.status === 'pending').length,
-                    fulfilled: items.filter(i => i.status === 'fulfilled').length,
-                    canceled: items.filter(i => i.status === 'canceled').length,
+                    pending: items.filter(i => i.status === 'Requested').length,
+                    fulfilled: items.filter(i => i.status === 'Delivered').length,
+                    canceled: items.filter(i => i.status === 'Cancelled').length,
                 };
                 setStats(counts);
             } else {
-                console.error("adminForwardingApi.list failed:", res.error);
+                console.error("Failed to load forwarding requests:", res.statusText);
                 setRequests([]);
                 setTotal(0);
                 setStats(null);
@@ -121,201 +117,83 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
         } finally {
             setIsFetchingRequests(false);
         }
-    }, [page, pageSize, q, status]);
-
-    // Load stats
-    const loadStats = async () => {
-        try {
-            const response = await apiClient.get('/api/admin/forwarding-requests/stats');
-            if (response.ok) {
-                setStats(response.data as any);
-            }
-        } catch (error) {
-            console.error('Failed to load forwarding stats:', error);
-        }
-    };
+    }, [page, q, status]);
 
     useEffect(() => {
         loadRequests();
     }, [loadRequests]);
 
-    useEffect(() => {
-        loadStats();
-    }, []);
-
-    const requestsData = requests;
-
-
-    const onSearchChange = (val: string) => {
-        setPage(1);
-        setQ(val);
-    };
-
-    const onStatusChange = (val: "pending" | "fulfilled" | "canceled" | "all") => {
-        setPage(1);
-        setStatus(val);
-    };
-
-    const handleViewRequest = async (requestId: number) => {
+    const handleStatusUpdate = async (requestId: number, action: string, extraData?: any) => {
+        setIsMutating(true);
         try {
-            await logAdminAction('admin_view_forwarding_request', { requestId });
-            window.open(`/admin/forwarding/${requestId}`, '_blank');
-        } catch (error) {
-            await logAdminAction('admin_view_forwarding_request_error', {
-                requestId,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
+            const response = await fetch(`/api/admin/forwarding/requests/${requestId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ action, ...extraData })
             });
-        }
-    };
 
-    const handleEditRequest = async (requestId: number) => {
-        try {
-            await logAdminAction('admin_edit_forwarding_request', { requestId });
-            window.open(`/admin/forwarding/${requestId}/edit`, '_blank');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.ok) {
+                    // Refresh the list
+                    loadRequests();
+                } else {
+                    alert('Failed to update request: ' + (result.error || 'Unknown error'));
+                }
+            } else {
+                const errorData = await response.json();
+                alert('Failed to update request: ' + (errorData.error || 'Unknown error'));
+            }
         } catch (error) {
-            await logAdminAction('admin_edit_forwarding_request_error', {
-                requestId,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        }
-    };
-
-    const handleProcessRequest = async (requestId: number) => {
-        try {
-            setIsMutating(true);
-            await logAdminAction('admin_process_forwarding_request', { requestId });
-            await apiClient.post(`/api/admin/forwarding-requests/${requestId}/process`);
-            await loadRequests();
-        } catch (error) {
-            await logAdminAction('admin_process_forwarding_request_error', {
-                requestId,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
+            console.error('Error updating request:', error);
+            alert('Error updating request. Please try again.');
         } finally {
             setIsMutating(false);
         }
     };
 
-    const handleShipRequest = async (requestId: number) => {
-        try {
-            setIsMutating(true);
-            await logAdminAction('admin_ship_forwarding_request', { requestId });
-            await apiClient.post(`/api/admin/forwarding-requests/${requestId}/ship`);
-            await loadRequests();
-        } catch (error) {
-            await logAdminAction('admin_ship_forwarding_request_error', {
-                requestId,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        } finally {
-            setIsMutating(false);
-        }
+    const handleDispatch = (request: ForwardingRequest) => {
+        setSelectedRequest(request);
+        setDispatchData({
+            courier: request.courier || "",
+            tracking_number: request.tracking_number || "",
+            admin_notes: request.admin_notes || ""
+        });
+        setShowDispatchModal(true);
     };
 
-    const handleCancelRequest = async (requestId: number) => {
-        try {
-            setIsMutating(true);
-            await logAdminAction('admin_cancel_forwarding_request', { requestId });
-            await adminApi.cancelForward(requestId.toString());
-            await loadRequests();
-        } catch (error) {
-            await logAdminAction('admin_cancel_forwarding_request_error', {
-                requestId,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        } finally {
-            setIsMutating(false);
-        }
+    const handleDispatchSubmit = async () => {
+        if (!selectedRequest) return;
+
+        await handleStatusUpdate(selectedRequest.id, 'mark_dispatched', dispatchData);
+        setShowDispatchModal(false);
+        setSelectedRequest(null);
     };
 
-    const handleBulkAction = async (action: string) => {
-        if (selectedRequests.length === 0) return;
-
-        try {
-            setIsMutating(true);
-            await logAdminAction('admin_bulk_forwarding_action', { action, requestIds: selectedRequests });
-            await apiClient.post(`/api/admin/forwarding-requests/bulk/${action}`, { requestIds: selectedRequests });
-            setSelectedRequests([]);
-            await loadRequests();
-        } catch (error) {
-            await logAdminAction('admin_bulk_forwarding_action_error', {
-                action,
-                requestIds: selectedRequests,
-                error_message: getErrorMessage(error),
-                stack: getErrorStack(error)
-            });
-        } finally {
-            setIsMutating(false);
-        }
-    };
-
-    const handleExportRequests = async () => {
-        setIsExporting(true);
-        try {
-            await logAdminAction('admin_export_forwarding_requests', {
-                filters: { q, status },
-            });
-
-            const params = new URLSearchParams();
-            if (q) params.set('q', q);
-            if (status && status !== 'all') params.set('status', status);
-            // add pagination if your backend supports it for exports:
-            // params.set('page', String(page));
-            // params.set('page_size', String(pageSize));
-
-            const base = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-            const url = `${base}/api/admin/forwarding/requests/export?${params.toString()}`;
-
-            window.open(url, '_blank');
-        } catch (error) {
-            await logAdminAction('admin_export_forwarding_requests_error', {
-                error_message: (error as Error)?.message ?? String(error),
-            });
-            console.error(error);
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
-    const toggleRequestSelection = (requestId: number) => {
-        setSelectedRequests(prev =>
-            prev.includes(requestId)
-                ? prev.filter(id => id !== requestId)
-                : [...prev, requestId]
-        );
-    };
-
-    const selectAllRequests = () => {
-        setSelectedRequests(requestsData.map((request: any) => request.id));
-    };
-
-    const clearSelection = () => {
-        setSelectedRequests([]);
-    };
-
-    const getStatusIcon = (status: string) => {
+    const getStatusColor = (status: string) => {
         switch (status) {
-            case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
-            case "processing": return <Package className="h-4 w-4 text-blue-500" />;
-            case "shipped": return <Truck className="h-4 w-4 text-purple-500" />;
-            case "delivered": return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case "cancelled": return <XCircle className="h-4 w-4 text-red-500" />;
-            default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+            case 'Requested': return 'bg-yellow-100 text-yellow-800';
+            case 'Reviewed': return 'bg-blue-100 text-blue-800';
+            case 'Processing': return 'bg-purple-100 text-purple-800';
+            case 'Dispatched': return 'bg-orange-100 text-orange-800';
+            case 'Delivered': return 'bg-green-100 text-green-800';
+            case 'Cancelled': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
     };
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case "urgent": return "bg-red-100 text-red-800";
-            case "express": return "bg-yellow-100 text-yellow-800";
-            case "standard": return "bg-blue-100 text-blue-800";
-            default: return "bg-gray-100 text-gray-800";
-        }
+    const formatDate = (timestamp?: number) => {
+        if (!timestamp) return '—';
+        return new Date(timestamp).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
     return (
@@ -328,8 +206,8 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                             <span>Total: {stats.total}</span>
                             <span>Pending: {stats.pending}</span>
-                            <span>Fulfilled: {stats.fulfilled}</span>
-                            <span>Canceled: {stats.canceled}</span>
+                            <span>Delivered: {stats.fulfilled}</span>
+                            <span>Cancelled: {stats.canceled}</span>
                         </div>
                     )}
                 </div>
@@ -337,258 +215,262 @@ export function ForwardingSection({ }: ForwardingSectionProps) {
                     <Button
                         variant="outline"
                         className="gap-2"
-                        onClick={handleExportRequests}
-                        disabled={isExporting || isMutating || isFetchingRequests}
+                        onClick={loadRequests}
+                        disabled={isFetchingRequests}
                     >
-                        <Download className="h-4 w-4" />
-                        {isExporting ? 'Exporting…' : 'Export'}
+                        <RefreshCw className={`h-4 w-4 ${isFetchingRequests ? 'animate-spin' : ''}`} />
+                        Refresh
                     </Button>
                 </div>
             </div>
 
-            {/* Bulk Actions */}
-            {selectedRequests.length > 0 && (
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">{selectedRequests.length} requests selected</span>
-                                <Button variant="ghost" size="sm" onClick={clearSelection}>
-                                    Clear
-                                </Button>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('process')}
-                                    disabled={isMutating}
-                                >
-                                    <Play className="h-4 w-4" />
-                                    Process
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('ship')}
-                                    disabled={isMutating}
-                                >
-                                    <Truck className="h-4 w-4" />
-                                    Ship
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('cancel')}
-                                    disabled={isMutating}
-                                >
-                                    <XCircle className="h-4 w-4" />
-                                    Cancel
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
             {/* Filters */}
             <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search forwarding requests..."
-                                    value={q}
-                                    onChange={(e) => onSearchChange(e.target.value)}
-                                    className="pl-10"
-                                />
-                            </div>
+                            <Input
+                                placeholder="Search by name, postal code, courier, or tracking..."
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                className="w-full"
+                            />
                         </div>
-                        <div className="flex gap-2">
-                            <Select value={status} onValueChange={onStatusChange}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="processing">Processing</SelectItem>
-                                    <SelectItem value="shipped">Shipped</SelectItem>
-                                    <SelectItem value="delivered">Delivered</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+                            <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="Requested">Requested</SelectItem>
+                                <SelectItem value="Reviewed">Reviewed</SelectItem>
+                                <SelectItem value="Processing">Processing</SelectItem>
+                                <SelectItem value="Dispatched">Dispatched</SelectItem>
+                                <SelectItem value="Delivered">Delivered</SelectItem>
+                                <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Forwarding Requests Table */}
+            {/* Requests Table */}
             <Card>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">
-                                <input
-                                    type="checkbox"
-                                    checked={requestsData.length > 0 && requestsData.every((request: any) => selectedRequests.includes(request.id))}
-                                    onChange={requestsData.length > 0 && requestsData.every((request: any) => selectedRequests.includes(request.id)) ? clearSelection : selectAllRequests}
-                                    className="rounded"
-                                />
-                            </TableHead>
-                            <TableHead>ID</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead>Mail Item</TableHead>
-                            <TableHead>Destination</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Tracking</TableHead>
-                            <TableHead>Cost</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {requestsData.length === 0 ? (
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                                    No forwarding requests found
-                                </TableCell>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Recipient</TableHead>
+                                <TableHead>Address</TableHead>
+                                <TableHead>Mail Details</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Tracking</TableHead>
+                                <TableHead>Created</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
-                        ) : (
-                            requestsData.map((request: any) => (
-                                <TableRow key={request.id}>
-                                    <TableCell>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedRequests.includes(request.id)}
-                                            onChange={() => toggleRequestSelection(request.id)}
-                                            className="rounded"
-                                        />
-                                    </TableCell>
-                                    <TableCell>#{request.id}</TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{request.userName}</div>
-                                            <div className="text-sm text-muted-foreground">ID: {request.userId}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">#{request.mailItemId}</div>
-                                            <div className="text-sm text-muted-foreground">{request.mailSubject}</div>
-                                            {request.mailSender && (
-                                                <div className="text-xs text-muted-foreground">From: {request.mailSender}</div>
-                                            )}
-                                            {request.mailTag && (
-                                                <Badge variant="outline" className="mt-1 text-xs">
-                                                    {request.mailTag}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="max-w-xs">
-                                            <div className="text-sm font-medium">{request.destinationDetails?.toName || 'Unknown'}</div>
-                                            <div className="text-xs text-muted-foreground">{request.destination}</div>
-                                            {request.userPhone && (
-                                                <div className="text-xs text-muted-foreground">📞 {request.userPhone}</div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge className={getPriorityColor(request.priority)} variant="secondary">
-                                            {request.priority}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {getStatusIcon(request.status)}
-                                            <Badge variant="outline" className="capitalize">
-                                                {request.status}
-                                            </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {request.trackingNumber ? (
-                                            <div>
-                                                <div className="text-sm font-medium">{request.trackingNumber}</div>
-                                                <div className="text-xs text-muted-foreground">{request.carrier}</div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{request.cost}</div>
-                                            {request.isBillable && (
-                                                <div className="text-xs text-yellow-600">Billable</div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{request.createdAt}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => handleViewRequest(request.id)}>
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="outline" onClick={() => handleEditRequest(request.id)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            {request.status === "pending" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleProcessRequest(request.id)} disabled={isMutating}>
-                                                    <Play className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            {request.status === "processing" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleShipRequest(request.id)} disabled={isMutating}>
-                                                    <Truck className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            {request.status !== "delivered" && request.status !== "cancelled" && (
-                                                <Button size="sm" variant="outline" onClick={() => handleCancelRequest(request.id)} disabled={isMutating}>
-                                                    <XCircle className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                        </TableHeader>
+                        <TableBody>
+                            {isFetchingRequests ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8">
+                                        <div className="flex items-center justify-center">
+                                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                            Loading requests...
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : requests.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                        No forwarding requests found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                requests.map((request) => (
+                                    <TableRow key={request.id}>
+                                        <TableCell className="font-medium">#{request.id}</TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <div className="font-medium">{request.to_name}</div>
+                                                <div className="text-sm text-muted-foreground">{request.email}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div>{request.address1}</div>
+                                                {request.address2 && <div>{request.address2}</div>}
+                                                <div>{request.city}, {request.postal}</div>
+                                                <div className="text-muted-foreground">{request.country}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div className="font-medium">{request.subject}</div>
+                                                <div className="text-muted-foreground">Tag: {request.tag || '—'}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={getStatusColor(request.status)}>
+                                                {request.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                {request.courier && <div>Courier: {request.courier}</div>}
+                                                {request.tracking_number && <div>Tracking: {request.tracking_number}</div>}
+                                                {!request.courier && !request.tracking_number && <div className="text-muted-foreground">—</div>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div>Created: {formatDate(request.created_at)}</div>
+                                                {request.reviewed_at && <div>Reviewed: {formatDate(request.reviewed_at)}</div>}
+                                                {request.processing_at && <div>Processing: {formatDate(request.processing_at)}</div>}
+                                                {request.dispatched_at && <div>Dispatched: {formatDate(request.dispatched_at)}</div>}
+                                                {request.delivered_at && <div>Delivered: {formatDate(request.delivered_at)}</div>}
+                                                {request.cancelled_at && <div>Cancelled: {formatDate(request.cancelled_at)}</div>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-1">
+                                                {request.status === 'Requested' && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleStatusUpdate(request.id, 'mark_reviewed')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Review
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleStatusUpdate(request.id, 'start_processing')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Process
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => handleStatusUpdate(request.id, 'cancel')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {request.status === 'Reviewed' && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleStatusUpdate(request.id, 'start_processing')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Process
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => handleStatusUpdate(request.id, 'cancel')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {request.status === 'Processing' && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleDispatch(request)}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Dispatch
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => handleStatusUpdate(request.id, 'cancel')}
+                                                            disabled={isMutating}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {request.status === 'Dispatched' && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleStatusUpdate(request.id, 'mark_delivered')}
+                                                        disabled={isMutating}
+                                                    >
+                                                        Delivered
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
             </Card>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                    Showing {Math.min((page - 1) * pageSize + 1, total)} to {Math.min(page * pageSize, total)} of {total} requests
+            {/* Dispatch Modal */}
+            {showDispatchModal && selectedRequest && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle>Mark as Dispatched</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Courier</label>
+                                <Input
+                                    value={dispatchData.courier}
+                                    onChange={(e) => setDispatchData({ ...dispatchData, courier: e.target.value })}
+                                    placeholder="e.g. Royal Mail, DHL, UPS"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Tracking Number</label>
+                                <Input
+                                    value={dispatchData.tracking_number}
+                                    onChange={(e) => setDispatchData({ ...dispatchData, tracking_number: e.target.value })}
+                                    placeholder="e.g. RM123456789GB"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Admin Notes</label>
+                                <Textarea
+                                    value={dispatchData.admin_notes}
+                                    onChange={(e) => setDispatchData({ ...dispatchData, admin_notes: e.target.value })}
+                                    placeholder="Additional notes..."
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={handleDispatchSubmit}
+                                    className="flex-1"
+                                    disabled={isMutating}
+                                >
+                                    {isMutating ? "Updating..." : "Mark Dispatched"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowDispatchModal(false)}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1 || isFetchingRequests}
-                        variant="outline"
-                        size="sm"
-                    >
-                        Previous
-                    </Button>
-                    <span className="text-sm">
-                        Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
-                    </span>
-                    <Button
-                        onClick={() => setPage(p => Math.min(Math.ceil(total / pageSize), p + 1))}
-                        disabled={page >= Math.ceil(total / pageSize) || isFetchingRequests}
-                        variant="outline"
-                        size="sm"
-                    >
-                        Next
-                    </Button>
-                </div>
-            </div>
+            )}
         </div>
     );
 }

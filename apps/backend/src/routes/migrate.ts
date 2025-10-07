@@ -13,10 +13,10 @@ const router = Router();
 router.post('/migrate/run', async (req: Request, res: Response) => {
     try {
         const { from, to, dryRun = false } = req.body;
-        
+
         // Build command
         let command = 'node dist/src/scripts/migrate-sql.js migrations';
-        
+
         if (from) {
             command += ` --from=${from}`;
         }
@@ -26,27 +26,27 @@ router.post('/migrate/run', async (req: Request, res: Response) => {
         if (dryRun) {
             command += ' --dry-run';
         }
-        
+
         console.log(`[Migration] Running command: ${command}`);
-        
+
         const { stdout, stderr } = await execAsync(command, {
             cwd: process.cwd(),
             env: process.env
         });
-        
+
         if (stderr) {
             console.error('[Migration] stderr:', stderr);
         }
-        
+
         console.log('[Migration] stdout:', stdout);
-        
+
         res.json({
             ok: true,
             message: 'Migration completed successfully',
             output: stdout,
             error: stderr || null
         });
-        
+
     } catch (error: any) {
         console.error('[Migration] Error:', error);
         res.status(500).json({
@@ -66,13 +66,13 @@ router.post('/migrate/run', async (req: Request, res: Response) => {
 router.get('/migrate/status', async (req: Request, res: Response) => {
     try {
         const { Client } = require('pg');
-        const client = new Client({ 
-            connectionString: process.env.DATABASE_URL, 
-            ssl: { rejectUnauthorized: false } 
+        const client = new Client({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
         });
-        
+
         await client.connect();
-        
+
         // Check if forwarding tables exist
         const result = await client.query(`
             SELECT table_name 
@@ -80,15 +80,15 @@ router.get('/migrate/status', async (req: Request, res: Response) => {
             WHERE table_name LIKE 'forwarding%' 
             ORDER BY table_name
         `);
-        
+
         await client.end();
-        
+
         res.json({
             ok: true,
             tables: result.rows.map(r => r.table_name),
             migrationStatus: result.rows.length >= 3 ? 'complete' : 'pending'
         });
-        
+
     } catch (error: any) {
         console.error('[Migration Status] Error:', error);
         res.status(500).json({

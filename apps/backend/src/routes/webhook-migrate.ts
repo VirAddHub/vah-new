@@ -10,26 +10,26 @@ const router = Router();
 router.post('/webhook/migrate', async (req: Request, res: Response) => {
     try {
         const { trigger } = req.body;
-        
+
         if (trigger !== 'migrate') {
             return res.status(400).json({
                 ok: false,
                 error: 'Invalid trigger'
             });
         }
-        
+
         console.log('🚀 Webhook triggered migrations...');
-        
+
         // Import and run the startup migration
         const { runStartupMigrations } = require('../scripts/startup-migrate');
         await runStartupMigrations();
-        
+
         res.json({
             ok: true,
             message: 'Migrations completed successfully',
             timestamp: new Date().toISOString()
         });
-        
+
     } catch (error: any) {
         console.error('[Webhook Migrate] Error:', error);
         res.status(500).json({

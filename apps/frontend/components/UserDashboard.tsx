@@ -18,8 +18,7 @@ import {
   LogOut,
   Settings,
   User,
-  Bell,
-  HelpCircle
+  Bell
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -27,6 +26,7 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
+import { ForwardingRequestModal } from "./ForwardingRequestModal";
 import { VAHLogo } from "./VAHLogo";
 
 interface UserDashboardProps {
@@ -79,6 +79,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
   const [certLoading, setCertLoading] = useState(false);
+  const [showForwardingModal, setShowForwardingModal] = useState(false);
+  const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -305,12 +307,59 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
-  const handleRequestForwarding = () => {
-    if (selectedMail.length > 0) {
-      onNavigate('dashboard-forwarding-confirm', {
-        selectedMailIds: selectedMail,
-        allMailItems: mailItems
+  const handleRequestForwarding = (mailItem?: MailItem) => {
+    // If a specific mail item is provided, use it directly
+    if (mailItem) {
+      setSelectedMailForForwarding(mailItem);
+      setShowForwardingModal(true);
+      return;
+    }
+
+    // Otherwise, use bulk selection logic
+    if (selectedMail.length === 0) return;
+
+    // Get the first selected mail item for forwarding
+    const item = mailItems.find((item: MailItem) => selectedMail.includes(item.id.toString()));
+    if (!item) return;
+
+    setSelectedMailForForwarding(item);
+    setShowForwardingModal(true);
+  };
+
+  const handleForwardingSubmit = async (data: any) => {
+    if (!selectedMailForForwarding) return;
+
+    try {
+      const response = await fetch('/api/forwarding/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          mail_item_id: selectedMailForForwarding.id,
+          ...data
+        })
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.ok) {
+          // Show success message
+          alert('Forwarding request created successfully! Your request will be reviewed by our team.');
+          // Clear selection
+          setSelectedMail([]);
+          // Refresh mail items
+          refreshMail();
+        } else {
+          alert('Failed to create forwarding request: ' + (result.error || 'Unknown error'));
+        }
+      } else {
+        alert('Failed to create forwarding request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating forwarding request:', error);
+      alert('Error creating forwarding request. Please try again.');
     }
   };
 
@@ -369,16 +418,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onNavigate('contact')}
-                  className="hidden sm:flex items-center gap-2"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  Support
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={onLogout}
                   className="flex items-center gap-2 text-destructive hover:text-destructive"
                 >
@@ -432,7 +471,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="default" onClick={handleRequestForwarding}>
+                      <Button size="sm" variant="default" onClick={() => handleRequestForwarding()}>
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -670,9 +709,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                                   {/* Actions */}
                                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="w-full h-9" onClick={() => onOpen(item)}>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       Open
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 h-9"
+                                      onClick={() => handleRequestForwarding(item)}
+                                    >
+                                      <Truck className="h-3 w-3 mr-1" />
+                                      Forward
                                     </Button>
                                   </div>
                                 </div>
@@ -708,7 +756,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
-                    <Button size="default" variant="default" className="w-full h-10" onClick={handleRequestForwarding}>
+                    <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding
                     </Button>
@@ -720,7 +768,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Help Text */}
             <div className="text-center py-6 space-y-2">
               <p className="text-sm text-muted-foreground">
-                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('contact')} className="text-primary hover:underline">Contact Support</button>
+                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button>
               </p>
             </div>
           </div>
@@ -782,6 +830,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
         useBlobFallback
       />
+
+      {/* Forwarding Request Modal */}
+      {showForwardingModal && selectedMailForForwarding && (
+        <ForwardingRequestModal
+          isOpen={showForwardingModal}
+          onClose={() => {
+            setShowForwardingModal(false);
+            setSelectedMailForForwarding(null);
+          }}
+          mailItem={selectedMailForForwarding}
+          onSubmit={handleForwardingSubmit}
+        />
+      )}
     </div>
   );
 }

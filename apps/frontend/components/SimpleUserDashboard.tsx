@@ -128,7 +128,11 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                                     <Mail className="h-6 w-6" />
                                     <span>View Mail</span>
                                 </Button>
-                                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                                <Button 
+                                    variant="outline" 
+                                    className="h-20 flex flex-col gap-2"
+                                    onClick={() => onNavigate('forwarding')}
+                                >
                                     <Truck className="h-6 w-6" />
                                     <span>Request Forwarding</span>
                                 </Button>

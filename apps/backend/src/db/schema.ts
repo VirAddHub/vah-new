@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS mail_item (
   action_log JSONB,
   scanned_at BIGINT,
   status TEXT,
-  requested_at BIGINT
+  requested_at BIGINT,
+  forwarding_status TEXT,
+  expires_at BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS payment (
@@ -85,16 +87,52 @@ CREATE TABLE IF NOT EXISTS admin_log (
 CREATE TABLE IF NOT EXISTS forwarding_request (
   id SERIAL PRIMARY KEY,
   created_at BIGINT NOT NULL,
-  "user" INT REFERENCES "user"(id) ON DELETE CASCADE,
-  mail_item INT REFERENCES mail_item(id) ON DELETE CASCADE,
-  requested_at BIGINT,
-  status TEXT,
-  payment INT REFERENCES payment(id) ON DELETE SET NULL,
-  is_billable BOOLEAN,
-  billed_at BIGINT,
-  destination_name TEXT,
-  destination_address TEXT,
-  source TEXT
+  user_id INT REFERENCES "user"(id) ON DELETE CASCADE,
+  mail_item_id INT REFERENCES mail_item(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'Requested',
+  to_name TEXT,
+  address1 TEXT,
+  address2 TEXT,
+  city TEXT,
+  state TEXT,
+  postal TEXT,
+  country TEXT,
+  reason TEXT,
+  method TEXT,
+  idem_key TEXT,
+  updated_at BIGINT,
+  tracking TEXT,
+  courier TEXT,
+  reviewed_at BIGINT,
+  reviewed_by INT,
+  processing_at BIGINT,
+  dispatched_at BIGINT,
+  delivered_at BIGINT,
+  cancelled_at BIGINT,
+  tracking_number TEXT,
+  admin_notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS forwarding_charge (
+  id SERIAL PRIMARY KEY,
+  forwarding_request_id INT UNIQUE REFERENCES forwarding_request(id) ON DELETE CASCADE,
+  amount_pence INT DEFAULT 200,
+  status TEXT DEFAULT 'pending',
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS forwarding_outbox (
+  id SERIAL PRIMARY KEY,
+  forwarding_request_id INT REFERENCES forwarding_request(id) ON DELETE CASCADE,
+  event TEXT,
+  payload_json TEXT,
+  status TEXT DEFAULT 'pending',
+  attempt_count INT DEFAULT 0,
+  last_error TEXT,
+  next_attempt_at BIGINT,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS mail_event (
@@ -109,6 +147,16 @@ CREATE TABLE IF NOT EXISTS mail_event (
 CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
 CREATE INDEX IF NOT EXISTS idx_mail_item_user ON mail_item(user_id);
 CREATE INDEX IF NOT EXISTS idx_mail_item_status ON mail_item(status);
-CREATE INDEX IF NOT EXISTS idx_forwarding_req_user ON forwarding_request("user");
+CREATE INDEX IF NOT EXISTS idx_forwarding_req_user ON forwarding_request(user_id);
+CREATE INDEX IF NOT EXISTS idx_forwarding_req_status ON forwarding_request(status);
+CREATE INDEX IF NOT EXISTS idx_forwarding_req_mail_item ON forwarding_request(mail_item_id);
+CREATE INDEX IF NOT EXISTS idx_forwarding_charge_request ON forwarding_charge(forwarding_request_id);
+CREATE INDEX IF NOT EXISTS idx_forwarding_charge_status ON forwarding_charge(status);
+CREATE INDEX IF NOT EXISTS idx_forwarding_outbox_status ON forwarding_outbox(status, next_attempt_at);
 CREATE INDEX IF NOT EXISTS idx_mail_event_mail ON mail_event(mail_item);
+
+-- Unique constraint to prevent duplicate active forwarding requests
+CREATE UNIQUE INDEX IF NOT EXISTS forwarding_request_active_uniq
+ON forwarding_request (user_id, mail_item_id)
+WHERE status IN ('Requested','Processing');
 `;

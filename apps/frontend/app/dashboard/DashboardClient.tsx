@@ -33,6 +33,9 @@ export default function DashboardClient() {
             case 'help':
                 router.push('/help');
                 break;
+            case 'forwarding':
+                router.push('/forwarding');
+                break;
             case 'dashboard-support':
             case 'contact':
                 router.push('/contact');

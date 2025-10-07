@@ -9,17 +9,17 @@ const router = Router();
 router.get('/trigger-migrate', async (req: Request, res: Response) => {
     try {
         console.log('🚀 Triggering migrations via API...');
-        
+
         // Import and run the startup migration
         const { runStartupMigrations } = require('../scripts/startup-migrate');
         await runStartupMigrations();
-        
+
         res.json({
             ok: true,
             message: 'Migrations triggered successfully',
             timestamp: new Date().toISOString()
         });
-        
+
     } catch (error: any) {
         console.error('[Trigger Migrate] Error:', error);
         res.status(500).json({
