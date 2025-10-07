@@ -234,6 +234,41 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [selectedMail, mailItems]);
 
+  // Generate certificate handler
+  const onGenerateCertificate = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/api/profile/certificate`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate certificate: ${response.status}`);
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Create download link
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `proof-of-address-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Certificate generation failed:', err);
+      alert('Failed to generate certificate. Please try again.');
+    }
+  }, []);
+
   // Get user name helper
   const getUserName = () => {
     if (userProfile?.first_name && userProfile?.last_name) {
@@ -715,7 +750,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">
-                  <Button className="w-full" size="sm">
+                  <Button className="w-full" size="sm" onClick={onGenerateCertificate}>
                     <FileCheck className="h-3.5 w-3.5 mr-1.5" />
                     Generate Certificate
                   </Button>
