@@ -11,10 +11,14 @@ import { sendMailForwarded } from '../../lib/mailer';
 
 const router = Router();
 
-// Rate limiting by admin user ID, not IP
+// Request deduplication cache to prevent multiple identical requests
+const requestCache = new Map<string, { timestamp: number; response: any }>();
+const CACHE_TTL = 2000; // 2 seconds
+
+// Rate limiting by admin user ID, not IP - reasonable limits
 const adminForwardingLimiter = rateLimit({
   windowMs: 10_000, // 10 seconds
-  limit: 20, // 20 requests per window
+  limit: 30, // 30 requests per window (allows for multiple tabs)
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
@@ -36,10 +40,47 @@ router.get('/forwarding/requests',
     (req, res, next) => {
         console.log('[admin-forwarding] GET /forwarding/requests called');
         console.log('[admin-forwarding] User:', req.user);
+        
+        // Request deduplication - check if we have a recent identical request
+        const cacheKey = `${req.user?.id}-${req.url}`;
+        const now = Date.now();
+        const cached = requestCache.get(cacheKey);
+        
+        if (cached && (now - cached.timestamp) < CACHE_TTL) {
+            console.log('[admin-forwarding] Returning cached response for deduplication');
+            return res.json(cached.response);
+        }
+        
         // Add cache headers
         res.set("Cache-Control", "private, max-age=5");
         next();
     }, 
+    async (req, res, next) => {
+        // Wrap the original handler to cache the response
+        const originalSend = res.json;
+        const cacheKey = `${req.user?.id}-${req.url}`;
+        
+        res.json = function(data: any) {
+            const now = Date.now();
+            
+            // Cache the response for deduplication
+            requestCache.set(cacheKey, {
+                timestamp: now,
+                response: data
+            });
+            
+            // Clean up old cache entries
+            for (const [key, value] of requestCache.entries()) {
+                if (now - value.timestamp > CACHE_TTL) {
+                    requestCache.delete(key);
+                }
+            }
+            
+            return originalSend.call(this, data);
+        };
+        
+        next();
+    },
     adminListForwarding
 );
 
