@@ -518,6 +518,13 @@ async function start() {
         // Don't exit - let the platform restart if truly fatal
     });
 
+    // ---- Run startup migrations ----
+    if (process.env.RUN_STARTUP_MIGRATIONS === 'true') {
+        console.log('[migration] Running startup migrations...');
+        const { runStartupMigrations } = require('./scripts/startup-migrate');
+        runStartupMigrations().catch(console.error);
+    }
+
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
     const server = http.createServer(app);
 
