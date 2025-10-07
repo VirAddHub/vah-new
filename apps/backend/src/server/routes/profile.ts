@@ -228,7 +228,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             year: 'numeric'
         });
 
-        // Create PDF document
+        // Create PDF document with clean margins
         const doc = new PDFDocument({
             size: 'A4',
             margin: 50
@@ -241,88 +241,108 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // Pipe PDF to response
         doc.pipe(res);
 
-        // VAH Header with green branding
-        doc.fillColor('#10B981') // VAH green
-            .fontSize(24)
+        // ===== BRAND LOGO (Top Center) =====
+        doc.fillColor('#214E34')
+            .fontSize(32)
             .font('Helvetica-Bold')
-            .text('Virtual Address Hub', 50, 50)
-            .fontSize(12)
-            .fillColor('#6B7280')
-            .text('Professional Business Address Service', 50, 80);
+            .text('VAH', 50, 50, { align: 'center' });
 
-        // VAH Logo (green square with VAH initials)
-        const logoSize = 40;
-        const logoX = 50;
-        const logoY = 100;
-
-        // Draw green square background
-        doc.fillColor('#214E34') // Primary green color matching CSS
-            .rect(logoX, logoY, logoSize, logoSize)
-            .fill();
-
-        // Add VAH text in white
-        doc.fillColor('#FFFFFF')
-            .fontSize(16)
-            .font('Helvetica-Bold')
-            .text('VAH', logoX + 8, logoY + 12);
-
-        // Certificate title
+        // ===== LETTER TITLE =====
         doc.fillColor('#000000')
-            .fontSize(20)
+            .fontSize(18)
             .font('Helvetica-Bold')
-            .text('PROOF OF ADDRESS CERTIFICATE', 50, 160, { align: 'center' });
+            .text('Letter of Certification', 50, 100);
 
-        // Certificate content
-        doc.fontSize(12)
+        // ===== DATE =====
+        doc.fillColor('#000000')
+            .fontSize(12)
             .font('Helvetica')
-            .fillColor('#374151')
-            .text('This is to certify that:', 50, 200)
-            .text('', 0, 10); // Line break
+            .text(`Date: ${currentDate}`, 50, 130);
 
-        // Company name or individual name
+        // ===== SALUTATION =====
+        doc.text('To Whom It May Concern,', 50, 160);
+
+        // ===== MAIN BODY =====
+        doc.moveDown(1);
+        doc.text(
+            'This letter confirms that the following company is registered at:',
+            { paragraphGap: 8 }
+        );
+
+        // ===== REGISTERED ADDRESS BLOCK =====
+        doc.moveDown(0.5);
+        doc.fillColor('#214E34')
+            .fontSize(12)
+            .font('Helvetica-Bold')
+            .text('Registered Business Address:', 70, doc.y);
+
+        doc.fillColor('#000000')
+            .fontSize(12)
+            .font('Helvetica')
+            .text('71-75 Shelton Street', 70, doc.y + 5)
+            .text('Covent Garden', 70, doc.y + 20)
+            .text('London, WC2H 9JQ', 70, doc.y + 35)
+            .text('United Kingdom', 70, doc.y + 50);
+
+        // ===== ACCOUNT DETAILS =====
+        doc.moveDown(2);
+
+        // Company/Individual name
         const displayName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
-        doc.font('Helvetica-Bold')
-            .fontSize(14)
-            .text(displayName, 50, 220)
+
+        doc.fillColor('#000000')
+            .fontSize(12)
+            .font('Helvetica-Bold')
+            .text('Account Holder:', 50, doc.y);
+
+        doc.fillColor('#000000')
+            .fontSize(12)
             .font('Helvetica')
-            .fontSize(12);
+            .text(displayName, 50, doc.y + 5);
 
-        doc.text('is registered at our business address:', 50, 250)
-            .text('', 0, 10);
+        doc.moveDown(1);
 
-        // Virtual address
-        doc.font('Helvetica-Bold')
-            .fontSize(14)
-            .text('71-75 Shelton Street', 50, 270)
-            .text('Covent Garden', 50, 290)
-            .text('London', 50, 310)
-            .text('WC2H 9JQ', 50, 330)
-            .text('United Kingdom', 50, 350)
+        // Contact details
+        doc.fillColor('#000000')
+            .fontSize(12)
+            .font('Helvetica-Bold')
+            .text('Contact Name:', 50, doc.y);
+
+        doc.fillColor('#000000')
+            .fontSize(12)
             .font('Helvetica')
-            .fontSize(12);
+            .text(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A', 50, doc.y + 5);
 
-        doc.text('', 0, 20);
+        // ===== TERMS PARAGRAPH =====
+        doc.moveDown(2);
 
-        // Additional details
-        doc.text('This address may be used for:', 50, 390)
-            .text('• Business correspondence and official mail', 70, 410)
-            .text('• Companies House registrations', 70, 430)
-            .text('• HMRC correspondence', 70, 450)
-            .text('• Banking and financial services', 70, 470)
-            .text('• Professional networking and business listings', 70, 490);
+        doc.fillColor('#000000')
+            .fontSize(12)
+            .font('Helvetica')
+            .text(
+                'Under the terms of a verified digital mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.',
+                { paragraphGap: 8 }
+            );
 
-        // Footer
-        doc.text('', 0, 30);
-        doc.text(`Certificate generated on: ${currentDate}`, 50, 540)
-            .text('For verification purposes, this certificate is digitally generated', 50, 560)
-            .text('and contains the current date of issue.', 50, 580);
+        doc.text(
+            'Subject to ongoing compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company\'s Trading or Correspondence Address. This confirmation does not confer rights of physical occupation or tenancy.',
+            { paragraphGap: 12 }
+        );
 
-        // VAH footer
-        doc.text('', 0, 20);
-        doc.fillColor('#10B981')
-            .fontSize(10)
-            .text('Virtual Address Hub - Professional Business Address Service', 50, 620, { align: 'center' })
-            .text('www.virtualaddresshub.co.uk', 50, 635, { align: 'center' });
+        // ===== CLOSING =====
+        doc.moveDown(2);
+        doc.text('Sincerely,', 50, doc.y);
+        doc.text('VirtualAddressHub Customer Support', 50, doc.y + 20);
+
+        // ===== FOOTER =====
+        doc.moveDown(3);
+        doc.fillColor('#6B7280')
+            .fontSize(9)
+            .font('Helvetica')
+            .text('VirtualAddressHub Ltd. 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom', 50, doc.y, { align: 'center' })
+            .text('T: +44 (0) 20 1234 5678 | E: support@virtualaddresshub.co.uk | W: www.virtualaddresshub.co.uk', 50, doc.y + 15, { align: 'center' })
+            .text('VirtualAddressHub Ltd. Registered Office: 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom', 50, doc.y + 30, { align: 'center' })
+            .text('Registered in England | VAT no: [VAT_NUMBER]', 50, doc.y + 45, { align: 'center' });
 
         // Finalize PDF
         doc.end();
