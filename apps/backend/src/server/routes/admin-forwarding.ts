@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool } from '../db';
@@ -10,15 +11,37 @@ import { sendMailForwarded } from '../../lib/mailer';
 
 const router = Router();
 
+// Rate limiting by admin user ID, not IP
+const adminForwardingLimiter = rateLimit({
+  windowMs: 10_000, // 10 seconds
+  limit: 20, // 20 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const u = (req as any).user;
+    return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
+  },
+  handler: (_req, res) => {
+    res.setHeader("Retry-After", "3");
+    return res.status(429).json({ ok: false, error: "rate_limited" });
+  },
+});
+
 // Apply admin auth to all routes
 router.use(requireAdmin);
 
 // GET /api/admin/forwarding/requests?status=Requested&q=...&limit=50&offset=0
-router.get('/forwarding/requests', (req, res, next) => {
-    console.log('[admin-forwarding] GET /forwarding/requests called');
-    console.log('[admin-forwarding] User:', req.user);
-    next();
-}, adminListForwarding);
+router.get('/forwarding/requests', 
+    adminForwardingLimiter,
+    (req, res, next) => {
+        console.log('[admin-forwarding] GET /forwarding/requests called');
+        console.log('[admin-forwarding] User:', req.user);
+        // Add cache headers
+        res.set("Cache-Control", "private, max-age=5");
+        next();
+    }, 
+    adminListForwarding
+);
 
 // PATCH /api/admin/forwarding/requests/:id  { action, courier?, tracking_number?, admin_notes? }
 router.patch('/forwarding/requests/:id', adminUpdateForwarding);

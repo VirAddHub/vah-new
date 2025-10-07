@@ -28,6 +28,7 @@ import {
     billingService
 } from "../lib/services";
 import { useAuthedSWR } from "../lib/useAuthedSWR";
+import { useAdminHeartbeat } from "../hooks/useAdminHeartbeat";
 import {
     Mail,
     Users,
@@ -188,41 +189,61 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         cancelled: 0
     });
 
+    // ⛔️ Ensure we never setState after unmount
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
+    // 🔒 Abort previous request before firing a new one
+    const abortRef = useRef<AbortController | null>(null);
+
     // Load forwarding requests in real-time
     const loadForwardingRequests = useCallback(async () => {
-        setIsLoadingForwarding(true);
+        // abort previous in-flight
+        if (abortRef.current) abortRef.current.abort();
+        abortRef.current = new AbortController();
+
         try {
+            if (mountedRef.current) setIsLoadingForwarding(true);
             const token = localStorage.getItem('vah_jwt');
             const response = await fetch('/api/admin/forwarding/requests?limit=50&offset=0', {
                 headers: {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                credentials: 'include'
+                credentials: 'include',
+                signal: abortRef.current.signal
             });
 
             if (response.ok) {
                 const data = await response.json();
                 if (data.ok && Array.isArray(data.data)) {
                     const requests = data.data;
-                    setForwardingRequests(requests);
+                    if (mountedRef.current) {
+                        setForwardingRequests(requests);
 
-                    // Calculate stats
-                    const stats = {
-                        total: requests.length,
-                        requested: requests.filter((r: any) => r.status === 'Requested').length,
-                        reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
-                        processing: requests.filter((r: any) => r.status === 'Processing').length,
-                        dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
-                        delivered: requests.filter((r: any) => r.status === 'Delivered').length,
-                        cancelled: requests.filter((r: any) => r.status === 'Cancelled').length
-                    };
-                    setForwardingStats(stats);
+                        // Calculate stats
+                        const stats = {
+                            total: requests.length,
+                            requested: requests.filter((r: any) => r.status === 'Requested').length,
+                            reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
+                            processing: requests.filter((r: any) => r.status === 'Processing').length,
+                            dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
+                            delivered: requests.filter((r: any) => r.status === 'Delivered').length,
+                            cancelled: requests.filter((r: any) => r.status === 'Cancelled').length
+                        };
+                        setForwardingStats(stats);
+                    }
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
+            if (err?.name === "AbortError") return; // ignore aborted
             console.error('Error loading forwarding requests:', err);
         } finally {
-            setIsLoadingForwarding(false);
+            if (mountedRef.current) setIsLoadingForwarding(false);
         }
     }, []);
 
@@ -284,30 +305,38 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         void loadForwardingRequests();
     }, []); // Only run once on mount
 
-    // Real-time refresh for forwarding requests every 30 seconds
+    // ✅ One interval only; don't include `loadForwardingRequests` in deps
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     useEffect(() => {
-        const interval = setInterval(() => {
-            void loadForwardingRequests();
-        }, 30000); // 30 seconds
+        // initial load
+        loadForwardingRequests();
 
-        return () => clearInterval(interval);
-    }, []); // Empty dependency array - only run once
+        // start single interval
+        pollRef.current = setInterval(() => {
+            loadForwardingRequests();
+        }, 30_000);
 
-    // Check system health
-    useEffect(() => {
-        const checkHealth = async () => {
-            try {
-                const response = await fetch('/api/healthz');
+        // cleanup: clear timer + abort in-flight
+        return () => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            if (abortRef.current) abortRef.current.abort();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // ← empty array on purpose
+
+    // Check system health using shared heartbeat
+    useAdminHeartbeat(async () => {
+        try {
+            const response = await fetch('/api/healthz');
+            if (mountedRef.current) {
                 setSystemStatus(response.ok ? 'operational' : 'down');
-            } catch (error) {
+            }
+        } catch (error) {
+            if (mountedRef.current) {
                 setSystemStatus('down');
             }
-        };
-
-        checkHealth();
-        const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
-        return () => clearInterval(interval);
-    }, []);
+        }
+    }, 30_000);
 
     // SWR will automatically fetch users data when the query key changes (filters or page)
 
