@@ -11,7 +11,11 @@ const router = Router();
 router.use(requireAdmin);
 
 // GET /api/admin/forwarding/requests?status=Requested&q=...&limit=50&offset=0
-router.get('/forwarding/requests', adminListForwarding);
+router.get('/forwarding/requests', (req, res, next) => {
+    console.log('[admin-forwarding] GET /forwarding/requests called');
+    console.log('[admin-forwarding] User:', req.user);
+    next();
+}, adminListForwarding);
 
 // PATCH /api/admin/forwarding/requests/:id  { action, courier?, tracking_number?, admin_notes? }
 router.patch('/forwarding/requests/:id', adminUpdateForwarding);
