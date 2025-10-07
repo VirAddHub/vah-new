@@ -57,18 +57,18 @@ router.post('/:id/complete', async (req: Request, res: Response) => {
             Date.now()
         ]);
 
-        return res.json({ 
-            ok: true, 
+        return res.json({
+            ok: true,
             data: updatedRequest,
             message: 'Forwarding request marked as completed'
         });
 
     } catch (error: any) {
         console.error('[POST /api/admin/forwarding/requests/:id/complete] error:', error);
-        return res.status(500).json({ 
-            ok: false, 
-            error: 'database_error', 
-            message: error.message 
+        return res.status(500).json({
+            ok: false,
+            error: 'database_error',
+            message: error.message
         });
     }
 });

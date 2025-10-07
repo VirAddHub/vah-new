@@ -26,7 +26,7 @@ async function runSchemaFix() {
 
         // Read and run the migration
         const migrationPath = path.join(__dirname, 'migrations', '20251007_fix_missing_schema.sql');
-        
+
         if (!fs.existsSync(migrationPath)) {
             console.error(`❌ Migration file not found: ${migrationPath}`);
             throw new Error(`Migration file not found: 20251007_fix_missing_schema.sql`);
@@ -34,11 +34,11 @@ async function runSchemaFix() {
 
         console.log('📋 Running schema fix migration...');
         const sql = fs.readFileSync(migrationPath, 'utf8');
-        
+
         await client.query('BEGIN;');
         await client.query(sql);
         await client.query('COMMIT;');
-        
+
         console.log('✅ Schema fix migration completed successfully');
 
         // Verify tables were created
