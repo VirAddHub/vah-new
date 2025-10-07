@@ -27,6 +27,7 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
+import { VAHLogo } from "./VAHLogo";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -332,13 +333,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-8 w-8 text-primary" />
-                <span className="text-xl font-bold text-primary">VAH</span>
-              </div>
-              <div className="hidden sm:block text-sm text-muted-foreground">
-                Virtual Address Hub
-              </div>
+              <VAHLogo size="lg" showText={true} />
             </div>
 
             {/* User Info and Actions */}
