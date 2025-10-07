@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react";
 import { VAHLogo } from "../VAHLogo";
 
 interface HeaderProps {
-  onNavigate?: (page: string) => void;
+    onNavigate?: (page: string) => void;
 }
 
 export function Header({ onNavigate }: HeaderProps) {
@@ -30,12 +30,7 @@ export function Header({ onNavigate }: HeaderProps) {
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-border/50">
             <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <button
-                    onClick={() => handleNavClick('home')}
-                    className="hover:opacity-80 transition-opacity"
-                >
-                    <VAHLogo size="md" showText={true} />
-                </button>
+                <VAHLogo href="/" size="md" showText={true} />
 
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex gap-8 text-sm text-muted-foreground">

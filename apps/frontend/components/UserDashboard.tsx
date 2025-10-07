@@ -77,6 +77,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
+  const [certLoading, setCertLoading] = useState(false);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -237,6 +238,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Generate certificate handler
   const onGenerateCertificate = useCallback(async () => {
     try {
+      if (certLoading) return;
+      setCertLoading(true);
       const token = getToken();
       const response = await fetch(`${API_BASE}/api/profile/certificate`, {
         headers: {
@@ -252,7 +255,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       // Get the PDF blob
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      
+
       // Create download link
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -260,14 +263,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       document.body.appendChild(a);
       a.click();
       a.remove();
-      
+
       // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Certificate generation failed:', err);
       alert('Failed to generate certificate. Please try again.');
+    } finally {
+      setCertLoading(false);
     }
-  }, []);
+  }, [certLoading]);
 
   // Get user name helper
   const getUserName = () => {
@@ -750,9 +755,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">
-                  <Button className="w-full" size="sm" onClick={onGenerateCertificate}>
-                    <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                    Generate Certificate
+                  <Button className="w-full" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                    {certLoading ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                        Generate Certificate
+                      </>
+                    )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center leading-tight">
                     Official proof of address

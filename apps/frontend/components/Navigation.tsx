@@ -35,12 +35,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-border/50">
             <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <button
-                    onClick={() => handleNavClick('home')}
-                    className="hover:opacity-80 transition-opacity"
-                >
-                    <VAHLogo size="md" showText={true} />
-                </button>
+                <VAHLogo href="/" size="md" showText={true} />
 
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex gap-8 text-sm lg:text-base leading-[1.2] text-muted-foreground">
