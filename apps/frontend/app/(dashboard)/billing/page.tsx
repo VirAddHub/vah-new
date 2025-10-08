@@ -32,6 +32,31 @@ export default function BillingPage() {
     }
   };
 
+  const handlePlanChange = async (cadence: 'monthly' | 'yearly') => {
+    setBusy(cadence);
+    try {
+      const planId = cadence === 'monthly' ? 3 : 2; // Plan IDs from database
+      const r = await fetch('/api/bff/billing/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ plan_id: planId })
+      });
+      
+      const j = await r.json();
+      if (j.ok) {
+        // Refresh the page to show updated plan
+        window.location.reload();
+      } else {
+        alert('Failed to change plan. Please try again.');
+      }
+    } catch (error) {
+      alert('Failed to change plan. Please try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <h1 className="text-2xl font-semibold">Billing</h1>
@@ -80,6 +105,67 @@ export default function BillingPage() {
         </div>
         <p className="text-xs text-gray-500 mt-2">
           Secure pages are provided by GoCardless. We'll refresh your mandate and billing automatically.
+        </p>
+      </div>
+
+      {/* Plan Upgrade Section */}
+      <div className="rounded-2xl border p-4">
+        <div className="text-sm text-gray-700 font-medium mb-3">Change Plan</div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Monthly Plan */}
+          <div className={`rounded-lg border p-4 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium">Virtual Mailbox - Monthly</h3>
+              {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>}
+            </div>
+            <div className="text-2xl font-bold mb-1">£9.95</div>
+            <div className="text-sm text-gray-500 mb-3">per month</div>
+            <ul className="text-xs text-gray-600 space-y-1 mb-4">
+              <li>• Professional London business address</li>
+              <li>• Unlimited digital mail scanning</li>
+              <li>• HMRC & Companies House forwarding (free)</li>
+              <li>• Cancel anytime</li>
+            </ul>
+            {o?.cadence !== 'monthly' && (
+              <button 
+                className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => handlePlanChange('monthly')}
+                disabled={busy !== null}
+              >
+                {busy === 'monthly' ? 'Switching...' : 'Switch to Monthly'}
+              </button>
+            )}
+          </div>
+
+          {/* Annual Plan */}
+          <div className={`rounded-lg border p-4 ${o?.cadence === 'yearly' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium">Virtual Mailbox - Annual</h3>
+              {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Current</span>}
+            </div>
+            <div className="text-2xl font-bold mb-1">£89.99</div>
+            <div className="text-sm text-gray-500 mb-1">per year</div>
+            <div className="text-sm text-green-600 font-medium mb-3">Save 25% (£29.41/year)</div>
+            <ul className="text-xs text-gray-600 space-y-1 mb-4">
+              <li>• Professional London business address</li>
+              <li>• Unlimited digital mail scanning</li>
+              <li>• HMRC & Companies House forwarding (free)</li>
+              <li>• Cancel anytime</li>
+              <li>• <strong>25% savings vs monthly</strong></li>
+            </ul>
+            {o?.cadence !== 'yearly' && (
+              <button 
+                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                onClick={() => handlePlanChange('yearly')}
+                disabled={busy !== null}
+              >
+                {busy === 'yearly' ? 'Switching...' : 'Switch to Annual'}
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Plan changes take effect immediately. You'll be charged the new rate on your next billing cycle.
         </p>
       </div>
 

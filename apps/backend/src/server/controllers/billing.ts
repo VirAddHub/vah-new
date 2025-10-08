@@ -90,9 +90,47 @@ export async function postRetryPayment(req: Request, res: Response) {
 }
 
 export async function postChangePlan(req: Request, res: Response) {
-  const { plan, cadence } = req.body ?? {};
-  // Stub: call GC to update subscription; persist to "subscription"
-  res.json({ ok: true, data: { plan, cadence } });
+  try {
+    const userId = Number(req.user!.id);
+    const { plan_id } = req.body ?? {};
+    const pool = getPool();
+
+    if (!plan_id || isNaN(Number(plan_id))) {
+      return res.status(400).json({ ok: false, error: 'Invalid plan_id' });
+    }
+
+    // Verify the plan exists and is active
+    const planCheck = await pool.query(
+      'SELECT id, name, interval FROM plans WHERE id = $1 AND active = true',
+      [plan_id]
+    );
+
+    if (planCheck.rows.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Plan not found or inactive' });
+    }
+
+    const plan = planCheck.rows[0];
+
+    // Update user's plan
+    await pool.query(
+      'UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3',
+      [plan_id, Date.now(), userId]
+    );
+
+    console.log(`[postChangePlan] User ${userId} changed to plan: ${plan.name}`);
+
+    res.json({ 
+      ok: true, 
+      data: { 
+        plan_id: Number(plan_id),
+        plan_name: plan.name,
+        interval: plan.interval
+      } 
+    });
+  } catch (error) {
+    console.error('[postChangePlan] error:', error);
+    res.status(500).json({ ok: false, error: 'Failed to change plan' });
+  }
 }
 
 export async function postCancelAtPeriodEnd(req: Request, res: Response) {
