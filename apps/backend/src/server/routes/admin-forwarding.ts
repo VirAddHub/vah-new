@@ -170,7 +170,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
                 FROM forwarding_request
                 WHERE mail_item_id = $1
             `, [mail_id]);
-            
+
             let forwarding_address = 'Your forwarding address';
             if (addressQuery.rows.length > 0) {
                 const addr = addressQuery.rows[0];
@@ -185,7 +185,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
                 ].filter(Boolean);
                 forwarding_address = parts.join(', ');
             }
-            
+
             await sendMailForwarded({
                 email: user.email,
                 name: user.first_name || user.email,

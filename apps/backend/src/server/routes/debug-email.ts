@@ -1,6 +1,6 @@
 // apps/backend/src/server/routes/debug-email.ts
 import { Router } from 'express';
-import { 
+import {
     sendPasswordResetEmail,
     sendPasswordChangedConfirmation,
     sendWelcomeEmail,

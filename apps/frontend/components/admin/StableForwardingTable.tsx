@@ -94,25 +94,25 @@ export default function StableForwardingTable() {
   const categorizeRequests = (requests: ForwardingRequest[]) => {
     const now = Date.now();
     const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-    
+
     // Apply search filter first
-    const filteredRequests = searchQuery 
+    const filteredRequests = searchQuery
       ? requests.filter(r => {
-          const searchLower = searchQuery.toLowerCase();
-          return (
-            formatFRId(r.id).toLowerCase().includes(searchLower) ||
-            r.mail_item_id.toString().includes(searchLower) ||
-            r.user_id.toString().includes(searchLower) ||
-            (r.to_name && r.to_name.toLowerCase().includes(searchLower)) ||
-            (r.address1 && r.address1.toLowerCase().includes(searchLower)) ||
-            (r.city && r.city.toLowerCase().includes(searchLower)) ||
-            (r.postal && r.postal.toLowerCase().includes(searchLower)) ||
-            (r.country && r.country.toLowerCase().includes(searchLower)) ||
-            r.status.toLowerCase().includes(searchLower)
-          );
-        })
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          formatFRId(r.id).toLowerCase().includes(searchLower) ||
+          r.mail_item_id.toString().includes(searchLower) ||
+          r.user_id.toString().includes(searchLower) ||
+          (r.to_name && r.to_name.toLowerCase().includes(searchLower)) ||
+          (r.address1 && r.address1.toLowerCase().includes(searchLower)) ||
+          (r.city && r.city.toLowerCase().includes(searchLower)) ||
+          (r.postal && r.postal.toLowerCase().includes(searchLower)) ||
+          (r.country && r.country.toLowerCase().includes(searchLower)) ||
+          r.status.toLowerCase().includes(searchLower)
+        );
+      })
       : requests;
-    
+
     // Map backend statuses to frontend sections
     const requested = filteredRequests.filter(r => r.status === 'Requested' || r.status === 'Reviewed');
     const inProgress = filteredRequests.filter(r => r.status === 'Processing');
@@ -123,7 +123,7 @@ export default function StableForwardingTable() {
       }
       return false;
     });
-    
+
     return { requested, inProgress, done };
   };
 
@@ -178,7 +178,7 @@ export default function StableForwardingTable() {
     // Determine what actions are available based on current status
     const canMoveToInProgress = section === 'requested' && (request.status === 'Requested' || request.status === 'Reviewed');
     const canMoveToDone = section === 'inProgress' && request.status === 'Processing';
-    
+
     return (
       <Card key={request.id} className="mb-3">
         <CardContent className="p-4">

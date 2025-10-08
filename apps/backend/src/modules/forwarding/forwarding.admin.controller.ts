@@ -236,14 +236,14 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
                 if (userQuery.rows.length > 0) {
                     const user = userQuery.rows[0];
-                    
+
                     // Get the forwarding address from the request
                     const addressQuery = await pool.query(`
                         SELECT to_name, address1, address2, city, state, postal, country
                         FROM forwarding_request
                         WHERE id = $1
                     `, [id]);
-                    
+
                     let forwarding_address = 'Your forwarding address';
                     if (addressQuery.rows.length > 0) {
                         const addr = addressQuery.rows[0];
@@ -258,7 +258,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                         ].filter(Boolean);
                         forwarding_address = parts.join(', ');
                     }
-                    
+
                     await sendMailForwarded({
                         email: user.email,
                         name: user.first_name || user.email,

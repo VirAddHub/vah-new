@@ -76,30 +76,17 @@ export function ForwardingConfirmationModal({
                     </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {/* Mail Item Details */}
+                    {/* Mail Item Details - Simplified */}
                     <div className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium text-sm text-gray-700 mb-2">Mail Item Details</h4>
                         <div className="space-y-1 text-sm">
                             <p><strong>Subject:</strong> {mailItem?.subject || mailItem?.description || "No subject"}</p>
                             <p><strong>From:</strong> {mailItem?.sender_name || "Unknown sender"}</p>
-                            <p><strong>Received:</strong> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}</p>
                             {isGovernmentMail && (
                                 <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
                                     Official Mail - Free Forwarding
                                 </Badge>
                             )}
                         </div>
-                    </div>
-
-                    {/* Forwarding Address */}
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                        <h4 className="font-medium text-sm text-blue-700 mb-2">Forwarding Address</h4>
-                        <pre className="text-sm text-blue-800 whitespace-pre-line">
-                            {userProfile?.forwarding_address || "No forwarding address configured"}
-                        </pre>
-                        <p className="text-xs text-blue-600 mt-2">
-                            This address will be used for forwarding. Update it in your Profile if needed.
-                        </p>
                     </div>
 
                     {/* Pricing Information */}
@@ -110,7 +97,7 @@ export function ForwardingConfirmationModal({
                             <Alert>
                                 <CheckCircle className="h-4 w-4" />
                                 <AlertDescription>
-                                    <strong>Free Forwarding:</strong> This appears to be official mail (HMRC, Companies House, etc.) and will be forwarded at no charge.
+                                    <strong>Free Forwarding:</strong> This appears to be official mail (HMRC, Companies House, etc.) and will be forwarded at no charge using your forwarding address from your profile.
                                 </AlertDescription>
                             </Alert>
                         ) : (
@@ -133,15 +120,15 @@ export function ForwardingConfirmationModal({
                                         <div className="space-y-2">
                                             <div
                                                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'monthly'
-                                                        ? 'border-primary bg-primary/5'
-                                                        : 'border-gray-200 hover:border-gray-300'
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 hover:border-gray-300'
                                                     }`}
                                                 onClick={() => setSelectedPaymentMethod('monthly')}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'monthly'
-                                                            ? 'border-primary bg-primary'
-                                                            : 'border-gray-300'
+                                                        ? 'border-primary bg-primary'
+                                                        : 'border-gray-300'
                                                         }`}>
                                                         {selectedPaymentMethod === 'monthly' && (
                                                             <div className="w-full h-full rounded-full bg-white scale-50"></div>
@@ -153,7 +140,7 @@ export function ForwardingConfirmationModal({
                                                             <span className="font-medium">Add to Monthly Bill</span>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">
-                                                            £2.00 will be added to your next monthly invoice
+                                                            £2.00 will be added to your next monthly invoice. You'll receive a confirmation once processed.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -163,15 +150,15 @@ export function ForwardingConfirmationModal({
                                         <div className="space-y-2">
                                             <div
                                                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'gocardless'
-                                                        ? 'border-primary bg-primary/5'
-                                                        : 'border-gray-200 hover:border-gray-300'
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 hover:border-gray-300'
                                                     }`}
                                                 onClick={() => setSelectedPaymentMethod('gocardless')}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'gocardless'
-                                                            ? 'border-primary bg-primary'
-                                                            : 'border-gray-300'
+                                                        ? 'border-primary bg-primary'
+                                                        : 'border-gray-300'
                                                         }`}>
                                                         {selectedPaymentMethod === 'gocardless' && (
                                                             <div className="w-full h-full rounded-full bg-white scale-50"></div>
@@ -230,7 +217,7 @@ export function ForwardingConfirmationModal({
                             ) : (
                                 <>
                                     <Truck className="h-4 w-4 mr-2" />
-                                    {isGovernmentMail ? 'Request Free Forwarding' : 'Confirm & Pay £2.00'}
+                                    {isGovernmentMail ? 'Request Free Forwarding' : (userPlan?.type === 'monthly' ? 'Confirm & Add to Bill' : 'Confirm & Pay £2.00')}
                                 </>
                             )}
                         </Button>

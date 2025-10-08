@@ -101,7 +101,7 @@ export function ForwardingSection() {
             // Use the new admin forwarding API
             const token = localStorage.getItem('vah_jwt');
             const query = searchQuery || "";
-            
+
             const params = new URLSearchParams();
             if (status !== "all") {
                 if (status === "active") {

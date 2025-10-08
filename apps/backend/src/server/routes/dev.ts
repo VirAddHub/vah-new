@@ -27,23 +27,23 @@ import {
 const router = Router();
 
 function ensureAllowed(req: any, res: any, next: any) {
-  // Security: Disable in production
-  if (ENV.NODE_ENV === "production") {
-    return res.status(404).json({ ok: false, error: "not found" });
-  }
-  
-  // Security: Require secret to be configured
-  if (!ENV.DEV_SEED_SECRET) {
-    return res.status(404).json({ ok: false, error: "not found" });
-  }
-  
-  // Security: Require correct header
-  const secret = req.headers["x-dev-seed-secret"];
-  if (!secret || secret !== ENV.DEV_SEED_SECRET) {
-    return res.status(401).json({ ok: false, error: "unauthorized" });
-  }
-  
-  next();
+    // Security: Disable in production
+    if (ENV.NODE_ENV === "production") {
+        return res.status(404).json({ ok: false, error: "not found" });
+    }
+
+    // Security: Require secret to be configured
+    if (!ENV.DEV_SEED_SECRET) {
+        return res.status(404).json({ ok: false, error: "not found" });
+    }
+
+    // Security: Require correct header
+    const secret = req.headers["x-dev-seed-secret"];
+    if (!secret || secret !== ENV.DEV_SEED_SECRET) {
+        return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    next();
 }
 
 /**
@@ -56,20 +56,20 @@ router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
     const firstName = req.body?.firstName || "Seed";
     const id = uuid();
 
-  try {
-    // Insert user into database
-    const pool = getPool();
-    await pool.query(
-      `INSERT INTO users (id, email, first_name, created_at, status) 
+    try {
+        // Insert user into database
+        const pool = getPool();
+        await pool.query(
+            `INSERT INTO users (id, email, first_name, created_at, status) 
        VALUES ($1, $2, $3, $4, $5)`,
-      [id, email, firstName, new Date().toISOString(), "active"]
-    );
+            [id, email, firstName, new Date().toISOString(), "active"]
+        );
 
-    return res.json({ ok: true, userId: id, email, firstName });
-  } catch (error: any) {
-    console.error("Failed to seed user:", error);
-    return res.status(500).json({ ok: false, error: error.message });
-  }
+        return res.json({ ok: true, userId: id, email, firstName });
+    } catch (error: any) {
+        console.error("Failed to seed user:", error);
+        return res.status(500).json({ ok: false, error: error.message });
+    }
 });
 
 /**
@@ -95,12 +95,12 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
     const { type, userId, payload = {} } = req.body || {};
     if (!type || !userId) return res.status(400).json({ ok: false, error: "type & userId required" });
 
-  try {
-    // Get user from database
-    const pool = getPool();
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
-    const u = result.rows[0];
-    if (!u) return res.status(404).json({ ok: false, error: "user not found" });
+    try {
+        // Get user from database
+        const pool = getPool();
+        const result = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+        const u = result.rows[0];
+        if (!u) return res.status(404).json({ ok: false, error: "user not found" });
 
         // normalize common fields
         const email = u.email;
@@ -246,25 +246,25 @@ router.post("/api/dev/cleanup", ensureAllowed, async (req, res) => {
     const { email, userId } = req.body || {};
     if (!email && !userId) return res.status(400).json({ ok: false, error: "email or userId required" });
 
-  try {
-    const pool = getPool();
-    let u: any = null;
-    if (userId) {
-      const result = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
-      u = result.rows[0];
-    }
-    if (!u && email) {
-      const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-      u = result.rows[0];
-    }
-    if (!u) return res.status(404).json({ ok: false, error: "user not found" });
+    try {
+        const pool = getPool();
+        let u: any = null;
+        if (userId) {
+            const result = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+            u = result.rows[0];
+        }
+        if (!u && email) {
+            const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+            u = result.rows[0];
+        }
+        if (!u) return res.status(404).json({ ok: false, error: "user not found" });
 
-    await pool.query("DELETE FROM users WHERE id = $1", [u.id]);
-    return res.json({ ok: true, deleted: u.id });
-  } catch (error: any) {
-    console.error("Failed to cleanup user:", error);
-    return res.status(500).json({ ok: false, error: error.message });
-  }
+        await pool.query("DELETE FROM users WHERE id = $1", [u.id]);
+        return res.json({ ok: true, deleted: u.id });
+    } catch (error: any) {
+        console.error("Failed to cleanup user:", error);
+        return res.status(500).json({ ok: false, error: error.message });
+    }
 });
 
 export default router;

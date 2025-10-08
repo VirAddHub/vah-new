@@ -6,7 +6,7 @@
  * @returns Formatted ID like "FR-000003"
  */
 export const formatFRId = (id: number | string): string => {
-  return `FR-${String(id).padStart(6, '0')}`;
+    return `FR-${String(id).padStart(6, '0')}`;
 };
 
 /**
@@ -15,22 +15,22 @@ export const formatFRId = (id: number | string): string => {
  * @returns Formatted UK date string or "—" if invalid
  */
 export function formatDateUK(input: number | string | null | undefined): string {
-  if (input == null) return '—';
-  
-  const n = typeof input === 'string' ? Number(input) : input;
-  const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(input);
-  
-  if (Number.isNaN(d.getTime())) return '—';
-  
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric',
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false, 
-    timeZone: 'Europe/London'
-  }).format(d);
+    if (input == null) return '—';
+
+    const n = typeof input === 'string' ? Number(input) : input;
+    const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(input);
+
+    if (Number.isNaN(d.getTime())) return '—';
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/London'
+    }).format(d);
 }
 
 /**
@@ -39,15 +39,15 @@ export function formatDateUK(input: number | string | null | undefined): string 
  * @returns Object with formatted date and ISO string for tooltip
  */
 export function formatDateWithTooltip(input: number | string | null | undefined) {
-  if (input == null) return { formatted: '—', isoString: '' };
-  
-  const n = typeof input === 'string' ? Number(input) : input;
-  const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(input);
-  
-  if (Number.isNaN(d.getTime())) return { formatted: '—', isoString: '' };
-  
-  const formatted = formatDateUK(input);
-  const isoString = d.toISOString();
-  
-  return { formatted, isoString };
+    if (input == null) return { formatted: '—', isoString: '' };
+
+    const n = typeof input === 'string' ? Number(input) : input;
+    const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(input);
+
+    if (Number.isNaN(d.getTime())) return { formatted: '—', isoString: '' };
+
+    const formatted = formatDateUK(input);
+    const isoString = d.toISOString();
+
+    return { formatted, isoString };
 }
