@@ -20,7 +20,7 @@ import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { apiClient, safe, adminApi } from "../lib/apiClient";
+import { apiClient, safe } from "../lib/apiClient";
 import {
     adminService,
     mailService,
@@ -29,6 +29,7 @@ import {
 } from "../lib/services";
 import { useAuthedSWR } from "../lib/useAuthedSWR";
 import { useAdminHeartbeat } from "../hooks/useAdminHeartbeat";
+import { adminApi } from "../lib/services/http";
 import {
     Mail,
     Users,
@@ -177,7 +178,18 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     });
     const [isLoadingOverview, setIsLoadingOverview] = useState(false);
 
-    // Forwarding requests are now handled by StableForwardingTable component
+    // Forwarding requests state for overview
+    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
+    const [isLoadingForwarding, setIsLoadingForwarding] = useState(false);
+    const [forwardingStats, setForwardingStats] = useState({
+        total: 0,
+        requested: 0,
+        reviewed: 0,
+        processing: 0,
+        dispatched: 0,
+        delivered: 0,
+        cancelled: 0,
+    });
 
     // ⛔️ Ensure we never setState after unmount
     const mountedRef = useRef(true);
@@ -191,7 +203,33 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // 🔒 Abort previous request before firing a new one
     const abortRef = useRef<AbortController | null>(null);
 
-    // Forwarding requests loading is now handled by StableForwardingTable component
+    // Load forwarding requests for overview using centralized HTTP service
+    const loadForwardingRequests = useCallback(async () => {
+        if (mountedRef.current) setIsLoadingForwarding(true);
+        try {
+            const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
+            if (mountedRef.current && data.ok && Array.isArray(data.data)) {
+                const requests = data.data;
+                setForwardingRequests(requests);
+                
+                // Calculate stats
+                const stats = {
+                    total: requests.length,
+                    requested: requests.filter((r: any) => r.status === 'Requested').length,
+                    reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
+                    processing: requests.filter((r: any) => r.status === 'Processing').length,
+                    dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
+                    delivered: requests.filter((r: any) => r.status === 'Delivered').length,
+                    cancelled: requests.filter((r: any) => r.status === 'Cancelled').length,
+                };
+                setForwardingStats(stats);
+            }
+        } catch (error) {
+            console.error('Error loading forwarding requests:', error);
+        } finally {
+            if (mountedRef.current) setIsLoadingForwarding(false);
+        }
+    }, []);
 
     // Load overview metrics using new service layer
     const loadOverview = useCallback(async () => {
@@ -248,6 +286,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     useEffect(() => {
         console.debug('[Admin] Loading overview on mount');
         void loadOverview();
+        void loadForwardingRequests();
     }, []); // Only run once on mount
 
     // Forwarding requests polling is now handled by StableForwardingTable component
@@ -309,6 +348,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     metrics={metrics}
                     overview={overview}
                     systemStatus={systemStatus}
+                    forwardingRequests={forwardingRequests}
+                    forwardingStats={forwardingStats}
+                    isLoadingForwarding={isLoadingForwarding}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
             case "users":
@@ -340,6 +382,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     metrics={metrics}
                     overview={overview}
                     systemStatus={systemStatus}
+                    forwardingRequests={forwardingRequests}
+                    forwardingStats={forwardingStats}
+                    isLoadingForwarding={isLoadingForwarding}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
         }
@@ -475,11 +520,17 @@ function OverviewSection({
     metrics,
     overview,
     systemStatus,
+    forwardingRequests,
+    forwardingStats,
+    isLoadingForwarding,
     onViewForwarding
 }: {
     metrics: any;
     overview: any;
     systemStatus: 'operational' | 'degraded' | 'down';
+    forwardingRequests: any[];
+    forwardingStats: any;
+    isLoadingForwarding: boolean;
     onViewForwarding: () => void;
 }) {
     const totals = safe(metrics?.totals, {});
@@ -541,7 +592,74 @@ function OverviewSection({
                 />
             </div>
 
-            {/* Forwarding Requests are now handled by the dedicated Forwarding section */}
+            {/* Forwarding Requests Summary */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        Forwarding Requests
+                        {isLoadingForwarding && (
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                        )}
+                    </CardTitle>
+                    <Button variant="outline" size="sm" onClick={onViewForwarding}>
+                        View All
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{forwardingStats.requested}</div>
+                            <div className="text-sm text-muted-foreground">Requested</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-600">{forwardingStats.reviewed}</div>
+                            <div className="text-sm text-muted-foreground">Reviewed</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">{forwardingStats.processing}</div>
+                            <div className="text-sm text-muted-foreground">Processing</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-orange-600">{forwardingStats.dispatched}</div>
+                            <div className="text-sm text-muted-foreground">Dispatched</div>
+                        </div>
+                    </div>
+
+                    {forwardingRequests.length > 0 && (
+                        <div className="space-y-2">
+                            <h4 className="font-medium text-sm text-muted-foreground">Recent Requests</h4>
+                            <div className="space-y-1">
+                                {forwardingRequests.slice(0, 3).map((request: any) => (
+                                    <div key={request.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={
+                                                request.status === 'Requested' ? 'default' :
+                                                    request.status === 'Reviewed' ? 'secondary' :
+                                                        request.status === 'Processing' ? 'outline' :
+                                                            request.status === 'Dispatched' ? 'destructive' : 'secondary'
+                                            }>
+                                                {request.status}
+                                            </Badge>
+                                            <span className="text-sm font-medium">{request.to_name}</span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {new Date(request.created_at).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {forwardingRequests.length === 0 && !isLoadingForwarding && (
+                        <div className="text-center py-4 text-muted-foreground">
+                            <Truck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No forwarding requests</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
