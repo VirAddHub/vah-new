@@ -42,16 +42,16 @@ export default function StableForwardingTable() {
     try {
       setLoading(true);
       setError(null);
-        const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
-        if (mountedRef.current) {
-          if (data.ok && Array.isArray(data.data)) {
-            console.log('Forwarding requests data:', data.data);
-            console.log('First row sample:', data.data[0]);
-            setRows(data.data);
-          } else {
-            setError(data.error || "Failed to load forwarding requests");
-          }
+      const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
+      if (mountedRef.current) {
+        if (data.ok && Array.isArray(data.data)) {
+          console.log('Forwarding requests data:', data.data);
+          console.log('First row sample:', data.data[0]);
+          setRows(data.data);
+        } else {
+          setError(data.error || "Failed to load forwarding requests");
         }
+      }
     } catch (e: any) {
       if (e?.name !== "AbortError" && mountedRef.current) setError(e.message ?? "Failed");
     } finally {
@@ -132,22 +132,36 @@ export default function StableForwardingTable() {
                 </TableCell>
                 <TableCell>
                   {(() => {
+                    console.log(`Row ${row.id} created_at:`, row.created_at, 'type:', typeof row.created_at);
+                    
                     try {
-                      // Handle both timestamp (number) and date string formats
-                      const date = typeof row.created_at === 'number' 
-                        ? new Date(row.created_at) 
-                        : new Date(row.created_at);
+                      let date;
+                      
+                      if (typeof row.created_at === 'number') {
+                        // It's already a timestamp
+                        date = new Date(row.created_at);
+                        console.log(`Row ${row.id} parsed timestamp:`, date);
+                      } else if (typeof row.created_at === 'string') {
+                        // Try parsing as string
+                        date = new Date(row.created_at);
+                        console.log(`Row ${row.id} parsed string:`, date);
+                      } else {
+                        console.warn(`Row ${row.id} unexpected created_at type:`, typeof row.created_at, row.created_at);
+                        return 'Invalid Type';
+                      }
                       
                       // Check if date is valid
                       if (isNaN(date.getTime())) {
-                        console.warn('Invalid date for row:', row.id, 'created_at:', row.created_at);
-                        return 'Invalid Date';
+                        console.warn(`Row ${row.id} invalid date:`, row.created_at, 'parsed as:', date);
+                        return `Invalid: ${row.created_at}`;
                       }
                       
-                      return date.toLocaleDateString();
+                      const formatted = date.toLocaleDateString();
+                      console.log(`Row ${row.id} formatted date:`, formatted);
+                      return formatted;
                     } catch (error) {
-                      console.error('Date parsing error for row:', row.id, 'created_at:', row.created_at, error);
-                      return 'Invalid Date';
+                      console.error(`Row ${row.id} date parsing error:`, error, 'created_at:', row.created_at);
+                      return `Error: ${row.created_at}`;
                     }
                   })()}
                 </TableCell>

@@ -100,7 +100,24 @@ export async function adminListForwarding(req: Request, res: Response) {
     `;
 
         const { rows } = await pool.query(sql, values);
-        return res.json({ ok: true, data: rows });
+        
+        // Debug: Log the first row to see the data structure
+        if (rows.length > 0) {
+            console.log('[adminListForwarding] First row sample:', {
+                id: rows[0].id,
+                created_at: rows[0].created_at,
+                created_at_type: typeof rows[0].created_at,
+                created_at_value: rows[0].created_at
+            });
+        }
+        
+        // Ensure created_at is a number (PostgreSQL might return BIGINT as string)
+        const processedRows = rows.map(row => ({
+            ...row,
+            created_at: typeof row.created_at === 'string' ? parseInt(row.created_at, 10) : row.created_at
+        }));
+        
+        return res.json({ ok: true, data: processedRows });
     } catch (e: any) {
         console.error('[AdminForwarding] list error', e);
         return res.status(500).json({ ok: false, error: 'internal_error' });
