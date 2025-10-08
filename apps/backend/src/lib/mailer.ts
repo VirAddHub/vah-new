@@ -242,11 +242,11 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
     await sendTemplateEmail({
         to: email,
-        templateAlias: Templates.MailForwarded,
+        templateAlias: Templates.ForwardingCompleted, // Use the correct template
         model: {
-            first_name: name,
-            forwarding_address: forwarding_address || 'Your forwarding address',
-            forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
+            name: name,
+            forwardingAddress: forwarding_address || 'Your forwarding address',
+            forwardedDate: forwarded_date || new Date().toLocaleDateString('en-GB'),
         },
     });
 }

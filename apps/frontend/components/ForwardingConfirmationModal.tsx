@@ -59,7 +59,9 @@ export function ForwardingConfirmationModal({
     const isGovernmentMail = mailItem?.sender_name?.toLowerCase().includes('hmrc') ||
         mailItem?.sender_name?.toLowerCase().includes('companies house') ||
         mailItem?.subject?.toLowerCase().includes('hmrc') ||
-        mailItem?.subject?.toLowerCase().includes('companies house');
+        mailItem?.subject?.toLowerCase().includes('companies house') ||
+        mailItem?.tag?.toUpperCase() === 'HMRC' ||
+        mailItem?.tag?.toUpperCase() === 'COMPANIES HOUSE';
 
     if (!isOpen) return null;
 
