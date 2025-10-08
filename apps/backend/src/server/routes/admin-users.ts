@@ -15,7 +15,7 @@ const router = Router();
  */
 router.get('/users', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const { page = '1', pageSize, limit = '100', search, status, plan_id, kyc_status, activity } = req.query;
+    const { page = '1', pageSize, limit = '100', search, status, plan_id, kyc_status, activity, include_deleted = 'false' } = req.query;
 
     const pageNum = parseInt(page as string) || 1;
     // Support both pageSize (new) and limit (legacy)
@@ -61,8 +61,8 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
             LEFT JOIN plans p ON u.plan_id = p.id
         `;
 
-        // Filter out soft-deleted users
-        let whereClause = 'WHERE u.deleted_at IS NULL';
+        // Filter soft-deleted users based on include_deleted parameter
+        let whereClause = include_deleted === 'true' ? 'WHERE 1=1' : 'WHERE u.deleted_at IS NULL';
 
         // Search functionality - now supports ID, email, and name
         if (search) {
@@ -118,7 +118,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
         const result = await pool.query(query, params);
 
         // Get total count with same filters
-        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NULL';
+        let countQuery = include_deleted === 'true' ? 'SELECT COUNT(*) FROM "user" u WHERE 1=1' : 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NULL';
         const countParams: any[] = [];
         let countParamIndex = 1;
 

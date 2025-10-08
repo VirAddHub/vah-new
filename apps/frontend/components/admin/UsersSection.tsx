@@ -61,6 +61,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Deleted users view toggle
   const [showDeleted, setShowDeleted] = useState(false);
 
+  // Additional state for managing deleted users API call
+  const [deletedUsers, setDeletedUsers] = useState<any[]>([]);
+  const [deletedUsersLoading, setDeletedUsersLoading] = useState(false);
+
   // User stats state
   const [stats, setStats] = useState<{ total: number; active: number; suspended: number; pending: number; deleted: number } | null>(null);
 
@@ -111,6 +115,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   useEffect(() => { loadUserStats(); }, [loadUserStats]);
 
+  // Load deleted users when showDeleted toggle changes
+  useEffect(() => {
+    if (showDeleted) {
+      loadDeletedUsers();
+    } else {
+      setDeletedUsers([]);
+    }
+  }, [showDeleted]);
+
   // Load available plans when plan modal opens
   useEffect(() => {
     if (planModal) {
@@ -129,6 +142,22 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       }
     } catch (error) {
       console.error('Failed to load plans:', error);
+    }
+  };
+
+  const loadDeletedUsers = async () => {
+    setDeletedUsersLoading(true);
+    try {
+      const params = new URLSearchParams({ include_deleted: 'true' });
+      const res = await adminApi.users(params);
+      if (res.ok && res.data) {
+        setDeletedUsers(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to load deleted users:', error);
+      toast({ title: 'Error', description: 'Failed to load deleted users', variant: 'destructive' });
+    } finally {
+      setDeletedUsersLoading(false);
     }
   };
 
@@ -157,8 +186,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
 
-      // Refresh data from parent
-      await Promise.all([loadUserStats()]);
+      // Refresh data from parent and deleted users
+      await Promise.all([loadUserStats(), showDeleted ? loadDeletedUsers() : Promise.resolve()]);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
     } finally {
@@ -184,8 +213,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
 
-      // Refresh data from parent
-      await Promise.all([loadUserStats()]);
+      // Refresh data from parent and deleted users
+      await Promise.all([loadUserStats(), showDeleted ? loadDeletedUsers() : Promise.resolve()]);
 
       // Close modal
       setRestoreModal(null);
@@ -197,14 +226,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     }
   }
 
-  // Server-side filtering - no local filtering needed
-  // Just filter deleted users based on showDeleted toggle
+  // Server-side filtering - combine active and deleted users based on showDeleted toggle
   const displayUsers = useMemo(() => {
-    if (!showDeleted) {
-      return users.filter((u: any) => !u.deleted_at);
+    if (showDeleted) {
+      // When showing deleted, combine both active and deleted users
+      return [...users, ...deletedUsers];
     }
+    // When not showing deleted, only show active users
     return users;
-  }, [users, showDeleted]);
+  }, [users, deletedUsers, showDeleted]);
 
   // Pagination helpers - paginate the display users
   const totalFiltered = displayUsers.length;
@@ -325,7 +355,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       </div>
 
       {/* Status row */}
-      {loading && (
+      {loading || deletedUsersLoading && (
         <div className="text-center py-2 text-sm text-muted-foreground">
           Loading users…
         </div>
@@ -335,7 +365,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           <div className="text-sm text-red-600 mb-2">{error}</div>
         </div>
       )}
-      {!loading && !error && users.length === 0 && (
+      {!loading && !deletedUsersLoading && !error && displayUsers.length === 0 && (
         <div className="text-center py-2">
           <div className="text-sm text-muted-foreground mb-2">No users yet.</div>
         </div>
@@ -480,7 +510,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         {/* Loading overlay */}
-        {loading && (
+        {loading || deletedUsersLoading && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
             <span className="text-sm">Loading…</span>
           </div>
@@ -495,7 +525,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex gap-2">
           <Button
             variant="outline"
-            disabled={!hasPrev || loading}
+            disabled={!hasPrev || loading || deletedUsersLoading}
             onClick={() => {
               const next = Math.max(1, page - 1);
               onPageChange(next);
@@ -505,7 +535,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           </Button>
           <Button
             variant="outline"
-            disabled={!hasNext || loading}
+            disabled={!hasNext || loading || deletedUsersLoading}
             onClick={() => {
               const next = page + 1;
               onPageChange(next);

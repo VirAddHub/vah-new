@@ -18,7 +18,8 @@ import {
   LogOut,
   Settings,
   User,
-  Bell
+  Bell,
+  CreditCard
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -509,6 +510,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 >
                   <User className="h-4 w-4" />
                   Profile
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    console.log('Billing button clicked');
+                    onNavigate('billing');
+                  }}
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Billing
                 </Button>
 
                 <Button

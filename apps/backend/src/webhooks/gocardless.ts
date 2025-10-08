@@ -31,16 +31,68 @@ export async function handleGcWebhook(req: Request, res: Response) {
             Math.round(Number(event.details?.amount) || 0),
             event.details?.invoice_url || null
           ]);
-          console.log(`[GoCardless Webhook] Created invoice for user ${userId}`);
+
+          // Clear payment failure state on successful payment
+          await pool.query(`
+            UPDATE "user" 
+            SET payment_failed_at = NULL,
+                payment_retry_count = 0,
+                payment_grace_until = NULL,
+                account_suspended_at = NULL,
+                updated_at = $1
+            WHERE id = $2
+          `, [now, userId]);
+
+          console.log(`[GoCardless Webhook] Created invoice and cleared payment failure state for user ${userId}`);
         }
         break;
 
       case 'payments.failed':
-        // Update subscription status to past_due
+        // Handle payment failure with grace period
         const failedUserId = event.links?.customer_metadata?.user_id;
         if (failedUserId) {
-          await pool.query(`UPDATE subscription SET status='past_due', updated_at=$1 WHERE user_id=$2`, [now, failedUserId]);
-          console.log(`[GoCardless Webhook] Marked subscription past_due for user ${failedUserId}`);
+          // Check if this is the first failure
+          const userResult = await pool.query(`
+            SELECT payment_failed_at, payment_retry_count 
+            FROM "user" 
+            WHERE id = $1
+          `, [failedUserId]);
+
+          if (userResult.rows.length > 0) {
+            const user = userResult.rows[0];
+            const isFirstFailure = !user.payment_failed_at;
+            const retryCount = user.payment_retry_count || 0;
+
+            if (isFirstFailure) {
+              // First failure - start grace period (7 days)
+              const gracePeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+              const graceUntil = now + gracePeriod;
+
+              await pool.query(`
+                UPDATE "user" 
+                SET payment_failed_at = $1, 
+                    payment_retry_count = 1,
+                    payment_grace_until = $2,
+                    updated_at = $3
+                WHERE id = $4
+              `, [now, graceUntil, now, failedUserId]);
+
+              console.log(`[GoCardless Webhook] First payment failure for user ${failedUserId}, grace period until ${new Date(graceUntil).toISOString()}`);
+            } else {
+              // Subsequent failure - increment retry count
+              await pool.query(`
+                UPDATE "user" 
+                SET payment_retry_count = $1,
+                    updated_at = $2
+                WHERE id = $3
+              `, [retryCount + 1, now, failedUserId]);
+
+              console.log(`[GoCardless Webhook] Payment retry ${retryCount + 1} failed for user ${failedUserId}`);
+            }
+
+            // Update subscription status
+            await pool.query(`UPDATE subscription SET status='past_due', updated_at=$1 WHERE user_id=$2`, [now, failedUserId]);
+          }
         }
         break;
 

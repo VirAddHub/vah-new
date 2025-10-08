@@ -6,34 +6,77 @@ export async function getBillingOverview(req: Request, res: Response) {
   const userId = Number(req.user!.id);
   const pool = getPool();
 
-  const subResult = await pool.query(`
-    SELECT * FROM subscription WHERE user_id=$1 ORDER BY id DESC LIMIT 1
-  `, [userId]);
+  try {
+    // Get subscription and user plan info
+    const subResult = await pool.query(`
+      SELECT s.*, p.name as plan_name, p.price_pence, p.interval as plan_interval
+      FROM subscription s
+      LEFT JOIN plans p ON s.plan_id = p.id
+      WHERE s.user_id=$1 ORDER BY s.id DESC LIMIT 1
+    `, [userId]);
 
-  const sub = subResult.rows[0];
+    const sub = subResult.rows[0];
 
-  const usageMonth = new Date();
-  usageMonth.setDate(1);
-  usageMonth.setHours(0, 0, 0, 0);
-  const yyyymm = `${usageMonth.getFullYear()}-${String(usageMonth.getMonth() + 1).padStart(2, '0')}`;
+    // Get user payment status
+    const userResult = await pool.query(`
+      SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at
+      FROM "user" WHERE id=$1
+    `, [userId]);
+    const user = userResult.rows[0];
 
-  const usageResult = await pool.query(`
-    SELECT COALESCE(SUM(amount_pence),0) as amount_pence, COALESCE(SUM(qty),0) as qty
-    FROM usage_charges WHERE user_id=$1 AND period_yyyymm=$2
-  `, [userId, yyyymm]);
+    const usageMonth = new Date();
+    usageMonth.setDate(1);
+    usageMonth.setHours(0, 0, 0, 0);
+    const yyyymm = `${usageMonth.getFullYear()}-${String(usageMonth.getMonth() + 1).padStart(2, '0')}`;
 
-  const usage = usageResult.rows[0];
+    const usageResult = await pool.query(`
+      SELECT COALESCE(SUM(amount_pence),0) as amount_pence, COALESCE(SUM(qty),0) as qty
+      FROM usage_charges WHERE user_id=$1 AND period_yyyymm=$2
+    `, [userId, yyyymm]);
 
-  res.json({
-    ok: true, data: {
-      plan: sub?.plan_name ?? 'Digital Mailbox Plan',
-      cadence: sub?.cadence ?? 'monthly',
-      status: sub?.status ?? 'active',
-      next_charge_at: sub?.next_charge_at ?? null,
-      mandate_status: sub?.mandate_id ? 'active' : 'missing',
-      usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
+    const usage = usageResult.rows[0];
+
+    // Determine account status
+    let accountStatus = 'active';
+    let gracePeriodInfo = null;
+
+    if (user?.account_suspended_at) {
+      accountStatus = 'suspended';
+    } else if (user?.payment_failed_at) {
+      const now = Date.now();
+      const graceUntil = user.payment_grace_until;
+
+      if (graceUntil && now < graceUntil) {
+        accountStatus = 'grace_period';
+        const daysLeft = Math.ceil((graceUntil - now) / (24 * 60 * 60 * 1000));
+        gracePeriodInfo = {
+          days_left: daysLeft,
+          retry_count: user.payment_retry_count || 0,
+          grace_until: graceUntil
+        };
+      } else {
+        accountStatus = 'past_due';
+      }
     }
-  });
+
+    res.json({
+      ok: true,
+      data: {
+        plan: sub?.plan_name ?? 'Digital Mailbox Plan',
+        cadence: sub?.plan_interval ?? 'monthly',
+        status: sub?.status ?? 'active',
+        account_status: accountStatus,
+        grace_period: gracePeriodInfo,
+        next_charge_at: sub?.next_charge_at ?? null,
+        mandate_status: sub?.mandate_id ? 'active' : 'missing',
+        current_price_pence: sub?.price_pence ?? 0,
+        usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
+      }
+    });
+  } catch (error) {
+    console.error('[getBillingOverview] error:', error);
+    res.status(500).json({ ok: false, error: 'Failed to fetch billing overview' });
+  }
 }
 
 export async function listInvoices(req: Request, res: Response) {
