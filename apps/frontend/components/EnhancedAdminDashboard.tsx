@@ -143,13 +143,13 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         revalidateOnReconnect: false, // Disable reconnect revalidation
     });
 
-    const users = usersData?.items ?? [];
-    const usersTotal = usersData?.total ?? 0;
-
     console.log('[EnhancedAdminDashboard] usersData:', usersData);
-    console.log('[EnhancedAdminDashboard] users:', users);
+    console.log('[EnhancedAdminDashboard] usersTotal:', usersData?.total);
     console.log('[EnhancedAdminDashboard] usersLoading:', usersLoading);
     console.log('[EnhancedAdminDashboard] usersError:', usersError);
+
+    const users = usersData?.items ?? [];
+    const usersTotal = usersData?.total ?? 0;
 
     // Data loading state for other sections
     const [metrics, setMetrics] = useState<any>(null);
@@ -571,17 +571,24 @@ function OverviewSection({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Users"
-                    value={overview.users.toLocaleString()}
+                    value={metrics?.totals?.users?.toLocaleString() || '0'}
                     change=""
                     trend="up"
                     icon={<Users2 className="h-5 w-5 text-blue-500" />}
                 />
                 <MetricCard
-                    title="Deleted Users"
-                    value={overview.deletedUsers.toLocaleString()}
+                    title="Active Users"
+                    value={metrics?.totals?.active_users?.toLocaleString() || '0'}
                     change=""
                     trend="up"
-                    icon={<Users2 className="h-5 w-5 text-red-500" />}
+                    icon={<Users2 className="h-5 w-5 text-green-500" />}
+                />
+                <MetricCard
+                    title="Pending KYC"
+                    value={metrics?.totals?.pending_kyc?.toLocaleString() || '0'}
+                    change=""
+                    trend="up"
+                    icon={<Users2 className="h-5 w-5 text-yellow-500" />}
                 />
                 <MetricCard
                     title="Monthly Revenue"
