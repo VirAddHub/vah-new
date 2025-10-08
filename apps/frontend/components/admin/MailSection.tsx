@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { apiClient, safe, adminApi } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
-import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
 
 const logAdminAction = async (action: string, data?: any) => {
@@ -70,11 +70,9 @@ export function MailSection({ }: MailSectionProps) {
     const [offset, setOffset] = useState(0);
     const [limit] = useState(20);
 
-    // Use debounced search hook
-    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, isSearching } = useDebouncedSearch({
-        delay: 300,
-        minLength: 0,
-    });
+    // Use simple debounced search hook (no callback needed with SWR)
+    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, shouldSearch } = useSimpleDebouncedSearch(300, 0);
+    const isSearching = false; // SWR handles loading state
 
     // Build query parameters for SWR key
     const mailItemsParams = useMemo(() => ({
