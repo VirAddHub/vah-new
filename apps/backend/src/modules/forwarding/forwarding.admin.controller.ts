@@ -101,7 +101,7 @@ export async function adminListForwarding(req: Request, res: Response) {
     `;
 
         const { rows } = await pool.query(sql, values);
-        
+
         // Debug: Log the first row to see the data structure
         if (rows.length > 0) {
             console.log('[adminListForwarding] First row sample:', {
@@ -111,13 +111,13 @@ export async function adminListForwarding(req: Request, res: Response) {
                 created_at_value: rows[0].created_at
             });
         }
-        
+
         // Ensure created_at is a number (PostgreSQL might return BIGINT as string)
         const processedRows = rows.map(row => ({
             ...row,
             created_at: typeof row.created_at === 'string' ? parseInt(row.created_at, 10) : row.created_at
         }));
-        
+
         return res.json({ ok: true, data: processedRows });
     } catch (e: any) {
         console.error('[AdminForwarding] list error', e);
@@ -233,15 +233,37 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                     JOIN "user" u ON u.id = fr.user_id
                     WHERE fr.id = $1
                 `, [id]);
-                
+
                 if (userQuery.rows.length > 0) {
                     const user = userQuery.rows[0];
+                    
+                    // Get the forwarding address from the request
+                    const addressQuery = await pool.query(`
+                        SELECT to_name, address1, address2, city, state, postal, country
+                        FROM forwarding_request
+                        WHERE id = $1
+                    `, [id]);
+                    
+                    let forwarding_address = 'Your forwarding address';
+                    if (addressQuery.rows.length > 0) {
+                        const addr = addressQuery.rows[0];
+                        const parts = [
+                            addr.to_name,
+                            addr.address1,
+                            addr.address2,
+                            addr.city,
+                            addr.state,
+                            addr.postal,
+                            addr.country
+                        ].filter(Boolean);
+                        forwarding_address = parts.join(', ');
+                    }
+                    
                     await sendMailForwarded({
                         email: user.email,
                         name: user.first_name || user.email,
-                        tracking_number: user.tracking_number,
-                        carrier: user.courier,
-                        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/mail`
+                        forwarding_address: forwarding_address,
+                        forwarded_date: new Date().toLocaleDateString('en-GB')
                     });
                     console.log(`[AdminForwarding] Sent delivery notification email to ${user.email} for request ${id}`);
                 }

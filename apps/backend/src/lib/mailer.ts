@@ -238,16 +238,15 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
     });
 }
 
-export async function sendMailForwarded({ email, name, tracking_number, carrier, cta_url }: { email: string; name?: string; tracking_number?: string; carrier?: string; cta_url?: string }): Promise<void> {
+export async function sendMailForwarded({ email, name, forwarding_address, forwarded_date }: { email: string; name?: string; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.MailForwarded,
         model: {
-            name,
-            trackingNumber: tracking_number,
-            carrier,
-            ctaUrl: cta_url || `${ENV.APP_BASE_URL}/mail`,
+            first_name: name,
+            forwarding_address: forwarding_address || 'Your forwarding address',
+            forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
         },
     });
 }
