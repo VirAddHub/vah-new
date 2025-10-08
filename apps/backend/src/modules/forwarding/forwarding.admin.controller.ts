@@ -223,8 +223,8 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             );
         } catch { }
 
-        // Send email notification when status is changed to "Delivered"
-        if (nextStatus === 'Delivered') {
+        // Send email notification when status is changed to "Dispatched" or "Delivered"
+        if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
             try {
                 // Get user details for email
                 const userQuery = await pool.query(`

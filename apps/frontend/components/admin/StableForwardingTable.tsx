@@ -50,7 +50,7 @@ export default function StableForwardingTable() {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminApi.getForwardingRequests({ 
+      const data = await adminApi.getForwardingRequests({
         limit: 100, // Increased to get more data for filtering
         offset: 0,
         q: searchQuery || undefined
@@ -95,9 +95,27 @@ export default function StableForwardingTable() {
     const now = Date.now();
     const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
     
-    const requested = requests.filter(r => r.status === 'Requested');
-    const inProgress = requests.filter(r => r.status === 'Processing');
-    const done = requests.filter(r => {
+    // Apply search filter first
+    const filteredRequests = searchQuery 
+      ? requests.filter(r => {
+          const searchLower = searchQuery.toLowerCase();
+          return (
+            formatFRId(r.id).toLowerCase().includes(searchLower) ||
+            r.mail_item_id.toString().includes(searchLower) ||
+            r.user_id.toString().includes(searchLower) ||
+            (r.to_name && r.to_name.toLowerCase().includes(searchLower)) ||
+            (r.address1 && r.address1.toLowerCase().includes(searchLower)) ||
+            (r.city && r.city.toLowerCase().includes(searchLower)) ||
+            (r.postal && r.postal.toLowerCase().includes(searchLower)) ||
+            (r.country && r.country.toLowerCase().includes(searchLower)) ||
+            r.status.toLowerCase().includes(searchLower)
+          );
+        })
+      : requests;
+    
+    const requested = filteredRequests.filter(r => r.status === 'Requested');
+    const inProgress = filteredRequests.filter(r => r.status === 'Processing');
+    const done = filteredRequests.filter(r => {
       if (r.status === 'Dispatched') {
         // Only show if dispatched within last 30 days
         return r.dispatched_at ? r.dispatched_at > thirtyDaysAgo : false;
@@ -112,10 +130,10 @@ export default function StableForwardingTable() {
   const updateRequestStatus = async (requestId: number, newStatus: string) => {
     setUpdatingStatus(requestId);
     try {
-      const response = await adminApi.updateForwardingRequest(requestId, { 
-        action: getActionFromStatus(newStatus) 
+      const response = await adminApi.updateForwardingRequest(requestId, {
+        action: getActionFromStatus(newStatus)
       });
-      
+
       if (response.ok) {
         // Reload data to get updated status
         await load();
@@ -136,6 +154,7 @@ export default function StableForwardingTable() {
     switch (status) {
       case 'In Progress': return 'start_processing';
       case 'Done': return 'mark_dispatched';
+      case 'Back to In Progress': return 'start_processing';
       default: return 'start_processing';
     }
   };
@@ -158,6 +177,7 @@ export default function StableForwardingTable() {
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
     const canMoveToInProgress = section === 'requested';
     const canMoveToDone = section === 'inProgress';
+    const canMoveBack = section === 'done';
     
     return (
       <Card key={request.id} className="mb-3">
@@ -205,6 +225,16 @@ export default function StableForwardingTable() {
                     {updatingStatus === request.id ? '...' : 'Mark Dispatched'}
                   </Button>
                 )}
+                {canMoveBack && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateRequestStatus(request.id, 'Back to In Progress')}
+                    disabled={updatingStatus === request.id}
+                  >
+                    {updatingStatus === request.id ? '...' : 'Move Back'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -227,7 +257,7 @@ export default function StableForwardingTable() {
         </CardHeader>
         <CardContent>
           {error && <p className="text-red-600 mb-4">{error}</p>}
-          
+
           {/* Search Filter */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
