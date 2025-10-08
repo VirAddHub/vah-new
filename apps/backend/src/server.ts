@@ -534,6 +534,10 @@ async function start() {
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
     const server = http.createServer(app);
 
+    // Configure timeouts for Render
+    server.headersTimeout = 65_000;
+    server.requestTimeout = 60_000;
+
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';
         const cors = process.env.CORS_ORIGINS || 'default';
@@ -541,7 +545,7 @@ async function start() {
         console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
         console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');
         console.log('[boot] CORS origins:', cors);
-        console.log(`[start] backend listening at http://${HOST}:${PORT}`);
+        console.log(`[server] listening on port ${PORT} (NODE_ENV=${env})`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
 

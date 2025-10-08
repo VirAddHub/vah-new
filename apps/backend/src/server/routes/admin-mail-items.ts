@@ -7,19 +7,44 @@ import { requireAdmin } from '../../middleware/auth';
 
 const router = Router();
 
+// Request coalescing cache to prevent duplicate requests
+type Key = string;
+const inflight = new Map<Key, Promise<any>>();
+const COALESCE_TTL_MS = 4_000;
+
+function keyFrom(req: Request): Key {
+    const u = (req as any).user;
+    const id = u?.id ?? "anon";
+    const qp = new URLSearchParams(Object.entries(req.query as any)).toString();
+    return `${id}:${req.path}?${qp}`;
+}
+
 /**
  * GET /api/admin/mail-items
  * Get all mail items (admin only)
  */
 router.get('/mail-items', requireAdmin, async (req: Request, res: Response) => {
-    const pool = getPool();
-    const { status, user_id, limit = '100', offset = '0' } = req.query;
+    res.setHeader("Cache-Control", "private, max-age=5");
 
-    const limitNum = parseInt(limit as string) || 100;
-    const offsetNum = parseInt(offset as string) || 0;
+    const key = keyFrom(req);
+    if (inflight.has(key)) {
+        try {
+            const result = await inflight.get(key)!;
+            return res.json(result);
+        } catch {
+            // fall through to fresh execution
+        }
+    }
 
-    try {
-        let query = `
+    const exec = (async () => {
+        const pool = getPool();
+        const { status, user_id, limit = '100', offset = '0' } = req.query;
+
+        const limitNum = parseInt(limit as string) || 100;
+        const offsetNum = parseInt(offset as string) || 0;
+
+        try {
+            let query = `
             SELECT
                 m.*,
                 u.email as user_email,
@@ -34,58 +59,69 @@ router.get('/mail-items', requireAdmin, async (req: Request, res: Response) => {
             WHERE m.deleted = false
         `;
 
-        const params: any[] = [];
-        let paramIndex = 1;
+            const params: any[] = [];
+            let paramIndex = 1;
 
-        if (status && status !== 'all') {
-            query += ` AND m.status = $${paramIndex}`;
-            params.push(status);
-            paramIndex++;
-        }
-
-        if (user_id) {
-            query += ` AND m.user_id = $${paramIndex}`;
-            params.push(parseInt(user_id as string));
-            paramIndex++;
-        }
-
-        query += ` ORDER BY m.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(limitNum, offsetNum);
-
-        const result = await pool.query(query, params);
-
-        // Get total count
-        let countQuery = 'SELECT COUNT(*) FROM mail_item m WHERE m.deleted = false';
-        const countParams: any[] = [];
-        let countParamIndex = 1;
-
-        if (status && status !== 'all') {
-            countQuery += ` AND m.status = $${countParamIndex}`;
-            countParams.push(status);
-            countParamIndex++;
-        }
-
-        if (user_id) {
-            countQuery += ` AND m.user_id = $${countParamIndex}`;
-            countParams.push(parseInt(user_id as string));
-            countParamIndex++;
-        }
-
-        const countResult = await pool.query(countQuery, countParams);
-        const total = parseInt(countResult.rows[0].count);
-
-        return res.json({
-            ok: true,
-            data: result.rows,
-            pagination: {
-                limit: limitNum,
-                offset: offsetNum,
-                total
+            if (status && status !== 'all') {
+                query += ` AND m.status = $${paramIndex}`;
+                params.push(status);
+                paramIndex++;
             }
-        });
+
+            if (user_id) {
+                query += ` AND m.user_id = $${paramIndex}`;
+                params.push(parseInt(user_id as string));
+                paramIndex++;
+            }
+
+            query += ` ORDER BY m.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+            params.push(limitNum, offsetNum);
+
+            const result = await pool.query(query, params);
+
+            // Get total count
+            let countQuery = 'SELECT COUNT(*) FROM mail_item m WHERE m.deleted = false';
+            const countParams: any[] = [];
+            let countParamIndex = 1;
+
+            if (status && status !== 'all') {
+                countQuery += ` AND m.status = $${countParamIndex}`;
+                countParams.push(status);
+                countParamIndex++;
+            }
+
+            if (user_id) {
+                countQuery += ` AND m.user_id = $${countParamIndex}`;
+                countParams.push(parseInt(user_id as string));
+                countParamIndex++;
+            }
+
+            const countResult = await pool.query(countQuery, countParams);
+            const total = parseInt(countResult.rows[0].count);
+
+            return {
+                ok: true,
+                data: result.rows,
+                pagination: {
+                    limit: limitNum,
+                    offset: offsetNum,
+                    total
+                }
+            };
+        } catch (error: any) {
+            console.error('[GET /api/admin/mail-items] error:', error);
+            throw error;
+        }
+    })();
+
+    inflight.set(key, exec);
+    try {
+        const result = await exec;
+        return res.json(result);
     } catch (error: any) {
-        console.error('[GET /api/admin/mail-items] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    } finally {
+        setTimeout(() => inflight.delete(key), COALESCE_TTL_MS);
     }
 });
 

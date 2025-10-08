@@ -15,10 +15,10 @@ const router = Router();
 const requestCache = new Map<string, { timestamp: number; response: any }>();
 const CACHE_TTL = 2000; // 2 seconds
 
-// Rate limiting by admin user ID, not IP - more generous limits for admin operations
+// Rate limiting by admin user ID, not IP - admin-friendly limits
 const adminForwardingLimiter = rateLimit({
-    windowMs: 60_000, // 1 minute
-    limit: 100, // 100 requests per minute (allows for admin dashboard usage)
+    windowMs: 10_000, // 10 seconds
+    limit: 20, // 20 requests per 10 seconds (allows for admin dashboard usage)
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
@@ -26,7 +26,7 @@ const adminForwardingLimiter = rateLimit({
         return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
     },
     handler: (_req, res) => {
-        res.setHeader("Retry-After", "10");
+        res.setHeader("Retry-After", "5");
         return res.status(429).json({ ok: false, error: "rate_limited" });
     },
 });
@@ -52,7 +52,7 @@ router.get('/forwarding/requests',
         }
 
         // Add cache headers
-        res.set("Cache-Control", "private, max-age=5");
+        res.setHeader("Cache-Control", "private, max-age=5");
         next();
     },
     async (req, res, next) => {
