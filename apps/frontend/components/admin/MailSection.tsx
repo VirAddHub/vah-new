@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -28,6 +28,7 @@ import {
 import { apiClient, safe, adminApi } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
+import { useAuthedSWR } from "../../lib/useAuthedSWR";
 
 const logAdminAction = async (action: string, data?: any) => {
     try {
@@ -65,71 +66,67 @@ export function MailSection({ }: MailSectionProps) {
     const [selectedTab, setSelectedTab] = useState("received");
     const [statusFilter, setStatusFilter] = useState("all");
     const [tagFilter, setTagFilter] = useState("all");
-    const [loading, setLoading] = useState(false);
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
-    const [mailItems, setMailItems] = useState<MailItem[]>([]);
-    const [stats, setStats] = useState<any>(null);
     const [offset, setOffset] = useState(0);
     const [limit] = useState(20);
-    const [hasMore, setHasMore] = useState(true);
 
     // Use debounced search hook
     const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, isSearching } = useDebouncedSearch({
         delay: 300,
         minLength: 0,
-        onSearch: async (query) => {
-            // Use the query parameter directly instead of debouncedSearchTerm
-            await loadMailItems(query);
-        }
     });
 
-    // Load mail items based on current tab and filters
-    const loadMailItems = async (searchQuery?: string) => {
-        try {
-            setLoading(true);
-            const params = new URLSearchParams({
-                status: selectedTab === "all" ? "" : selectedTab,
-                q: searchQuery || debouncedSearchTerm || "",
-                tag: tagFilter === "all" ? "" : tagFilter,
-                page: String(Math.floor(offset / limit) + 1),
-                page_size: String(limit)
-            });
+    // Build query parameters for SWR key
+    const mailItemsParams = useMemo(() => ({
+        status: selectedTab === "all" ? "" : selectedTab,
+        q: debouncedSearchTerm || "",
+        tag: tagFilter === "all" ? "" : tagFilter,
+        page: String(Math.floor(offset / limit) + 1),
+        page_size: String(limit)
+    }), [selectedTab, debouncedSearchTerm, tagFilter, offset, limit]);
 
-            const response = await adminApi.mailItems(params);
-            if (response.ok) {
-                const data = response.data as { items?: any[] };
-                const items = safe(data?.items, []);
-                setMailItems(items);
-                setHasMore(items.length === limit);
-            }
-        } catch (error) {
-            console.error('Failed to load mail items:', error);
-        } finally {
-            setLoading(false);
+    // Use SWR with proper deduplication for mail items
+    const {
+        data: mailItemsData,
+        isLoading: mailItemsLoading,
+        error: mailItemsError,
+        mutate: refetchMailItems
+    } = useAuthedSWR<{ items: MailItem[]; total: number }>(
+        ['/api/admin/mail-items', mailItemsParams],
+        {
+            dedupingInterval: 5000, // 5 seconds deduplication
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            refreshInterval: 30000, // 30 seconds refresh
+            refreshWhenHidden: false,
         }
-    };
+    );
 
-    // Load stats
-    const loadStats = async () => {
-        try {
-            const response = await apiClient.get('/api/admin/mail-items/stats');
-            if (response.ok) {
-                setStats(response.data);
-            }
-        } catch (error) {
-            console.error('Failed to load mail stats:', error);
+    // Extract data from SWR response
+    const mailItems = safe(mailItemsData?.items, []);
+    const hasMore = mailItems.length === limit;
+
+    // Use SWR for stats with longer refresh interval
+    const {
+        data: statsData,
+        isLoading: statsLoading,
+        error: statsError
+    } = useAuthedSWR<{ total: number; received: number; processed: number; forwarded: number }>(
+        '/api/admin/mail-items/stats',
+        {
+            dedupingInterval: 10000, // 10 seconds deduplication for stats
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            refreshInterval: 60000, // 1 minute refresh for stats
+            refreshWhenHidden: false,
         }
-    };
+    );
 
-    useEffect(() => {
-        loadMailItems();
-    }, [selectedTab, debouncedSearchTerm, tagFilter, offset]);
-
-    useEffect(() => {
-        loadStats();
-    }, []);
+    // Extract stats from SWR response
+    const stats = statsData;
 
     const filteredItems = mailItems;
+    const loading = mailItemsLoading || statsLoading;
 
     const handleAddItem = async () => {
         try {
@@ -171,7 +168,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_process_mail_item', { itemId });
             await adminApi.updateMailItem(itemId.toString(), { status: 'processed' });
-            loadMailItems(); // Refetch current data
+            refetchMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -184,7 +181,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_tag_mail_item', { itemId, tag });
             await adminApi.updateMailItem(itemId.toString(), { tag });
-            loadMailItems(); // Refetch current data
+            refetchMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -197,7 +194,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_forward_mail_item', { itemId });
             await apiClient.post(`/api/admin/mail-items/${itemId}/forward`);
-            loadMailItems(); // Refetch current data
+            refetchMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_forward_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -210,7 +207,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_delete_mail_item', { itemId });
             await apiClient.delete(`/api/admin/mail-items/${itemId}`);
-            loadMailItems(); // Refetch current data
+            refetchMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_delete_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -226,7 +223,7 @@ export function MailSection({ }: MailSectionProps) {
             await logAdminAction('admin_bulk_mail_action', { action, itemIds: selectedItems });
             await apiClient.post(`/api/admin/mail-items/bulk/${action}`, { itemIds: selectedItems });
             setSelectedItems([]);
-            loadMailItems(); // Refetch current data
+            refetchMailItems(); // Refetch current data
         } catch (error) {
             await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -410,6 +407,14 @@ export function MailSection({ }: MailSectionProps) {
                             </div>
                         </div>
                         <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => refetchMailItems()}
+                                disabled={loading}
+                            >
+                                {loading ? "Refreshing..." : "Refresh"}
+                            </Button>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Status" />
