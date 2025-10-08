@@ -82,6 +82,7 @@ import { BillingSection } from "./admin/BillingSection";
 import { AnalyticsSection } from "./admin/AnalyticsSection";
 import { SettingsSection } from "./admin/SettingsSection";
 import { DebugInfo } from "./DebugInfo";
+import { UsersDebugTest } from "./UsersDebugTest";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -566,6 +567,9 @@ function OverviewSection({
                     </Badge>
                 </div>
             </div>
+
+            {/* Debug Test Component */}
+            <UsersDebugTest />
 
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
