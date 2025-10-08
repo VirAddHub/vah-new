@@ -399,7 +399,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
             VALUES ($1, $2, $3, $4, $5)
-        `, [adminId, 'delete_user', 'user', userId, now]);
+        `, [adminId, 'delete_user', 'user', userId, nowTimestamp]);
 
         return res.json({ ok: true });
     } catch (error: any) {
