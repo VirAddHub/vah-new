@@ -3,6 +3,8 @@
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { useState } from 'react';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
 const formatDateUK = (v?: number | string | null) => {
@@ -58,196 +60,212 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <h1 className="text-2xl font-semibold">Billing</h1>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navigation onNavigate={() => {}} />
+      <main className="flex-1">
+        <div className="max-w-5xl mx-auto p-6 space-y-8">
+          <h1 className="text-3xl font-bold text-foreground">Billing</h1>
 
-      {/* Payment Status Alerts */}
-      {o?.account_status === 'grace_period' && o?.grace_period && (
-        <div className="rounded-xl p-4 border border-amber-300 bg-amber-50">
-          <div className="font-medium">Payment Failed - Grace Period</div>
-          <div className="text-sm mt-1">
-            Your payment failed, but you have {o.grace_period.days_left} days to update your payment method.
-            This is attempt #{o.grace_period.retry_count + 1}.
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button className="px-3 py-2 rounded-lg bg-amber-600 text-white"
-              onClick={() => act('/api/bff/billing/reauthorise')}
-              disabled={busy !== null}>
-              Update Payment Method
-            </button>
-            <button className="px-3 py-2 rounded-lg border border-amber-600 text-amber-600"
-              onClick={() => act('/api/bff/billing/update-bank')}
-              disabled={busy !== null}>
-              Update Bank Details
-            </button>
-          </div>
-        </div>
-      )}
-
-      {o?.account_status === 'past_due' && (
-        <div className="rounded-xl p-4 border border-red-300 bg-red-50">
-          <div className="font-medium">Payment Overdue</div>
-          <div className="text-sm mt-1">Your payment is overdue. Please update your payment method immediately to avoid service interruption.</div>
-          <div className="mt-3">
-            <button className="px-3 py-2 rounded-lg bg-red-600 text-white"
-              onClick={() => act('/api/bff/billing/reauthorise')}
-              disabled={busy !== null}>
-              Update Payment Method
-            </button>
-          </div>
-        </div>
-      )}
-
-      {o?.account_status === 'suspended' && (
-        <div className="rounded-xl p-4 border border-red-300 bg-red-50">
-          <div className="font-medium">Account Suspended</div>
-          <div className="text-sm mt-1">Your account has been suspended due to payment issues. Please contact support to restore service.</div>
-        </div>
-      )}
-
-      {o?.status && o.status !== 'active' && o?.account_status === 'active' && (
-        <div className="rounded-xl p-4 border border-amber-300 bg-amber-50">
-          <div className="font-medium">Payment issue</div>
-          <div className="text-sm mt-1">Your Direct Debit is {o.status}. Please re-authorise to avoid service interruption.</div>
-          <div className="mt-3">
-            <button className="px-3 py-2 rounded-lg bg-amber-600 text-white"
-              onClick={() => act('/api/bff/billing/reauthorise')}
-              disabled={busy !== null}>
-              Re-authorise Direct Debit
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="rounded-2xl border p-4">
-          <div className="text-sm text-gray-500">Plan</div>
-          <div className="text-lg font-medium">{o?.plan ?? 'Digital Mailbox Plan'}</div>
-          <div className="text-sm text-gray-500 mt-1">Cadence: {o?.cadence ?? 'monthly'}</div>
-        </div>
-        <div className="rounded-2xl border p-4">
-          <div className="text-sm text-gray-500">Next charge</div>
-          <div className="text-lg font-medium">{o?.next_charge_at ? formatDateUK(o.next_charge_at) : '—'}</div>
-          <div className="text-sm text-gray-500 mt-1">Status: {o?.status ?? '—'}</div>
-        </div>
-        <div className="rounded-2xl border p-4">
-          <div className="text-sm text-gray-500">This month's usage</div>
-          <div className="text-lg font-medium">{money(o?.usage?.amount_pence)} <span className="text-sm text-gray-500">({o?.usage?.qty ?? 0} items)</span></div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border p-4">
-        <div className="text-sm text-gray-700 font-medium mb-3">Actions</div>
-        <div className="flex flex-wrap gap-2">
-          <button className="px-3 py-2 rounded-lg border"
-            onClick={() => act('/api/bff/billing/update-bank')}
-            disabled={busy !== null}>Update bank details</button>
-
-          <button className="px-3 py-2 rounded-lg border"
-            onClick={() => act('/api/bff/billing/reauthorise')}
-            disabled={busy !== null}>Re-authorise mandate</button>
-        </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Secure pages are provided by GoCardless. We'll refresh your mandate and billing automatically.
-        </p>
-      </div>
-
-      {/* Billing Frequency Section */}
-      <div className="rounded-2xl border p-4">
-        <div className="text-sm text-gray-700 font-medium mb-3">Billing Frequency</div>
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* Monthly Plan */}
-          <div className={`rounded-lg border p-4 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-medium">Virtual Mailbox - Monthly</h3>
-              {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>}
+          {/* Payment Status Alerts */}
+          {o?.account_status === 'grace_period' && o?.grace_period && (
+            <div className="rounded-xl p-4 border border-amber-500 bg-amber-100 dark:bg-amber-900/20 dark:border-amber-400">
+              <div className="font-semibold text-amber-900 dark:text-amber-100">Payment Failed - Grace Period</div>
+              <div className="text-sm mt-1 text-amber-800 dark:text-amber-200">
+                Your payment failed, but you have {o.grace_period.days_left} days to update your payment method.
+                This is attempt #{o.grace_period.retry_count + 1}.
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium"
+                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  disabled={busy !== null}>
+                  Update Payment Method
+                </button>
+                <button className="px-3 py-2 rounded-lg border border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 font-medium"
+                  onClick={() => act('/api/bff/billing/update-bank')}
+                  disabled={busy !== null}>
+                  Update Bank Details
+                </button>
+              </div>
             </div>
-            <div className="text-2xl font-bold mb-1">
-              {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || 995) / 100}` : '£9.95'}
+          )}
+
+          {o?.account_status === 'past_due' && (
+            <div className="rounded-xl p-4 border border-red-500 bg-red-100 dark:bg-red-900/20 dark:border-red-400">
+              <div className="font-semibold text-red-900 dark:text-red-100">Payment Overdue</div>
+              <div className="text-sm mt-1 text-red-800 dark:text-red-200">Your payment is overdue. Please update your payment method immediately to avoid service interruption.</div>
+              <div className="mt-3">
+                <button className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium"
+                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  disabled={busy !== null}>
+                  Update Payment Method
+                </button>
+              </div>
             </div>
-            <div className="text-sm text-gray-500 mb-3">per month</div>
-            <ul className="text-xs text-gray-600 space-y-1 mb-4">
-              <li>• Professional London business address</li>
-              <li>• Unlimited digital mail scanning</li>
-              <li>• HMRC & Companies House forwarding (free)</li>
-              <li>• Cancel anytime</li>
-            </ul>
-            {o?.cadence !== 'monthly' && (
-              <button
-                className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                onClick={() => handlePlanChange('monthly')}
-                disabled={busy !== null}
-              >
-                {busy === 'monthly' ? 'Processing...' : 'Choose Monthly Billing'}
-              </button>
-            )}
+          )}
+
+          {o?.account_status === 'suspended' && (
+            <div className="rounded-xl p-4 border border-red-500 bg-red-100 dark:bg-red-900/20 dark:border-red-400">
+              <div className="font-semibold text-red-900 dark:text-red-100">Account Suspended</div>
+              <div className="text-sm mt-1 text-red-800 dark:text-red-200">Your account has been suspended due to payment issues. Please contact support to restore service.</div>
+            </div>
+          )}
+
+          {o?.status && o.status !== 'active' && o?.account_status === 'active' && (
+            <div className="rounded-xl p-4 border border-amber-500 bg-amber-100 dark:bg-amber-900/20 dark:border-amber-400">
+              <div className="font-semibold text-amber-900 dark:text-amber-100">Payment issue</div>
+              <div className="text-sm mt-1 text-amber-800 dark:text-amber-200">Your Direct Debit is {o.status}. Please re-authorise to avoid service interruption.</div>
+              <div className="mt-3">
+                <button className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium"
+                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  disabled={busy !== null}>
+                  Re-authorise Direct Debit
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="text-sm text-muted-foreground font-medium">Plan</div>
+              <div className="text-xl font-bold text-foreground mt-1">{o?.plan ?? 'Digital Mailbox Plan'}</div>
+              <div className="text-sm text-muted-foreground mt-2">Cadence: {o?.cadence ?? 'monthly'}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="text-sm text-muted-foreground font-medium">Next charge</div>
+              <div className="text-xl font-bold text-foreground mt-1">{o?.next_charge_at ? formatDateUK(o.next_charge_at) : '—'}</div>
+              <div className="text-sm text-muted-foreground mt-2">Status: {o?.status ?? '—'}</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="text-sm text-muted-foreground font-medium">This month's usage</div>
+              <div className="text-xl font-bold text-foreground mt-1">{money(o?.usage?.amount_pence)} <span className="text-sm text-muted-foreground">({o?.usage?.qty ?? 0} items)</span></div>
+            </div>
           </div>
 
-          {/* Annual Plan */}
-          <div className={`rounded-lg border p-4 ${o?.cadence === 'yearly' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-medium">Virtual Mailbox - Annual</h3>
-              {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Current</span>}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="text-lg font-semibold text-foreground mb-4">Actions</div>
+            <div className="flex flex-wrap gap-3">
+              <button className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium"
+                onClick={() => act('/api/bff/billing/update-bank')}
+                disabled={busy !== null}>Update bank details</button>
+
+              <button className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium"
+                onClick={() => act('/api/bff/billing/reauthorise')}
+                disabled={busy !== null}>Re-authorise mandate</button>
             </div>
-            <div className="text-2xl font-bold mb-1">
-              {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || 8999) / 100}` : '£89.99'}
+            <p className="text-sm text-muted-foreground mt-4">
+              Secure pages are provided by GoCardless. We'll refresh your mandate and billing automatically.
+            </p>
+          </div>
+
+          {/* Billing Frequency Section */}
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="text-lg font-semibold text-foreground mb-6">Billing Frequency</div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Monthly Plan */}
+              <div className={`rounded-lg border p-6 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' : 'border-border bg-card'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-foreground">Virtual Mailbox - Monthly</h3>
+                  {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-2 py-1 rounded font-medium">Current</span>}
+                </div>
+                <div className="text-3xl font-bold mb-2 text-foreground">
+                  {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || 995) / 100}` : '£9.95'}
+                </div>
+                <div className="text-sm text-muted-foreground mb-4">per month</div>
+                <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                  <li>• Professional London business address</li>
+                  <li>• Unlimited digital mail scanning</li>
+                  <li>• HMRC & Companies House forwarding (free)</li>
+                  <li>• Cancel anytime</li>
+                </ul>
+                {o?.cadence !== 'monthly' && (
+                  <button
+                    className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+                    onClick={() => handlePlanChange('monthly')}
+                    disabled={busy !== null}
+                  >
+                    {busy === 'monthly' ? 'Processing...' : 'Choose Monthly Billing'}
+                  </button>
+                )}
+              </div>
+
+              {/* Annual Plan */}
+              <div className={`rounded-lg border p-6 ${o?.cadence === 'yearly' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-400' : 'border-border bg-card'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-foreground">Virtual Mailbox - Annual</h3>
+                  {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 px-2 py-1 rounded font-medium">Current</span>}
+                </div>
+                <div className="text-3xl font-bold mb-2 text-foreground">
+                  {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || 8999) / 100}` : '£89.99'}
+                </div>
+                <div className="text-sm text-muted-foreground mb-2">per year</div>
+                <div className="text-sm text-green-600 dark:text-green-400 font-semibold mb-4">
+                  Save 25% (£29.41/year) - Same service, better value
+                </div>
+                <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                  <li>• Professional London business address</li>
+                  <li>• Unlimited digital mail scanning</li>
+                  <li>• HMRC & Companies House forwarding (free)</li>
+                  <li>• Cancel anytime</li>
+                  <li>• <strong>25% savings vs monthly</strong></li>
+                </ul>
+                {o?.cadence !== 'yearly' && (
+                  <button
+                    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                    onClick={() => handlePlanChange('yearly')}
+                    disabled={busy !== null}
+                  >
+                    {busy === 'yearly' ? 'Processing...' : 'Choose Annual Billing'}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-gray-500 mb-1">per year</div>
-            <div className="text-sm text-green-600 font-medium mb-3">
-              Save 25% (£29.41/year) - Same service, better value
+            <p className="text-sm text-muted-foreground mt-6">
+              Billing frequency changes take effect immediately. You'll be charged the new rate on your next billing cycle.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card">
+            <div className="p-6 border-b border-border">
+              <div className="text-lg font-semibold text-foreground">Invoices & receipts</div>
             </div>
-            <ul className="text-xs text-gray-600 space-y-1 mb-4">
-              <li>• Professional London business address</li>
-              <li>• Unlimited digital mail scanning</li>
-              <li>• HMRC & Companies House forwarding (free)</li>
-              <li>• Cancel anytime</li>
-              <li>• <strong>25% savings vs monthly</strong></li>
-            </ul>
-            {o?.cadence !== 'yearly' && (
-              <button
-                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                onClick={() => handlePlanChange('yearly')}
-                disabled={busy !== null}
-              >
-                {busy === 'yearly' ? 'Processing...' : 'Choose Annual Billing'}
-              </button>
-            )}
+            <div className="p-6 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-3 font-medium">Date</th>
+                    <th className="py-3 font-medium">Amount</th>
+                    <th className="py-3 font-medium">Status</th>
+                    <th className="py-3 font-medium">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr><td className="py-8 text-muted-foreground text-center" colSpan={4}>No invoices yet.</td></tr>
+                  ) : items.map((x: any) => (
+                    <tr key={x.id} className="border-t border-border">
+                      <td className="py-3 text-foreground">{formatDateUK(x.date)}</td>
+                      <td className="py-3 text-foreground font-medium">{money(x.amount_pence)}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          x.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                          x.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                        }`}>
+                          {x.status}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        {x.pdf_url ? <a className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline font-medium" href={x.pdf_url} target="_blank" rel="noreferrer">Download PDF</a> : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-3">
-          Billing frequency changes take effect immediately. You'll be charged the new rate on your next billing cycle.
-        </p>
-      </div>
-
-      <div className="rounded-2xl border">
-        <div className="p-4 border-b text-sm text-gray-700 font-medium">Invoices & receipts</div>
-        <div className="p-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="py-2">Date</th>
-                <th className="py-2">Amount</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Receipt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr><td className="py-6 text-gray-500" colSpan={4}>No invoices yet.</td></tr>
-              ) : items.map((x: any) => (
-                <tr key={x.id} className="border-t">
-                  <td className="py-2">{formatDateUK(x.date)}</td>
-                  <td className="py-2">{money(x.amount_pence)}</td>
-                  <td className="py-2">{x.status}</td>
-                  <td className="py-2">
-                    {x.pdf_url ? <a className="underline" href={x.pdf_url} target="_blank" rel="noreferrer">Download PDF</a> : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </main>
+      <Footer onNavigate={() => {}} />
     </div>
   );
 }
