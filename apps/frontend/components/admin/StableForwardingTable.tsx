@@ -5,8 +5,12 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useAdminHeartbeat } from "@/contexts/AdminHeartbeatContext";
 import { adminApi } from "@/lib/services/http";
+import { Search, Filter } from "lucide-react";
+import { formatFRId, formatDateUK } from "@/lib/utils/format";
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -27,6 +31,8 @@ export default function StableForwardingTable() {
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
 
   const mountedRef = useRef(true);
@@ -42,7 +48,12 @@ export default function StableForwardingTable() {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
+      const data = await adminApi.getForwardingRequests({ 
+        limit: 50, 
+        offset: 0,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        q: searchQuery || undefined
+      });
       if (mountedRef.current) {
         if (data.ok && Array.isArray(data.data)) {
           console.log('Forwarding requests data:', data.data);
@@ -57,7 +68,7 @@ export default function StableForwardingTable() {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [statusFilter, searchQuery]);
 
   // Use shared heartbeat instead of individual polling
   useEffect(() => {
@@ -104,66 +115,76 @@ export default function StableForwardingTable() {
       </CardHeader>
       <CardContent>
         {error && <p className="text-red-600 mb-4">{error}</p>}
+        
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search requests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Requested">Requested</SelectItem>
+                <SelectItem value="Reviewed">Reviewed</SelectItem>
+                <SelectItem value="Processing">Processing</SelectItem>
+                <SelectItem value="Dispatched">Dispatched</SelectItem>
+                <SelectItem value="Delivered">Delivered</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>User ID</TableHead>
+              <TableHead>Mail #</TableHead>
+              <TableHead>User</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>To Name</TableHead>
               <TableHead>Address</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Requested</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.id}</TableCell>
-                <TableCell>{row.user_id}</TableCell>
+                <TableCell className="font-mono text-sm">
+                  {formatFRId(row.id)}
+                </TableCell>
+                <TableCell className="font-mono text-sm">
+                  #{row.mail_item_id}
+                </TableCell>
+                <TableCell className="text-sm">
+                  User #{row.user_id}
+                </TableCell>
                 <TableCell>{getStatusBadge(row.status)}</TableCell>
                 <TableCell>{row.to_name || '-'}</TableCell>
                 <TableCell>
                   {row.address1 && (
-                    <div>
+                    <div className="text-sm">
                       <div>{row.address1}</div>
-                      {row.city && <div>{row.city}, {row.postal} {row.country}</div>}
+                      {row.city && <div className="text-muted-foreground">{row.city}, {row.postal} {row.country}</div>}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>
-                  {(() => {
-                    console.log(`Row ${row.id} created_at:`, row.created_at, 'type:', typeof row.created_at);
-                    
-                    try {
-                      let date;
-                      
-                      if (typeof row.created_at === 'number') {
-                        // It's already a timestamp
-                        date = new Date(row.created_at);
-                        console.log(`Row ${row.id} parsed timestamp:`, date);
-                      } else if (typeof row.created_at === 'string') {
-                        // Try parsing as string
-                        date = new Date(row.created_at);
-                        console.log(`Row ${row.id} parsed string:`, date);
-                      } else {
-                        console.warn(`Row ${row.id} unexpected created_at type:`, typeof row.created_at, row.created_at);
-                        return 'Invalid Type';
-                      }
-                      
-                      // Check if date is valid
-                      if (isNaN(date.getTime())) {
-                        console.warn(`Row ${row.id} invalid date:`, row.created_at, 'parsed as:', date);
-                        return `Invalid: ${row.created_at}`;
-                      }
-                      
-                      const formatted = date.toLocaleDateString();
-                      console.log(`Row ${row.id} formatted date:`, formatted);
-                      return formatted;
-                    } catch (error) {
-                      console.error(`Row ${row.id} date parsing error:`, error, 'created_at:', row.created_at);
-                      return `Error: ${row.created_at}`;
-                    }
-                  })()}
+                <TableCell className="text-sm">
+                  <span title={new Date(Number(row.created_at)).toISOString()}>
+                    {formatDateUK(row.created_at)}
+                  </span>
                 </TableCell>
               </TableRow>
             ))}
