@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { useAdminHeartbeat } from "@/contexts/AdminHeartbeatContext";
+import { adminApi } from "@/lib/services/http";
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {

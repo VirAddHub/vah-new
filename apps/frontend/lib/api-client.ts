@@ -264,10 +264,10 @@ export const apiClient = {
     ): Promise<ApiResponse<{ user: User }>> {
         const resp = await legacyReq(apiUrl('auth/signup'), {
             method: 'POST',
-            body: JSON.stringify({ 
-                email, 
-                password, 
-                first_name, 
+            body: JSON.stringify({
+                email,
+                password,
+                first_name,
                 last_name,
                 phone,
                 business_type,
