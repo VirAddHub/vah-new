@@ -25,14 +25,16 @@ type ForwardingRequest = {
   country: string;
   created_at: number;
   updated_at: number;
+  dispatched_at?: number;
+  delivered_at?: number;
 };
 
 export default function StableForwardingTable() {
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
 
   const mountedRef = useRef(true);
@@ -49,9 +51,8 @@ export default function StableForwardingTable() {
       setLoading(true);
       setError(null);
       const data = await adminApi.getForwardingRequests({ 
-        limit: 50, 
+        limit: 100, // Increased to get more data for filtering
         offset: 0,
-        status: statusFilter === "all" ? undefined : statusFilter,
         q: searchQuery || undefined
       });
       if (mountedRef.current) {
@@ -68,7 +69,7 @@ export default function StableForwardingTable() {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [statusFilter, searchQuery]);
+  }, [searchQuery]);
 
   // Use shared heartbeat instead of individual polling
   useEffect(() => {
@@ -89,111 +90,210 @@ export default function StableForwardingTable() {
     };
   }, [load, registerPolling, unregisterPolling]);
 
+  // Categorize requests into 3 main sections
+  const categorizeRequests = (requests: ForwardingRequest[]) => {
+    const now = Date.now();
+    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+    
+    const requested = requests.filter(r => r.status === 'Requested');
+    const inProgress = requests.filter(r => r.status === 'Processing');
+    const done = requests.filter(r => {
+      if (r.status === 'Dispatched') {
+        // Only show if dispatched within last 30 days
+        return r.dispatched_at ? r.dispatched_at > thirtyDaysAgo : false;
+      }
+      return false;
+    });
+    
+    return { requested, inProgress, done };
+  };
+
+  // Update request status
+  const updateRequestStatus = async (requestId: number, newStatus: string) => {
+    setUpdatingStatus(requestId);
+    try {
+      const response = await adminApi.updateForwardingRequest(requestId, { 
+        action: getActionFromStatus(newStatus) 
+      });
+      
+      if (response.ok) {
+        // Reload data to get updated status
+        await load();
+      } else {
+        console.error('Failed to update status:', response.error);
+        alert('Failed to update status. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Error updating status. Please try again.');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  // Map simplified status to API action
+  const getActionFromStatus = (status: string) => {
+    switch (status) {
+      case 'In Progress': return 'start_processing';
+      case 'Done': return 'mark_dispatched';
+      default: return 'start_processing';
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
       'Requested': { variant: 'secondary', label: 'Requested' },
-      'Reviewed': { variant: 'outline', label: 'Reviewed' },
-      'Processing': { variant: 'default', label: 'Processing' },
-      'Dispatched': { variant: 'default', label: 'Dispatched' },
-      'Delivered': { variant: 'default', label: 'Delivered' },
-      'Cancelled': { variant: 'destructive', label: 'Cancelled' },
+      'In Progress': { variant: 'default', label: 'In Progress' },
+      'Done': { variant: 'outline', label: 'Done' },
     };
 
     const config = statusMap[status] || { variant: 'secondary' as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          Forwarding Requests
-          <Button onClick={load} disabled={loading} className="border rounded px-3 py-2">
-            {loading ? "Refreshing…" : "Refresh"}
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error && <p className="text-red-600 mb-4">{error}</p>}
-        
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search requests..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+  // Categorize the requests
+  const { requested, inProgress, done } = categorizeRequests(rows);
+
+  // Render a request card
+  const renderRequestCard = (request: ForwardingRequest, section: string) => {
+    const canMoveToInProgress = section === 'requested';
+    const canMoveToDone = section === 'inProgress';
+    
+    return (
+      <Card key={request.id} className="mb-3">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-2">
+                <span className="font-mono text-sm font-medium">{formatFRId(request.id)}</span>
+                <span className="text-sm text-muted-foreground">Mail #{request.mail_item_id}</span>
+                <span className="text-sm text-muted-foreground">User #{request.user_id}</span>
+                <span className="text-sm text-muted-foreground">
+                  {formatDateUK(request.created_at)}
+                </span>
+              </div>
+              <div className="text-sm">
+                <div className="font-medium">{request.to_name || 'No name'}</div>
+                {request.address1 && (
+                  <div className="text-muted-foreground">
+                    {request.address1}
+                    {request.city && `, ${request.city} ${request.postal} ${request.country}`}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(section === 'requested' ? 'Requested' : section === 'inProgress' ? 'In Progress' : 'Done')}
+              <div className="flex gap-1">
+                {canMoveToInProgress && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateRequestStatus(request.id, 'In Progress')}
+                    disabled={updatingStatus === request.id}
+                  >
+                    {updatingStatus === request.id ? '...' : 'Start Processing'}
+                  </Button>
+                )}
+                {canMoveToDone && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateRequestStatus(request.id, 'Done')}
+                    disabled={updatingStatus === request.id}
+                  >
+                    {updatingStatus === request.id ? '...' : 'Mark Dispatched'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Requested">Requested</SelectItem>
-                <SelectItem value="Reviewed">Reviewed</SelectItem>
-                <SelectItem value="Processing">Processing</SelectItem>
-                <SelectItem value="Dispatched">Dispatched</SelectItem>
-                <SelectItem value="Delivered">Delivered</SelectItem>
-                <SelectItem value="Cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header with search */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Forwarding Requests</CardTitle>
+            <Button onClick={load} disabled={loading} variant="outline" size="sm">
+              {loading ? "Refreshing..." : "Refresh"}
+            </Button>
           </div>
-        </div>
-        
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Mail #</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>To Name</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Requested</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell className="font-mono text-sm">
-                  {formatFRId(row.id)}
-                </TableCell>
-                <TableCell className="font-mono text-sm">
-                  #{row.mail_item_id}
-                </TableCell>
-                <TableCell className="text-sm">
-                  User #{row.user_id}
-                </TableCell>
-                <TableCell>{getStatusBadge(row.status)}</TableCell>
-                <TableCell>{row.to_name || '-'}</TableCell>
-                <TableCell>
-                  {row.address1 && (
-                    <div className="text-sm">
-                      <div>{row.address1}</div>
-                      {row.city && <div className="text-muted-foreground">{row.city}, {row.postal} {row.country}</div>}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm">
-                  <span title={new Date(Number(row.created_at)).toISOString()}>
-                    {formatDateUK(row.created_at)}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {rows.length === 0 && !loading && (
-          <p className="text-center text-gray-500 py-4">No forwarding requests found</p>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          {error && <p className="text-red-600 mb-4">{error}</p>}
+          
+          {/* Search Filter */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search requests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Three Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Requested Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Badge variant="secondary">Requested</Badge>
+              <span className="text-sm text-muted-foreground">({requested.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {requested.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No requested items</p>
+            ) : (
+              requested.map(request => renderRequestCard(request, 'requested'))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* In Progress Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Badge variant="default">In Progress</Badge>
+              <span className="text-sm text-muted-foreground">({inProgress.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {inProgress.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No items in progress</p>
+            ) : (
+              inProgress.map(request => renderRequestCard(request, 'inProgress'))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Done Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Badge variant="outline">Done</Badge>
+              <span className="text-sm text-muted-foreground">({done.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {done.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No completed items</p>
+            ) : (
+              done.map(request => renderRequestCard(request, 'done'))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
