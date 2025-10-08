@@ -11,6 +11,7 @@ import { useAdminHeartbeat } from "@/contexts/AdminHeartbeatContext";
 import { adminApi } from "@/lib/services/http";
 import { Search, Filter } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
+import { useToast } from "../ui/use-toast";
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -30,6 +31,7 @@ type ForwardingRequest = {
 };
 
 export default function StableForwardingTable() {
+  const { toast } = useToast();
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -140,11 +142,21 @@ export default function StableForwardingTable() {
         await load();
       } else {
         console.error('Failed to update status:', response.error);
-        alert('Failed to update status. Please try again.');
+        toast({
+          title: "Status Update Failed",
+          description: "Failed to update status. Please try again.",
+          variant: "destructive",
+          durationMs: 5000,
+        });
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Error updating status. Please try again.');
+      toast({
+        title: "Status Update Error",
+        description: "Error updating status. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
     } finally {
       setUpdatingStatus(null);
     }

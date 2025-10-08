@@ -176,6 +176,16 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         });
     } catch (e: any) {
         console.error('[POST /api/forwarding/requests] error:', e);
+        
+        // Handle GDPR expiration specifically
+        if (e.message && e.message.includes('30 days')) {
+            return res.status(403).json({ 
+                ok: false, 
+                error: 'gdpr_expired',
+                message: 'This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.'
+            });
+        }
+        
         return res.status(500).json({ ok: false, error: 'Failed to create forwarding request' });
     }
 });

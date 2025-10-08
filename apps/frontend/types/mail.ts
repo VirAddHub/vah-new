@@ -17,6 +17,7 @@ export interface MailItem {
   tag?: string | null;
   scan_url?: string | null;  // if present on list API
   is_read?: boolean | null;
+  gdpr_expired?: boolean;    // GDPR 30-day expiration flag
 }
 
 export interface MailItemDetails extends MailItem {

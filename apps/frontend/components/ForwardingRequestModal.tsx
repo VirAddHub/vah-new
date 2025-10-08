@@ -8,6 +8,7 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { X } from "lucide-react";
+import { useToast } from "./ui/use-toast";
 
 interface ForwardingRequestModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface ForwardingRequestData {
 }
 
 export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAddress, onSubmit }: ForwardingRequestModalProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<ForwardingRequestData>({
     to_name: "",
     address1: "",
@@ -51,7 +53,7 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
       const address2 = addressLines[2] || '';
       const cityPostal = addressLines[addressLines.length - 2] || '';
       const country = addressLines[addressLines.length - 1] || 'GB';
-      
+
       const [city, postal] = cityPostal.split(',').map(s => s.trim());
 
       setFormData(prev => ({
@@ -70,7 +72,12 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.to_name || !formData.address1 || !formData.city || !formData.postal) {
-      alert("Please fill in all required fields");
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+        durationMs: 4000,
+      });
       return;
     }
 

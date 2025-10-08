@@ -28,7 +28,7 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
     return await pool.query('BEGIN').then(async () => {
         try {
             const mail = await pool.query(`
-        SELECT id, status, tag, subject 
+        SELECT id, status, tag, subject, received_at_ms, received_date 
         FROM mail_item 
         WHERE id = $1 AND user_id = $2 AND deleted = false
       `, [mailItemId, userId]);
@@ -40,6 +40,21 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             const mailData = mail.rows[0];
             if (!LegalTransitions['Pending'].includes('Requested') && mailData.status !== 'Pending') {
                 throw new Error('Mail not eligible for forwarding');
+            }
+
+            // Check GDPR 30-day rule
+            const now = Date.now();
+            const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+            let receivedAtMs = mailData.received_at_ms;
+            if (!receivedAtMs && mailData.received_date) {
+                // Fallback to received_date if received_at_ms is not available
+                receivedAtMs = new Date(mailData.received_date).getTime();
+            }
+
+            const gdprExpired = receivedAtMs && (now - receivedAtMs) > thirtyDaysInMs;
+            if (gdprExpired) {
+                throw new Error('Mail item is older than 30 days and cannot be forwarded due to GDPR compliance');
             }
 
             const isOfficial = isOfficialMail(mailData.tag);

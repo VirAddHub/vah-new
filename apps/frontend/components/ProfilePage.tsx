@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowLeft, User, Mail, Phone, Building2, MapPin, Save, Edit } from "lucide-react";
 import { profileService, UserProfile } from "@/lib/services/profile.service";
+import { useToast } from "./ui/use-toast";
 
 interface ProfilePageProps {
     onNavigate: (page: string) => void;
@@ -16,6 +17,7 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
+    const { toast } = useToast();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -46,7 +48,12 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
-                alert('Failed to load profile. Please try again.');
+                toast({
+                    title: "Profile Load Failed",
+                    description: "Failed to load profile. Please try again.",
+                    variant: "destructive",
+                    durationMs: 5000,
+                });
             } finally {
                 setLoading(false);
             }
@@ -62,13 +69,27 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
             if (response.ok && response.data) {
                 setProfile(response.data);
                 setEditing(false);
-                alert('Profile updated successfully!');
+                toast({
+                    title: "Profile Updated",
+                    description: "Profile updated successfully!",
+                    durationMs: 3000,
+                });
             } else {
-                alert('Failed to update profile. Please try again.');
+                toast({
+                    title: "Profile Update Failed",
+                    description: "Failed to update profile. Please try again.",
+                    variant: "destructive",
+                    durationMs: 5000,
+                });
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Error updating profile. Please try again.');
+            toast({
+                title: "Profile Update Error",
+                description: "Error updating profile. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         } finally {
             setSaving(false);
         }

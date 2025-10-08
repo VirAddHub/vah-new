@@ -28,6 +28,7 @@ import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { VAHLogo } from "./VAHLogo";
+import { useToast } from "./ui/use-toast";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -73,6 +74,7 @@ interface MailItem {
 }
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
@@ -213,7 +215,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       }
     } catch (err) {
       console.error('Error opening file:', err);
-      alert('Unable to open file for this item.');
+      toast({
+        title: "File Access Error",
+        description: "Unable to open file for this item.",
+        variant: "destructive",
+        durationMs: 4000,
+      });
     }
   }, [markAsRead]);
 
@@ -234,7 +241,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       }
     } catch (err) {
       console.error('Bulk download failed:', err);
-      alert('Some downloads may have failed. Please try again.');
+      toast({
+        title: "Download Warning",
+        description: "Some downloads may have failed. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
     }
   }, [selectedMail, mailItems]);
 
@@ -271,7 +283,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Certificate generation failed:', err);
-      alert('Failed to generate certificate. Please try again.');
+      toast({
+        title: "Certificate Generation Failed",
+        description: "Failed to generate certificate. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
     } finally {
       setCertLoading(false);
     }
@@ -307,9 +324,42 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
+  // Check if mail item is GDPR expired (older than 30 days)
+  const isGDPRExpired = useCallback((item: MailItem) => {
+    // Use backend flag if available
+    if (typeof item.gdpr_expired === 'boolean') {
+      return item.gdpr_expired;
+    }
+    
+    // Fallback to frontend calculation using received_at
+    if (!item.received_at) return false;
+
+    const receivedDate = new Date(item.received_at);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+    return receivedDate < thirtyDaysAgo;
+  }, []);
+
+  // Check if mail item can be forwarded
+  const canForward = useCallback((item: MailItem) => {
+    return !isGDPRExpired(item) && item.status === 'received';
+  }, [isGDPRExpired]);
+
   const handleRequestForwarding = (mailItem?: MailItem) => {
     // If a specific mail item is provided, use it directly
     if (mailItem) {
+      if (!canForward(mailItem)) {
+        toast({
+          title: "Cannot Forward Mail",
+          description: isGDPRExpired(mailItem)
+            ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
+            : "This mail item cannot be forwarded at this time.",
+          variant: "destructive",
+          durationMs: 5000,
+        });
+        return;
+      }
       setSelectedMailForForwarding(mailItem);
       setShowForwardingConfirmation(true);
       return;
@@ -321,6 +371,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // Get the first selected mail item for forwarding
     const item = mailItems.find((item: MailItem) => selectedMail.includes(item.id.toString()));
     if (!item) return;
+
+    if (!canForward(item)) {
+      toast({
+        title: "Cannot Forward Mail",
+        description: isGDPRExpired(item)
+          ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
+          : "This mail item cannot be forwarded at this time.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
+      return;
+    }
 
     setSelectedMailForForwarding(item);
     setShowForwardingConfirmation(true);
@@ -350,20 +412,42 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         const result = await response.json();
         if (result.ok) {
           // Show success message
-          alert('Forwarding request created successfully! Your request will be reviewed by our team.');
+          toast({
+            title: "Forwarding Request Created",
+            description: "Your request will be reviewed by our team.",
+            durationMs: 5000,
+          });
           // Clear selection
           setSelectedMail([]);
           // Refresh mail items
           refreshMail();
         } else {
-          alert('Failed to create forwarding request: ' + (result.error || 'Unknown error'));
+          toast({
+            title: "Forwarding Request Failed",
+            description: result.error || 'Unknown error',
+            variant: "destructive",
+            durationMs: 5000,
+          });
         }
       } else {
-        alert('Failed to create forwarding request. Please try again.');
+        const errorResult = await response.json().catch(() => ({}));
+        const errorMessage = errorResult.message || errorResult.error || "Failed to create forwarding request. Please try again.";
+
+        toast({
+          title: "Forwarding Request Failed",
+          description: errorMessage,
+          variant: "destructive",
+          durationMs: 5000,
+        });
       }
     } catch (error) {
       console.error('Error creating forwarding request:', error);
-      alert('Error creating forwarding request. Please try again.');
+      toast({
+        title: "Forwarding Request Error",
+        description: "Error creating forwarding request. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
     }
   };
 
@@ -484,7 +568,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="default" onClick={() => handleRequestForwarding()}>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleRequestForwarding()}
+                        disabled={selectedMail.length === 0 || !mailItems.find((item: MailItem) => selectedMail.includes(item.id.toString()) && canForward(item))}
+                        title={selectedMail.length === 0 ? "Select mail items to forward" : "Request forwarding for selected items"}
+                      >
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -643,9 +733,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       variant="outline"
                                       className="flex-1 h-9"
                                       onClick={() => handleRequestForwarding(item)}
+                                      disabled={!canForward(item)}
+                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
-                                      Forward
+                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
                                     </Button>
                                   </div>
                                 </div>
@@ -737,9 +829,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       variant="outline"
                                       className="flex-1 h-9"
                                       onClick={() => handleRequestForwarding(item)}
+                                      disabled={!canForward(item)}
+                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
-                                      Forward
+                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
                                     </Button>
                                   </div>
                                 </div>
@@ -775,7 +869,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
-                    <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
+                    <Button
+                      size="default"
+                      variant="default"
+                      className="w-full h-10"
+                      onClick={() => handleRequestForwarding()}
+                      disabled={selectedMail.length === 0 || !mailItems.find((item: MailItem) => selectedMail.includes(item.id.toString()) && canForward(item))}
+                      title={selectedMail.length === 0 ? "Select mail items to forward" : "Request forwarding for selected items"}
+                    >
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding
                     </Button>

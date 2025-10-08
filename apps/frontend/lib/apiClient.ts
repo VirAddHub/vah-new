@@ -136,6 +136,7 @@ const mapMailItem = (raw: any): MailItem => ({
     tag: raw.tag ?? null,
     scan_url: raw.scan_url ?? raw.scanUrl ?? null,
     is_read: typeof raw.is_read === 'boolean' ? raw.is_read : (raw.status === 'read'),
+    gdpr_expired: Boolean(raw.gdpr_expired),
 });
 
 const mapMailDetails = (raw: any): MailItemDetails => ({

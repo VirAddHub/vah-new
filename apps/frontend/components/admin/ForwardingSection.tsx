@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import StableForwardingTable from "./StableForwardingTable";
+import { useToast } from "../ui/use-toast";
 import {
     Truck,
     Package,
@@ -68,6 +69,7 @@ interface ForwardingStats {
 }
 
 export function ForwardingSection() {
+    const { toast } = useToast();
     const [requests, setRequests] = useState<ForwardingRequest[]>([]);
     const [total, setTotal] = useState(0);
     const [isFetchingRequests, setIsFetchingRequests] = useState(false);
@@ -202,7 +204,12 @@ export function ForwardingSection() {
             }
         } catch (err: any) {
             console.error("Error updating request:", err);
-            alert(err.message || "Failed to update request");
+            toast({
+                title: "Request Update Failed",
+                description: err.message || "Failed to update request",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         } finally {
             setIsMutating(false);
         }
@@ -263,7 +270,12 @@ export function ForwardingSection() {
             }
         } catch (err: any) {
             console.error("Error performing bulk action:", err);
-            alert(err.message || "Failed to perform bulk action");
+            toast({
+                title: "Bulk Action Failed",
+                description: err.message || "Failed to perform bulk action",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         } finally {
             setIsMutating(false);
         }
@@ -307,7 +319,12 @@ export function ForwardingSection() {
             window.URL.revokeObjectURL(url);
         } catch (err: any) {
             console.error("Error exporting requests:", err);
-            alert(err.message || "Failed to export requests");
+            toast({
+                title: "Export Failed",
+                description: err.message || "Failed to export requests",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         } finally {
             setIsExporting(false);
         }

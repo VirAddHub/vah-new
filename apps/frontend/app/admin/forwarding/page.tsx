@@ -6,6 +6,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ForwardingRequest {
     id: number;
@@ -32,6 +33,7 @@ interface ForwardingRequest {
 }
 
 export default function AdminForwardingPage() {
+    const { toast } = useToast();
     const [status, setStatus] = useState("Requested");
     const [q, setQ] = useState("");
     const [rows, setRows] = useState<ForwardingRequest[]>([]);
@@ -72,14 +74,29 @@ export default function AdminForwardingPage() {
                     setShowModal(false);
                     setSelectedRequest(null);
                 } else {
-                    alert('Failed to update request: ' + (result.error || 'Unknown error'));
+                    toast({
+                        title: "Request Update Failed",
+                        description: result.error || 'Unknown error',
+                        variant: "destructive",
+                        durationMs: 5000,
+                    });
                 }
             } else {
-                alert('Failed to update request. Please try again.');
+                toast({
+                    title: "Request Update Failed",
+                    description: "Failed to update request. Please try again.",
+                    variant: "destructive",
+                    durationMs: 5000,
+                });
             }
         } catch (error) {
             console.error("Failed to update forwarding request:", error);
-            alert('Error updating request. Please try again.');
+            toast({
+                title: "Request Update Error",
+                description: "Error updating request. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         }
     }
 

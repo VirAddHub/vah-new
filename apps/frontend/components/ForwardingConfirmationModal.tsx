@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { X, CreditCard, Calendar, CheckCircle, Truck } from "lucide-react";
+import { useToast } from "./ui/use-toast";
 
 interface ForwardingConfirmationModalProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ export function ForwardingConfirmationModal({
     userProfile,
     onConfirm
 }: ForwardingConfirmationModalProps) {
+    const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'monthly' | 'gocardless' | null>(null);
     const [userPlan, setUserPlan] = useState<any>(null);
@@ -50,7 +52,12 @@ export function ForwardingConfirmationModal({
             onClose();
         } catch (error) {
             console.error('Error processing forwarding request:', error);
-            alert('Failed to process forwarding request. Please try again.');
+            toast({
+                title: "Forwarding Request Failed",
+                description: "Failed to process forwarding request. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         } finally {
             setIsProcessing(false);
         }

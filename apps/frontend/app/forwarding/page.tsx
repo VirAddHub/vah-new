@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Truck, Mail, Clock, CheckCircle } from 'lucide-react';
 import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
+import { useToast } from '@/components/ui/use-toast';
 
 interface MailItem {
     id: string;
@@ -15,6 +16,7 @@ interface MailItem {
     created_at: string;
     tag: string;
     forwarding_status?: string;
+    gdpr_expired?: boolean;
 }
 
 interface ForwardingRequest {
@@ -32,6 +34,7 @@ interface ForwardingRequest {
 }
 
 export default function ForwardingPage() {
+    const { toast } = useToast();
     const router = useRouter();
     const [mailItems, setMailItems] = useState<MailItem[]>([]);
     const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
@@ -54,7 +57,7 @@ export default function ForwardingPage() {
         try {
             setLoading(true);
             const token = localStorage.getItem('vah_jwt');
-            
+
             // Load mail items
             const mailResponse = await fetch('/api/mail', {
                 headers: {
@@ -86,6 +89,17 @@ export default function ForwardingPage() {
     };
 
     const handleRequestForwarding = (mailItem: MailItem) => {
+        // Check if GDPR expired
+        if (mailItem.gdpr_expired) {
+            toast({
+                title: "Cannot Forward",
+                description: "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+            return;
+        }
+        
         setSelectedMailForForwarding(mailItem);
         setShowForwardingModal(true);
     };
@@ -111,19 +125,38 @@ export default function ForwardingPage() {
             if (response.ok) {
                 const result = await response.json();
                 if (result.ok) {
-                    alert('Forwarding request created successfully! Your request will be reviewed by our team.');
+                    toast({
+                        title: "Forwarding Request Created",
+                        description: "Your request will be reviewed by our team.",
+                        durationMs: 5000,
+                    });
                     setShowForwardingModal(false);
                     setSelectedMailForForwarding(null);
                     loadData(); // Refresh data
                 } else {
-                    alert('Failed to create forwarding request: ' + (result.error || 'Unknown error'));
+                    toast({
+                        title: "Forwarding Request Failed",
+                        description: result.error || 'Unknown error',
+                        variant: "destructive",
+                        durationMs: 5000,
+                    });
                 }
             } else {
-                alert('Failed to create forwarding request. Please try again.');
+                toast({
+                    title: "Request Failed",
+                    description: "Failed to create forwarding request. Please try again.",
+                    variant: "destructive",
+                    durationMs: 5000,
+                });
             }
         } catch (error) {
             console.error('Error creating forwarding request:', error);
-            alert('Error creating forwarding request. Please try again.');
+            toast({
+                title: "Request Error",
+                description: "Error creating forwarding request. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
         }
     };
 
@@ -195,11 +228,18 @@ export default function ForwardingPage() {
                                         <div key={item.id} className="border rounded-lg p-4">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-medium">{item.subject || 'No Subject'}</h3>
-                                                {item.forwarding_status && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {item.forwarding_status}
-                                                    </Badge>
-                                                )}
+                                                <div className="flex gap-2">
+                                                    {item.gdpr_expired && (
+                                                        <Badge variant="destructive" className="text-xs">
+                                                            GDPR Expired
+                                                        </Badge>
+                                                    )}
+                                                    {item.forwarding_status && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {item.forwarding_status}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-sm text-muted-foreground mb-2">
                                                 From: {item.sender_name || 'Unknown'}
@@ -211,10 +251,11 @@ export default function ForwardingPage() {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => handleRequestForwarding(item)}
-                                                disabled={item.forwarding_status === 'Processing' || item.forwarding_status === 'Dispatched'}
+                                                disabled={item.gdpr_expired || item.forwarding_status === 'Processing' || item.forwarding_status === 'Dispatched'}
+                                                title={item.gdpr_expired ? "This item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it." : ""}
                                             >
                                                 <Truck className="h-4 w-4 mr-2" />
-                                                Request Forwarding
+                                                {item.gdpr_expired ? "GDPR Expired" : "Request Forwarding"}
                                             </Button>
                                         </div>
                                     ))}

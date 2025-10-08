@@ -44,9 +44,9 @@ router.post('/forward', async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Get mail item
+        // Get mail item with received date for GDPR check
         const result = await pool.query(
-            `SELECT id, user_id, expires_at FROM mail_item WHERE id = $1`,
+            `SELECT id, user_id, expires_at, received_at_ms, received_date FROM mail_item WHERE id = $1`,
             [Number(mail_item_id || 0)]
         );
 
@@ -55,21 +55,51 @@ router.post('/forward', async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
 
-        // Check expiry
-        const expired = m.expires_at && Date.now() > new Date(m.expires_at).getTime();
+        // Check GDPR 30-day rule from received date
+        const now = Date.now();
+        const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
-        if (expired && !req.user?.is_admin) {
-            await auditForward(userId, m.id, 'blocked', 'expired');
+        let receivedAtMs = m.received_at_ms;
+        if (!receivedAtMs && m.received_date) {
+            // Fallback to received_date if received_at_ms is not available
+            receivedAtMs = new Date(m.received_date).getTime();
+        }
+
+        const gdprExpired = receivedAtMs && (now - receivedAtMs) > thirtyDaysInMs;
+
+        // Check storage expiry (legacy)
+        const storageExpired = m.expires_at && Date.now() > new Date(m.expires_at).getTime();
+
+        if (gdprExpired && !req.user?.is_admin) {
+            await auditForward(userId, m.id, 'blocked', 'gdpr_30day_expired');
             return res.status(403).json({
                 ok: false,
-                error: 'expired',
+                error: 'gdpr_expired',
+                message: 'This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.'
+            });
+        }
+
+        if (gdprExpired && req.user?.is_admin && String(adminOverride) !== 'true') {
+            await auditForward(userId, m.id, 'blocked', 'gdpr_admin_override_required');
+            return res.status(412).json({
+                ok: false,
+                error: 'gdpr_admin_override_required',
+                message: 'Admin override required for GDPR-expired item'
+            });
+        }
+
+        if (storageExpired && !req.user?.is_admin) {
+            await auditForward(userId, m.id, 'blocked', 'storage_expired');
+            return res.status(403).json({
+                ok: false,
+                error: 'storage_expired',
                 message: 'Forwarding period has expired for this item.'
             });
         }
 
-        if (expired && req.user?.is_admin && String(adminOverride) !== 'true') {
-            await auditForward(userId, m.id, 'blocked', 'admin_override_required');
-            return res.status(412).json({ ok: false, error: 'admin_override_required' });
+        if (storageExpired && req.user?.is_admin && String(adminOverride) !== 'true') {
+            await auditForward(userId, m.id, 'blocked', 'storage_admin_override_required');
+            return res.status(412).json({ ok: false, error: 'storage_admin_override_required' });
         }
 
         // Update mail item status
@@ -79,7 +109,8 @@ router.post('/forward', async (req: Request, res: Response) => {
         );
 
         // Audit successful request
-        await auditForward(userId, m.id, expired ? 'override' : 'requested', null);
+        const auditReason = gdprExpired ? 'gdpr_override' : storageExpired ? 'storage_override' : 'requested';
+        await auditForward(userId, m.id, auditReason, null);
 
         // Send to webhook (optional)
         const url = process.env.MAKE_FORWARDING_LOG_URL || '';
