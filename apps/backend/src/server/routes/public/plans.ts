@@ -41,26 +41,26 @@ router.get('/plans', async (_req, res) => {
         const stubPlans = [
             { 
                 id: 'monthly', 
-                name: 'Digital Mailbox', 
-                price_pence: 999, 
-                price: 9.99,
-                priceFormatted: '£9.99',
+                name: 'Virtual Mailbox - Monthly', 
+                price_pence: 995, 
+                price: 9.95,
+                priceFormatted: '£9.95',
                 interval: 'month',
                 currency: 'GBP',
-                features: ['Digital mail scanning', 'Mail forwarding', 'Registered office address'],
+                features: ['Use as Registered Office & Director\'s Service Address (Companies House + HMRC)', 'Professional London business address for banking, invoices & websites', 'Unlimited digital mail scanning — uploaded same day it arrives', 'Secure online dashboard to read, download, archive or request actions', 'HMRC & Companies House mail: digital scan + physical forwarding at no charge', 'Cancel anytime. No setup fees or long-term contracts', 'UK support — Mon-Fri, 9AM–6PM GMT'],
                 active: true,
                 isMonthly: true,
                 isAnnual: false
             },
             { 
                 id: 'annual', 
-                name: 'Digital Mailbox (Annual)', 
+                name: 'Virtual Mailbox - Annual', 
                 price_pence: 8999, 
                 price: 89.99,
                 priceFormatted: '£89.99',
                 interval: 'year',
                 currency: 'GBP',
-                features: ['Digital mail scanning', 'Mail forwarding', 'Registered office address', '25% savings'],
+                features: ['Use as Registered Office & Director\'s Service Address (Companies House + HMRC)', 'Professional London business address for banking, invoices & websites', 'Unlimited digital mail scanning — uploaded same day it arrives', 'Secure online dashboard to read, download, archive or request actions', 'HMRC & Companies House mail: digital scan + physical forwarding at no charge', 'Cancel anytime. No setup fees or long-term contracts', 'UK support — Mon-Fri, 9AM–6PM GMT', 'Save 25% — equivalent to £7.50/month'],
                 active: true,
                 isMonthly: false,
                 isAnnual: true

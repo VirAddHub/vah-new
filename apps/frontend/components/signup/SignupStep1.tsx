@@ -66,7 +66,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
     const handleContinue = () => {
         onNext({
             billing,
-            price: billing === 'monthly' ? '9.99' : '89.99'
+            price: getPlanPrice(billing)
         });
     };
 

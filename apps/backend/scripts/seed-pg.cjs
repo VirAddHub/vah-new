@@ -8,19 +8,8 @@ const { Client } = require('pg');
     try {
         await client.query('BEGIN');
 
-        // Seed plans table with basic plan
-        await client.query(`
-      INSERT INTO plans (id, slug, name, description, price_pence, currency, active, interval)
-      VALUES (1, 'digital_mailbox', 'Digital Mailbox Plan', 'Basic digital mailbox service', 999, 'GBP', true, 'month')
-      ON CONFLICT (id) DO UPDATE
-      SET slug=EXCLUDED.slug, 
-          name=EXCLUDED.name, 
-          description=EXCLUDED.description, 
-          price_pence=EXCLUDED.price_pence, 
-          currency=EXCLUDED.currency, 
-          active=EXCLUDED.active, 
-          interval=EXCLUDED.interval;
-    `);
+        // Seed plans table with basic plan (REMOVED - Digital Mailbox Plan is retired)
+        // The migration 013_insert_default_plans.sql now handles plan creation
 
         // Optional: Add admin user (uncomment and set proper hash)
         // const bcryptHash = '$2b$10$replace_me_with_proper_hash';
