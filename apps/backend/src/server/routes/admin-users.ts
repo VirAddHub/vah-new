@@ -393,7 +393,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             UPDATE "user"
             SET deleted_at = $1, updated_at = $2
             WHERE id = $3
-        `, [nowTimestamp, now, userId]);
+        `, [nowTimestamp, nowTimestamp, userId]);
 
         // Log admin action
         await pool.query(`
