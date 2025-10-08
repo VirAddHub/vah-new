@@ -16,7 +16,7 @@ function keyFrom(req: Request): Key {
     const u = (req as any).user;
     const id = u?.id ?? "anon";
     // Normalize query params by sorting to handle different ordering
-    const sortedQuery = Object.entries(req.query as any).sort();
+    const sortedQuery = Object.entries(req.query as Record<string, string>).sort();
     const qp = new URLSearchParams(sortedQuery).toString();
     return `${id}:${req.path}?${qp}`;
 }
