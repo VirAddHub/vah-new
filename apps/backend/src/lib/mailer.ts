@@ -240,7 +240,7 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
 
 export async function sendMailForwarded({ email, name, forwarding_address, forwarded_date }: { email: string; name?: string; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
-    
+
     const client = getClient();
     if (!client) return;
 
@@ -257,7 +257,7 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
         });
     } catch (error) {
         console.error('ForwardingCompleted template failed, sending fallback email:', error);
-        
+
         // Send a proper fallback email instead of generic notification
         await client.sendEmail({
             From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,

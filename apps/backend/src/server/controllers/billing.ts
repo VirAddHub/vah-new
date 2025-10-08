@@ -63,15 +63,25 @@ export async function listInvoices(req: Request, res: Response) {
 }
 
 export async function postUpdateBank(req: Request, res: Response) {
-  const userId = Number(req.user!.id);
-  const link = await gcCreateUpdateBankLink(userId);
-  res.json({ ok: true, data: link });
+  try {
+    const userId = Number(req.user!.id);
+    const link = await gcCreateUpdateBankLink(userId);
+    res.json({ ok: true, data: link });
+  } catch (error) {
+    console.error('[postUpdateBank] error:', error);
+    res.status(500).json({ ok: false, error: 'Failed to create update bank link' });
+  }
 }
 
 export async function postReauthorise(req: Request, res: Response) {
-  const userId = Number(req.user!.id);
-  const link = await gcCreateReauthoriseLink(userId);
-  res.json({ ok: true, data: link });
+  try {
+    const userId = Number(req.user!.id);
+    const link = await gcCreateReauthoriseLink(userId);
+    res.json({ ok: true, data: link });
+  } catch (error) {
+    console.error('[postReauthorise] error:', error);
+    res.status(500).json({ ok: false, error: 'Failed to create reauthorization link' });
+  }
 }
 
 export async function postRetryPayment(req: Request, res: Response) {

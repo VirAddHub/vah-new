@@ -99,7 +99,7 @@ export default function ForwardingPage() {
             });
             return;
         }
-        
+
         setSelectedMailForForwarding(mailItem);
         setShowForwardingModal(true);
     };

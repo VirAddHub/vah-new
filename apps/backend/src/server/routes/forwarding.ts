@@ -132,7 +132,7 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         }
 
         // Parse the stored forwarding address
-        const addressLines = user.forwarding_address.split('\n').filter(line => line.trim() !== '');
+        const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
         const name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
         const address1 = addressLines[1] || '';
         const address2 = addressLines[2] || undefined; // Optional second address line
@@ -176,16 +176,16 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         });
     } catch (e: any) {
         console.error('[POST /api/forwarding/requests] error:', e);
-        
+
         // Handle GDPR expiration specifically
         if (e.message && e.message.includes('30 days')) {
-            return res.status(403).json({ 
-                ok: false, 
+            return res.status(403).json({
+                ok: false,
                 error: 'gdpr_expired',
                 message: 'This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.'
             });
         }
-        
+
         return res.status(500).json({ ok: false, error: 'Failed to create forwarding request' });
     }
 });

@@ -66,11 +66,13 @@ interface MailItem {
   subject?: string;
   sender_name?: string;
   received_date?: string;
+  received_at?: string;
   status?: string;
   tag?: string;
   is_read?: boolean;
   created_at?: string;
   file_url?: string;
+  gdpr_expired?: boolean;
 }
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
@@ -330,7 +332,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (typeof item.gdpr_expired === 'boolean') {
       return item.gdpr_expired;
     }
-    
+
     // Fallback to frontend calculation using received_at
     if (!item.received_at) return false;
 
