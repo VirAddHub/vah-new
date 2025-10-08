@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { getPool } from '../../server/db';
 import { z } from 'zod';
+import { sendMailForwarded } from '../../lib/mailer';
 // import logger from '../../lib/logger'; // Using console for now
 
 const ACTION_TO_STATUS = {
@@ -221,6 +222,34 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes })]
             );
         } catch { }
+
+        // Send email notification when status is changed to "Delivered"
+        if (nextStatus === 'Delivered') {
+            try {
+                // Get user details for email
+                const userQuery = await pool.query(`
+                    SELECT u.email, u.first_name, u.last_name, fr.tracking_number, fr.courier
+                    FROM forwarding_request fr
+                    JOIN "user" u ON u.id = fr.user_id
+                    WHERE fr.id = $1
+                `, [id]);
+                
+                if (userQuery.rows.length > 0) {
+                    const user = userQuery.rows[0];
+                    await sendMailForwarded({
+                        email: user.email,
+                        name: user.first_name || user.email,
+                        tracking_number: user.tracking_number,
+                        carrier: user.courier,
+                        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/mail`
+                    });
+                    console.log(`[AdminForwarding] Sent delivery notification email to ${user.email} for request ${id}`);
+                }
+            } catch (emailError) {
+                console.error(`[AdminForwarding] Failed to send delivery email for request ${id}:`, emailError);
+                // Don't fail the request - the status update succeeded, just email failed
+            }
+        }
 
         console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
         return res.json({ ok: true, data: upd.rows[0] });
