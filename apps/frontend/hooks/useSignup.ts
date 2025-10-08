@@ -79,12 +79,26 @@ export function useSignup() {
         setError(null);
 
         try {
-            // Call the real API signup
+            // Call the real API signup with all signup data including forwarding address
             const response = await apiClient.signup(
                 step2Data.email,
                 step2Data.password,
                 step2Data.first_name,
-                step2Data.last_name
+                step2Data.last_name,
+                step2Data.phone,
+                step2Data.business_type,
+                step2Data.country_of_incorporation,
+                step2Data.company_number,
+                step2Data.company_name,
+                step2Data.forward_to_first_name,
+                step2Data.forward_to_last_name,
+                step2Data.address_line1,
+                step2Data.address_line2,
+                step2Data.city,
+                step2Data.postcode,
+                step2Data.forward_country,
+                step1Data?.billing,
+                step1Data?.price
             );
 
             if (response.ok) {

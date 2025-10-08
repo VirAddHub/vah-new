@@ -245,12 +245,45 @@ export const apiClient = {
     async signup(
         email: string,
         password: string,
-        first_name?: string,
-        last_name?: string
+        first_name: string,
+        last_name: string,
+        phone?: string,
+        business_type?: string,
+        country_of_incorporation?: string,
+        company_number?: string,
+        company_name?: string,
+        forward_to_first_name?: string,
+        forward_to_last_name?: string,
+        address_line1?: string,
+        address_line2?: string,
+        city?: string,
+        postcode?: string,
+        forward_country?: string,
+        billing?: string,
+        price?: string
     ): Promise<ApiResponse<{ user: User }>> {
         const resp = await legacyReq(apiUrl('auth/signup'), {
             method: 'POST',
-            body: JSON.stringify({ email, password, first_name, last_name }),
+            body: JSON.stringify({ 
+                email, 
+                password, 
+                first_name, 
+                last_name,
+                phone,
+                business_type,
+                country_of_incorporation,
+                company_number,
+                company_name,
+                forward_to_first_name,
+                forward_to_last_name,
+                address_line1,
+                address_line2,
+                city,
+                postcode,
+                forward_country,
+                billing,
+                price
+            }),
         });
         return coerceUserResponse(resp);
     },
