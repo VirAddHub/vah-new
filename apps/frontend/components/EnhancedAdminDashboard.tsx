@@ -82,7 +82,6 @@ import { BillingSection } from "./admin/BillingSection";
 import { AnalyticsSection } from "./admin/AnalyticsSection";
 import { SettingsSection } from "./admin/SettingsSection";
 import { DebugInfo } from "./DebugInfo";
-import { UsersDebugTest } from "./UsersDebugTest";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -125,10 +124,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         ? ['/api/admin/users', usersQueryParams] as const
         : null;
 
-    console.log('[EnhancedAdminDashboard] activeSection:', activeSection);
-    console.log('[EnhancedAdminDashboard] usersKey:', usersKey);
-    console.log('[EnhancedAdminDashboard] usersQueryParams:', usersQueryParams);
-
     const {
         data: usersData,
         isLoading: usersLoading,
@@ -143,11 +138,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         revalidateOnFocus: false, // Disable focus revalidation
         revalidateOnReconnect: false, // Disable reconnect revalidation
     });
-
-    console.log('[EnhancedAdminDashboard] usersData:', usersData);
-    console.log('[EnhancedAdminDashboard] usersTotal:', usersData?.total);
-    console.log('[EnhancedAdminDashboard] usersLoading:', usersLoading);
-    console.log('[EnhancedAdminDashboard] usersError:', usersError);
 
     const users = usersData?.items ?? [];
     const usersTotal = usersData?.total ?? 0;
@@ -567,9 +557,6 @@ function OverviewSection({
                     </Badge>
                 </div>
             </div>
-
-            {/* Debug Test Component */}
-            <UsersDebugTest />
 
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
