@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
-import { X, CreditCard, Calendar, CheckCircle, AlertCircle, Truck } from "lucide-react";
+import { X, CreditCard, Calendar, CheckCircle, Truck } from "lucide-react";
 
 interface ForwardingConfirmationModalProps {
     isOpen: boolean;
@@ -207,21 +207,6 @@ export function ForwardingConfirmationModal({
                         )}
                     </div>
 
-                    {/* Terms and Conditions */}
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                        <div className="flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                            <div className="text-sm text-yellow-800">
-                                <p className="font-medium mb-1">Important Notes:</p>
-                                <ul className="list-disc list-inside space-y-1 text-xs">
-                                    <li>Forwarding requests are subject to admin review</li>
-                                    <li>Processing time: 1-3 business days after approval</li>
-                                    <li>We'll notify you once your mail is dispatched</li>
-                                    <li>Tracking information will be provided when available</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Action Buttons */}
                     <div className="flex justify-end space-x-2 pt-4">
