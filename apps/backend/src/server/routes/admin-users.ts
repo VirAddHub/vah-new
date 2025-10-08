@@ -385,7 +385,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 
     try {
-        const now = new Date().toISOString();
+        const now = Date.now(); // Unix timestamp in milliseconds
 
         // Soft delete - just mark as deleted
         await pool.query(`
