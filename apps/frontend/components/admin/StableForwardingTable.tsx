@@ -57,9 +57,18 @@ export default function StableForwardingTable() {
   useEffect(() => {
     load(); // initial
     timerRef.current = setInterval(load, 30_000);
+
+    // Abort on page unload/navigation
+    const handleBeforeUnload = () => {
+      abortRef.current?.abort();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       abortRef.current?.abort();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // do not include `load` to avoid interval duplication
@@ -73,7 +82,7 @@ export default function StableForwardingTable() {
       'Delivered': { variant: 'default', label: 'Delivered' },
       'Cancelled': { variant: 'destructive', label: 'Cancelled' },
     };
-    
+
     const config = statusMap[status] || { variant: 'secondary' as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };

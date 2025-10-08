@@ -15,7 +15,9 @@ const COALESCE_TTL_MS = 4_000;
 function keyFrom(req: Request): Key {
     const u = (req as any).user;
     const id = u?.id ?? "anon";
-    const qp = new URLSearchParams(Object.entries(req.query as any)).toString();
+    // Normalize query params by sorting to handle different ordering
+    const sortedQuery = Object.entries(req.query as any).sort();
+    const qp = new URLSearchParams(sortedQuery).toString();
     return `${id}:${req.path}?${qp}`;
 }
 
