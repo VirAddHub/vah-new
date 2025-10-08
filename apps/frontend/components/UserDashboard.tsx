@@ -26,7 +26,7 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
-import { ForwardingRequestModal } from "./ForwardingRequestModal";
+import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { VAHLogo } from "./VAHLogo";
 
 interface UserDashboardProps {
@@ -79,9 +79,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
   const [certLoading, setCertLoading] = useState(false);
-  const [showForwardingModal, setShowForwardingModal] = useState(false);
+  const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
-  const [forwardingAddress, setForwardingAddress] = useState<string>('');
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -131,7 +130,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             const data = await response.json();
             if (data.ok && data.data) {
               setUserProfile(data.data);
-              setForwardingAddress(data.data.forwarding_address || '');
               // Update localStorage with fresh data
               localStorage.setItem('vah_user', JSON.stringify(data.data));
             }
@@ -313,7 +311,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // If a specific mail item is provided, use it directly
     if (mailItem) {
       setSelectedMailForForwarding(mailItem);
-      setShowForwardingModal(true);
+      setShowForwardingConfirmation(true);
       return;
     }
 
@@ -325,10 +323,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (!item) return;
 
     setSelectedMailForForwarding(item);
-    setShowForwardingModal(true);
+    setShowForwardingConfirmation(true);
   };
 
-  const handleForwardingSubmit = async (data: any) => {
+  const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
     if (!selectedMailForForwarding) return;
 
     try {
@@ -342,7 +340,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         credentials: 'include',
         body: JSON.stringify({
           mail_item_id: selectedMailForForwarding.id,
-          ...data
+          payment_method: paymentMethod,
+          // Use the forwarding address from user profile
+          forwarding_address: userProfile?.forwarding_address
         })
       });
 
@@ -841,17 +841,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         useBlobFallback
       />
 
-      {/* Forwarding Request Modal */}
-      {showForwardingModal && selectedMailForForwarding && (
-        <ForwardingRequestModal
-          isOpen={showForwardingModal}
+      {/* Forwarding Confirmation Modal */}
+      {showForwardingConfirmation && selectedMailForForwarding && (
+        <ForwardingConfirmationModal
+          isOpen={showForwardingConfirmation}
           onClose={() => {
-            setShowForwardingModal(false);
+            setShowForwardingConfirmation(false);
             setSelectedMailForForwarding(null);
           }}
           mailItem={selectedMailForForwarding}
-          forwardingAddress={forwardingAddress}
-          onSubmit={handleForwardingSubmit}
+          userProfile={userProfile}
+          onConfirm={handleForwardingConfirm}
         />
       )}
     </div>
