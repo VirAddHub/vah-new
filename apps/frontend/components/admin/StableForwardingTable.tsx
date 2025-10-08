@@ -42,13 +42,14 @@ export default function StableForwardingTable() {
     try {
       setLoading(true);
       setError(null);
-      const r = await fetch("/api/admin/forwarding/requests?limit=50&offset=0", {
-        credentials: "include",
-        signal: abortRef.current.signal,
-      });
-      if (!r.ok) throw new Error(`${r.status} ${await r.text().catch(() => r.statusText)}`);
-      const j = (await r.json()) as Api<ForwardingRequest[]>;
-      if (mountedRef.current) setRows(j.data ?? []);
+      const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
+      if (mountedRef.current) {
+        if (data.ok && Array.isArray(data.data)) {
+          setRows(data.data);
+        } else {
+          setError(data.error || "Failed to load forwarding requests");
+        }
+      }
     } catch (e: any) {
       if (e?.name !== "AbortError" && mountedRef.current) setError(e.message ?? "Failed");
     } finally {
