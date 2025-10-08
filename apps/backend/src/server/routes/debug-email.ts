@@ -233,13 +233,13 @@ router.post('/debug-email', async (req, res) => {
                 await sendMailForwarded({
                     email,
                     name: name || 'Test User',
-                    tracking_number: req.body.tracking_number,
-                    carrier: req.body.carrier,
-                    cta_url: req.body.cta_url
+                    forwarding_address: req.body.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
+                    forwarded_date: req.body.forwarded_date || new Date().toLocaleDateString('en-GB')
                 });
                 result = {
                     type: 'mail-forwarded',
-                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/mail`,
+                    forwarding_address: req.body.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
+                    forwarded_date: req.body.forwarded_date || new Date().toLocaleDateString('en-GB'),
                     status: 'sent'
                 };
                 break;

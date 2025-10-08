@@ -164,12 +164,33 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
 
         // 4. Send confirmation email
         try {
+            // Get the forwarding address from the request
+            const addressQuery = await pool.query(`
+                SELECT to_name, address1, address2, city, state, postal, country
+                FROM forwarding_request
+                WHERE mail_item_id = $1
+            `, [mail_id]);
+            
+            let forwarding_address = 'Your forwarding address';
+            if (addressQuery.rows.length > 0) {
+                const addr = addressQuery.rows[0];
+                const parts = [
+                    addr.to_name,
+                    addr.address1,
+                    addr.address2,
+                    addr.city,
+                    addr.state,
+                    addr.postal,
+                    addr.country
+                ].filter(Boolean);
+                forwarding_address = parts.join(', ');
+            }
+            
             await sendMailForwarded({
                 email: user.email,
                 name: user.first_name || user.email,
-                tracking_number: undefined, // No tracking for completed forwarding
-                carrier: undefined, // No carrier for completed forwarding
-                cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/mail`
+                forwarding_address: forwarding_address,
+                forwarded_date: new Date().toLocaleDateString('en-GB')
             });
         } catch (emailError) {
             console.error('[admin-forwarding-complete] Email failed:', emailError);

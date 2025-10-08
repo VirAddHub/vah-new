@@ -213,9 +213,8 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                 await sendMailForwarded({
                     email,
                     name,
-                    tracking_number: payload.trackingNumber || "TRK123456789",
-                    carrier: payload.carrier || "Royal Mail",
-                    cta_url: `${ENV.APP_BASE_URL}/mail`
+                    forwarding_address: payload.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
+                    forwarded_date: payload.forwarded_date || new Date().toLocaleDateString('en-GB')
                 });
                 break;
 
