@@ -178,6 +178,41 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
         if (nextStatus === 'Dispatched') {
             sets.push('dispatched_at = $3');
             vals.push(nowTimestamp);
+            
+            // Add usage charges for forwarding
+            try {
+                const now = Date.now();
+                const month = new Date(); 
+                month.setDate(1); 
+                month.setHours(0,0,0,0);
+                const yyyymm = `${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,'0')}`;
+
+                // Get user_id from forwarding request
+                const userResult = await pool.query(`
+                    SELECT user_id FROM forwarding_request WHERE id = $1
+                `, [id]);
+                
+                if (userResult.rows.length > 0) {
+                    const userId = userResult.rows[0].user_id;
+                    
+                    // £2 handling fee
+                    await pool.query(`
+                        INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
+                        VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
+                    `, [userId, yyyymm, now]);
+
+                    // TODO: Add postage at cost if you have a value
+                    // if (typeof postagePence === 'number' && postagePence > 0) {
+                    //     await pool.query(`
+                    //         INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
+                    //         VALUES ($1, $2, 'postage', 1, $3, 'Royal Mail postage', $4)
+                    //     `, [userId, yyyymm, postagePence, now]);
+                    // }
+                }
+            } catch (usageError) {
+                console.error('[adminUpdateForwarding] Usage tracking failed:', usageError);
+                // Don't fail the main operation if usage tracking fails
+            }
         }
         if (nextStatus === 'Delivered') {
             sets.push('delivered_at = $3');
