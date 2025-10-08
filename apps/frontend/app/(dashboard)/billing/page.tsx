@@ -42,7 +42,7 @@ export default function BillingPage() {
         credentials: 'include',
         body: JSON.stringify({ plan_id: planId })
       });
-      
+
       const j = await r.json();
       if (j.ok) {
         // Refresh the page to show updated plan
@@ -108,9 +108,9 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {/* Plan Upgrade Section */}
+      {/* Billing Frequency Section */}
       <div className="rounded-2xl border p-4">
-        <div className="text-sm text-gray-700 font-medium mb-3">Change Plan</div>
+        <div className="text-sm text-gray-700 font-medium mb-3">Billing Frequency</div>
         <div className="grid md:grid-cols-2 gap-4">
           {/* Monthly Plan */}
           <div className={`rounded-lg border p-4 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
@@ -127,12 +127,12 @@ export default function BillingPage() {
               <li>• Cancel anytime</li>
             </ul>
             {o?.cadence !== 'monthly' && (
-              <button 
+              <button
                 className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 onClick={() => handlePlanChange('monthly')}
                 disabled={busy !== null}
               >
-                {busy === 'monthly' ? 'Switching...' : 'Switch to Monthly'}
+                {busy === 'monthly' ? 'Processing...' : 'Choose Monthly Billing'}
               </button>
             )}
           </div>
@@ -145,7 +145,7 @@ export default function BillingPage() {
             </div>
             <div className="text-2xl font-bold mb-1">£89.99</div>
             <div className="text-sm text-gray-500 mb-1">per year</div>
-            <div className="text-sm text-green-600 font-medium mb-3">Save 25% (£29.41/year)</div>
+            <div className="text-sm text-green-600 font-medium mb-3">Save 25% (£29.41/year) - Same service, better value</div>
             <ul className="text-xs text-gray-600 space-y-1 mb-4">
               <li>• Professional London business address</li>
               <li>• Unlimited digital mail scanning</li>
@@ -154,18 +154,18 @@ export default function BillingPage() {
               <li>• <strong>25% savings vs monthly</strong></li>
             </ul>
             {o?.cadence !== 'yearly' && (
-              <button 
+              <button
                 className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 onClick={() => handlePlanChange('yearly')}
                 disabled={busy !== null}
               >
-                {busy === 'yearly' ? 'Switching...' : 'Switch to Annual'}
+                {busy === 'yearly' ? 'Processing...' : 'Choose Annual Billing'}
               </button>
             )}
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-3">
-          Plan changes take effect immediately. You'll be charged the new rate on your next billing cycle.
+          Billing frequency changes take effect immediately. You'll be charged the new rate on your next billing cycle.
         </p>
       </div>
 

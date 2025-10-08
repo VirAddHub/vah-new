@@ -119,13 +119,13 @@ export async function postChangePlan(req: Request, res: Response) {
 
     console.log(`[postChangePlan] User ${userId} changed to plan: ${plan.name}`);
 
-    res.json({ 
-      ok: true, 
-      data: { 
+    res.json({
+      ok: true,
+      data: {
         plan_id: Number(plan_id),
         plan_name: plan.name,
         interval: plan.interval
-      } 
+      }
     });
   } catch (error) {
     console.error('[postChangePlan] error:', error);

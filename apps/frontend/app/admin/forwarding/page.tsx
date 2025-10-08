@@ -197,7 +197,7 @@ export default function AdminForwardingPage() {
 
                         <div className="text-xs text-muted-foreground">
                             Created: {formatDate(r.created_at)}
-                            {r.reviewed_at && ` • Reviewed: ${formatDate(r.reviewed_at)}`}
+                            {r.reviewed_at && ` • Confirmed: ${formatDate(r.reviewed_at)}`}
                             {r.processing_at && ` • Processing: ${formatDate(r.processing_at)}`}
                             {r.dispatched_at && ` • Dispatched: ${formatDate(r.dispatched_at)}`}
                             {r.delivered_at && ` • Delivered: ${formatDate(r.delivered_at)}`}
@@ -211,7 +211,7 @@ export default function AdminForwardingPage() {
                                         variant="secondary"
                                         onClick={() => action(r.id, 'mark_reviewed')}
                                     >
-                                        Mark Reviewed
+                                        Confirm Processing
                                     </Button>
                                     <Button
                                         onClick={() => action(r.id, 'start_processing')}

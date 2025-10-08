@@ -105,7 +105,7 @@ async function switchUserPlan(userId, planId) {
             [planId, Date.now(), userId]
         );
 
-        console.log(`✅ Successfully switched user ${userId} (${userCheck.rows[0].email}) to plan: ${planCheck.rows[0].name}`);
+        console.log(`✅ Successfully changed user ${userId} (${userCheck.rows[0].email}) billing frequency to: ${planCheck.rows[0].name}`);
 
     } catch (error) {
         console.error('❌ Error:', error.message);
