@@ -336,8 +336,15 @@ async function start() {
         }
     });
 
-    // Mount Postmark webhook FIRST with raw parser (before other routes)
+    // Mount webhooks FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
+    
+    // GoCardless webhook with raw body for signature verification
+    app.post('/api/webhooks/gocardless', express.raw({ type: 'application/json' }), async (req: any, res: any, next: any) => {
+        // Store raw body for webhook handler
+        req.rawBody = req.body;
+        next();
+    });
 
     // Internal routes removed - admin-driven system doesn't need cron/outbox
     // app.use('/api/internal', internalRouter);
@@ -480,6 +487,11 @@ async function start() {
 
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
+    
+    // Mount GoCardless webhook handler
+    const webhooksGcRouterNew = require('./server/routes/webhooks-gocardless');
+    app.use('/api/webhooks', webhooksGcRouterNew);
+    logger.info('[mount] /api/webhooks (GoCardless) mounted');
 
     app.use('/api/webhooks-onedrive', onedriveWebhook);
     logger.info('[mount] /api/webhooks-onedrive mounted');

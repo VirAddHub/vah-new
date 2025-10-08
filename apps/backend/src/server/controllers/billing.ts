@@ -38,7 +38,7 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     // Determine account status
     let accountStatus = 'active';
-    let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
+    let gracePeriodInfo = null;
 
     if (user?.account_suspended_at) {
       accountStatus = 'suspended';

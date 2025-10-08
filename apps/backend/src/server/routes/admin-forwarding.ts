@@ -197,6 +197,18 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
             // Don't rollback - the forwarding is complete, just email failed
         }
 
+        // 5. Record usage charges
+        const currentMonth = new Date();
+        currentMonth.setDate(1);
+        currentMonth.setHours(0, 0, 0, 0);
+        const yyyymm = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+        
+        // Forwarding charge: £2.00 (200 pence)
+        await pool.query(`
+            INSERT INTO usage_charges (user_id, period_yyyymm, amount_pence, qty, description, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+        `, [user.id, yyyymm, 200, 1, 'Mail forwarding', Date.now()]);
+
         // Commit transaction
         await pool.query('COMMIT');
 
@@ -207,7 +219,8 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
                 mail_id: mailItem.id,
                 user_email: user.email,
                 forwarded_date: forwardedDate.toISOString(),
-                email_sent: true
+                email_sent: true,
+                usage_charged: 200 // pence
             }
         });
 

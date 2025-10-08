@@ -16,16 +16,10 @@ const formatDateUK = (v?: number | string | null) => {
 export default function BillingPage() {
   const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
   const { data: invoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
-  const { data: plans } = useSWR('/api/plans', swrFetcher);
   const [busy, setBusy] = useState<string | null>(null);
 
   const o = overview?.data;
   const items = invoices?.data?.items ?? [];
-  const availablePlans = plans?.data ?? [];
-
-  // Find monthly and yearly plans
-  const monthlyPlan = availablePlans.find((p: any) => p.interval === 'month' && p.active);
-  const yearlyPlan = availablePlans.find((p: any) => p.interval === 'year' && p.active);
 
   const act = async (path: string) => {
     setBusy(path);
@@ -38,9 +32,10 @@ export default function BillingPage() {
     }
   };
 
-  const handlePlanChange = async (planId: number) => {
-    setBusy(`plan-${planId}`);
+  const handlePlanChange = async (cadence: 'monthly' | 'yearly') => {
+    setBusy(cadence);
     try {
+      const planId = cadence === 'monthly' ? 3 : 2; // Plan IDs from database
       const r = await fetch('/api/bff/billing/change-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,86 +153,71 @@ export default function BillingPage() {
       </div>
 
       {/* Billing Frequency Section */}
-      {availablePlans.length > 0 && (
-        <div className="rounded-2xl border p-4">
-          <div className="text-sm text-gray-700 font-medium mb-3">Billing Frequency</div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Monthly Plan */}
-            {monthlyPlan && (
-              <div className={`rounded-lg border p-4 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{monthlyPlan.name}</h3>
-                  {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>}
-                </div>
-                <div className="text-2xl font-bold mb-1">
-                  {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || monthlyPlan.price_pence) / 100}` : `£${(monthlyPlan.price_pence / 100).toFixed(2)}`}
-                </div>
-                <div className="text-sm text-gray-500 mb-3">per month</div>
-                {monthlyPlan.description && (
-                  <div className="text-sm text-gray-600 mb-3">{monthlyPlan.description}</div>
-                )}
-                {monthlyPlan.features && monthlyPlan.features.length > 0 && (
-                  <ul className="text-xs text-gray-600 space-y-1 mb-4">
-                    {monthlyPlan.features.map((feature: string, index: number) => (
-                      <li key={index}>• {feature}</li>
-                    ))}
-                  </ul>
-                )}
-                {o?.cadence !== 'monthly' && (
-                  <button
-                    className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    onClick={() => handlePlanChange(monthlyPlan.id)}
-                    disabled={busy !== null}
-                  >
-                    {busy === `plan-${monthlyPlan.id}` ? 'Processing...' : 'Choose Monthly Billing'}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Annual Plan */}
-            {yearlyPlan && (
-              <div className={`rounded-lg border p-4 ${o?.cadence === 'yearly' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{yearlyPlan.name}</h3>
-                  {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Current</span>}
-                </div>
-                <div className="text-2xl font-bold mb-1">
-                  {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || yearlyPlan.price_pence) / 100}` : `£${(yearlyPlan.price_pence / 100).toFixed(2)}`}
-                </div>
-                <div className="text-sm text-gray-500 mb-1">per year</div>
-                {monthlyPlan && yearlyPlan && (
-                  <div className="text-sm text-green-600 font-medium mb-3">
-                    Save {Math.round((1 - yearlyPlan.price_pence / (monthlyPlan.price_pence * 12)) * 100)}% vs monthly
-                  </div>
-                )}
-                {yearlyPlan.description && (
-                  <div className="text-sm text-gray-600 mb-3">{yearlyPlan.description}</div>
-                )}
-                {yearlyPlan.features && yearlyPlan.features.length > 0 && (
-                  <ul className="text-xs text-gray-600 space-y-1 mb-4">
-                    {yearlyPlan.features.map((feature: string, index: number) => (
-                      <li key={index}>• {feature}</li>
-                    ))}
-                  </ul>
-                )}
-                {o?.cadence !== 'yearly' && (
-                  <button
-                    className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                    onClick={() => handlePlanChange(yearlyPlan.id)}
-                    disabled={busy !== null}
-                  >
-                    {busy === `plan-${yearlyPlan.id}` ? 'Processing...' : 'Choose Annual Billing'}
-                  </button>
-                )}
-              </div>
+      <div className="rounded-2xl border p-4">
+        <div className="text-sm text-gray-700 font-medium mb-3">Billing Frequency</div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Monthly Plan */}
+          <div className={`rounded-lg border p-4 ${o?.cadence === 'monthly' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium">Virtual Mailbox - Monthly</h3>
+              {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>}
+            </div>
+            <div className="text-2xl font-bold mb-1">
+              {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || 995) / 100}` : '£9.95'}
+            </div>
+            <div className="text-sm text-gray-500 mb-3">per month</div>
+            <ul className="text-xs text-gray-600 space-y-1 mb-4">
+              <li>• Professional London business address</li>
+              <li>• Unlimited digital mail scanning</li>
+              <li>• HMRC & Companies House forwarding (free)</li>
+              <li>• Cancel anytime</li>
+            </ul>
+            {o?.cadence !== 'monthly' && (
+              <button
+                className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => handlePlanChange('monthly')}
+                disabled={busy !== null}
+              >
+                {busy === 'monthly' ? 'Processing...' : 'Choose Monthly Billing'}
+              </button>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Billing frequency changes take effect immediately. You'll be charged the new rate on your next billing cycle.
-          </p>
+
+          {/* Annual Plan */}
+          <div className={`rounded-lg border p-4 ${o?.cadence === 'yearly' ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium">Virtual Mailbox - Annual</h3>
+              {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Current</span>}
+            </div>
+            <div className="text-2xl font-bold mb-1">
+              {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || 8999) / 100}` : '£89.99'}
+            </div>
+            <div className="text-sm text-gray-500 mb-1">per year</div>
+            <div className="text-sm text-green-600 font-medium mb-3">
+              Save 25% (£29.41/year) - Same service, better value
+            </div>
+            <ul className="text-xs text-gray-600 space-y-1 mb-4">
+              <li>• Professional London business address</li>
+              <li>• Unlimited digital mail scanning</li>
+              <li>• HMRC & Companies House forwarding (free)</li>
+              <li>• Cancel anytime</li>
+              <li>• <strong>25% savings vs monthly</strong></li>
+            </ul>
+            {o?.cadence !== 'yearly' && (
+              <button
+                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                onClick={() => handlePlanChange('yearly')}
+                disabled={busy !== null}
+              >
+                {busy === 'yearly' ? 'Processing...' : 'Choose Annual Billing'}
+              </button>
+            )}
+          </div>
         </div>
-      )}
+        <p className="text-xs text-gray-500 mt-3">
+          Billing frequency changes take effect immediately. You'll be charged the new rate on your next billing cycle.
+        </p>
+      </div>
 
       <div className="rounded-2xl border">
         <div className="p-4 border-b text-sm text-gray-700 font-medium">Invoices & receipts</div>
