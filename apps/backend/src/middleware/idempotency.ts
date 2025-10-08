@@ -38,7 +38,7 @@ export function idempotencyMiddleware(req: Request, res: Response, next: NextFun
 
   // Store the original res.json to intercept the response
   const originalJson = res.json;
-  res.json = function(data: any) {
+  res.json = function (data: any) {
     // Store the result for future requests
     idempotencyStore.set(key, {
       result: { status: res.statusCode, data },

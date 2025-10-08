@@ -2,15 +2,32 @@
 // Admin mail items management endpoints
 
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
 const router = Router();
 
+// Rate limiting for admin mail items - more generous for admin usage
+const adminMailItemsLimiter = rateLimit({
+  windowMs: 10_000, // 10 seconds
+  limit: 30, // 30 requests per 10 seconds (more generous than forwarding)
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const u = (req as any).user;
+    return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
+  },
+  handler: (_req, res) => {
+    res.setHeader("Retry-After", "3");
+    return res.status(429).json({ ok: false, error: "rate_limited" });
+  },
+});
+
 // Request coalescing cache to prevent duplicate requests
 type Key = string;
 const inflight = new Map<Key, Promise<any>>();
-const COALESCE_TTL_MS = 4_000;
+const COALESCE_TTL_MS = 2_000; // Reduced to 2 seconds for faster response
 
 function keyFrom(req: Request): Key {
     const u = (req as any).user;
@@ -25,11 +42,12 @@ function keyFrom(req: Request): Key {
  * GET /api/admin/mail-items
  * Get all mail items (admin only)
  */
-router.get('/mail-items', requireAdmin, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "private, max-age=5");
 
     const key = keyFrom(req);
     if (inflight.has(key)) {
+        console.log(`[admin-mail-items] Coalescing request for key: ${key}`);
         try {
             const result = await inflight.get(key)!;
             return res.json(result);

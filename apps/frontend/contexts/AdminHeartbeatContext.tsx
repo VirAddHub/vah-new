@@ -22,17 +22,17 @@ export function AdminHeartbeatProvider({ children }: { children: React.ReactNode
 
   const executeAllCallbacks = useCallback(async () => {
     if (!mountedRef.current) return;
-    
-    const promises = Array.from(pollingCallbacks.current.values()).map(callback => 
+
+    const promises = Array.from(pollingCallbacks.current.values()).map(callback =>
       callback().catch(err => console.warn('Polling callback failed:', err))
     );
-    
+
     await Promise.allSettled(promises);
   }, []);
 
   const registerPolling = useCallback((key: string, callback: () => Promise<void>) => {
     pollingCallbacks.current.set(key, callback);
-    
+
     // Start timer if this is the first registration
     if (pollingCallbacks.current.size === 1 && !timerRef.current) {
       executeAllCallbacks(); // Initial call
@@ -42,7 +42,7 @@ export function AdminHeartbeatProvider({ children }: { children: React.ReactNode
 
   const unregisterPolling = useCallback((key: string) => {
     pollingCallbacks.current.delete(key);
-    
+
     // Stop timer if no more callbacks
     if (pollingCallbacks.current.size === 0 && timerRef.current) {
       clearInterval(timerRef.current);

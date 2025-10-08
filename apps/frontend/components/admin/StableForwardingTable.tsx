@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
+import { useAdminHeartbeat } from "@/contexts/AdminHeartbeatContext";
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -25,6 +26,7 @@ export default function StableForwardingTable() {
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { registerPolling, unregisterPolling } = useAdminHeartbeat();
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -53,25 +55,24 @@ export default function StableForwardingTable() {
     }
   }, []);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Use shared heartbeat instead of individual polling
   useEffect(() => {
-    load(); // initial
-    timerRef.current = setInterval(load, 30_000);
-
+    load(); // initial load
+    registerPolling('forwarding-requests', load);
+    
     // Abort on page unload/navigation
     const handleBeforeUnload = () => {
       abortRef.current?.abort();
     };
-
+    
     window.addEventListener('beforeunload', handleBeforeUnload);
-
+    
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      unregisterPolling('forwarding-requests');
       abortRef.current?.abort();
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // do not include `load` to avoid interval duplication
+  }, [load, registerPolling, unregisterPolling]);
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
