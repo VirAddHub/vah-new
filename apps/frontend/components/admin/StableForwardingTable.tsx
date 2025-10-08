@@ -42,14 +42,16 @@ export default function StableForwardingTable() {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
-      if (mountedRef.current) {
-        if (data.ok && Array.isArray(data.data)) {
-          setRows(data.data);
-        } else {
-          setError(data.error || "Failed to load forwarding requests");
+        const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
+        if (mountedRef.current) {
+          if (data.ok && Array.isArray(data.data)) {
+            console.log('Forwarding requests data:', data.data);
+            console.log('First row sample:', data.data[0]);
+            setRows(data.data);
+          } else {
+            setError(data.error || "Failed to load forwarding requests");
+          }
         }
-      }
     } catch (e: any) {
       if (e?.name !== "AbortError" && mountedRef.current) setError(e.message ?? "Failed");
     } finally {
@@ -129,7 +131,25 @@ export default function StableForwardingTable() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {new Date(row.created_at).toLocaleDateString()}
+                  {(() => {
+                    try {
+                      // Handle both timestamp (number) and date string formats
+                      const date = typeof row.created_at === 'number' 
+                        ? new Date(row.created_at) 
+                        : new Date(row.created_at);
+                      
+                      // Check if date is valid
+                      if (isNaN(date.getTime())) {
+                        console.warn('Invalid date for row:', row.id, 'created_at:', row.created_at);
+                        return 'Invalid Date';
+                      }
+                      
+                      return date.toLocaleDateString();
+                    } catch (error) {
+                      console.error('Date parsing error for row:', row.id, 'created_at:', row.created_at, error);
+                      return 'Invalid Date';
+                    }
+                  })()}
                 </TableCell>
               </TableRow>
             ))}
