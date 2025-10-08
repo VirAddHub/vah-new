@@ -10,18 +10,18 @@ const router = Router();
 
 // Rate limiting for admin mail items - more generous for admin usage
 const adminMailItemsLimiter = rateLimit({
-  windowMs: 10_000, // 10 seconds
-  limit: 30, // 30 requests per 10 seconds (more generous than forwarding)
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    const u = (req as any).user;
-    return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
-  },
-  handler: (_req, res) => {
-    res.setHeader("Retry-After", "3");
-    return res.status(429).json({ ok: false, error: "rate_limited" });
-  },
+    windowMs: 10_000, // 10 seconds
+    limit: 30, // 30 requests per 10 seconds (more generous than forwarding)
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        const u = (req as any).user;
+        return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
+    },
+    handler: (_req, res) => {
+        res.setHeader("Retry-After", "3");
+        return res.status(429).json({ ok: false, error: "rate_limited" });
+    },
 });
 
 // Request coalescing cache to prevent duplicate requests

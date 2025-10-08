@@ -59,14 +59,14 @@ export default function StableForwardingTable() {
   useEffect(() => {
     load(); // initial load
     registerPolling('forwarding-requests', load);
-    
+
     // Abort on page unload/navigation
     const handleBeforeUnload = () => {
       abortRef.current?.abort();
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       unregisterPolling('forwarding-requests');
       abortRef.current?.abort();

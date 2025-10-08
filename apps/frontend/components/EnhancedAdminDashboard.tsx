@@ -76,7 +76,7 @@ import { VAHLogo } from "./VAHLogo";
 import UsersSection from "./admin/UsersSection";
 import PlansSection from "./admin/PlansSection";
 import { MailSection } from "./admin/MailSection";
-import { ForwardingSection } from "./admin/ForwardingSection";
+import StableForwardingTable from "./admin/StableForwardingTable";
 import { BillingSection } from "./admin/BillingSection";
 import { AnalyticsSection } from "./admin/AnalyticsSection";
 import { SettingsSection } from "./admin/SettingsSection";
@@ -135,10 +135,11 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         mutate: refetchUsers
     } = useAuthedSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
         keepPreviousData: true,
-        refreshInterval: 20000,
+        refreshInterval: 60000, // 1 minute instead of 20 seconds
         refreshWhenHidden: false,
         refreshWhenOffline: false,
-        revalidateOnFocus: true,
+        revalidateOnFocus: false, // Disable focus revalidation
+        revalidateOnReconnect: false, // Disable reconnect revalidation
     });
 
     const users = usersData?.items ?? [];
@@ -401,7 +402,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "mail":
                 return <MailSection />;
             case "forwarding":
-                return <ForwardingSection />;
+                return <StableForwardingTable />;
             case "billing":
                 return <BillingSection />;
             case "plans":
