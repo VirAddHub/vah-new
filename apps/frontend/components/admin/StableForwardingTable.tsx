@@ -113,10 +113,11 @@ export default function StableForwardingTable() {
         })
       : requests;
     
-    const requested = filteredRequests.filter(r => r.status === 'Requested');
+    // Map backend statuses to frontend sections
+    const requested = filteredRequests.filter(r => r.status === 'Requested' || r.status === 'Reviewed');
     const inProgress = filteredRequests.filter(r => r.status === 'Processing');
     const done = filteredRequests.filter(r => {
-      if (r.status === 'Dispatched') {
+      if (r.status === 'Dispatched' || r.status === 'Delivered') {
         // Only show if dispatched within last 30 days
         return r.dispatched_at ? r.dispatched_at > thirtyDaysAgo : false;
       }
@@ -154,7 +155,6 @@ export default function StableForwardingTable() {
     switch (status) {
       case 'In Progress': return 'start_processing';
       case 'Done': return 'mark_dispatched';
-      case 'Back to In Progress': return 'start_processing';
       default: return 'start_processing';
     }
   };
@@ -175,9 +175,9 @@ export default function StableForwardingTable() {
 
   // Render a request card
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
-    const canMoveToInProgress = section === 'requested';
-    const canMoveToDone = section === 'inProgress';
-    const canMoveBack = section === 'done';
+    // Determine what actions are available based on current status
+    const canMoveToInProgress = section === 'requested' && (request.status === 'Requested' || request.status === 'Reviewed');
+    const canMoveToDone = section === 'inProgress' && request.status === 'Processing';
     
     return (
       <Card key={request.id} className="mb-3">
@@ -223,16 +223,6 @@ export default function StableForwardingTable() {
                     disabled={updatingStatus === request.id}
                   >
                     {updatingStatus === request.id ? '...' : 'Mark Dispatched'}
-                  </Button>
-                )}
-                {canMoveBack && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'Back to In Progress')}
-                    disabled={updatingStatus === request.id}
-                  >
-                    {updatingStatus === request.id ? '...' : 'Move Back'}
                   </Button>
                 )}
               </div>
