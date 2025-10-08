@@ -119,7 +119,7 @@ router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
             AND column_name IN ('deleted_at', 'updated_at', 'created_at', 'forwarding_address')
             ORDER BY column_name
         `);
-        
+
         console.log('Current columns:');
         result.rows.forEach(row => {
             console.log(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);
@@ -128,7 +128,7 @@ router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
         // Check if deleted_at exists
         const deletedAtExists = result.rows.some(row => row.column_name === 'deleted_at');
         const forwardingAddressExists = result.rows.some(row => row.column_name === 'forwarding_address');
-        
+
         console.log(`deleted_at column exists: ${deletedAtExists}`);
         console.log(`forwarding_address column exists: ${forwardingAddressExists}`);
 
@@ -143,7 +143,7 @@ router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
         } else {
             console.log('✅ deleted_at column already exists');
         }
-        
+
         if (!forwardingAddressExists) {
             console.log('Adding forwarding_address column...');
             await pool.query('ALTER TABLE "user" ADD COLUMN forwarding_address text');
@@ -162,7 +162,7 @@ router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
             AND column_name IN ('deleted_at', 'forwarding_address')
             ORDER BY column_name
         `);
-        
+
         console.log('Updated columns:');
         verifyResult.rows.forEach(row => {
             console.log(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);

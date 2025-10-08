@@ -81,7 +81,6 @@ import StableForwardingTable from "./admin/StableForwardingTable";
 import { BillingSection } from "./admin/BillingSection";
 import { AnalyticsSection } from "./admin/AnalyticsSection";
 import { SettingsSection } from "./admin/SettingsSection";
-import { DebugInfo } from "./DebugInfo";
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -507,8 +506,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 {renderContent()}
             </main>
 
-            {/* Debug Info - Remove this after fixing */}
-            <DebugInfo />
         </div>
     );
 }

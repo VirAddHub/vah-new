@@ -6,7 +6,7 @@ import { api } from '../api';
 export interface ForwardingRequest {
     id: number;
     user_id: number;
-    letter_id: number;
+    mail_item_id: number;
     to_name: string;
     address1: string;
     address2?: string;
@@ -47,7 +47,7 @@ export const forwardingService = {
      * Create a new forwarding request
      */
     async createForwardingRequest(request: {
-        letter_id: number;
+        mail_item_id: number;
         to_name: string;
         address1: string;
         address2?: string;

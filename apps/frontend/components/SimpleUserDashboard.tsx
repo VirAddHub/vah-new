@@ -128,8 +128,8 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                                     <Mail className="h-6 w-6" />
                                     <span>View Mail</span>
                                 </Button>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="h-20 flex flex-col gap-2"
                                     onClick={() => onNavigate('forwarding')}
                                 >
@@ -148,20 +148,6 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                         </CardContent>
                     </Card>
 
-                    {/* Debug Info */}
-                    <Card className="mt-8">
-                        <CardHeader>
-                            <CardTitle>Debug Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2 text-sm">
-                                <p><strong>User ID:</strong> {user?.id || 'Not available'}</p>
-                                <p><strong>Email:</strong> {user?.email || 'Not available'}</p>
-                                <p><strong>Role:</strong> {user?.role || 'Not available'}</p>
-                                <p><strong>Token exists:</strong> {localStorage.getItem('vah_jwt') ? 'Yes' : 'No'}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
             </main>
         </div>

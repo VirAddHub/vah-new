@@ -122,28 +122,29 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         }
 
         const user = userResult.rows[0];
-        
+
         if (!user.forwarding_address) {
-            return res.status(400).json({ 
-                ok: false, 
+            return res.status(400).json({
+                ok: false,
                 error: 'no_forwarding_address',
                 message: 'Please add your forwarding address in Profile before requesting forwarding.'
             });
         }
 
         // Parse the stored forwarding address
-        const addressLines = user.forwarding_address.split('\n');
+        const addressLines = user.forwarding_address.split('\n').filter(line => line.trim() !== '');
         const name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
         const address1 = addressLines[1] || '';
-        const address2 = addressLines[2] || undefined;
+        const address2 = addressLines[2] || undefined; // Optional second address line
         const cityPostal = addressLines[addressLines.length - 2] || '';
         const country = addressLines[addressLines.length - 1] || 'GB';
-        
+
         const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
 
-        if (!address1 || !city || !postal) {
-            return res.status(400).json({ 
-                ok: false, 
+        // Only require name, address1, city, and postal - address2 is optional
+        if (!name || !address1 || !city || !postal) {
+            return res.status(400).json({
+                ok: false,
                 error: 'invalid_forwarding_address',
                 message: 'Your forwarding address is incomplete. Please update it in Profile.'
             });
