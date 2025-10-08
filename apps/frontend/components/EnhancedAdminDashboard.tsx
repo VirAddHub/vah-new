@@ -177,18 +177,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     });
     const [isLoadingOverview, setIsLoadingOverview] = useState(false);
 
-    // Real-time forwarding requests state
-    const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
-    const [isLoadingForwarding, setIsLoadingForwarding] = useState(false);
-    const [forwardingStats, setForwardingStats] = useState({
-        total: 0,
-        requested: 0,
-        reviewed: 0,
-        processing: 0,
-        dispatched: 0,
-        delivered: 0,
-        cancelled: 0
-    });
+    // Forwarding requests are now handled by StableForwardingTable component
 
     // ⛔️ Ensure we never setState after unmount
     const mountedRef = useRef(true);
@@ -202,51 +191,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // 🔒 Abort previous request before firing a new one
     const abortRef = useRef<AbortController | null>(null);
 
-    // Load forwarding requests in real-time
-    const loadForwardingRequests = useCallback(async () => {
-        // abort previous in-flight
-        if (abortRef.current) abortRef.current.abort();
-        abortRef.current = new AbortController();
-
-        try {
-            if (mountedRef.current) setIsLoadingForwarding(true);
-            const token = localStorage.getItem('vah_jwt');
-            const response = await fetch('/api/admin/forwarding/requests?limit=50&offset=0', {
-                headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                credentials: 'include',
-                signal: abortRef.current.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.ok && Array.isArray(data.data)) {
-                    const requests = data.data;
-                    if (mountedRef.current) {
-                        setForwardingRequests(requests);
-
-                        // Calculate stats
-                        const stats = {
-                            total: requests.length,
-                            requested: requests.filter((r: any) => r.status === 'Requested').length,
-                            reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
-                            processing: requests.filter((r: any) => r.status === 'Processing').length,
-                            dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
-                            delivered: requests.filter((r: any) => r.status === 'Delivered').length,
-                            cancelled: requests.filter((r: any) => r.status === 'Cancelled').length
-                        };
-                        setForwardingStats(stats);
-                    }
-                }
-            }
-        } catch (err: any) {
-            if (err?.name === "AbortError") return; // ignore aborted
-            console.error('Error loading forwarding requests:', err);
-        } finally {
-            if (mountedRef.current) setIsLoadingForwarding(false);
-        }
-    }, []);
+    // Forwarding requests loading is now handled by StableForwardingTable component
 
     // Load overview metrics using new service layer
     const loadOverview = useCallback(async () => {
@@ -303,27 +248,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     useEffect(() => {
         console.debug('[Admin] Loading overview on mount');
         void loadOverview();
-        void loadForwardingRequests();
     }, []); // Only run once on mount
 
-    // ✅ One interval only; don't include `loadForwardingRequests` in deps
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    useEffect(() => {
-        // initial load
-        loadForwardingRequests();
-
-        // start single interval
-        pollRef.current = setInterval(() => {
-            loadForwardingRequests();
-        }, 30_000);
-
-        // cleanup: clear timer + abort in-flight
-        return () => {
-            if (pollRef.current) clearInterval(pollRef.current);
-            if (abortRef.current) abortRef.current.abort();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // ← empty array on purpose
+    // Forwarding requests polling is now handled by StableForwardingTable component
 
     // Check system health using shared heartbeat
     useAdminHeartbeat(async () => {
@@ -382,9 +309,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     metrics={metrics}
                     overview={overview}
                     systemStatus={systemStatus}
-                    forwardingRequests={forwardingRequests}
-                    forwardingStats={forwardingStats}
-                    isLoadingForwarding={isLoadingForwarding}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
             case "users":
@@ -416,9 +340,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     metrics={metrics}
                     overview={overview}
                     systemStatus={systemStatus}
-                    forwardingRequests={forwardingRequests}
-                    forwardingStats={forwardingStats}
-                    isLoadingForwarding={isLoadingForwarding}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
         }
@@ -554,17 +475,11 @@ function OverviewSection({
     metrics,
     overview,
     systemStatus,
-    forwardingRequests,
-    forwardingStats,
-    isLoadingForwarding,
     onViewForwarding
 }: {
     metrics: any;
     overview: any;
     systemStatus: 'operational' | 'degraded' | 'down';
-    forwardingRequests: any[];
-    forwardingStats: any;
-    isLoadingForwarding: boolean;
     onViewForwarding: () => void;
 }) {
     const totals = safe(metrics?.totals, {});
@@ -626,74 +541,7 @@ function OverviewSection({
                 />
             </div>
 
-            {/* Forwarding Requests Summary */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Truck className="h-5 w-5" />
-                        Forwarding Requests
-                        {isLoadingForwarding && (
-                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                        )}
-                    </CardTitle>
-                    <Button variant="outline" size="sm" onClick={onViewForwarding}>
-                        View All
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{forwardingStats.requested}</div>
-                            <div className="text-sm text-muted-foreground">Requested</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-yellow-600">{forwardingStats.reviewed}</div>
-                            <div className="text-sm text-muted-foreground">Reviewed</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-purple-600">{forwardingStats.processing}</div>
-                            <div className="text-sm text-muted-foreground">Processing</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{forwardingStats.dispatched}</div>
-                            <div className="text-sm text-muted-foreground">Dispatched</div>
-                        </div>
-                    </div>
-
-                    {forwardingRequests.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="font-medium text-sm text-muted-foreground">Recent Requests</h4>
-                            <div className="space-y-1">
-                                {forwardingRequests.slice(0, 3).map((request: any) => (
-                                    <div key={request.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={
-                                                request.status === 'Requested' ? 'default' :
-                                                    request.status === 'Reviewed' ? 'secondary' :
-                                                        request.status === 'Processing' ? 'outline' :
-                                                            request.status === 'Dispatched' ? 'destructive' : 'secondary'
-                                            }>
-                                                {request.status}
-                                            </Badge>
-                                            <span className="text-sm font-medium">{request.to_name}</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {new Date(request.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {forwardingRequests.length === 0 && !isLoadingForwarding && (
-                        <div className="text-center py-4 text-muted-foreground">
-                            <Truck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No forwarding requests</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {/* Forwarding Requests are now handled by the dedicated Forwarding section */}
 
             {/* Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
