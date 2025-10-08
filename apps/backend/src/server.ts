@@ -45,6 +45,8 @@ import authRouter from "./server/routes/auth";
 // import { internalRouter } from "./routes/internal"; // No longer needed - admin-driven system
 import migrateRouter from "./routes/migrate";
 import triggerMigrateRouter from "./routes/trigger-migrate";
+import webhookMigrateRouter from "./routes/webhook-migrate";
+import directMigrateRouter from "./routes/direct-migrate";
 import webhookRouter from "./server/routes/webhooks";
 
 // NEW: Import missing endpoints

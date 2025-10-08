@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getPool } from '../../db/pool';
+import { getPool } from '../db';
 
 const router = Router();
 
@@ -35,7 +35,7 @@ router.post('/fix-columns', async (req: Request, res: Response) => {
         console.log(`deleted_at column exists: ${deletedAtExists}`);
         console.log(`forwarding_address column exists: ${forwardingAddressExists}`);
 
-        const changes = [];
+        const changes: string[] = [];
 
         // Add missing columns
         if (!deletedAtExists) {

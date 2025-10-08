@@ -4,19 +4,19 @@ import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { useState } from 'react';
 
-const money = (p?: number) => typeof p === 'number' ? `£${(p/100).toFixed(2)}` : '—';
-const formatDateUK = (v?: number|string|null) => {
+const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
+const formatDateUK = (v?: number | string | null) => {
   if (v == null) return '—';
   const n = typeof v === 'string' ? Number(v) : v;
   const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(v as any);
   return Number.isNaN(d.getTime()) ? '—' :
-    new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Europe/London'}).format(d);
+    new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/London' }).format(d);
 };
 
 export default function BillingPage() {
   const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
   const { data: invoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
-  const [busy, setBusy] = useState<string|null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
   const o = overview?.data;
   const items = invoices?.data?.items ?? [];
@@ -98,7 +98,7 @@ export default function BillingPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr><td className="py-6 text-gray-500" colSpan={4}>No invoices yet.</td></tr>
-              ) : items.map((x:any) => (
+              ) : items.map((x: any) => (
                 <tr key={x.id} className="border-t">
                   <td className="py-2">{formatDateUK(x.date)}</td>
                   <td className="py-2">{money(x.amount_pence)}</td>

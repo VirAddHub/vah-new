@@ -5,5 +5,5 @@ export async function POST(req: NextRequest) {
     method: 'POST', headers: { cookie: req.headers.get('cookie') ?? '' },
     credentials: 'include'
   });
-  return new NextResponse(await r.text(), { status: r.status, headers: { 'Content-Type': r.headers.get('Content-Type') ?? 'application/json' }});
+  return new NextResponse(await r.text(), { status: r.status, headers: { 'Content-Type': r.headers.get('Content-Type') ?? 'application/json' } });
 }

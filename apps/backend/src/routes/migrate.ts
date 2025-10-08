@@ -86,7 +86,7 @@ router.get('/migrate/status', async (req: Request, res: Response) => {
 
         res.json({
             ok: true,
-            tables: result.rows.map(r => r.table_name),
+            tables: result.rows.map((r: any) => r.table_name),
             migrationStatus: result.rows.length >= 3 ? 'complete' : 'pending'
         });
 
@@ -132,7 +132,7 @@ router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
         console.log(`deleted_at column exists: ${deletedAtExists}`);
         console.log(`forwarding_address column exists: ${forwardingAddressExists}`);
 
-        const changes = [];
+        const changes: string[] = [];
 
         // Add missing columns
         if (!deletedAtExists) {
