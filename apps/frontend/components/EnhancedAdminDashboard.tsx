@@ -120,7 +120,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     // Use authenticated SWR with proper key that triggers immediate fetch on any change
     // Note: The search input in UsersSection will handle debouncing before calling onFiltersChange
-    const usersKey: readonly [string, any] | null = activeSection === 'users'
+    const usersKey: readonly [string, any] | null = (activeSection === 'users' || activeSection === 'overview')
         ? ['/api/admin/users', usersQueryParams] as const
         : null;
 
@@ -259,7 +259,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // Calculate metrics from users data (from SWR)
     useEffect(() => {
         if (users && users.length > 0) {
-            const totalUsers = users.length;
+            const totalUsers = usersTotal; // Use the total from the API response
             const activeUsers = users.filter((u: any) => u.status === 'active').length;
             const pendingKyc = users.filter((u: any) => u.kyc_status === 'pending').length;
             const suspendedUsers = users.filter((u: any) => u.status === 'suspended').length;
@@ -279,8 +279,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 },
                 recent_activity: []
             });
+
+            // Also update the overview state with the correct user count
+            setOverview(prev => ({
+                ...prev,
+                users: totalUsers,
+                deletedUsers: users.filter((u: any) => u.deleted_at).length,
+            }));
         }
-    }, [users]);
+    }, [users, usersTotal]);
 
     // Load overview data on mount once
     useEffect(() => {
