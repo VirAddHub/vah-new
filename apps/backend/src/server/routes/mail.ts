@@ -94,8 +94,8 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 COALESCE(f.size, m.file_size) as file_size,
                 COALESCE(f.web_url, m.scan_file_url) as file_url,
                 CASE 
-                    WHEN m.received_at_ms IS NOT NULL AND (EXTRACT(EPOCH FROM now()) * 1000 - m.received_at_ms) > (30 * 24 * 60 * 60 * 1000) THEN true
-                    WHEN m.received_date IS NOT NULL AND (EXTRACT(EPOCH FROM now()) * 1000 - EXTRACT(EPOCH FROM m.received_date::timestamptz) * 1000) > (30 * 24 * 60 * 60 * 1000) THEN true
+                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
+                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
                     ELSE false
                 END as gdpr_expired
             FROM mail_item m
@@ -136,8 +136,8 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
                 f.web_url as file_url,
                 f.mime as file_mime,
                 CASE 
-                    WHEN m.received_at_ms IS NOT NULL AND (EXTRACT(EPOCH FROM now()) * 1000 - m.received_at_ms) > (30 * 24 * 60 * 60 * 1000) THEN true
-                    WHEN m.received_date IS NOT NULL AND (EXTRACT(EPOCH FROM now()) * 1000 - EXTRACT(EPOCH FROM m.received_date::timestamptz) * 1000) > (30 * 24 * 60 * 60 * 1000) THEN true
+                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
+                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
                     ELSE false
                 END as gdpr_expired
             FROM mail_item m
