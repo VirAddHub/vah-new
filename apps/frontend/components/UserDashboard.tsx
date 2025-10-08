@@ -381,7 +381,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <header className="bg-white border-b border-border sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-border sticky top-0 z-40 shadow-sm" style={{ position: 'relative' }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
@@ -398,11 +398,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" style={{ position: 'relative', zIndex: 50 }}>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onNavigate('settings')}
+                  onClick={() => {
+                    console.log('Settings button clicked');
+                    onNavigate('settings');
+                  }}
                   className="hidden sm:flex items-center gap-2"
                 >
                   <Settings className="h-4 w-4" />
@@ -412,7 +415,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onNavigate('profile')}
+                  onClick={() => {
+                    console.log('Profile button clicked');
+                    onNavigate('profile');
+                  }}
                   className="hidden sm:flex items-center gap-2"
                 >
                   <User className="h-4 w-4" />
@@ -422,7 +428,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onLogout}
+                  onClick={() => {
+                    console.log('Logout button clicked');
+                    onLogout();
+                  }}
                   className="flex items-center gap-2 text-destructive hover:text-destructive"
                 >
                   <LogOut className="h-4 w-4" />
