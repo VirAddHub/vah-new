@@ -179,40 +179,43 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             sets.push('dispatched_at = $3');
             vals.push(nowTimestamp);
 
-            // Add usage charges for forwarding
-            try {
-                const now = Date.now();
-                const month = new Date();
-                month.setDate(1);
-                month.setHours(0, 0, 0, 0);
-                const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+            // Add usage charges for forwarding (async, non-blocking)
+            const poolForUsage = pool; // Capture pool reference
+            setImmediate(async () => {
+                try {
+                    const now = Date.now();
+                    const month = new Date();
+                    month.setDate(1);
+                    month.setHours(0, 0, 0, 0);
+                    const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
 
-                // Get user_id from forwarding request
-                const userResult = await pool.query(`
-                    SELECT user_id FROM forwarding_request WHERE id = $1
-                `, [id]);
+                    // Get user_id from forwarding request
+                    const userResult = await poolForUsage.query(`
+                        SELECT user_id FROM forwarding_request WHERE id = $1
+                    `, [id]);
 
-                if (userResult.rows.length > 0) {
-                    const userId = userResult.rows[0].user_id;
+                    if (userResult.rows.length > 0) {
+                        const userId = userResult.rows[0].user_id;
 
-                    // £2 handling fee
-                    await pool.query(`
-                        INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
-                        VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
-                    `, [userId, yyyymm, now]);
+                        // £2 handling fee
+                        await poolForUsage.query(`
+                            INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
+                            VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
+                        `, [userId, yyyymm, now]);
 
-                    // TODO: Add postage at cost if you have a value
-                    // if (typeof postagePence === 'number' && postagePence > 0) {
-                    //     await pool.query(`
-                    //         INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
-                    //         VALUES ($1, $2, 'postage', 1, $3, 'Royal Mail postage', $4)
-                    //     `, [userId, yyyymm, postagePence, now]);
-                    // }
+                        // TODO: Add postage at cost if you have a value
+                        // if (typeof postagePence === 'number' && postagePence > 0) {
+                        //     await poolForUsage.query(`
+                        //         INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
+                        //         VALUES ($1, $2, 'postage', 1, $3, 'Royal Mail postage', $4)
+                        //     `, [userId, yyyymm, postagePence, now]);
+                        // }
+                    }
+                } catch (usageError) {
+                    console.error('[adminUpdateForwarding] Usage tracking failed:', usageError);
+                    // Don't fail the main operation if usage tracking fails
                 }
-            } catch (usageError) {
-                console.error('[adminUpdateForwarding] Usage tracking failed:', usageError);
-                // Don't fail the main operation if usage tracking fails
-            }
+            });
         }
         if (nextStatus === 'Delivered') {
             sets.push('delivered_at = $3');
@@ -258,54 +261,49 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             );
         } catch { }
 
-        // Send email notification when status is changed to "Dispatched" or "Delivered"
+        // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
         if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
-            try {
-                // Get user details for email
-                const userQuery = await pool.query(`
-                    SELECT u.email, u.first_name, u.last_name, fr.tracking_number, fr.courier
-                    FROM forwarding_request fr
-                    JOIN "user" u ON u.id = fr.user_id
-                    WHERE fr.id = $1
-                `, [id]);
-
-                if (userQuery.rows.length > 0) {
-                    const user = userQuery.rows[0];
-
-                    // Get the forwarding address from the request
-                    const addressQuery = await pool.query(`
-                        SELECT to_name, address1, address2, city, state, postal, country
-                        FROM forwarding_request
-                        WHERE id = $1
+            // Don't await - let it run in background
+            const poolForEmail = pool; // Capture pool reference
+            setImmediate(async () => {
+                try {
+                    // Get user details and forwarding address in one query
+                    const userQuery = await poolForEmail.query(`
+                        SELECT u.email, u.first_name, u.last_name, fr.tracking_number, fr.courier,
+                               fr.to_name, fr.address1, fr.address2, fr.city, fr.state, fr.postal, fr.country
+                        FROM forwarding_request fr
+                        JOIN "user" u ON u.id = fr.user_id
+                        WHERE fr.id = $1
                     `, [id]);
 
-                    let forwarding_address = 'Your forwarding address';
-                    if (addressQuery.rows.length > 0) {
-                        const addr = addressQuery.rows[0];
-                        const parts = [
-                            addr.to_name,
-                            addr.address1,
-                            addr.address2,
-                            addr.city,
-                            addr.state,
-                            addr.postal,
-                            addr.country
-                        ].filter(Boolean);
-                        forwarding_address = parts.join(', ');
-                    }
+                    if (userQuery.rows.length > 0) {
+                        const user = userQuery.rows[0];
 
-                    await sendMailForwarded({
-                        email: user.email,
-                        name: user.first_name || user.email,
-                        forwarding_address: forwarding_address,
-                        forwarded_date: new Date().toLocaleDateString('en-GB')
-                    });
-                    console.log(`[AdminForwarding] Sent delivery notification email to ${user.email} for request ${id}`);
+                        // Build forwarding address
+                        const parts = [
+                            user.to_name,
+                            user.address1,
+                            user.address2,
+                            user.city,
+                            user.state,
+                            user.postal,
+                            user.country
+                        ].filter(Boolean);
+                        const forwarding_address = parts.length > 0 ? parts.join(', ') : 'Your forwarding address';
+
+                        await sendMailForwarded({
+                            email: user.email,
+                            name: user.first_name || user.email,
+                            forwarding_address: forwarding_address,
+                            forwarded_date: new Date().toLocaleDateString('en-GB')
+                        });
+                        console.log(`[AdminForwarding] Sent delivery notification email to ${user.email} for request ${id}`);
+                    }
+                } catch (emailError) {
+                    console.error(`[AdminForwarding] Failed to send delivery email for request ${id}:`, emailError);
+                    // Don't fail the request - the status update succeeded, just email failed
                 }
-            } catch (emailError) {
-                console.error(`[AdminForwarding] Failed to send delivery email for request ${id}:`, emailError);
-                // Don't fail the request - the status update succeeded, just email failed
-            }
+            });
         }
 
         console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
