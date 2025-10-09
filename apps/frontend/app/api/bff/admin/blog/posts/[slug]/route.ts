@@ -27,7 +27,11 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
 
     const r = await fetch(targetUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', cookie },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Cookie': cookie,
+        'User-Agent': 'vah-bff'
+      },
       body: JSON.stringify(body),
       cache: 'no-store',
     });
@@ -59,7 +63,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
 
     const r = await fetch(targetUrl, {
       method: 'DELETE',
-      headers: { cookie },
+      headers: { 
+        'Cookie': cookie,
+        'User-Agent': 'vah-bff'
+      },
       cache: 'no-store',
     });
 

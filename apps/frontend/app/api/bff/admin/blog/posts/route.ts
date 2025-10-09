@@ -26,7 +26,11 @@ export async function POST(req: NextRequest) {
 
     const r = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', cookie },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Cookie': cookie,
+        'User-Agent': 'vah-bff'
+      },
       body: JSON.stringify(body),
       cache: 'no-store',
     });
