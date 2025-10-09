@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -59,14 +60,29 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-            <div className="w-full max-w-md">
-                <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
-                        <p className="text-muted-foreground">Sign in to your account</p>
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+            {/* Back Button */}
+            <div className="absolute top-6 left-6 z-10">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => router.push('/')}
+                    className="flex items-center gap-2 bg-background/90 backdrop-blur-md border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to home
+                </Button>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex items-center justify-center min-h-screen p-4">
+                <div className="w-full max-w-md">
+                    <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
+                            <p className="text-muted-foreground">Sign in to your account</p>
+                        </div>
 
                     {/* Error Alert */}
                     {error && (
@@ -128,13 +144,6 @@ export default function LoginPage() {
                             className="text-sm text-primary hover:underline"
                         >
                             Forgot your password?
-                        </button>
-                        <br />
-                        <button
-                            onClick={() => router.push('/')}
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            ← Back to home
                         </button>
                     </div>
                 </div>
