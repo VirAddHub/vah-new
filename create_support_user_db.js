@@ -5,8 +5,8 @@
  * Run this script on the Render server with DATABASE_URL environment variable
  */
 
-import { Pool } from 'pg';
-import bcrypt from 'bcrypt';
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
 
 // Database connection from environment
 const DATABASE_URL = process.env.DATABASE_URL;
