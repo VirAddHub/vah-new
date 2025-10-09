@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const matter = require("gray-matter");
-const { requireAdmin } = require("../middleware/auth");
+const { requireAdmin } = require("../src/middleware/auth");
 
 const router = express.Router();
 
