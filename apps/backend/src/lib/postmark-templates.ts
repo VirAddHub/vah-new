@@ -25,7 +25,6 @@ export const Templates = {
     MailScanned: "mail-scanned", // pragma: allowlist secret
     MailForwarded: "mail-forwarded", // pragma: allowlist secret
     MailAfterCancellation: "mail-received-after-cancellation", // pragma: allowlist secret
-    ForwardingCompleted: "forwarding-completed", // pragma: allowlist secret
 } as const;
 
 export type TemplateKey = keyof typeof Templates;

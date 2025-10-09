@@ -346,14 +346,14 @@ describe('template sends (guarded)', () => {
         );
     });
 
-    test('mail forwarded includes tracking details', async () => {
+    test('mail forwarded includes forwarding details', async () => {
         const postmark = (await import('postmark')).default as any;
         const { sendMailForwarded } = await import('../../src/lib/mailer');
         await sendMailForwarded({ 
             email: 'u@example.com', 
             name: 'User', 
-            tracking_number: 'TRK123456',
-            carrier: 'Royal Mail'
+            forwarding_address: '123 Test Street, London, SW1A 1AA, United Kingdom',
+            forwarded_date: '09/10/2025'
         });
 
         const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
@@ -362,9 +362,9 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'mail-forwarded',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    tracking_number: 'TRK123456',
-                    carrier: 'Royal Mail',
-                    name: 'User',
+                    first_name: 'User',
+                    forwarding_address: '123 Test Street, London, SW1A 1AA, United Kingdom',
+                    forwarded_date: '09/10/2025',
                 }),
             }),
         );

@@ -175,7 +175,7 @@ Everything else (templates, flags, webhook) can remain unchanged unless you also
 | `support-request-received` | `sendSupportRequestReceived` | `email` | `name`, `ticket_id`, `cta_url` |
 | `support-request-closed` | `sendSupportRequestClosed` | `email` | `name`, `ticket_id`, `cta_url` |
 | `mail-scanned` | `sendMailScanned` | `email` | `name`, `subject`, `cta_url` |
-| `mail-forwarded` | `sendMailForwarded` | `email` | `name`, `tracking_number`, `carrier`, `cta_url` |
+| `mail-forwarded` | `sendMailForwarded` | `email` | `name`, `forwarding_address`, `forwarded_date` |
 | `mail-received-after-cancellation` | `sendMailReceivedAfterCancellation` | `email` | `name`, `subject`, `cta_url` |
 
 > **Note:** See Postmark template for exact variables. Fields can be adjusted per template content.

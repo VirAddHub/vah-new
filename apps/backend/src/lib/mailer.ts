@@ -248,11 +248,11 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
         // Try the template first
         await sendTemplateEmail({
             to: email,
-            templateAlias: Templates.ForwardingCompleted,
+            templateAlias: Templates.MailForwarded,
             model: {
-                name: name,
-                forwardingAddress: forwarding_address || 'Your forwarding address',
-                forwardedDate: forwarded_date || new Date().toLocaleDateString('en-GB'),
+                first_name: name,
+                forwarding_address: forwarding_address || 'Your forwarding address',
+                forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
             },
         });
     } catch (error) {

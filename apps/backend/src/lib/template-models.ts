@@ -34,6 +34,11 @@ export type BuildArgs = {
   virtualAddressLine2?: string;
   postcode?: string;
 
+  forwardingAddress?: string;
+  forwarding_address?: string;
+  forwardedDate?: string;
+  forwarded_date?: string;
+
   reason?: string;
 } & AnyDict;
 
@@ -110,19 +115,13 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     dashboard_link: a.ctaUrl,
   }),
   [Templates.MailForwarded]: (a) => ({
-    name: a.name,
-    tracking_number: a.trackingNumber,
-    carrier: a.carrier,
-    cta_url: a.ctaUrl,
+    first_name: a.name,
+    forwarding_address: a.forwardingAddress || a.forwarding_address,
+    forwarded_date: a.forwardedDate || a.forwarded_date,
   }),
   [Templates.MailAfterCancellation]: (a) => ({
     name: a.name,
     subject: a.subjectLine,
     cta_url: a.ctaUrl,
-  }),
-  [Templates.ForwardingCompleted]: (a) => ({
-    name: a.name,
-    forwarding_address: a.forwardingAddress,
-    forwarded_date: a.forwardedDate,
   }),
 };
