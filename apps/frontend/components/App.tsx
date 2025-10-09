@@ -118,6 +118,8 @@ export function App() {
         return <KYCDashboard onNavigate={navigate} />;
       case 'profile':
         return <ProfilePage onNavigate={navigate} onGoBack={goBack} />;
+      case 'settings':
+        return <ProfilePage onNavigate={navigate} onGoBack={goBack} />;
       case 'admin':
         // Placeholder for admin page
         return (

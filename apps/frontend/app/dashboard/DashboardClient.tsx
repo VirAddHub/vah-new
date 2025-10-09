@@ -39,15 +39,18 @@ export default function DashboardClient() {
             case 'billing':
                 router.push('/billing');
                 break;
-            case 'dashboard-support':
             case 'contact':
+            case 'support':
                 router.push('/contact');
                 break;
-            case 'dashboard-profile':
+            case 'settings':
                 router.push('/settings/profile');
                 break;
-            case 'dashboard-settings':
-                router.push('/settings');
+            case 'account':
+                router.push('/account');
+                break;
+            case 'profile':
+                router.push('/settings/profile');
                 break;
             default:
                 console.log('Navigate to:', page);

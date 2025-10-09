@@ -19,7 +19,8 @@ import {
   Settings,
   User,
   Bell,
-  CreditCard
+  CreditCard,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -488,6 +489,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
               {/* Navigation Buttons */}
               <div className="flex items-center gap-2" style={{ position: 'relative', zIndex: 50 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    console.log('Support button clicked');
+                    onNavigate('contact');
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline">Support</span>
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="sm"
