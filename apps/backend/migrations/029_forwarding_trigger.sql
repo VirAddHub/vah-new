@@ -30,3 +30,4 @@ EXECUTE FUNCTION trg_forwarding_to_mail_item();
 
 -- Add index for the new column
 CREATE INDEX IF NOT EXISTS idx_mail_item_forwarding_status ON mail_item(forwarding_status);
+

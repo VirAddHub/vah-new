@@ -186,3 +186,4 @@ LIMIT 10;
 - Consider increasing frequency during high-volume periods
 
 This setup ensures your forwarding system processes events reliably without manual intervention.
+

@@ -70,3 +70,4 @@ WHERE status IN ('Requested','Processing');
 COMMENT ON TABLE forwarding_request IS 'Enhanced forwarding requests with full address details and state management';
 COMMENT ON TABLE forwarding_charge IS 'Tracks £2 forwarding charges for non-HMRC/Companies House mail';
 COMMENT ON TABLE forwarding_outbox IS 'Outbox pattern for retryable forwarding events';
+

@@ -14,3 +14,4 @@ export function canTransition(from: ForwardingState, to: ForwardingState): boole
     // @ts-expect-error
     return (LegalTransitions[from] || []).includes(to);
 }
+

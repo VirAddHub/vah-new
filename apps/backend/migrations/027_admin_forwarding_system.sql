@@ -23,3 +23,4 @@ CREATE INDEX IF NOT EXISTS idx_forwarding_request_dispatched ON forwarding_reque
 
 -- Note: The forwarding_outbox table can be kept but will not be used
 -- No cron jobs or drain endpoints needed for admin-driven workflow
+

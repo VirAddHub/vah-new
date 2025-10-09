@@ -63,9 +63,9 @@ export default function LoginPage() {
         <div className="min-h-screen bg-gradient-to-br from-background to-muted">
             {/* Back Button */}
             <div className="absolute top-6 left-6 z-10">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => router.push('/')}
                     className="flex items-center gap-2 bg-background/90 backdrop-blur-md border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
                 >
@@ -84,67 +84,68 @@ export default function LoginPage() {
                             <p className="text-muted-foreground">Sign in to your account</p>
                         </div>
 
-                    {/* Error Alert */}
-                    {error && (
-                        <Alert className="mb-6 border-destructive/50 text-destructive">
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
+                        {/* Error Alert */}
+                        {error && (
+                            <Alert className="mb-6 border-destructive/50 text-destructive">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
 
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                        {/* Login Form */}
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    disabled={loading}
+                                    className="h-11"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    disabled={loading}
+                                    className="h-11"
+                                />
+                            </div>
+
+                            <Button
+                                type="submit"
                                 disabled={loading}
-                                className="h-11"
-                            />
+                                className="w-full h-11 text-base font-semibold"
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
+                            </Button>
+                        </form>
+
+                        {/* Footer Links */}
+                        <div className="mt-6 text-center space-y-2">
+                            <button
+                                onClick={() => router.push('/signup')}
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Don't have an account? Sign up
+                            </button>
+                            <br />
+                            <button
+                                onClick={() => router.push('/reset-password')}
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Forgot your password?
+                            </button>
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                disabled={loading}
-                                className="h-11"
-                            />
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full h-11 text-base font-semibold"
-                        >
-                            {loading ? 'Signing in...' : 'Sign In'}
-                        </Button>
-                    </form>
-
-                    {/* Footer Links */}
-                    <div className="mt-6 text-center space-y-2">
-                        <button
-                            onClick={() => router.push('/signup')}
-                            className="text-sm text-primary hover:underline"
-                        >
-                            Don't have an account? Sign up
-                        </button>
-                        <br />
-                        <button
-                            onClick={() => router.push('/reset-password')}
-                            className="text-sm text-primary hover:underline"
-                        >
-                            Forgot your password?
-                        </button>
                     </div>
                 </div>
             </div>

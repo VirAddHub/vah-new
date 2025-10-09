@@ -17,3 +17,4 @@ CREATE INDEX IF NOT EXISTS idx_fr_created_at ON forwarding_request(created_at);
 -- Composite indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_fr_status_created ON forwarding_request(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_fr_user_status ON forwarding_request(user_id, status);
+
