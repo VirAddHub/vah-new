@@ -200,7 +200,7 @@ export default function ForwardingPage() {
             <div className="container mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
-                    <Button variant="outline" size="sm" onClick={() => router.back()}>
+                    <Button variant="outline" size="sm" onClick={() => router.back()} className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back
                     </Button>

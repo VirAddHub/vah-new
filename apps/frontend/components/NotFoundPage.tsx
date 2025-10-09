@@ -80,7 +80,7 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                             <div className="pt-2 text-xs text-muted-foreground">
                                 <button
                                     onClick={onGoBack || (() => window.history.back())}
-                                    className="inline-flex items-center hover:underline"
+                                    className="inline-flex items-center bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 px-3 py-1.5 rounded-md text-sm font-medium"
                                 >
                                     <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                                     Go back

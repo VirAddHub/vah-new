@@ -65,10 +65,10 @@ export default function Login({ onNavigate }: LoginProps) {
         <CardHeader className="text-center">
           <div className="flex items-center justify-between mb-4">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => window.location.href = '/'}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
             >
               <ArrowLeft className="h-4 w-4" />
               Go Back

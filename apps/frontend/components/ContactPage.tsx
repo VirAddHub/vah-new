@@ -466,6 +466,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             type="button"
                                             variant="outline"
                                             onClick={() => onNavigate?.("home")}
+                                            className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
                                         >
                                             Back to Home
                                         </Button>

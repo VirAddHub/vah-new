@@ -57,7 +57,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={onGoBack}>
+                        <Button variant="outline" size="sm" onClick={onGoBack} className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
                             Back to Home
                         </Button>
                         <Button variant="outline" size="sm" onClick={onLogout}>

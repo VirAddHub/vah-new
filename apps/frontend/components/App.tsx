@@ -85,7 +85,7 @@ export function App() {
               <p className="text-muted-foreground mb-4">Login functionality coming soon</p>
               <button
                 onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Back to Home
               </button>
@@ -102,7 +102,7 @@ export function App() {
               <p className="text-muted-foreground mb-4">User dashboard coming soon</p>
               <button
                 onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Back to Home
               </button>
@@ -124,7 +124,7 @@ export function App() {
               <p className="text-muted-foreground mb-4">Admin functionality coming soon</p>
               <button
                 onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Back to Home
               </button>
@@ -139,7 +139,7 @@ export function App() {
               <p className="text-muted-foreground mb-4">The page "{currentPage}" doesn't exist</p>
               <button
                 onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Back to Home
               </button>

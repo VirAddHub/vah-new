@@ -48,8 +48,9 @@ export function MobileTopBar({
                         aria-label="Go back"
                         className={cn(
                             'min-w-[44px] min-h-[44px] p-2 -ml-2',
-                            'rounded-lg hover:bg-black/5 dark:hover:bg-white/10',
-                            'transition-colors',
+                            'rounded-lg bg-background/90 backdrop-blur-sm border border-border',
+                            'hover:bg-accent hover:border-primary/20 text-foreground',
+                            'shadow-sm hover:shadow-md transition-all duration-200',
                             'flex items-center justify-center',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                         )}

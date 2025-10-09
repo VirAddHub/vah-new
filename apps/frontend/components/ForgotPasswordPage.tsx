@@ -368,7 +368,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         {/* Back Button */}
         <button
           onClick={onGoBack}
-          className="absolute top-8 left-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted"
+          className="absolute top-8 left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg"
         >
           <ArrowLeft className="h-4 w-4" />
           <span className="text-sm font-medium">Back</span>

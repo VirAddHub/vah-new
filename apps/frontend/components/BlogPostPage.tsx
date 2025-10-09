@@ -220,7 +220,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6">Blog Post Not Found</h1>
                     <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">The blog post you're looking for doesn't exist.</p>
-                    <Button onClick={onBack} variant="outline" className="px-6 py-3">
+                    <Button onClick={onBack} variant="outline" className="px-6 py-3 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back to Blog
                     </Button>
