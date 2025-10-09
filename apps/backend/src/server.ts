@@ -61,6 +61,9 @@ import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminBlogRouter from "./server/routes/admin-blog";
 import companiesHouseRouter from "./server/routes/companies-house";
 
+// Import maintenance service
+import { systemMaintenance } from "./server/services/maintenance";
+
 // Safe stubs for integrations until providers are wired
 import paymentsStubRouter from "./server/routes/payments-stub";
 import kycStubRouter from "./server/routes/kyc-stub";
@@ -571,6 +574,11 @@ async function start() {
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';
         const cors = process.env.CORS_ORIGINS || 'default';
+        
+        // Start maintenance service
+        systemMaintenance.start();
+        console.log('[boot] System maintenance service started');
+        
         // Print extremely explicit diagnostics for Render logs:
         console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
         console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');

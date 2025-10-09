@@ -8,6 +8,7 @@ import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
+import { concurrencyService } from '../services/concurrency';
 
 const router = Router();
 
@@ -86,6 +87,125 @@ router.get('/forwarding/requests',
 
 // PATCH /api/admin/forwarding/requests/:id  { action, courier?, tracking_number?, admin_notes? }
 router.patch('/forwarding/requests/:id', adminUpdateForwarding);
+
+// PATCH /api/admin/forwarding/requests/:id/safe - Concurrency-safe update
+router.patch('/forwarding/requests/:id/safe',
+    adminForwardingLimiter,
+    async (req, res) => {
+        console.log('[admin-forwarding] PATCH /forwarding/requests/:id/safe called');
+        console.log('[admin-forwarding] Params:', req.params);
+        console.log('[admin-forwarding] Body:', req.body);
+        console.log('[admin-forwarding] User:', req.user);
+
+        try {
+            const { id } = req.params;
+            const adminId = req.user?.id;
+            const { status, version, ...updateData } = req.body;
+
+            if (!adminId) {
+                return res.status(401).json({ ok: false, error: 'Unauthorized' });
+            }
+
+            // Check if resource is locked by another admin
+            const lockInfo = await concurrencyService.isResourceLocked('forwarding_request', parseInt(id));
+            if (lockInfo && lockInfo.adminId !== adminId) {
+                return res.status(409).json({
+                    ok: false,
+                    error: 'Resource is locked by another admin',
+                    lockInfo: {
+                        lockedBy: lockInfo.adminId,
+                        operation: lockInfo.operation,
+                        expiresAt: lockInfo.expiresAt
+                    }
+                });
+            }
+
+            // Acquire lock if not already locked
+            if (!lockInfo) {
+                const lockAcquired = await concurrencyService.acquireLock(
+                    'forwarding_request',
+                    parseInt(id),
+                    adminId,
+                    'updating',
+                    30 // 30 minutes
+                );
+
+                if (!lockAcquired) {
+                    return res.status(409).json({
+                        ok: false,
+                        error: 'Could not acquire lock - resource may be locked by another admin'
+                    });
+                }
+            }
+
+            try {
+                // Validate status transition if status is being changed
+                if (status) {
+                    const currentVersion = await concurrencyService.getResourceVersion('forwarding_request', parseInt(id));
+                    if (currentVersion === null) {
+                        return res.status(404).json({ ok: false, error: 'Forwarding request not found' });
+                    }
+
+                    // Use optimistic locking for status updates
+                    const result = await concurrencyService.updateForwardingRequestSafe(
+                        parseInt(id),
+                        adminId,
+                        status,
+                        version || currentVersion,
+                        updateData
+                    );
+
+                    if (!result.success) {
+                        return res.status(409).json({
+                            ok: false,
+                            error: result.errorMessage || 'Update failed',
+                            currentVersion: currentVersion
+                        });
+                    }
+
+                    // Log activity
+                    await concurrencyService.logAdminActivity(
+                        adminId,
+                        'forwarding_request',
+                        parseInt(id),
+                        'status_update',
+                        undefined,
+                        status,
+                        updateData,
+                        req.ip,
+                        req.get('User-Agent')
+                    );
+
+                    res.json({
+                        ok: true,
+                        data: {
+                            id: parseInt(id),
+                            status,
+                            version: result.newVersion,
+                            updatedAt: new Date().toISOString()
+                        }
+                    });
+                } else {
+                    // Non-status updates use regular update
+                    const result = await adminUpdateForwarding(parseInt(id), req.body, adminId);
+                    console.log('[admin-forwarding] Update result:', result);
+
+                    if (result.ok) {
+                        res.json(result);
+                    } else {
+                        res.status(400).json(result);
+                    }
+                }
+            } finally {
+                // Release lock
+                await concurrencyService.releaseLock('forwarding_request', parseInt(id), adminId);
+            }
+        } catch (error) {
+            console.error('[admin-forwarding] Error in PATCH /forwarding/requests/:id/safe:', error);
+            res.status(500).json({ ok: false, error: 'Internal server error' });
+        }
+    }
+);
 
 const CompleteForwardingSchema = z.object({
     mail_id: z.number().int().positive(),
