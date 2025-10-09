@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { toDateOrNull, nowMs } from '../helpers/time';
+import { TimestampUtils } from '../../lib/timestamp-utils';
 
 const router = Router();
 
@@ -336,14 +337,14 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                                 `UPDATE subscription 
                                  SET plan_name = $1, updated_at = $2
                                  WHERE user_id = $3 AND id = $4`,
-                                [plan.name, Date.now(), userId, subscriptionResult.rows[0].id]
+                                [plan.name, TimestampUtils.forTableField('subscription', 'updated_at'), userId, subscriptionResult.rows[0].id]
                             );
                         } else {
                             // Create new subscription record
                             await pool.query(
                                 `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
                                  VALUES ($1, $2, $3, 'active', $4, $4)`,
-                                [userId, plan.name, plan.interval, Date.now()]
+                                [userId, plan.name, plan.interval, TimestampUtils.forTableField('subscription', 'created_at'), TimestampUtils.forTableField('subscription', 'updated_at')]
                             );
                         }
 
@@ -385,7 +386,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
 
         // Always update the updated_at timestamp (use milliseconds for bigint field)
         updates.push(`updated_at = $${paramIndex++}`);
-        values.push(Date.now());
+        values.push(TimestampUtils.forTableField('user', 'updated_at'));
 
         values.push(userId);
 
@@ -402,7 +403,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
-        `, [adminId, userId, JSON.stringify(req.body), new Date()]);
+        `, [adminId, userId, JSON.stringify(req.body), TimestampUtils.forTableField('admin_audit', 'created_at')]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
+import { TimestampUtils } from '../../lib/timestamp-utils';
 
 export async function getBillingOverview(req: Request, res: Response) {
   const userId = Number(req.user!.id);
@@ -161,7 +162,7 @@ export async function postChangePlan(req: Request, res: Response) {
       // Update user's plan
       await pool.query(
         'UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3',
-        [plan_id, Date.now(), userId]
+        [plan_id, TimestampUtils.forTableField('user', 'updated_at'), userId]
       );
 
       // Update or create subscription record
@@ -176,14 +177,14 @@ export async function postChangePlan(req: Request, res: Response) {
           `UPDATE subscription 
            SET plan_name = $1, updated_at = $2
            WHERE user_id = $3 AND id = $4`,
-          [plan.name, Date.now(), userId, subscriptionResult.rows[0].id]
+          [plan.name, TimestampUtils.forTableField('subscription', 'updated_at'), userId, subscriptionResult.rows[0].id]
         );
       } else {
         // Create new subscription record
         await pool.query(
           `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
            VALUES ($1, $2, $3, 'active', $4, $4)`,
-          [userId, plan.name, plan.interval, Date.now()]
+          [userId, plan.name, plan.interval, TimestampUtils.forTableField('subscription', 'created_at'), TimestampUtils.forTableField('subscription', 'updated_at')]
         );
       }
 
@@ -197,7 +198,7 @@ export async function postChangePlan(req: Request, res: Response) {
           plan_name: plan.name,
           plan_interval: plan.interval,
           price_pence: plan.price_pence
-        }), Date.now()]
+        }), TimestampUtils.forTableField('admin_audit', 'created_at')]
       );
 
       await pool.query('COMMIT');

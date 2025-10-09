@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { pricingService } from '../services/pricing';
+import { TimestampUtils } from '../../lib/timestamp-utils';
 
 const router = Router();
 
@@ -329,7 +330,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                          WHERE user_id IN (
                              SELECT id FROM "user" WHERE plan_id = $2 AND deleted_at IS NULL
                          )`,
-                        [Date.now(), planId]
+                        [TimestampUtils.forTableField('plans', 'updated_at_ms'), planId]
                     );
 
                     console.log(`[PlanUpdate] Updated ${affectedUsersCount} subscription records for plan ${planId}`);
@@ -359,7 +360,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                     'plan',
                     planId,
                     JSON.stringify(auditDetails),
-                    Date.now()
+                    TimestampUtils.forTableField('admin_audit', 'created_at')
                 ]
             );
 
