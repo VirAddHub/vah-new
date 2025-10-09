@@ -144,21 +144,37 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
     try {
         const pool = getPool();
 
-        // load current
-        const cur = await pool.query('SELECT id, status, mail_item_id FROM forwarding_request WHERE id = $1', [id]);
-        if (cur.rowCount === 0) {
-            return res.status(404).json({ ok: false, error: 'not_found' });
-        }
+        // Start transaction for atomic operations
+        await pool.query('BEGIN');
 
-        const current = cur.rows[0].status;
-        if (!canMove(current, nextStatus)) {
-            return res.status(400).json({
-                ok: false,
-                error: 'illegal_transition',
-                from: current,
-                to: nextStatus
-            });
-        }
+        try {
+            // Single optimized query to get all needed data
+            const cur = await pool.query(`
+                SELECT fr.id, fr.status, fr.mail_item_id, fr.user_id,
+                       mi.subject, mi.tag,
+                       u.email, u.first_name, u.last_name,
+                       fr.to_name, fr.address1, fr.address2, fr.city, fr.state, fr.postal, fr.country
+                FROM forwarding_request fr
+                JOIN mail_item mi ON mi.id = fr.mail_item_id
+                JOIN "user" u ON u.id = fr.user_id
+                WHERE fr.id = $1
+            `, [id]);
+
+            if (cur.rowCount === 0) {
+                await pool.query('ROLLBACK');
+                return res.status(404).json({ ok: false, error: 'not_found' });
+            }
+
+            const current = cur.rows[0].status;
+            if (!canMove(current, nextStatus)) {
+                await pool.query('ROLLBACK');
+                return res.status(400).json({
+                    ok: false,
+                    error: 'illegal_transition',
+                    from: current,
+                    to: nextStatus
+                });
+            }
 
         // build update
         const now = new Date();
@@ -174,48 +190,21 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
         if (nextStatus === 'Processing') {
             sets.push('processing_at = $3');
             vals.push(nowTimestamp);
+            
+            // Add usage charges for forwarding (in transaction)
+            const month = new Date();
+            month.setDate(1);
+            month.setHours(0, 0, 0, 0);
+            const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+
+            await pool.query(`
+                INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
+                VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
+            `, [cur.rows[0].user_id, yyyymm, nowTimestamp]);
         }
         if (nextStatus === 'Dispatched') {
             sets.push('dispatched_at = $3');
             vals.push(nowTimestamp);
-
-            // Add usage charges for forwarding (async, non-blocking)
-            const poolForUsage = pool; // Capture pool reference
-            setImmediate(async () => {
-                try {
-                    const now = Date.now();
-                    const month = new Date();
-                    month.setDate(1);
-                    month.setHours(0, 0, 0, 0);
-                    const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-
-                    // Get user_id from forwarding request
-                    const userResult = await poolForUsage.query(`
-                        SELECT user_id FROM forwarding_request WHERE id = $1
-                    `, [id]);
-
-                    if (userResult.rows.length > 0) {
-                        const userId = userResult.rows[0].user_id;
-
-                        // £2 handling fee
-                        await poolForUsage.query(`
-                            INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
-                            VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
-                        `, [userId, yyyymm, now]);
-
-                        // TODO: Add postage at cost if you have a value
-                        // if (typeof postagePence === 'number' && postagePence > 0) {
-                        //     await poolForUsage.query(`
-                        //         INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
-                        //         VALUES ($1, $2, 'postage', 1, $3, 'Royal Mail postage', $4)
-                        //     `, [userId, yyyymm, postagePence, now]);
-                        // }
-                    }
-                } catch (usageError) {
-                    console.error('[adminUpdateForwarding] Usage tracking failed:', usageError);
-                    // Don't fail the main operation if usage tracking fails
-                }
-            });
         }
         if (nextStatus === 'Delivered') {
             sets.push('delivered_at = $3');
@@ -255,59 +244,55 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
         // audit (if table exists)
         try {
             await pool.query(
-                `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json)
-         VALUES ($1, $2, $3, $4)`,
-                [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes })]
+                `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json, created_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+                [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes }), nowTimestamp]
             );
         } catch { }
 
+        // Commit the transaction
+        await pool.query('COMMIT');
+
         // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
         if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
-            // Don't await - let it run in background
-            const poolForEmail = pool; // Capture pool reference
             setImmediate(async () => {
                 try {
-                    // Get user details and forwarding address in one query
-                    const userQuery = await poolForEmail.query(`
-                        SELECT u.email, u.first_name, u.last_name, fr.tracking_number, fr.courier,
-                               fr.to_name, fr.address1, fr.address2, fr.city, fr.state, fr.postal, fr.country
-                        FROM forwarding_request fr
-                        JOIN "user" u ON u.id = fr.user_id
-                        WHERE fr.id = $1
-                    `, [id]);
+                    // Use data we already have from the initial query
+                    const userData = cur.rows[0];
+                    
+                    // Build forwarding address
+                    const parts = [
+                        userData.to_name,
+                        userData.address1,
+                        userData.address2,
+                        userData.city,
+                        userData.state,
+                        userData.postal,
+                        userData.country
+                    ].filter(Boolean);
+                    const forwarding_address = parts.length > 0 ? parts.join(', ') : 'Your forwarding address';
 
-                    if (userQuery.rows.length > 0) {
-                        const user = userQuery.rows[0];
-
-                        // Build forwarding address
-                        const parts = [
-                            user.to_name,
-                            user.address1,
-                            user.address2,
-                            user.city,
-                            user.state,
-                            user.postal,
-                            user.country
-                        ].filter(Boolean);
-                        const forwarding_address = parts.length > 0 ? parts.join(', ') : 'Your forwarding address';
-
-                        await sendMailForwarded({
-                            email: user.email,
-                            name: user.first_name || user.email,
-                            forwarding_address: forwarding_address,
-                            forwarded_date: new Date().toLocaleDateString('en-GB')
-                        });
-                        console.log(`[AdminForwarding] Sent delivery notification email to ${user.email} for request ${id}`);
-                    }
+                    await sendMailForwarded({
+                        email: userData.email,
+                        name: userData.first_name || userData.email,
+                        forwarding_address: forwarding_address,
+                        forwarded_date: new Date().toLocaleDateString('en-GB')
+                    });
+                    console.log(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${userData.email} for request ${id}`);
                 } catch (emailError) {
-                    console.error(`[AdminForwarding] Failed to send delivery email for request ${id}:`, emailError);
-                    // Don't fail the request - the status update succeeded, just email failed
+                    console.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
                 }
             });
         }
 
-        console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
-        return res.json({ ok: true, data: upd.rows[0] });
+            console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
+            return res.json({ ok: true, data: upd.rows[0] });
+
+        } catch (transactionError) {
+            await pool.query('ROLLBACK');
+            throw transactionError;
+        }
+
     } catch (e: any) {
         console.error('[AdminForwarding] update error', e);
         return res.status(500).json({ ok: false, error: 'internal_error' });

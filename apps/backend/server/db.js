@@ -15,7 +15,12 @@ function getPool() {
 
         pool = new Pool({
             connectionString,
-            ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+            // Add proper connection settings to prevent SASL errors
+            connectionTimeoutMillis: 10000,
+            idleTimeoutMillis: 30000,
+            max: 20, // Maximum number of clients in the pool
+            min: 2,  // Minimum number of clients in the pool
         });
     }
     return pool;

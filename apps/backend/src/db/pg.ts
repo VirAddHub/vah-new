@@ -1,14 +1,24 @@
 import { Pool, PoolClient } from 'pg';
 import { BOOTSTRAP_SQL } from './schema';
 
+// Fix database connection configuration
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.PGSSLMODE ? { rejectUnauthorized: false } : undefined,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // Add proper connection settings
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 20, // Maximum number of clients in the pool
+  min: 2,  // Minimum number of clients in the pool
 });
 
 async function withClient<T>(fn: (c: PoolClient) => Promise<T>) {
   const c = await pool.connect();
-  try { return await fn(c); } finally { c.release(); }
+  try { 
+    return await fn(c); 
+  } finally { 
+    c.release(); 
+  }
 }
 
 export async function ensureSchema() {

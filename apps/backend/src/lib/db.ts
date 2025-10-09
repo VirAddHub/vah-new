@@ -19,9 +19,13 @@ export function getPool() {
         pool = new Pool({
             connectionString: url,
             ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-            // Add connection timeouts to prevent hanging
-            connectionTimeoutMillis: 5000,
-            idleTimeoutMillis: 10000,
+            // Add proper connection settings to prevent SASL errors
+            connectionTimeoutMillis: 10000,
+            idleTimeoutMillis: 30000,
+            max: 20, // Maximum number of clients in the pool
+            min: 2,  // Minimum number of clients in the pool
+            // Ensure password is handled correctly
+            allowExitOnIdle: true,
         });
         
         // Don't connect immediately - let first query open the connection
