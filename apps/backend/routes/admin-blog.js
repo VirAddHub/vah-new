@@ -63,7 +63,22 @@ function savePost(slug, postData) {
         noindex: postData.noindex || false
     };
 
-    const content = `---\n${matter.stringify('', frontMatter).replace(/^---\n/, '')}\n---\n\n${postData.content}`;
+    // Generate front matter manually to avoid gray-matter issues
+    const frontMatterString = Object.entries(frontMatter)
+        .map(([key, value]) => {
+            if (Array.isArray(value)) {
+                return `${key}: [${value.map(v => `"${v}"`).join(', ')}]`;
+            } else if (typeof value === 'string') {
+                return `${key}: "${value}"`;
+            } else if (typeof value === 'boolean') {
+                return `${key}: ${value}`;
+            } else {
+                return `${key}: "${value}"`;
+            }
+        })
+        .join('\n');
+    
+    const content = `---\n${frontMatterString}\n---\n\n${postData.content}`;
 
     fs.writeFileSync(filePath, content, "utf8");
     return true;
