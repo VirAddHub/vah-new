@@ -2,7 +2,6 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const matter = require("gray-matter");
-const { requireAdmin } = require("../src/middleware/auth");
 
 const router = express.Router();
 
@@ -81,7 +80,8 @@ function deletePost(slug) {
 }
 
 // GET /api/admin/blog/posts - List all blog posts
-router.get("/blog/posts", requireAdmin, (req, res) => {
+router.get("/blog/posts", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const includeDrafts = req.query.includeDrafts === "true";
         const slugs = getAllPostSlugs();
@@ -99,7 +99,8 @@ router.get("/blog/posts", requireAdmin, (req, res) => {
 });
 
 // GET /api/admin/blog/posts/:slug - Get specific blog post
-router.get("/blog/posts/:slug", requireAdmin, (req, res) => {
+router.get("/blog/posts/:slug", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
         const post = getPostBySlug(slug);
@@ -116,7 +117,8 @@ router.get("/blog/posts/:slug", requireAdmin, (req, res) => {
 });
 
 // POST /api/admin/blog/posts - Create new blog post
-router.post("/blog/posts", requireAdmin, (req, res) => {
+router.post("/blog/posts", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug, title, description, content, tags, cover, status, ogTitle, ogDesc, noindex } = req.body;
 
@@ -154,7 +156,8 @@ router.post("/blog/posts", requireAdmin, (req, res) => {
 });
 
 // PUT /api/admin/blog/posts/:slug - Update blog post
-router.put("/blog/posts/:slug", requireAdmin, (req, res) => {
+router.put("/blog/posts/:slug", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
         const { title, description, content, tags, cover, status, ogTitle, ogDesc, noindex } = req.body;
@@ -190,7 +193,8 @@ router.put("/blog/posts/:slug", requireAdmin, (req, res) => {
 });
 
 // DELETE /api/admin/blog/posts/:slug - Delete blog post
-router.delete("/blog/posts/:slug", requireAdmin, (req, res) => {
+router.delete("/blog/posts/:slug", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
 
@@ -213,7 +217,8 @@ router.delete("/blog/posts/:slug", requireAdmin, (req, res) => {
 });
 
 // GET /api/admin/blog/categories - Get all categories/tags
-router.get("/blog/categories", requireAdmin, (req, res) => {
+router.get("/blog/categories", (req, res) => {
+    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const slugs = getAllPostSlugs();
         const allTags = new Set();
