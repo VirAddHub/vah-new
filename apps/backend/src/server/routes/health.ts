@@ -83,7 +83,11 @@ async function healthCheckMinimal(req: Request, res: Response) {
     try {
         const pool = getPool();
         await pool.query('SELECT 1');
-        res.status(200).json({ status: 'ok' });
+        res.status(200).json({ 
+            status: 'ok',
+            version: '2.0.0-deployment-test',
+            timestamp: new Date().toISOString()
+        });
     } catch (error: any) {
         res.status(503).json({ status: 'error' });
     }
