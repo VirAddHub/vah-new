@@ -7,6 +7,63 @@ import { requireAdmin } from '../../middleware/auth';
 
 const router = Router();
 
+// Helper to format timestamps
+function formatTimestamp(timestamp: number | string): string {
+    if (typeof timestamp === 'string') {
+        // If it's an ISO string, parse it
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) {
+            return 'Invalid Date';
+        }
+        return date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+    // Assume it's a Unix timestamp in milliseconds
+    return new Date(timestamp).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+// Helper to format admin action titles
+function formatAdminAction(action: string): string {
+    const actionMap: { [key: string]: string } = {
+        'user_created': 'New User Created',
+        'user_updated': 'User Profile Updated',
+        'user_deleted': 'User Deleted',
+        'plan_update': 'Plan Details Updated',
+        'kyc_verified': 'KYC Status Verified',
+        'kyc_rejected': 'KYC Status Rejected',
+        'mail_processed': 'Mail Processed',
+        'forwarding_requested': 'Forwarding Requested',
+        'forwarding_dispatched': 'Mail Dispatched',
+        'forwarding_delivered': 'Mail Delivered'
+    };
+    return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+// Helper to format user activity titles
+function formatUserActivityTitle(action: string): string {
+    const actionMap: { [key: string]: string } = {
+        'login': 'User Login',
+        'signup': 'New User Registration',
+        'mail_viewed': 'Mail Viewed',
+        'mail_downloaded': 'Mail Downloaded',
+        'forwarding_requested': 'Forwarding Requested',
+        'profile_updated': 'Profile Updated',
+        'password_changed': 'Password Changed'
+    };
+    return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+// Helper to format mail event titles
+function formatMailEventTitle(eventType: string): string {
+    const eventMap: { [key: string]: string } = {
+        'mail.received': 'Mail Received',
+        'mail.scanned': 'Mail Scanned',
+        'mail.forwarded': 'Mail Forwarded',
+        'mail.downloaded': 'Mail Downloaded',
+        'mail.deleted': 'Mail Deleted'
+    };
+    return eventMap[eventType] || eventType.replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 /**
  * GET /api/admin/activity
  * Get recent activity for admin dashboard
@@ -15,98 +72,121 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
     try {
         const pool = getPool();
 
-        // Get recent activity from multiple sources
-        const [
-            adminLogsResult,
-            userActivityResult,
-            mailEventsResult,
-            recentUsersResult,
-            recentMailResult
-        ] = await Promise.all([
-            // Recent admin actions
-            pool.query(`
-                SELECT 
-                    al.id,
-                    al.created_at,
-                    al.action_type,
-                    al.target_type,
-                    al.target_id,
-                    al.details,
-                    u.email as admin_email,
-                    u.first_name as admin_first_name,
-                    u.last_name as admin_last_name
-                FROM admin_log al
-                LEFT JOIN "user" u ON u.id = al.admin_user_id
-                ORDER BY al.created_at DESC
-                LIMIT 10
-            `),
+        // Initialize empty results
+        let adminLogsResult = { rows: [] };
+        let userActivityResult = { rows: [] };
+        let mailEventsResult = { rows: [] };
+        let recentUsersResult = { rows: [] };
+        let recentMailResult = { rows: [] };
 
-            // Recent user activities
-            pool.query(`
-                SELECT 
-                    al.id,
-                    al.created_at,
-                    al.action,
-                    al.details,
-                    u.email as user_email,
-                    u.first_name as user_first_name,
-                    u.last_name as user_last_name
-                FROM activity_log al
-                LEFT JOIN "user" u ON u.id = al.user_id
-                ORDER BY al.created_at DESC
-                LIMIT 10
-            `),
+        // Try to get data from tables, but handle missing tables gracefully
+        try {
+            // Check if tables exist first
+            const tableCheck = await pool.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name IN ('admin_log', 'activity_log', 'mail_event')
+            `);
+            
+            const existingTables = tableCheck.rows.map(row => row.table_name);
+            
+            // Get recent activity from existing tables only
+            if (existingTables.includes('admin_log')) {
+                try {
+                    adminLogsResult = await pool.query(`
+                        SELECT 
+                            al.id,
+                            al.created_at,
+                            al.action_type,
+                            al.target_type,
+                            al.target_id,
+                            al.details,
+                            u.email as admin_email,
+                            u.first_name as admin_first_name,
+                            u.last_name as admin_last_name
+                        FROM admin_log al
+                        LEFT JOIN "user" u ON u.id = al.admin_user_id
+                        ORDER BY al.created_at DESC
+                        LIMIT 10
+                    `);
+                } catch (error) {
+                    console.warn('[AdminActivity] Error querying admin_log:', error.message);
+                }
+            }
+            
+            if (existingTables.includes('activity_log')) {
+                try {
+                    userActivityResult = await pool.query(`
+                        SELECT 
+                            al.id,
+                            al.created_at,
+                            al.action,
+                            al.details,
+                            u.email as user_email,
+                            u.first_name as user_first_name,
+                            u.last_name as user_last_name
+                        FROM activity_log al
+                        LEFT JOIN "user" u ON u.id = al.user_id
+                        ORDER BY al.created_at DESC
+                        LIMIT 10
+                    `);
+                } catch (error) {
+                    console.warn('[AdminActivity] Error querying activity_log:', error.message);
+                }
+            }
+            
+            if (existingTables.includes('mail_event')) {
+                try {
+                    mailEventsResult = await pool.query(`
+                        SELECT 
+                            me.id,
+                            me.created_at,
+                            me.event_type,
+                            me.details,
+                            mi.subject,
+                            u.email as user_email,
+                            u.first_name as user_first_name,
+                            u.last_name as user_last_name
+                        FROM mail_event me
+                        LEFT JOIN mail_item mi ON mi.id = me.mail_item
+                        LEFT JOIN "user" u ON u.id = mi.user_id
+                        ORDER BY me.created_at DESC
+                        LIMIT 10
+                    `);
+                } catch (error) {
+                    console.warn('[AdminActivity] Error querying mail_event:', error.message);
+                }
+            }
+            
+        } catch (tableError) {
+            console.warn('[AdminActivity] Error checking table existence:', tableError.message);
+        }
 
-            // Recent mail events
-            pool.query(`
-                SELECT 
-                    me.id,
-                    me.created_at,
-                    me.event_type,
-                    me.details,
-                    mi.subject,
-                    u.email as user_email,
-                    u.first_name as user_first_name,
-                    u.last_name as user_last_name
-                FROM mail_event me
-                LEFT JOIN mail_item mi ON mi.id = me.mail_item
-                LEFT JOIN "user" u ON u.id = mi.user_id
-                ORDER BY me.created_at DESC
-                LIMIT 10
-            `),
-
-            // Recent user registrations
-            pool.query(`
-                SELECT 
-                    id,
-                    created_at,
-                    email,
-                    first_name,
-                    last_name,
-                    'user_registered' as action_type
+        // Always get recent users and mail (these tables should exist)
+        try {
+            recentUsersResult = await pool.query(`
+                SELECT id, email, first_name, last_name, created_at
                 FROM "user"
                 WHERE deleted_at IS NULL
                 ORDER BY created_at DESC
-                LIMIT 5
-            `),
+                LIMIT 10
+            `);
+        } catch (error) {
+            console.warn('[AdminActivity] Error querying users:', error.message);
+        }
 
-            // Recent mail items
-            pool.query(`
-                SELECT 
-                    mi.id,
-                    mi.created_at,
-                    mi.subject,
-                    mi.status,
-                    u.email as user_email,
-                    u.first_name as user_first_name,
-                    u.last_name as user_last_name
-                FROM mail_item mi
-                LEFT JOIN "user" u ON u.id = mi.user_id
-                WHERE mi.deleted = false
-                ORDER BY mi.created_at DESC
-                LIMIT 5
-            `)
-        ]);
+        try {
+            recentMailResult = await pool.query(`
+                SELECT id, subject, sender_name, created_at, user_id
+                FROM mail_item
+                WHERE deleted = false
+                ORDER BY created_at DESC
+                LIMIT 10
+            `);
+        } catch (error) {
+            console.warn('[AdminActivity] Error querying mail_items:', error.message);
+        }
 
         // Format activities for display
         const activities: any[] = [];
@@ -115,25 +195,25 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         adminLogsResult.rows.forEach((log: any) => {
             activities.push({
                 id: `admin_${log.id}`,
-                type: 'admin_action',
-                title: formatAdminActionTitle(log.action_type, log.target_type),
-                description: formatAdminActionDescription(log),
-                time: formatTimeAgo(log.created_at),
+                type: 'admin',
+                title: formatAdminAction(log.action_type),
+                description: `${log.admin_first_name || log.admin_email} ${log.action_type.replace(/_/g, ' ')}`,
+                time: formatTimestamp(log.created_at),
                 timestamp: log.created_at,
-                admin: log.admin_email ? `${log.admin_first_name} ${log.admin_last_name}` : 'System'
+                details: log.details
             });
         });
 
         // Add user activities
-        userActivityResult.rows.forEach((activity: any) => {
+        userActivityResult.rows.forEach((log: any) => {
             activities.push({
-                id: `user_${activity.id}`,
-                type: 'user_activity',
-                title: formatUserActivityTitle(activity.action),
-                description: formatUserActivityDescription(activity),
-                time: formatTimeAgo(activity.created_at),
-                timestamp: activity.created_at,
-                user: activity.user_email ? `${activity.user_first_name} ${activity.user_last_name}` : 'Unknown User'
+                id: `user_${log.id}`,
+                type: 'user',
+                title: formatUserActivityTitle(log.action),
+                description: `${log.user_first_name || log.user_email} ${log.action.replace(/_/g, ' ')}`,
+                time: formatTimestamp(log.created_at),
+                timestamp: log.created_at,
+                details: log.details
             });
         });
 
@@ -141,85 +221,67 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         mailEventsResult.rows.forEach((event: any) => {
             activities.push({
                 id: `mail_${event.id}`,
-                type: 'mail_event',
+                type: 'mail',
                 title: formatMailEventTitle(event.event_type),
-                description: formatMailEventDescription(event),
-                time: formatTimeAgo(event.created_at),
+                description: `${event.user_first_name || event.user_email} - ${event.subject || 'Mail Event'}`,
+                time: formatTimestamp(event.created_at),
                 timestamp: event.created_at,
-                user: event.user_email ? `${event.user_first_name} ${event.user_last_name}` : 'Unknown User'
+                details: event.details
             });
         });
 
-        // Add recent users
+        // Add recent user signups
         recentUsersResult.rows.forEach((user: any) => {
             activities.push({
-                id: `new_user_${user.id}`,
-                type: 'user_registration',
+                id: `signup_${user.id}`,
+                type: 'signup',
                 title: 'New User Registration',
-                description: `${user.first_name} ${user.last_name} (${user.email}) joined`,
-                time: formatTimeAgo(user.created_at),
+                description: `${user.first_name || user.email} signed up`,
+                time: formatTimestamp(user.created_at),
                 timestamp: user.created_at,
-                user: `${user.first_name} ${user.last_name}`
+                details: { email: user.email }
             });
         });
 
         // Add recent mail items
         recentMailResult.rows.forEach((mail: any) => {
             activities.push({
-                id: `new_mail_${mail.id}`,
-                type: 'mail_received',
-                title: 'New Mail Received',
-                description: `"${mail.subject || 'No subject'}" for ${mail.user_first_name} ${mail.user_last_name}`,
-                time: formatTimeAgo(mail.created_at),
+                id: `mail_item_${mail.id}`,
+                type: 'mail_item',
+                title: 'Mail Received',
+                description: `${mail.subject || 'Mail Item'} received`,
+                time: formatTimestamp(mail.created_at),
                 timestamp: mail.created_at,
-                user: `${mail.user_first_name} ${mail.user_last_name}`
+                details: { subject: mail.subject, sender: mail.sender_name }
             });
         });
 
-        // Sort by timestamp and limit to 20 most recent
-        activities.sort((a, b) => b.timestamp - a.timestamp);
-        const recentActivities = activities.slice(0, 20);
+        // Sort by timestamp (most recent first)
+        activities.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-        // Get today's counts
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayStartMs = todayStart.getTime();
+        // Calculate today's stats
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTimestamp = today.getTime();
 
-        const [
-            todaySignupsResult,
-            todayMailResult,
-            todayForwardingResult
-        ] = await Promise.all([
-            // New signups today
-            pool.query(`
-                SELECT COUNT(*) as count
-                FROM "user"
-                WHERE created_at >= $1 AND deleted_at IS NULL
-            `, [todayStartMs]),
+        const todaySignups = recentUsersResult.rows.filter((user: any) => 
+            user.created_at >= todayTimestamp
+        ).length;
 
-            // Mail processed today
-            pool.query(`
-                SELECT COUNT(*) as count
-                FROM mail_item
-                WHERE created_at >= $1 AND deleted = false
-            `, [todayStartMs]),
+        const todayMail = recentMailResult.rows.filter((mail: any) => 
+            mail.created_at >= todayTimestamp
+        ).length;
 
-            // Forwarding requests today
-            pool.query(`
-                SELECT COUNT(*) as count
-                FROM forwarding_request
-                WHERE created_at >= $1
-            `, [todayStartMs])
-        ]);
-
-        const todaySignups = parseInt(todaySignupsResult.rows[0]?.count || '0');
-        const todayMail = parseInt(todayMailResult.rows[0]?.count || '0');
-        const todayForwarding = parseInt(todayForwardingResult.rows[0]?.count || '0');
+        const todayForwarding = activities.filter((activity: any) => 
+            activity.type === 'mail' && 
+            activity.title.includes('Forward') &&
+            activity.timestamp >= todayTimestamp
+        ).length;
 
         return res.json({
             ok: true,
             data: {
-                activities: recentActivities,
+                activities: activities.slice(0, 20), // Limit to 20 most recent
                 todayStats: {
                     newSignups: todaySignups,
                     mailProcessed: todayMail,
@@ -237,128 +299,5 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         });
     }
 });
-
-// Helper functions to format activity data
-function formatAdminActionTitle(actionType: string, targetType?: string): string {
-    const actionMap: { [key: string]: string } = {
-        'user_update': 'User Updated',
-        'user_create': 'User Created',
-        'user_delete': 'User Deleted',
-        'mail_update': 'Mail Item Updated',
-        'mail_delete': 'Mail Item Deleted',
-        'plan_update': 'Plan Updated',
-        'kyc_verify': 'KYC Verification',
-        'forwarding_update': 'Forwarding Request Updated',
-        'system_config': 'System Configuration Changed'
-    };
-
-    return actionMap[actionType] || `${actionType} on ${targetType || 'unknown'}`;
-}
-
-function formatAdminActionDescription(log: any): string {
-    if (log.details) {
-        try {
-            const details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
-            if (details.changes) {
-                return `Changes: ${Object.keys(details.changes).join(', ')}`;
-            }
-            if (details.reason) {
-                return details.reason;
-            }
-        } catch (e) {
-            return log.details;
-        }
-    }
-
-    if (log.target_type && log.target_id) {
-        return `${log.target_type} #${log.target_id}`;
-    }
-
-    return 'Admin action performed';
-}
-
-function formatUserActivityTitle(action: string): string {
-    const actionMap: { [key: string]: string } = {
-        'login': 'User Login',
-        'logout': 'User Logout',
-        'mail_view': 'Mail Viewed',
-        'mail_download': 'Mail Downloaded',
-        'forwarding_request': 'Forwarding Requested',
-        'profile_update': 'Profile Changed'
-    };
-
-    return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-function formatUserActivityDescription(activity: any): string {
-    if (activity.details) {
-        try {
-            const details = typeof activity.details === 'string' ? JSON.parse(activity.details) : activity.details;
-            if (details.mail_item_id) {
-                return `Mail item #${details.mail_item_id}`;
-            }
-            if (details.ip_address) {
-                return `From IP: ${details.ip_address}`;
-            }
-        } catch (e) {
-            return activity.details;
-        }
-    }
-
-    return 'User activity';
-}
-
-function formatMailEventTitle(eventType: string): string {
-    const eventMap: { [key: string]: string } = {
-        'mail.received': 'Mail Received',
-        'mail.scanned': 'Mail Scanned',
-        'mail.forwarded': 'Mail Forwarded',
-        'mail.deleted': 'Mail Deleted',
-        'forwarding.requested': 'Forwarding Requested',
-        'forwarding.processed': 'Forwarding Processed',
-        'forwarding.dispatched': 'Mail Dispatched',
-        'forwarding.delivered': 'Mail Delivered'
-    };
-
-    return eventMap[eventType] || eventType.replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-function formatMailEventDescription(event: any): string {
-    if (event.subject) {
-        return `"${event.subject}"`;
-    }
-
-    if (event.details) {
-        try {
-            const details = typeof event.details === 'string' ? JSON.parse(event.details) : event.details;
-            if (details.tracking_number) {
-                return `Tracking: ${details.tracking_number}`;
-            }
-            if (details.courier) {
-                return `Courier: ${details.courier}`;
-            }
-        } catch (e) {
-            return event.details;
-        }
-    }
-
-    return 'Mail event occurred';
-}
-
-function formatTimeAgo(timestamp: number): string {
-    const now = Date.now();
-    const diff = now - timestamp;
-
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-
-    return new Date(timestamp).toLocaleDateString();
-}
 
 export default router;
