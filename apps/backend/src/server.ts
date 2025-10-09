@@ -58,7 +58,6 @@ import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminStatsRouter from "./server/routes/admin-stats";
 import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
-import adminBlogRouter from "./server/routes/admin-blog";
 import companiesHouseRouter from "./server/routes/companies-house";
 
 // Import maintenance service
@@ -418,8 +417,6 @@ async function start() {
     logger.info('[mount] /api/admin (plans) mounted');
     app.use('/api/admin', adminMailItemsRouter);
     logger.info('[mount] /api/admin (mail-items) mounted');
-    app.use('/api/admin', adminBlogRouter);
-    logger.info('[mount] /api/admin (blog) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api/kyc', kycRouter);
@@ -574,11 +571,11 @@ async function start() {
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';
         const cors = process.env.CORS_ORIGINS || 'default';
-        
+
         // Start maintenance service
         systemMaintenance.start();
         console.log('[boot] System maintenance service started');
-        
+
         // Print extremely explicit diagnostics for Render logs:
         console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
         console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');

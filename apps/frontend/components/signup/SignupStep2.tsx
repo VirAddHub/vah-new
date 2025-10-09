@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
+import { AddressCompleter } from '../ui/AddressCompleter';
 import { API_BASE } from '@/lib/config';
 import { useSimpleDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
@@ -610,84 +611,29 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="address_line1" className="flex items-center gap-2">
-                                    Address Line 1 <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="address_line1"
-                                    value={formData.address_line1}
-                                    onChange={(e) => updateFormData('address_line1', e.target.value)}
-                                    autoComplete="address-line1"
-                                    className={errors.address_line1 ? 'border-destructive' : ''}
-                                />
-                                {errors.address_line1 && (
-                                    <p className="text-sm text-destructive">{errors.address_line1}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="address_line2">Address Line 2</Label>
-                                <Input
-                                    id="address_line2"
-                                    value={formData.address_line2}
-                                    onChange={(e) => updateFormData('address_line2', e.target.value)}
-                                    autoComplete="address-line2"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="city" className="flex items-center gap-2">
-                                        City <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="city"
-                                        value={formData.city}
-                                        onChange={(e) => updateFormData('city', e.target.value)}
-                                        autoComplete="address-level2"
-                                        className={errors.city ? 'border-destructive' : ''}
-                                    />
-                                    {errors.city && (
-                                        <p className="text-sm text-destructive">{errors.city}</p>
-                                    )}
+                            {/* Forwarding Address - Enhanced with Address Completer */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+                                    <MapPin className="h-5 w-5" />
+                                    Forwarding Address
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="postcode" className="flex items-center gap-2">
-                                        Postcode <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="postcode"
-                                        value={formData.postcode}
-                                        onChange={(e) => updateFormData('postcode', e.target.value)}
-                                        autoComplete="postal-code"
-                                        className={errors.postcode ? 'border-destructive' : ''}
-                                    />
-                                    {errors.postcode && (
-                                        <p className="text-sm text-destructive">{errors.postcode}</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="forward_country" className="flex items-center gap-2">
-                                    Country <span className="text-destructive">*</span>
-                                </Label>
-                                <Select value={formData.forward_country} onValueChange={(value) => updateFormData('forward_country', value)}>
-                                    <SelectTrigger className={errors.forward_country ? 'border-destructive' : ''}>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {countries.map((country) => (
-                                            <SelectItem key={country.value} value={country.value}>
-                                                {country.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.forward_country && (
-                                    <p className="text-sm text-destructive">{errors.forward_country}</p>
-                                )}
+                                <p className="text-sm text-muted-foreground">
+                                    This is where we'll forward your mail. Use our smart address finder to quickly select your address.
+                                </p>
+                                
+                                <AddressCompleter
+                                    onAddressSelect={(address) => {
+                                        updateFormData('address_line1', address.address_line_1);
+                                        updateFormData('address_line2', address.address_line_2 || '');
+                                        updateFormData('city', address.city);
+                                        updateFormData('postcode', address.postcode);
+                                        updateFormData('forward_country', address.country);
+                                    }}
+                                    placeholder="Start typing your forwarding address..."
+                                    label="Forwarding Address"
+                                    required={true}
+                                    className="w-full"
+                                />
                             </div>
                         </div>
                     </div>
