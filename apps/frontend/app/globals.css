@@ -15,7 +15,7 @@
 }
 
 /* Montserrat for Corporate/Tech Aesthetic - Multi-layer font loading strategy */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 /* FontLoader integration - ensures Montserrat is applied when loaded */
 html.fonts-loaded *,
@@ -42,6 +42,7 @@ html {
 
 /* Respect user's motion preferences (accessibility) */
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -157,54 +158,58 @@ iframe {
         /* airy surfaces */
         --background: 0 0% 97%;
         /* #F8F8F6 */
-        --foreground: 210 37% 3%;
-        /* #0f1720 - much darker */
+        --foreground: 210 20% 15%;
+        /* Improved contrast for better readability */
 
         --card: 0 0% 100%;
         /* #ffffff */
-        --card-foreground: 210 37% 3%;
+        --card-foreground: 210 20% 15%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 210 37% 3%;
+        --popover-foreground: 210 20% 15%;
 
-        /* brand green */
-        --primary: 145 41% 22%;
-        /* #214E34 */
+        /* Enhanced brand green */
+        --primary: 145 50% 25%;
+        /* More vibrant primary */
         --primary-foreground: 0 0% 100%;
+        --primary-hover: 145 50% 20%;
+        /* Darker hover state */
 
-        /* scale (optional) */
-        --primary-50: 145 41% 97%;
-        --primary-100: 145 41% 90%;
-        --primary-200: 145 41% 76%;
-        --primary-300: 145 41% 65%;
-        --primary-400: 145 41% 57%;
-        --primary-500: 145 41% 50%;
-        --primary-600: 145 41% 22%;
-        --primary-700: 145 45% 18%;
-        --primary-800: 145 50% 15%;
-        --primary-900: 145 55% 12%;
+        /* Enhanced primary scale */
+        --primary-50: 145 50% 97%;
+        --primary-100: 145 50% 90%;
+        --primary-200: 145 50% 80%;
+        --primary-300: 145 50% 70%;
+        --primary-400: 145 50% 60%;
+        --primary-500: 145 50% 50%;
+        --primary-600: 145 50% 40%;
+        --primary-700: 145 50% 30%;
+        --primary-800: 145 50% 20%;
+        --primary-900: 145 50% 15%;
 
-        /* calm utility */
+        /* Enhanced utility colors */
         --secondary: 0 0% 100%;
-        --secondary-foreground: 210 37% 3%;
+        --secondary-foreground: 210 20% 15%;
 
         --muted: 48 10% 94%;
         /* #f1f0ec */
-        --muted-foreground: 210 13% 28%;
-        /* #667085 - darker gray */
+        --muted-foreground: 210 15% 35%;
+        /* Improved contrast */
 
-        --accent: 48 12% 91%;
-        /* #edebe6 */
-        --accent-foreground: 210 37% 3%;
+        --accent: 48 15% 88%;
+        /* Better accent for hover */
+        --accent-foreground: 210 20% 15%;
+        --accent-hover: 48 15% 85%;
+        /* Slightly darker on hover */
 
-        /* semantics */
-        --destructive: 0 0% 0%;
+        /* Enhanced semantic colors */
+        --destructive: 0 70% 50%;
         --destructive-foreground: 0 0% 100%;
-        --success: 145 41% 22%;
+        --success: 145 60% 35%;
         --success-foreground: 0 0% 100%;
-        --warning: 0 0% 0%;
+        --warning: 45 80% 50%;
         --warning-foreground: 0 0% 100%;
-        --info: 0 0% 0%;
+        --info: 210 70% 50%;
         --info-foreground: 0 0% 100%;
 
         /* lines / inputs */
@@ -261,44 +266,52 @@ iframe {
 
     /* DARK THEME (HSL triples) — apply via <html class="dark"> */
     html.dark {
-        --background: 210 29% 7%;
-        /* #0c1116 */
-        --foreground: 206 18% 92%;
-        /* #e8ecef */
+        --background: 210 15% 8%;
+        /* Warmer dark background */
+        --foreground: 210 10% 90%;
+        /* Softer light text */
 
-        --card: 213 27% 8%;
-        /* #0f141a */
-        --card-foreground: 206 18% 92%;
+        --card: 213 20% 10%;
+        /* Slightly lighter than background */
+        --card-foreground: 210 10% 90%;
 
-        --popover: 213 27% 8%;
-        --popover-foreground: 206 18% 92%;
+        --popover: 213 20% 10%;
+        --popover-foreground: 210 10% 90%;
 
-        --primary: 145 41% 22%;
+        --primary: 145 50% 25%;
         --primary-foreground: 0 0% 100%;
+        --primary-hover: 145 50% 30%;
 
-        --secondary: 213 27% 8%;
-        --secondary-foreground: 206 18% 92%;
+        --secondary: 213 20% 10%;
+        --secondary-foreground: 210 10% 90%;
 
-        --muted: 216 31% 10%;
-        /* #111720 */
-        --muted-foreground: 210 11% 64%;
-        /* #9aa4ae */
+        --muted: 216 15% 15%;
+        /* Better dark muted */
+        --muted-foreground: 210 8% 70%;
+        /* Softer muted text */
 
-        --accent: 216 33% 9%;
-        /* #0f151e */
-        --accent-foreground: 206 18% 92%;
+        --accent: 216 20% 12%;
+        /* Better dark accent */
+        --accent-foreground: 210 10% 90%;
+        --accent-hover: 216 20% 15%;
 
-        --destructive: 0 0% 100%;
-        --destructive-foreground: 210 29% 7%;
+        --destructive: 0 70% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --success: 145 60% 35%;
+        --success-foreground: 0 0% 100%;
+        --warning: 45 80% 50%;
+        --warning-foreground: 0 0% 100%;
+        --info: 210 70% 50%;
+        --info-foreground: 0 0% 100%;
 
-        --border: 211 29% 16%;
-        /* #1c2733 */
-        --border-light: 209 32% 13%;
-        --input: 209 32% 13%;
-        --input-background: 213 27% 8%;
+        --border: 211 20% 20%;
+        /* Better dark borders */
+        --border-light: 209 25% 15%;
+        --input: 209 20% 15%;
+        --input-background: 213 20% 10%;
 
         --ring: 0 0% 100% / .08;
-        --selection: 145 41% 22% / .14;
+        --selection: 145 50% 25% / .14;
 
         --chart-1: 206 18% 92%;
         --chart-2: 145 41% 22%;
@@ -337,6 +350,7 @@ iframe {
         font-size: var(--fs-h1);
         line-height: 1.1;
         font-weight: 700;
+        letter-spacing: -0.02em;
         word-wrap: break-word;
     }
 
@@ -344,6 +358,7 @@ iframe {
         font-size: var(--fs-h2);
         line-height: 1.2;
         font-weight: 600;
+        letter-spacing: -0.01em;
         word-wrap: break-word;
     }
 
@@ -351,27 +366,31 @@ iframe {
         font-size: var(--fs-h3);
         line-height: 1.3;
         font-weight: 600;
+        letter-spacing: -0.01em;
         word-wrap: break-word;
     }
 
     h4 {
         font-size: var(--fs-h4);
         line-height: 1.4;
-        font-weight: 600;
+        font-weight: 500;
+        letter-spacing: 0;
         word-wrap: break-word;
     }
 
     h5 {
         font-size: var(--fs-h5);
         line-height: 1.5;
-        font-weight: 600;
+        font-weight: 500;
+        letter-spacing: 0;
         word-wrap: break-word;
     }
 
     h6 {
         font-size: var(--fs-h6);
         line-height: 1.5;
-        font-weight: 600;
+        font-weight: 500;
+        letter-spacing: 0;
         word-wrap: break-word;
     }
 
@@ -403,11 +422,43 @@ iframe {
         letter-spacing: 0.01em;
     }
 
-    /* card soft lift */
+    /* Enhanced card styling */
     .card,
     .claude-card {
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: var(--radius-lg);
+        transition: all 0.2s ease;
+    }
+
+    .card:hover,
+    .claude-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+    }
+
+    /* Enhanced button styling */
+    .btn-primary {
+        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+        box-shadow: 0 4px 12px rgba(33, 78, 52, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 20px rgba(33, 78, 52, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: hsl(var(--secondary));
+        border: 1px solid hsl(var(--border));
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: hsl(var(--accent));
+        border-color: hsl(var(--accent-hover));
+        transform: translateY(-1px);
     }
 }
 
@@ -436,6 +487,39 @@ iframe {
 
     .bg-gray-50 {
         background-color: hsl(var(--muted)) !important;
+    }
+
+    /* Semantic color utilities */
+    .text-success {
+        color: hsl(var(--success)) !important;
+    }
+
+    .bg-success {
+        background-color: hsl(var(--success)) !important;
+    }
+
+    .text-warning {
+        color: hsl(var(--warning)) !important;
+    }
+
+    .bg-warning {
+        background-color: hsl(var(--warning)) !important;
+    }
+
+    .text-error {
+        color: hsl(var(--destructive)) !important;
+    }
+
+    .bg-error {
+        background-color: hsl(var(--destructive)) !important;
+    }
+
+    .text-info {
+        color: hsl(var(--info)) !important;
+    }
+
+    .bg-info {
+        background-color: hsl(var(--info)) !important;
     }
 
     /* Force Montserrat on specific Tailwind utilities */

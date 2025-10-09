@@ -106,7 +106,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="h-12 px-8 rounded-[16px] bg-primary text-primary-foreground hover:bg-primary/90"
+                                className="h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
                             >
                                 Secure My London Address — Start Today
                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -427,7 +427,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                                        className="w-full h-11 rounded-[14px] bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+                                        className="w-full h-11 rounded-[14px] btn-primary font-semibold text-primary-foreground"
                                     >
                                         {ctaText}
                                     </Button>
@@ -509,7 +509,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="mt-8 text-center">
                         <Button
                             onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                            className="h-11 rounded-[14px] bg-primary px-6 text-primary-foreground hover:bg-primary/90"
+                            className="h-11 rounded-[14px] btn-primary px-6 text-primary-foreground"
                         >
                             Get Started — Secure My London Address
                         </Button>
