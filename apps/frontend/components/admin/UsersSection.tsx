@@ -636,21 +636,21 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     ))}
                 </select>
               </div>
-              
+
               {selectedPlan && (
                 <div className="bg-muted/50 rounded-lg p-3 text-sm">
                   <h4 className="font-medium mb-2">Plan Change Details:</h4>
                   {(() => {
                     const plan = availablePlans.find(p => p.id.toString() === selectedPlan);
                     if (!plan) return null;
-                    
+
                     return (
                       <div className="space-y-1">
                         <p><strong>New Plan:</strong> {plan.name}</p>
                         <p><strong>Price:</strong> £{(plan.price_pence / 100).toFixed(2)}/{plan.interval}</p>
                         <p><strong>Billing:</strong> {plan.interval === 'month' ? 'Monthly' : 'Annual'} billing cycle</p>
                         <p className="text-muted-foreground text-xs mt-2">
-                          The user's billing will be updated on their next billing cycle. 
+                          The user's billing will be updated on their next billing cycle.
                           They will receive an email notification about the plan change.
                         </p>
                       </div>
@@ -689,13 +689,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     });
 
                     if (res.ok) {
-                      toast({ 
-                        title: "Plan Updated Successfully", 
-                        description: `${planModal.email} has been moved to ${planName} (${planPrice}). Billing will be updated on the next cycle.` 
+                      toast({
+                        title: "Plan Updated Successfully",
+                        description: `${planModal.email} has been moved to ${planName} (${planPrice}). Billing will be updated on the next cycle.`
                       });
                       setPlanModal(null);
                       setSelectedPlan('');
-                      
+
                       // Refresh the users list to show updated plan
                       if (onFiltersChange) {
                         onFiltersChange({
@@ -707,18 +707,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       }
                     } else {
                       const errorMsg = res.error || 'Unknown error occurred';
-                      toast({ 
-                        title: "Failed to Update Plan", 
-                        description: `Could not change plan for ${planModal.email}: ${errorMsg}`, 
-                        variant: "destructive" 
+                      toast({
+                        title: "Failed to Update Plan",
+                        description: `Could not change plan for ${planModal.email}: ${errorMsg}`,
+                        variant: "destructive"
                       });
                     }
                   } catch (error) {
                     console.error('Plan update error:', error);
-                    toast({ 
-                      title: "Error", 
-                      description: `Failed to update plan for ${planModal.email}. Please try again.`, 
-                      variant: "destructive" 
+                    toast({
+                      title: "Error",
+                      description: `Failed to update plan for ${planModal.email}. Please try again.`,
+                      variant: "destructive"
                     });
                   } finally {
                     setIsMutating(false);
