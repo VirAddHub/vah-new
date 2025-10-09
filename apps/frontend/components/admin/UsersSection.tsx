@@ -18,11 +18,7 @@ type AdminUser = {
   status?: string;
   plan?: string;
   kyc_status?: string;
-  created_at?: string;
   deleted_at?: string;
-  last_active_at?: number;
-  last_login_at?: number;
-  activity_status?: 'online' | 'offline';
 };
 
 interface UsersSectionProps {
@@ -39,7 +35,6 @@ interface UsersSectionProps {
     status: string;
     plan_id: string;
     kyc_status: string;
-    activity: string;
   }) => void;
 }
 
@@ -56,7 +51,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
   const [planFilter, setPlanFilter] = useState<string>("__all__");
   const [kycFilter, setKycFilter] = useState<string>("__all__");
-  const [activityFilter, setActivityFilter] = useState<string>("__all__");
 
   // Deleted users view toggle
   const [showDeleted, setShowDeleted] = useState(false);
@@ -102,10 +96,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         status: statusFilter === "__all__" ? "" : statusFilter,
         plan_id: planFilter === "__all__" ? "" : planFilter,
         kyc_status: kycFilter === "__all__" ? "" : kycFilter,
-        activity: activityFilter === "__all__" ? "" : activityFilter,
       });
     }
-  }, [q, statusFilter, planFilter, kycFilter, activityFilter, onFiltersChange]);
+  }, [q, statusFilter, planFilter, kycFilter, onFiltersChange]);
 
   // Load user stats
   const loadUserStats = useCallback(async () => {
@@ -349,19 +342,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Activity:</label>
-          <Select value={activityFilter} onValueChange={setActivityFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All</SelectItem>
-              <SelectItem value="online">Online</SelectItem>
-              <SelectItem value="offline">Offline</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
         <Button
           variant="outline"
@@ -370,7 +350,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             setStatusFilter("__all__");
             setPlanFilter("__all__");
             setKycFilter("__all__");
-            setActivityFilter("__all__");
           }}
         >
           Clear Filters
@@ -426,18 +405,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>ID</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Activity</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>KYC</TableHead>
-                <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-muted-foreground">
+                  <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
@@ -455,35 +432,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${u.activity_status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <span className="text-xs font-medium">
-                            {u.activity_status === 'online' ? 'Online' : 'Offline'}
-                          </span>
-                        </div>
-                        {u.last_login_at && u.last_login_at > 0 ? (
-                          <span className="text-xs text-muted-foreground">
-                            Last login: {(() => {
-                              try {
-                                const date = new Date(u.last_login_at);
-                                return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString('en-GB', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                });
-                              } catch (e) {
-                                return 'Invalid Date';
-                              }
-                            })()}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Never logged in</span>
-                        )}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
@@ -504,16 +452,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {u.created_at ? (() => {
-                        try {
-                          const date = new Date(u.created_at);
-                          return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
-                        } catch (e) {
-                          return 'Invalid Date';
-                        }
-                      })() : "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -765,7 +703,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                           status: statusFilter,
                           plan_id: planFilter,
                           kyc_status: kycFilter,
-                          activity: activityFilter
                         });
                       }
                     } else {
