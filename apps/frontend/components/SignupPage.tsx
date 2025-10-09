@@ -11,6 +11,9 @@ interface SignupPageProps {
 }
 
 export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
+    // Add debugging for deployment issues
+    console.log('SignupPage component loaded', { initialBilling });
+
     const {
         currentStep,
         step1Data,
@@ -25,6 +28,11 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
         completeSignup,
         resetSignup,
     } = useSignup();
+
+    // Add error logging
+    if (error) {
+        console.error('SignupPage error:', error);
+    }
 
     // If signup is complete, show success message
     if (isComplete) {
