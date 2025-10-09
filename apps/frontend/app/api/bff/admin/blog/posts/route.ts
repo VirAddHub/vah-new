@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
     const hdrs = nextHeaders();
     const cookie = hdrs.get('cookie') || '';
 
+    // Debug logging
+    console.log('[BFF] BACKEND_API_ORIGIN:', ORIGIN);
+    console.log('[BFF] Full URL:', `${ORIGIN}/admin/blog/posts`);
+
     const r = await fetch(`${ORIGIN}/admin/blog/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', cookie },
@@ -21,9 +25,14 @@ export async function POST(req: NextRequest) {
       cache: 'no-store',
     });
 
+    console.log('[BFF] Response status:', r.status);
+    console.log('[BFF] Response headers:', Object.fromEntries(r.headers.entries()));
+
     const text = await r.text();
     let json: any = {};
     try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+
+    console.log('[BFF] Response body:', json);
 
     // Normalise to { ok, data, error }
     const ok = (json?.ok === true) || (json?.success === true) || r.ok;
@@ -32,6 +41,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok, data, error }, { status: ok ? 200 : 502 });
   } catch (e: any) {
+    console.error('[BFF] Error:', e);
     return NextResponse.json({ ok: false, error: e?.message || 'proxy_error' }, { status: 502 });
   }
 }

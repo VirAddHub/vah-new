@@ -123,7 +123,7 @@ export function BlogSection() {
 
             const { slug, status } = json.data || {};
             await logAdminAction('blog_post_created', { slug: formData.slug, title: formData.title });
-            
+
             // Revalidate blog pages to show new post
             try {
                 await fetch('/api/revalidate', {
@@ -137,7 +137,7 @@ export function BlogSection() {
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
-            
+
             await refetchPosts();
             setShowCreateForm(false);
             resetForm();
@@ -166,7 +166,7 @@ export function BlogSection() {
             }
 
             await logAdminAction('blog_post_updated', { slug: editingPost.slug, title: formData.title });
-            
+
             // Revalidate blog pages to show updated post
             try {
                 await fetch('/api/revalidate', {
@@ -180,7 +180,7 @@ export function BlogSection() {
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
-            
+
             await refetchPosts();
             setEditingPost(null);
             resetForm();
@@ -210,7 +210,7 @@ export function BlogSection() {
             }
 
             await logAdminAction('blog_post_deleted', { slug, title });
-            
+
             // Revalidate blog pages to remove deleted post
             try {
                 await fetch('/api/revalidate', {
@@ -224,7 +224,7 @@ export function BlogSection() {
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
-            
+
             await refetchPosts();
             // Show success message
             alert('Blog post deleted successfully!');
