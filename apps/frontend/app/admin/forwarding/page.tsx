@@ -118,7 +118,7 @@ export default function AdminForwardingPage() {
             case 'Dispatched': return 'bg-orange-100 text-orange-800';
             case 'Delivered': return 'bg-green-100 text-green-800';
             case 'Cancelled': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            default: return 'bg-muted text-muted-foreground';
         }
     }
 
@@ -190,7 +190,7 @@ export default function AdminForwardingPage() {
                         </div>
 
                         {r.admin_notes && (
-                            <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded">
+                            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
                                 <strong>Admin Notes:</strong> {r.admin_notes}
                             </div>
                         )}
@@ -280,7 +280,7 @@ export default function AdminForwardingPage() {
             {/* Modal for dispatch details */}
             {showModal && selectedRequest && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <div className="bg-card rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-semibold mb-4">Mark as Dispatched</h3>
 
                         <div className="space-y-4">

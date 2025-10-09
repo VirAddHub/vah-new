@@ -155,8 +155,8 @@ iframe {
     :root,
     html {
         /* airy surfaces */
-        --background: 0 12% 97%;
-        /* #F9F8F8 */
+        --background: 0 0% 97%;
+        /* #F8F8F6 */
         --foreground: 210 37% 3%;
         /* #0f1720 - much darker */
 
