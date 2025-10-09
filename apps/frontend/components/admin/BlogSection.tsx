@@ -109,14 +109,21 @@ export function BlogSection() {
     const handleCreatePost = async () => {
         try {
             const response = await apiClient.post('/api/admin/blog/posts', formData);
-            if (response.ok) {
+            const data = await response.json();
+            
+            if (response.ok && data.ok) {
                 await logAdminAction('blog_post_created', { slug: formData.slug, title: formData.title });
                 await refetchPosts();
                 setShowCreateForm(false);
                 resetForm();
+                alert('Blog post created successfully!');
+            } else {
+                console.error('Create failed:', data.error);
+                alert(`Failed to create post: ${data.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Error creating post:', error);
+            alert('Failed to create post. Please try again.');
         }
     };
 
@@ -125,14 +132,21 @@ export function BlogSection() {
         
         try {
             const response = await apiClient.put(`/api/admin/blog/posts/${editingPost.slug}`, formData);
-            if (response.ok) {
+            const data = await response.json();
+            
+            if (response.ok && data.ok) {
                 await logAdminAction('blog_post_updated', { slug: editingPost.slug, title: formData.title });
                 await refetchPosts();
                 setEditingPost(null);
                 resetForm();
+                alert('Blog post updated successfully!');
+            } else {
+                console.error('Update failed:', data.error);
+                alert(`Failed to update post: ${data.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Error updating post:', error);
+            alert('Failed to update post. Please try again.');
         }
     };
 
@@ -143,12 +157,20 @@ export function BlogSection() {
         
         try {
             const response = await apiClient.delete(`/api/admin/blog/posts/${slug}`);
-            if (response.ok) {
+            const data = await response.json();
+            
+            if (response.ok && data.ok) {
                 await logAdminAction('blog_post_deleted', { slug, title });
                 await refetchPosts();
+                // Show success message
+                alert('Blog post deleted successfully!');
+            } else {
+                console.error('Delete failed:', data.error);
+                alert(`Failed to delete post: ${data.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Error deleting post:', error);
+            alert('Failed to delete post. Please try again.');
         }
     };
 

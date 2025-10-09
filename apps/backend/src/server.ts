@@ -85,6 +85,8 @@ const adminForwardAuditRouter = require(path.join(routesDir, 'admin-forward-audi
 const adminMailBulkRouter = require(path.join(routesDir, 'admin-mail-bulk'));
 const adminMailRouter = require(path.join(routesDir, 'admin-mail'));
 const adminRepairRouter = require(path.join(routesDir, 'admin-repair'));
+const adminBlogRouter = require(path.join(routesDir, 'admin-blog'));
+const blogRouter = require(path.join(routesDir, 'blog'));
 const debugRouterLegacy = require(path.join(routesDir, 'debug'));
 const downloadsRouter = require(path.join(routesDir, 'downloads'));
 // const emailPrefsRouter = require(path.join(routesDir, 'email-prefs')); // Now using TypeScript version
@@ -417,6 +419,10 @@ async function start() {
     logger.info('[mount] /api/admin (plans) mounted');
     app.use('/api/admin', adminMailItemsRouter);
     logger.info('[mount] /api/admin (mail-items) mounted');
+    app.use('/api/admin', adminBlogRouter);
+    logger.info('[mount] /api/admin (blog) mounted');
+    app.use('/api', blogRouter);
+    logger.info('[mount] /api (blog) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api/kyc', kycRouter);

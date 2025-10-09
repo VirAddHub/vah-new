@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -9,7 +9,7 @@ import {
     CardTitle,
 } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Calendar, Clock, ArrowRight } from "lucide-react";
+import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 type BlogPost = {
@@ -30,8 +30,36 @@ interface BlogPageProps {
 }
 
 export function BlogPage({ onNavigate }: BlogPageProps) {
-    // Add structured data for SEO
-    const blogStructuredData = {
+    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch blog posts from API
+    useEffect(() => {
+        const fetchBlogPosts = async () => {
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+                const response = await fetch(`${apiUrl}/api/blog/posts`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    setBlogPosts(data.data);
+                } else {
+                    setError('Failed to load blog posts');
+                }
+            } catch (err) {
+                console.error('Error fetching blog posts:', err);
+                setError('Failed to load blog posts');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBlogPosts();
+    }, []);
+
+    // Generate structured data for SEO based on fetched posts
+    const blogStructuredData = useMemo(() => ({
         "@context": "https://schema.org",
         "@type": "Blog",
         "name": "VirtualAddressHub Business Blog",
@@ -42,86 +70,18 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
             "name": "VirtualAddressHub",
             "url": "https://virtualaddresshub.com"
         },
-        "blogPost": [
-            {
-                "@type": "BlogPosting",
-                "headline": "What is a Registered Office Address? Complete Guide for UK Companies 2024",
-                "description": "Complete guide to registered office addresses for UK companies. Learn legal requirements, benefits, costs, and how to choose the best virtual address service for your business compliance needs.",
-                "url": "https://virtualaddresshub.com/blog/what-is-a-registered-office-address",
-                "datePublished": "2024-01-15",
-                "author": {
-                    "@type": "Organization",
-                    "name": "VirtualAddressHub"
-                }
-            },
-            {
-                "@type": "BlogPosting", 
-                "headline": "UK Company Formation: A Complete Guide for 2024",
-                "description": "Step-by-step guide to forming a UK company, including required documents, costs, and timeline. Everything you need to know to get started.",
-                "url": "https://virtualaddresshub.com/blog/uk-company-formation-complete-guide",
-                "datePublished": "2024-01-10",
-                "author": {
-                    "@type": "Organization",
-                    "name": "VirtualAddressHub"
-                }
-            },
-            {
-                "@type": "BlogPosting",
-                "headline": "Virtual Address vs Postal Address: What's the Difference?",
-                "description": "Understanding the key differences between virtual addresses and traditional postal addresses for your business needs.",
-                "url": "https://virtualaddresshub.com/blog/virtual-address-vs-postal-address",
-                "datePublished": "2024-01-05",
-                "author": {
-                    "@type": "Organization",
-                    "name": "VirtualAddressHub"
-                }
+        "blogPost": blogPosts.map(post => ({
+            "@type": "BlogPosting",
+            "headline": post.title,
+            "description": post.excerpt,
+            "url": `https://virtualaddresshub.com/blog/${post.slug}`,
+            "datePublished": post.dateLong,
+            "author": {
+                "@type": "Organization",
+                "name": "VirtualAddressHub"
             }
-        ]
-    };
-
-    const blogPosts: BlogPost[] = [
-        {
-            id: 1,
-            slug: "what-is-a-registered-office-address",
-            title:
-                "What is a Registered Office Address? Complete Guide for UK Companies 2024",
-            excerpt:
-                "Complete guide to registered office addresses for UK companies. Learn legal requirements, benefits, costs, and how to choose the best virtual address service for your business compliance needs.",
-            dateLong: "DD Month YYYY",
-            dateShort: "DD Mon",
-            readTime: "5 min read",
-            category: "Company Formation",
-            imageUrl:
-                "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-        },
-        {
-            id: 2,
-            slug: "uk-company-formation-complete-guide",
-            title: "UK Company Formation: A Complete Guide for 2024",
-            excerpt:
-                "Step-by-step guide to forming a UK company, including required documents, costs, and timeline. Everything you need to know to get started.",
-            dateLong: "DD Month YYYY",
-            dateShort: "DD Mon",
-            readTime: "8 min read",
-            category: "Business Setup",
-            imageUrl:
-                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHBsYW5uaW5nJTIwaWxsdXN0cmF0aW9ufGVufDF8fHx8MTc1NzQxMTY1NXww&ixlib=rb-4.1.0&q=80&w=1080",
-        },
-        {
-            id: 3,
-            slug: "virtual-address-vs-postal-address",
-            title:
-                "Virtual Address vs Postal Address: What's the Difference?",
-            excerpt:
-                "Understanding the key differences between virtual addresses and traditional postal addresses for your business needs.",
-            dateLong: "DD Month YYYY",
-            dateShort: "DD Mon",
-            readTime: "4 min read",
-            category: "Virtual Addresses",
-            imageUrl:
-                "https://images.unsplash.com/photo-1586880244406-556ebe35f282?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWlsJTIwYm94JTIwaWxsdXN0cmF0aW9ufGVufDF8fHx8MTc1NzQxMTY1NXww&ixlib=rb-4.0&q=80&w=1080",
-        },
-    ];
+        }))
+    }), [blogPosts]);
 
     // Always show the first post as featured (latest) and others in the grid
     const featuredPost = useMemo(
@@ -144,17 +104,42 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                             Virtual Business Address & UK Compliance Blog
                         </h1>
                         <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                            Expert insights on virtual business addresses, UK company formation, 
-                            HMRC compliance, and mail forwarding services. Stay informed with 
+                            Expert insights on virtual business addresses, UK company formation,
+                            HMRC compliance, and mail forwarding services. Stay informed with
                             the latest industry updates and best practices for your business.
                         </p>
                     </div>
                 </div>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+                <div className="container mx-auto px-4 py-16">
+                    <div className="flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <span className="ml-2 text-muted-foreground">Loading blog posts...</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+                <div className="container mx-auto px-4 py-16">
+                    <div className="text-center">
+                        <p className="text-muted-foreground mb-4">{error}</p>
+                        <Button 
+                            onClick={() => window.location.reload()} 
+                            variant="outline"
+                        >
+                            Try Again
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             <div className="container mx-auto px-4 py-14">
                 {/* Featured Post */}
-                {featuredPost ? (
+                {!loading && !error && featuredPost ? (
                     <Card className="mb-16 overflow-hidden shadow-sm border border-border bg-card">
                         <div className="grid grid-cols-1 lg:grid-cols-2">
                             <div className="relative h-72 lg:h-auto">
@@ -211,7 +196,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 )}
 
                 {/* Blog Posts Grid */}
-                {gridPosts.length > 0 && (
+                {!loading && !error && gridPosts.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
                         {gridPosts.map((post) => (
                             <Card
@@ -265,7 +250,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                     </div>
                 )}
             </div>
-            
+
             {/* Structured Data for SEO */}
             <script
                 type="application/ld+json"
