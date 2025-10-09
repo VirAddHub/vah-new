@@ -71,6 +71,7 @@ router.post('/', async (req, res) => {
   const statusText = reviewAnswer || reviewStatus || 'unknown';
 
   await db.transaction(async (txDb) => {
+    // Update Sumsub-specific fields
     await txDb.run(`
       UPDATE "user"
       SET sumsub_applicant_id = COALESCE(sumsub_applicant_id, $1),
@@ -81,8 +82,24 @@ router.post('/', async (req, res) => {
       WHERE id = $6
     `, [applicantId || null, statusText, now, rejectReason, JSON.stringify(payload).slice(0, 50000), userRow.id]);
 
-    // Note: KYC status will be updated manually by admin when notified via email
-    console.log(`[SumsubWebhook] Received KYC update for user ${userRow.id}: ${statusText}`);
+    // Update KYC status based on Sumsub response
+    let kycStatus = 'pending';
+    if (reviewAnswer === 'GREEN' || reviewStatus === 'completed') {
+      kycStatus = 'verified';
+    } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
+      kycStatus = 'rejected';
+    }
+
+    // Update user's KYC status
+    await txDb.run(`
+      UPDATE "user"
+      SET kyc_status = $1,
+          kyc_verified_at = $2,
+          updated_at = $2
+      WHERE id = $3
+    `, [kycStatus, now, userRow.id]);
+
+    console.log(`[SumsubWebhook] Updated user ${userRow.id} KYC status to: ${kycStatus}`);
   });
 
   // Send notification to user
