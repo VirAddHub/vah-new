@@ -579,13 +579,6 @@ function OverviewSection({
                     icon={<Users2 className="h-5 w-5 text-green-500" />}
                 />
                 <MetricCard
-                    title="Pending KYC"
-                    value={metrics?.totals?.pending_kyc?.toLocaleString() || '0'}
-                    change=""
-                    trend="up"
-                    icon={<Users2 className="h-5 w-5 text-yellow-500" />}
-                />
-                <MetricCard
                     title="Monthly Revenue"
                     value={`£${(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                     change="Resets monthly"

@@ -311,7 +311,7 @@ router.post("/login", async (req, res) => {
         // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
             [email, 'active'] // Use the validated and normalized email
         );
 
@@ -332,6 +332,16 @@ router.post("/login", async (req, res) => {
                 ok: false,
                 error: "invalid_credentials",
                 message: "Invalid email or password"
+            });
+        }
+
+        // Check KYC verification status (except for admins)
+        if (!userData.is_admin && userData.kyc_status !== 'verified') {
+            return res.status(403).json({
+                ok: false,
+                error: "kyc_verification_required",
+                message: "Account verification required. Please complete KYC verification to access your account.",
+                kyc_status: userData.kyc_status || 'pending'
             });
         }
 

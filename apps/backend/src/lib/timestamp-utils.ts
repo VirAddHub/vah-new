@@ -241,14 +241,14 @@ export function getTimestampForTableField(tableName: string, fieldName: string):
 export const TimestampUtils = {
     // For bigint fields (most common)
     bigint: getBigintTimestamp,
-    
+
     // For timestamp fields
     timestamp: getTimestampString,
     timestampWithTimezone: getTimestampWithTimezone,
-    
+
     // For specific table/field combinations
     forTableField: getTimestampForTableField,
-    
+
     // Legacy compatibility (deprecated - use specific methods instead)
     now: getBigintTimestamp
 };

@@ -81,7 +81,8 @@ router.post('/', async (req, res) => {
       WHERE id = $6
     `, [applicantId || null, statusText, now, rejectReason, JSON.stringify(payload).slice(0, 50000), userRow.id]);
 
-    // Note: mail_event requires a valid mail_item, so we skip audit logging for KYC events
+    // Note: KYC status will be updated manually by admin when notified via email
+    console.log(`[SumsubWebhook] Received KYC update for user ${userRow.id}: ${statusText}`);
   });
 
   // Send notification to user
