@@ -123,6 +123,21 @@ export function BlogSection() {
 
             const { slug, status } = json.data || {};
             await logAdminAction('blog_post_created', { slug: formData.slug, title: formData.title });
+            
+            // Revalidate blog pages to show new post
+            try {
+                await fetch('/api/revalidate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
+                    },
+                    body: JSON.stringify({ tag: 'blog', slug: formData.slug })
+                });
+            } catch (revalidateError) {
+                console.warn('Failed to revalidate blog pages:', revalidateError);
+            }
+            
             await refetchPosts();
             setShowCreateForm(false);
             resetForm();
@@ -151,6 +166,21 @@ export function BlogSection() {
             }
 
             await logAdminAction('blog_post_updated', { slug: editingPost.slug, title: formData.title });
+            
+            // Revalidate blog pages to show updated post
+            try {
+                await fetch('/api/revalidate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
+                    },
+                    body: JSON.stringify({ tag: 'blog', slug: editingPost.slug })
+                });
+            } catch (revalidateError) {
+                console.warn('Failed to revalidate blog pages:', revalidateError);
+            }
+            
             await refetchPosts();
             setEditingPost(null);
             resetForm();
@@ -180,6 +210,21 @@ export function BlogSection() {
             }
 
             await logAdminAction('blog_post_deleted', { slug, title });
+            
+            // Revalidate blog pages to remove deleted post
+            try {
+                await fetch('/api/revalidate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
+                    },
+                    body: JSON.stringify({ tag: 'blog', slug })
+                });
+            } catch (revalidateError) {
+                console.warn('Failed to revalidate blog pages:', revalidateError);
+            }
+            
             await refetchPosts();
             // Show success message
             alert('Blog post deleted successfully!');
