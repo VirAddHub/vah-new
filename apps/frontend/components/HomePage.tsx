@@ -86,20 +86,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             className="font-serif tracking-tight leading-[1.05] text-[clamp(2rem,6vw,5rem)] font-bold"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
-                            Your Official London Business Address.
+                            Professional London Business Address Service.
                             <span className="block text-primary">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
                         <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                            Establish your professional London presence and
-                            ensure full UK compliance. A prestigious business
-                            address for HMRC, Companies House and the
-                            Director's Service Address — with unlimited
-                            same-day scanning to your secure online dashboard
-                            and free UK forwarding for official HMRC &
-                            Companies House mail. Flat £9.99/month — one plan,
-                            no tiers or surprises.
+                            Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents. Trusted by 1000+ businesses across the UK.
                         </p>
 
                         <div className="mt-10">

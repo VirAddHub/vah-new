@@ -30,15 +30,63 @@ interface BlogPageProps {
 }
 
 export function BlogPage({ onNavigate }: BlogPageProps) {
+    // Add structured data for SEO
+    const blogStructuredData = {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "VirtualAddressHub Business Blog",
+        "description": "Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding services.",
+        "url": "https://virtualaddresshub.com/blog",
+        "publisher": {
+            "@type": "Organization",
+            "name": "VirtualAddressHub",
+            "url": "https://virtualaddresshub.com"
+        },
+        "blogPost": [
+            {
+                "@type": "BlogPosting",
+                "headline": "What is a Registered Office Address? Complete Guide for UK Companies 2024",
+                "description": "Complete guide to registered office addresses for UK companies. Learn legal requirements, benefits, costs, and how to choose the best virtual address service for your business compliance needs.",
+                "url": "https://virtualaddresshub.com/blog/what-is-a-registered-office-address",
+                "datePublished": "2024-01-15",
+                "author": {
+                    "@type": "Organization",
+                    "name": "VirtualAddressHub"
+                }
+            },
+            {
+                "@type": "BlogPosting", 
+                "headline": "UK Company Formation: A Complete Guide for 2024",
+                "description": "Step-by-step guide to forming a UK company, including required documents, costs, and timeline. Everything you need to know to get started.",
+                "url": "https://virtualaddresshub.com/blog/uk-company-formation-complete-guide",
+                "datePublished": "2024-01-10",
+                "author": {
+                    "@type": "Organization",
+                    "name": "VirtualAddressHub"
+                }
+            },
+            {
+                "@type": "BlogPosting",
+                "headline": "Virtual Address vs Postal Address: What's the Difference?",
+                "description": "Understanding the key differences between virtual addresses and traditional postal addresses for your business needs.",
+                "url": "https://virtualaddresshub.com/blog/virtual-address-vs-postal-address",
+                "datePublished": "2024-01-05",
+                "author": {
+                    "@type": "Organization",
+                    "name": "VirtualAddressHub"
+                }
+            }
+        ]
+    };
 
     const blogPosts: BlogPost[] = [
         {
             id: 1,
             slug: "what-is-a-registered-office-address",
             title:
-                "What is a Registered Office Address and Why Your UK Company Needs One",
+                "What is a Registered Office Address? Complete Guide for UK Companies 2024",
             excerpt:
-                "Every UK company must have a registered office address. Learn what it is, why it's required, and how to choose the right one for your business.",
+                "Complete guide to registered office addresses for UK companies. Learn legal requirements, benefits, costs, and how to choose the best virtual address service for your business compliance needs.",
             dateLong: "DD Month YYYY",
             dateShort: "DD Mon",
             readTime: "5 min read",
@@ -93,12 +141,12 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto text-center">
                         <h1 className="font-serif text-5xl lg:text-6xl tracking-tight mb-6 text-primary">
-                            Business Knowledge Hub
+                            Virtual Business Address & UK Compliance Blog
                         </h1>
                         <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                            Expert guidance on UK company formation, virtual
-                            addresses, and business compliance. Stay informed
-                            with the latest updates and best practices.
+                            Expert insights on virtual business addresses, UK company formation, 
+                            HMRC compliance, and mail forwarding services. Stay informed with 
+                            the latest industry updates and best practices for your business.
                         </p>
                     </div>
                 </div>
@@ -217,6 +265,14 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                     </div>
                 )}
             </div>
+            
+            {/* Structured Data for SEO */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(blogStructuredData)
+                }}
+            />
         </div>
     );
 }

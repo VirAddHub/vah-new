@@ -13,6 +13,39 @@ interface BlogPostPageProps {
 }
 
 export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
+    // Add structured data for individual blog posts
+    const generateStructuredData = (post: any) => ({
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": post.title,
+        "description": post.excerpt,
+        "url": `https://virtualaddresshub.com/blog/${slug}`,
+        "datePublished": post.date,
+        "dateModified": post.date,
+        "author": {
+            "@type": "Organization",
+            "name": "VirtualAddressHub",
+            "url": "https://virtualaddresshub.com"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "VirtualAddressHub",
+            "url": "https://virtualaddresshub.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://virtualaddresshub.com/images/logo.png"
+            }
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": `https://virtualaddresshub.com/blog/${slug}`
+        },
+        "image": post.imageUrl,
+        "articleSection": post.category,
+        "wordCount": post.content.split(' ').length,
+        "timeRequired": post.readTime
+    });
+
     // Mock blog post data - in real app would fetch based on slug
     const blogPosts: Record<string, any> = {
         "what-is-a-registered-office-address": {
@@ -334,6 +367,14 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     </section>
                 </article>
             </div>
+            
+            {/* Structured Data for SEO */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(generateStructuredData(post))
+                }}
+            />
         </div>
     );
 }
