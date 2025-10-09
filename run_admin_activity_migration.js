@@ -13,16 +13,16 @@ async function runMigration() {
 
     try {
         console.log('🔄 Creating admin activity tables...');
-        
+
         // Read the migration file
         const migrationPath = path.join(__dirname, 'migrations', '023_create_admin_activity_tables.sql');
         const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
-        
+
         // Execute the migration
         await pool.query(migrationSQL);
-        
+
         console.log('✅ Admin activity tables created successfully');
-        
+
         // Test the tables
         const result = await pool.query(`
             SELECT 
@@ -30,9 +30,9 @@ async function runMigration() {
                 (SELECT COUNT(*) FROM activity_log) as activity_log_count,
                 (SELECT COUNT(*) FROM mail_event) as mail_event_count
         `);
-        
+
         console.log('📊 Table counts:', result.rows[0]);
-        
+
     } catch (error) {
         console.error('❌ Migration failed:', error.message);
         process.exit(1);

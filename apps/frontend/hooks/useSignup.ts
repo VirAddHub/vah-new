@@ -79,8 +79,8 @@ export function useSignup() {
         setError(null);
 
         try {
-            // Call the real API signup with all signup data including forwarding address
-            const response = await apiClient.signup(
+            // Step 1: Create user account
+            const signupResponse = await apiClient.signup(
                 step2Data.email,
                 step2Data.password,
                 step2Data.first_name,
@@ -101,20 +101,52 @@ export function useSignup() {
                 step1Data?.price
             );
 
-            if (response.ok) {
-                setIsComplete(true);
-                console.log('Signup successful:', response.data);
-            } else {
-                throw new Error('Signup failed');
+            if (!signupResponse.ok) {
+                throw new Error(signupResponse.error || 'Signup failed');
             }
+
+            console.log('✅ User account created:', signupResponse.data);
+
+            // Step 2: Set up payment
+            try {
+                const paymentResponse = await fetch('/api/payments/redirect-flows', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+
+                const paymentData = await paymentResponse.json();
+
+                if (paymentResponse.ok && paymentData.redirect_url) {
+                    console.log('✅ Payment setup initiated, redirecting to:', paymentData.redirect_url);
+                    // Redirect to GoCardless for payment setup
+                    window.location.href = paymentData.redirect_url;
+                    return; // Don't set complete yet, wait for redirect
+                } else {
+                    console.warn('⚠️ Payment setup failed, but user account created:', paymentData);
+                    // User account created but payment setup failed
+                    // Still mark as complete so they can try payment later
+                }
+            } catch (paymentError) {
+                console.warn('⚠️ Payment setup error, but user account created:', paymentError);
+                // User account created but payment setup failed
+                // Still mark as complete so they can try payment later
+            }
+
+            // If we get here, user account was created successfully
+            setIsComplete(true);
+            console.log('✅ Signup completed successfully');
+
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Signup failed';
             setError(errorMessage);
-            console.error('Signup error:', err);
+            console.error('❌ Signup error:', err);
         } finally {
             setIsLoading(false);
         }
-    }, [step2Data]);
+    }, [step2Data, step1Data]);
 
     const resetSignup = useCallback(() => {
         setCurrentStep(1);

@@ -55,7 +55,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 p.price_pence as plan_price,
                 CASE
                     WHEN u.last_active_at IS NULL THEN 'offline'
-                    WHEN u.last_active_at > ${onlineThresholdParam} THEN 'online'
+                    WHEN u.last_active_at > $1 THEN 'online'
                     ELSE 'offline'
                 END as activity_status
             FROM "user" u
@@ -343,7 +343,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                             // Create new subscription record
                             await pool.query(
                                 `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
-                                 VALUES ($1, $2, $3, 'active', $4, $4)`,
+                                 VALUES ($1, $2, $3, 'active', $4, $5)`,
                                 [userId, plan.name, plan.interval, TimestampUtils.forTableField('subscription', 'created_at'), TimestampUtils.forTableField('subscription', 'updated_at')]
                             );
                         }

@@ -88,9 +88,9 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 WHERE table_schema = 'public' 
                 AND table_name IN ('admin_log', 'activity_log', 'mail_event')
             `);
-            
+
             const existingTables = tableCheck.rows.map(row => row.table_name);
-            
+
             // Get recent activity from existing tables only
             if (existingTables.includes('admin_log')) {
                 try {
@@ -114,7 +114,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                     console.warn('[AdminActivity] Error querying admin_log:', error.message);
                 }
             }
-            
+
             if (existingTables.includes('activity_log')) {
                 try {
                     userActivityResult = await pool.query(`
@@ -135,7 +135,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                     console.warn('[AdminActivity] Error querying activity_log:', error.message);
                 }
             }
-            
+
             if (existingTables.includes('mail_event')) {
                 try {
                     mailEventsResult = await pool.query(`
@@ -158,7 +158,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                     console.warn('[AdminActivity] Error querying mail_event:', error.message);
                 }
             }
-            
+
         } catch (tableError) {
             console.warn('[AdminActivity] Error checking table existence:', tableError.message);
         }
@@ -264,16 +264,16 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         today.setHours(0, 0, 0, 0);
         const todayTimestamp = today.getTime();
 
-        const todaySignups = recentUsersResult.rows.filter((user: any) => 
+        const todaySignups = recentUsersResult.rows.filter((user: any) =>
             user.created_at >= todayTimestamp
         ).length;
 
-        const todayMail = recentMailResult.rows.filter((mail: any) => 
+        const todayMail = recentMailResult.rows.filter((mail: any) =>
             mail.created_at >= todayTimestamp
         ).length;
 
-        const todayForwarding = activities.filter((activity: any) => 
-            activity.type === 'mail' && 
+        const todayForwarding = activities.filter((activity: any) =>
+            activity.type === 'mail' &&
             activity.title.includes('Forward') &&
             activity.timestamp >= todayTimestamp
         ).length;

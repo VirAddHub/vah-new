@@ -133,7 +133,7 @@ export class SystemMaintenanceService {
                     (SELECT COUNT(*) FROM admin_operation_locks WHERE expires_at > NOW()) as active_locks,
                     (SELECT COUNT(*) FROM forwarding_request WHERE status = 'requested') as pending_requests,
                     (SELECT COUNT(*) FROM mail_item WHERE status = 'received') as pending_mail,
-                    (SELECT COUNT(*) FROM "user" WHERE is_active = true) as active_users,
+                    (SELECT COUNT(*) FROM "user" WHERE status = 'active' AND deleted_at IS NULL) as active_users,
                     (SELECT COUNT(*) FROM admin_activity WHERE created_at > NOW() - INTERVAL '1 hour') as recent_activity
             `);
             
