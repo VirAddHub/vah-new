@@ -39,6 +39,12 @@ export type BuildArgs = {
   forwardedDate?: string;
   forwarded_date?: string;
 
+  planName?: string;
+  oldPrice?: string;
+  newPrice?: string;
+  interval?: string;
+  effectiveDate?: string;
+
   reason?: string;
 } & AnyDict;
 
@@ -66,6 +72,14 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     name: a.name,
     end_date: a.endDate,            // optional
     cta_url: a.billingUrl ?? a.ctaUrl,
+  }),
+  [Templates.PlanPriceChange]: (a) => ({
+    first_name: a.firstName ?? a.name,
+    plan_name: a.planName,
+    old_price: a.oldPrice,
+    new_price: a.newPrice,
+    interval: a.interval,
+    effective_date: a.effectiveDate,
   }),
   [Templates.InvoiceSent]: (a) => ({
     name: a.name,

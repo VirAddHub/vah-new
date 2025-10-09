@@ -9,6 +9,7 @@ export const Templates = {
 
     // Billing & invoices
     PlanCancelled: "plan-cancelled", // pragma: allowlist secret
+    PlanPriceChange: "plan-price-change", // pragma: allowlist secret
     InvoiceSent: "invoice-sent", // pragma: allowlist secret
     PaymentFailed: "payment-failed", // pragma: allowlist secret
 
