@@ -349,10 +349,10 @@ async function start() {
         try {
             const rawBody = req.rawBody || req.body?.toString?.() || '';
             const signature = req.headers['webhook-signature'] as string;
-            
+
             // For now, just log and return success (signature verification can be added later)
             console.log('[GoCardless webhook] Received:', rawBody);
-            
+
             res.json({ received: true });
         } catch (error) {
             console.error('[GoCardless webhook] error:', error);
@@ -502,10 +502,7 @@ async function start() {
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
 
-    // Mount GoCardless webhook handler
-    const webhooksGcRouterNew = require('./server/routes/webhooks-gocardless');
-    app.use('/api/webhooks', webhooksGcRouterNew);
-    logger.info('[mount] /api/webhooks (GoCardless) mounted');
+    // GoCardless webhook is already mounted above with raw body support
 
     app.use('/api/webhooks-onedrive', onedriveWebhook);
     logger.info('[mount] /api/webhooks-onedrive mounted');
