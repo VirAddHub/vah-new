@@ -27,13 +27,8 @@ const defaultTabs: TabItem[] = [
         icon: <Mail className="h-5 w-5" />,
     },
     {
-        href: '/billing',
-        label: 'Billing',
-        icon: <CreditCard className="h-5 w-5" />,
-    },
-    {
-        href: '/settings/profile',
-        label: 'Profile',
+        href: '/account',
+        label: 'Account',
         icon: <User className="h-5 w-5" />,
     },
 ];

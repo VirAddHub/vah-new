@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { VAHLogo } from './VAHLogo';
-import { LogOut, Mail, Truck, CreditCard, Settings } from 'lucide-react';
+import { LogOut, Mail, Truck, CreditCard, Settings, User } from 'lucide-react';
 
 interface SimpleUserDashboardProps {
     onLogout: () => void;
@@ -139,14 +139,10 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                                 <Button
                                     variant="outline"
                                     className="h-20 flex flex-col gap-2"
-                                    onClick={() => onNavigate('billing')}
+                                    onClick={() => onNavigate('account')}
                                 >
-                                    <CreditCard className="h-6 w-6" />
-                                    <span>Manage Billing</span>
-                                </Button>
-                                <Button variant="outline" className="h-20 flex flex-col gap-2">
-                                    <Settings className="h-6 w-6" />
-                                    <span>Settings</span>
+                                    <User className="h-6 w-6" />
+                                    <span>Account</span>
                                 </Button>
                             </div>
                         </CardContent>

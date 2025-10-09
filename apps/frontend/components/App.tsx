@@ -16,6 +16,7 @@ import { SignupPage } from './SignupPage';
 import { BillingDashboard } from './BillingDashboard';
 import { KYCDashboard } from './KYCDashboard';
 import { ProfilePage } from './ProfilePage';
+import AccountPage from '../app/(dashboard)/account/page';
 import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
@@ -111,6 +112,8 @@ export function App() {
         );
       case 'billing':
         return <BillingDashboard onNavigate={navigate} />;
+      case 'account':
+        return <AccountPage />;
       case 'kyc':
         return <KYCDashboard onNavigate={navigate} />;
       case 'profile':

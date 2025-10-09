@@ -503,26 +503,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    console.log('Profile button clicked');
-                    onNavigate('profile');
+                    console.log('Account button clicked');
+                    onNavigate('account');
                   }}
                   className="hidden sm:flex items-center gap-2"
                 >
                   <User className="h-4 w-4" />
-                  Profile
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    console.log('Billing button clicked');
-                    onNavigate('billing');
-                  }}
-                  className="hidden sm:flex items-center gap-2"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Billing
+                  Account
                 </Button>
 
                 <Button
