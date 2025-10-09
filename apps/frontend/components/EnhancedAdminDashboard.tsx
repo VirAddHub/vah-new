@@ -132,11 +132,14 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         mutate: refetchUsers
     } = useAuthedSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
         keepPreviousData: true,
-        refreshInterval: 60000, // 1 minute instead of 20 seconds
+        refreshInterval: 300000, // 5 minutes instead of 1 minute
         refreshWhenHidden: false,
         refreshWhenOffline: false,
         revalidateOnFocus: false, // Disable focus revalidation
         revalidateOnReconnect: false, // Disable reconnect revalidation
+        dedupingInterval: 10000, // Dedupe requests within 10 seconds
+        errorRetryCount: 1, // Reduce retry count
+        errorRetryInterval: 15000, // Increase retry interval
     });
 
     const users = usersData?.items ?? [];

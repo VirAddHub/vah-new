@@ -87,16 +87,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
 
-  // SWR hook for mail items with 15s polling
+  // SWR hook for mail items with optimized polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
     '/api/mail-items',
     fetcher,
     {
-      refreshInterval: 15000, // Poll every 15 seconds
-      revalidateOnFocus: true,
+      refreshInterval: 60000, // Reduced from 15s to 60s
+      revalidateOnFocus: false, // Disable focus revalidation
       revalidateOnReconnect: true,
-      errorRetryCount: 3,
-      errorRetryInterval: 5000
+      errorRetryCount: 2, // Reduced retry count
+      errorRetryInterval: 10000, // Increased retry interval
+      dedupingInterval: 5000, // Dedupe requests within 5 seconds
+      keepPreviousData: true, // Keep previous data while loading
     }
   );
 

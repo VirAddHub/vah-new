@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { cachedAdminQuery } from '../../lib/query-cache';
 
 const router = Router();
 
@@ -12,58 +13,45 @@ const router = Router();
  * Get admin dashboard statistics
  */
 router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
-    const pool = getPool();
-
     try {
-        // Get total users
-        const userCountResult = await pool.query('SELECT COUNT(*) as total FROM "user"');
-        const totalUsers = parseInt(userCountResult.rows[0].total);
-
-        // Get user growth (users created in last 30 days vs previous 30 days)
+        // Calculate time ranges
         const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
         const sixtyDaysAgo = Date.now() - (60 * 24 * 60 * 60 * 1000);
 
-        const recentUsersResult = await pool.query(
-            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1',
-            [thirtyDaysAgo]
-        );
-        const previousUsersResult = await pool.query(
-            'SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1 AND created_at < $2',
-            [sixtyDaysAgo, thirtyDaysAgo]
-        );
+        // Execute all queries in parallel with caching
+        const [
+            userCountResult,
+            recentUsersResult,
+            previousUsersResult,
+            mailCountResult,
+            recentMailResult,
+            previousMailResult,
+            activeForwardsResult
+        ] = await Promise.all([
+            cachedAdminQuery('SELECT COUNT(*) as total FROM "user" WHERE deleted_at IS NULL'),
+            cachedAdminQuery('SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1 AND deleted_at IS NULL', [thirtyDaysAgo]),
+            cachedAdminQuery('SELECT COUNT(*) as count FROM "user" WHERE created_at >= $1 AND created_at < $2 AND deleted_at IS NULL', [sixtyDaysAgo, thirtyDaysAgo]),
+            cachedAdminQuery('SELECT COUNT(*) as total FROM mail_item WHERE deleted = false'),
+            cachedAdminQuery('SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1 AND deleted = false', [thirtyDaysAgo]),
+            cachedAdminQuery('SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1 AND created_at < $2 AND deleted = false', [sixtyDaysAgo, thirtyDaysAgo]),
+            cachedAdminQuery('SELECT COUNT(*) as count FROM mail_item WHERE forwarded_physically = true AND scanned = true AND deleted = false')
+        ]);
 
-        const recentUsers = parseInt(recentUsersResult.rows[0].count);
-        const previousUsers = parseInt(previousUsersResult.rows[0].count);
+        const totalUsers = parseInt(userCountResult[0]?.total || '0');
+        const recentUsers = parseInt(recentUsersResult[0]?.count || '0');
+        const previousUsers = parseInt(previousUsersResult[0]?.count || '0');
         const userGrowth = previousUsers > 0
             ? Math.round(((recentUsers - previousUsers) / previousUsers) * 100)
             : 0;
 
-        // Get total mail items processed
-        const mailCountResult = await pool.query('SELECT COUNT(*) as total FROM mail_item');
-        const mailProcessed = parseInt(mailCountResult.rows[0].total);
-
-        // Get mail growth
-        const recentMailResult = await pool.query(
-            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1',
-            [thirtyDaysAgo]
-        );
-        const previousMailResult = await pool.query(
-            'SELECT COUNT(*) as count FROM mail_item WHERE created_at >= $1 AND created_at < $2',
-            [sixtyDaysAgo, thirtyDaysAgo]
-        );
-
-        const recentMail = parseInt(recentMailResult.rows[0].count);
-        const previousMail = parseInt(previousMailResult.rows[0].count);
+        const mailProcessed = parseInt(mailCountResult[0]?.total || '0');
+        const recentMail = parseInt(recentMailResult[0]?.count || '0');
+        const previousMail = parseInt(previousMailResult[0]?.count || '0');
         const mailGrowth = previousMail > 0
             ? Math.round(((recentMail - previousMail) / previousMail) * 100)
             : 0;
 
-        // Get active forwarding requests (pending/processing status)
-        const activeForwardsResult = await pool.query(
-            `SELECT COUNT(*) as count FROM mail_item
-             WHERE forwarded_physically = true AND scanned = true`
-        );
-        const activeForwards = parseInt(activeForwardsResult.rows[0].count);
+        const activeForwards = parseInt(activeForwardsResult[0]?.count || '0');
 
         // Revenue calculations would go here if you have billing data
         // For now, using placeholder values

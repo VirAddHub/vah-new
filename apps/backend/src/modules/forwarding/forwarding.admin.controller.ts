@@ -176,114 +176,114 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 });
             }
 
-        // build update
-        const now = new Date();
-        const nowTimestamp = now.getTime(); // Convert to Unix timestamp in milliseconds
-        const sets: string[] = ['status = $1', 'updated_at = $2'];
-        const vals: any[] = [nextStatus, nowTimestamp];
+            // build update
+            const now = new Date();
+            const nowTimestamp = now.getTime(); // Convert to Unix timestamp in milliseconds
+            const sets: string[] = ['status = $1', 'updated_at = $2'];
+            const vals: any[] = [nextStatus, nowTimestamp];
 
-        // timestamps by status
-        if (nextStatus === 'Reviewed') {
-            sets.push('reviewed_at = $3', 'reviewed_by = $4');
-            vals.push(nowTimestamp, admin.id);
-        }
-        if (nextStatus === 'Processing') {
-            sets.push('processing_at = $3');
-            vals.push(nowTimestamp);
-            
-            // Add usage charges for forwarding (in transaction)
-            const month = new Date();
-            month.setDate(1);
-            month.setHours(0, 0, 0, 0);
-            const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+            // timestamps by status
+            if (nextStatus === 'Reviewed') {
+                sets.push('reviewed_at = $3', 'reviewed_by = $4');
+                vals.push(nowTimestamp, admin.id);
+            }
+            if (nextStatus === 'Processing') {
+                sets.push('processing_at = $3');
+                vals.push(nowTimestamp);
 
-            await pool.query(`
+                // Add usage charges for forwarding (in transaction)
+                const month = new Date();
+                month.setDate(1);
+                month.setHours(0, 0, 0, 0);
+                const yyyymm = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+
+                await pool.query(`
                 INSERT INTO usage_charges (user_id, period_yyyymm, type, qty, amount_pence, notes, created_at)
                 VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
             `, [cur.rows[0].user_id, yyyymm, nowTimestamp]);
-        }
-        if (nextStatus === 'Dispatched') {
-            sets.push('dispatched_at = $3');
-            vals.push(nowTimestamp);
-        }
-        if (nextStatus === 'Delivered') {
-            sets.push('delivered_at = $3');
-            vals.push(nowTimestamp);
-        }
-        if (nextStatus === 'Cancelled') {
-            sets.push('cancelled_at = $3');
-            vals.push(nowTimestamp);
-        }
+            }
+            if (nextStatus === 'Dispatched') {
+                sets.push('dispatched_at = $3');
+                vals.push(nowTimestamp);
+            }
+            if (nextStatus === 'Delivered') {
+                sets.push('delivered_at = $3');
+                vals.push(nowTimestamp);
+            }
+            if (nextStatus === 'Cancelled') {
+                sets.push('cancelled_at = $3');
+                vals.push(nowTimestamp);
+            }
 
-        // courier / tracking / notes (optional)
-        if (courier !== undefined) {
-            sets.push(`courier = $${vals.length + 1}`);
-            vals.push(courier);
-        }
-        if (tracking_number !== undefined) {
-            sets.push(`tracking_number = $${vals.length + 1}`);
-            vals.push(tracking_number);
-        }
-        if (admin_notes !== undefined) {
-            sets.push(`admin_notes = $${vals.length + 1}`);
-            vals.push(admin_notes);
-        }
+            // courier / tracking / notes (optional)
+            if (courier !== undefined) {
+                sets.push(`courier = $${vals.length + 1}`);
+                vals.push(courier);
+            }
+            if (tracking_number !== undefined) {
+                sets.push(`tracking_number = $${vals.length + 1}`);
+                vals.push(tracking_number);
+            }
+            if (admin_notes !== undefined) {
+                sets.push(`admin_notes = $${vals.length + 1}`);
+                vals.push(admin_notes);
+            }
 
-        // where id = last parameter
-        vals.push(id);
-        const upd = await pool.query(
-            `UPDATE forwarding_request SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING *`,
-            vals
-        );
-
-        // mirror onto mail_item.forwarding_status (optional, if column exists)
-        try {
-            await pool.query('UPDATE mail_item SET forwarding_status = $1 WHERE id = $2', [nextStatus, cur.rows[0].mail_item_id]);
-        } catch { }
-
-        // audit (if table exists)
-        try {
-            await pool.query(
-                `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json, created_at)
-         VALUES ($1, $2, $3, $4, $5)`,
-                [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes }), nowTimestamp]
+            // where id = last parameter
+            vals.push(id);
+            const upd = await pool.query(
+                `UPDATE forwarding_request SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING *`,
+                vals
             );
-        } catch { }
 
-        // Commit the transaction
-        await pool.query('COMMIT');
+            // mirror onto mail_item.forwarding_status (optional, if column exists)
+            try {
+                await pool.query('UPDATE mail_item SET forwarding_status = $1 WHERE id = $2', [nextStatus, cur.rows[0].mail_item_id]);
+            } catch { }
 
-        // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
-        if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
-            setImmediate(async () => {
-                try {
-                    // Use data we already have from the initial query
-                    const userData = cur.rows[0];
-                    
-                    // Build forwarding address
-                    const parts = [
-                        userData.to_name,
-                        userData.address1,
-                        userData.address2,
-                        userData.city,
-                        userData.state,
-                        userData.postal,
-                        userData.country
-                    ].filter(Boolean);
-                    const forwarding_address = parts.length > 0 ? parts.join(', ') : 'Your forwarding address';
+            // audit (if table exists)
+            try {
+                await pool.query(
+                    `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json, created_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+                    [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes }), nowTimestamp]
+                );
+            } catch { }
 
-                    await sendMailForwarded({
-                        email: userData.email,
-                        name: userData.first_name || userData.email,
-                        forwarding_address: forwarding_address,
-                        forwarded_date: new Date().toLocaleDateString('en-GB')
-                    });
-                    console.log(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${userData.email} for request ${id}`);
-                } catch (emailError) {
-                    console.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
-                }
-            });
-        }
+            // Commit the transaction
+            await pool.query('COMMIT');
+
+            // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
+            if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
+                setImmediate(async () => {
+                    try {
+                        // Use data we already have from the initial query
+                        const userData = cur.rows[0];
+
+                        // Build forwarding address
+                        const parts = [
+                            userData.to_name,
+                            userData.address1,
+                            userData.address2,
+                            userData.city,
+                            userData.state,
+                            userData.postal,
+                            userData.country
+                        ].filter(Boolean);
+                        const forwarding_address = parts.length > 0 ? parts.join(', ') : 'Your forwarding address';
+
+                        await sendMailForwarded({
+                            email: userData.email,
+                            name: userData.first_name || userData.email,
+                            forwarding_address: forwarding_address,
+                            forwarded_date: new Date().toLocaleDateString('en-GB')
+                        });
+                        console.log(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${userData.email} for request ${id}`);
+                    } catch (emailError) {
+                        console.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
+                    }
+                });
+            }
 
             console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
             return res.json({ ok: true, data: upd.rows[0] });

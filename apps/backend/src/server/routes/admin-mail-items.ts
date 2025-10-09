@@ -66,7 +66,19 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
         try {
             let query = `
             SELECT
-                m.*,
+                m.id,
+                m.user_id,
+                m.subject,
+                m.sender_name,
+                m.tag,
+                m.status,
+                m.forwarding_status,
+                m.created_at,
+                m.received_date,
+                m.scanned,
+                m.deleted,
+                m.file_size,
+                m.scan_file_url,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,

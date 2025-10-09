@@ -7,7 +7,7 @@ let pool: Pool | undefined;
 export function getPool() {
     if (!pool) {
         const url = process.env.DATABASE_URL;
-        
+
         if (!url) {
             throw new Error("DATABASE_URL is required. This app does NOT support SQLite.");
         }
@@ -27,7 +27,7 @@ export function getPool() {
             // Ensure password is handled correctly
             allowExitOnIdle: true,
         });
-        
+
         // Don't connect immediately - let first query open the connection
     }
     return pool;

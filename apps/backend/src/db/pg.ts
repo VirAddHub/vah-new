@@ -14,10 +14,10 @@ const pool = new Pool({
 
 async function withClient<T>(fn: (c: PoolClient) => Promise<T>) {
   const c = await pool.connect();
-  try { 
-    return await fn(c); 
-  } finally { 
-    c.release(); 
+  try {
+    return await fn(c);
+  } finally {
+    c.release();
   }
 }
 
@@ -29,12 +29,12 @@ export async function ensureSchema() {
   });
 }
 
-export async function selectOne<T=any>(sql: string, params: any[] = []): Promise<T | null> {
+export async function selectOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
   const { rows } = await withClient(c => c.query(sql, params));
   return rows[0] ?? null;
 }
 
-export async function selectMany<T=any>(sql: string, params: any[] = []): Promise<T[]> {
+export async function selectMany<T = any>(sql: string, params: any[] = []): Promise<T[]> {
   const { rows } = await withClient(c => c.query(sql, params));
   return rows as T[];
 }
