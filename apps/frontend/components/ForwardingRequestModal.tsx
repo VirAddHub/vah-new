@@ -10,6 +10,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { X } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 
+// Helper functions to format display text professionally
+const formatSubjectForDisplay = (subject: string): string => {
+    if (!subject) return "No subject";
+    
+    // Remove technical prefixes and clean up the display
+    let cleanSubject = subject
+        .replace(/^user\d+_\d+_/, '') // Remove user4_222222222_ prefix
+        .replace(/\.pdf$/i, '') // Remove .pdf extension
+        .replace(/_/g, ' ') // Replace underscores with spaces
+        .trim();
+    
+    // If it's still empty or just numbers, show a generic message
+    if (!cleanSubject || /^\d+$/.test(cleanSubject)) {
+        return "Mail Document";
+    }
+    
+    return cleanSubject;
+};
+
+const formatSenderForDisplay = (sender: string): string => {
+    if (!sender) return "Unknown sender";
+    
+    // Clean up technical sender names
+    if (sender.toLowerCase().includes('onedrive')) {
+        return "Digital Mailbox";
+    }
+    if (sender.toLowerCase().includes('scan')) {
+        return "Mail Processing";
+    }
+    
+    return sender;
+};
+
 interface ForwardingRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -111,10 +144,10 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <h4 className="font-medium text-sm text-gray-700 mb-1">Mail Item Details</h4>
             <p className="text-sm text-gray-600">
-              <strong>Subject:</strong> {mailItem?.subject || mailItem?.description || "No subject"}
+              <strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}
             </p>
             <p className="text-sm text-gray-600">
-              <strong>From:</strong> {mailItem?.sender_name || "Unknown sender"}
+              <strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}
             </p>
             <p className="text-sm text-gray-600">
               <strong>Received:</strong> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}

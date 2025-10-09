@@ -8,6 +8,39 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { X, CreditCard, Calendar, CheckCircle, Truck } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 
+// Helper functions to format display text professionally
+const formatSubjectForDisplay = (subject: string): string => {
+    if (!subject) return "No subject";
+    
+    // Remove technical prefixes and clean up the display
+    let cleanSubject = subject
+        .replace(/^user\d+_\d+_/, '') // Remove user4_222222222_ prefix
+        .replace(/\.pdf$/i, '') // Remove .pdf extension
+        .replace(/_/g, ' ') // Replace underscores with spaces
+        .trim();
+    
+    // If it's still empty or just numbers, show a generic message
+    if (!cleanSubject || /^\d+$/.test(cleanSubject)) {
+        return "Mail Document";
+    }
+    
+    return cleanSubject;
+};
+
+const formatSenderForDisplay = (sender: string): string => {
+    if (!sender) return "Unknown sender";
+    
+    // Clean up technical sender names
+    if (sender.toLowerCase().includes('onedrive')) {
+        return "Digital Mailbox";
+    }
+    if (sender.toLowerCase().includes('scan')) {
+        return "Mail Processing";
+    }
+    
+    return sender;
+};
+
 interface ForwardingConfirmationModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -88,8 +121,8 @@ export function ForwardingConfirmationModal({
                     {/* Mail Item Details - Simplified */}
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <div className="space-y-1 text-sm">
-                            <p><strong>Subject:</strong> {mailItem?.subject || mailItem?.description || "No subject"}</p>
-                            <p><strong>From:</strong> {mailItem?.sender_name || "Unknown sender"}</p>
+                            <p><strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}</p>
+                            <p><strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}</p>
                             {isGovernmentMail && (
                                 <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
                                     Official Mail - Free Forwarding

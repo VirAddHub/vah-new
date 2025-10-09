@@ -191,7 +191,7 @@ export async function postChangePlan(req: Request, res: Response) {
       await pool.query(
         `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
          VALUES ($1, 'plan_change', 'user', $2, $3, $4)`,
-        [userId, userId, JSON.stringify({ 
+        [userId, userId, JSON.stringify({
           old_plan_id: null, // Could be enhanced to track previous plan
           new_plan_id: plan_id,
           plan_name: plan.name,

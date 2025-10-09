@@ -313,17 +313,17 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             if (!isNaN(planIdNum)) {
                 updates.push(`plan_id = $${paramIndex++}`);
                 values.push(planIdNum);
-                
+
                 // Also update subscription when plan changes
                 try {
                     const planCheck = await pool.query(
                         'SELECT id, name, interval, price_pence FROM plans WHERE id = $1 AND active = true',
                         [planIdNum]
                     );
-                    
+
                     if (planCheck.rows.length > 0) {
                         const plan = planCheck.rows[0];
-                        
+
                         // Update or create subscription record
                         const subscriptionResult = await pool.query(
                             'SELECT id FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
@@ -346,7 +346,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                                 [userId, plan.name, plan.interval, Date.now()]
                             );
                         }
-                        
+
                         console.log(`[Admin] User ${userId} plan changed to: ${plan.name} (${plan.interval})`);
                     }
                 } catch (planError) {

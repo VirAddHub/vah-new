@@ -495,10 +495,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     console.log('Settings button clicked');
                     onNavigate('settings');
                   }}
-                  className="hidden sm:flex items-center gap-2"
+                  className="flex items-center gap-2"
                 >
                   <Settings className="h-4 w-4" />
-                  Settings
+                  <span className="hidden sm:inline">Settings</span>
                 </Button>
 
                 <Button
@@ -508,10 +508,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     console.log('Account button clicked');
                     onNavigate('account');
                   }}
-                  className="hidden sm:flex items-center gap-2"
+                  className="flex items-center gap-2"
                 >
                   <User className="h-4 w-4" />
-                  Account
+                  <span className="hidden sm:inline">Account</span>
                 </Button>
 
                 <Button
