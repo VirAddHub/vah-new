@@ -124,7 +124,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </Badge>
                         </div>
                     </div>
-                    <div className="lg:col-span-5">
+                    <div className="lg:col-span-5 hidden lg:block">
                         <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
                             <img
                                 src="/images/london_skyline.png"
