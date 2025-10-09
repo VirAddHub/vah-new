@@ -5,7 +5,15 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers as nextHeaders } from 'next/headers';
 
-const ORIGIN = process.env.BACKEND_API_ORIGIN!; // e.g. https://vah-api-staging.onrender.com/api
+const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || "";
+
+function buildUrl(path: string) {
+  // absolute if ORIGIN set, else relative to this frontend origin (vercel proxy or local dev)
+  if (!ORIGIN || ORIGIN === "/") return path.startsWith("/") ? path : `/${path}`;
+  const base = ORIGIN.replace(/\/+$/, "");
+  const tail = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${tail}`;
+}
 
 export async function PUT(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
@@ -14,7 +22,10 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
     const cookie = hdrs.get('cookie') || '';
     const { slug } = params;
 
-    const r = await fetch(`${ORIGIN}/admin/blog/posts/${slug}`, {
+    // Use the same buildUrl pattern as other working routes
+    const targetUrl = buildUrl(`/api/admin/blog/posts/${slug}`);
+
+    const r = await fetch(targetUrl, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', cookie },
       body: JSON.stringify(body),
@@ -32,6 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
 
     return NextResponse.json({ ok, data, error }, { status: ok ? 200 : 502 });
   } catch (e: any) {
+    console.error('[BFF] Error:', e);
     return NextResponse.json({ ok: false, error: e?.message || 'proxy_error' }, { status: 502 });
   }
 }
@@ -42,7 +54,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
     const cookie = hdrs.get('cookie') || '';
     const { slug } = params;
 
-    const r = await fetch(`${ORIGIN}/admin/blog/posts/${slug}`, {
+    // Use the same buildUrl pattern as other working routes
+    const targetUrl = buildUrl(`/api/admin/blog/posts/${slug}`);
+
+    const r = await fetch(targetUrl, {
       method: 'DELETE',
       headers: { cookie },
       cache: 'no-store',
@@ -59,6 +74,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
 
     return NextResponse.json({ ok, data, error }, { status: ok ? 200 : 502 });
   } catch (e: any) {
+    console.error('[BFF] Error:', e);
     return NextResponse.json({ ok: false, error: e?.message || 'proxy_error' }, { status: 502 });
   }
 }
