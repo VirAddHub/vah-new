@@ -26,9 +26,9 @@ const formatDateUK = (v?: number | string | null) => {
 };
 
 export default function AccountPage() {
-    const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
-    const { data: invoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
-    const { data: userData } = useSWR('/api/auth/me', swrFetcher);
+    const { data: overview } = useSWR('/api/billing/overview', swrFetcher);
+    const { data: invoices } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
+    const { data: userData } = useSWR('/api/auth/whoami', swrFetcher);
 
     const [busy, setBusy] = useState<string | null>(null);
     const [profileForm, setProfileForm] = useState({
@@ -70,7 +70,7 @@ export default function AccountPage() {
         setBusy(cadence);
         try {
             const planId = cadence === 'monthly' ? 3 : 2;
-            const r = await fetch('/api/bff/billing/change-plan', {
+            const r = await fetch('/api/billing/change-plan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -106,7 +106,7 @@ export default function AccountPage() {
         e.preventDefault();
         setProfileMsg('');
         try {
-            const r = await fetch('/api/auth/me', {
+            const r = await fetch('/api/auth/whoami', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -151,7 +151,7 @@ export default function AccountPage() {
                             </div>
                             <div className="mt-3 flex gap-2">
                                 <Button
-                                    onClick={() => act('/api/bff/billing/reauthorise')}
+                                    onClick={() => act('/api/billing/reauthorise')}
                                     disabled={busy !== null}
                                     className="bg-amber-600 hover:bg-amber-700"
                                 >
@@ -159,7 +159,7 @@ export default function AccountPage() {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => act('/api/bff/billing/update-bank')}
+                                    onClick={() => act('/api/billing/update-bank')}
                                     disabled={busy !== null}
                                     className="border-amber-600 text-amber-600 hover:bg-amber-50"
                                 >
@@ -180,7 +180,7 @@ export default function AccountPage() {
                             </div>
                             <div className="mt-3">
                                 <Button
-                                    onClick={() => act('/api/bff/billing/reauthorise')}
+                                    onClick={() => act('/api/billing/reauthorise')}
                                     disabled={busy !== null}
                                     className="bg-red-600 hover:bg-red-700"
                                 >
@@ -405,14 +405,14 @@ export default function AccountPage() {
                                     <div className="flex flex-wrap gap-3">
                                         <Button
                                             variant="outline"
-                                            onClick={() => act('/api/bff/billing/update-bank')}
+                                            onClick={() => act('/api/billing/update-bank')}
                                             disabled={busy !== null}
                                         >
                                             Update Bank Details
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            onClick={() => act('/api/bff/billing/reauthorise')}
+                                            onClick={() => act('/api/billing/reauthorise')}
                                             disabled={busy !== null}
                                         >
                                             Re-authorise Mandate

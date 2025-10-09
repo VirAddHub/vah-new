@@ -15,7 +15,7 @@ const router = Router();
 async function healthCheck(req: Request, res: Response) {
     try {
         const startTime = Date.now();
-        
+
         // Basic service info
         const serviceInfo = {
             ok: true,
@@ -34,7 +34,7 @@ async function healthCheck(req: Request, res: Response) {
         // Database connectivity check
         let dbStatus = 'unknown';
         let dbLatency = 0;
-        
+
         try {
             const dbStart = Date.now();
             const pool = getPool();
@@ -83,7 +83,7 @@ async function healthCheckMinimal(req: Request, res: Response) {
     try {
         const pool = getPool();
         await pool.query('SELECT 1');
-        res.status(200).json({ 
+        res.status(200).json({
             status: 'ok',
             version: '2.0.0-deployment-test',
             timestamp: new Date().toISOString()
