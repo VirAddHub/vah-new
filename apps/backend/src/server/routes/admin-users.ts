@@ -4,8 +4,8 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
-import { toDateOrNull, nowMs } from '../helpers/time';
 import { TimestampUtils } from '../../lib/timestamp-utils';
+import { toDateOrNull, nowMs } from '../helpers/time';
 
 const router = Router();
 
@@ -426,21 +426,23 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 
     try {
-        const now = Date.now(); // Unix timestamp in milliseconds
-        const nowTimestamp = new Date(now).toISOString(); // Convert to ISO timestamp for deleted_at
+        // Use TimestampUtils for proper timestamp handling
+        const nowTimestamp = TimestampUtils.forTableField('user', 'deleted_at');
+        const nowBigint = TimestampUtils.forTableField('user', 'updated_at');
+        const auditTimestamp = TimestampUtils.forTableField('admin_audit', 'created_at');
 
         // Soft delete - just mark as deleted
         await pool.query(`
             UPDATE "user"
-            SET deleted_at = to_timestamp($1/1000.0)::timestamptz, updated_at = $2
+            SET deleted_at = $1, updated_at = $2
             WHERE id = $3
-        `, [now, now, userId]);
+        `, [nowTimestamp, nowBigint, userId]);
 
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
             VALUES ($1, $2, $3, $4, $5)
-        `, [adminId, 'delete_user', 'user', userId, now]);
+        `, [adminId, 'delete_user', 'user', userId, auditTimestamp]);
 
         return res.json({ ok: true });
     } catch (error: any) {

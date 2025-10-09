@@ -14,7 +14,7 @@ const router = Router();
 router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
     try {
         const pool = getPool();
-        
+
         // Get recent activity from multiple sources
         const [
             adminLogsResult,
@@ -40,7 +40,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 ORDER BY al.created_at DESC
                 LIMIT 10
             `),
-            
+
             // Recent user activities
             pool.query(`
                 SELECT 
@@ -56,7 +56,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 ORDER BY al.created_at DESC
                 LIMIT 10
             `),
-            
+
             // Recent mail events
             pool.query(`
                 SELECT 
@@ -74,7 +74,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 ORDER BY me.created_at DESC
                 LIMIT 10
             `),
-            
+
             // Recent user registrations
             pool.query(`
                 SELECT 
@@ -89,7 +89,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 ORDER BY created_at DESC
                 LIMIT 5
             `),
-            
+
             // Recent mail items
             pool.query(`
                 SELECT 
@@ -184,7 +184,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const todayStartMs = todayStart.getTime();
-        
+
         const [
             todaySignupsResult,
             todayMailResult,
@@ -196,14 +196,14 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 FROM "user"
                 WHERE created_at >= $1 AND deleted_at IS NULL
             `, [todayStartMs]),
-            
+
             // Mail processed today
             pool.query(`
                 SELECT COUNT(*) as count
                 FROM mail_item
                 WHERE created_at >= $1 AND deleted = false
             `, [todayStartMs]),
-            
+
             // Forwarding requests today
             pool.query(`
                 SELECT COUNT(*) as count
@@ -251,7 +251,7 @@ function formatAdminActionTitle(actionType: string, targetType?: string): string
         'forwarding_update': 'Forwarding Request Updated',
         'system_config': 'System Configuration Changed'
     };
-    
+
     return actionMap[actionType] || `${actionType} on ${targetType || 'unknown'}`;
 }
 
@@ -269,11 +269,11 @@ function formatAdminActionDescription(log: any): string {
             return log.details;
         }
     }
-    
+
     if (log.target_type && log.target_id) {
         return `${log.target_type} #${log.target_id}`;
     }
-    
+
     return 'Admin action performed';
 }
 
@@ -284,10 +284,9 @@ function formatUserActivityTitle(action: string): string {
         'mail_view': 'Mail Viewed',
         'mail_download': 'Mail Downloaded',
         'forwarding_request': 'Forwarding Requested',
-        'profile_update': 'Profile Updated',
-        'password_change': 'Account Security Updated'
+        'profile_update': 'Profile Changed'
     };
-    
+
     return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
@@ -305,7 +304,7 @@ function formatUserActivityDescription(activity: any): string {
             return activity.details;
         }
     }
-    
+
     return 'User activity';
 }
 
@@ -320,7 +319,7 @@ function formatMailEventTitle(eventType: string): string {
         'forwarding.dispatched': 'Mail Dispatched',
         'forwarding.delivered': 'Mail Delivered'
     };
-    
+
     return eventMap[eventType] || eventType.replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
@@ -328,7 +327,7 @@ function formatMailEventDescription(event: any): string {
     if (event.subject) {
         return `"${event.subject}"`;
     }
-    
+
     if (event.details) {
         try {
             const details = typeof event.details === 'string' ? JSON.parse(event.details) : event.details;
@@ -342,23 +341,23 @@ function formatMailEventDescription(event: any): string {
             return event.details;
         }
     }
-    
+
     return 'Mail event occurred';
 }
 
 function formatTimeAgo(timestamp: number): string {
     const now = Date.now();
     const diff = now - timestamp;
-    
+
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    
+
     return new Date(timestamp).toLocaleDateString();
 }
 
