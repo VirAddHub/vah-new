@@ -402,7 +402,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
-        `, [adminId, userId, JSON.stringify(req.body), Date.now()]);
+        `, [adminId, userId, JSON.stringify(req.body), new Date()]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

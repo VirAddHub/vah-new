@@ -364,7 +364,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
             );
 
             // 4. Get affected users for notification (if price changed)
-            let affectedUsers: Array<{id: number, email: string, first_name: string, last_name: string}> = [];
+            let affectedUsers: Array<{ id: number, email: string, first_name: string, last_name: string }> = [];
             if (typeof price_pence === 'number' && oldPrice !== newPrice) {
                 const usersResult = await pool.query(
                     `SELECT id, email, first_name, last_name 
@@ -386,7 +386,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                 setImmediate(async () => {
                     try {
                         const { sendTemplateEmail } = await import('../../lib/mailer');
-                        
+
                         for (const user of affectedUsers) {
                             await sendTemplateEmail({
                                 to: user.email,
@@ -401,7 +401,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                                 }
                             });
                         }
-                        
+
                         console.log(`[PlanUpdate] Sent price change notifications to ${affectedUsers.length} users`);
                     } catch (emailError) {
                         console.error('[PlanUpdate] Failed to send notifications:', emailError);
