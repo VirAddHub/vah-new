@@ -130,6 +130,30 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
         const user = userResult.rows[0];
 
+        // Check if GoCardless is properly configured
+        const gocardlessToken = process.env.GOCARDLESS_ACCESS_TOKEN;
+        
+        if (!gocardlessToken) {
+            // GoCardless not configured - skip payment setup for now
+            console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
+            
+            // Mark user as having payment setup pending
+            await pool.query(`
+                UPDATE "user"
+                SET plan_status = 'pending_payment', updated_at = $1
+                WHERE id = $2
+            `, [Date.now(), userId]);
+
+            return res.json({
+                ok: true,
+                data: {
+                    skip_payment: true,
+                    message: "Payment setup will be completed later"
+                },
+                redirect_url: null
+            });
+        }
+
         // TODO: Call GoCardless API to create redirect flow
         // For now, return a mock response
 

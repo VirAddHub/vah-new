@@ -124,6 +124,10 @@ export function useSignup() {
                     // Redirect to GoCardless for payment setup
                     window.location.href = paymentData.redirect_url;
                     return; // Don't set complete yet, wait for redirect
+                } else if (paymentResponse.ok && paymentData.data?.skip_payment) {
+                    console.log('✅ Payment setup skipped, user account created successfully');
+                    // Payment setup was skipped (GoCardless not configured)
+                    // User account is created and ready to use
                 } else {
                     console.warn('⚠️ Payment setup failed, but user account created:', paymentData);
                     // User account created but payment setup failed
