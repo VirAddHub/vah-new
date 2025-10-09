@@ -63,7 +63,7 @@ function savePost(slug, postData) {
         noindex: postData.noindex || false
     };
 
-    const content = `---\n${matter.stringify(frontMatter).replace(/^---\n/, '')}\n---\n\n${postData.content}`;
+    const content = `---\n${matter.stringify('', frontMatter).replace(/^---\n/, '')}\n---\n\n${postData.content}`;
 
     fs.writeFileSync(filePath, content, "utf8");
     return true;
