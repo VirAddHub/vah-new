@@ -313,6 +313,46 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             if (!isNaN(planIdNum)) {
                 updates.push(`plan_id = $${paramIndex++}`);
                 values.push(planIdNum);
+                
+                // Also update subscription when plan changes
+                try {
+                    const planCheck = await pool.query(
+                        'SELECT id, name, interval, price_pence FROM plans WHERE id = $1 AND active = true',
+                        [planIdNum]
+                    );
+                    
+                    if (planCheck.rows.length > 0) {
+                        const plan = planCheck.rows[0];
+                        
+                        // Update or create subscription record
+                        const subscriptionResult = await pool.query(
+                            'SELECT id FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+                            [userId]
+                        );
+
+                        if (subscriptionResult.rows.length > 0) {
+                            // Update existing subscription
+                            await pool.query(
+                                `UPDATE subscription 
+                                 SET plan_id = $1, price_pence = $2, updated_at = $3
+                                 WHERE user_id = $4 AND id = $5`,
+                                [planIdNum, plan.price_pence, nowMs(), userId, subscriptionResult.rows[0].id]
+                            );
+                        } else {
+                            // Create new subscription record
+                            await pool.query(
+                                `INSERT INTO subscription (user_id, plan_id, price_pence, status, created_at, updated_at)
+                                 VALUES ($1, $2, $3, 'active', $4, $4)`,
+                                [userId, planIdNum, plan.price_pence, nowMs()]
+                            );
+                        }
+                        
+                        console.log(`[Admin] User ${userId} plan changed to: ${plan.name} (${plan.interval})`);
+                    }
+                } catch (planError) {
+                    console.error('[Admin] Failed to update subscription for plan change:', planError);
+                    // Don't fail the entire update, just log the error
+                }
             }
         }
         if (typeof plan_status === 'string') {

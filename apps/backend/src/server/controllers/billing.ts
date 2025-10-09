@@ -144,7 +144,7 @@ export async function postChangePlan(req: Request, res: Response) {
 
     // Verify the plan exists and is active
     const planCheck = await pool.query(
-      'SELECT id, name, interval FROM plans WHERE id = $1 AND active = true',
+      'SELECT id, name, interval, price_pence FROM plans WHERE id = $1 AND active = true',
       [plan_id]
     );
 
@@ -154,22 +154,70 @@ export async function postChangePlan(req: Request, res: Response) {
 
     const plan = planCheck.rows[0];
 
-    // Update user's plan
-    await pool.query(
-      'UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3',
-      [plan_id, Date.now(), userId]
-    );
+    // Start transaction to ensure consistency
+    await pool.query('BEGIN');
 
-    console.log(`[postChangePlan] User ${userId} changed to plan: ${plan.name}`);
+    try {
+      // Update user's plan
+      await pool.query(
+        'UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3',
+        [plan_id, Date.now(), userId]
+      );
 
-    res.json({
-      ok: true,
-      data: {
-        plan_id: Number(plan_id),
-        plan_name: plan.name,
-        interval: plan.interval
+      // Update or create subscription record
+      const subscriptionResult = await pool.query(
+        'SELECT id FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+        [userId]
+      );
+
+      if (subscriptionResult.rows.length > 0) {
+        // Update existing subscription
+        await pool.query(
+          `UPDATE subscription 
+           SET plan_id = $1, price_pence = $2, updated_at = $3
+           WHERE user_id = $4 AND id = $5`,
+          [plan_id, plan.price_pence, Date.now(), userId, subscriptionResult.rows[0].id]
+        );
+      } else {
+        // Create new subscription record
+        await pool.query(
+          `INSERT INTO subscription (user_id, plan_id, price_pence, status, created_at, updated_at)
+           VALUES ($1, $2, $3, 'active', $4, $4)`,
+          [userId, plan_id, plan.price_pence, Date.now()]
+        );
       }
-    });
+
+      // Log the plan change for audit purposes
+      await pool.query(
+        `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+         VALUES ($1, 'plan_change', 'user', $2, $3, $4)`,
+        [userId, userId, JSON.stringify({ 
+          old_plan_id: null, // Could be enhanced to track previous plan
+          new_plan_id: plan_id,
+          plan_name: plan.name,
+          plan_interval: plan.interval,
+          price_pence: plan.price_pence
+        }), Date.now()]
+      );
+
+      await pool.query('COMMIT');
+
+      console.log(`[postChangePlan] User ${userId} changed to plan: ${plan.name} (${plan.interval})`);
+
+      res.json({
+        ok: true,
+        data: {
+          plan_id: Number(plan_id),
+          plan_name: plan.name,
+          interval: plan.interval,
+          price_pence: plan.price_pence,
+          message: 'Plan updated successfully. Billing will be updated on the next cycle.'
+        }
+      });
+    } catch (transactionError) {
+      await pool.query('ROLLBACK');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('[postChangePlan] error:', error);
     res.status(500).json({ ok: false, error: 'Failed to change plan' });

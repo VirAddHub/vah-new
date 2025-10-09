@@ -41,7 +41,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
                 const response = await fetch(`${apiUrl}/api/blog/posts`);
                 const data = await response.json();
-                
+
                 if (data.ok) {
                     setBlogPosts(data.data);
                 } else {
@@ -127,8 +127,8 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 <div className="container mx-auto px-4 py-16">
                     <div className="text-center">
                         <p className="text-muted-foreground mb-4">{error}</p>
-                        <Button 
-                            onClick={() => window.location.reload()} 
+                        <Button
+                            onClick={() => window.location.reload()}
                             variant="outline"
                         >
                             Try Again

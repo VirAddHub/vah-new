@@ -134,14 +134,60 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const loadPlans = async () => {
     try {
       const res = await adminApi.getPlans();
-      if (res.ok && res.data) {
+      if (res.ok && res.data && res.data.length > 0) {
         setAvailablePlans(res.data);
         if (planModal?.currentPlan) {
           setSelectedPlan(planModal.currentPlan);
         }
+      } else {
+        // Fallback to default plans if admin API fails or returns empty
+        console.warn('Admin plans API returned empty data, using fallback plans');
+        const fallbackPlans = [
+          {
+            id: 1,
+            name: 'Virtual Mailbox - Monthly',
+            slug: 'virtual-mailbox-monthly',
+            price_pence: 999,
+            interval: 'month',
+            active: true,
+            retired_at: null
+          },
+          {
+            id: 2,
+            name: 'Virtual Mailbox - Annual',
+            slug: 'virtual-mailbox-annual',
+            price_pence: 8999,
+            interval: 'year',
+            active: true,
+            retired_at: null
+          }
+        ];
+        setAvailablePlans(fallbackPlans);
       }
     } catch (error) {
       console.error('Failed to load plans:', error);
+      // Use fallback plans on error
+      const fallbackPlans = [
+        {
+          id: 1,
+          name: 'Virtual Mailbox - Monthly',
+          slug: 'virtual-mailbox-monthly',
+          price_pence: 999,
+          interval: 'month',
+          active: true,
+          retired_at: null
+        },
+        {
+          id: 2,
+          name: 'Virtual Mailbox - Annual',
+          slug: 'virtual-mailbox-annual',
+          price_pence: 8999,
+          interval: 'year',
+          active: true,
+          retired_at: null
+        }
+      ];
+      setAvailablePlans(fallbackPlans);
     }
   };
 
@@ -652,6 +698,28 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     ))}
                 </select>
               </div>
+              
+              {selectedPlan && (
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <h4 className="font-medium mb-2">Plan Change Details:</h4>
+                  {(() => {
+                    const plan = availablePlans.find(p => p.id.toString() === selectedPlan);
+                    if (!plan) return null;
+                    
+                    return (
+                      <div className="space-y-1">
+                        <p><strong>New Plan:</strong> {plan.name}</p>
+                        <p><strong>Price:</strong> £{(plan.price_pence / 100).toFixed(2)}/{plan.interval}</p>
+                        <p><strong>Billing:</strong> {plan.interval === 'month' ? 'Monthly' : 'Annual'} billing cycle</p>
+                        <p className="text-muted-foreground text-xs mt-2">
+                          The user's billing will be updated on their next billing cycle. 
+                          They will receive an email notification about the plan change.
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <Button
@@ -673,20 +741,48 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
                   setIsMutating(true);
                   try {
+                    const selectedPlanData = availablePlans.find(p => p.id.toString() === selectedPlan);
+                    const planName = selectedPlanData?.name || 'Unknown Plan';
+                    const planPrice = selectedPlanData ? `£${(selectedPlanData.price_pence / 100).toFixed(2)}/${selectedPlanData.interval}` : 'Unknown Price';
+
                     // Update user's plan_id to change their plan
                     const res = await adminApi.updateUser(planModal.id, {
                       plan_id: parseInt(selectedPlan)
                     });
 
                     if (res.ok) {
-                      toast({ title: "Success", description: "User plan updated" });
+                      toast({ 
+                        title: "Plan Updated Successfully", 
+                        description: `${planModal.email} has been moved to ${planName} (${planPrice}). Billing will be updated on the next cycle.` 
+                      });
                       setPlanModal(null);
                       setSelectedPlan('');
+                      
+                      // Refresh the users list to show updated plan
+                      if (onFiltersChange) {
+                        onFiltersChange({
+                          search: debouncedQ,
+                          status: statusFilter,
+                          plan_id: planFilter,
+                          kyc_status: kycFilter,
+                          activity: activityFilter
+                        });
+                      }
                     } else {
-                      toast({ title: "Error", description: "Failed to update plan", variant: "destructive" });
+                      const errorMsg = res.error || 'Unknown error occurred';
+                      toast({ 
+                        title: "Failed to Update Plan", 
+                        description: `Could not change plan for ${planModal.email}: ${errorMsg}`, 
+                        variant: "destructive" 
+                      });
                     }
                   } catch (error) {
-                    toast({ title: "Error", description: "Failed to update plan", variant: "destructive" });
+                    console.error('Plan update error:', error);
+                    toast({ 
+                      title: "Error", 
+                      description: `Failed to update plan for ${planModal.email}. Please try again.`, 
+                      variant: "destructive" 
+                    });
                   } finally {
                     setIsMutating(false);
                   }

@@ -96,12 +96,12 @@ export function BlogSection() {
     const filteredPosts = useMemo(() => {
         return posts.filter(post => {
             const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                 post.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                 post.content.toLowerCase().includes(searchTerm.toLowerCase());
-            
+                post.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                post.content.toLowerCase().includes(searchTerm.toLowerCase());
+
             const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
             const matchesTag = tagFilter === 'all' || post.tags.includes(tagFilter);
-            
+
             return matchesSearch && matchesStatus && matchesTag;
         });
     }, [posts, searchTerm, statusFilter, tagFilter]);
@@ -110,7 +110,7 @@ export function BlogSection() {
         try {
             const response = await apiClient.post('/api/admin/blog/posts', formData);
             const data = await response.json();
-            
+
             if (response.ok && data.ok) {
                 await logAdminAction('blog_post_created', { slug: formData.slug, title: formData.title });
                 await refetchPosts();
@@ -129,11 +129,11 @@ export function BlogSection() {
 
     const handleUpdatePost = async () => {
         if (!editingPost) return;
-        
+
         try {
             const response = await apiClient.put(`/api/admin/blog/posts/${editingPost.slug}`, formData);
             const data = await response.json();
-            
+
             if (response.ok && data.ok) {
                 await logAdminAction('blog_post_updated', { slug: editingPost.slug, title: formData.title });
                 await refetchPosts();
@@ -154,11 +154,11 @@ export function BlogSection() {
         if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
             return;
         }
-        
+
         try {
             const response = await apiClient.delete(`/api/admin/blog/posts/${slug}`);
             const data = await response.json();
-            
+
             if (response.ok && data.ok) {
                 await logAdminAction('blog_post_deleted', { slug, title });
                 await refetchPosts();
@@ -465,7 +465,7 @@ export function BlogSection() {
                             </div>
                             <div>
                                 <Label htmlFor="status">Status</Label>
-                                <Select value={formData.status} onValueChange={(value: 'draft' | 'published') => 
+                                <Select value={formData.status} onValueChange={(value: 'draft' | 'published') =>
                                     setFormData(prev => ({ ...prev, status: value }))
                                 }>
                                     <SelectTrigger>

@@ -25,7 +25,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
                 const response = await fetch(`${apiUrl}/api/blog/posts/${slug}`);
                 const data = await response.json();
-                
+
                 if (data.ok) {
                     setPost(data.data);
                 } else {
@@ -110,9 +110,9 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
             <div className="container mx-auto px-4 py-8">
                 {/* Back Button */}
                 <div className="mb-8">
-                    <Button 
-                        onClick={onBack} 
-                        variant="outline" 
+                    <Button
+                        onClick={onBack}
+                        variant="outline"
                         className="px-4 py-2 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -168,7 +168,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 <div className="max-w-4xl mx-auto">
                     <Card className="border-0 shadow-none bg-transparent">
                         <CardContent className="px-0">
-                            <div 
+                            <div
                                 className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
                                 dangerouslySetInnerHTML={{ __html: post.content }}
                             />
