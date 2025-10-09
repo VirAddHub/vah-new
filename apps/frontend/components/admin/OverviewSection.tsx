@@ -106,7 +106,9 @@ export function OverviewSection() {
     };
 
     const stats = adminStats as AdminStats | null;
-    const activity = (recentActivity as RecentActivity[] | null) || [];
+    const activityData = recentActivity as { activities: RecentActivity[], todayStats: { newSignups: number, mailProcessed: number, forwardingRequests: number } } | null;
+    const activity = activityData?.activities || [];
+    const todayStats = activityData?.todayStats || { newSignups: 0, mailProcessed: 0, forwardingRequests: 0 };
 
     return (
         <div className="space-y-6">
@@ -212,6 +214,54 @@ export function OverviewSection() {
                     </Card>
                 </div>
             )}
+
+            {/* Today's Activity */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">New Signups Today</p>
+                                <p className="text-2xl font-bold">{todayStats.newSignups}</p>
+                                <p className="text-xs text-blue-600">
+                                    Since midnight
+                                </p>
+                            </div>
+                            <Users2 className="h-8 w-8 text-blue-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Mail Processed Today</p>
+                                <p className="text-2xl font-bold">{todayStats.mailProcessed}</p>
+                                <p className="text-xs text-green-600">
+                                    Since midnight
+                                </p>
+                            </div>
+                            <Mail className="h-8 w-8 text-green-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Forwarding Requests Today</p>
+                                <p className="text-2xl font-bold">{todayStats.forwardingRequests}</p>
+                                <p className="text-xs text-orange-600">
+                                    Since midnight
+                                </p>
+                            </div>
+                            <Truck className="h-8 w-8 text-orange-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* Recent Activity */}
             <Card>
