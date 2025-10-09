@@ -338,12 +338,26 @@ async function start() {
 
     // Mount webhooks FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
-    
+
     // GoCardless webhook with raw body for signature verification
     app.post('/api/webhooks/gocardless', express.raw({ type: 'application/json' }), async (req: any, res: any, next: any) => {
         // Store raw body for webhook handler
         req.rawBody = req.body;
         next();
+    }, async (req: any, res: any) => {
+        // Actual webhook handler
+        try {
+            const rawBody = req.rawBody || req.body?.toString?.() || '';
+            const signature = req.headers['webhook-signature'] as string;
+            
+            // For now, just log and return success (signature verification can be added later)
+            console.log('[GoCardless webhook] Received:', rawBody);
+            
+            res.json({ received: true });
+        } catch (error) {
+            console.error('[GoCardless webhook] error:', error);
+            res.status(500).json({ error: 'Webhook processing failed' });
+        }
     });
 
     // Internal routes removed - admin-driven system doesn't need cron/outbox
@@ -487,7 +501,7 @@ async function start() {
 
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
-    
+
     // Mount GoCardless webhook handler
     const webhooksGcRouterNew = require('./server/routes/webhooks-gocardless');
     app.use('/api/webhooks', webhooksGcRouterNew);

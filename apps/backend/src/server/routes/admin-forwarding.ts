@@ -3,7 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool } from '../db';
@@ -23,7 +23,7 @@ const adminForwardingLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
+        return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "5");
@@ -202,7 +202,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
         currentMonth.setDate(1);
         currentMonth.setHours(0, 0, 0, 0);
         const yyyymm = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-        
+
         // Forwarding charge: £2.00 (200 pence)
         await pool.query(`
             INSERT INTO usage_charges (user_id, period_yyyymm, amount_pence, qty, description, created_at)

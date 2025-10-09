@@ -61,7 +61,7 @@ export default function BillingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navigation onNavigate={() => {}} />
+      <Navigation onNavigate={() => { }} />
       <main className="flex-1">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
           <h1 className="text-3xl font-bold text-foreground">Billing</h1>
@@ -246,11 +246,10 @@ export default function BillingPage() {
                       <td className="py-3 text-foreground">{formatDateUK(x.date)}</td>
                       <td className="py-3 text-foreground font-medium">{money(x.amount_pence)}</td>
                       <td className="py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          x.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${x.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                           x.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
+                            'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                          }`}>
                           {x.status}
                         </span>
                       </td>
@@ -265,7 +264,7 @@ export default function BillingPage() {
           </div>
         </div>
       </main>
-      <Footer onNavigate={() => {}} />
+      <Footer onNavigate={() => { }} />
     </div>
   );
 }

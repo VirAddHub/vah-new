@@ -2,7 +2,7 @@
 // Admin mail items management endpoints
 
 import { Router, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -16,7 +16,7 @@ const adminMailItemsLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin:${u.id}` : `ip:${req.ip}`;
+        return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "3");
