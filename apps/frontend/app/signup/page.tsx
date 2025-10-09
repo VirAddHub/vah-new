@@ -12,7 +12,7 @@ export default function Signup() {
     };
 
     // Add debugging for deployment issues
-    console.log('Signup page loaded successfully');
+    console.log('Signup page loaded successfully - Render deployment trigger');
 
     return (
         <SignupPage onNavigate={handleNavigate} />
