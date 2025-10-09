@@ -1,7 +1,7 @@
 // src/lib/query-cache.ts
 // Database query caching for performance optimization
 
-import { getPool } from '../db';
+import { getPool } from './db';
 
 interface CacheEntry<T> {
     data: T;
@@ -51,12 +51,12 @@ class QueryCache {
 
     // Cached query execution
     async query<T = any>(
-        query: string, 
-        params: any[] = [], 
+        query: string,
+        params: any[] = [],
         ttl: number = this.DEFAULT_TTL
     ): Promise<T[]> {
         const key = this.generateKey(query, params);
-        
+
         // Check cache first
         const cached = this.get<T[]>(key);
         if (cached) {
@@ -68,10 +68,10 @@ class QueryCache {
         console.log(`[QueryCache] Cache miss, executing: ${query.substring(0, 50)}...`);
         const pool = getPool();
         const result = await pool.query(query, params);
-        
+
         // Cache result
         this.set(key, result.rows, ttl);
-        
+
         return result.rows as T[];
     }
 
@@ -114,24 +114,24 @@ export const queryCache = new QueryCache();
 
 // Helper functions for common cached queries
 export async function cachedUserQuery<T = any>(
-    query: string, 
-    params: any[] = [], 
+    query: string,
+    params: any[] = [],
     ttl: number = 30000
 ): Promise<T[]> {
     return queryCache.query<T>(query, params, ttl);
 }
 
 export async function cachedMailQuery<T = any>(
-    query: string, 
-    params: any[] = [], 
+    query: string,
+    params: any[] = [],
     ttl: number = 15000
 ): Promise<T[]> {
     return queryCache.query<T>(query, params, ttl);
 }
 
 export async function cachedAdminQuery<T = any>(
-    query: string, 
-    params: any[] = [], 
+    query: string,
+    params: any[] = [],
     ttl: number = 60000
 ): Promise<T[]> {
     return queryCache.query<T>(query, params, ttl);
