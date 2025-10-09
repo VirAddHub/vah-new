@@ -47,7 +47,7 @@ function formatUserActivityTitle(action: string): string {
         'mail_downloaded': 'Mail Downloaded',
         'forwarding_requested': 'Forwarding Requested',
         'profile_updated': 'Profile Updated',
-        'password_changed': 'Password Changed'
+        'password_changed': 'Password Changed' // pragma: allowlist secret
     };
     return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
@@ -111,7 +111,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying admin_log:', error.message);
+                    console.warn('[AdminActivity] Error querying admin_log:', (error as Error).message);
                 }
             }
 
@@ -132,7 +132,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying activity_log:', error.message);
+                    console.warn('[AdminActivity] Error querying activity_log:', (error as Error).message);
                 }
             }
 
@@ -155,12 +155,12 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying mail_event:', error.message);
+                    console.warn('[AdminActivity] Error querying mail_event:', (error as Error).message);
                 }
             }
 
         } catch (tableError) {
-            console.warn('[AdminActivity] Error checking table existence:', tableError.message);
+            console.warn('[AdminActivity] Error checking table existence:', (tableError as Error).message);
         }
 
         // Always get recent users and mail (these tables should exist)
@@ -173,7 +173,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 LIMIT 10
             `);
         } catch (error) {
-            console.warn('[AdminActivity] Error querying users:', error.message);
+            console.warn('[AdminActivity] Error querying users:', (error as Error).message);
         }
 
         try {
@@ -185,7 +185,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 LIMIT 10
             `);
         } catch (error) {
-            console.warn('[AdminActivity] Error querying mail_items:', error.message);
+            console.warn('[AdminActivity] Error querying mail_items:', (error as Error).message);
         }
 
         // Format activities for display
