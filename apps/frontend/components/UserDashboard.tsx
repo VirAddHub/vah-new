@@ -468,7 +468,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <header className="bg-white border-b border-border sticky top-0 z-40 shadow-sm" style={{ position: 'relative' }}>
+      <header className="bg-background border-b border-border sticky top-0 z-40 shadow-sm" style={{ position: 'relative' }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}

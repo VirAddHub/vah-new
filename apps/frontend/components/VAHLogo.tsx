@@ -75,10 +75,10 @@ export function VAHLogo({
                     "bg-primary rounded-lg flex items-center justify-center font-bold",
                     "transform transition-transform duration-200 ease-in-out group-hover:scale-105 group-active:scale-95",
                     // Dynamic sizing for the square based on `size` prop
-                    size === "sm" && "w-6 h-6",
-                    size === "md" && "w-8 h-8",
-                    size === "lg" && "w-10 h-10",
-                    size === "xl" && "w-12 h-12"
+                    size === "sm" && "w-6 h-6 text-xs",
+                    size === "md" && "w-8 h-8 text-sm",
+                    size === "lg" && "w-10 h-10 text-base",
+                    size === "xl" && "w-12 h-12 text-lg"
                 )}
             >
                 <span className="text-primary-foreground">{initials}</span>

@@ -36,7 +36,7 @@ export function MobileTopBar({
     return (
         <header
             className={cn(
-                'sticky top-0 z-40 bg-white/90 dark:bg-neutral-900/80 backdrop-blur-md border-b border-border',
+                'sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border',
                 'px-3 py-2 pt-[calc(0.5rem+var(--safe-top))]',
                 className
             )}

@@ -32,7 +32,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-border/50">
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
             <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
                 <VAHLogo href="/" size="md" showText={true} />
@@ -80,7 +80,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
             {/* Mobile menu */}
             {isMenuOpen && (
-                <div className="md:hidden animate-slide-up border-t border-border/50 bg-white">
+                <div className="md:hidden border-t border-border/50 bg-background">
                     <div className="px-6 pt-4 pb-6 space-y-2">
                         {navItems.map((item) => (
                             <button

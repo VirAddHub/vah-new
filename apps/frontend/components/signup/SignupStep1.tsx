@@ -108,7 +108,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                         {/* Billing toggle */}
                         <div className="mt-6 flex items-center justify-center gap-3">
-                            <div className="inline-flex rounded-xl border bg-white p-1 shadow-sm">
+                            <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
                                 <button
                                     onClick={() => setBilling('monthly')}
                                     className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'monthly'
