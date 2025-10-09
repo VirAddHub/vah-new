@@ -334,16 +334,16 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                             // Update existing subscription
                             await pool.query(
                                 `UPDATE subscription 
-                                 SET plan_id = $1, price_pence = $2, updated_at = $3
-                                 WHERE user_id = $4 AND id = $5`,
-                                [planIdNum, plan.price_pence, nowMs(), userId, subscriptionResult.rows[0].id]
+                                 SET plan_name = $1, updated_at = $2
+                                 WHERE user_id = $3 AND id = $4`,
+                                [plan.name, Date.now(), userId, subscriptionResult.rows[0].id]
                             );
                         } else {
                             // Create new subscription record
                             await pool.query(
-                                `INSERT INTO subscription (user_id, plan_id, price_pence, status, created_at, updated_at)
+                                `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
                                  VALUES ($1, $2, $3, 'active', $4, $4)`,
-                                [userId, planIdNum, plan.price_pence, nowMs()]
+                                [userId, plan.name, plan.interval, Date.now()]
                             );
                         }
                         
@@ -385,7 +385,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
 
         // Always update the updated_at timestamp (use milliseconds for bigint field)
         updates.push(`updated_at = $${paramIndex++}`);
-        values.push(nowMs());
+        values.push(Date.now());
 
         values.push(userId);
 

@@ -11,7 +11,7 @@ export async function getBillingOverview(req: Request, res: Response) {
     const subResult = await pool.query(`
       SELECT s.*, p.name as plan_name, p.price_pence, p.interval as plan_interval
       FROM subscription s
-      LEFT JOIN plans p ON s.plan_id = p.id
+      LEFT JOIN plans p ON s.plan_name = p.name
       WHERE s.user_id=$1 ORDER BY s.id DESC LIMIT 1
     `, [userId]);
 
@@ -174,16 +174,16 @@ export async function postChangePlan(req: Request, res: Response) {
         // Update existing subscription
         await pool.query(
           `UPDATE subscription 
-           SET plan_id = $1, price_pence = $2, updated_at = $3
-           WHERE user_id = $4 AND id = $5`,
-          [plan_id, plan.price_pence, Date.now(), userId, subscriptionResult.rows[0].id]
+           SET plan_name = $1, updated_at = $2
+           WHERE user_id = $3 AND id = $4`,
+          [plan.name, Date.now(), userId, subscriptionResult.rows[0].id]
         );
       } else {
         // Create new subscription record
         await pool.query(
-          `INSERT INTO subscription (user_id, plan_id, price_pence, status, created_at, updated_at)
+          `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
            VALUES ($1, $2, $3, 'active', $4, $4)`,
-          [userId, plan_id, plan.price_pence, Date.now()]
+          [userId, plan.name, plan.interval, Date.now()]
         );
       }
 
