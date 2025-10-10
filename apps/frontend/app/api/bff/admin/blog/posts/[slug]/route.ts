@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || "";
+const ORIGIN = process.env.NEXT_PUBLIC_API_URL || "";
 
 function buildUrl(path: string) {
   // absolute if ORIGIN set, else relative to this frontend origin (vercel proxy or local dev)
