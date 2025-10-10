@@ -69,7 +69,7 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordPageProps) {
       <div className="w-full max-w-md">
         <Card className="card-modern p-8">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
               <Mail className="h-8 w-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-gradient">Forgot Password?</CardTitle>

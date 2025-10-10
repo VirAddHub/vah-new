@@ -154,7 +154,7 @@ export function CriticalCSS() {
     const criticalCSS = `
       /* Critical above-the-fold styles */
       .hero-section {
-        background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+        background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%);
         min-height: 100vh;
         display: flex;
         align-items: center;

@@ -36,18 +36,18 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
       <section className="section-padding bg-gradient-to-b from-background to-muted/30">
         <div className="container-modern">
           <div className="text-center mb-16">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
               <Shield className="h-8 w-8 text-white" />
             </div>
             <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
               Privacy <span className="text-gradient">Policy</span>
-            </h1>
+          </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
               Your privacy is important to us. This policy explains how we collect, use, and protect your personal information.
             </p>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
 
       {/* Privacy Content */}
       <section className="section-padding">
@@ -114,9 +114,9 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
                 </CardContent>
               </Card>
             </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Compliance */}
       <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
@@ -148,7 +148,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
             </Card>
           </div>
         </div>
-      </section>
+        </section>
     </div>
   );
 }

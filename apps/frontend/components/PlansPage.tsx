@@ -260,7 +260,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                     {/* Features Section */}
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-16">
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                 <ShieldCheck className="h-8 w-8 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-2">Fully Compliant</h3>

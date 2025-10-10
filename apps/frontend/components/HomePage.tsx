@@ -151,7 +151,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <div className="lg:col-span-5 animate-slide-in-left">
                         <div className="relative">
-                            <div className="card-modern p-8 shadow-modern-lg">
+                            <div className="card-modern p-8 shadow-lg">
                                 <div className="text-center">
                                     <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                         <Building2 className="h-8 w-8 text-white" />
@@ -273,7 +273,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                 <Clock className="h-8 w-8 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-2">Same-Day Scanning</h3>

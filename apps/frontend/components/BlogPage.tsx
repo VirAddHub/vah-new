@@ -332,7 +332,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
 
                                         <Button
                                             variant="ghost"
-                                            className="p-0 h-auto text-primary hover:text-primary-hover group-hover:translate-x-1 transition-all duration-200"
+                                            className="p-0 h-auto text-primary hover:text-primary group-hover:translate-x-1 transition-all duration-200"
                                         >
                                             Read More
                                             <ArrowRight className="ml-2 h-4 w-4" />

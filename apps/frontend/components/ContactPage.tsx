@@ -144,7 +144,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="grid gap-8 lg:grid-cols-3 mb-16">
                         {/* Email Support */}
                         <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Mail className="h-8 w-8 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-4">Email Support</h3>
@@ -364,7 +364,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="grid gap-8 lg:grid-cols-2">
                         <Card className="card-modern p-8">
                             <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-hover rounded-xl flex items-center justify-center flex-shrink-0">
+                                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary rounded-xl flex items-center justify-center flex-shrink-0">
                                     <MapPin className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
@@ -411,7 +411,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                     <div className="grid gap-8 md:grid-cols-3">
                         <Card className="card-modern p-8 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-hover rounded-full mx-auto mb-6 flex items-center justify-center">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-full mx-auto mb-6 flex items-center justify-center">
                                 <Users className="h-10 w-10 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-2">Customer Success</h3>

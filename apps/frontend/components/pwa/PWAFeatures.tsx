@@ -61,7 +61,7 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-background border border-border rounded-xl shadow-modern-lg p-4 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-50 bg-background border border-border rounded-xl shadow-lg p-4 max-w-sm">
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
           <Download className="h-5 w-5 text-primary" />
@@ -164,7 +164,7 @@ export function NotificationPermission() {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 bg-background border border-border rounded-xl shadow-modern-lg p-4 max-w-sm">
+    <div className="fixed bottom-20 right-4 z-50 bg-background border border-border rounded-xl shadow-lg p-4 max-w-sm">
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
           <Bell className="h-5 w-5 text-primary" />

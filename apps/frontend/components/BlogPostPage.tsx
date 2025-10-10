@@ -165,7 +165,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
 
                         {/* Author */}
                         <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-hover rounded-full flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary rounded-full flex items-center justify-center">
                                 <User className="h-6 w-6 text-white" />
                             </div>
                             <div>
@@ -182,7 +182,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 <section className="section-padding">
                     <div className="container-modern">
                         <div className="max-w-4xl mx-auto">
-                            <div className="relative rounded-2xl overflow-hidden shadow-modern-lg">
+                            <div className="relative rounded-2xl overflow-hidden shadow-lg">
                                 <ImageWithFallback
                                     src={post.cover}
                                     alt={post.title}

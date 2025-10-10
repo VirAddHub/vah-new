@@ -123,7 +123,7 @@ We reserve the right to terminate service if you breach these requirements or if
       <section className="section-padding bg-gradient-to-b from-background to-muted/30">
         <div className="container-modern">
           <div className="text-center mb-16">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
               <FileText className="h-8 w-8 text-white" />
             </div>
             <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
@@ -146,7 +146,7 @@ We reserve the right to terminate service if you breach these requirements or if
                 <Card key={index} className="card-modern">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">
                         {index + 1}
                       </div>
                       {section.heading}

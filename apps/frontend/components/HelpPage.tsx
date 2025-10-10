@@ -307,7 +307,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         <div className="container-modern">
           <div className="grid gap-6 md:grid-cols-4 mb-16">
             <Card className="card-modern p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-hover rounded-xl mx-auto mb-4 flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary rounded-xl mx-auto mb-4 flex items-center justify-center">
                 <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <h3 className="font-semibold mb-2">ICO Registered</h3>
@@ -409,7 +409,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
           <div className="grid gap-8 md:grid-cols-3 max-w-4xl mx-auto">
             <Card className="card-modern p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
                 <MessageCircle className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-4">Live Chat</h3>

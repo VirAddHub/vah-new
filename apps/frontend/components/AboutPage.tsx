@@ -104,7 +104,7 @@ export function AboutPage() {
                     {/* Stats */}
                     <div className="grid gap-6 md:grid-cols-4 mb-16">
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                 <Users className="h-8 w-8 text-white" />
                             </div>
                             <div className="text-3xl font-bold text-gradient mb-2">1000+</div>
@@ -197,7 +197,7 @@ export function AboutPage() {
 
                     <div className="grid gap-8 md:grid-cols-3">
                         <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Shield className="h-8 w-8 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-4">Compliance First</h3>
@@ -243,7 +243,7 @@ export function AboutPage() {
 
                     <div className="grid gap-8 md:grid-cols-3">
                         <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-hover rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-full mx-auto mb-4 flex items-center justify-center">
                                 <Users className="h-10 w-10 text-white" />
                             </div>
                             <h3 className="text-xl font-semibold mb-2">Expert Team</h3>
