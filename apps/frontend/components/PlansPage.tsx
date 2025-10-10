@@ -7,7 +7,7 @@ import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
 
 interface PlansPageProps {
-    onNavigate: (page: string) => void;
+    onNavigate: (page: string, data?: any) => void;
 }
 
 export function PlansPage({ onNavigate }: PlansPageProps) {
@@ -29,15 +29,19 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 billing_period: isAnnual ? 'annual' : 'monthly'
             });
 
-            if (response.ok) {
+            if (response.ok && response.data?.redirect_url) {
                 // Redirect to payment
                 window.location.href = response.data.redirect_url;
             } else {
-                setPaymentError('Failed to start payment process');
+                // Fallback: navigate to signup flow instead of payment
+                console.warn('Payment redirect URL not available, falling back to signup flow');
+                onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
             }
         } catch (err) {
             console.error('Payment flow error:', err);
-            setPaymentError('Failed to start payment process');
+            // Fallback: navigate to signup flow instead of payment
+            console.warn('Payment flow failed, falling back to signup flow');
+            onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
         } finally {
             setProcessingPayment(false);
         }

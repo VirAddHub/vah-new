@@ -65,7 +65,7 @@ export function App() {
           />
         );
       case 'pricing':
-        return <PlansPage onNavigate={navigate} />;
+        return <PlansPage onNavigate={handleNavigate} />;
       case 'terms':
         return <TermsPage onNavigate={navigate} />;
       case 'privacy':
