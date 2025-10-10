@@ -19,8 +19,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const cookieHeader = req.headers.get('cookie');
 
+    // Debug logging
+    console.log('[BFF] Cookie header:', cookieHeader);
+    console.log('[BFF] Request headers:', Object.fromEntries(req.headers.entries()));
+
     // Use the same buildUrl pattern as other working routes
     const targetUrl = buildUrl('/api/admin/blog/posts');
+
+    console.log('[BFF] Target URL:', targetUrl);
 
     const r = await fetch(targetUrl, {
       method: 'POST',
@@ -33,9 +39,14 @@ export async function POST(req: NextRequest) {
       cache: 'no-store',
     });
 
+    console.log('[BFF] Response status:', r.status);
+    console.log('[BFF] Response headers:', Object.fromEntries(r.headers.entries()));
+
     const text = await r.text();
     let json: any = {};
     try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+
+    console.log('[BFF] Response body:', json);
 
     // Normalise to { ok, data, error }
     const ok = (json?.ok === true) || (json?.success === true) || r.ok;

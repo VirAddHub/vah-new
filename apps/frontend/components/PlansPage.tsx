@@ -14,7 +14,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
     const [processingPayment, setProcessingPayment] = useState(false);
     const [paymentError, setPaymentError] = useState<string | null>(null);
-    
+
     // Use the plans hook for consistent data fetching
     const { plans, loading, error, refetch } = usePlans();
 
