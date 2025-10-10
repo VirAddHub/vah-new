@@ -13,6 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
 
 interface HomePageProps {
@@ -159,7 +160,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         </div>
                         <div className="lg:col-span-5">
-                            <MailboxPreviewCard 
+                            <MailboxPreviewCard
                                 showPriceBadge={true}
                                 price="£9.94/mo"
                             />
