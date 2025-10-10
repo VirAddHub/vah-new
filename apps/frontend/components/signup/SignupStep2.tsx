@@ -139,8 +139,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
     // Debounced search for Companies House
     useEffect(() => {
-        if (searchQuery.length < 2) {
+        if (searchQuery.length < 2 || isManualEntry) {
             setSearchResults([]);
+            setShowResults(false);
             return;
         }
 
@@ -168,12 +169,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [searchQuery, isManualEntry]);
 
     const handleSelectCompany = (company: any) => {
         updateFormData('company_number', company.company_number);
         updateFormData('company_name', company.title);
-        setSearchQuery('');
         setShowResults(false);
         setSearchResults([]);
 
@@ -467,49 +467,6 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     </Button>
                                 </div>
 
-                                {!isManualEntry && (
-                                    <div className="space-y-2 relative">
-                                        <Label htmlFor="company_search">
-                                            Search for your company
-                                        </Label>
-                                        <div className="relative">
-                                            <Input
-                                                id="company_search"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Type company name or number..."
-                                                className="pr-10"
-                                            />
-                                            {isSearching && (
-                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                                            )}
-                                        </div>
-
-                                        {/* Search Results Dropdown */}
-                                        {showResults && searchResults.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                                {searchResults.map((company, index) => (
-                                                    <button
-                                                        key={index}
-                                                        type="button"
-                                                        onClick={() => handleSelectCompany(company)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
-                                                    >
-                                                        <div className="font-medium text-sm">{company.title}</div>
-                                                        <div className="text-xs text-muted-foreground mt-1">
-                                                            {company.company_number} • {company.company_status}
-                                                            {company.address_snippet && ` • ${company.address_snippet}`}
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {showResults && searchResults.length === 0 && !isSearching && (
-                                            <p className="text-sm text-muted-foreground">No companies found. Try a different search term.</p>
-                                        )}
-                                    </div>
-                                )}
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -544,14 +501,49 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         <Label htmlFor="company_name" className="flex items-center gap-2">
                                             Company Name <span className="text-destructive">*</span>
                                         </Label>
-                                        <Input
-                                            id="company_name"
-                                            value={formData.company_name}
-                                            onChange={(e) => updateFormData('company_name', e.target.value)}
-                                            className={errors.company_name ? 'border-destructive' : ''}
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                id="company_name"
+                                                value={formData.company_name}
+                                                onChange={(e) => {
+                                                    updateFormData('company_name', e.target.value);
+                                                    if (!isManualEntry) {
+                                                        setSearchQuery(e.target.value);
+                                                    }
+                                                }}
+                                                placeholder="Type company name to search..."
+                                                className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
+                                            />
+                                            {isSearching && (
+                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                                            )}
+                                        </div>
+
+                                        {/* Search Results Dropdown */}
+                                        {!isManualEntry && showResults && searchResults.length > 0 && (
+                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                                {searchResults.map((company, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        onClick={() => handleSelectCompany(company)}
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                    >
+                                                        <div className="font-medium text-sm">{company.title}</div>
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            {company.company_number} • {company.company_status}
+                                                            {company.address_snippet && ` • ${company.address_snippet}`}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {!isManualEntry && showResults && searchResults.length === 0 && !isSearching && searchQuery.length >= 2 && (
+                                            <p className="text-sm text-muted-foreground">No companies found. Try a different search term.</p>
+                                        )}
                                         <p className="text-xs text-muted-foreground">
-                                            {!isManualEntry ? 'Selected from Companies House. You can edit if needed.' : 'If the name appears incorrect, you can still edit it later.'}
+                                            {!isManualEntry ? 'Start typing to search Companies House. You can edit if needed.' : 'If the name appears incorrect, you can still edit it later.'}
                                         </p>
                                         {errors.company_name && (
                                             <p className="text-sm text-destructive">{errors.company_name}</p>
