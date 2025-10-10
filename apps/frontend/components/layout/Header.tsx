@@ -49,7 +49,7 @@ export function Header({ onNavigate }: HeaderProps) {
                 <div className="hidden md:flex items-center gap-3">
                     <Button
                         onClick={() => handleNavClick('login')}
-                        className="rounded-xl bg-primary px-4 py-2 text-white text-sm font-medium hover:bg-primary/90 shadow-soft"
+                        className="rounded-md bg-primary px-4 py-2 text-white text-sm font-medium hover:bg-primary/90"
                     >
                         Get started
                     </Button>
@@ -83,7 +83,7 @@ export function Header({ onNavigate }: HeaderProps) {
                         <div className="pt-4">
                             <Button
                                 onClick={() => handleNavClick('login')}
-                                className="w-full rounded-xl bg-primary text-white font-medium hover:bg-primary/90 shadow-soft"
+                                className="w-full rounded-md bg-primary text-white font-medium hover:bg-primary/90"
                             >
                                 Get started
                             </Button>

@@ -97,7 +97,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Editorial Header */}
-            <div className="relative bg-gradient-to-b from-muted/30 to-background py-20 lg:py-28">
+            <div className="relative bg-gradient-to-b from-muted/30 to-background py-12 lg:py-16">
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto text-center">
                         <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-6 text-primary">
@@ -114,7 +114,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
 
             {/* Loading State */}
             {loading && (
-                <div className="container mx-auto px-4 py-16">
+                <div className="container mx-auto px-4 py-12">
                     <div className="flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <span className="ml-2 text-muted-foreground">Loading blog posts...</span>
@@ -124,7 +124,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
 
             {/* Error State */}
             {error && !loading && (
-                <div className="container mx-auto px-4 py-16">
+                <div className="container mx-auto px-4 py-12">
                     <div className="text-center">
                         <p className="text-muted-foreground mb-4">{error}</p>
                         <Button

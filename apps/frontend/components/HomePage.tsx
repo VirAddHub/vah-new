@@ -420,7 +420,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                                        className="w-full h-11 rounded-[14px] btn-primary font-semibold text-primary-foreground"
+                                        className="w-full h-11 rounded-md font-semibold text-primary-foreground"
                                     >
                                         {ctaText}
                                     </Button>

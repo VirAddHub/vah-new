@@ -78,7 +78,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     // Loading state
     if (loading) {
         return (
-            <div className="min-h-screen bg-background py-24">
+            <div className="min-h-screen bg-background py-12">
                 <div className="container mx-auto px-4 text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                     <p className="text-muted-foreground">Loading blog post...</p>
@@ -90,7 +90,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     // Error state
     if (error || !post) {
         return (
-            <div className="min-h-screen bg-background py-24">
+            <div className="min-h-screen bg-background py-12">
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-6">Blog Post Not Found</h1>
                     <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">

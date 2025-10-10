@@ -472,7 +472,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
       <header className="bg-background border-b border-border sticky top-0 z-40 shadow-sm" style={{ position: 'relative' }}>
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center gap-4">
@@ -547,7 +547,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
 
         {/* Welcome Message */}
         <div className="mb-8">
