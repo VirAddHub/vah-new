@@ -3,7 +3,6 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers as nextHeaders } from 'next/headers';
 
 const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || "";
 
@@ -18,17 +17,16 @@ function buildUrl(path: string) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const hdrs = nextHeaders();
-    const cookie = hdrs.get('cookie') || '';
+    const cookieHeader = req.headers.get('cookie');
 
     // Use the same buildUrl pattern as other working routes
     const targetUrl = buildUrl('/api/admin/blog/posts');
 
     const r = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Cookie': cookie,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader || '',
         'User-Agent': 'vah-bff'
       },
       body: JSON.stringify(body),

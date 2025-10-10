@@ -3,7 +3,6 @@ export const revalidate = 0;
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers as nextHeaders } from 'next/headers';
 
 const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || "";
 
@@ -18,8 +17,7 @@ function buildUrl(path: string) {
 export async function PUT(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
     const body = await req.json().catch(() => ({}));
-    const hdrs = nextHeaders();
-    const cookie = hdrs.get('cookie') || '';
+    const cookieHeader = req.headers.get('cookie');
     const { slug } = params;
 
     // Use the same buildUrl pattern as other working routes
@@ -27,9 +25,9 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
 
     const r = await fetch(targetUrl, {
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Cookie': cookie,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader || '',
         'User-Agent': 'vah-bff'
       },
       body: JSON.stringify(body),
@@ -54,8 +52,7 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
 
 export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const hdrs = nextHeaders();
-    const cookie = hdrs.get('cookie') || '';
+    const cookieHeader = req.headers.get('cookie');
     const { slug } = params;
 
     // Use the same buildUrl pattern as other working routes
@@ -63,8 +60,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
 
     const r = await fetch(targetUrl, {
       method: 'DELETE',
-      headers: { 
-        'Cookie': cookie,
+      headers: {
+        'Cookie': cookieHeader || '',
         'User-Agent': 'vah-bff'
       },
       cache: 'no-store',
