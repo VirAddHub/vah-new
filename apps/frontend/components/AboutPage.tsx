@@ -107,7 +107,7 @@ export function AboutPage() {
             <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-5xl lg:text-6xl font-bold text-primary mb-6">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary mb-6">
                         About Us
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">

@@ -92,7 +92,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         return (
             <div className="min-h-screen bg-background py-24">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6">Blog Post Not Found</h1>
+                    <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-6">Blog Post Not Found</h1>
                     <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
                         {error || "The blog post you're looking for doesn't exist."}
                     </p>
@@ -128,7 +128,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                                 {post.tags[0]}
                             </Badge>
                         )}
-                        <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6 text-foreground leading-tight">
+                        <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-6 text-foreground leading-tight">
                             {post.title}
                         </h1>
                         <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-3xl mx-auto">

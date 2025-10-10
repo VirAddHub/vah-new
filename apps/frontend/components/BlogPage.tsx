@@ -100,7 +100,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
             <div className="relative bg-gradient-to-b from-muted/30 to-background py-20 lg:py-28">
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto text-center">
-                        <h1 className="font-serif text-5xl lg:text-6xl tracking-tight mb-6 text-primary">
+                        <h1 className="font-serif text-3xl md:text-4xl tracking-tight mb-6 text-primary">
                             Virtual Business Address & UK Compliance Blog
                         </h1>
                         <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">

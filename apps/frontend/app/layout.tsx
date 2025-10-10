@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.',
     keywords: [
         'virtual business address',
-        'London business address', 
+        'London business address',
         'mail forwarding service',
         'virtual office London',
         'company registration address',
@@ -132,7 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                     "description": "Professional London business address for company registration and mail handling"
                                 },
                                 {
-                                    "@type": "Service", 
+                                    "@type": "Service",
                                     "name": "Mail Forwarding",
                                     "description": "Secure digital mail scanning and forwarding service"
                                 },
