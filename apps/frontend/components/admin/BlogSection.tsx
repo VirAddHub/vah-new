@@ -298,24 +298,24 @@ export function BlogSection() {
                         <Plus className="h-4 w-4" />
                         New Post
                     </Button>
-                    <Button 
+                    <Button
                         variant="outline"
                         onClick={() => {
                             // Create a simple blog post directly via API
                             const slug = prompt('Enter slug for the blog post:');
                             if (!slug) return;
-                            
+
                             const title = prompt('Enter title:');
                             if (!title) return;
-                            
+
                             const description = prompt('Enter description:');
                             if (!description) return;
-                            
+
                             const content = prompt('Enter content (markdown):');
                             if (!content) return;
-                            
+
                             const status = confirm('Publish immediately?') ? 'published' : 'draft';
-                            
+
                             // Create the post
                             fetch('/api/bff/admin/blog/posts', {
                                 method: 'POST',
@@ -333,18 +333,18 @@ export function BlogSection() {
                                     noindex: false
                                 })
                             })
-                            .then(r => r.json())
-                            .then(result => {
-                                if (result.ok) {
-                                    alert('✅ Blog post created successfully!');
-                                    refetchPosts();
-                                } else {
-                                    alert(`❌ Error: ${result.error || 'Failed to create post'}`);
-                                }
-                            })
-                            .catch(error => {
-                                alert(`❌ Error: ${error.message}`);
-                            });
+                                .then(r => r.json())
+                                .then(result => {
+                                    if (result.ok) {
+                                        alert('✅ Blog post created successfully!');
+                                        refetchPosts();
+                                    } else {
+                                        alert(`❌ Error: ${result.error || 'Failed to create post'}`);
+                                    }
+                                })
+                                .catch(error => {
+                                    alert(`❌ Error: ${error.message}`);
+                                });
                         }}
                         className="flex items-center gap-2"
                     >

@@ -32,8 +32,8 @@ export function Navigation({ onNavigate }: NavigationProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
-            <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm">
+            <div className="container-modern py-4 flex items-center justify-between">
                 {/* Logo */}
                 <VAHLogo href="/" size="md" showText={true} />
 
@@ -43,66 +43,70 @@ export function Navigation({ onNavigate }: NavigationProps) {
                         <button
                             key={item.label}
                             onClick={() => handleNavClick(item.page)}
-                            className="hover:text-foreground transition-colors font-medium"
+                            className="nav-link hover:text-foreground transition-colors font-medium"
                         >
                             {item.label}
                         </button>
                     ))}
                 </nav>
 
-                {/* Auth Buttons */}
-                <div className="hidden md:flex items-center gap-3">
-                    <button
+                {/* Desktop CTA */}
+                <div className="hidden md:flex items-center gap-4">
+                    <Button
+                        variant="outline"
                         onClick={() => handleNavClick('login')}
-                        className="text-sm lg:text-base leading-[1.2] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        className="btn-outline"
                     >
-                        Log in
-                    </button>
+                        Login
+                    </Button>
                     <Button
                         onClick={() => handleNavClick('signup')}
-                        className="rounded-xl bg-primary px-4 py-2 text-white text-sm lg:text-base leading-[1.2] font-medium hover:bg-primary/90 shadow-soft"
+                        className="btn-primary"
                     >
-                        Get started
+                        Get Started
                     </Button>
                 </div>
 
-                {/* Mobile menu button */}
-                <div className="md:hidden">
-                    <Button
-                        variant="ghost"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2"
-                    >
-                        {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </Button>
-                </div>
+                {/* Mobile Menu Button */}
+                <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="md:hidden p-2 rounded-xl hover:bg-muted transition-colors"
+                    aria-label="Toggle menu"
+                >
+                    {isMenuOpen ? (
+                        <X className="h-6 w-6" />
+                    ) : (
+                        <Menu className="h-6 w-6" />
+                    )}
+                </button>
             </div>
 
-            {/* Mobile menu */}
+            {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-border/50 bg-background">
-                    <div className="px-6 pt-4 pb-6 space-y-2">
+                <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-md">
+                    <div className="container-modern py-4 space-y-4">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page)}
-                                className="block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
+                                className="block w-full text-left py-3 px-4 rounded-xl hover:bg-muted transition-colors font-medium"
                             >
                                 {item.label}
                             </button>
                         ))}
-                        <div className="pt-4 space-y-3">
-                            <button
+                        <div className="pt-4 border-t border-border/50 space-y-3">
+                            <Button
+                                variant="outline"
                                 onClick={() => handleNavClick('login')}
-                                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                                className="w-full btn-outline"
                             >
-                                Log in
-                            </button>
+                                Login
+                            </Button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="w-full rounded-xl bg-primary text-white font-medium hover:bg-primary/90 shadow-soft"
+                                className="w-full btn-primary"
                             >
-                                Get started
+                                Get Started
                             </Button>
                         </div>
                     </div>
