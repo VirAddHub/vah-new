@@ -13,7 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { MailboxPreviewCard } from "./MailboxPreviewCard";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -159,17 +159,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         </div>
                         <div className="lg:col-span-5">
-                            <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
-                                <img
-                                    src="/images/london_skyline.png"
-                                    alt="London skyline - Your professional business address location"
-                                    className="aspect-[4/3] w-full rounded-[16px] object-cover object-top"
-                                />
-                                <div className="p-4 text-sm text-muted-foreground">
-                                    Same-Day Scans • Secure Dashboard • UK
-                                    Forwarding On Request
-                                </div>
-                            </div>
+                            <MailboxPreviewCard 
+                                showPriceBadge={true}
+                                price="£9.94/mo"
+                            />
                         </div>
                     </div>
                 </div>
