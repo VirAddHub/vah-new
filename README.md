@@ -4,3 +4,4 @@
 - Never commit real DATABASE_URL or API keys.
 - Local secrets live in apps/backend/.env (gitignored).
 - Render uses dashboard Environment Variables. Use the **INTERNAL DB URL** on Render.
+# Reverted to original working state
