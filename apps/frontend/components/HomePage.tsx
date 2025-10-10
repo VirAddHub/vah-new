@@ -133,7 +133,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </h1>
                             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                                Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents. Trusted by 1000+ businesses across the UK.
+                                Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents.
                             </p>
 
                             <div className="mt-10">
