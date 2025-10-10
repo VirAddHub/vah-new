@@ -476,7 +476,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center gap-4">
-              <VAHLogo onNavigate={onNavigate} size="md" showText={false} />
+              <VAHLogo onNavigate={onNavigate} size="lg" showText={false} />
             </div>
 
             {/* User Info and Actions */}

@@ -10,7 +10,7 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default:
-                    // VAH amber
+                    // VAH green
                     "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border border-[color-mix(in_oklab,hsl(var(--primary))_85%,hsl(var(--border)))] shadow-[var(--shadow-sm)] hover:bg-[hsl(var(--primary-hover))] hover:shadow-[var(--shadow-md)]",
                 secondary:
                     "bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] hover:border-[hsl(var(--accent-hover))]",

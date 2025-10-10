@@ -140,7 +140,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-6">
-          <VAHLogo className="h-12 w-auto" />
+          <VAHLogo size="lg" />
         </div>
         <h1 className="text-3xl font-bold mb-2">Reset Your Password</h1>
         <p className="text-muted-foreground text-lg">
@@ -285,7 +285,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-6">
-          <VAHLogo className="h-12 w-auto" />
+          <VAHLogo size="lg" />
         </div>
         <h1 className="text-3xl font-bold mb-2">Create New Password</h1>
         <p className="text-muted-foreground text-lg">
