@@ -102,8 +102,8 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto text-balance">
                             {error || "The blog post you're looking for doesn't exist."}
                         </p>
-                        <Button 
-                            onClick={onBack} 
+                        <Button
+                            onClick={onBack}
                             className="btn-primary"
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -200,7 +200,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     <div className="max-w-4xl mx-auto">
                         <Card className="card-modern p-8 lg:p-12">
                             <CardContent className="prose prose-lg max-w-none">
-                                <div 
+                                <div
                                     className="text-muted-foreground leading-relaxed"
                                     dangerouslySetInnerHTML={{ __html: post.content }}
                                 />

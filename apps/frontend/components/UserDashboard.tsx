@@ -34,6 +34,7 @@ import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { VAHLogo } from "./VAHLogo";
 import { useToast } from "./ui/use-toast";
+import { DashboardStatsSkeleton, MailItemSkeleton, TableSkeleton } from "./ui/skeleton";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -243,14 +244,42 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container-modern py-12">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading dashboard...</p>
+        {/* Header Skeleton */}
+        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+          <div className="container-modern py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-8 bg-muted/50 rounded-lg animate-pulse"></div>
+                <div className="h-6 w-32 bg-muted/50 rounded-lg animate-pulse"></div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="h-9 w-24 bg-muted/50 rounded-lg animate-pulse"></div>
+                <div className="h-9 w-20 bg-muted/50 rounded-lg animate-pulse"></div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Stats Skeleton */}
+        <section className="section-padding">
+          <div className="container-modern">
+            <DashboardStatsSkeleton />
+          </div>
+        </section>
+
+        {/* Mail Items Skeleton */}
+        <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
+          <div className="container-modern">
+            <div className="max-w-6xl mx-auto">
+              <div className="h-8 w-48 bg-muted/50 rounded-lg mb-8 animate-pulse"></div>
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <MailItemSkeleton key={i} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }

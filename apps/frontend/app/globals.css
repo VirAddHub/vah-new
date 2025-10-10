@@ -197,7 +197,7 @@ html.fonts-loaded *:after {
     100% { background-position: 200% 0; }
 }
 
-/* Enhanced Responsive Design */
+/* Enhanced Mobile Experience */
 @media (max-width: 768px) {
     .container-modern {
         @apply px-4;
@@ -205,6 +205,138 @@ html.fonts-loaded *:after {
     
     .section-padding {
         @apply py-12;
+    }
+    
+    /* Mobile-specific touch targets */
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline {
+        @apply min-h-[44px] min-w-[44px]; /* iOS touch target minimum */
+    }
+    
+    /* Mobile navigation improvements */
+    .nav-link {
+        @apply py-3 px-4 text-base;
+    }
+    
+    /* Mobile card spacing */
+    .card-modern {
+        @apply mx-2 mb-4;
+    }
+    
+    /* Mobile form improvements */
+    .form-input {
+        @apply text-base; /* Prevents zoom on iOS */
+    }
+    
+    /* Mobile-specific animations */
+    .animate-fade-in-up {
+        @apply transform translate-y-4 opacity-0;
+        animation: fadeInUpMobile 0.6s ease-out forwards;
+    }
+}
+
+@keyframes fadeInUpMobile {
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Touch Gesture Support */
+.touch-gesture {
+    @apply touch-manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Pull-to-refresh indicator */
+.pull-to-refresh {
+    @apply transform -translate-y-full transition-transform duration-300;
+}
+
+.pull-to-refresh.active {
+    @apply translate-y-0;
+}
+
+/* Mobile-specific loading states */
+@media (max-width: 768px) {
+    .loading-shimmer {
+        animation-duration: 1.5s; /* Faster on mobile */
+    }
+    
+    .skeleton-card {
+        @apply mx-2 mb-3;
+    }
+}
+
+/* Enhanced Loading States */
+.loading-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Skeleton Loading States */
+.skeleton-card {
+    @apply animate-pulse bg-muted/30 rounded-xl p-6;
+}
+
+.skeleton-text {
+    @apply animate-pulse bg-muted/50 rounded h-4;
+}
+
+.skeleton-avatar {
+    @apply animate-pulse bg-muted/50 rounded-full;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    @apply animate-spin rounded-full border-2 border-muted border-t-primary;
+}
+
+/* Content Loading States */
+.content-loading {
+    @apply opacity-50 pointer-events-none;
+}
+
+.content-loaded {
+    @apply opacity-100 transition-opacity duration-300;
+}
+
+/* Progressive Loading */
+.progressive-load {
+    @apply opacity-0 transform translate-y-4;
+    animation: progressiveLoad 0.6s ease-out forwards;
+}
+
+@keyframes progressiveLoad {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Staggered Loading Animation */
+.stagger-load > * {
+    @apply opacity-0 transform translate-y-4;
+    animation: staggerLoad 0.6s ease-out forwards;
+}
+
+.stagger-load > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-load > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-load > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-load > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-load > *:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes staggerLoad {
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 

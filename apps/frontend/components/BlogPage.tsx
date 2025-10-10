@@ -11,6 +11,7 @@ import {
 import { Badge } from "./ui/badge";
 import { Calendar, Clock, ArrowRight, Loader2, Search, Filter } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { BlogCardSkeleton } from "./ui/skeleton";
 
 type BlogPost = {
     id: number;
@@ -114,12 +115,64 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     if (loading) {
         return (
             <div className="min-h-screen bg-background">
+                {/* Header Skeleton */}
+                <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+                    <div className="container-modern py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="h-8 w-24 bg-muted/50 rounded-lg animate-pulse"></div>
+                            <div className="flex items-center gap-4">
+                                <div className="h-10 w-64 bg-muted/50 rounded-lg animate-pulse"></div>
+                                <div className="h-10 w-20 bg-muted/50 rounded-lg animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Hero Section Skeleton */}
+                <section className="section-padding bg-gradient-to-b from-background to-muted/30">
+                    <div className="container-modern">
+                        <div className="text-center mb-16">
+                            <div className="h-16 w-16 bg-muted/50 rounded-2xl mx-auto mb-6 animate-pulse"></div>
+                            <div className="h-12 w-96 bg-muted/50 rounded-lg mx-auto mb-6 animate-pulse"></div>
+                            <div className="h-6 w-2/3 bg-muted/50 rounded-lg mx-auto mb-8 animate-pulse"></div>
+                            <div className="h-12 w-80 bg-muted/50 rounded-lg mx-auto animate-pulse"></div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Featured Post Skeleton */}
                 <section className="section-padding">
                     <div className="container-modern">
-                        <div className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                                <p className="text-muted-foreground">Loading blog posts...</p>
+                        <div className="max-w-6xl mx-auto">
+                            <div className="h-8 w-48 bg-muted/50 rounded-lg mx-auto mb-8 animate-pulse"></div>
+                            <div className="card-modern p-8 mb-16">
+                                <div className="grid gap-8 lg:grid-cols-2">
+                                    <div className="h-64 bg-muted/50 rounded-xl animate-pulse"></div>
+                                    <div className="space-y-4">
+                                        <div className="h-8 w-3/4 bg-muted/50 rounded-lg animate-pulse"></div>
+                                        <div className="h-4 w-full bg-muted/50 rounded animate-pulse"></div>
+                                        <div className="h-4 w-2/3 bg-muted/50 rounded animate-pulse"></div>
+                                        <div className="flex items-center gap-4 mt-6">
+                                            <div className="h-6 w-20 bg-muted/50 rounded-full animate-pulse"></div>
+                                            <div className="h-4 w-24 bg-muted/50 rounded animate-pulse"></div>
+                                            <div className="h-4 w-16 bg-muted/50 rounded animate-pulse"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Blog Grid Skeleton */}
+                <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
+                    <div className="container-modern">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="h-8 w-48 bg-muted/50 rounded-lg mx-auto mb-12 animate-pulse"></div>
+                            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <BlogCardSkeleton key={i} />
+                                ))}
                             </div>
                         </div>
                     </div>

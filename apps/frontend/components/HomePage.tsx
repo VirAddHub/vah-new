@@ -19,6 +19,9 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { SEO } from "./seo/SEO";
+import { TouchGesture, MobileNavigation } from "./ui/mobile";
+import { SEO_CONFIGS } from "./seo/SEO";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -78,7 +81,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
         });
 
     return (
-        <main className="bg-background text-foreground">
+        <>
+            <SEO {...SEO_CONFIGS.home} />
+            <TouchGesture
+                onSwipeLeft={() => handleNavClick('blog')}
+                onSwipeRight={() => handleNavClick('pricing')}
+                onPullToRefresh={() => window.location.reload()}
+            >
+                <main className="bg-background text-foreground">
             {/* HERO */}
             <section
                 className="relative overflow-hidden section-padding"
@@ -377,5 +387,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
         </main>
+            </TouchGesture>
+            <MobileNavigation currentPage="home" onNavigate={handleNavClick} />
+        </>
     );
 }
