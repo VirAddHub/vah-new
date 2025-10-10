@@ -162,7 +162,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="lg:col-span-5">
                             <MailboxPreviewCard
                                 showPriceBadge={true}
-                                price="£9.94/mo"
+                                price={`${priceLabel}${priceSuffix}`}
                             />
                         </div>
                     </div>
