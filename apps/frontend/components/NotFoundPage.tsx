@@ -1,95 +1,58 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+'use client';
+
 import { Button } from "./ui/button";
-// Separator component not available, using div instead
-import { ArrowLeft, Home, Mail, Search, Check } from "lucide-react";
+import { Card, CardContent } from "./ui/card";
+import { Home, ArrowLeft, Search, HelpCircle } from "lucide-react";
 
 interface NotFoundPageProps {
-    onNavigate?: (page: string) => void;
-    onGoBack?: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
-    const handleNavClick = (page: string) => {
-        if (onNavigate) {
-            onNavigate(page);
-        }
-    };
+export function NotFoundPage({ onNavigate }: NotFoundPageProps) {
+  const go = (page: string) => onNavigate?.(page);
 
-    return (
-        <main className="min-h-[80vh] bg-background text-foreground">
-            <div className="container mx-auto px-4 py-16">
-                <div className="mx-auto max-w-3xl">
-                    <div className="text-center mb-10">
-                        <div className="text-6xl font-bold tracking-tight">404</div>
-                        <h1 className="text-3xl md:text-4xl font-bold mt-3">
-                            We couldn't find that page
-                        </h1>
-                        <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-                            The link may be broken, or the page may have been moved. Here are a few helpful links.
-                        </p>
-                    </div>
-
-                    <Card className="shadow-sm border border-border/80">
-                        <CardHeader>
-                            <CardTitle>Try the following</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                            <ul className="space-y-3 text-sm">
-                                {[
-                                    "Check the URL for typos",
-                                    "Use the main navigation to find a section",
-                                    "Search for the page or topic you need",
-                                ].map((tip) => (
-                                    <li key={tip} className="flex items-start gap-3">
-                                        <div className="mt-[2px] w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <Check className="w-3.5 h-3.5 text-primary" />
-                                        </div>
-                                        <span className="text-foreground/90">{tip}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <div className="border-t border-border my-4" />
-
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Button
-                                    onClick={() => handleNavClick('home')}
-                                    className="w-full sm:w-auto"
-                                >
-                                    <Home className="mr-2 h-4 w-4" />
-                                    Go to Home
-                                </Button>
-                                <Button
-                                    onClick={() => handleNavClick('help')}
-                                    variant="secondary"
-                                    className="w-full sm:w-auto"
-                                >
-                                    <Search className="mr-2 h-4 w-4" />
-                                    Browse Help
-                                </Button>
-                                <Button
-                                    onClick={() => window.open('mailto:support@virtualaddresshub.co.uk')}
-                                    variant="ghost"
-                                    className="w-full sm:w-auto"
-                                >
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    Contact Support
-                                </Button>
-                            </div>
-
-                            <div className="pt-2 text-xs text-muted-foreground">
-                                <button
-                                    onClick={onGoBack || (() => window.history.back())}
-                                    className="inline-flex items-center bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 px-3 py-1.5 rounded-md text-sm font-medium"
-                                >
-                                    <ArrowLeft className="mr-1 h-3.5 w-3.5" />
-                                    Go back
-                                </button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        </main>
-    );
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        <Card className="card-modern p-8 text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-muted to-muted/50 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+            <Search className="h-10 w-10 text-muted-foreground" />
+          </div>
+          
+          <h1 className="text-4xl font-bold mb-4 text-gradient">404 - Page Not Found</h1>
+          
+          <p className="text-lg text-muted-foreground mb-8 text-balance">
+            Sorry, the page you're looking for doesn't exist. 
+            It might have been moved, deleted, or you entered the wrong URL.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => go('home')}
+              className="btn-primary"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Go Home
+            </Button>
+            <Button
+              onClick={() => window.history.back()}
+              variant="outline"
+              className="btn-outline"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
+            </Button>
+            <Button
+              onClick={() => go('help')}
+              variant="outline"
+              className="btn-outline"
+            >
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Get Help
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 }

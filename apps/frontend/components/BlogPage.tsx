@@ -87,7 +87,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     // Filter posts based on search term
     const filteredPosts = useMemo(() => {
         if (!searchTerm) return blogPosts;
-        return blogPosts.filter(post => 
+        return blogPosts.filter(post =>
             post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
             post.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -154,7 +154,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance mb-8">
                             Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding services.
                         </p>
-                        
+
                         {/* Search Bar */}
                         <div className="max-w-md mx-auto relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -178,8 +178,8 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                             <h2 className="text-2xl font-bold mb-8 text-center">
                                 <span className="text-gradient">Featured Article</span>
                             </h2>
-                            
-                            <article 
+
+                            <article
                                 className="blog-card cursor-pointer group"
                                 onClick={() => handlePostClick(featuredPost)}
                             >
@@ -194,7 +194,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                             Featured
                                         </Badge>
                                     </div>
-                                    
+
                                     <div className="p-8 flex flex-col justify-center">
                                         <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
                                             <Badge variant="secondary">{featuredPost.category}</Badge>
@@ -207,17 +207,17 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                                 {featuredPost.readTime}
                                             </div>
                                         </div>
-                                        
+
                                         <h3 className="text-2xl lg:text-3xl font-bold mb-4 group-hover:text-primary transition-colors">
                                             {featuredPost.title}
                                         </h3>
-                                        
+
                                         <p className="text-muted-foreground mb-6 leading-relaxed">
                                             {featuredPost.excerpt}
                                         </p>
-                                        
-                                        <Button 
-                                            variant="outline" 
+
+                                        <Button
+                                            variant="outline"
                                             className="btn-outline w-fit group-hover:bg-primary group-hover:text-primary-foreground"
                                         >
                                             Read More
@@ -238,10 +238,10 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                         <h2 className="text-2xl font-bold mb-12 text-center">
                             <span className="text-gradient">All Articles</span>
                         </h2>
-                        
+
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {gridPosts.map((post) => (
-                                <article 
+                                <article
                                     key={post.id}
                                     className="blog-card cursor-pointer group"
                                     onClick={() => handlePostClick(post)}
@@ -256,7 +256,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                             {post.category}
                                         </Badge>
                                     </div>
-                                    
+
                                     <div className="p-6">
                                         <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
                                             <div className="flex items-center gap-1">
@@ -268,17 +268,17 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                                 {post.readTime}
                                             </div>
                                         </div>
-                                        
+
                                         <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors line-clamp-2">
                                             {post.title}
                                         </h3>
-                                        
+
                                         <p className="text-muted-foreground mb-4 leading-relaxed line-clamp-3">
                                             {post.excerpt}
                                         </p>
-                                        
-                                        <Button 
-                                            variant="ghost" 
+
+                                        <Button
+                                            variant="ghost"
                                             className="p-0 h-auto text-primary hover:text-primary-hover group-hover:translate-x-1 transition-all duration-200"
                                         >
                                             Read More
@@ -304,8 +304,8 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                             <p className="text-muted-foreground mb-4">
                                 Try adjusting your search terms or browse all articles.
                             </p>
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={() => setSearchTerm('')}
                                 className="btn-outline"
                             >

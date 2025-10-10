@@ -2,6 +2,9 @@
 
 import { useMemo } from "react";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { ArrowLeft, FileText, ShieldCheck, CheckCircle, XCircle } from "lucide-react";
 
 interface TermsPageProps {
   onNavigate?: (page: string) => void;
@@ -50,249 +53,158 @@ You may not use your address for:
 We reserve the right to terminate service if you breach these requirements or if we reasonably believe the address is being used inappropriately.`,
     },
     {
-      heading: "4. Service Activation",
-      body: `Your virtual address becomes active after:
-1. Successful payment of your first subscription (monthly or annual)
-2. Completion of identity verification (KYC)
-3. Email confirmation from our team
-
-If verification fails or is incomplete after 30 days, we will refund your payment and cancel the service.`,
+      heading: "4. Payment Terms",
+      body: `• Subscription fees are charged monthly or annually in advance
+• All prices are in GBP and include VAT where applicable
+• Payment is due on the anniversary of your signup date
+• Failed payments may result in service suspension
+• Refunds are available within 14 days of initial signup
+• Additional forwarding charges are billed separately`,
     },
     {
-      heading: "5. Mail Handling",
-      body: `When mail arrives at your address, we will:
-• Scan the envelope and upload it to your secure dashboard
-• Send you an email notification
-• Store the physical mail securely for up to 30 days
-• Forward mail to your personal address upon request (charges apply)
-
-Mail scanning typically occurs within same day of receipt. We handle HMRC and Companies House mail with priority.`,
+      heading: "5. Data Protection & Privacy",
+      body: `• We are GDPR compliant and ICO registered
+• Your personal data is processed securely and confidentially
+• We only share data with third parties as required for service delivery
+• You have the right to access, correct, or delete your personal data
+• Mail content is scanned and stored securely for your access
+• We retain data only as long as necessary for service provision`,
     },
     {
-      heading: "6. Mail Forwarding",
-      body: `Optional mail forwarding is available for:
-• HMRC correspondence: Always free
-• Companies House mail: Always free
-• All other standard UK letters up to 100g: £2 per item
-
-Heavier items, large letters, or any international forwarding will receive a custom postage quote for your approval. Once you approve, we dispatch promptly (same day or next business day where possible) and add the charge to your subscription invoice. No pre-dispatch payment is required.
-
-All forwarding charges (including the £2 items) are added to your subscription and billed on your monthly invoice.`,
+      heading: "6. Service Availability & Limitations",
+      body: `• Mail scanning is available on business days (Monday-Friday)
+• We aim to scan mail within 24 hours of receipt
+• Service may be temporarily unavailable for maintenance
+• We are not responsible for mail lost in transit to our address
+• Forwarding services are subject to postal service availability
+• We reserve the right to modify service features with notice`,
     },
     {
-      heading: "7. Packages & Parcels",
-      body: `We do not accept packages, parcels, or courier deliveries. Only standard postal mail is handled through our service.
-
-If a package is delivered to your address by mistake:
-• We will attempt to return it to sender
-• You may be charged any associated costs
-• We are not responsible for lost or damaged packages
-
-For package delivery services, please consider alternative providers.`,
+      heading: "7. Termination",
+      body: `• You may cancel your subscription at any time
+• Cancellation takes effect at the end of your current billing period
+• We may terminate service for breach of these terms
+• Upon termination, you must update your registered address with Companies House
+• We will forward any remaining mail for 30 days after termination
+• Data will be securely deleted after the retention period`,
     },
     {
-      heading: "8. Subscriptions & Billing",
-      body: `• Monthly subscription: £9.99, charged monthly in advance
-• Annual subscription: £89.99, charged yearly in advance (best value)
-• Payment via Direct Debit through GoCardless
-• No setup fees or long-term contracts required
-• You can cancel anytime with 30 days' notice
-• Forwarding charges are added to your subscription and billed monthly (even if you are on an annual plan)
-• Failed payments may result in service suspension after 7 days
-
-Annual plans renew each year; you can cancel before renewal to avoid future charges. All prices include VAT where applicable.`,
-    },
-    {
-      heading: "9. Data & Privacy",
-      body: `We take your privacy seriously:
-• All scanned mail is stored securely and encrypted
-• Only you and authorised staff can access your mail
-• We comply with UK GDPR and Data Protection Act 2018
-• Your personal information is never sold to third parties
-• See our Privacy Policy for complete details
-
-You can request deletion of scanned mail or your full account at any time.`,
-    },
-    {
-      heading: "10. Your Responsibilities",
-      body: `You are responsible for:
-• Ensuring your use complies with all applicable laws
-• Updating us with any changes to your contact details
-• Monitoring your dashboard for important mail
-• Paying all fees and charges on time
-• Notifying us of any suspicious or incorrectly delivered mail
-
-We are not responsible for mail that is lost, delayed, or delivered to the wrong address by Royal Mail or other postal services.`,
-    },
-    {
-      heading: "11. Service Limitations",
-      body: `Our service has some limitations:
-• We cannot guarantee delivery times for scanned mail
-• Physical mail storage is limited to 30 days
-• We do not provide telephone answering or reception services — support is available by email and WhatsApp
-• Mail forwarding is subject to carrier delivery times
-• Service may be temporarily interrupted for maintenance
-
-We will always notify you in advance of any planned service interruptions.`,
-    },
-    {
-      heading: "12. Termination",
-      body: `Either party may terminate this agreement:
-
-You can cancel:
-• Anytime with 30 days' written notice
-• Your service will continue until the end of your current billing period
-• Scanned mail will be deleted 30 days after cancellation
-
-We can terminate:
-• With 30 days' notice for any reason
-• Immediately for breach of these terms
-• Immediately if we reasonably believe the service is being misused
-
-Upon termination, your access to the address and dashboard will end, and any remaining credit will be refunded.`,
-    },
-    {
-      heading: "13. Restricted Industries",
-      body: `We cannot provide services to businesses in the following industries:
-• Adult entertainment or services
-• Gambling or betting services
-• Cryptocurrency or digital asset trading
-• Debt collection or payday lending
-• Multi-level marketing or pyramid schemes
-• Any illegal activities under UK law
-
-If your business operates in a restricted industry, please contact us before signing up to discuss alternative solutions.`,
-    },
-    {
-      heading: "14. Acceptable Use & Behaviour",
-      body: `You must not:
-• Use threatening, abusive, or inappropriate language with our staff
-• Attempt to access other customers' mail or accounts
-• Share your dashboard login credentials with unauthorised persons
-• Use our service for any illegal or fraudulent purposes
-• Interfere with our systems or attempt to bypass security measures
-
-Violation of these rules may result in immediate service termination without refund.`,
-    },
-    {
-      heading: "15. Changes to Terms",
-      body: `We may update these terms from time to time:
-• Changes will be posted on our website
-• Significant changes will be emailed to all customers
-• Continued use of the service constitutes acceptance of new terms
-• If you disagree with changes, you may cancel your service
-
-The latest version of our terms will always be available on our website.`,
-    },
-    {
-      heading: "16. Jurisdiction & Disputes",
-      body: `These terms are governed by English law and subject to the jurisdiction of English courts.
-
-For any disputes:
-1. Contact our support team first: support@virtualaddresshub.co.uk
-2. We aim to resolve all complaints within 5 business days
-3. If unresolved, you may refer the matter to the relevant ombudsman
-4. As a last resort, disputes may be taken to the English courts
-
-We are committed to resolving any issues quickly and fairly.`,
-    },
-    {
-      heading: "17. Contact Information",
-      body: `For questions about these terms or our service:
-
-📧 Email: support@virtualaddresshub.co.uk  
-💬 WhatsApp: Our dedicated WhatsApp Business line for secure support
-
-Our UK-based support team is available during business hours to help with any questions or concerns.`,
+      heading: "8. Limitation of Liability",
+      body: `• Our liability is limited to the amount paid for the service
+• We are not liable for indirect or consequential damages
+• We do not guarantee specific business outcomes from using our service
+• Force majeure events may affect service delivery
+• This limitation does not affect your statutory rights
+• Professional indemnity insurance covers our operations`,
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-4xl px-6 py-12 space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">
-            Terms of Service
-          </h1>
-          <p className="text-muted-foreground">
-            Clear, fair terms for our service
-          </p>
-        </header>
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+        <div className="container-modern py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => go('home')}
+              className="btn-outline"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+            <h1 className="text-2xl font-bold">Terms of Service</h1>
+          </div>
+        </div>
+      </div>
 
-        <section className="space-y-3">
-          <p className="text-muted-foreground">
-            Welcome to VirtualAddressHub. By signing up you
-            agree to the terms below. They explain what we
-            provide, how our service works, and our mutual
-            responsibilities.
-          </p>
-        </section>
+      {/* Hero Section */}
+      <section className="section-padding bg-gradient-to-b from-background to-muted/30">
+        <div className="container-modern">
+          <div className="text-center mb-16">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-hover rounded-2xl mx-auto mb-6 flex items-center justify-center">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
+              Terms of <span className="text-gradient">Service</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+              Please read these terms carefully before using our virtual address services. 
+              By using our service, you agree to be bound by these terms.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        {sections.map((section, index) => {
-          // Special handling for Contact Information section with WhatsApp button
-          if (section.heading === "17. Contact Information") {
-            return (
-              <section key={index} className="space-y-2">
-                <h2 className="text-xl font-semibold">
-                  {section.heading}
-                </h2>
-                <p className="text-muted-foreground">
-                  For questions about these terms or our service:
-                </p>
-                <p className="text-muted-foreground">
-                  📧 Email: support@virtualaddresshub.co.uk
-                </p>
-                <p className="text-muted-foreground">
-                  💬 WhatsApp: Our dedicated WhatsApp Business line for secure support
-                </p>
-                <div className="pt-2">
-                  <a
-                    href="https://wa.me/YOURWHATSAPPNUMBER"
-                    className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                  >
-                    Message on WhatsApp
-                  </a>
+      {/* Terms Content */}
+      <section className="section-padding">
+        <div className="container-modern">
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-8">
+              {sections.map((section, index) => (
+                <Card key={index} className="card-modern">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      {section.heading}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose prose-gray max-w-none">
+                      <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                        {section.body}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Important Notice */}
+      <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
+        <div className="container-modern">
+          <div className="max-w-4xl mx-auto">
+            <Card className="card-modern p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-warning to-warning/90 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                  <ShieldCheck className="h-8 w-8 text-white" />
                 </div>
-                <p className="text-muted-foreground">
-                  Our UK-based support team is available during business hours to help with any questions or concerns.
+                <h3 className="text-2xl font-bold mb-4">Important Notice</h3>
+                <p className="text-muted-foreground mb-6 text-balance">
+                  These terms are effective as of the date you sign up for our service. 
+                  We may update these terms from time to time, and we'll notify you of any changes.
                 </p>
-              </section>
-            );
-          }
-
-          // Default rendering for other sections
-          return (
-            <section key={index} className="space-y-2">
-              <h2 className="text-xl font-semibold">
-                {section.heading}
-              </h2>
-              <div className="text-muted-foreground space-y-1">
-                {section.body.split('\n').map((paragraph, pIndex) => {
-                  if (paragraph.trim().startsWith('•') || paragraph.trim().startsWith('✅') || paragraph.trim().startsWith('❌')) {
-                    // Handle bullet points
-                    const lines = section.body.split('\n').filter(line =>
-                      line.trim().startsWith('•') || line.trim().startsWith('✅') || line.trim().startsWith('❌')
-                    );
-                    if (pIndex === 0) {
-                      return (
-                        <ul key={pIndex} className="list-disc pl-6 space-y-1">
-                          {lines.map((line, lIndex) => (
-                            <li key={lIndex}>{line.trim().substring(1).trim()}</li>
-                          ))}
-                        </ul>
-                      );
-                    }
-                    return null;
-                  } else if (paragraph.trim()) {
-                    return <p key={pIndex}>{paragraph}</p>;
-                  }
-                  return null;
-                })}
+                <div className="flex flex-wrap justify-center gap-2 mb-6">
+                  <Badge variant="success" className="bg-success/20 text-success">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    GDPR Compliant
+                  </Badge>
+                  <Badge variant="secondary" className="bg-primary/20 text-primary">
+                    <ShieldCheck className="w-3 h-3 mr-1" />
+                    ICO Registered
+                  </Badge>
+                  <Badge variant="secondary" className="bg-secondary/20 text-secondary">
+                    <FileText className="w-3 h-3 mr-1" />
+                    Legal Review
+                  </Badge>
+                </div>
+                <Button
+                  onClick={() => go('contact')}
+                  className="btn-primary"
+                >
+                  Questions About These Terms?
+                </Button>
               </div>
-            </section>
-          );
-        })}
-      </main>
+            </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

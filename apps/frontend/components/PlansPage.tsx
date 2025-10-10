@@ -102,7 +102,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance mb-8">
                             Professional London business address service with transparent pricing. No hidden fees, no surprises.
                         </p>
-                        
+
                         {/* Billing Toggle */}
                         <div className="flex items-center justify-center gap-4 mb-8">
                             <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -110,14 +110,12 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                             </span>
                             <button
                                 onClick={() => setIsAnnual(!isAnnual)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    isAnnual ? 'bg-primary' : 'bg-muted'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAnnual ? 'bg-primary' : 'bg-muted'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        isAnnual ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
                                 />
                             </button>
                             <span className={`text-sm font-medium ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -145,7 +143,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {isAnnual ? '/year' : '/month'}
                                 </div>
                             </div>
-                            
+
                             <ul className="space-y-3 mb-8">
                                 {includedFeatures.slice(0, 4).map((feature, index) => (
                                     <li key={index} className="flex items-start gap-3">
@@ -154,7 +152,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     </li>
                                 ))}
                             </ul>
-                            
+
                             <Button
                                 onClick={() => handleSelectPlan('basic')}
                                 disabled={processingPayment}
@@ -179,7 +177,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     Most Popular
                                 </Badge>
                             </div>
-                            
+
                             <div className="text-center mb-8">
                                 <h3 className="text-2xl font-bold mb-2">Professional</h3>
                                 <p className="text-muted-foreground mb-4">Ideal for growing businesses</p>
@@ -190,7 +188,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {isAnnual ? '/year' : '/month'}
                                 </div>
                             </div>
-                            
+
                             <ul className="space-y-3 mb-8">
                                 {includedFeatures.map((feature, index) => (
                                     <li key={index} className="flex items-start gap-3">
@@ -199,7 +197,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     </li>
                                 ))}
                             </ul>
-                            
+
                             <Button
                                 onClick={() => handleSelectPlan('professional')}
                                 disabled={processingPayment}
@@ -228,7 +226,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {isAnnual ? '/year' : '/month'}
                                 </div>
                             </div>
-                            
+
                             <ul className="space-y-3 mb-8">
                                 {includedFeatures.map((feature, index) => (
                                     <li key={index} className="flex items-start gap-3">
@@ -241,7 +239,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <span className="text-sm text-muted-foreground">Priority support & dedicated account manager</span>
                                 </li>
                             </ul>
-                            
+
                             <Button
                                 onClick={() => handleSelectPlan('enterprise')}
                                 disabled={processingPayment}
@@ -268,7 +266,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                             <h3 className="text-xl font-semibold mb-2">Fully Compliant</h3>
                             <p className="text-muted-foreground">Meets all UK regulations including ECCT Act 2023</p>
                         </div>
-                        
+
                         <div className="text-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                 <Clock className="h-8 w-8 text-white" />
@@ -276,7 +274,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                             <h3 className="text-xl font-semibold mb-2">Same-Day Service</h3>
                             <p className="text-muted-foreground">Digital mail scanning within hours of arrival</p>
                         </div>
-                        
+
                         <div className="text-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                 <Users className="h-8 w-8 text-white" />

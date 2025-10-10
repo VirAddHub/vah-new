@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Share2, Loader2, User, Tag } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface BlogPostPageProps {
@@ -78,10 +78,12 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     // Loading state
     if (loading) {
         return (
-            <div className="min-h-screen bg-background py-24">
-                <div className="container mx-auto px-4 text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                    <p className="text-muted-foreground">Loading blog post...</p>
+            <div className="min-h-screen bg-background">
+                <div className="container-modern py-24">
+                    <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading blog post...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -90,16 +92,24 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     // Error state
     if (error || !post) {
         return (
-            <div className="min-h-screen bg-background py-24">
-                <div className="container mx-auto px-4 text-center">
-                    <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6">Blog Post Not Found</h1>
-                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                        {error || "The blog post you're looking for doesn't exist."}
-                    </p>
-                    <Button onClick={onBack} variant="outline" className="px-6 py-3 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Blog
-                    </Button>
+            <div className="min-h-screen bg-background">
+                <div className="container-modern py-24">
+                    <div className="text-center">
+                        <div className="w-16 h-16 bg-muted rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                            <User className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <h1 className="text-4xl font-bold mb-6 text-gradient">Blog Post Not Found</h1>
+                        <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto text-balance">
+                            {error || "The blog post you're looking for doesn't exist."}
+                        </p>
+                        <Button 
+                            onClick={onBack} 
+                            className="btn-primary"
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back to Blog
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -107,98 +117,163 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-8">
-                {/* Back Button */}
-                <div className="mb-8">
+            {/* Header */}
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+                <div className="container-modern py-4">
                     <Button
                         onClick={onBack}
-                        variant="outline"
-                        className="px-4 py-2 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                        variant="ghost"
+                        className="btn-outline"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back to Blog
                     </Button>
                 </div>
-
-                {/* Article Header */}
-                <div className="max-w-4xl mx-auto mb-12">
-                    <div className="text-center mb-8">
-                        {post.tags && post.tags.length > 0 && (
-                            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs">
-                                {post.tags[0]}
-                            </Badge>
-                        )}
-                        <h1 className="font-serif text-4xl lg:text-5xl tracking-tight mb-6 text-foreground leading-tight">
-                            {post.title}
-                        </h1>
-                        <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-3xl mx-auto">
-                            {post.description}
-                        </p>
-                        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {post.dateLong}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {post.readTime}
-                            </div>
-                            <Button variant="ghost" size="sm" className="gap-2">
-                                <Share2 className="h-4 w-4" />
-                                Share
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Featured Image */}
-                {post.cover && (
-                    <div className="max-w-4xl mx-auto mb-12">
-                        <div className="relative h-64 lg:h-96 rounded-lg overflow-hidden">
-                            <ImageWithFallback
-                                src={post.cover}
-                                alt={post.title}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Article Content */}
-                <div className="max-w-4xl mx-auto">
-                    <Card className="border-0 shadow-none bg-transparent">
-                        <CardContent className="px-0">
-                            <div
-                                className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: post.content }}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Article Footer */}
-                <div className="max-w-4xl mx-auto mt-16 pt-8 border-t border-border">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button variant="outline" onClick={onBack}>
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Blog
-                            </Button>
-                        </div>
-                        <Button variant="ghost" size="sm" className="gap-2">
-                            <Share2 className="h-4 w-4" />
-                            Share Article
-                        </Button>
-                    </div>
-                </div>
             </div>
 
-            {/* Structured Data for SEO */}
+            {/* Hero Section */}
+            <section className="section-padding bg-gradient-to-b from-background to-muted/30">
+                <div className="container-modern">
+                    <div className="max-w-4xl mx-auto">
+                        {/* Meta Information */}
+                        <div className="flex flex-wrap items-center gap-4 mb-6">
+                            <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                <Tag className="w-3 h-3 mr-1" />
+                                {post.tags?.[0] || 'General'}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                {post.dateLong || post.date}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                {post.readTime || '5 min read'}
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-6 text-balance">
+                            {post.title}
+                        </h1>
+
+                        {/* Description */}
+                        {post.description && (
+                            <p className="text-xl text-muted-foreground mb-8 leading-relaxed text-balance">
+                                {post.description}
+                            </p>
+                        )}
+
+                        {/* Author */}
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-hover rounded-full flex items-center justify-center">
+                                <User className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">VirtualAddressHub</p>
+                                <p className="text-sm text-muted-foreground">Business Address Experts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Featured Image */}
+            {post.cover && (
+                <section className="section-padding">
+                    <div className="container-modern">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="relative rounded-2xl overflow-hidden shadow-modern-lg">
+                                <ImageWithFallback
+                                    src={post.cover}
+                                    alt={post.title}
+                                    className="aspect-[16/9] w-full object-cover"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Content */}
+            <section className="section-padding">
+                <div className="container-modern">
+                    <div className="max-w-4xl mx-auto">
+                        <Card className="card-modern p-8 lg:p-12">
+                            <CardContent className="prose prose-lg max-w-none">
+                                <div 
+                                    className="text-muted-foreground leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: post.content }}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </section>
+
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+                <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
+                    <div className="container-modern">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold mb-6">Tags</h3>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {post.tags.map((tag: string, index: number) => (
+                                        <Badge key={index} variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-colors">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Share Section */}
+            <section className="section-padding">
+                <div className="container-modern">
+                    <div className="max-w-4xl mx-auto">
+                        <Card className="card-modern p-8 text-center">
+                            <h3 className="text-xl font-semibold mb-4">Share This Article</h3>
+                            <p className="text-muted-foreground mb-6">
+                                Help others discover this valuable content about UK business addresses.
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: post.title,
+                                                text: post.description,
+                                                url: window.location.href,
+                                            });
+                                        } else {
+                                            navigator.clipboard.writeText(window.location.href);
+                                        }
+                                    }}
+                                    className="btn-outline"
+                                >
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    Share
+                                </Button>
+                                <Button
+                                    onClick={() => onNavigate?.('blog')}
+                                    className="btn-primary"
+                                >
+                                    Read More Articles
+                                </Button>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </section>
+
+            {/* Structured Data */}
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(generateStructuredData(post))
-                }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(generateStructuredData(post)) }}
             />
         </div>
     );

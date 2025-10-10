@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, User, Mail, Phone, Building2, MapPin, Save, Edit } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Building2, MapPin, Save, Edit, ShieldCheck, CheckCircle, Loader2 } from "lucide-react";
 import { profileService, UserProfile } from "@/lib/services/profile.service";
 import { useToast } from "./ui/use-toast";
 
@@ -101,10 +101,12 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading profile...</p>
+            <div className="min-h-screen bg-background">
+                <div className="container-modern py-24">
+                    <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                        <p className="text-muted-foreground">Loading profile...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -113,194 +115,267 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <div className="border-b bg-card">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm" onClick={onGoBack} className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back
-                        </Button>
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+                <div className="container-modern py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onGoBack}
+                                className="btn-outline"
+                            >
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Back
+                            </Button>
+                            <h1 className="text-2xl font-bold">Profile Settings</h1>
+                        </div>
+                        
                         <div className="flex items-center gap-2">
-                            <User className="h-5 w-5 text-primary" />
-                            <h1 className="text-2xl font-semibold">Profile Settings</h1>
+                            {editing ? (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setEditing(false)}
+                                        className="btn-outline"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="btn-primary"
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-4 w-4" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    onClick={() => setEditing(true)}
+                                    className="btn-primary"
+                                >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Profile
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="container-modern py-8">
+                {/* Profile Overview */}
+                <div className="mb-8">
+                    <Card className="card-modern p-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-hover rounded-2xl flex items-center justify-center">
+                                <User className="h-10 w-10 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-bold mb-2">
+                                    {profile?.first_name} {profile?.last_name}
+                                </h2>
+                                <p className="text-muted-foreground mb-2">{profile?.email}</p>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="success" className="bg-success/20 text-success">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Verified Account
+                                    </Badge>
+                                    <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                        <ShieldCheck className="w-3 h-3 mr-1" />
+                                        Active Service
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Profile Form */}
+                <div className="grid gap-8 lg:grid-cols-2">
                     {/* Personal Information */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
+                    <Card className="card-modern">
+                        <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <User className="h-5 w-5" />
                                 Personal Information
                             </CardTitle>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditing(!editing)}
-                            >
-                                <Edit className="h-4 w-4 mr-2" />
-                                {editing ? 'Cancel' : 'Edit'}
-                            </Button>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <Label htmlFor="first_name">First Name</Label>
+                                    <Label htmlFor="first_name" className="text-sm font-medium mb-2 block">
+                                        First Name
+                                    </Label>
                                     <Input
                                         id="first_name"
                                         value={formData.first_name}
                                         onChange={(e) => handleChange('first_name', e.target.value)}
                                         disabled={!editing}
+                                        className="form-input"
                                         placeholder="Enter your first name"
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="last_name">Last Name</Label>
+                                    <Label htmlFor="last_name" className="text-sm font-medium mb-2 block">
+                                        Last Name
+                                    </Label>
                                     <Input
                                         id="last_name"
                                         value={formData.last_name}
                                         onChange={(e) => handleChange('last_name', e.target.value)}
                                         disabled={!editing}
+                                        className="form-input"
                                         placeholder="Enter your last name"
                                     />
                                 </div>
                             </div>
-
+                            
                             <div>
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input
-                                    id="email"
-                                    value={profile?.email || ''}
-                                    disabled
-                                    className="bg-gray-50"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Email cannot be changed. Contact support if needed.
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="phone">Phone Number</Label>
+                                <Label htmlFor="phone" className="text-sm font-medium mb-2 block">
+                                    Phone Number
+                                </Label>
                                 <Input
                                     id="phone"
                                     value={formData.phone}
                                     onChange={(e) => handleChange('phone', e.target.value)}
                                     disabled={!editing}
+                                    className="form-input"
                                     placeholder="Enter your phone number"
                                 />
                             </div>
+                        </CardContent>
+                    </Card>
 
+                    {/* Business Information */}
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Building2 className="h-5 w-5" />
+                                Business Information
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
                             <div>
-                                <Label htmlFor="company_name">Company Name</Label>
+                                <Label htmlFor="company_name" className="text-sm font-medium mb-2 block">
+                                    Company Name
+                                </Label>
                                 <Input
                                     id="company_name"
                                     value={formData.company_name}
                                     onChange={(e) => handleChange('company_name', e.target.value)}
                                     disabled={!editing}
-                                    placeholder="Enter your company name (optional)"
+                                    className="form-input"
+                                    placeholder="Enter your company name"
                                 />
                             </div>
-
-                            {editing && (
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" onClick={() => setEditing(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSave} disabled={saving}>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? 'Saving...' : 'Save Changes'}
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Forwarding Address */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Forwarding Address
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="p-4 bg-blue-50 rounded-lg">
-                                <h4 className="font-medium text-sm text-blue-900 mb-2">Important</h4>
-                                <p className="text-sm text-blue-800">
-                                    This address will be used for all mail forwarding requests.
-                                    Make sure it's accurate and complete.
-                                </p>
-                            </div>
-
+                            
                             <div>
-                                <Label htmlFor="forwarding_address">Forwarding Address</Label>
+                                <Label htmlFor="forwarding_address" className="text-sm font-medium mb-2 block">
+                                    Forwarding Address
+                                </Label>
                                 <Textarea
                                     id="forwarding_address"
                                     value={formData.forwarding_address}
                                     onChange={(e) => handleChange('forwarding_address', e.target.value)}
                                     disabled={!editing}
-                                    placeholder="Enter your forwarding address&#10;Include:&#10;- Full name&#10;- Street address&#10;- City, Postal Code&#10;- Country"
-                                    rows={6}
-                                    className="font-mono text-sm"
+                                    className="form-input"
+                                    placeholder="Enter your forwarding address"
+                                    rows={3}
                                 />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Format: Name on Line 1, Street Address on Line 2, City and Postal Code on Line 3, Country on Line 4
-                                </p>
                             </div>
-
-                            {!editing && (
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                    <h4 className="font-medium text-sm text-gray-700 mb-2">Current Address:</h4>
-                                    <pre className="text-sm text-gray-600 whitespace-pre-line">
-                                        {formData.forwarding_address || 'No forwarding address set'}
-                                    </pre>
-                                </div>
-                            )}
-
-                            {editing && (
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" onClick={() => setEditing(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSave} disabled={saving}>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? 'Saving...' : 'Save Address'}
-                                    </Button>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Account Information */}
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Building2 className="h-5 w-5" />
-                            Account Information
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label>Account Status</Label>
-                                <div className="mt-1">
-                                    <Badge variant="default">Active</Badge>
+                {/* Service Information */}
+                <div className="mt-8">
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5" />
+                                Service Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <div>
+                                    <h4 className="font-semibold mb-2">Your London Address</h4>
+                                    <p className="text-muted-foreground mb-2">
+                                        This is your professional business address for all official correspondence.
+                                    </p>
+                                    <div className="p-4 bg-muted/50 rounded-xl">
+                                        <p className="font-mono text-sm">
+                                            {profile?.london_address || '123 Business Street, London, EC1A 4HD'}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-semibold mb-2">Service Status</h4>
+                                    <p className="text-muted-foreground mb-2">
+                                        Your current service plan and status.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <Badge variant="success" className="bg-success/20 text-success">
+                                            Active Service
+                                        </Badge>
+                                        <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                            Premium Plan
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <Label>Member Since</Label>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
-                                </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Account Actions */}
+                <div className="mt-8">
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle>Account Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('dashboard')}
+                                    className="btn-outline"
+                                >
+                                    <User className="mr-2 h-4 w-4" />
+                                    View Dashboard
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('help')}
+                                    className="btn-outline"
+                                >
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Contact Support
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('pricing')}
+                                    className="btn-outline"
+                                >
+                                    <Building2 className="mr-2 h-4 w-4" />
+                                    Manage Plan
+                                </Button>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );
