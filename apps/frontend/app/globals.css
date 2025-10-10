@@ -437,7 +437,48 @@ iframe {
         transform: translateY(-1px);
     }
 
-    /* Enhanced button styling */
+    /* Enhanced spacing and layout utilities */
+.section-padding {
+    @apply py-16 md:py-24 lg:py-32;
+}
+
+.container-modern {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Enhanced card styles */
+.card-modern {
+    @apply bg-card border border-border/50 rounded-2xl;
+    @apply shadow-sm hover:shadow-lg transition-all duration-300;
+    @apply backdrop-blur-sm bg-card/80;
+}
+
+/* Enhanced gradient backgrounds */
+.gradient-hero {
+    background: linear-gradient(135deg, 
+        hsl(var(--primary)) 0%, 
+        hsl(var(--secondary)) 50%, 
+        hsl(var(--primary)) 100%);
+}
+
+/* Enhanced text styles */
+.text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-balance {
+    text-wrap: balance;
+}
+
+/* Enhanced shadows */
+.shadow-modern-lg {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Enhanced button styling */
     .btn-primary {
         background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
         box-shadow: 0 4px 12px rgba(33, 78, 52, 0.3);
