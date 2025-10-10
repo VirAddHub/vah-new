@@ -404,7 +404,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         onClick={() => onNavigate?.('home')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <VAHLogo size="sm" showText={false} />
+                        <VAHLogo size="md" showText={false} />
                         <div>
                             <h2 className="font-semibold text-sm text-primary">Admin Portal</h2>
                             <p className="text-xs text-muted-foreground hidden sm:block">VirtualAddressHub</p>
@@ -577,6 +577,13 @@ function OverviewSection({
                     change=""
                     trend="up"
                     icon={<Users2 className="h-5 w-5 text-green-500" />}
+                />
+                <MetricCard
+                    title="Pending KYC"
+                    value={metrics?.totals?.pending_kyc?.toLocaleString() || '0'}
+                    change=""
+                    trend="up"
+                    icon={<Users2 className="h-5 w-5 text-yellow-500" />}
                 />
                 <MetricCard
                     title="Monthly Revenue"

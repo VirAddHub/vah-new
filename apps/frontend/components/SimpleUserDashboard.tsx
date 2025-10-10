@@ -51,7 +51,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
             <header className="bg-card border-b border-border">
                 <div className="flex items-center justify-between h-16 px-6">
                     <div className="flex items-center gap-3">
-                        <VAHLogo size="sm" showText={false} />
+                        <VAHLogo size="md" showText={false} />
                         <div>
                             <p className="text-sm text-muted-foreground">Dashboard</p>
                         </div>
