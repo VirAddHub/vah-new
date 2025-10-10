@@ -84,7 +84,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <h1
-                            className="font-serif tracking-tight leading-[1.05] text-[clamp(1.75rem,5vw,3rem)] font-bold"
+                            className="font-serif tracking-tight leading-[1.1] text-[clamp(1.5rem,4vw,2.5rem)] font-bold"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Professional London Business Address Service.
@@ -124,7 +124,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <h1
-                                className="font-serif tracking-tight leading-[1.05] text-[clamp(2rem,6vw,5rem)] font-bold"
+                                className="font-serif tracking-tight leading-[1.1] text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold"
                                 style={{ fontFamily: "Playfair Display, serif" }}
                             >
                                 Professional London Business Address Service.
