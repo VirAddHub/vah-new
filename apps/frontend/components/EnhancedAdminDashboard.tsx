@@ -404,7 +404,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         onClick={() => onNavigate?.('home')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <VAHLogo size="md" showText={false} />
+                        <VAHLogo onNavigate={onNavigate} size="md" showText={false} />
                         <div>
                             <h2 className="font-semibold text-sm text-primary">Admin Portal</h2>
                             <p className="text-xs text-muted-foreground hidden sm:block">VirtualAddressHub</p>

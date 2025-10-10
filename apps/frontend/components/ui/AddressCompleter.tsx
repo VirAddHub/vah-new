@@ -49,7 +49,7 @@ interface AddressCompleterProps {
 export function AddressCompleter({
     onAddressSelect,
     initialAddress,
-    placeholder = "Start typing your address...",
+    placeholder = "Enter postcode to search...",
     label = "Address",
     required = false,
     className = "",
@@ -62,17 +62,34 @@ export function AddressCompleter({
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [error, setError] = useState<string | null>(null);
     const [isSelected, setIsSelected] = useState(false);
+    const [useManualEntry, setUseManualEntry] = useState(false);
+    const [manualAddress, setManualAddress] = useState({
+        line1: '',
+        line2: '',
+        line3: '',
+        postcode: '',
+        city: ''
+    });
 
     const inputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<NodeJS.Timeout>();
 
-    // Your address completer API key
-    const API_KEY = process.env.NEXT_PUBLIC_ADDRESS_API_KEY || "HDYIptgdlUCG92rU8XhD_g47737";
+    // Address completer API key - using environment variable or fallback
+    const API_KEY = process.env.NEXT_PUBLIC_ADDRESS_API_KEY;
     const API_URL = "https://api.getaddress.io/find";
 
     const searchAddresses = useCallback(async (searchQuery: string) => {
+        // Focus on postcode search - UK postcodes are typically 5-8 characters
         if (!searchQuery || searchQuery.length < 3) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        // If no API key, suggest manual entry
+        if (!API_KEY) {
+            setError("Address search is temporarily unavailable. Please use manual entry below.");
             setSuggestions([]);
             setShowSuggestions(false);
             return;
@@ -119,13 +136,33 @@ export function AddressCompleter({
             }
         } catch (err) {
             console.error("Address search error:", err);
-            setError("Failed to search addresses. Please try again.");
+            setError("Address search is temporarily unavailable. Please use manual entry below.");
             setSuggestions([]);
             setShowSuggestions(false);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [API_KEY]);
+
+    // Handle manual address entry
+    const handleManualAddressChange = (field: keyof typeof manualAddress, value: string) => {
+        setManualAddress(prev => ({ ...prev, [field]: value }));
+
+        // Auto-submit when all required fields are filled
+        const updated = { ...manualAddress, [field]: value };
+        if (updated.line1 && updated.postcode && updated.city) {
+            const address: AddressSuggestion = {
+                id: 'manual',
+                formatted_address: `${updated.line1}, ${updated.line2 ? updated.line2 + ', ' : ''}${updated.line3 ? updated.line3 + ', ' : ''}${updated.city}, ${updated.postcode}`,
+                address_line_1: updated.line1,
+                address_line_2: updated.line2,
+                city: updated.city,
+                postcode: updated.postcode,
+                country: 'GB'
+            };
+            onAddressSelect(address);
+        }
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -254,8 +291,8 @@ export function AddressCompleter({
                                     <div
                                         key={suggestion.id}
                                         className={`p-3 cursor-pointer border-b last:border-b-0 transition-colors ${index === selectedIndex
-                                                ? 'bg-primary/10 border-primary/20'
-                                                : 'hover:bg-muted/50'
+                                            ? 'bg-primary/10 border-primary/20'
+                                            : 'hover:bg-muted/50'
                                             }`}
                                         onClick={() => handleSuggestionClick(suggestion)}
                                     >
@@ -295,6 +332,91 @@ export function AddressCompleter({
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
+
+            {/* Manual Entry Option */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Can't find your address?</span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUseManualEntry(!useManualEntry)}
+                        className="text-xs"
+                    >
+                        {useManualEntry ? 'Hide Manual Entry' : 'Enter Manually'}
+                    </Button>
+                </div>
+
+                {useManualEntry && (
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+                        <div className="grid grid-cols-1 gap-3">
+                            <div>
+                                <Label htmlFor="manual-line1" className="text-sm font-medium">
+                                    Address Line 1 <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                    id="manual-line1"
+                                    value={manualAddress.line1}
+                                    onChange={(e) => handleManualAddressChange('line1', e.target.value)}
+                                    placeholder="House number and street name"
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="manual-line2" className="text-sm font-medium">
+                                    Address Line 2
+                                </Label>
+                                <Input
+                                    id="manual-line2"
+                                    value={manualAddress.line2}
+                                    onChange={(e) => handleManualAddressChange('line2', e.target.value)}
+                                    placeholder="Apartment, suite, etc. (optional)"
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="manual-line3" className="text-sm font-medium">
+                                    Address Line 3
+                                </Label>
+                                <Input
+                                    id="manual-line3"
+                                    value={manualAddress.line3}
+                                    onChange={(e) => handleManualAddressChange('line3', e.target.value)}
+                                    placeholder="Additional info (optional)"
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label htmlFor="manual-city" className="text-sm font-medium">
+                                        City <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="manual-city"
+                                        value={manualAddress.city}
+                                        onChange={(e) => handleManualAddressChange('city', e.target.value)}
+                                        placeholder="City"
+                                        className="mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="manual-postcode" className="text-sm font-medium">
+                                        Postcode <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="manual-postcode"
+                                        value={manualAddress.postcode}
+                                        onChange={(e) => handleManualAddressChange('postcode', e.target.value)}
+                                        placeholder="Postcode"
+                                        className="mt-1"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Selected Address Display */}
             {isSelected && (

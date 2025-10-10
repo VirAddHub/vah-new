@@ -80,10 +80,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 aria-label="Hero"
             >
                 <div className="absolute right-[-8rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-primary/20 to-primary/40 blur-3xl opacity-40" />
-                <div className="mx-auto max-w-7xl px-6 pt-20 pb-12 grid lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-7">
+                <div className="mx-auto max-w-7xl px-6 pt-20 pb-12">
+                    {/* Mobile: Clean Text-First Layout */}
+                    <div className="lg:hidden">
                         <h1
-                            className="font-serif tracking-tight leading-[1.05] text-[clamp(2rem,6vw,5rem)] font-bold"
+                            className="font-serif tracking-tight leading-[1.05] text-[clamp(1.75rem,5vw,3rem)] font-bold"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Professional London Business Address Service.
@@ -91,42 +92,83 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                            Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents. Trusted by 1000+ businesses across the UK.
+                        <p className="mt-4 text-base text-muted-foreground leading-relaxed">
+                            Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence.
                         </p>
 
-                        <div className="mt-10">
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                                ICO — Registered
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                                HMRC — AML Supervised
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                                GDPR — Aligned
+                            </Badge>
+                        </div>
+
+                        <div className="mt-6">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
+                                className="w-full h-12 px-6 rounded-[16px] btn-primary text-primary-foreground"
                             >
                                 Secure My London Address — Start Today
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="mt-8 flex flex-wrap gap-2">
-                            <Badge variant="secondary" className="text-sm">
-                                ICO — Registered
-                            </Badge>
-                            <Badge variant="secondary" className="text-sm">
-                                HMRC — AML Supervised
-                            </Badge>
-                            <Badge variant="secondary" className="text-sm">
-                                GDPR — Aligned
-                            </Badge>
-                        </div>
                     </div>
-                    <div className="lg:col-span-5 hidden lg:block">
-                        <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
-                            <img
-                                src="/images/london_skyline.png"
-                                alt="London skyline - Your professional business address location"
-                                className="aspect-[4/3] w-full rounded-[16px] object-cover object-top"
-                            />
-                            <div className="p-4 text-sm text-muted-foreground">
-                                Same-Day Scans • Secure Dashboard • UK
-                                Forwarding On Request
+
+                    {/* Desktop: Horizontal Layout - Text First */}
+                    <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
+                        <div className="lg:col-span-7">
+                            <h1
+                                className="font-serif tracking-tight leading-[1.05] text-[clamp(2rem,6vw,5rem)] font-bold"
+                                style={{ fontFamily: "Playfair Display, serif" }}
+                            >
+                                Professional London Business Address Service.
+                                <span className="block text-primary">
+                                    Compliant. Private. Seamless.
+                                </span>
+                            </h1>
+                            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                                Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents. Trusted by 1000+ businesses across the UK.
+                            </p>
+
+                            <div className="mt-10">
+                                <Button
+                                    onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
+                                    size="lg"
+                                    className="h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
+                                >
+                                    Secure My London Address — Start Today
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="mt-8 flex flex-wrap gap-2">
+                                <Badge variant="secondary" className="text-sm">
+                                    ICO — Registered
+                                </Badge>
+                                <Badge variant="secondary" className="text-sm">
+                                    HMRC — AML Supervised
+                                </Badge>
+                                <Badge variant="secondary" className="text-sm">
+                                    GDPR — Aligned
+                                </Badge>
+                            </div>
+                        </div>
+                        <div className="lg:col-span-5">
+                            <div className="rounded-[24px] bg-card p-4 shadow-md border border-border">
+                                <img
+                                    src="/images/london_skyline.png"
+                                    alt="London skyline - Your professional business address location"
+                                    className="aspect-[4/3] w-full rounded-[16px] object-cover object-top"
+                                />
+                                <div className="p-4 text-sm text-muted-foreground">
+                                    Same-Day Scans • Secure Dashboard • UK
+                                    Forwarding On Request
+                                </div>
                             </div>
                         </div>
                     </div>

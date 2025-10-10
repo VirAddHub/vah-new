@@ -36,6 +36,7 @@ interface VAHLogoProps extends VariantProps<typeof logoVariants> {
     initials?: string;
     fullName?: string;
     className?: string;
+    onNavigate?: (page: string) => void;
 }
 
 export function VAHLogo({
@@ -45,6 +46,7 @@ export function VAHLogo({
     initials = "VAH",
     fullName = "VirtualAddressHub",
     className,
+    onNavigate,
 }: VAHLogoProps) {
     useEffect(() => {
         logClientEvent("vah_logo_view", {
@@ -54,21 +56,38 @@ export function VAHLogo({
         });
     }, [size, showText]);
 
-    const handleClick = () => {
+    const handleClick = (e: React.MouseEvent) => {
         logClientEvent("vah_logo_click", {
             size,
             showText,
             source: "vah_logo",
         });
+
+        // If onNavigate is provided, use custom navigation instead of href
+        if (onNavigate) {
+            e.preventDefault();
+            onNavigate('home');
+        }
     };
 
+    // Use button if onNavigate is provided, otherwise use Link
+    const LogoElement = onNavigate ? 'button' : Link;
+    const logoProps = onNavigate
+        ? {
+            onClick: handleClick,
+            className: cn(logoVariants({ size }), className),
+            'aria-label': `${fullName} homepage`,
+            type: 'button' as const
+        }
+        : {
+            href,
+            onClick: handleClick,
+            className: cn(logoVariants({ size }), className),
+            'aria-label': `${fullName} homepage`
+        };
+
     return (
-        <Link
-            href={href}
-            className={cn(logoVariants({ size }), className)}
-            onClick={handleClick}
-            aria-label={`${fullName} homepage`}
-        >
+        <LogoElement {...logoProps}>
             {/* Logo Square */}
             <div
                 className={cn(
@@ -90,6 +109,6 @@ export function VAHLogo({
                     {fullName}
                 </span>
             )}
-        </Link>
+        </LogoElement>
     );
 }

@@ -129,7 +129,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             onClick={() => handleNavClick("home")}
                             className="mb-2 hover:scale-[1.02] transition-transform"
                         >
-                            <VAHLogo size="sm" showText={true} textClass="text-sm" />
+                            <VAHLogo onNavigate={onNavigate} size="sm" showText={true} />
                         </button>
                         <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-prose mb-2">
                             Professional virtual address for UK business. Fully compliant.

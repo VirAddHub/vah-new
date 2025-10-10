@@ -152,21 +152,25 @@ iframe {
    =========================== */
 @layer base {
 
-    /* LIGHT THEME (HSL triples) */
+    /* LIGHT THEME (HSL triples) - Premium Clean Design */
     :root,
     html {
-        /* airy surfaces */
-        --background: 0 0% 97%;
-        /* #F8F8F6 */
-        --foreground: 210 20% 15%;
-        /* Improved contrast for better readability */
+        /* Premium white surfaces */
+        --background: 0 0% 100%;
+        /* Pure white for crisp, professional look */
+        --foreground: 220 10% 15%;
+        /* Darker text for better contrast on white */
 
         --card: 0 0% 100%;
-        /* #ffffff */
-        --card-foreground: 210 20% 15%;
+        /* Pure white cards */
+        --card-foreground: 220 10% 15%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 210 20% 15%;
+        --popover-foreground: 220 10% 15%;
+
+        /* Subtle section breaks for depth */
+        --section-alt: 210 5% 98%;
+        /* Very light neutral for feature bands */
 
         /* Enhanced brand green */
         --primary: 145 50% 25%;
@@ -189,17 +193,17 @@ iframe {
 
         /* Enhanced utility colors */
         --secondary: 0 0% 100%;
-        --secondary-foreground: 210 20% 15%;
+        --secondary-foreground: 220 10% 15%;
 
-        --muted: 48 10% 94%;
-        /* #f1f0ec */
-        --muted-foreground: 210 15% 35%;
-        /* Improved contrast */
+        --muted: 210 5% 96%;
+        /* Subtle neutral for muted sections */
+        --muted-foreground: 220 10% 35%;
+        /* Better contrast on white */
 
-        --accent: 48 15% 88%;
-        /* Better accent for hover */
-        --accent-foreground: 210 20% 15%;
-        --accent-hover: 48 15% 85%;
+        --accent: 210 5% 94%;
+        /* Subtle accent for hover states */
+        --accent-foreground: 220 10% 15%;
+        --accent-hover: 210 5% 90%;
         /* Slightly darker on hover */
 
         /* Enhanced semantic colors */
@@ -212,14 +216,15 @@ iframe {
         --info: 210 70% 50%;
         --info-foreground: 0 0% 100%;
 
-        /* lines / inputs */
-        --border: 30 12% 90%;
-        /* #e7e5e4 */
-        --border-light: 30 10% 93%;
-        --input: 36 10% 92%;
-        /* #edeae6 */
+        /* Clean borders for white background */
+        --border: 0 0% 88%;
+        /* #E1E1E1 - Clean neutral border */
+        --border-light: 0 0% 92%;
+        /* Lighter border for subtle elements */
+        --input: 0 0% 96%;
+        /* Subtle input background */
         --input-background: 0 0% 100%;
-        --switch-background: 30 12% 90%;
+        --switch-background: 0 0% 90%;
 
         /* focus & selection */
         --ring: 210 21% 10% / 0.10;
@@ -745,5 +750,44 @@ iframe {
 
     .animate-accordion-up {
         animation: accordion-up 0.2s ease-out;
+    }
+
+    /* Premium UI Enhancements for White Background */
+    .card-modern {
+        @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .gradient-hero {
+        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+    }
+
+    .section-padding {
+        @apply py-12 lg:py-16;
+    }
+
+    .section-alt {
+        background-color: hsl(var(--section-alt));
+    }
+
+    .container-modern {
+        @apply max-w-7xl mx-auto px-4;
+    }
+
+    .text-gradient {
+        @apply bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent;
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .shadow-modern-lg {
+        box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Premium focus states for white background */
+    .focus-ring {
+        @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
     }
 }
