@@ -172,24 +172,23 @@ iframe {
         --section-alt: 210 5% 98%;
         /* Very light neutral for feature bands */
 
-        /* Enhanced brand green */
-        --primary: 145 50% 25%;
-        /* More vibrant primary */
+        /* Brand Amber (VAH) */
+        --primary: 28 92% 45%;
+        /* ≈ #d97706 */
         --primary-foreground: 0 0% 100%;
-        --primary-hover: 145 50% 20%;
-        /* Darker hover state */
+        --primary-hover: 28 92% 38%;
 
-        /* Enhanced primary scale */
-        --primary-50: 145 50% 97%;
-        --primary-100: 145 50% 90%;
-        --primary-200: 145 50% 80%;
-        --primary-300: 145 50% 70%;
-        --primary-400: 145 50% 60%;
-        --primary-500: 145 50% 50%;
-        --primary-600: 145 50% 40%;
-        --primary-700: 145 50% 30%;
-        --primary-800: 145 50% 20%;
-        --primary-900: 145 50% 15%;
+        /* Amber scale (approx) */
+        --primary-50: 28 92% 97%;
+        --primary-100: 28 92% 90%;
+        --primary-200: 28 92% 80%;
+        --primary-300: 28 92% 70%;
+        --primary-400: 28 92% 58%;
+        --primary-500: 28 92% 45%;
+        --primary-600: 28 92% 38%;
+        --primary-700: 28 92% 30%;
+        --primary-800: 28 92% 22%;
+        --primary-900: 28 92% 16%;
 
         /* Enhanced utility colors */
         --secondary: 0 0% 100%;
@@ -227,8 +226,10 @@ iframe {
         --switch-background: 0 0% 90%;
 
         /* focus & selection */
-        --ring: 210 21% 10% / 0.10;
-        --selection: 145 41% 22% / 0.08;
+        --ring: 28 92% 45% / 0.28;
+        /* more visible on white */
+        --selection: 28 92% 45% / 0.12;
+        /* subtle amber selection */
 
         /* charts */
         --chart-1: 210 37% 9%;
@@ -283,9 +284,9 @@ iframe {
         --popover: 213 20% 10%;
         --popover-foreground: 210 10% 90%;
 
-        --primary: 145 50% 25%;
+        --primary: 28 92% 50%;
         --primary-foreground: 0 0% 100%;
-        --primary-hover: 145 50% 30%;
+        --primary-hover: 28 92% 56%;
 
         --secondary: 213 20% 10%;
         --secondary-foreground: 210 10% 90%;
@@ -325,9 +326,16 @@ iframe {
         --chart-5: 212 24% 21%;
     }
 
-    /* Global feel with Montserrat Typography System */
-    * {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !important;
+    /* Scoped typography (safer with icons/mono) */
+    body,
+    p,
+    span,
+    div,
+    button,
+    input,
+    textarea,
+    label {
+        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
 
     html,
@@ -789,5 +797,61 @@ iframe {
     /* Premium focus states for white background */
     .focus-ring {
         @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+    }
+
+    /* Section band using your --section-alt */
+    .section--alt {
+        background-color: hsl(var(--section-alt));
+    }
+
+    /* High-visibility focus rings (keyboard a11y) */
+    :where(button, a, input, textarea, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 3px;
+        border-radius: 6px;
+    }
+
+    /* Card base */
+    .card {
+        background-color: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Button utilities (if you use class-based buttons anywhere) */
+    .btn-primary {
+        background: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+        border: 1px solid color-mix(in oklab, hsl(var(--primary)) 85%, hsl(var(--border)));
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+
+    .btn-primary:hover {
+        background: hsl(var(--primary-hover));
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: hsl(var(--secondary));
+        color: hsl(var(--secondary-foreground));
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+
+    .btn-secondary:hover {
+        background: hsl(var(--accent));
+        border-color: hsl(var(--accent-hover));
+        transform: translateY(-1px);
     }
 }
