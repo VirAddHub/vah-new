@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
+import { DarkModeToggle } from "./ui/theme";
+import { AdvancedSearch } from "./ui/advanced-search";
 
 interface NavigationProps {
     onNavigate: (page: string) => void;
@@ -52,6 +54,12 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
                 {/* Desktop CTA */}
                 <div className="hidden md:flex items-center gap-4">
+                    {/* Advanced Search */}
+                    <AdvancedSearch onNavigate={onNavigate} />
+                    
+                    {/* Dark Mode Toggle */}
+                    <DarkModeToggle />
+                    
                     <Button
                         variant="outline"
                         onClick={() => handleNavClick('login')}

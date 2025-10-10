@@ -347,11 +347,88 @@ html.fonts-loaded *:after {
     }
 }
 
-/* Universal CSS safety net */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
+/* Dark Mode Support */
+.dark {
+    --background: 220 15% 8%;
+    --foreground: 0 0% 95%;
+    --card: 220 15% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 200 100% 60%;
+    --primary-foreground: 0 0% 0%;
+    --primary-hover: 200 100% 55%;
+    --secondary: 25 95% 70%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 220 15% 20%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 95%;
+    --success: 142 76% 50%;
+    --success-foreground: 0 0% 95%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 95%;
+    --info: 200 100% 50%;
+    --info-foreground: 0 0% 95%;
+    --border: 220 15% 20%;
+    --input: 220 15% 15%;
+    --ring: 200 100% 50%;
+}
+
+/* Enhanced Dark Mode Components */
+.dark .card-modern {
+    @apply bg-card/50 backdrop-blur-md border-border/50;
+}
+
+.dark .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-hover text-primary-foreground;
+    @apply hover:shadow-lg hover:shadow-primary/25;
+}
+
+.dark .btn-secondary {
+    @apply bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground;
+    @apply hover:shadow-lg hover:shadow-secondary/25;
+}
+
+.dark .btn-outline {
+    @apply border-primary text-primary bg-transparent;
+    @apply hover:bg-primary hover:text-primary-foreground;
+}
+
+.dark .form-input {
+    @apply bg-input border-border text-foreground;
+    @apply focus:border-primary focus:ring-primary/20;
+}
+
+.dark .nav-link {
+    @apply text-foreground hover:text-primary;
+}
+
+.dark .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+}
+
+.dark .gradient-hero {
+    @apply bg-gradient-to-br from-primary via-primary-hover to-secondary;
+}
+
+.dark .gradient-card {
+    @apply bg-gradient-to-br from-card to-card/50;
+}
+
+/* Dark mode specific animations */
+.dark .loading-shimmer {
+    background: linear-gradient(90deg, 
+        hsl(var(--muted)) 25%, 
+        hsl(var(--muted-foreground)/0.1) 50%, 
+        hsl(var(--muted)) 75%);
+}
+
+/* Dark mode transitions */
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 html {

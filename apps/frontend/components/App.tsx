@@ -20,6 +20,10 @@ import AccountPage from '../app/(dashboard)/account/page';
 import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
+import { ThemeProvider } from "./ui/theme";
+import { CoreWebVitalsOptimizer, ResourceHints, CriticalCSS } from "./performance/CoreWebVitals";
+import { PWAInstallPrompt, OfflineIndicator, NotificationPermission, ServiceWorkerRegistration, PWAStatus } from "./pwa/PWAFeatures";
+import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
 
 export function App() {
   const { currentPage, navigate, goBack } = useNavigation();
@@ -155,13 +159,33 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <ThemeProvider>
+      {/* Performance Optimizations */}
+      <CoreWebVitalsOptimizer />
+      <ResourceHints />
+      <CriticalCSS />
+      
+      {/* PWA Features */}
+      <ServiceWorkerRegistration />
+      <PWAInstallPrompt />
+      <OfflineIndicator />
+      <NotificationPermission />
+      <PWAStatus />
+      
+      {/* SEO Schema Markup */}
+      <SchemaInjection schema={SchemaMarkup.organization} />
+      <SchemaInjection schema={SchemaMarkup.service} />
+      
+      {/* Font Loading */}
       <FontLoader />
-      <Navigation onNavigate={navigate} />
-      <main className="flex-1">
-        {renderPage()}
-      </main>
-      <Footer onNavigate={navigate} />
-    </div>
+      
+      <div className="min-h-screen flex flex-col">
+        <Navigation onNavigate={navigate} />
+        <main className="flex-1">
+          {renderPage()}
+        </main>
+        <Footer onNavigate={navigate} />
+      </div>
+    </ThemeProvider>
   );
 }
