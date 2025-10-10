@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { apiClient, safe } from "../../lib/apiClient";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
+import { SimpleBlogEditor } from "./SimpleBlogEditor";
 
 interface BlogPost {
     slug: string;
@@ -292,10 +293,65 @@ export function BlogSection() {
                     <h2 className="text-2xl font-bold">Blog Management</h2>
                     <p className="text-muted-foreground">Manage your blog posts and content</p>
                 </div>
-                <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    New Post
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        New Post
+                    </Button>
+                    <Button 
+                        variant="outline"
+                        onClick={() => {
+                            // Create a simple blog post directly via API
+                            const slug = prompt('Enter slug for the blog post:');
+                            if (!slug) return;
+                            
+                            const title = prompt('Enter title:');
+                            if (!title) return;
+                            
+                            const description = prompt('Enter description:');
+                            if (!description) return;
+                            
+                            const content = prompt('Enter content (markdown):');
+                            if (!content) return;
+                            
+                            const status = confirm('Publish immediately?') ? 'published' : 'draft';
+                            
+                            // Create the post
+                            fetch('/api/bff/admin/blog/posts', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    slug,
+                                    title,
+                                    description,
+                                    content,
+                                    tags: ['General'],
+                                    status,
+                                    cover: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+                                    ogTitle: title,
+                                    ogDesc: description,
+                                    noindex: false
+                                })
+                            })
+                            .then(r => r.json())
+                            .then(result => {
+                                if (result.ok) {
+                                    alert('✅ Blog post created successfully!');
+                                    refetchPosts();
+                                } else {
+                                    alert(`❌ Error: ${result.error || 'Failed to create post'}`);
+                                }
+                            })
+                            .catch(error => {
+                                alert(`❌ Error: ${error.message}`);
+                            });
+                        }}
+                        className="flex items-center gap-2"
+                    >
+                        <FileText className="h-4 w-4" />
+                        Quick Create
+                    </Button>
+                </div>
             </div>
 
             {/* Filters */}
