@@ -13,6 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL('https://virtualaddresshub.com'),
     title: 'VirtualAddressHub - Professional London Business Address & Mail Forwarding',
     description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.',
     keywords: [
@@ -39,7 +40,6 @@ export const metadata: Metadata = {
             { rel: 'mask-icon', url: '/icons/maskable-512.png' }
         ]
     },
-    themeColor: '#111827',
     openGraph: {
         type: 'website',
         locale: 'en_GB',
@@ -84,6 +84,7 @@ export const viewport: Viewport = {
     width: 'device-width',
     initialScale: 1,
     viewportFit: 'cover',
+    themeColor: '#111827',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
