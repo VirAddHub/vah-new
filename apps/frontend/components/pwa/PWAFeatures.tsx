@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import { Download, Bell, Wifi, WifiOff } from 'lucide-react';
 
 // PWA Installation prompt
@@ -45,13 +45,13 @@ export function PWAInstallPrompt() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('PWA installed successfully');
     } else {
       console.log('PWA installation declined');
     }
-    
+
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
   };
@@ -131,13 +131,13 @@ export function NotificationPermission() {
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
-      
+
       // Show prompt after 5 seconds if permission is default
       if (Notification.permission === 'default') {
         const timer = setTimeout(() => {
           setShowPrompt(true);
         }, 5000);
-        
+
         return () => clearTimeout(timer);
       }
     }
@@ -148,7 +148,7 @@ export function NotificationPermission() {
       const result = await Notification.requestPermission();
       setPermission(result);
       setShowPrompt(false);
-      
+
       if (result === 'granted') {
         // Show welcome notification
         new Notification('Welcome to VirtualAddressHub!', {
@@ -223,7 +223,7 @@ export function PWAStatus() {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
-      
+
       setIsPWA(isStandalone || (isIOS && isInStandaloneMode));
     };
 

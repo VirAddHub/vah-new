@@ -21,7 +21,6 @@ import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
-import { CoreWebVitalsOptimizer, ResourceHints, CriticalCSS } from "./performance/CoreWebVitals";
 import { PWAInstallPrompt, OfflineIndicator, NotificationPermission, ServiceWorkerRegistration, PWAStatus } from "./pwa/PWAFeatures";
 import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
 
@@ -160,25 +159,20 @@ export function App() {
 
   return (
     <ThemeProvider>
-      {/* Performance Optimizations */}
-      <CoreWebVitalsOptimizer />
-      <ResourceHints />
-      <CriticalCSS />
-      
       {/* PWA Features */}
       <ServiceWorkerRegistration />
       <PWAInstallPrompt />
       <OfflineIndicator />
       <NotificationPermission />
       <PWAStatus />
-      
+
       {/* SEO Schema Markup */}
       <SchemaInjection schema={SchemaMarkup.organization} />
       <SchemaInjection schema={SchemaMarkup.service} />
-      
+
       {/* Font Loading */}
       <FontLoader />
-      
+
       <div className="min-h-screen flex flex-col">
         <Navigation onNavigate={navigate} />
         <main className="flex-1">
