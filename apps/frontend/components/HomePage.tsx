@@ -389,18 +389,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </span>
                         </div>
 
-                        <div className="rounded-3xl bg-card p-8 shadow-xl border border-border">
+                        <div className="rounded-2xl bg-card p-6 shadow-lg border border-border">
                             <div className="text-center">
-                                <h3 className="text-3xl md:text-4xl font-bold text-primary mb-6">
+                                <h3 className="text-2xl md:text-3xl font-bold text-primary mb-4">
                                     All-In-One Plan
                                 </h3>
 
                                 <div className="mb-6">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-5xl md:text-6xl font-bold text-primary">
+                                        <span className="text-3xl md:text-4xl font-bold text-primary">
                                             {priceLabel}
                                         </span>
-                                        <span className="text-xl text-muted-foreground">
+                                        <span className="text-lg text-muted-foreground">
                                             {priceSuffix}
                                         </span>
                                     </div>
@@ -413,7 +413,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
 
                                 {/* Features List */}
-                                <div className="space-y-4 mb-8 text-left">
+                                <div className="space-y-3 mb-6 text-left">
                                     {[
                                         "Instantly Establish Credibility with a Prime Central London Address",
                                         "Guaranteed Compliance: Fully Approved for Companies House & HMRC",
@@ -446,10 +446,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="w-full h-14 text-lg font-semibold rounded-xl"
+                                    className="w-full h-12 text-base font-semibold rounded-lg"
                                 >
                                     {isAnnual ? `Choose Annual — ${priceLabel}${priceSuffix}` : `Secure My London Address Now`}
-                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                    <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
                                 <p className="mt-6 text-sm text-muted-foreground">
