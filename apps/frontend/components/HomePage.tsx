@@ -176,11 +176,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PRICING */}
             <section
                 id="pricing"
-                className="py-16 md:py-20 bg-muted/30"
+                className="py-8 md:py-12 bg-muted/30"
                 aria-label="Pricing"
             >
                 <div className="mx-auto max-w-4xl px-6">
-                    <div className="text-center mb-12">
+                    <div className="text-center mb-8">
                         <h2
                             className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-4"
                             style={{ fontFamily: "Playfair Display, serif" }}
@@ -193,7 +193,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
 
                     {/* Billing Toggle */}
-                    <div className="mb-8 flex justify-center">
+                    <div className="mb-6 flex justify-center">
                         <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm">
                             <RadioGroup
                                 defaultValue={billing}

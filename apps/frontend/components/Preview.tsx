@@ -1,6 +1,6 @@
 export default function Preview() {
     return (
-        <main className="min-h-screen w-full bg-muted/30 py-16">
+        <main className="min-h-screen w-full bg-muted/30 py-8">
             <section className="mx-auto max-w-4xl px-6 text-center">
                 <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3.5rem)] leading-tight text-gray-900">London address for modern businesses</h2>
                 <p className="mt-2 text-base font-medium tracking-wide text-gray-600 uppercase">
@@ -33,7 +33,7 @@ export default function Preview() {
 
             {/* FAQ intro follows seamlessly */}
             <section className="mx-auto max-w-4xl px-6 text-center">
-                <div className="mx-auto mb-6 mt-8 h-px w-24 bg-border" />
+                <div className="mx-auto mb-4 mt-6 h-px w-24 bg-border" />
                 <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">Questions, answered.</h2>
                 <p className="mt-3 text-base text-muted-foreground">Everything from using your address to billing and KYC — explained in plain English.</p>
 
@@ -46,7 +46,7 @@ export default function Preview() {
                 </div>
 
                 {/* teaser FAQs to keep the flow */}
-                <div className="mx-auto mt-8 grid gap-3 text-left md:max-w-3xl">
+                <div className="mx-auto mt-6 grid gap-3 text-left md:max-w-3xl">
                     <a href="/help#vah-registered-office" className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60">
                         <p className="font-medium text-foreground">Can I use your address as my official Registered Office & Director's Service Address?</p>
                         <p className="mt-1 text-sm text-muted-foreground">Yes — it's compliant for both with Companies House and HMRC and meets the "appropriate address" requirements.</p>

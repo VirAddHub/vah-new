@@ -34,9 +34,9 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full py-16">
+        <section className="w-full py-8">
             <div className="mx-auto max-w-6xl px-6">
-                <header className="mx-auto max-w-3xl text-center mb-12">
+                <header className="mx-auto max-w-3xl text-center mb-8">
                     <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">
                         How it works — clear, compliant, no surprises
                     </h2>
@@ -46,7 +46,7 @@ export default function HowItWorks() {
                 </header>
 
                 {/* timeline layout */}
-                <ol className="relative grid gap-10 md:gap-12">
+                <ol className="relative grid gap-6 md:gap-8">
                     {steps.map((s, i) => (
                         <li key={s.k} className="relative">
                             {/* number badge */}
@@ -58,7 +58,7 @@ export default function HowItWorks() {
 
                             <div className="md:pl-16">
                                 <div className="rounded-xl border border-border bg-card shadow-sm">
-                                    <div className="p-6 sm:p-8">
+                                    <div className="p-4 sm:p-6">
                                         <h3 className="font-serif text-[clamp(1.25rem,2.5vw,1.75rem)] text-gray-900">{s.title}</h3>
                                         <ul className="mt-4 space-y-2.5">
                                             {s.points.map((p) => (
