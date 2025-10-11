@@ -463,6 +463,10 @@ async function start() {
     app.use('/api', addressRouter);
     logger.info('[mount] /api (address routes) mounted');
 
+    // DEBUG: Temporary ping route to verify server wiring
+    app.get('/api/address/_ping', (req, res) => res.json({ ok: true, where: 'inline', timestamp: new Date().toISOString() }));
+    logger.info('[debug] /api/address/_ping route added');
+
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
 
