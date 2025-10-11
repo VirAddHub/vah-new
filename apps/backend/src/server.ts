@@ -72,7 +72,7 @@ import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
-import addressRouterImport from "./routes/address";
+import addressRouterImport from "./server/routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
 // DEBUG: Test import immediately
@@ -489,7 +489,7 @@ async function start() {
     console.log('[mount] mounting /api/address');
     console.log('[mount] addressRouter type:', typeof addressRouter);
     console.log('[mount] addressRouter value:', addressRouter);
-    
+
     if (addressRouter && typeof addressRouter === 'function') {
         app.use('/api/address', addressRouter);
         console.log('[mount] /api/address mounted successfully');
