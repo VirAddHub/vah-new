@@ -3,33 +3,33 @@
 import { Check } from 'lucide-react';
 
 const steps = [
-    {
-        k: 'verify',
-        title: 'Verify your account',
-        points: [
-            'Create your account and upload ID & proof of address (KYC/AML).',
-            'We review and confirm. You'll be notified when approved.',
+  {
+    k: 'verify',
+    title: 'Verify your account',
+    points: [
+      'Create your account and upload ID & proof of address (KYC/AML).',
+      'We review and confirm. You\'ll be notified when approved.',
       'Your Central London address appears in your dashboard once approved.'
-        ]
-    },
-    {
-        k: 'use',
-        title: 'Use your address everywhere',
-        points: [
-            'Update Companies House (Registered Office & Director's Service Address).',
+    ]
+  },
+  {
+    k: 'use',
+    title: 'Use your address everywhere',
+    points: [
+      'Update Companies House (Registered Office & Director\'s Service Address).',
       'Use with HMRC, banks, suppliers and clients.',
-            'A real, physical address — never a P.O. Box.'
-        ]
-    },
-    {
-        k: 'handle',
-        title: 'We handle your mail',
-        points: [
-            'Same-day letter scanning on business days to your dashboard.',
-            'Free UK forwarding for HMRC & Companies House letters (on request).',
-            'Other UK letters forwarded for £2 per item + postage. Letters only — no parcels.'
-        ]
-    }
+      'A real, physical address — never a P.O. Box.'
+    ]
+  },
+  {
+    k: 'handle',
+    title: 'We handle your mail',
+    points: [
+      'Same-day letter scanning on business days to your dashboard.',
+      'Free UK forwarding for HMRC & Companies House letters (on request).',
+      'Other UK letters forwarded for £2 per item + postage. Letters only — no parcels.'
+    ]
+  }
 ];
 
 export default function HowItWorks() {
@@ -37,7 +37,7 @@ export default function HowItWorks() {
         <section className="w-full py-16">
             <div className="mx-auto max-w-6xl px-6">
                 <header className="mx-auto max-w-3xl text-center mb-12">
-                    <h2 className="font-serif text-3xl sm:text-4xl leading-tight text-neutral-900">
+                    <h2 className="font-serif text-2xl sm:text-3xl leading-tight text-neutral-900">
                         How it works — clear, compliant, no surprises
                     </h2>
                     <p className="mt-3 text-base text-neutral-600">
