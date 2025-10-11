@@ -471,17 +471,31 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // Mount address router explicitly under /api/address
-    console.log('[mount] mounting /api/address');
-    app.use('/api/address', addressRouter);
-    console.log('[mount] /api/address mounted');
-
     // DEBUG: Test if /api/address path works at all
     app.get('/api/address/inline-test', (req, res) => {
         console.log('[inline] /api/address/inline-test hit');
         res.json({ ok: true, message: 'Inline route works', timestamp: new Date().toISOString() });
     });
     console.log('[debug] /api/address/inline-test route added');
+
+    // DEBUG: Test simple inline route
+    app.get('/api/address/simple', (req, res) => {
+        console.log('[inline] /api/address/simple hit');
+        res.json({ ok: true, message: 'Simple route works', timestamp: new Date().toISOString() });
+    });
+    console.log('[debug] /api/address/simple route added');
+
+    // Mount address router explicitly under /api/address
+    console.log('[mount] mounting /api/address');
+    console.log('[mount] addressRouter type:', typeof addressRouter);
+    console.log('[mount] addressRouter value:', addressRouter);
+    
+    if (addressRouter && typeof addressRouter === 'function') {
+        app.use('/api/address', addressRouter);
+        console.log('[mount] /api/address mounted successfully');
+    } else {
+        console.log('[mount] ERROR: addressRouter is not a function:', typeof addressRouter);
+    }
 
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
