@@ -107,7 +107,7 @@ export function AboutPage() {
             <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary mb-6">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-ink mb-6">
                         About Us
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
@@ -123,9 +123,9 @@ export function AboutPage() {
                 {/* What We Do */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
                     <CardHeader className="p-6">
-                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-primary">
-                            <div className="w-8 h-8 bg-primary/10 rounded-[12px] flex items-center justify-center">
-                                <Mail className="h-5 w-5 text-primary" />
+                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-ink">
+                            <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
+                                <Mail className="h-5 w-5 text-gray-600" />
                             </div>
                             What We Do
                         </CardTitle>
@@ -143,7 +143,7 @@ export function AboutPage() {
                                     key={point}
                                     className="flex items-start gap-4"
                                 >
-                                    <Check className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
                                     <span className="text-base text-foreground leading-relaxed">
                                         {point}
                                     </span>
@@ -155,7 +155,7 @@ export function AboutPage() {
 
                 {/* Why We Exist */}
                 <div className="mb-12 text-center">
-                    <h2 className="text-4xl font-bold text-primary mb-6">
+                    <h2 className="text-4xl font-bold text-ink mb-6">
                         Why We Exist
                     </h2>
                     <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
@@ -171,7 +171,7 @@ export function AboutPage() {
                                     key={point}
                                     className="flex items-start gap-4 text-left"
                                 >
-                                    <Check className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
                                     <span className="text-base text-foreground leading-relaxed">
                                         {point}
                                     </span>
@@ -184,9 +184,9 @@ export function AboutPage() {
                 {/* Who We Support */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
                     <CardHeader className="p-6">
-                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-primary">
-                            <div className="w-8 h-8 bg-primary/10 rounded-[12px] flex items-center justify-center">
-                                <Users className="h-5 w-5 text-primary" />
+                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-ink">
+                            <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
+                                <Users className="h-5 w-5 text-gray-600" />
                             </div>
                             Who We Support
                         </CardTitle>
@@ -198,7 +198,7 @@ export function AboutPage() {
                                     key={item}
                                     className="flex items-start gap-4"
                                 >
-                                    <Check className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
                                     <span className="text-base text-foreground leading-relaxed">
                                         {item}
                                     </span>
@@ -211,8 +211,8 @@ export function AboutPage() {
                 {/* Compliance */}
                 <Card className="mb-12">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-3xl font-semibold text-primary">
-                            <Shield className="h-5 w-5 text-primary" />
+                        <CardTitle className="flex items-center gap-2 text-3xl font-semibold text-ink">
+                            <Shield className="h-5 w-5 text-gray-600" />
                             Our Compliance Promise
                         </CardTitle>
                     </CardHeader>
@@ -227,7 +227,7 @@ export function AboutPage() {
                                     key={point}
                                     className="flex items-start gap-3"
                                 >
-                                    <Check className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+                                    <Check className="h-4 w-4 mt-1 text-gray-600 flex-shrink-0" />
                                     <span className="text-base text-foreground leading-relaxed">
                                         {point}
                                     </span>
@@ -238,21 +238,21 @@ export function AboutPage() {
                             You can review our full{" "}
                             <a
                                 href="/privacy"
-                                className="text-primary hover:underline"
+                                className="text-gray-600 hover:underline"
                             >
                                 Privacy Policy
                             </a>
                             ,{" "}
                             <a
                                 href="/terms"
-                                className="text-primary hover:underline"
+                                className="text-gray-600 hover:underline"
                             >
                                 Terms of Service
                             </a>
                             , and{" "}
                             <a
                                 href="/kyc-policy"
-                                className="text-primary hover:underline"
+                                className="text-gray-600 hover:underline"
                             >
                                 KYC Policy
                             </a>{" "}
@@ -263,26 +263,26 @@ export function AboutPage() {
 
                 {/* Company Stats */}
                 {healthData && (
-                    <Card className="mb-12 bg-primary/5 border border-primary/20">
+                    <Card className="mb-12 bg-gray-50 border border-line">
                         <CardContent className="p-6">
-                            <h2 className="text-2xl font-bold text-primary mb-4 text-center">
+                            <h2 className="text-2xl font-bold text-ink mb-4 text-center">
                                 Our Performance
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                                 <div>
-                                    <div className="text-3xl font-bold text-primary mb-1">
+                                    <div className="text-3xl font-bold text-ink mb-1">
                                         {healthData.uptime ? `${Math.round(healthData.uptime)}%` : '99.9%'}
                                     </div>
                                     <div className="text-sm text-muted-foreground">Uptime</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-bold text-primary mb-1">
+                                    <div className="text-3xl font-bold text-ink mb-1">
                                         1000+
                                     </div>
                                     <div className="text-sm text-muted-foreground">Active Users</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-bold text-primary mb-1">
+                                    <div className="text-3xl font-bold text-ink mb-1">
                                         50,000+
                                     </div>
                                     <div className="text-sm text-muted-foreground">Mail Processed</div>
@@ -294,7 +294,7 @@ export function AboutPage() {
 
                 {/* Contact Form */}
                 <div className="text-center">
-                    <h2 className="text-4xl font-bold text-primary mb-6">
+                    <h2 className="text-4xl font-bold text-ink mb-6">
                         Got Questions? Speak to Our UK Team.
                     </h2>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
@@ -309,7 +309,7 @@ export function AboutPage() {
                             {formSuccess ? (
                                 <div className="text-center py-8">
                                     <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                    <h3 className="text-xl font-semibold text-primary mb-2">
+                                    <h3 className="text-xl font-semibold text-ink mb-2">
                                         Message Sent Successfully!
                                     </h3>
                                     <p className="text-muted-foreground">
@@ -407,13 +407,13 @@ export function AboutPage() {
                     <div className="mt-8 max-w-md mx-auto space-y-4">
                         <Card className="bg-card border border-border">
                             <CardContent className="p-4">
-                                <div className="text-lg font-semibold mb-1 text-primary">
+                                <div className="text-lg font-semibold mb-1 text-ink">
                                     Email Support
                                 </div>
                                 <div className="text-base text-muted-foreground">
                                     <a
                                         href="mailto:support@virtualaddresshub.co.uk"
-                                        className="text-primary hover:underline break-all"
+                                        className="text-gray-600 hover:underline break-all"
                                     >
                                         support@virtualaddresshub.co.uk
                                     </a>
@@ -423,7 +423,7 @@ export function AboutPage() {
 
                         <Card className="bg-card border border-border">
                             <CardContent className="p-4">
-                                <div className="text-lg font-semibold mb-1 text-primary">
+                                <div className="text-lg font-semibold mb-1 text-ink">
                                     WhatsApp Support
                                 </div>
                                 <p className="text-sm text-muted-foreground mb-3">

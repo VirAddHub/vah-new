@@ -233,7 +233,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Hero */}
         <section className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-ink">
             Help Centre & FAQs
           </h1>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
@@ -245,7 +245,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         {/* Trust Highlights */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
           <div className="space-y-2">
-            <ShieldCheck className="mx-auto text-primary w-6 h-6" />
+            <ShieldCheck className="mx-auto text-gray-600 w-6 h-6" />
             <p className="text-sm font-medium">
               HMRC AML supervised
             </p>
@@ -254,7 +254,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             </p>
           </div>
           <div className="space-y-2">
-            <Mail className="mx-auto text-primary w-6 h-6" />
+            <Mail className="mx-auto text-gray-600 w-6 h-6" />
             <p className="text-sm font-medium">
               Unlimited mail scanning
             </p>
@@ -263,7 +263,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             </p>
           </div>
           <div className="space-y-2">
-            <CreditCard className="mx-auto text-primary w-6 h-6" />
+            <CreditCard className="mx-auto text-gray-600 w-6 h-6" />
             <p className="text-sm font-medium">
               £9.99 flat monthly plan
             </p>
@@ -277,7 +277,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         <section className="space-y-10">
           {grouped.map(({ category, items }) => (
             <div key={category} className="space-y-4">
-              <h2 className="text-lg md:text-xl font-semibold tracking-tight text-primary">
+              <h2 className="text-lg md:text-xl font-semibold tracking-tight text-ink">
                 {category}
               </h2>
               <Accordion type="multiple" className="space-y-2">
@@ -310,7 +310,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Contact CTA */}
         <section className="text-center space-y-3 pt-4">
-          <h3 className="text-lg font-semibold text-primary">
+          <h3 className="text-lg font-semibold text-ink">
             Still need help?
           </h3>
           <p className="text-muted-foreground text-sm max-w-xl mx-auto">

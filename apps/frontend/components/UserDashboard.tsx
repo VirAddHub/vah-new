@@ -551,7 +551,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         {/* Welcome Message */}
         <div className="mb-8">
-          <h1 className="mb-2 text-2xl font-bold text-primary">Welcome back, {getUserName()}</h1>
+          <h1 className="mb-2 text-2xl font-bold text-ink">Welcome back, {getUserName()}</h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
@@ -563,14 +563,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Mail Inbox Section */}
             <Card className="shadow-sm">
-              <CardHeader className="border-b border-primary/10">
+              <CardHeader className="border-b border-line">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-primary" />
+                      <Mail className="h-5 w-5 text-gray-600" />
                       <CardTitle className="text-lg font-semibold">Mail Inbox</CardTitle>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">{totalItems} items</Badge>
-                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin text-primary" />}
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-800 font-medium">{totalItems} items</Badge>
+                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin text-gray-600" />}
                     </div>
                     <p className="text-sm text-muted-foreground hidden sm:block">
                       Click on any mail item to view full details
@@ -607,11 +607,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
                   <button
                     onClick={toggleSelectAll}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                    className="flex items-center gap-2 text-sm font-medium hover:text-gray-600 transition-colors"
                     disabled={mailItems.length === 0}
                   >
                     {isAllSelected ? (
-                      <CheckSquare className="h-4 w-4 text-primary" />
+                      <CheckSquare className="h-4 w-4 text-gray-600" />
                     ) : (
                       <Square className="h-4 w-4" />
                     )}
@@ -630,7 +630,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   >
                     {isAllSelected ? (
                       <>
-                        <CheckSquare className="h-4 w-4 mr-2 text-primary" />
+                        <CheckSquare className="h-4 w-4 mr-2 text-gray-600" />
                         Deselect All ({mailItems.length})
                       </>
                     ) : (
@@ -676,7 +676,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           return (
                             <div
                               key={item.id}
-                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
+                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-gray-50 hover:bg-gray-100" : ""
                                 }`}
                             >
                               <div className="flex items-start gap-4">
@@ -689,9 +689,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                   className="mt-1 flex-shrink-0"
                                 >
                                   {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                    <CheckSquare className="h-5 w-5 text-gray-600" />
                                   ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                                    <Square className="h-5 w-5 text-muted-foreground hover:text-gray-600 transition-colors" />
                                   )}
                                 </button>
 
@@ -703,18 +703,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                   <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-medium truncate group-hover:text-primary transition-colors">
+                                        <h4 className="font-medium truncate group-hover:text-gray-600 transition-colors">
                                           Inbox Item
                                         </h4>
                                         {!item.is_read && (
                                           <Badge variant="default" className="text-xs">New</Badge>
                                         )}
                                         {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                          <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                                             Free Forwarding
                                           </Badge>
                                         )}
-                                        <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
+                                        <div className="hidden group-hover:flex items-center gap-1 text-xs text-gray-600 ml-2">
                                           <FileCheck className="h-3 w-3" />
                                           <span className="font-medium">Open</span>
                                         </div>
@@ -776,7 +776,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         return (
                           <div
                             key={item.id}
-                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
+                            className={`p-4 ${isSelected ? "bg-gray-50" : ""}`}
                           >
                             <div className="space-y-3">
                               {/* Header with checkbox */}
@@ -789,7 +789,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                   className="mt-1 flex-shrink-0"
                                 >
                                   {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                    <CheckSquare className="h-5 w-5 text-gray-600" />
                                   ) : (
                                     <Square className="h-5 w-5 text-muted-foreground" />
                                   )}
@@ -809,7 +809,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <Badge variant="default" className="text-xs">New</Badge>
                                         )}
                                         {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                          <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                                             Free Forwarding
                                           </Badge>
                                         )}
@@ -871,11 +871,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Bulk Actions Notice - Mobile */}
             {isSomeSelected && (
-              <Card className="sm:hidden border-primary/30 bg-primary/5">
+              <Card className="sm:hidden border-gray-300 bg-gray-50">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
-                      <CheckSquare className="h-4 w-4 text-primary" />
+                      <CheckSquare className="h-4 w-4 text-gray-600" />
                       <span className="font-medium">{selectedMail.length} items selected</span>
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => setSelectedMail([])}>
@@ -907,7 +907,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Help Text */}
             <div className="text-center py-6 space-y-2">
               <p className="text-sm text-muted-foreground">
-                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button>
+                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-gray-600 hover:underline">Help Center</button>
               </p>
             </div>
           </div>
@@ -915,10 +915,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           {/* Right Column - Virtual Address Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <Card className="border-0">
-              <CardHeader className="pb-3 border border-primary/20 rounded-lg">
+              <CardHeader className="pb-3 border border-line rounded-lg">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <Building2 className="h-4 w-4 text-primary" />
+                  <div className="p-1.5 bg-gray-100 rounded-lg">
+                    <Building2 className="h-4 w-4 text-gray-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-sm truncate">{userProfile?.company_name || 'Your Virtual Business Address'}</CardTitle>

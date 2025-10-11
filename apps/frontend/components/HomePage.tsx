@@ -88,7 +88,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Professional London Business Address Service.
-                            <span className="block text-primary">
+                            <span className="block text-ink">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
@@ -129,7 +129,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 style={{ fontFamily: "Playfair Display, serif" }}
                             >
                                 Professional London Business Address Service.
-                                <span className="block text-primary">
+                                <span className="block text-ink">
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
@@ -182,7 +182,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="text-center mb-12">
                         <h2
-                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary mb-4"
+                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-ink mb-4"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Simple, All-Inclusive Pricing
@@ -251,13 +251,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-primary mb-4">
+                                <h3 className="text-xl font-bold text-ink mb-4">
                                     All-In-One Plan
                                 </h3>
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-3xl font-bold text-primary">
+                                        <span className="text-3xl font-bold text-ink">
                                             {priceLabel}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
@@ -267,7 +267,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <p className="text-sm text-muted-foreground mb-1">
                                         {subCopy}
                                     </p>
-                                    <p className="text-sm text-primary font-medium">
+                                    <p className="text-sm text-gray-600 font-medium">
                                         {fineCopy}
                                     </p>
                                 </div>
@@ -283,10 +283,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         "Cancel Anytime"
                                     ].map((feature, index) => (
                                         <div key={index} className="flex items-start gap-2">
-                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center mt-0.5">
                                                 <svg
                                                     viewBox="0 0 24 24"
-                                                    className="h-2.5 w-2.5 text-primary"
+                                                    className="h-2.5 w-2.5 text-gray-600"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     strokeWidth="2"

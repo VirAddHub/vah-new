@@ -84,6 +84,16 @@ module.exports = {
                     DEFAULT: "#0A7AFF",
                     fg: "#ffffff",
                 },
+                // Neutral helpers for color cleanup
+                ink: {
+                    DEFAULT: '#111827', // near-black for headings/nav
+                },
+                line: {
+                    DEFAULT: '#e5e7eb', // subtle border
+                },
+                success: {
+                    DEFAULT: '#16a34a', // ensure success token exists (same as your green)
+                },
             },
             borderRadius: {
                 lg: "var(--radius)",
