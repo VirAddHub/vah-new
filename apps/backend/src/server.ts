@@ -75,6 +75,9 @@ import contactRouter from "./server/routes/contact";
 import addressRouter from "./routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
+// DEBUG: Log address router import
+logger.info('[debug] addressRouter imported:', typeof addressRouter);
+
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
 import * as path from 'path';
@@ -460,8 +463,13 @@ async function start() {
     }
 
     // Mount legacy routes (all functional now!)
-    app.use('/api', addressRouter);
-    logger.info('[mount] /api (address routes) mounted');
+    try {
+        logger.info('[debug] Attempting to import addressRouter...');
+        app.use('/api', addressRouter);
+        logger.info('[mount] /api (address routes) mounted successfully');
+    } catch (error) {
+        logger.error('[error] Failed to mount address router:', error);
+    }
 
     // DEBUG: Temporary ping route to verify server wiring
     app.get('/api/address/_ping', (req, res) => res.json({ ok: true, where: 'inline', timestamp: new Date().toISOString() }));
