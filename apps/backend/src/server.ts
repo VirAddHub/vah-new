@@ -471,9 +471,12 @@ async function start() {
     app.use('/api/address', addressRouter);
     console.log('[mount] /api/address mounted');
 
-    // DEBUG: Temporary ping route to verify server wiring
-    app.get('/api/address/_ping', (req, res) => res.json({ ok: true, where: 'inline', timestamp: new Date().toISOString() }));
-    logger.info('[debug] /api/address/_ping route added');
+    // DEBUG: Test if /api/address path works at all
+    app.get('/api/address/inline-test', (req, res) => {
+        console.log('[inline] /api/address/inline-test hit');
+        res.json({ ok: true, message: 'Inline route works', timestamp: new Date().toISOString() });
+    });
+    console.log('[debug] /api/address/inline-test route added');
 
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
