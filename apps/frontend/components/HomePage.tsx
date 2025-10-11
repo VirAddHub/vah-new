@@ -389,46 +389,44 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </span>
                         </div>
 
-                        <div className="rounded-2xl bg-card p-6 shadow-lg border border-border">
+                        <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-2xl md:text-3xl font-bold text-primary mb-4">
+                                <h3 className="text-xl font-bold text-primary mb-4">
                                     All-In-One Plan
                                 </h3>
 
-                                <div className="mb-6">
+                                <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-3xl md:text-4xl font-bold text-primary">
+                                        <span className="text-3xl font-bold text-primary">
                                             {priceLabel}
                                         </span>
-                                        <span className="text-lg text-muted-foreground">
+                                        <span className="text-sm text-muted-foreground">
                                             {priceSuffix}
                                         </span>
                                     </div>
-                                    <p className="text-muted-foreground mb-2">
+                                    <p className="text-sm text-muted-foreground mb-1">
                                         {subCopy}
                                     </p>
-                                    <p className="text-primary font-medium">
+                                    <p className="text-sm text-primary font-medium">
                                         {fineCopy}
                                     </p>
                                 </div>
 
-                                {/* Features List */}
-                                <div className="space-y-3 mb-6 text-left">
+                                {/* Features List - Compact */}
+                                <div className="space-y-2 mb-6 text-left">
                                     {[
-                                        "Instantly Establish Credibility with a Prime Central London Address",
-                                        "Guaranteed Compliance: Fully Approved for Companies House & HMRC",
-                                        "Unlimited, Free Mail Scanning (Same-Day)",
-                                        "Total Control: Manage All Mail & Forwarding Online",
-                                        "Free Forwarding for All Official Government Mail",
-                                        "Dedicated, UK-Based Support (We're Here for You)",
-                                        "Go Live Today: Address Ready Minutes After ID Verification",
-                                        "Zero Risk: No Lock-In Contracts, Cancel Anytime",
+                                        "Registered Office, Director & Business Address",
+                                        "Unlimited Same-Day Mail Scanning",
+                                        "Free Forwarding for Official Mail",
+                                        "Secure Digital Dashboard",
+                                        "UK-Based Support",
+                                        "Cancel Anytime"
                                     ].map((feature, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                                        <div key={index} className="flex items-start gap-2">
+                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
                                                 <svg
                                                     viewBox="0 0 24 24"
-                                                    className="h-3 w-3 text-primary"
+                                                    className="h-2.5 w-2.5 text-primary"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     strokeWidth="2"
@@ -436,7 +434,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                                     <path d="M20 6L9 17l-5-5" />
                                                 </svg>
                                             </div>
-                                            <span className="text-muted-foreground leading-relaxed">
+                                            <span className="text-xs text-muted-foreground leading-relaxed">
                                                 {feature}
                                             </span>
                                         </div>
@@ -452,7 +450,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
-                                <p className="mt-6 text-sm text-muted-foreground">
+                                <p className="mt-4 text-xs text-muted-foreground">
                                     HMRC & Companies House mail forwarding is free in the UK. Other letters can be forwarded for £2 per item (covering postage & handling).
                                 </p>
                             </div>
