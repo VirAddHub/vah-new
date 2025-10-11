@@ -2,12 +2,12 @@ export default function Preview() {
     return (
         <main className="min-h-screen w-full bg-muted/30 py-8">
             <section className="mx-auto max-w-4xl px-6 text-center">
-                <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3.5rem)] leading-tight text-gray-900">London address for modern businesses</h2>
+                <h2 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] leading-tight text-primary">London address for modern businesses</h2>
                 <p className="mt-2 text-base font-medium tracking-wide text-gray-600 uppercase">
                     From solo founders to established teams
                 </p>
 
-                <p className="mx-auto mt-5 max-w-3xl text-lg leading-7 text-muted-foreground">Run your business with a credible London presence — minus the admin. Private by default, handled to UK standards, and priced simply so you can focus on the work that matters.</p>
+                <p className="mx-auto mt-5 max-w-3xl text-lg leading-7 text-black">Run your business with a credible London presence — minus the admin. Private by default, handled to UK standards, and priced simply so you can focus on the work that matters.</p>
 
                 <ul className="mx-auto mt-5 max-w-2xl space-y-2.5 text-left">
                     {[
@@ -16,7 +16,7 @@ export default function Preview() {
                         'Clear monthly price — cancel any time',
                         'Human support · UK working hours',
                     ].map((line) => (
-                        <li key={line} className="flex items-start gap-3 text-muted-foreground">
+                        <li key={line} className="flex items-start gap-3 text-black">
                             <svg className="mt-1 h-4 w-4 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5" /></svg>
                             <span>{line}</span>
                         </li>
@@ -34,8 +34,8 @@ export default function Preview() {
             {/* FAQ intro follows seamlessly */}
             <section className="mx-auto max-w-4xl px-6 text-center">
                 <div className="mx-auto mb-4 mt-6 h-px w-24 bg-border" />
-                <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">Questions, answered.</h2>
-                <p className="mt-3 text-base text-muted-foreground">Everything from using your address to billing and KYC — explained in plain English.</p>
+                <h2 className="font-bold text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-primary">Questions, answered.</h2>
+                <p className="mt-3 text-base text-black">Everything from using your address to billing and KYC — explained in plain English.</p>
 
                 {/* quick actions */}
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

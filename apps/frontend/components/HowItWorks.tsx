@@ -37,10 +37,10 @@ export default function HowItWorks() {
         <section className="w-full py-8">
             <div className="mx-auto max-w-6xl px-6">
                 <header className="mx-auto max-w-3xl text-center mb-8">
-                    <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">
+                    <h2 className="font-bold text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-primary">
                         How it works — clear, compliant, no surprises
                     </h2>
-                    <p className="mt-3 text-base text-muted-foreground">
+                    <p className="mt-3 text-base text-black">
                         Verification first. Address issued next. Then professional mail handling.
                     </p>
                 </header>
@@ -59,10 +59,10 @@ export default function HowItWorks() {
                             <div className="md:pl-16">
                                 <div className="rounded-xl border border-border bg-card shadow-sm">
                                     <div className="p-4 sm:p-6">
-                                        <h3 className="font-serif text-[clamp(1.25rem,2.5vw,1.75rem)] text-gray-900">{s.title}</h3>
+                                        <h3 className="font-bold text-[clamp(1.25rem,2.5vw,1.75rem)] text-primary">{s.title}</h3>
                                         <ul className="mt-4 space-y-2.5">
                                             {s.points.map((p) => (
-                                                <li key={p} className="flex gap-3 text-muted-foreground">
+                                                <li key={p} className="flex gap-3 text-black">
                                                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                                                     <span>{p}</span>
                                                 </li>
