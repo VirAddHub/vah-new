@@ -3,7 +3,7 @@ import { Router } from 'express';
 const router = Router();
 
 // loud module-load log so we know the file is actually in the build
-console.log('[address] router module loaded');
+console.log('[address] router module loaded - v2');
 
 router.get('/', (req, res) => {
   console.log('[address] GET / (ok)');
