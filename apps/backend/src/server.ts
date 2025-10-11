@@ -75,8 +75,13 @@ import contactRouter from "./server/routes/contact";
 import addressRouterImport from "./routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
+// DEBUG: Test import immediately
+console.log('[server] addressRouterImport:', typeof addressRouterImport);
+console.log('[server] addressRouterImport.default:', typeof (addressRouterImport as any)?.default);
+
 // handle CJS/ESM default interop safely
 const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
+console.log('[server] addressRouter resolved:', typeof addressRouter);
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
