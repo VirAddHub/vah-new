@@ -2,8 +2,8 @@ export default function Preview() {
     return (
         <main className="min-h-screen w-full bg-neutral-50 py-16">
             <section className="mx-auto max-w-4xl px-6 text-center">
-                <h2 className="font-serif text-4xl sm:text-5xl leading-tight text-neutral-900">London address for modern businesses</h2>
-                <p className="mt-2 text-sm font-medium tracking-wide text-neutral-600 uppercase">
+                <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3.5rem)] leading-tight text-gray-900">London address for modern businesses</h2>
+                <p className="mt-2 text-base font-medium tracking-wide text-gray-600 uppercase">
                     From solo founders to established teams
                 </p>
 
@@ -34,7 +34,7 @@ export default function Preview() {
             {/* FAQ intro follows seamlessly */}
             <section className="mx-auto max-w-4xl px-6 text-center">
                 <div className="mx-auto mb-6 mt-8 h-px w-24 bg-neutral-200" />
-                <h2 className="font-serif text-3xl sm:text-4xl leading-tight text-neutral-900">Questions, answered.</h2>
+                <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">Questions, answered.</h2>
                 <p className="mt-3 text-base text-neutral-600">Everything from using your address to billing and KYC — explained in plain English.</p>
 
                 {/* quick actions */}

@@ -37,7 +37,7 @@ export default function HowItWorks() {
         <section className="w-full py-16">
             <div className="mx-auto max-w-6xl px-6">
                 <header className="mx-auto max-w-3xl text-center mb-12">
-                    <h2 className="font-serif text-2xl sm:text-3xl leading-tight text-neutral-900">
+                    <h2 className="font-serif text-[clamp(1.75rem,4.5vw,3rem)] leading-tight text-gray-900">
                         How it works — clear, compliant, no surprises
                     </h2>
                     <p className="mt-3 text-base text-neutral-600">
@@ -59,7 +59,7 @@ export default function HowItWorks() {
                             <div className="md:pl-16">
                                 <div className="rounded-xl border border-neutral-200 bg-white/70 backdrop-blur-sm shadow-sm">
                                     <div className="p-6 sm:p-8">
-                                        <h3 className="font-serif text-2xl text-neutral-900">{s.title}</h3>
+                                        <h3 className="font-serif text-[clamp(1.25rem,2.5vw,1.75rem)] text-gray-900">{s.title}</h3>
                                         <ul className="mt-4 space-y-2.5">
                                             {s.points.map((p) => (
                                                 <li key={p} className="flex gap-3 text-neutral-700">

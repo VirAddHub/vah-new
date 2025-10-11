@@ -107,7 +107,7 @@ export function AboutPage() {
             <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-6">
+                    <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold tracking-tight text-gray-900 mb-6">
                         About Us
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
@@ -123,7 +123,7 @@ export function AboutPage() {
                 {/* What We Do */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
                     <CardHeader className="p-6">
-                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-gray-900">
+                        <CardTitle className="flex items-center gap-3 text-[clamp(1.25rem,2.5vw,1.75rem)] font-semibold text-gray-900">
                             <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
                                 <Mail className="h-5 w-5 text-gray-600" />
                             </div>
@@ -155,7 +155,7 @@ export function AboutPage() {
 
                 {/* Why We Exist */}
                 <div className="mb-12 text-center">
-                    <h2 className="text-4xl font-bold text-gray-900 mb-6">
+                    <h2 className="text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-6">
                         Why We Exist
                     </h2>
                     <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
@@ -184,7 +184,7 @@ export function AboutPage() {
                 {/* Who We Support */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
                     <CardHeader className="p-6">
-                        <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-gray-900">
+                        <CardTitle className="flex items-center gap-3 text-[clamp(1.25rem,2.5vw,1.75rem)] font-semibold text-gray-900">
                             <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
                                 <Users className="h-5 w-5 text-gray-600" />
                             </div>
@@ -294,7 +294,7 @@ export function AboutPage() {
 
                 {/* Contact Form */}
                 <div className="text-center">
-                    <h2 className="text-4xl font-bold text-gray-900 mb-6">
+                    <h2 className="text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-6">
                         Got Questions? Speak to Our UK Team.
                     </h2>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
