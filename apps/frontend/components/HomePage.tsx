@@ -13,6 +13,7 @@ import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
 import HowItWorks from "./HowItWorks";
+import Preview from "./Preview";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -318,111 +319,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* Built for Modern UK Businesses */}
-            <section className="py-14 md:py-16 bg-primary/5 border-t border-border">
-                <div className="mx-auto max-w-3xl px-6">
-                    <h2
-                        className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold mb-3 text-center text-primary"
-                        style={{ fontFamily: "Playfair Display, serif" }}
-                    >
-                        🏢 Built for Modern UK Businesses
-                    </h2>
-
-                    <p className="text-center text-lg leading-relaxed text-muted-foreground font-medium mb-6 max-w-prose mx-auto">
-                        <strong>
-                            From solo founders to established teams — we
-                            support all kinds of companies.
-                        </strong>
-                    </p>
-
-                    <p className="text-lg leading-relaxed text-muted-foreground mb-4 max-w-prose">
-                        Whether you're a remote freelancer, a fast-growing
-                        startup, or an international firm entering the UK
-                        market, VirtualAddressHub gives you the London
-                        presence and legal compliance you need — without the
-                        admin headache.
-                    </p>
-
-                    <p className="text-lg leading-relaxed text-muted-foreground max-w-prose">
-                        We're a fully compliant digital mailroom, designed
-                        to streamline your back-office operations so you can
-                        focus on running your business.
-                    </p>
-
-                    <ul className="mt-6 space-y-2 text-base md:text-lg leading-relaxed">
-                        <li>
-                            ✅ Registered Office, Director & Business
-                            Address
-                        </li>
-                        <li>✅ Unlimited Same-Day Mail Scanning</li>
-                        <li>
-                            ✅ Trusted by Founders, Agencies, Consultancies,
-                            and Global Brands
-                        </li>
-                    </ul>
-
-                    <div className="mt-6 grid sm:grid-cols-3 gap-3 text-sm">
-                        <div className="rounded-lg border border-primary/20 bg-card p-3 text-center">
-                            <strong>📍 Central London Presence</strong>
-                        </div>
-                        <div className="rounded-lg border border-primary/20 bg-card p-3 text-center">
-                            <strong>🔒 Fully AML Compliant & HMRC Supervised</strong>
-                        </div>
-                        <div className="rounded-lg border border-primary/20 bg-card p-3 text-center">
-                            <strong>
-                                Professional-Grade Mail Handling Only (No Parcels)
-                            </strong>
-                        </div>
-                    </div>
-
-                    <div className="mt-8 text-center">
-                        <Button
-                            onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                            className="h-11 rounded-[14px] btn-primary px-6 text-primary-foreground"
-                        >
-                            Get Started — Secure My London Address
-                        </Button>
-                    </div>
-                </div>
-            </section>
-
-            {/* CONTACT SECTION */}
-            <section id="contact" className="py-14 bg-primary/5 border-t border-border">
-                <div className="mx-auto max-w-3xl px-6 text-center">
-                    <h2 className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary">
-                        Questions? We've Got Answers.
-                    </h2>
-                    <p className="mt-3 text-lg leading-relaxed text-muted-foreground max-w-prose mx-auto">
-                        From scanning speed to forwarding and billing —
-                        see our most asked questions.
-                    </p>
-                    <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={() => handleNavClick?.("help")}
-                            className="inline-block text-primary font-medium hover:text-primary/80 transition-colors"
-                        >
-                            Visit Help Centre ↗
-                        </button>
-                        <button
-                            onClick={() => handleNavClick?.("contact")}
-                            className="inline-block text-primary font-medium hover:text-primary/80 transition-colors"
-                        >
-                            Contact Us Directly ↗
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            {/* WHAT YOU GET STRIP */}
-            <section className="py-6 bg-primary text-primary-foreground text-center text-sm">
-                <div className="max-w-6xl mx-auto px-6 flex flex-wrap justify-center gap-4">
-                    <span>Registered Office + Director Address</span>
-                    <span>Business Mailing Address</span>
-                    <span>Unlimited Mail Scanning</span>
-                    <span>Free HMRC/Companies House Forwarding</span>
-                    <span>Cancel Anytime</span>
-                </div>
-            </section>
+            {/* PREVIEW SECTION */}
+            <Preview />
         </main>
     );
 }
