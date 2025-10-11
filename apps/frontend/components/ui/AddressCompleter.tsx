@@ -441,8 +441,8 @@ export function AddressCompleter({
             {/* Selected Address Display */}
             {isSelected && (
                 <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-success" />
-                    <AlertDescription className="text-success">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
                         Address selected successfully
                     </AlertDescription>
                 </Alert>

@@ -88,7 +88,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Professional London Business Address Service.
-                            <span className="block text-ink">
+                            <span className="block text-gray-900">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
@@ -129,7 +129,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 style={{ fontFamily: "Playfair Display, serif" }}
                             >
                                 Professional London Business Address Service.
-                                <span className="block text-ink">
+                                <span className="block text-gray-900">
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
@@ -182,7 +182,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="text-center mb-12">
                         <h2
-                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-ink mb-4"
+                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-4"
                             style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Simple, All-Inclusive Pricing
@@ -251,13 +251,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-ink mb-4">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">
                                     All-In-One Plan
                                 </h3>
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-3xl font-bold text-ink">
+                                        <span className="text-3xl font-bold text-gray-900">
                                             {priceLabel}
                                         </span>
                                         <span className="text-sm text-muted-foreground">

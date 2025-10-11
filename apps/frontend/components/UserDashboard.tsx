@@ -551,7 +551,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         {/* Welcome Message */}
         <div className="mb-8">
-          <h1 className="mb-2 text-2xl font-bold text-ink">Welcome back, {getUserName()}</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">Welcome back, {getUserName()}</h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
@@ -563,7 +563,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Mail Inbox Section */}
             <Card className="shadow-sm">
-              <CardHeader className="border-b border-line">
+              <CardHeader className="border-b border-gray-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
@@ -915,7 +915,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           {/* Right Column - Virtual Address Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <Card className="border-0">
-              <CardHeader className="pb-3 border border-line rounded-lg">
+              <CardHeader className="pb-3 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-gray-100 rounded-lg">
                     <Building2 className="h-4 w-4 text-gray-600" />

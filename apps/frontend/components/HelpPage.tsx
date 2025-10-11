@@ -233,7 +233,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Hero */}
         <section className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-ink">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
             Help Centre & FAQs
           </h1>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
@@ -277,7 +277,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         <section className="space-y-10">
           {grouped.map(({ category, items }) => (
             <div key={category} className="space-y-4">
-              <h2 className="text-lg md:text-xl font-semibold tracking-tight text-ink">
+              <h2 className="text-lg md:text-xl font-semibold tracking-tight text-gray-900">
                 {category}
               </h2>
               <Accordion type="multiple" className="space-y-2">
@@ -310,7 +310,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Contact CTA */}
         <section className="text-center space-y-3 pt-4">
-          <h3 className="text-lg font-semibold text-ink">
+          <h3 className="text-lg font-semibold text-gray-900">
             Still need help?
           </h3>
           <p className="text-muted-foreground text-sm max-w-xl mx-auto">
