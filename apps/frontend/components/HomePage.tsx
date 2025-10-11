@@ -84,7 +84,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <h1
-                            className="font-bold tracking-tight leading-[1.1] text-[clamp(1.5rem,4vw,2.5rem)]"
+                            className="font-serif tracking-tight leading-[1.1] text-[clamp(1.5rem,4vw,2.5rem)] font-bold"
+                            style={{ fontFamily: "Playfair Display, serif" }}
                         >
                             Professional London Business Address Service.
                             <span className="block text-gray-900">
@@ -124,7 +125,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <h1
-                                className="font-bold tracking-tight leading-[1.1] text-[clamp(1.75rem,4.5vw,3.5rem)]"
+                                className="font-serif tracking-tight leading-[1.1] text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold"
+                                style={{ fontFamily: "Playfair Display, serif" }}
                             >
                                 Professional London Business Address Service.
                                 <span className="block text-gray-900">
@@ -180,7 +182,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-4xl px-6">
                     <div className="text-center mb-8">
                         <h2
-                            className="font-bold leading-tight text-[clamp(1.75rem,4.5vw,3rem)] text-gray-900 mb-4"
+                            className="font-bold leading-tight text-[clamp(1.75rem,4.5vw,3rem)] text-primary mb-4"
                         >
                             Simple, All-Inclusive Pricing
                         </h2>
@@ -248,23 +250,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                                <h3 className="text-xl font-bold text-primary mb-4">
                                     All-In-One Plan
                                 </h3>
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-3xl font-bold text-gray-900">
+                                        <span className="text-3xl font-bold text-black">
                                             {priceLabel}
                                         </span>
                                         <span className="text-sm text-muted-foreground">
                                             {priceSuffix}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground mb-1">
+                                    <p className="text-sm text-black mb-1">
                                         {subCopy}
                                     </p>
-                                    <p className="text-sm text-gray-600 font-medium">
+                                    <p className="text-sm text-black font-medium">
                                         {fineCopy}
                                     </p>
                                 </div>
@@ -291,7 +293,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                                     <path d="M20 6L9 17l-5-5" />
                                                 </svg>
                                             </div>
-                                            <span className="text-xs text-muted-foreground leading-relaxed">
+                                            <span className="text-xs text-black leading-relaxed">
                                                 {feature}
                                             </span>
                                         </div>
@@ -307,7 +309,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
-                                <p className="mt-4 text-xs text-muted-foreground">
+                                <p className="mt-4 text-xs text-black">
                                     HMRC & Companies House mail forwarding is free in the UK. Other letters can be forwarded for £2 per item (covering postage & handling).
                                 </p>
                             </div>
