@@ -94,7 +94,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </span>
                         </h1>
                         <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                            Get your Registered Office, Director's Service Address, and Business Correspondence Address in one simple, comprehensive plan. Stay compliant, protect your privacy, and build a professional brand from day one.
+                            One London address for every official use.
+                            Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
 
                         <div className="mt-6 flex flex-wrap gap-2">
@@ -134,7 +135,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </h1>
                             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                                Get your Registered Office, Director's Service Address, and Business Correspondence Address in one simple, comprehensive plan. Stay compliant, protect your privacy, and build a professional brand from day one.
+                                One London address for every official use.
+                                Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>
 
                             <div className="mt-10">
