@@ -6,15 +6,13 @@ import { usePricing } from "@/hooks/usePlans";
 import {
     ArrowRight,
     Mail,
-    ShieldCheck,
-    Building2,
-    ScanLine,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
+import HowItWorks from "./HowItWorks";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -172,146 +170,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </section>
 
             {/* HOW IT WORKS — above pricing */}
-            <section
-                id="how-it-works"
-                className="py-12 bg-primary/5 border-t border-border"
-                aria-label="How It Works"
-            >
-                <div className="mx-auto max-w-6xl px-6">
-                    <header className="text-center mb-10">
-                        <h2
-                            className="font-serif leading-tight text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-primary"
-                            style={{ fontFamily: "Playfair Display, serif" }}
-                        >
-                            How It Works — Clear, Compliant, No Surprises
-                        </h2>
-                        <p className="mt-3 text-lg leading-relaxed text-muted-foreground max-w-prose mx-auto">
-                            Understand the process before you pay.
-                            Verification first, address issued next, then
-                            professional mail handling.
-                        </p>
-                    </header>
-
-                    <div className="grid gap-6 md:grid-cols-3">
-                        {/* Step 1 */}
-                        <article className="rounded-2xl border border-primary/20 bg-card p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition hover:border-primary/40">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary mb-4">
-                                <ShieldCheck className="h-5 w-5" />
-                            </div>
-                            <h3
-                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
-                                style={{
-                                    fontFamily: "Playfair Display, serif",
-                                }}
-                            >
-                                1) Verify Your Account
-                            </h3>
-                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
-                                <li>
-                                    • Create your account and upload ID and proof
-                                    of address (KYC/AML).
-                                </li>
-                                <li>
-                                    • We review the documents and notify you when
-                                    approved.
-                                </li>
-                                <li>
-                                    • Your official{" "}
-                                    <strong>Central London</strong> address
-                                    appears in your dashboard once approved.
-                                </li>
-                            </ul>
-                        </article>
-
-                        {/* Step 2 */}
-                        <article className="rounded-2xl border border-primary/20 bg-card p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition hover:border-primary/40">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary mb-4">
-                                <Building2 className="h-5 w-5" />
-                            </div>
-                            <h3
-                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
-                                style={{
-                                    fontFamily: "Playfair Display, serif",
-                                }}
-                            >
-                                2) Use Your Address Everywhere
-                            </h3>
-                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
-                                <li>
-                                    • Update Companies House (Registered Office &
-                                    Director's Service Address).
-                                </li>
-                                <li>
-                                    • Use with HMRC, banks, suppliers, and
-                                    clients.
-                                </li>
-                                <li>
-                                    • Real, physical address — never a P.O. Box.
-                                </li>
-                            </ul>
-                        </article>
-
-                        {/* Step 3 */}
-                        <article className="rounded-2xl border border-primary/20 bg-card p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition hover:border-primary/40">
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary mb-4">
-                                <ScanLine className="h-5 w-5" />
-                            </div>
-                            <h3
-                                className="text-xl md:text-2xl font-semibold mb-2 text-primary"
-                                style={{
-                                    fontFamily: "Playfair Display, serif",
-                                }}
-                            >
-                                3) We Handle Your Mail
-                            </h3>
-                            <ul className="text-muted-foreground space-y-2 text-base leading-relaxed">
-                                <li>
-                                    • Same-day letter scanning on business days to
-                                    your secure dashboard.
-                                </li>
-                                <li>
-                                    • <strong>Free UK forwarding</strong> for HMRC
-                                    & Companies House letters (on request).
-                                </li>
-                                <li>
-                                    • Other letters can be forwarded for{" "}
-                                    <strong>£2 per item</strong> (plus postage).
-                                </li>
-                                <li>
-                                    • Letters only — parcels are not accepted.
-                                </li>
-                            </ul>
-                        </article>
-                    </div>
-
-                    {/* Expectation strip */}
-                    <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/10 p-6">
-                        <div className="grid sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                            <div>
-                                🔓 Activation happens after verification —
-                                you're in control throughout.
-                            </div>
-                            <div>
-                                📬 Nothing is auto-forwarded without your
-                                request.
-                            </div>
-                            <div>
-                                🔒 UK GDPR aligned — access limited to trained,
-                                vetted staff.
-                            </div>
-                        </div>
-                        <div className="mt-5 text-center">
-                            <Button
-                                variant="outline"
-                                onClick={() => handleNavClick?.("help")}
-                                className="rounded-[12px] border-primary/30 text-primary hover:bg-primary/10"
-                            >
-                                Need more detail? Visit the Help Centre
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <HowItWorks />
 
             {/* PRICING */}
             <section
