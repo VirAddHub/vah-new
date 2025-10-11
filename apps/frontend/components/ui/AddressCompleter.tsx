@@ -77,8 +77,11 @@ export function AddressCompleter({
 
     // Address completer API - now using BFF proxy
     const searchAddresses = useCallback(async (searchQuery: string) => {
+        console.log('[AddressCompleter] Starting search for:', searchQuery);
+        
         // Focus on postcode search - UK postcodes are typically 5-8 characters
         if (!searchQuery || searchQuery.length < 3) {
+            console.log('[AddressCompleter] Query too short, clearing suggestions');
             setSuggestions([]);
             setShowSuggestions(false);
             return;
@@ -88,22 +91,30 @@ export function AddressCompleter({
         setError(null);
 
         try {
-            const response = await fetch(
-                `/api/bff/address?postcode=${encodeURIComponent(searchQuery)}&line1=`,
-                { cache: 'no-store' }
-            );
+            const url = `/api/bff/address?postcode=${encodeURIComponent(searchQuery)}&line1=`;
+            console.log('[AddressCompleter] Fetching from:', url);
+            
+            const response = await fetch(url, { cache: 'no-store' });
+            
+            console.log('[AddressCompleter] Response status:', response.status);
+            console.log('[AddressCompleter] Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
-                throw new Error(`Address lookup failed: ${response.status}`);
+                const errorText = await response.text().catch(() => 'Unknown error');
+                console.log('[AddressCompleter] Response error:', response.status, errorText);
+                throw new Error(`Address lookup failed: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('[AddressCompleter] Response data:', data);
 
             if (!data.ok) {
+                console.log('[AddressCompleter] API returned error:', data.error);
                 throw new Error(data.error || 'Address lookup failed');
             }
 
             if (data.data?.addresses && Array.isArray(data.data.addresses)) {
+                console.log('[AddressCompleter] Found addresses:', data.data.addresses.length);
                 const formattedSuggestions: AddressSuggestion[] = data.data.addresses.map((addr: string, index: number) => ({
                     id: `addr_${index}`,
                     formatted_address: addr,
@@ -114,15 +125,17 @@ export function AddressCompleter({
                     country: 'GB'
                 }));
 
+                console.log('[AddressCompleter] Formatted suggestions:', formattedSuggestions);
                 setSuggestions(formattedSuggestions);
                 setShowSuggestions(true);
                 setSelectedIndex(-1);
             } else {
+                console.log('[AddressCompleter] No addresses in response');
                 setSuggestions([]);
                 setShowSuggestions(false);
             }
         } catch (err) {
-            console.error("Address search error:", err);
+            console.error("[AddressCompleter] Search error:", err);
             setError("Address search is temporarily unavailable. Please use manual entry below.");
             setSuggestions([]);
             setShowSuggestions(false);

@@ -19,6 +19,25 @@ router.get('/', (req, res) => {
   return res.json({ ok: true, ping: 'address-root' });
 });
 
+// Debug route to test API key and environment
+router.get('/debug', (req, res) => {
+  console.log('[address] DEBUG route called');
+  const hasApiKey = !!process.env.ADDRESS_API_KEY;
+  const apiKeyLength = process.env.ADDRESS_API_KEY?.length || 0;
+  const apiKeyPrefix = process.env.ADDRESS_API_KEY?.substring(0, 8) || 'none';
+  
+  return res.json({ 
+    ok: true, 
+    debug: {
+      hasApiKey,
+      apiKeyLength,
+      apiKeyPrefix: `${apiKeyPrefix}...`,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
 // Hardened lookup route with timeout, caching, and observability
 router.get('/lookup', async (req, res) => {
   const t0 = performance.now();
