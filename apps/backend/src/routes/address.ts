@@ -3,6 +3,11 @@ import fetch from 'node-fetch';
 
 const router = Router();
 
+// DEBUG: Test route to verify router is loaded
+router.get('/address/test', (req, res) => {
+    res.json({ ok: true, message: 'Address router is loaded', timestamp: new Date().toISOString() });
+});
+
 // GET /api/address?postcode=EC1V%209NR&line1=10
 router.get('/address', async (req, res) => {
     try {
