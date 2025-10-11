@@ -161,8 +161,8 @@ iframe {
         --foreground: 220 10% 15%;
         /* Darker text for better contrast on white */
 
-        --card: 0 0% 100%;
-        /* Pure white cards */
+        --card: 0 0% 99%;
+        /* Slightly off-white for subtle contrast */
         --card-foreground: 220 10% 15%;
 
         --popover: 0 0% 100%;
@@ -217,9 +217,9 @@ iframe {
         --info-foreground: 0 0% 100%;
 
         /* Clean borders for white background */
-        --border: 0 0% 88%;
-        /* #E1E1E1 - Clean neutral border */
-        --border-light: 0 0% 92%;
+        --border: 0 0% 85%;
+        /* Slightly darker border for better card definition */
+        --border-light: 0 0% 90%;
         /* Lighter border for subtle elements */
         --input: 0 0% 96%;
         /* Subtle input background */
@@ -817,13 +817,13 @@ iframe {
         background-color: hsl(var(--card));
         border: 1px solid hsl(var(--border));
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
     }
 
     .card:hover {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     /* Button utilities (if you use class-based buttons anywhere) */
