@@ -94,7 +94,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </span>
                         </h1>
                         <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                            Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence.
+                            Get your Registered Office, Director's Service Address, and Business Correspondence Address in one simple, comprehensive plan. Stay compliant, protect your privacy, and build a professional brand from day one.
                         </p>
 
                         <div className="mt-6 flex flex-wrap gap-2">
@@ -134,7 +134,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </h1>
                             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                                Get a prestigious London business address for your company registration, HMRC compliance, and professional correspondence. Our virtual office service includes unlimited same-day mail scanning, secure digital dashboard, and free forwarding for official documents.
+                                Get your Registered Office, Director's Service Address, and Business Correspondence Address in one simple, comprehensive plan. Stay compliant, protect your privacy, and build a professional brand from day one.
                             </p>
 
                             <div className="mt-10">
