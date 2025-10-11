@@ -75,21 +75,10 @@ export function AddressCompleter({
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const debounceRef = useRef<NodeJS.Timeout>();
 
-    // Address completer API key - using environment variable or fallback
-    const API_KEY = process.env.NEXT_PUBLIC_ADDRESS_API_KEY;
-    const API_URL = "https://api.getaddress.io/find";
-
+    // Address completer API - now using BFF proxy
     const searchAddresses = useCallback(async (searchQuery: string) => {
         // Focus on postcode search - UK postcodes are typically 5-8 characters
         if (!searchQuery || searchQuery.length < 3) {
-            setSuggestions([]);
-            setShowSuggestions(false);
-            return;
-        }
-
-        // If no API key, suggest manual entry
-        if (!API_KEY) {
-            setError("Address search is temporarily unavailable. Please use manual entry below.");
             setSuggestions([]);
             setShowSuggestions(false);
             return;
@@ -100,7 +89,8 @@ export function AddressCompleter({
 
         try {
             const response = await fetch(
-                `${API_URL}/${encodeURIComponent(searchQuery)}?api-key=${API_KEY}&format=true&sort=true`
+                `/api/bff/address?postcode=${encodeURIComponent(searchQuery)}&line1=`,
+                { cache: 'no-store' }
             );
 
             if (!response.ok) {
@@ -109,22 +99,19 @@ export function AddressCompleter({
 
             const data = await response.json();
 
-            if (data.addresses && Array.isArray(data.addresses)) {
-                const formattedSuggestions: AddressSuggestion[] = data.addresses.map((addr: any, index: number) => ({
-                    id: `${addr.id || index}`,
-                    formatted_address: addr.formatted_address || addr.formattedAddress,
-                    address_line_1: addr.line_1 || addr.line1 || addr.address_line_1,
-                    address_line_2: addr.line_2 || addr.line2 || addr.address_line_2,
-                    city: addr.town_or_city || addr.city || addr.town,
-                    postcode: addr.postcode || addr.postal_code,
-                    country: addr.country || "GB",
-                    latitude: addr.latitude,
-                    longitude: addr.longitude,
-                    building_name: addr.building_name,
-                    premise: addr.premise,
-                    thoroughfare: addr.thoroughfare,
-                    dependent_locality: addr.dependent_locality,
-                    administrative_area: addr.administrative_area
+            if (!data.ok) {
+                throw new Error(data.error || 'Address lookup failed');
+            }
+
+            if (data.data?.addresses && Array.isArray(data.data.addresses)) {
+                const formattedSuggestions: AddressSuggestion[] = data.data.addresses.map((addr: string, index: number) => ({
+                    id: `addr_${index}`,
+                    formatted_address: addr,
+                    address_line_1: addr.split(',')[0] || '',
+                    address_line_2: '',
+                    city: addr.split(',').slice(-2, -1)[0]?.trim() || '',
+                    postcode: addr.split(',').slice(-1)[0]?.trim() || '',
+                    country: 'GB'
                 }));
 
                 setSuggestions(formattedSuggestions);
@@ -142,7 +129,7 @@ export function AddressCompleter({
         } finally {
             setIsLoading(false);
         }
-    }, [API_KEY]);
+    }, []);
 
     // Handle manual address entry
     const handleManualAddressChange = (field: keyof typeof manualAddress, value: string) => {

@@ -72,6 +72,7 @@ import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
+import addressRouter from "./routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
@@ -459,8 +460,8 @@ async function start() {
     }
 
     // Mount legacy routes (all functional now!)
-    // app.use('/api', addressRouter); // File doesn't exist
-    // logger.info('[mount] /api (address routes) mounted');
+    app.use('/api', addressRouter);
+    logger.info('[mount] /api (address routes) mounted');
 
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
