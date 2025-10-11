@@ -72,11 +72,15 @@ import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
-import addressRouter from "./routes/address";
+import addressRouterImport from "./routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
 // DEBUG: Log address router import
-logger.info('[debug] addressRouter imported:', typeof addressRouter);
+logger.info('[debug] addressRouter imported:', typeof addressRouterImport);
+
+// handle CJS/ESM default interop safely
+const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
+logger.info('[debug] addressRouter resolved:', typeof addressRouter);
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -462,14 +466,10 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // Mount legacy routes (all functional now!)
-    try {
-        logger.info('[debug] Attempting to import addressRouter...');
-        app.use('/api', addressRouter);
-        logger.info('[mount] /api (address routes) mounted successfully');
-    } catch (error) {
-        logger.error('[error] Failed to mount address router:', error);
-    }
+    // Mount address router explicitly under /api/address
+    console.log('[mount] mounting /api/address');
+    app.use('/api/address', addressRouter);
+    console.log('[mount] /api/address mounted');
 
     // DEBUG: Temporary ping route to verify server wiring
     app.get('/api/address/_ping', (req, res) => res.json({ ok: true, where: 'inline', timestamp: new Date().toISOString() }));
