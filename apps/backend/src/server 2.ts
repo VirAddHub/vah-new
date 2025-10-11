@@ -19,7 +19,6 @@ import type { Request, Response, NextFunction } from 'express';
 
 // Centralized environment config
 import { HOST, PORT } from './config/env';
-import { logGraphConfigAtStartup } from './config/azure';
 
 // CORS middleware
 import { corsMiddleware } from './cors';
@@ -42,12 +41,6 @@ import devRouter from "./server/routes/dev";
 import robustPasswordResetRouter from "./server/routes/profile/reset-password-request";
 import { passwordResetRouter } from "./server/routes/profile.password-reset";
 import authRouter from "./server/routes/auth";
-// import { internalRouter } from "./routes/internal"; // No longer needed - admin-driven system
-import migrateRouter from "./routes/migrate";
-import triggerMigrateRouter from "./routes/trigger-migrate";
-import webhookMigrateRouter from "./routes/webhook-migrate";
-import directMigrateRouter from "./routes/direct-migrate";
-import webhookRouter from "./server/routes/webhooks";
 
 // NEW: Import missing endpoints
 import mailRouter from "./server/routes/mail";
@@ -58,11 +51,7 @@ import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminStatsRouter from "./server/routes/admin-stats";
 import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
-import adminActivityRouter from "./server/routes/admin-activity";
 import companiesHouseRouter from "./server/routes/companies-house";
-
-// Import maintenance service
-import { systemMaintenance } from "./server/services/maintenance";
 
 // Safe stubs for integrations until providers are wired
 import paymentsStubRouter from "./server/routes/payments-stub";
@@ -72,11 +61,6 @@ import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
 import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
-import addressRouterImport from "./routes/address";
-import bffMailScanRouter from "./routes/bff-mail-scan";
-
-// handle CJS/ESM default interop safely
-const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -90,8 +74,6 @@ const adminForwardAuditRouter = require(path.join(routesDir, 'admin-forward-audi
 const adminMailBulkRouter = require(path.join(routesDir, 'admin-mail-bulk'));
 const adminMailRouter = require(path.join(routesDir, 'admin-mail'));
 const adminRepairRouter = require(path.join(routesDir, 'admin-repair'));
-const adminBlogRouter = require(path.join(routesDir, 'admin-blog'));
-const blogRouter = require(path.join(routesDir, 'blog'));
 const debugRouterLegacy = require(path.join(routesDir, 'debug'));
 const downloadsRouter = require(path.join(routesDir, 'downloads'));
 // const emailPrefsRouter = require(path.join(routesDir, 'email-prefs')); // Now using TypeScript version
@@ -177,10 +159,6 @@ const logger = winston.createLogger({
         new winston.transports.Console()
     ]
 });
-
-// DEBUG: Log address router import after logger is initialized
-logger.info('[debug] addressRouter imported:', typeof addressRouterImport);
-logger.info('[debug] addressRouter resolved:', typeof addressRouter);
 
 // Morgan HTTP logging
 app.use(morgan('combined', {
@@ -350,33 +328,8 @@ async function start() {
         }
     });
 
-    // Mount webhooks FIRST with raw parser (before other routes)
+    // Mount Postmark webhook FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
-
-    // GoCardless webhook with raw body for signature verification
-    app.post('/api/webhooks/gocardless', express.raw({ type: 'application/json' }), async (req: any, res: any, next: any) => {
-        // Store raw body for webhook handler
-        req.rawBody = req.body;
-        next();
-    }, async (req: any, res: any) => {
-        // Actual webhook handler
-        try {
-            const rawBody = req.rawBody || req.body?.toString?.() || '';
-            const signature = req.headers['webhook-signature'] as string;
-
-            // For now, just log and return success (signature verification can be added later)
-            console.log('[GoCardless webhook] Received:', rawBody);
-
-            res.json({ received: true });
-        } catch (error) {
-            console.error('[GoCardless webhook] error:', error);
-            res.status(500).json({ error: 'Webhook processing failed' });
-        }
-    });
-
-    // Internal routes removed - admin-driven system doesn't need cron/outbox
-    // app.use('/api/internal', internalRouter);
-    // logger.info('[mount] /api/internal mounted');
 
     // JWT authentication middleware - extracts and verifies JWT tokens
     const { authenticateJWT } = require('./middleware/auth');
@@ -394,13 +347,6 @@ async function start() {
     app.use('/api', debugEmailRouter);
 
     // NEW: Mount missing endpoints
-    // Disable ETags for mail routes to prevent 304 responses
-    app.use('/api', (req, res, next) => {
-        if (req.path.startsWith('/mail-items')) {
-            res.setHeader('ETag', '');
-        }
-        next();
-    });
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
     app.use('/api/billing', billingRouter);
@@ -428,12 +374,6 @@ async function start() {
     logger.info('[mount] /api/admin (plans) mounted');
     app.use('/api/admin', adminMailItemsRouter);
     logger.info('[mount] /api/admin (mail-items) mounted');
-    app.use('/api/admin', adminActivityRouter);
-    logger.info('[mount] /api/admin (activity) mounted');
-    app.use('/api/admin', adminBlogRouter);
-    logger.info('[mount] /api/admin (blog) mounted');
-    app.use('/api', blogRouter);
-    logger.info('[mount] /api (blog) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api/kyc', kycRouter);
@@ -443,21 +383,6 @@ async function start() {
     app.use('/api/contact', contactRouter);
     logger.info('[mount] /api/contact mounted');
 
-    // BFF mail scan routes (buffer and serve with safe headers)
-    app.use('/api/bff', bffMailScanRouter);
-    logger.info('[mount] /api/bff (mail scan) mounted');
-    app.use('/api', bffMailScanRouter); // compat for /api/legacy/mail-items/:id/download
-    logger.info('[mount] /api (legacy mail scan compat) mounted');
-
-    // Test download routes (for testing file downloads)
-    const testDownloadsRouter = require(path.join(routesDir, 'test-downloads'));
-    app.use('/api/test', testDownloadsRouter);
-    app.use('/api', migrateRouter);
-    app.use('/api', triggerMigrateRouter);
-    app.use('/api', webhookMigrateRouter);
-    app.use('/api', directMigrateRouter);
-    logger.info('[mount] /api/test (downloads) mounted');
-
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
         app.use(devRouter);
@@ -466,17 +391,9 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // Mount address router explicitly under /api/address
-    console.log('[mount] mounting /api/address');
-    app.use('/api/address', addressRouter);
-    console.log('[mount] /api/address mounted');
-
-    // DEBUG: Test if /api/address path works at all
-    app.get('/api/address/inline-test', (req, res) => {
-        console.log('[inline] /api/address/inline-test hit');
-        res.json({ ok: true, message: 'Inline route works', timestamp: new Date().toISOString() });
-    });
-    console.log('[debug] /api/address/inline-test route added');
+    // Mount legacy routes (all functional now!)
+    // app.use('/api', addressRouter); // File doesn't exist
+    // logger.info('[mount] /api (address routes) mounted');
 
     app.use('/api/admin-audit', adminAuditRouter);
     logger.info('[mount] /api/admin-audit mounted');
@@ -530,13 +447,8 @@ async function start() {
     app.use('/api/webhooks-gc', webhooksGcRouter);
     logger.info('[mount] /api/webhooks-gc mounted');
 
-    // GoCardless webhook is already mounted above with raw body support
-
     app.use('/api/webhooks-onedrive', onedriveWebhook);
     logger.info('[mount] /api/webhooks-onedrive mounted');
-
-    app.use(webhookRouter);
-    logger.info('[mount] webhook routes mounted');
 
     // 404 handler that still returns CORS
     app.use((req, res) => {
@@ -579,38 +491,19 @@ async function start() {
         // Don't exit - let the platform restart if truly fatal
     });
 
-    // ---- Run startup migrations ----
-    if (process.env.RUN_STARTUP_MIGRATIONS === 'true') {
-        console.log('[migration] Running startup migrations...');
-        const { runStartupMigrations } = require('./scripts/startup-migrate');
-        runStartupMigrations().catch(console.error);
-    }
-
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
     const server = http.createServer(app);
-
-    // Configure timeouts for Render
-    server.headersTimeout = 65_000;
-    server.requestTimeout = 60_000;
 
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';
         const cors = process.env.CORS_ORIGINS || 'default';
-
-        // Start maintenance service
-        systemMaintenance.start();
-        console.log('[boot] System maintenance service started');
-
         // Print extremely explicit diagnostics for Render logs:
         console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
         console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');
         console.log('[boot] CORS origins:', cors);
-        console.log(`[server] listening on port ${PORT} (NODE_ENV=${env})`);
+        console.log(`[start] backend listening at http://${HOST}:${PORT}`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
-
-        // Log Graph API configuration
-        logGraphConfigAtStartup();
     });
 
     // ---- Graceful shutdown (prevents crash loops) ----
