@@ -159,7 +159,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         <div className="flex justify-center mb-6">
                             <CheckCircle className="h-16 w-16 text-primary" />
                         </div>
-                        <h1 className="text-3xl font-bold mb-3 text-primary">
+                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-3 text-primary">
                             Message sent — thank you!
                         </h1>
                         <p className="text-lg text-muted-foreground">
@@ -199,7 +199,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold mb-4 text-primary">
+                    <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">
                         Get in touch
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

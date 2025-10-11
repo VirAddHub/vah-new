@@ -21,7 +21,7 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                 <div className="mx-auto max-w-3xl">
                     <div className="text-center mb-10">
                         <div className="text-6xl font-bold tracking-tight">404</div>
-                        <h1 className="text-3xl md:text-4xl font-bold mt-3">
+                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mt-3">
                             We couldn't find that page
                         </h1>
                         <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">

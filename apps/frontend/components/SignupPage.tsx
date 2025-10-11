@@ -45,7 +45,7 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-bold mb-4 text-primary">Welcome to VirtualAddressHub!</h1>
+                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">Welcome to VirtualAddressHub!</h1>
                         <p className="text-lg text-muted-foreground mb-8">
                             Your account has been created successfully. You'll receive an email with next steps shortly.
                         </p>

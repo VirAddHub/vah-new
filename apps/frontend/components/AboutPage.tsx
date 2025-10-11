@@ -211,7 +211,7 @@ export function AboutPage() {
                 {/* Compliance */}
                 <Card className="mb-12">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-3xl font-semibold text-ink">
+                        <CardTitle className="flex items-center gap-2 text-[clamp(1.75rem,4.5vw,3.5rem)] font-semibold text-primary">
                             <Shield className="h-5 w-5 text-gray-600" />
                             Our Compliance Promise
                         </CardTitle>
@@ -270,19 +270,19 @@ export function AboutPage() {
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                                 <div>
-                                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
                                         {healthData.uptime ? `${Math.round(healthData.uptime)}%` : '99.9%'}
                                     </div>
                                     <div className="text-sm text-muted-foreground">Uptime</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
                                         1000+
                                     </div>
                                     <div className="text-sm text-muted-foreground">Active Users</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
                                         50,000+
                                     </div>
                                     <div className="text-sm text-muted-foreground">Mail Processed</div>

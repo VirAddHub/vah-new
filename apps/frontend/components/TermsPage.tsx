@@ -211,7 +211,7 @@ Our UK-based support team is available during business hours to help with any qu
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6">
         <header className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">
+          <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold tracking-tight text-primary">
             Terms of Service
           </h1>
           <p className="text-muted-foreground">
