@@ -75,13 +75,8 @@ import contactRouter from "./server/routes/contact";
 import addressRouterImport from "./server/routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 
-// DEBUG: Test import immediately
-console.log('[server] addressRouterImport:', typeof addressRouterImport);
-console.log('[server] addressRouterImport.default:', typeof (addressRouterImport as any)?.default);
-
 // handle CJS/ESM default interop safely
 const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
-console.log('[server] addressRouter resolved:', typeof addressRouter);
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -183,9 +178,6 @@ const logger = winston.createLogger({
     ]
 });
 
-// DEBUG: Log address router import after logger is initialized
-logger.info('[debug] addressRouter imported:', typeof addressRouterImport);
-logger.info('[debug] addressRouter resolved:', typeof addressRouter);
 
 // Morgan HTTP logging
 app.use(morgan('combined', {
@@ -471,28 +463,10 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // DEBUG: Test if /api/address path works at all
-    app.get('/api/address/inline-test', (req, res) => {
-        console.log('[inline] /api/address/inline-test hit');
-        res.json({ ok: true, message: 'Inline route works', timestamp: new Date().toISOString() });
-    });
-    console.log('[debug] /api/address/inline-test route added');
-
-    // DEBUG: Test simple inline route
-    app.get('/api/address/simple', (req, res) => {
-        console.log('[inline] /api/address/simple hit');
-        res.json({ ok: true, message: 'Simple route works', timestamp: new Date().toISOString() });
-    });
-    console.log('[debug] /api/address/simple route added');
-
-    // Mount address router explicitly under /api/address
-    console.log('[mount] mounting /api/address');
-    console.log('[mount] addressRouter type:', typeof addressRouter);
-    console.log('[mount] addressRouter value:', addressRouter);
-
+    // Mount address router
     if (addressRouter && typeof addressRouter === 'function') {
         app.use('/api/address', addressRouter);
-        console.log('[mount] /api/address mounted successfully');
+        console.log('[mount] /api/address mounted');
     } else {
         console.log('[mount] ERROR: addressRouter is not a function:', typeof addressRouter);
     }

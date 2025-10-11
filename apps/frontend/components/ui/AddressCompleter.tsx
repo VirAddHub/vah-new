@@ -151,8 +151,41 @@ export function AddressCompleter({
         }
     };
 
+    // Format postcode to UK standard (AA1 1AA)
+    const formatPostcode = (postcode: string): string => {
+        // Remove all spaces and convert to uppercase
+        const cleaned = postcode.replace(/\s/g, '').toUpperCase();
+        
+        // UK postcode patterns: AA1 1AA, AA11 1AA, A1A 1AA, A11A 1AA, AA1A 1AA, AA11A 1AA
+        const patterns = [
+            /^([A-Z]{2})(\d)([A-Z])(\d)([A-Z]{2})$/, // AA1A1AA
+            /^([A-Z]{2})(\d{2})([A-Z])(\d)([A-Z]{2})$/, // AA11A1AA
+            /^([A-Z])(\d)([A-Z])(\d)([A-Z]{2})$/, // A1A1AA
+            /^([A-Z])(\d{2})([A-Z])(\d)([A-Z]{2})$/, // A11A1AA
+            /^([A-Z]{2})(\d)([A-Z]{2})(\d)([A-Z]{2})$/, // AA1AA1AA
+            /^([A-Z]{2})(\d{2})([A-Z]{2})(\d)([A-Z]{2})$/, // AA11AA1AA
+        ];
+        
+        for (const pattern of patterns) {
+            const match = cleaned.match(pattern);
+            if (match) {
+                const [, part1, part2, part3, part4, part5] = match;
+                return `${part1}${part2}${part3} ${part4}${part5}`;
+            }
+        }
+        
+        // If no pattern matches, return cleaned version
+        return cleaned;
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+        let value = e.target.value;
+        
+        // Auto-format postcode as user types
+        if (value.length > 2) {
+            value = formatPostcode(value);
+        }
+        
         setQuery(value);
         setIsSelected(false);
         setError(null);
