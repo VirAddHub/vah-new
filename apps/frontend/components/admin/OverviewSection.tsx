@@ -17,6 +17,11 @@ import {
     AlertCircle,
     ArrowUp,
     ArrowDown,
+    UserPlus,
+    Send,
+    RefreshCw,
+    HelpCircle,
+    ShieldCheck,
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
@@ -92,6 +97,46 @@ export function OverviewSection() {
             window.open('/admin/activity', '_blank');
         } catch (error) {
             await logAdminAction('admin_view_activity_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
+        }
+    };
+
+    const getActivityIcon = (iconType: string) => {
+        switch (iconType) {
+            case 'user-plus':
+                return <UserPlus className="h-4 w-4" />;
+            case 'mail':
+                return <Mail className="h-4 w-4" />;
+            case 'truck':
+                return <Truck className="h-4 w-4" />;
+            case 'credit-card':
+                return <CreditCard className="h-4 w-4" />;
+            case 'shield-check':
+                return <ShieldCheck className="h-4 w-4" />;
+            case 'send':
+                return <Send className="h-4 w-4" />;
+            case 'refresh-cw':
+                return <RefreshCw className="h-4 w-4" />;
+            case 'help-circle':
+                return <HelpCircle className="h-4 w-4" />;
+            default:
+                return <Activity className="h-4 w-4" />;
+        }
+    };
+
+    const getActivityIconColor = (colorClass: string) => {
+        switch (colorClass) {
+            case 'text-green-500':
+                return 'bg-green-100 text-green-600';
+            case 'text-blue-500':
+                return 'bg-blue-100 text-blue-600';
+            case 'text-orange-500':
+                return 'bg-orange-100 text-orange-600';
+            case 'text-purple-500':
+                return 'bg-purple-100 text-purple-600';
+            case 'text-yellow-500':
+                return 'bg-yellow-100 text-yellow-600';
+            default:
+                return 'bg-muted text-muted-foreground';
         }
     };
 
@@ -280,8 +325,8 @@ export function OverviewSection() {
                         <div className="space-y-4">
                             {activity.slice(0, 5).map((item: any, index: number) => (
                                 <div key={index} className="flex items-start gap-3">
-                                    <div className="p-2 bg-muted rounded-lg">
-                                        <Activity className="h-4 w-4" />
+                                    <div className={`p-2 rounded-lg ${getActivityIconColor(item.iconColor)}`}>
+                                        {getActivityIcon(item.icon)}
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">{item.title}</p>

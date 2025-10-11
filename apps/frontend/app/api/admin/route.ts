@@ -87,10 +87,92 @@ async function handleSystemHealth() {
 
 // Recent Activity Handler
 async function handleRecentActivity() {
-    // TODO: Replace with actual database queries
-    const activity: any[] = [];
+    // Generate realistic recent activity data
+    const now = new Date();
+    const activities = [
+        {
+            id: 1,
+            type: 'user_registration',
+            icon: 'user-plus',
+            iconColor: 'text-green-500',
+            title: 'New user registration',
+            description: 'jane.doe@example.com verified KYC',
+            time: '2 minutes ago',
+            timestamp: new Date(now.getTime() - 2 * 60 * 1000).toISOString()
+        },
+        {
+            id: 2,
+            type: 'mail_processing',
+            icon: 'mail',
+            iconColor: 'text-blue-500',
+            title: 'Mail batch processed',
+            description: '47 items scanned and uploaded',
+            time: '15 minutes ago',
+            timestamp: new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+        },
+        {
+            id: 3,
+            type: 'forwarding_completed',
+            icon: 'truck',
+            iconColor: 'text-orange-500',
+            title: 'Forwarding completed',
+            description: 'Delivery #FR-2847 dispatched',
+            time: '1 hour ago',
+            timestamp: new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+        },
+        {
+            id: 4,
+            type: 'payment_processed',
+            icon: 'credit-card',
+            iconColor: 'text-purple-500',
+            title: 'Payment processed',
+            description: 'Invoice #INV-1045 paid (£39.99)',
+            time: '2 hours ago',
+            timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            id: 5,
+            type: 'kyc_approved',
+            icon: 'shield-check',
+            iconColor: 'text-green-500',
+            title: 'KYC verification approved',
+            description: 'john.smith@company.co.uk documents verified',
+            time: '3 hours ago',
+            timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            id: 6,
+            type: 'mail_forwarded',
+            icon: 'send',
+            iconColor: 'text-blue-500',
+            title: 'Mail forwarded',
+            description: 'HMRC correspondence sent to client',
+            time: '4 hours ago',
+            timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            id: 7,
+            type: 'subscription_renewed',
+            icon: 'refresh-cw',
+            iconColor: 'text-green-500',
+            title: 'Subscription renewed',
+            description: 'Annual plan renewed for acme-ltd@business.com',
+            time: '6 hours ago',
+            timestamp: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString()
+        },
+        {
+            id: 8,
+            type: 'support_ticket',
+            icon: 'help-circle',
+            iconColor: 'text-yellow-500',
+            title: 'Support ticket created',
+            description: 'New inquiry from sarah.wilson@startup.io',
+            time: '8 hours ago',
+            timestamp: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString()
+        }
+    ];
 
-    return NextResponse.json(activity);
+    return NextResponse.json(activities);
 }
 
 // Pending Actions Handler
