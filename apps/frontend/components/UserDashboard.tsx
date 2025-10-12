@@ -14,13 +14,23 @@ import {
   Eye,
   Calendar,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  LogOut,
+  Settings,
+  User,
+  Bell,
+  CreditCard,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
+import PDFViewerModal from "@/components/PDFViewerModal";
+import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
+import { VAHLogo } from "./VAHLogo";
+import { useToast } from "./ui/use-toast";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -66,9 +76,15 @@ interface MailItem {
 }
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
+  const [certLoading, setCertLoading] = useState(false);
+  const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
+  const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -189,10 +205,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [refreshMail]);
 
-  // Open handler - uses secure blob streaming, also marks as read
+  // Open handler - opens PDF modal and marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
-      await openInline(`${API_BASE}/api/mail-items/${item.id}/download`);
+      setSelectedMailForPDF(item);
+      setShowPDFModal(true);
 
       // Auto-mark as read when opened (if not already read)
       if (!item.is_read) {
@@ -200,7 +217,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       }
     } catch (err) {
       console.error('Error opening file:', err);
-      alert('Unable to open file for this item.');
     }
   }, [markAsRead]);
 
@@ -213,6 +229,119 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       alert('Unable to download file. Please try again.');
     }
   }, []);
+
+  // Generate certificate handler
+  const onGenerateCertificate = useCallback(async () => {
+    try {
+      if (certLoading) return;
+      setCertLoading(true);
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/api/profile/certificate`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'proof-of-address.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: "Certificate Generated",
+          description: "Your proof of address certificate has been downloaded.",
+          durationMs: 3000,
+        });
+      } else {
+        throw new Error('Failed to generate certificate');
+      }
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      toast({
+        title: "Certificate Error",
+        description: "Failed to generate certificate. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
+    } finally {
+      setCertLoading(false);
+    }
+  }, [certLoading, toast]);
+
+  // Forwarding handler
+  const onForward = useCallback((item: MailItem) => {
+    setSelectedMailForForwarding(item);
+    setShowForwardingConfirmation(true);
+  }, []);
+
+  // Check if mail item can be forwarded
+  const canForward = useCallback((item: MailItem) => {
+    return !isGDPRExpired(item) && item.status === 'received';
+  }, []);
+
+  // Check if mail item is GDPR expired (30+ days old)
+  const isGDPRExpired = useCallback((item: MailItem) => {
+    if (!item.received_date) return false;
+    const receivedDate = new Date(item.received_date);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - receivedDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff > 30;
+  }, []);
+
+  // Forwarding confirmation handler
+  const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
+    if (!selectedMailForForwarding) return;
+
+    try {
+      const token = getToken();
+      const response = await fetch('/api/forwarding/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          mail_item_id: selectedMailForForwarding.id,
+          payment_method: paymentMethod,
+          // Use the forwarding address from user profile
+          forwarding_address: userProfile?.forwarding_address
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Forwarding Request Created",
+          description: "Your mail forwarding request has been submitted successfully.",
+          durationMs: 3000,
+        });
+        
+        // Refresh mail items to update status
+        refreshMail();
+        
+        // Close modal
+        setShowForwardingConfirmation(false);
+        setSelectedMailForForwarding(null);
+      } else {
+        throw new Error('Failed to create forwarding request');
+      }
+    } catch (error) {
+      console.error('Error creating forwarding request:', error);
+      toast({
+        title: "Forwarding Request Error",
+        description: "Error creating forwarding request. Please try again.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
+    }
+  };
 
   // Get user name helper
   const getUserName = () => {
@@ -237,13 +366,53 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
-  const handleRequestForwarding = () => {
-    if (selectedMail.length > 0) {
-      onNavigate('dashboard-forwarding-confirm', {
-        selectedMailIds: selectedMail,
-        allMailItems: mailItems
-      });
+  const handleRequestForwarding = (mailItem?: MailItem) => {
+    // If a specific mail item is provided, use it directly
+    if (mailItem) {
+      if (!canForward(mailItem)) {
+        toast({
+          title: "Cannot Forward Mail",
+          description: isGDPRExpired(mailItem)
+            ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
+            : "This mail item cannot be forwarded at this time.",
+          variant: "destructive",
+          durationMs: 5000,
+        });
+        return;
+      }
+      setSelectedMailForForwarding(mailItem);
+      setShowForwardingConfirmation(true);
+      return;
     }
+
+    // Handle bulk forwarding
+    if (selectedMail.length === 0) {
+      toast({
+        title: "No Items Selected",
+        description: "Please select mail items to forward.",
+        variant: "destructive",
+        durationMs: 3000,
+      });
+      return;
+    }
+
+    const item = mailItems.find((item: MailItem) => selectedMail.includes(item.id.toString()));
+    if (!item) return;
+
+    if (!canForward(item)) {
+      toast({
+        title: "Cannot Forward Mail",
+        description: isGDPRExpired(item)
+          ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
+          : "This mail item cannot be forwarded at this time.",
+        variant: "destructive",
+        durationMs: 5000,
+      });
+      return;
+    }
+
+    setSelectedMailForForwarding(item);
+    setShowForwardingConfirmation(true);
   };
 
   if (loading) {
@@ -300,7 +469,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="default" onClick={handleRequestForwarding}>
+                      <Button size="sm" variant="default" onClick={() => handleRequestForwarding()}>
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -456,6 +625,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <Download className="h-3 w-3 mr-1" />
                                       Download
                                     </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 h-9"
+                                      onClick={() => handleRequestForwarding(item)}
+                                      disabled={!canForward(item)}
+                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                    >
+                                      <Truck className="h-3 w-3 mr-1" />
+                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -548,6 +728,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <Download className="h-3 w-3 mr-1" />
                                       Download
                                     </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 h-9"
+                                      onClick={() => handleRequestForwarding(item)}
+                                      disabled={!canForward(item)}
+                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                    >
+                                      <Truck className="h-3 w-3 mr-1" />
+                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -588,7 +779,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
-                    <Button size="default" variant="default" className="w-full h-10" onClick={handleRequestForwarding}>
+                    <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding
                     </Button>
@@ -630,9 +821,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">
-                  <Button className="w-full" size="sm">
-                    <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                    Generate Certificate
+                  <Button className="w-full" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                    {certLoading ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                        Generate Certificate
+                      </>
+                    )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center leading-tight">
                     Official proof of address
@@ -645,6 +845,28 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         </div>
       </main>
 
+      {/* PDF Viewer Modal */}
+      <PDFViewerModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        mailItemId={selectedMailForPDF ? parseInt(String(selectedMailForPDF.id)) : null}
+        mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
+        useBlobFallback
+      />
+
+      {/* Forwarding Confirmation Modal */}
+      {showForwardingConfirmation && selectedMailForForwarding && (
+        <ForwardingConfirmationModal
+          isOpen={showForwardingConfirmation}
+          onClose={() => {
+            setShowForwardingConfirmation(false);
+            setSelectedMailForForwarding(null);
+          }}
+          mailItem={selectedMailForForwarding}
+          userProfile={userProfile}
+          onConfirm={handleForwardingConfirm}
+        />
+      )}
     </div>
   );
 }
