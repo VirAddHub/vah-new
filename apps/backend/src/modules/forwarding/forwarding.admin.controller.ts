@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { sendMailForwarded } from '../../lib/mailer';
 import { MAIL_STATUS, toCanonical, isTransitionAllowed, getNextStatuses, type MailStatus } from './mailStatus';
 import { metrics } from '../../lib/metrics';
+import { clearAdminForwardingCache } from '../../server/routes/admin-forwarding';
 // import logger from '../../lib/logger'; // Using console for now
 
 const ACTION_TO_STATUS = {
@@ -385,6 +386,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             }
 
             console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
+            
+            // Clear cache to ensure fresh data on next GET request
+            clearAdminForwardingCache(admin.id);
+            
             return res.json({ ok: true, data: upd.rows[0] });
 
         } catch (transactionError) {

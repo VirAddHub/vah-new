@@ -217,17 +217,17 @@ export default function StableForwardingTable() {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
-      
+
       // Try auto-heal for illegal transitions
       const payload = error?.payload;
-      if (payload?.error === "illegal_transition" && 
-          payload?.from === MAIL_STATUS.Requested && 
-          payload?.to === MAIL_STATUS.Dispatched &&
-          Array.isArray(payload?.allowed) &&
-          payload.allowed.includes(MAIL_STATUS.Processing)) {
-        
+      if (payload?.error === "illegal_transition" &&
+        payload?.from === MAIL_STATUS.Requested &&
+        payload?.to === MAIL_STATUS.Dispatched &&
+        Array.isArray(payload?.allowed) &&
+        payload.allowed.includes(MAIL_STATUS.Processing)) {
+
         console.log('[Auto-heal] Attempting to auto-advance: Requested → Processing → Dispatched');
-        
+
         try {
           // Step 1: Move to Processing
           await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Processing);
@@ -238,7 +238,7 @@ export default function StableForwardingTable() {
                 : req
             )
           );
-          
+
           // Step 2: Move to Dispatched
           await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Dispatched);
           setRows(prevRows =>
@@ -248,17 +248,17 @@ export default function StableForwardingTable() {
                 : req
             )
           );
-          
+
           toast({
             title: "Auto-Advanced",
             description: "Processing → Dispatched",
             durationMs: 3000,
           });
-          
+
           // Refresh data to ensure consistency
           await loadForwardingRequests();
           return; // Success, exit early
-          
+
         } catch (autoHealError: any) {
           console.error('[Auto-heal] Failed:', autoHealError);
           toast({
@@ -270,7 +270,7 @@ export default function StableForwardingTable() {
           return;
         }
       }
-      
+
       // Fallback for other errors
       let errorMsg = "Error updating status. Please try again.";
       if (payload?.error === "illegal_transition") {
@@ -280,7 +280,7 @@ export default function StableForwardingTable() {
       } else if (error?.message) {
         errorMsg = error.message;
       }
-      
+
       toast({
         title: "Status Update Error",
         description: errorMsg,

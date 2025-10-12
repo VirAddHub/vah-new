@@ -16,6 +16,18 @@ const router = Router();
 const requestCache = new Map<string, { timestamp: number; response: any }>();
 const CACHE_TTL = 2000; // 2 seconds
 
+// Function to clear cache for a specific admin user
+export function clearAdminForwardingCache(adminId: number) {
+    const keysToDelete: string[] = [];
+    for (const [key] of requestCache) {
+        if (key.startsWith(`${adminId}-`)) {
+            keysToDelete.push(key);
+        }
+    }
+    keysToDelete.forEach(key => requestCache.delete(key));
+    console.log(`[admin-forwarding] Cleared ${keysToDelete.length} cached responses for admin ${adminId}`);
+}
+
 // Rate limiting by admin user ID, not IP - admin-friendly limits
 const adminForwardingLimiter = rateLimit({
     windowMs: 10_000, // 10 seconds
