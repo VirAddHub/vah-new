@@ -70,6 +70,7 @@ interface MailItem {
   tag?: string;
   is_read?: boolean;
   created_at?: string;
+  scanned_at?: string;
   file_url?: string;
 }
 
@@ -86,6 +87,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // PDF preloader for hover optimization
   const { preloadPDF } = usePDFPreloader();
+
+  // Helper function to format scanned date
+  const formatScannedDate = (item: MailItem) => {
+    // Prefer scanned_at if available, otherwise use created_at
+    const dateToUse = item.scanned_at || item.created_at;
+    if (!dateToUse) return null;
+    
+    // Handle both timestamp (number) and date string formats
+    const date = typeof dateToUse === 'number' ? new Date(dateToUse) : new Date(dateToUse);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -700,6 +716,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
                                         From: {item.tag || 'Unknown Sender'}
                                       </p>
+                                      {formatScannedDate(item) && (
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          Scanned: {formatScannedDate(item)}
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="flex-shrink-0 text-right">
                                       <p className="text-sm text-muted-foreground">
@@ -796,6 +817,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
                                       </p>
+                                      {formatScannedDate(item) && (
+                                        <p className="text-xs text-muted-foreground break-words">
+                                          Scanned: {formatScannedDate(item)}
+                                        </p>
+                                      )}
                                     </div>
                                     {!item.is_read && (
                                       <Badge variant="default" className="text-xs flex-shrink-0">

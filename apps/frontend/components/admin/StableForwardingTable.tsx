@@ -138,9 +138,9 @@ export default function StableForwardingTable() {
     const originalRows = [...rows];
 
     // Convert UI status to canonical status for API call
-    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing : 
-                           newStatus === 'Done' ? MAIL_STATUS.Delivered : 
-                           newStatus; // Already canonical if passed as MAIL_STATUS constant
+    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing :
+      newStatus === 'Done' ? MAIL_STATUS.Delivered :
+        newStatus; // Already canonical if passed as MAIL_STATUS constant
 
     // Optimistically update the local state with canonical status
     setRows(prevRows =>
@@ -154,7 +154,7 @@ export default function StableForwardingTable() {
     try {
       const action = getActionFromStatus(newStatus);
       console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}") with action "${action}"`);
-      
+
       const response = await adminApi.updateForwardingRequest(requestId, {
         action: action
       });
@@ -173,7 +173,7 @@ export default function StableForwardingTable() {
         // Rollback on failure
         setRows(originalRows);
         console.error('Failed to update status:', response.error);
-        
+
         // Try to surface the server's strict-guard payload if present
         let errorMsg = "Failed to update status. Please try again.";
         if (response.error === "illegal_transition") {
@@ -181,7 +181,7 @@ export default function StableForwardingTable() {
         } else if (response.message) {
           errorMsg = response.message;
         }
-        
+
         toast({
           title: "Status Update Failed",
           description: errorMsg,
@@ -193,13 +193,13 @@ export default function StableForwardingTable() {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
-      
+
       // Try to surface the server's strict-guard payload if present
       let errorMsg = "Error updating status. Please try again.";
       if (error instanceof Error && error.message.includes("illegal_transition")) {
         errorMsg = error.message;
       }
-      
+
       toast({
         title: "Status Update Error",
         description: errorMsg,
