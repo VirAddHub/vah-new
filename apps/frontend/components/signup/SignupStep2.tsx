@@ -7,7 +7,6 @@ import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { AddressCompleter } from '../ui/AddressCompleter';
-import { API_BASE } from '@/lib/config';
 import { useSimpleDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface SignupStep2Props {
@@ -149,7 +148,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
             try {
                 setIsSearching(true);
                 const response = await fetch(
-                    `${API_BASE}/api/companies-house/search?q=${encodeURIComponent(searchQuery)}`
+                    `/api/bff/companies/search?q=${encodeURIComponent(searchQuery)}`
                 );
 
                 if (response.ok) {
@@ -191,7 +190,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         try {
             setIsSearching(true);
             const response = await fetch(
-                `${API_BASE}/api/companies-house/company/${formData.company_number}`
+                `/api/bff/companies/${formData.company_number}`
             );
 
             if (response.ok) {
