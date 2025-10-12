@@ -704,7 +704,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-medium truncate group-hover:text-gray-600 transition-colors">
-                                          {item.tag || 'Unknown Sender'}
+                                          {item.sender_name || 'Mail Item'}
                                         </h4>
                                         {!item.is_read && (
                                           <Badge variant="default" className="text-xs">New</Badge>
