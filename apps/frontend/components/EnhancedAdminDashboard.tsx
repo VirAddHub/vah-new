@@ -85,10 +85,6 @@ const PlansSection = dynamic(() => import('./admin/PlansSection'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
-const MailSection = dynamic(() => import('./admin/MailSection').then(mod => ({ default: mod.MailSection })), {
-    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
-});
-
 const StableForwardingTable = dynamic(() => import('./admin/StableForwardingTable'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
@@ -345,7 +341,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
-        { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
@@ -403,8 +398,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     onPageChange={setUsersPage}
                     isValidating={usersValidating}
                 />;
-            case "mail":
-                return <MailSection />;
             case "forwarding":
                 return <StableForwardingTable />;
             case "billing":
@@ -445,10 +438,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
                         <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
-                        <div>
-                            <h2 className="font-semibold text-sm text-primary">Admin Portal</h2>
-                            <p className="text-xs text-muted-foreground hidden sm:block">VirtualAddressHub</p>
-                        </div>
                     </button>
 
                     {/* Desktop Navigation */}
