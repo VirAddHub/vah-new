@@ -704,13 +704,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-medium truncate group-hover:text-gray-600 transition-colors">
-                                          {item.sender_name || 'Mail Item'}
+                                          {item.tag || 'Unknown Sender'}
                                         </h4>
                                         {!item.is_read && (
-                                          <Badge variant="default" className="text-xs">New</Badge>
+                                          <Badge variant="default" className="text-xs bg-primary text-primary-foreground">New</Badge>
                                         )}
                                         {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
+                                          <Badge variant="outline" className="text-xs border-primary text-primary">
                                             Free Forwarding
                                           </Badge>
                                         )}
@@ -795,10 +795,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                             {item.tag || 'Unknown Sender'}
                                           </h4>
                                           {!item.is_read && (
-                                            <Badge variant="default" className="text-xs">New</Badge>
+                                            <Badge variant="default" className="text-xs bg-primary text-primary-foreground">New</Badge>
                                           )}
                                           {isGovernment && (
-                                            <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
+                                            <Badge variant="outline" className="text-xs border-primary text-primary">
                                               Free Forwarding
                                             </Badge>
                                           )}
