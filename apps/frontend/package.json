@@ -25,6 +25,7 @@
         "docs:refresh": "mkdir -p public/api-docs && cp ../backend/docs/public/api.html public/api-docs/index.html"
     },
     "dependencies": {
+        "@vah/shared": "file:../../packages/shared",
         "@hookform/resolvers": "^3.3.0",
         "@ideal-postcodes/address-finder": "^5.2.6",
         "@radix-ui/react-accordion": "^1.2.12",

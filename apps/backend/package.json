@@ -98,6 +98,7 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
+    "@vah/shared": "file:../../packages/shared",
     "@types/pg": "8.15.5",
     "archiver": "^7.0.1",
     "bcrypt": "6.0.0",

@@ -12,6 +12,7 @@ import { adminApi } from "@/lib/services/http";
 import { Search, Filter } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
+import { MAIL_STATUS, type MailStatus } from '../../lib/mailStatus';
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -115,11 +116,11 @@ export default function StableForwardingTable() {
       })
       : requests;
 
-    // Map backend statuses to frontend sections
-    const requested = filteredRequests.filter(r => r.status === 'Requested' || r.status === 'Reviewed');
-    const inProgress = filteredRequests.filter(r => r.status === 'Processing');
+    // Map backend statuses to frontend sections using shared constants
+    const requested = filteredRequests.filter(r => r.status === MAIL_STATUS.Requested);
+    const inProgress = filteredRequests.filter(r => r.status === MAIL_STATUS.Processing);
     const done = filteredRequests.filter(r => {
-      if (r.status === 'Dispatched' || r.status === 'Delivered') {
+      if (r.status === MAIL_STATUS.Dispatched || r.status === MAIL_STATUS.Delivered) {
         // Debug logging to see what's happening
         console.log('Done filter check:', {
           id: r.id,
@@ -129,17 +130,17 @@ export default function StableForwardingTable() {
           thirtyDaysAgo,
           now
         });
-        
+
         // Convert dispatched_at to number if it's a string
         let dispatchedAt = r.dispatched_at;
         if (typeof dispatchedAt === 'string') {
           dispatchedAt = parseInt(dispatchedAt, 10);
         }
-        
+
         // Show all dispatched/delivered items regardless of age for now
         // TODO: Re-enable 30-day filter once we confirm the timestamp format
         return true;
-        
+
         // Original logic (commented out for debugging):
         // return dispatchedAt ? dispatchedAt > thirtyDaysAgo : false;
       }

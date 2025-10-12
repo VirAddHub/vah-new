@@ -3,23 +3,24 @@ import { Request, Response } from 'express';
 import { getPool } from '../../server/db';
 import { z } from 'zod';
 import { sendMailForwarded } from '../../lib/mailer';
+import { MAIL_STATUS, normalizeStatus, isTransitionAllowed, type MailStatus } from './mailStatus';
 // import logger from '../../lib/logger'; // Using console for now
 
 const ACTION_TO_STATUS = {
-    mark_reviewed: 'Reviewed',
-    start_processing: 'Processing',
-    mark_dispatched: 'Dispatched',
-    mark_delivered: 'Delivered',
-    cancel: 'Cancelled',
+    mark_reviewed: MAIL_STATUS.Requested, // Map to Requested since Reviewed is not in our canonical statuses
+    start_processing: MAIL_STATUS.Processing,
+    mark_dispatched: MAIL_STATUS.Dispatched,
+    mark_delivered: MAIL_STATUS.Delivered,
+    cancel: MAIL_STATUS.Cancelled,
 } as const;
 
+// Use shared transitions - this will be replaced by the shared constants
 const allowedTransitions: Record<string, string[]> = {
-    Requested: ['Reviewed', 'Processing', 'Cancelled'],
-    Reviewed: ['Processing', 'Cancelled'],
-    Processing: ['Dispatched', 'Cancelled'],
-    Dispatched: ['Delivered'],
-    Delivered: [],
-    Cancelled: [],
+    [MAIL_STATUS.Requested]: [MAIL_STATUS.Processing, MAIL_STATUS.Cancelled],
+    [MAIL_STATUS.Processing]: [MAIL_STATUS.Dispatched, MAIL_STATUS.Cancelled],
+    [MAIL_STATUS.Dispatched]: [MAIL_STATUS.Delivered],
+    [MAIL_STATUS.Delivered]: [],
+    [MAIL_STATUS.Cancelled]: [],
 };
 
 const AdminUpdateSchema = z.object({
@@ -29,10 +30,15 @@ const AdminUpdateSchema = z.object({
     admin_notes: z.string().trim().max(2000).optional().nullable(),
 });
 
-// Helper to validate transitions locally
+// Helper to validate transitions using shared constants
 function canMove(from: string, to: string): boolean {
-    const nexts = allowedTransitions[from] || [];
-    return nexts.includes(to);
+    try {
+        const fromStatus = normalizeStatus(from) as MailStatus;
+        const toStatus = normalizeStatus(to) as MailStatus;
+        return isTransitionAllowed(fromStatus, toStatus);
+    } catch {
+        return false;
+    }
 }
 
 // Status mapping for case-insensitive filtering
@@ -189,11 +195,11 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             const vals: any[] = [nextStatus, nowTimestamp];
 
             // timestamps by status
-            if (nextStatus === 'Reviewed') {
+            if (nextStatus === MAIL_STATUS.Requested && action === 'mark_reviewed') {
                 sets.push('reviewed_at = $3', 'reviewed_by = $4');
                 vals.push(nowTimestamp, admin.id);
             }
-            if (nextStatus === 'Processing') {
+            if (nextStatus === MAIL_STATUS.Processing) {
                 sets.push('processing_at = $3');
                 vals.push(nowTimestamp);
 
@@ -208,15 +214,15 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 VALUES ($1, $2, 'forwarding', 1, 200, 'Handling fee', $3)
             `, [cur.rows[0].user_id, yyyymm, nowTimestamp]);
             }
-            if (nextStatus === 'Dispatched') {
+            if (nextStatus === MAIL_STATUS.Dispatched) {
                 sets.push('dispatched_at = $3');
                 vals.push(nowTimestamp);
             }
-            if (nextStatus === 'Delivered') {
+            if (nextStatus === MAIL_STATUS.Delivered) {
                 sets.push('delivered_at = $3');
                 vals.push(nowTimestamp);
             }
-            if (nextStatus === 'Cancelled') {
+            if (nextStatus === MAIL_STATUS.Cancelled) {
                 sets.push('cancelled_at = $3');
                 vals.push(nowTimestamp);
             }
@@ -260,7 +266,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             await pool.query('COMMIT');
 
             // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
-            if (nextStatus === 'Dispatched' || nextStatus === 'Delivered') {
+            if (nextStatus === MAIL_STATUS.Dispatched || nextStatus === MAIL_STATUS.Delivered) {
                 setImmediate(async () => {
                     try {
                         // Use data we already have from the initial query

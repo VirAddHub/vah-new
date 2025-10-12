@@ -191,13 +191,13 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             hasCity: !!city,
             hasPostal: !!postal
         });
-        
+
         // Use fallback values for missing fields
         const finalName = name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown';
         const finalAddress1 = address1 || 'Address not provided';
         const finalCity = city || 'City not provided';
         const finalPostal = postal || 'Postal not provided';
-        
+
         console.log('[forwarding] Using fallback values:', {
             finalName,
             finalAddress1,

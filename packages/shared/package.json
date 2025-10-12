@@ -1,0 +1,17 @@
+{
+  "name": "@vah/shared",
+  "version": "1.0.0",
+  "description": "Shared types and constants for VirtualAddressHub",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    "./mailStatus": "./src/mailStatus.ts"
+  }
+}
