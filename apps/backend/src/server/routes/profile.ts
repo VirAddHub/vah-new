@@ -87,6 +87,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
                 state,
                 postal_code,
                 country,
+                forwarding_address,
                 kyc_status,
                 kyc_verified_at,
                 plan_id,
