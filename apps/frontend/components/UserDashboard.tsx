@@ -336,7 +336,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
     try {
       const token = getToken();
-      const response = await fetch('/api/forwarding/requests', {
+      const response = await fetch(`${API_BASE}/api/forwarding/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
