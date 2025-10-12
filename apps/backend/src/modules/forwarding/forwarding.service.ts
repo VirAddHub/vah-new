@@ -38,7 +38,8 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             }
 
             const mailData = mail.rows[0];
-            if (!LegalTransitions['Pending'].includes('Requested') && mailData.status !== 'Pending') {
+            // Allow forwarding for 'received' status mail items (not just 'Pending')
+            if (mailData.status !== 'received' && mailData.status !== 'Pending') {
                 throw new Error('Mail not eligible for forwarding');
             }
 
