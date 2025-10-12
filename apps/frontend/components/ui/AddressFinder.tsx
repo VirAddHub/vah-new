@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Alert, AlertDescription } from "./ui/alert";
+import { Input } from "./input";
+import { Label } from "./label";
+import { Alert, AlertDescription } from "./alert";
 import { MapPin, AlertCircle } from "lucide-react";
 
 interface AddressFinderProps {
