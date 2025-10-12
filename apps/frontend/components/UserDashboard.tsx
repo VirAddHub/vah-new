@@ -301,11 +301,25 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Forwarding confirmation handler
   const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
-    if (!selectedMailForForwarding) return;
+    console.log('[UI] handleForwardingConfirm called', { 
+      paymentMethod, 
+      hasSelectedMail: !!selectedMailForForwarding,
+      selectedMailId: selectedMailForForwarding?.id 
+    });
+    
+    if (!selectedMailForForwarding) {
+      console.log('[UI] No selected mail for forwarding, returning early');
+      return;
+    }
+
+    console.log('[UI] forward click', {
+      mailItemId: selectedMailForForwarding.id,
+      paymentMethod
+    });
 
     try {
       const token = getToken();
-      const response = await fetch('/api/forwarding/requests', {
+      const response = await fetch('/api/bff/forwarding/requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -318,6 +332,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           reason: `Forwarding request via ${paymentMethod} payment method`
         })
       });
+
+      console.log('[UI] res.status', response.status);
+      const responseText = await response.text();
+      console.log('[UI] res.text', responseText);
 
       if (response.ok) {
         toast({
@@ -333,31 +351,63 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         setShowForwardingConfirmation(false);
         setSelectedMailForForwarding(null);
       } else {
-        const errorData = await response.json();
-        
-        // Handle specific error cases
-        if (errorData.error === 'no_forwarding_address') {
-          toast({
-            title: "Forwarding Address Required",
-            description: "Please set your forwarding address in Profile settings before requesting mail forwarding.",
-            variant: "destructive",
-            durationMs: 5000,
-          });
-        } else if (errorData.error === 'invalid_forwarding_address') {
-          toast({
-            title: "Incomplete Forwarding Address",
-            description: "Your forwarding address is incomplete. Please update it in Profile settings with your full name, address, city, and postal code.",
-            variant: "destructive",
-            durationMs: 5000,
-          });
-        } else {
-          toast({
-            title: "Forwarding Request Failed",
-            description: errorData.message || "Failed to create forwarding request. Please try again.",
-            variant: "destructive",
-            durationMs: 5000,
-          });
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          errorData = { error: 'parse_error', message: responseText };
         }
+
+        // Map specific error reasons to user-friendly messages
+        const reason = errorData?.reason || errorData?.error;
+        let title = "Forwarding Request Failed";
+        let description = errorData.message || "Failed to create forwarding request. Please try again.";
+
+        switch (reason) {
+          case 'missing_forwarding_address':
+            title = "Forwarding Address Required";
+            description = "Please set your forwarding address in Profile settings before requesting mail forwarding.";
+            break;
+          case 'invalid_forwarding_address':
+            title = "Incomplete Forwarding Address";
+            description = "Your forwarding address is incomplete. Please update it in Profile settings with your full name, address, city, and postal code.";
+            break;
+          case 'missing_mail_item_id':
+            title = "Invalid Request";
+            description = "Please select a mail item to forward.";
+            break;
+          case 'user_not_found':
+            title = "Account Error";
+            description = "Your account could not be found. Please try logging out and back in.";
+            break;
+          case 'too_old':
+            title = "Item Too Old";
+            description = "That item is beyond the forwarding window.";
+            break;
+          case 'deleted':
+            title = "Item Not Available";
+            description = "That item was deleted.";
+            break;
+          case 'not_owner':
+            title = "Access Denied";
+            description = "You do not own that item.";
+            break;
+          case 'blocked_kyc':
+            title = "KYC Required";
+            description = "Please complete KYC before forwarding.";
+            break;
+          case 'already_requested':
+            title = "Already Requested";
+            description = "You have already requested forwarding for this item.";
+            break;
+        }
+
+        toast({
+          title,
+          description,
+          variant: "destructive",
+          durationMs: 5000,
+        });
       }
     } catch (error) {
       console.error('Error creating forwarding request:', error);
@@ -394,9 +444,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
+    console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
+    
     // If a specific mail item is provided, use it directly
     if (mailItem) {
+      console.log('[UI] Processing specific mail item:', mailItem.id);
       if (!canForward(mailItem)) {
+        console.log('[UI] Cannot forward mail item:', mailItem.id, 'GDPR expired:', isGDPRExpired(mailItem));
         toast({
           title: "Cannot Forward Mail",
           description: isGDPRExpired(mailItem)
@@ -407,6 +461,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         });
         return;
       }
+      console.log('[UI] Setting selected mail for forwarding and showing modal');
       setSelectedMailForForwarding(mailItem);
       setShowForwardingConfirmation(true);
       return;

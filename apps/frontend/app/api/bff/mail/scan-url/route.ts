@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Forward the request to the backend
     const backendUrl = `${API_BASE}/api/mail-items/${mailItemId}/download?disposition=${disposition}`;
-    
+
     const response = await fetch(backendUrl, {
       headers: {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Get the PDF content
     const pdfBuffer = await response.arrayBuffer();
-    
+
     // Return the PDF with proper headers
     return new NextResponse(pdfBuffer, {
       status: 200,

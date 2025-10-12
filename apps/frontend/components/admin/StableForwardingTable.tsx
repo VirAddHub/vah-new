@@ -132,19 +132,19 @@ export default function StableForwardingTable() {
   // Update request status with optimistic updates
   const updateRequestStatus = async (requestId: number, newStatus: string) => {
     setUpdatingStatus(requestId);
-    
+
     // Store original state for rollback
     const originalRows = [...rows];
-    
+
     // Optimistically update the local state
-    setRows(prevRows => 
-      prevRows.map(req => 
-        req.id === requestId 
+    setRows(prevRows =>
+      prevRows.map(req =>
+        req.id === requestId
           ? { ...req, status: newStatus, updated_at: Date.now() }
           : req
       )
     );
-    
+
     try {
       const response = await adminApi.updateForwardingRequest(requestId, {
         action: getActionFromStatus(newStatus)
