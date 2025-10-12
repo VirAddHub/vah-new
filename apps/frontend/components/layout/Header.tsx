@@ -30,7 +30,7 @@ export function Header({ onNavigate }: HeaderProps) {
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
             <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <VAHLogo onNavigate={onNavigate} size="lg" showText={false} />
+                <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
 
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex gap-8 text-sm text-muted-foreground">

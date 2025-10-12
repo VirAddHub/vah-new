@@ -476,7 +476,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center gap-4">
-              <VAHLogo onNavigate={onNavigate} size="lg" showText={false} />
+              <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
             </div>
 
             {/* User Info and Actions */}
@@ -718,35 +718,127 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <FileCheck className="h-3 w-3" />
                                           <span className="font-medium">Open</span>
                                         </div>
+                                      </div>
+                                      <div className="flex-shrink-0 text-right">
+                                        <p className="text-sm text-muted-foreground">
+                                          {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric'
+                                          }) : 'Unknown Date'}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div className="flex-shrink-0 text-right">
-                                      <p className="text-sm text-muted-foreground">
-                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                          day: 'numeric',
-                                          month: 'short',
-                                          year: 'numeric'
-                                        }) : 'Unknown Date'}
-                                      </p>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                      <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Open
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 h-9"
+                                        onClick={() => handleRequestForwarding(item)}
+                                        disabled={!canForward(item)}
+                                        title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                      >
+                                        <Truck className="h-3 w-3 mr-1" />
+                                        {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                      </Button>
                                     </div>
                                   </div>
+                                </div>
+                              </div>
+                              );
+                        })}
+                            </div>
+                    </div>
 
-                                  {/* Action Buttons */}
-                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      Open
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="flex-1 h-9"
-                                      onClick={() => handleRequestForwarding(item)}
-                                      disabled={!canForward(item)}
-                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
-                                    >
-                                      <Truck className="h-3 w-3 mr-1" />
-                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
-                                    </Button>
+                      {/* Mail Items List - Mobile */}
+                      <div className="sm:hidden divide-y">
+                        {mailItems.map((item: MailItem) => {
+                          const isSelected = selectedMail.includes(String(item.id));
+                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`p-4 ${isSelected ? "bg-gray-50" : ""}`}
+                            >
+                              <div className="space-y-3">
+                                {/* Header with checkbox */}
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleSelectMail(String(item.id));
+                                    }}
+                                    className="mt-1 flex-shrink-0"
+                                  >
+                                    {isSelected ? (
+                                      <CheckSquare className="h-5 w-5 text-gray-600" />
+                                    ) : (
+                                      <Square className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                  </button>
+
+                                  <div
+                                    className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+                                    onClick={() => onOpen(item)}
+                                  >
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <h4 className="font-medium break-words">
+                                            {item.sender_name || 'Unknown Sender'}
+                                          </h4>
+                                          {!item.is_read && (
+                                            <Badge variant="default" className="text-xs">New</Badge>
+                                          )}
+                                          {isGovernment && (
+                                            <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
+                                              Free Forwarding
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        {!shouldHideSender(item.sender_name) && (
+                                          <p className="text-sm text-muted-foreground break-words">
+                                            {item.sender_name}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="flex-shrink-0 text-right">
+                                        <p className="text-sm text-muted-foreground">
+                                          {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric'
+                                          }) : 'Unknown Date'}
+                                        </p>
+                                      </div>
+                                    </div>
+
+
+                                    {/* Actions */}
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                      <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Open
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 h-9"
+                                        onClick={() => handleRequestForwarding(item)}
+                                        disabled={!canForward(item)}
+                                        title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                      >
+                                        <Truck className="h-3 w-3 mr-1" />
+                                        {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -754,101 +846,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                           );
                         })}
                       </div>
-                    </div>
-
-                    {/* Mail Items List - Mobile */}
-                    <div className="sm:hidden divide-y">
-                      {mailItems.map((item: MailItem) => {
-                        const isSelected = selectedMail.includes(String(item.id));
-                        const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
-
-                        return (
-                          <div
-                            key={item.id}
-                            className={`p-4 ${isSelected ? "bg-gray-50" : ""}`}
-                          >
-                            <div className="space-y-3">
-                              {/* Header with checkbox */}
-                              <div className="flex items-start gap-3">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSelectMail(String(item.id));
-                                  }}
-                                  className="mt-1 flex-shrink-0"
-                                >
-                                  {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-gray-600" />
-                                  ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground" />
-                                  )}
-                                </button>
-
-                                <div
-                                  className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
-                                  onClick={() => onOpen(item)}
-                                >
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-medium break-words">
-                                          {item.sender_name || 'Unknown Sender'}
-                                        </h4>
-                                        {!item.is_read && (
-                                          <Badge variant="default" className="text-xs">New</Badge>
-                                        )}
-                                        {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
-                                            Free Forwarding
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      {!shouldHideSender(item.sender_name) && (
-                                        <p className="text-sm text-muted-foreground break-words">
-                                          {item.sender_name}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex-shrink-0 text-right">
-                                      <p className="text-sm text-muted-foreground">
-                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                          day: 'numeric',
-                                          month: 'short',
-                                          year: 'numeric'
-                                        }) : 'Unknown Date'}
-                                      </p>
-                                    </div>
-                                  </div>
-
-
-                                  {/* Actions */}
-                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      Open
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="flex-1 h-9"
-                                      onClick={() => handleRequestForwarding(item)}
-                                      disabled={!canForward(item)}
-                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
-                                    >
-                                      <Truck className="h-3 w-3 mr-1" />
-                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
+                    </>
                 )}
-              </CardContent>
+                  </CardContent>
             </Card>
 
             {/* Free Forwarding Notice */}
