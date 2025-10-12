@@ -13,6 +13,7 @@ import { Search, Filter } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { MAIL_STATUS, type MailStatus } from '../../lib/mailStatus';
+import { isRequested, isInProgress, isDone, uiStageFor } from '../../lib/forwardingStages';
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -116,41 +117,17 @@ export default function StableForwardingTable() {
       })
       : requests;
 
-    // Map backend statuses to frontend sections using shared constants
-    // FIX: Handle both "Requested" and "Reviewed" statuses for backward compatibility
-    const requested = filteredRequests.filter(r =>
-      r.status === MAIL_STATUS.Requested || r.status === 'Reviewed'
+    // Use canonical status helpers for filtering
+    const requested = filteredRequests.filter(r => isRequested(r.status));
+    const inProgress = filteredRequests.filter(r => isInProgress(r.status));
+    const done = filteredRequests.filter(r => isDone(r.status));
+    
+    // Defensive "Other" column for any items that don't fit the main categories
+    const other = filteredRequests.filter(r => 
+      !isRequested(r.status) && !isInProgress(r.status) && !isDone(r.status)
     );
-    const inProgress = filteredRequests.filter(r => r.status === MAIL_STATUS.Processing);
-    const done = filteredRequests.filter(r => {
-      if (r.status === MAIL_STATUS.Dispatched || r.status === MAIL_STATUS.Delivered) {
-        // Debug logging to see what's happening
-        console.log('Done filter check:', {
-          id: r.id,
-          status: r.status,
-          dispatched_at: r.dispatched_at,
-          dispatched_at_type: typeof r.dispatched_at,
-          thirtyDaysAgo,
-          now
-        });
 
-        // Convert dispatched_at to number if it's a string
-        let dispatchedAt = r.dispatched_at;
-        if (typeof dispatchedAt === 'string') {
-          dispatchedAt = parseInt(dispatchedAt, 10);
-        }
-
-        // Show all dispatched/delivered items regardless of age for now
-        // TODO: Re-enable 30-day filter once we confirm the timestamp format
-        return true;
-
-        // Original logic (commented out for debugging):
-        // return dispatchedAt ? dispatchedAt > thirtyDaysAgo : false;
-      }
-      return false;
-    });
-
-    return { requested, inProgress, done };
+    return { requested, inProgress, done, other };
   };
 
   // Update request status with optimistic updates
@@ -160,18 +137,23 @@ export default function StableForwardingTable() {
     // Store original state for rollback
     const originalRows = [...rows];
 
-    // Optimistically update the local state
+    // Convert UI status to canonical status for API call
+    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing : 
+                           newStatus === 'Done' ? MAIL_STATUS.Delivered : 
+                           newStatus;
+
+    // Optimistically update the local state with canonical status
     setRows(prevRows =>
       prevRows.map(req =>
         req.id === requestId
-          ? { ...req, status: newStatus, updated_at: Date.now() }
+          ? { ...req, status: canonicalStatus, updated_at: Date.now() }
           : req
       )
     );
 
     try {
       const action = getActionFromStatus(newStatus);
-      console.log(`[StableForwardingTable] Updating request ${requestId} to status "${newStatus}" with action "${action}"`);
+      console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}") with action "${action}"`);
       
       const response = await adminApi.updateForwardingRequest(requestId, {
         action: action
@@ -230,28 +212,20 @@ export default function StableForwardingTable() {
     };
 
     const config = statusMap[status] || { variant: 'secondary' as const, label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} data-testid="status-badge">{config.label}</Badge>;
   };
 
   // Categorize the requests
-  const { requested, inProgress, done } = categorizeRequests(rows);
+  const { requested, inProgress, done, other } = categorizeRequests(rows);
 
   // Render a request card
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
     // Determine what actions are available based on current status
-    // FIX: Handle both "Requested" and "Reviewed" statuses for backward compatibility
-    const canMoveToInProgress = section === 'requested' && (
-      request.status === 'Requested' ||
-      request.status === 'Reviewed' ||
-      request.status === MAIL_STATUS.Requested
-    );
-    const canMoveToDone = section === 'inProgress' && (
-      request.status === 'Processing' ||
-      request.status === MAIL_STATUS.Processing
-    );
+    const canMoveToInProgress = section === 'requested' && isRequested(request.status);
+    const canMoveToDone = section === 'inProgress' && isInProgress(request.status);
 
     return (
-      <Card key={request.id} className="mb-3">
+      <Card key={request.id} className="mb-3" data-testid="forwarding-card" data-status={uiStageFor(request.status)}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -274,7 +248,7 @@ export default function StableForwardingTable() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {getStatusBadge(section === 'requested' ? 'Requested' : section === 'inProgress' ? 'In Progress' : 'Done')}
+              {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
                 {canMoveToInProgress && (
                   <Button
@@ -335,7 +309,7 @@ export default function StableForwardingTable() {
       {/* Three Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Requested Section */}
-        <Card>
+        <Card data-testid="forwarding-column" data-stage="Requested">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="secondary">Requested</Badge>
@@ -352,7 +326,7 @@ export default function StableForwardingTable() {
         </Card>
 
         {/* In Progress Section */}
-        <Card>
+        <Card data-testid="forwarding-column" data-stage="In Progress">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="default">In Progress</Badge>
@@ -369,7 +343,7 @@ export default function StableForwardingTable() {
         </Card>
 
         {/* Done Section */}
-        <Card>
+        <Card data-testid="forwarding-column" data-stage="Done">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="outline">Done</Badge>
@@ -384,6 +358,30 @@ export default function StableForwardingTable() {
             )}
           </CardContent>
         </Card>
+
+        {/* Other Section - Defensive column for unexpected statuses */}
+        {other.length > 0 && (
+          <Card className="lg:col-span-3" data-testid="forwarding-column" data-stage="Other">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Badge variant="destructive">Other</Badge>
+                <span className="text-sm text-muted-foreground">({other.length})</span>
+                <span className="text-xs text-muted-foreground">Unexpected statuses</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {other.map(request => (
+                <div key={request.id} className="mb-2 p-2 border border-dashed border-red-200 rounded" data-testid="forwarding-card" data-status="Other">
+                  <div className="text-sm">
+                    <span className="font-mono">{formatFRId(request.id)}</span>
+                    <span className="ml-2 text-red-600" data-testid="status-text">Status: "{request.status}"</span>
+                    <span className="ml-2 text-muted-foreground">User #{request.user_id}</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
