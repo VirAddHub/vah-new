@@ -93,7 +93,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // Prefer scanned_at if available, otherwise use created_at
     const dateToUse = item.scanned_at || item.created_at;
     if (!dateToUse) return null;
-    
+
     // Handle both timestamp (number) and date string formats
     const date = typeof dateToUse === 'number' ? new Date(dateToUse) : new Date(dateToUse);
     return date.toLocaleDateString('en-GB', {

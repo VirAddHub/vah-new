@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAdmin } from '../../middleware/auth';
-import { toCanonical, getNextStatuses } from './mailStatus';
+import { toCanonical, getNextStatuses } from '../../modules/forwarding/mailStatus';
 import { getPool } from '../../server/db';
 
 const router = Router();
