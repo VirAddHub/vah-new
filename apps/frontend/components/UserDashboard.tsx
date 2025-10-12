@@ -428,6 +428,60 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-4">
+              <VAHLogo onNavigate={onNavigate} size="md" showText={true} />
+            </div>
+
+            {/* Navigation Links */}
+            <nav className="hidden md:flex items-center gap-6">
+              <button
+                onClick={() => onNavigate('billing')}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </button>
+              <button
+                onClick={() => onNavigate('settings')}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button>
+              <button
+                onClick={() => onNavigate('help')}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <HelpCircle className="h-4 w-4" />
+                Help
+              </button>
+            </nav>
+
+            {/* User Menu */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-sm">
+                <p className="font-medium">{getUserName()}</p>
+                <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onLogout}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
 
@@ -624,7 +678,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="flex-1 h-9"
+                                      className="h-9"
                                       onClick={() => handleRequestForwarding(item)}
                                       disabled={!canForward(item)}
                                       title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}

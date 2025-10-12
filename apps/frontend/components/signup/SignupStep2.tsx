@@ -64,16 +64,13 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Companies House search state
-    const [companySearchQuery, setCompanySearchQuery] = useState('');
     const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
     const [companySearchLoading, setCompanySearchLoading] = useState(false);
     const [companySearchError, setCompanySearchError] = useState<string | null>(null);
     const [showResults, setShowResults] = useState(false);
 
-    const { debouncedSearchTerm: debouncedCompanySearch, setSearchTerm: setCompanySearchTerm } = useSimpleDebouncedSearch(companySearchQuery, 500);
+    const { debouncedQuery: debouncedCompanySearch, setQuery: setCompanySearchTerm } = useSimpleDebouncedSearch(500, 2);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
 
     const businessTypes = [
         { value: 'limited_company', label: 'Private Limited Company' },
@@ -182,7 +179,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         updateFormData('company_number', company.company_number);
         updateFormData('company_name', company.title);
         setShowResults(false);
-        setSearchResults([]);
+        setCompanySearchResults([]);
 
         // Auto-fill business type based on company type
         if (company.company_type === 'ltd') {
@@ -452,7 +449,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         type="button"
                                         onClick={() => {
                                             setIsManualEntry(false);
-                                            setSearchQuery('');
+                                            setCompanySearchTerm('');
                                             setShowResults(false);
                                         }}
                                         variant={!isManualEntry ? "default" : "outline"}
@@ -515,7 +512,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                 onChange={(e) => {
                                                     updateFormData('company_name', e.target.value);
                                                     if (!isManualEntry) {
-                                                        setSearchQuery(e.target.value);
+                                                        setCompanySearchTerm(e.target.value);
                                                     }
                                                 }}
                                                 placeholder="Type company name to search..."
@@ -527,9 +524,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         </div>
 
                                         {/* Search Results Dropdown */}
-                                        {!isManualEntry && showResults && searchResults.length > 0 && (
+                                        {!isManualEntry && showResults && companySearchResults.length > 0 && (
                                             <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                                {searchResults.map((company, index) => (
+                                                {companySearchResults.map((company, index) => (
                                                     <button
                                                         key={index}
                                                         type="button"
@@ -546,7 +543,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             </div>
                                         )}
 
-                                        {!isManualEntry && showResults && searchResults.length === 0 && !isSearching && searchQuery.length >= 2 && (
+                                        {!isManualEntry && showResults && companySearchResults.length === 0 && !companySearchLoading && debouncedCompanySearch.length >= 2 && (
                                             <p className="text-sm text-muted-foreground">No companies found. Try a different search term.</p>
                                         )}
                                         <p className="text-xs text-muted-foreground">
