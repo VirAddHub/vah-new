@@ -187,8 +187,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const loadDeletedUsers = async () => {
     setDeletedUsersLoading(true);
     try {
-      const params = new URLSearchParams({ include_deleted: 'true' });
-      const res = await adminApi.users(params);
+      const params = new URLSearchParams();
+      const res = await adminApi.deletedUsers(params);
       if (res.ok && res.data) {
         setDeletedUsers(res.data);
       }

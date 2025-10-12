@@ -87,6 +87,9 @@ const adminApi = {
     users: (params: URLSearchParams) =>
         get<User[]>(`/api/admin/users?${params.toString()}`),
 
+    deletedUsers: (params: URLSearchParams) =>
+        get<User[]>(`/api/admin/users/deleted?${params.toString()}`),
+
     userStats: () =>
         get<{ total: number; active: number; suspended: number; pending: number; deleted: number }>(
             '/api/admin/users/stats'

@@ -451,4 +451,198 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 });
 
+/**
+ * GET /api/admin/users/deleted
+ * Get soft-deleted users (admin only)
+ */
+router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) => {
+    const pool = getPool();
+    const pageNum = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const search = (req.query.q as string)?.trim();
+    const offset = (pageNum - 1) * limitNum;
+
+    try {
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        let query = `
+            SELECT
+                u.id,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.is_admin,
+                u.status,
+                u.plan_status,
+                u.plan_id,
+                u.kyc_status,
+                u.created_at,
+                u.updated_at,
+                u.deleted_at,
+                u.last_active_at,
+                u.last_login_at,
+                p.name as plan_name,
+                p.interval as plan_interval,
+                p.price_pence as plan_price
+            FROM "user" u
+            LEFT JOIN plans p ON u.plan_id = p.id
+        `;
+
+        // Only show soft-deleted users
+        let whereClause = 'WHERE u.deleted_at IS NOT NULL';
+
+        // Search functionality
+        if (search) {
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                whereClause += ` AND u.id = $${paramIndex}`;
+                params.push(searchNum);
+            } else {
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+                params.push(`%${search}%`);
+            }
+            paramIndex++;
+        }
+
+        query += ` ${whereClause} ORDER BY u.deleted_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        params.push(limitNum, offset);
+
+        const result = await pool.query(query, params);
+
+        // Get total count with same filters
+        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NOT NULL';
+        const countParams: any[] = [];
+        let countParamIndex = 1;
+
+        if (search) {
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                countQuery += ` AND u.id = $${countParamIndex}`;
+                countParams.push(searchNum);
+            } else {
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
+                countParams.push(`%${search}%`);
+            }
+            countParamIndex++;
+        }
+
+        const countResult = await pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
+
+        return res.json({
+            ok: true,
+            data: result.rows,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                pages: Math.ceil(total / limitNum)
+            }
+        });
+    } catch (error: any) {
+        console.error('[GET /api/admin/users/deleted] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/admin/users/:id/restore
+ * Restore soft-deleted user (admin only)
+ */
+router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+    const adminId = req.user!.id;
+    const pool = getPool();
+
+    if (!userId) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    const { email, first_name, last_name, reactivate = true } = req.body || {};
+
+    if (!email?.trim()) {
+        return res.status(400).json({ ok: false, error: 'email_required' });
+    }
+
+    try {
+        // Check if user exists and is deleted
+        const userResult = await pool.query(`
+            SELECT id, email, deleted_at FROM "user" WHERE id = $1
+        `, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const user = userResult.rows[0];
+        if (!user.deleted_at) {
+            return res.status(400).json({ ok: false, error: 'user_not_deleted' });
+        }
+
+        // Check if email is already taken by another user
+        const emailCheck = await pool.query(`
+            SELECT id FROM "user" WHERE email = $1 AND id != $2 AND deleted_at IS NULL
+        `, [email.trim(), userId]);
+
+        if (emailCheck.rows.length > 0) {
+            return res.status(400).json({ ok: false, error: 'email_taken' });
+        }
+
+        // Use TimestampUtils for proper timestamp handling
+        const nowBigint = TimestampUtils.forTableField('user', 'updated_at');
+        const auditTimestamp = TimestampUtils.forTableField('admin_audit', 'created_at');
+
+        // Restore user
+        await pool.query(`
+            UPDATE "user"
+            SET 
+                deleted_at = NULL,
+                email = $1,
+                first_name = $2,
+                last_name = $3,
+                status = $4,
+                updated_at = $5
+            WHERE id = $6
+        `, [
+            email.trim(),
+            first_name?.trim() || null,
+            last_name?.trim() || null,
+            reactivate ? 'active' : 'pending',
+            nowBigint,
+            userId
+        ]);
+
+        // Log admin action
+        await pool.query(`
+            INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+        `, [
+            adminId, 
+            'restore_user', 
+            'user', 
+            userId, 
+            JSON.stringify({ 
+                restored_email: email.trim(),
+                restored_name: `${first_name || ''} ${last_name || ''}`.trim(),
+                reactivated: reactivate
+            }),
+            auditTimestamp
+        ]);
+
+        return res.json({ 
+            ok: true, 
+            message: 'User restored successfully',
+            data: {
+                id: userId,
+                email: email.trim(),
+                status: reactivate ? 'active' : 'pending'
+            }
+        });
+    } catch (error: any) {
+        console.error('[POST /api/admin/users/:id/restore] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
 export default router;
