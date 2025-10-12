@@ -101,11 +101,38 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
  * Returns: { ok: true, data: { forwarding_request, pricing, mail_tag, charge_amount } }
  */
 router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
+    // High-signal logging at the top
+    console.log('[forwarding] incoming', {
+        path: req.path,
+        user_id: req.user?.id,
+        is_admin: req.user?.is_admin,
+        body_keys: Object.keys(req.body || {}),
+        mail_item_id: req.body?.mail_item_id,
+        method: req.body?.method,
+        reason: req.body?.reason
+    });
+
+    // DEBUG flag for troubleshooting
+    if (process.env.DEBUG_FORWARDING === '1') {
+        console.log('[forwarding] debug', { 
+            user: req.user?.id, 
+            payload: req.body,
+            headers: req.headers
+        });
+    }
+
     const userId = req.user!.id as number;
     const { mail_item_id, reason = null, method = 'standard' } = req.body ?? {};
 
+    // Validate payload with clear error codes
     if (!mail_item_id) {
-        return res.status(400).json({ ok: false, error: 'Missing required field: mail_item_id' });
+        console.warn('[forwarding] 400 bad payload', { mail_item_id });
+        return res.status(400).json({ 
+            ok: false, 
+            error: 'bad_payload',
+            reason: 'missing_mail_item_id',
+            message: 'Missing required field: mail_item_id' 
+        });
     }
 
     try {
@@ -117,15 +144,23 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         `, [userId]);
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: 'user_not_found' });
+            console.warn('[forwarding] 404 user not found', { userId });
+            return res.status(404).json({ 
+                ok: false, 
+                error: 'user_not_found',
+                reason: 'user_not_found',
+                message: 'User not found' 
+            });
         }
 
         const user = userResult.rows[0];
 
         if (!user.forwarding_address) {
+            console.warn('[forwarding] 400 no forwarding address', { userId });
             return res.status(400).json({
                 ok: false,
                 error: 'no_forwarding_address',
+                reason: 'missing_forwarding_address',
                 message: 'Please add your forwarding address in Profile before requesting forwarding.'
             });
         }
@@ -142,9 +177,17 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         // Only require name, address1, city, and postal - address2 is optional
         if (!name || !address1 || !city || !postal) {
+            console.warn('[forwarding] 400 invalid forwarding address', { 
+                userId, 
+                hasName: !!name, 
+                hasAddress1: !!address1, 
+                hasCity: !!city, 
+                hasPostal: !!postal 
+            });
             return res.status(400).json({
                 ok: false,
                 error: 'invalid_forwarding_address',
+                reason: 'invalid_forwarding_address',
                 message: 'Your forwarding address is incomplete. Please update it in Profile.'
             });
         }
