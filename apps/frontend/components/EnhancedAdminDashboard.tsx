@@ -119,7 +119,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "bundle-analysis" | "settings" | "blog";
+type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "bundle-analysis" | "service-monitoring" | "settings" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -134,7 +134,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         status: '',
         plan_id: '',
         kyc_status: '',
-        activity: '',
     });
 
     // Build query params for users - include ALL filters in key for immediate fetch
@@ -145,7 +144,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         ...(userFilters.status && { status: userFilters.status }),
         ...(userFilters.plan_id && { plan_id: userFilters.plan_id }),
         ...(userFilters.kyc_status && { kyc_status: userFilters.kyc_status }),
-        ...(userFilters.activity && { activity: userFilters.activity }),
     };
 
     // Use authenticated SWR with proper key that triggers immediate fetch on any change
@@ -356,7 +354,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         status: string;
         plan_id: string;
         kyc_status: string;
-        activity: string;
     }) => {
         console.debug('[Users] Filters changed:', filters);
         setUserFilters(filters);
@@ -569,117 +566,124 @@ function OverviewSection({
     const recentActivity = safe(metrics?.recent_activity, []);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Admin Overview</h1>
-                    <p className="text-muted-foreground">Real-time system status and key performance metrics</p>
+                    <h1 className="text-2xl font-bold">Admin Overview</h1>
+                    <p className="text-sm text-muted-foreground">System status and key metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`gap-2 ${systemStatus === 'operational' ? 'border-green-500' :
+                    <Badge variant="outline" className={`gap-1 text-xs ${systemStatus === 'operational' ? 'border-green-500' :
                         systemStatus === 'degraded' ? 'border-yellow-500' :
                             'border-red-500'
                         }`}>
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${systemStatus === 'operational' ? 'bg-green-500' :
+                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${systemStatus === 'operational' ? 'bg-green-500' :
                             systemStatus === 'degraded' ? 'bg-yellow-500' :
                                 'bg-red-500'
                             }`} />
-                        {systemStatus === 'operational' ? 'System Operational' :
-                            systemStatus === 'degraded' ? 'System Degraded' :
-                                'System Down'}
+                        {systemStatus === 'operational' ? 'Operational' :
+                            systemStatus === 'degraded' ? 'Degraded' :
+                                'Down'}
                     </Badge>
                 </div>
             </div>
 
             {/* Key Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 <MetricCard
-                    title="Total Users"
+                    title="Users"
                     value={metrics?.totals?.users?.toLocaleString() || '0'}
                     change=""
                     trend="up"
-                    icon={<Users2 className="h-5 w-5 text-blue-500" />}
+                    icon={<Users2 className="h-4 w-4 text-blue-500" />}
                 />
                 <MetricCard
-                    title="Active Users"
+                    title="Active"
                     value={metrics?.totals?.active_users?.toLocaleString() || '0'}
                     change=""
                     trend="up"
-                    icon={<Users2 className="h-5 w-5 text-green-500" />}
+                    icon={<Users2 className="h-4 w-4 text-green-500" />}
                 />
                 <MetricCard
-                    title="Pending KYC"
+                    title="KYC Pending"
                     value={metrics?.totals?.pending_kyc?.toLocaleString() || '0'}
                     change=""
                     trend="up"
-                    icon={<Users2 className="h-5 w-5 text-yellow-500" />}
+                    icon={<Users2 className="h-4 w-4 text-yellow-500" />}
                 />
                 <MetricCard
-                    title="Monthly Revenue"
+                    title="Revenue"
                     value={`£${(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    change="Resets monthly"
+                    change="Monthly"
                     trend="up"
-                    icon={<DollarSign className="h-5 w-5 text-green-500" />}
+                    icon={<DollarSign className="h-4 w-4 text-green-500" />}
                 />
                 <MetricCard
-                    title="Mail Processed"
+                    title="Mail"
                     value={overview.mailProcessed.toLocaleString()}
                     change=""
                     trend="up"
-                    icon={<Mail className="h-5 w-5 text-purple-500" />}
+                    icon={<Mail className="h-4 w-4 text-purple-500" />}
+                />
+                <MetricCard
+                    title="Forwards"
+                    value={overview.activeForwards.toLocaleString()}
+                    change="Active"
+                    trend="up"
+                    icon={<Truck className="h-4 w-4 text-orange-500" />}
                 />
             </div>
 
             {/* Forwarding Requests Summary */}
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Truck className="h-5 w-5" />
+                <CardHeader className="flex flex-row items-center justify-between py-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
                         Forwarding Requests
                         {isLoadingForwarding && (
-                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                            <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
                         )}
                     </CardTitle>
-                    <Button variant="outline" size="sm" onClick={onViewForwarding}>
+                    <Button variant="outline" size="sm" onClick={onViewForwarding} className="text-xs">
                         View All
                     </Button>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <CardContent className="py-3">
+                    <div className="grid grid-cols-4 gap-3 mb-3">
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{forwardingStats.requested}</div>
-                            <div className="text-sm text-muted-foreground">Requested</div>
+                            <div className="text-lg font-bold text-blue-600">{forwardingStats.requested}</div>
+                            <div className="text-xs text-muted-foreground">Requested</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-yellow-600">{forwardingStats.reviewed}</div>
-                            <div className="text-sm text-muted-foreground">Reviewed</div>
+                            <div className="text-lg font-bold text-yellow-600">{forwardingStats.reviewed}</div>
+                            <div className="text-xs text-muted-foreground">Reviewed</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-purple-600">{forwardingStats.processing}</div>
-                            <div className="text-sm text-muted-foreground">Processing</div>
+                            <div className="text-lg font-bold text-purple-600">{forwardingStats.processing}</div>
+                            <div className="text-xs text-muted-foreground">Processing</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{forwardingStats.dispatched}</div>
-                            <div className="text-sm text-muted-foreground">Dispatched</div>
+                            <div className="text-lg font-bold text-orange-600">{forwardingStats.dispatched}</div>
+                            <div className="text-xs text-muted-foreground">Dispatched</div>
                         </div>
                     </div>
 
                     {forwardingRequests.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="font-medium text-sm text-muted-foreground">Recent Requests</h4>
+                        <div className="space-y-1">
+                            <h4 className="font-medium text-xs text-muted-foreground">Recent Requests</h4>
                             <div className="space-y-1">
                                 {forwardingRequests.slice(0, 3).map((request: any) => (
-                                    <div key={request.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                                    <div key={request.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs">
                                         <div className="flex items-center gap-2">
                                             <Badge variant={
                                                 request.status === 'Requested' ? 'default' :
                                                     request.status === 'Reviewed' ? 'secondary' :
                                                         request.status === 'Processing' ? 'outline' :
                                                             request.status === 'Dispatched' ? 'destructive' : 'secondary'
-                                            }>
+                                            } className="text-xs px-1 py-0">
                                                 {request.status}
                                             </Badge>
-                                            <span className="text-sm font-medium">{request.to_name}</span>
+                                            <span className="font-medium truncate">{request.to_name}</span>
                                         </div>
                                         <div className="text-xs text-muted-foreground">
                                             {new Date(request.created_at).toLocaleDateString()}
@@ -691,38 +695,38 @@ function OverviewSection({
                     )}
 
                     {forwardingRequests.length === 0 && !isLoadingForwarding && (
-                        <div className="text-center py-4 text-muted-foreground">
-                            <Truck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No forwarding requests</p>
+                        <div className="text-center py-2 text-muted-foreground">
+                            <Truck className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                            <p className="text-xs">No forwarding requests</p>
                         </div>
                     )}
                 </CardContent>
             </Card>
 
             {/* Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Recent Activity */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Recent Activity</CardTitle>
-                        <Button variant="outline" size="sm">View All</Button>
+                    <CardHeader className="flex flex-row items-center justify-between py-3">
+                        <CardTitle className="text-base">Recent Activity</CardTitle>
+                        <Button variant="outline" size="sm" className="text-xs">View All</Button>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
+                    <CardContent className="py-3">
+                        <div className="space-y-2">
                             {recentActivity.length > 0 ? (
                                 recentActivity.map((activity: any, index: number) => (
                                     <ActivityItem
                                         key={index}
-                                        icon={<UserCheck className="h-4 w-4 text-green-500" />}
+                                        icon={<UserCheck className="h-3 w-3 text-green-500" />}
                                         title={activity.title || "Activity"}
                                         description={activity.description || "No description"}
                                         time={activity.time || "Unknown time"}
                                     />
                                 ))
                             ) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p>No activity yet</p>
+                                <div className="text-center py-4 text-muted-foreground">
+                                    <Activity className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                                    <p className="text-xs">No activity yet</p>
                                 </div>
                             )}
                         </div>
@@ -731,11 +735,11 @@ function OverviewSection({
 
                 {/* System Status */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">System Health</CardTitle>
+                    <CardHeader className="py-3">
+                        <CardTitle className="text-base">System Health</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
+                    <CardContent className="py-3">
+                        <div className="space-y-2">
                             <StatusItem
                                 label="Mail Processing API"
                                 status="operational"
@@ -846,13 +850,13 @@ function MetricCard({ title, value, change, trend, icon }: {
 }) {
     return (
         <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-sm text-muted-foreground">{title}</p>
-                        <p className="text-2xl font-bold">{value}</p>
+                        <p className="text-xs text-muted-foreground">{title}</p>
+                        <p className="text-lg font-bold">{value}</p>
                         <p className={`text-xs flex items-center gap-1 ${trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                            {trend === "up" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                            {trend === "up" ? <ArrowUp className="h-2 w-2" /> : <ArrowDown className="h-2 w-2" />}
                             {change}
                         </p>
                     </div>
@@ -870,12 +874,12 @@ function ActivityItem({ icon, title, description, time }: {
     time: string;
 }) {
     return (
-        <div className="flex items-start gap-3">
-            <div className="p-2 bg-muted rounded-lg">
+        <div className="flex items-start gap-2">
+            <div className="p-1 bg-muted rounded">
                 {icon}
             </div>
             <div className="flex-1">
-                <p className="text-sm font-medium">{title}</p>
+                <p className="text-xs font-medium">{title}</p>
                 <p className="text-xs text-muted-foreground">{description}</p>
                 <p className="text-xs text-muted-foreground">{time}</p>
             </div>
@@ -895,9 +899,9 @@ function StatusItem({ label, status, uptime }: {
     };
 
     const statusIcons = {
-        operational: <CheckCircle className="h-4 w-4" />,
-        warning: <AlertCircle className="h-4 w-4" />,
-        error: <XCircle className="h-4 w-4" />
+        operational: <CheckCircle className="h-3 w-3" />,
+        warning: <AlertCircle className="h-3 w-3" />,
+        error: <XCircle className="h-3 w-3" />
     };
 
     return (
@@ -906,11 +910,11 @@ function StatusItem({ label, status, uptime }: {
                 <div className={statusColors[status]}>
                     {statusIcons[status]}
                 </div>
-                <span className="text-sm">{label}</span>
+                <span className="text-xs">{label}</span>
             </div>
             <div className="text-right">
                 <div className="text-xs text-muted-foreground">Uptime</div>
-                <div className="text-sm font-medium">{uptime}</div>
+                <div className="text-xs font-medium">{uptime}</div>
             </div>
         </div>
     );
