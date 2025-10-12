@@ -154,12 +154,22 @@ export default function StableForwardingTable() {
     try {
       const action = getActionFromStatus(newStatus);
       console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}") with action "${action}"`);
+      console.log(`[StableForwardingTable] Current request status from DB:`, rows.find(r => r.id === requestId)?.status);
+      console.log(`[StableForwardingTable] Request details:`, rows.find(r => r.id === requestId));
 
       const response = await adminApi.updateForwardingRequest(requestId, {
         action: action
       });
 
       console.log(`[StableForwardingTable] API response:`, response);
+      console.log(`[StableForwardingTable] API response details:`, {
+        ok: response.ok,
+        error: response.error,
+        message: response.message,
+        from: response.from,
+        to: response.to,
+        allowed: response.allowed
+      });
 
       if (response.ok) {
         // Success - keep the optimistic update, no need to reload
