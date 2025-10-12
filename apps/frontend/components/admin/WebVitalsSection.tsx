@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
 interface WebVitalsData {

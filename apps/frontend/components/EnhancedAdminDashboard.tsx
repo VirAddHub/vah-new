@@ -110,11 +110,11 @@ const BlogSection = dynamic(() => import('./admin/BlogSection').then(mod => ({ d
 });
 
 const WebVitalsSection = dynamic(() => import('./admin/WebVitalsSection').then(mod => ({ default: mod.WebVitalsSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const BundleAnalysisSection = dynamic(() => import('./admin/BundleAnalysisSection').then(mod => ({ default: mod.BundleAnalysisSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 interface AdminDashboardProps {
