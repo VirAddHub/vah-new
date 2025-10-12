@@ -12,8 +12,9 @@ import { adminApi } from "@/lib/services/http";
 import { Search, Filter } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
-import { MAIL_STATUS, type MailStatus } from '../../lib/mailStatus';
+import { MAIL_STATUS, type MailStatus, toCanonical, getNextStatuses } from '../../lib/mailStatus';
 import { isRequested, isInProgress, isDone, uiStageFor } from '../../lib/forwardingStages';
+import { updateForwardingByAction } from '../../lib/forwardingActions';
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -40,6 +41,16 @@ export default function StableForwardingTable() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
+
+  // Helper to get allowed next statuses
+  const allowedNext = (status: string): MailStatus[] => {
+    try {
+      const s = toCanonical(status);
+      return getNextStatuses(s);
+    } catch {
+      return [];
+    }
+  };
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -138,9 +149,9 @@ export default function StableForwardingTable() {
     const originalRows = [...rows];
 
     // Convert UI status to canonical status for API call
-    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing :
-      newStatus === 'Done' ? MAIL_STATUS.Delivered :
-        newStatus; // Already canonical if passed as MAIL_STATUS constant
+    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing : 
+                           newStatus === 'Done' ? MAIL_STATUS.Delivered : 
+                           newStatus; // Already canonical if passed as MAIL_STATUS constant
 
     // Optimistically update the local state with canonical status
     setRows(prevRows =>
@@ -152,24 +163,13 @@ export default function StableForwardingTable() {
     );
 
     try {
-      const action = getActionFromStatus(newStatus);
-      console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}") with action "${action}"`);
+      console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}")`);
       console.log(`[StableForwardingTable] Current request status from DB:`, rows.find(r => r.id === requestId)?.status);
       console.log(`[StableForwardingTable] Request details:`, rows.find(r => r.id === requestId));
 
-      const response = await adminApi.updateForwardingRequest(requestId, {
-        action: action
-      });
+      const response = await updateForwardingByAction(requestId.toString(), canonicalStatus);
 
       console.log(`[StableForwardingTable] API response:`, response);
-      console.log(`[StableForwardingTable] API response details:`, {
-        ok: response.ok,
-        error: response.error,
-        message: response.message,
-        from: response.from,
-        to: response.to,
-        allowed: response.allowed
-      });
 
       if (response.ok) {
         // Success - keep the optimistic update, no need to reload
@@ -183,7 +183,7 @@ export default function StableForwardingTable() {
         // Rollback on failure
         setRows(originalRows);
         console.error('Failed to update status:', response.error);
-
+        
         // Try to surface the server's strict-guard payload if present
         let errorMsg = "Failed to update status. Please try again.";
         if (response.error === "illegal_transition") {
@@ -191,7 +191,7 @@ export default function StableForwardingTable() {
         } else if (response.message) {
           errorMsg = response.message;
         }
-
+        
         toast({
           title: "Status Update Failed",
           description: errorMsg,
@@ -199,17 +199,22 @@ export default function StableForwardingTable() {
           durationMs: 5000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
-
+      
       // Try to surface the server's strict-guard payload if present
       let errorMsg = "Error updating status. Please try again.";
-      if (error instanceof Error && error.message.includes("illegal_transition")) {
+      const payload = error?.payload;
+      if (payload?.error === "illegal_transition") {
+        errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
+      } else if (payload?.message) {
+        errorMsg = payload.message;
+      } else if (error?.message) {
         errorMsg = error.message;
       }
-
+      
       toast({
         title: "Status Update Error",
         description: errorMsg,
@@ -221,17 +226,6 @@ export default function StableForwardingTable() {
     }
   };
 
-  // Map simplified status to API action
-  const getActionFromStatus = (status: string) => {
-    switch (status) {
-      case 'In Progress': return 'start_processing';
-      case 'Done': return 'mark_delivered';
-      case MAIL_STATUS.Processing: return 'start_processing';
-      case MAIL_STATUS.Dispatched: return 'mark_dispatched';
-      case MAIL_STATUS.Delivered: return 'mark_delivered';
-      default: return 'start_processing';
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
@@ -249,9 +243,11 @@ export default function StableForwardingTable() {
 
   // Render a request card
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
-    // Determine what actions are available based on current status
-    const canMoveToInProgress = section === 'requested' && isRequested(request.status);
-    const canMoveToDone = section === 'inProgress' && isInProgress(request.status);
+    // Get allowed next statuses based on current status
+    const allowedStatuses = allowedNext(request.status);
+    const canMoveToProcessing = allowedStatuses.includes(MAIL_STATUS.Processing);
+    const canMoveToDispatched = allowedStatuses.includes(MAIL_STATUS.Dispatched);
+    const canMoveToDelivered = allowedStatuses.includes(MAIL_STATUS.Delivered);
 
     return (
       <Card key={request.id} className="mb-3" data-testid="forwarding-card" data-status={uiStageFor(request.status)}>
@@ -279,17 +275,17 @@ export default function StableForwardingTable() {
             <div className="flex items-center gap-2">
               {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
-                {canMoveToInProgress && (
+                {canMoveToProcessing && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'In Progress')}
+                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Processing)}
                     disabled={updatingStatus === request.id}
                   >
                     {updatingStatus === request.id ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {canMoveToDone && (
+                {canMoveToDispatched && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -297,6 +293,16 @@ export default function StableForwardingTable() {
                     disabled={updatingStatus === request.id}
                   >
                     {updatingStatus === request.id ? '...' : 'Mark Dispatched'}
+                  </Button>
+                )}
+                {canMoveToDelivered && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Delivered)}
+                    disabled={updatingStatus === request.id}
+                  >
+                    {updatingStatus === request.id ? '...' : 'Mark Delivered'}
                   </Button>
                 )}
               </div>

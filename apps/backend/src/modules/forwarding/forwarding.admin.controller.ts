@@ -15,6 +15,13 @@ const ACTION_TO_STATUS = {
     cancel: 'Cancelled', // Keep as string since Cancelled is not in our canonical statuses
 } as const;
 
+const STATUS_TO_ACTION: Record<string, keyof typeof ACTION_TO_STATUS> = {
+    [MAIL_STATUS.Requested]: "mark_reviewed",
+    [MAIL_STATUS.Processing]: "start_processing",
+    [MAIL_STATUS.Dispatched]: "mark_dispatched",
+    [MAIL_STATUS.Delivered]: "mark_delivered",
+};
+
 // Use shared transitions - this will be replaced by the shared constants
 const allowedTransitions: Record<string, string[]> = {
     [MAIL_STATUS.Requested]: [MAIL_STATUS.Processing],
@@ -25,7 +32,8 @@ const allowedTransitions: Record<string, string[]> = {
 };
 
 const AdminUpdateSchema = z.object({
-    action: z.enum(['mark_reviewed', 'start_processing', 'mark_dispatched', 'mark_delivered', 'cancel']),
+    action: z.enum(['mark_reviewed', 'start_processing', 'mark_dispatched', 'mark_delivered', 'cancel']).optional(),
+    status: z.string().optional(),
     courier: z.string().trim().max(100).optional().nullable(),
     tracking_number: z.string().trim().max(120).optional().nullable(),
     admin_notes: z.string().trim().max(2000).optional().nullable(),
@@ -154,8 +162,32 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
         return res.status(400).json({ ok: false, error: 'invalid_body', details: parse.error.flatten() });
     }
 
-    const { action, courier, tracking_number, admin_notes } = parse.data;
-    const nextStatus = ACTION_TO_STATUS[action];
+    const { action, status, courier, tracking_number, admin_notes } = parse.data;
+    
+    // Normalize to ACTION
+    let normalizedAction = action as keyof typeof ACTION_TO_STATUS | undefined;
+    if (!normalizedAction && status) {
+        try {
+            const nextCanon = toCanonical(status);
+            normalizedAction = STATUS_TO_ACTION[nextCanon];
+        } catch (error) {
+            return res.status(422).json({ 
+                ok: false, 
+                error: "invalid_payload", 
+                message: `Invalid status format: ${status}` 
+            });
+        }
+    }
+    
+    if (!normalizedAction) {
+        return res.status(422).json({ 
+            ok: false, 
+            error: "invalid_payload", 
+            message: "Missing or invalid action/status. Must provide either 'action' or 'status'." 
+        });
+    }
+    
+    const nextStatus = ACTION_TO_STATUS[normalizedAction];
 
     try {
         const pool = getPool();
@@ -190,8 +222,9 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 try {
                     const currentStatus = toCanonical(current) as MailStatus;
                     const nextStatusCanonical = toCanonical(nextStatus) as MailStatus;
+                    const allowed = getNextStatuses(currentStatus);
                     
-                    if (!isTransitionAllowed(currentStatus, nextStatusCanonical)) {
+                    if (!allowed.includes(nextStatusCanonical)) {
                         await pool.query('ROLLBACK');
                         console.warn(`[STRICT_STATUS_GUARD] Illegal transition ${currentStatus} → ${nextStatusCanonical} for request ${id}`);
                         
@@ -201,11 +234,11 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                         return res.status(400).json({
                             ok: false,
                             error: 'illegal_transition',
-                            message: `Illegal transition ${currentStatus} → ${nextStatusCanonical}`,
+                            message: `Illegal transition: ${currentStatus} → ${nextStatusCanonical}`,
                             id: String(id),
                             from: currentStatus,
                             to: nextStatusCanonical,
-                            allowed: getNextStatuses(currentStatus)
+                            allowed: allowed
                         });
                     }
                 } catch (error) {
