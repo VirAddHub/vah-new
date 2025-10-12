@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
-import { AddressCompleter } from '../ui/AddressCompleter';
+import { AddressFinder } from '../ui/AddressFinder';
 import { useSimpleDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface SignupStep2Props {
@@ -612,19 +612,46 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     This is where we'll forward your mail. Use our smart address finder to quickly select your address.
                                 </p>
                                 
-                                <AddressCompleter
+                                <AddressFinder
                                     onAddressSelect={(address) => {
-                                        updateFormData('address_line1', address.address_line_1);
-                                        updateFormData('address_line2', address.address_line_2 || '');
-                                        updateFormData('city', address.city);
-                                        updateFormData('postcode', address.postcode);
-                                        updateFormData('forward_country', address.country);
+                                        console.log('[SignupStep2] Address selected:', address);
+                                        // AddressFinder will automatically populate the fields via outputFields
                                     }}
                                     placeholder="Start typing your forwarding address..."
                                     label="Forwarding Address"
                                     required={true}
                                     className="w-full"
+                                    outputFields={{
+                                        line_1: "#address_line1",
+                                        line_2: "#address_line2", 
+                                        post_town: "#city",
+                                        postcode: "#postcode"
+                                    }}
                                 />
+
+                                {/* Hidden address input fields for AddressFinder to populate */}
+                                <div className="hidden">
+                                    <Input
+                                        id="address_line1"
+                                        value={formData.address_line1}
+                                        onChange={(e) => updateFormData('address_line1', e.target.value)}
+                                    />
+                                    <Input
+                                        id="address_line2"
+                                        value={formData.address_line2}
+                                        onChange={(e) => updateFormData('address_line2', e.target.value)}
+                                    />
+                                    <Input
+                                        id="city"
+                                        value={formData.city}
+                                        onChange={(e) => updateFormData('city', e.target.value)}
+                                    />
+                                    <Input
+                                        id="postcode"
+                                        value={formData.postcode}
+                                        onChange={(e) => updateFormData('postcode', e.target.value)}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

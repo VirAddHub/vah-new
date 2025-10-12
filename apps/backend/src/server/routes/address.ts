@@ -72,13 +72,13 @@ router.get('/lookup', async (req, res) => {
     // Ideal Postcodes API endpoint
     const url = new URL(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(postcode)}`);
     url.searchParams.set('api_key', API_KEY);
-    
+
     // Add timeout with AbortController
     const ctrl = AbortController ? new AbortController() : null;
     const timeout = setTimeout(() => ctrl?.abort(), 6000);
 
     const r = await fetch(url.toString(), {
-      headers: { 
+      headers: {
         Accept: 'application/json',
         'User-Agent': 'VirtualAddressHub/1.0'
       },
@@ -94,7 +94,7 @@ router.get('/lookup', async (req, res) => {
     }
 
     const data = await r.json();
-    
+
     // Transform Ideal Postcodes response to match expected format
     const addresses: string[] = [];
     if (data.result && Array.isArray(data.result)) {
