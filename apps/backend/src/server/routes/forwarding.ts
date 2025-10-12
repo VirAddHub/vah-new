@@ -66,7 +66,6 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
 router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const requestId = parseInt(req.params.id);
-    const pool = getPool();
 
     if (!requestId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -197,7 +196,6 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 router.post('/requests/bulk', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { ids } = req.body;
-    const pool = getPool();
 
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ ok: false, error: 'invalid_ids' });
