@@ -114,8 +114,8 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
     // DEBUG flag for troubleshooting
     if (process.env.DEBUG_FORWARDING === '1') {
-        console.log('[forwarding] debug', { 
-            user: req.user?.id, 
+        console.log('[forwarding] debug', {
+            user: req.user?.id,
             payload: req.body,
             headers: req.headers
         });
@@ -127,11 +127,11 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
     // Validate payload with clear error codes
     if (!mail_item_id) {
         console.warn('[forwarding] 400 bad payload', { mail_item_id });
-        return res.status(400).json({ 
-            ok: false, 
+        return res.status(400).json({
+            ok: false,
             error: 'bad_payload',
             reason: 'missing_mail_item_id',
-            message: 'Missing required field: mail_item_id' 
+            message: 'Missing required field: mail_item_id'
         });
     }
 
@@ -145,11 +145,11 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         if (userResult.rows.length === 0) {
             console.warn('[forwarding] 404 user not found', { userId });
-            return res.status(404).json({ 
-                ok: false, 
+            return res.status(404).json({
+                ok: false,
                 error: 'user_not_found',
                 reason: 'user_not_found',
-                message: 'User not found' 
+                message: 'User not found'
             });
         }
 
@@ -177,12 +177,12 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         // Only require name, address1, city, and postal - address2 is optional
         if (!name || !address1 || !city || !postal) {
-            console.warn('[forwarding] 400 invalid forwarding address', { 
-                userId, 
-                hasName: !!name, 
-                hasAddress1: !!address1, 
-                hasCity: !!city, 
-                hasPostal: !!postal 
+            console.warn('[forwarding] 400 invalid forwarding address', {
+                userId,
+                hasName: !!name,
+                hasAddress1: !!address1,
+                hasCity: !!city,
+                hasPostal: !!postal
             });
             return res.status(400).json({
                 ok: false,
