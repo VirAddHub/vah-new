@@ -11,6 +11,7 @@ export interface UserProfile {
     phone?: string;
     company_name?: string;
     forwarding_address?: string;
+    kyc_status?: string;
     created_at: string;
     updated_at: string;
 }

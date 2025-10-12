@@ -13,6 +13,7 @@ export default function ProfilePage() {
         marketingOptIn: false,
         forwarding_address: ""
     });
+    const [kycStatus, setKycStatus] = useState<string>("");
     const [msg, setMsg] = useState("");
 
     useEffect(() => {
@@ -25,6 +26,7 @@ export default function ProfilePage() {
                     marketingOptIn: !!u.marketingOptIn,
                     forwarding_address: u.forwarding_address ?? ""
                 });
+                setKycStatus(u.kyc_status ?? "");
             })
             .finally(() => setLoading(false));
     }, []);
@@ -48,8 +50,17 @@ export default function ProfilePage() {
             <form onSubmit={onSubmit} className="grid gap-4">
                 <label className="grid gap-1">
                     <span>Name</span>
-                    <input className="border rounded p-2" value={form.name}
-                        onChange={e => setForm({ ...form, name: e.target.value })} />
+                    <input 
+                        className="border rounded p-2" 
+                        value={form.name}
+                        onChange={e => setForm({ ...form, name: e.target.value })}
+                        disabled={kycStatus === 'verified'}
+                    />
+                    {kycStatus === 'verified' && (
+                        <p className="text-xs text-gray-500">
+                            Name cannot be changed after KYC verification
+                        </p>
+                    )}
                 </label>
                 <label className="grid gap-1">
                     <span>Avatar URL</span>

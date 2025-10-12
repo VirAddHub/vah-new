@@ -37,6 +37,7 @@ export default function AccountPage() {
         forwarding_address: '',
         marketingOptIn: false
     });
+    const [kycStatus, setKycStatus] = useState<string>('');
     const [profileMsg, setProfileMsg] = useState('');
 
     const o = overview?.data;
@@ -52,6 +53,7 @@ export default function AccountPage() {
                 forwarding_address: user.forwarding_address || '',
                 marketingOptIn: !!user.marketingOptIn
             });
+            setKycStatus(user.kyc_status || '');
         }
     }, [user]);
 
@@ -241,7 +243,13 @@ export default function AccountPage() {
                                                     value={profileForm.name}
                                                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                                                     placeholder="Enter your full name"
+                                                    disabled={kycStatus === 'verified'}
                                                 />
+                                                {kycStatus === 'verified' && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Name cannot be changed after KYC verification
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="email">Email Address</Label>

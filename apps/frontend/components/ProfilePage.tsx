@@ -154,9 +154,14 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                         id="first_name"
                                         value={formData.first_name}
                                         onChange={(e) => handleChange('first_name', e.target.value)}
-                                        disabled={!editing}
+                                        disabled={!editing || profile?.kyc_status === 'verified'}
                                         placeholder="Enter your first name"
                                     />
+                                    {profile?.kyc_status === 'verified' && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Name cannot be changed after KYC verification
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label htmlFor="last_name">Last Name</Label>
@@ -164,9 +169,14 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                         id="last_name"
                                         value={formData.last_name}
                                         onChange={(e) => handleChange('last_name', e.target.value)}
-                                        disabled={!editing}
+                                        disabled={!editing || profile?.kyc_status === 'verified'}
                                         placeholder="Enter your last name"
                                     />
+                                    {profile?.kyc_status === 'verified' && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Name cannot be changed after KYC verification
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

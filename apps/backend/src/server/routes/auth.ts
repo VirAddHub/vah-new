@@ -445,7 +445,7 @@ router.get("/whoami", async (req, res) => {
         // Verify user still exists and is not deleted
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, is_admin, role FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            'SELECT id, email, is_admin, role, kyc_status, name, first_name, last_name, forwarding_address FROM "user" WHERE id = $1 AND deleted_at IS NULL',
             [payload.id]
         );
 
@@ -463,10 +463,17 @@ router.get("/whoami", async (req, res) => {
         res.json({
             ok: true,
             data: {
-                user_id: userData.id,
-                email: userData.email,
-                is_admin: userData.is_admin,
-                role: userData.role
+                user: {
+                    id: userData.id,
+                    email: userData.email,
+                    is_admin: userData.is_admin,
+                    role: userData.role,
+                    kyc_status: userData.kyc_status,
+                    name: userData.name,
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    forwarding_address: userData.forwarding_address
+                }
             }
         });
     } catch (error) {
