@@ -297,8 +297,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return false;
     }
     
-    // Parse the forwarding address to check if it's complete
+    // Parse the forwarding address using the same logic as the backend
     const addressLines = userProfile.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
+    
+    // Need at least 4 lines: name, address1, city/postal, country
+    if (addressLines.length < 4) {
+      return false;
+    }
+    
     const name = addressLines[0] || '';
     const address1 = addressLines[1] || '';
     const cityPostal = addressLines[addressLines.length - 2] || '';
@@ -306,7 +312,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     
     const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
     
-    // Check if all required fields are present
+    // Check if all required fields are present (same as backend validation)
     if (!name || !address1 || !city || !postal) {
       return false;
     }
@@ -743,13 +749,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       onClick={() => handleRequestForwarding(item)}
                                       disabled={!canForward(item)}
                                       title={
-                                        isGDPRExpired(item) 
-                                          ? "Cannot forward: GDPR expired (30+ days old)" 
+                                        isGDPRExpired(item)
+                                          ? "Cannot forward: GDPR expired (30+ days old)"
                                           : !userProfile?.forwarding_address
-                                          ? "Cannot forward: Please set your forwarding address in Profile settings"
-                                          : !canForward(item) 
-                                          ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
-                                          : ""
+                                            ? "Cannot forward: Please set your forwarding address in Profile settings"
+                                            : !canForward(item)
+                                              ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
+                                              : ""
                                       }
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
@@ -851,13 +857,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       onClick={() => handleRequestForwarding(item)}
                                       disabled={!canForward(item)}
                                       title={
-                                        isGDPRExpired(item) 
-                                          ? "Cannot forward: GDPR expired (30+ days old)" 
+                                        isGDPRExpired(item)
+                                          ? "Cannot forward: GDPR expired (30+ days old)"
                                           : !userProfile?.forwarding_address
-                                          ? "Cannot forward: Please set your forwarding address in Profile settings"
-                                          : !canForward(item) 
-                                          ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
-                                          : ""
+                                            ? "Cannot forward: Please set your forwarding address in Profile settings"
+                                            : !canForward(item)
+                                              ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
+                                              : ""
                                       }
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
