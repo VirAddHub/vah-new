@@ -101,39 +101,46 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
  * Returns: { ok: true, data: { forwarding_request, pricing, mail_tag, charge_amount } }
  */
 router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
-    // High-signal logging at the top
+    // First-line logging at the top
     console.log('[forwarding] incoming', {
-        path: req.path,
-        user_id: req.user?.id,
-        is_admin: req.user?.is_admin,
+        user_id: (req as any).user?.id,
         body_keys: Object.keys(req.body || {}),
+        ids: req.body?.mail_item_ids,
         mail_item_id: req.body?.mail_item_id,
-        method: req.body?.method,
-        reason: req.body?.reason
     });
 
     // DEBUG flag for troubleshooting
     if (process.env.DEBUG_FORWARDING === '1') {
-        console.log('[forwarding] debug', {
-            user: req.user?.id,
+        console.log('[forwarding] debug', { 
+            user: req.user?.id, 
             payload: req.body,
             headers: req.headers
         });
     }
 
     const userId = req.user!.id as number;
-    const { mail_item_id, reason = null, method = 'standard' } = req.body ?? {};
+    
+    // Handle both payload formats: single mail_item_id or array mail_item_ids
+    let mailItemIds: number[] = [];
+    if (req.body?.mail_item_ids && Array.isArray(req.body.mail_item_ids)) {
+        mailItemIds = req.body.mail_item_ids;
+    } else if (req.body?.mail_item_id) {
+        mailItemIds = [req.body.mail_item_id];
+    }
 
     // Validate payload with clear error codes
-    if (!mail_item_id) {
-        console.warn('[forwarding] 400 bad payload', { mail_item_id });
-        return res.status(400).json({
-            ok: false,
+    if (mailItemIds.length === 0) {
+        console.warn('[forwarding] 400 bad payload', { mail_item_ids: req.body?.mail_item_ids, mail_item_id: req.body?.mail_item_id });
+        return res.status(400).json({ 
+            ok: false, 
             error: 'bad_payload',
             reason: 'missing_mail_item_id',
-            message: 'Missing required field: mail_item_id'
+            message: 'Missing required field: mail_item_id or mail_item_ids' 
         });
     }
+
+    // For now, handle only the first item (can be extended for bulk later)
+    const mail_item_id = mailItemIds[0];
 
     try {
         // Get user's forwarding address
@@ -203,8 +210,8 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
                 postal,
                 country,
             },
-            reason,
-            method,
+            reason: req.body?.reason || null,
+            method: req.body?.method || 'standard',
         });
 
         return res.json({
