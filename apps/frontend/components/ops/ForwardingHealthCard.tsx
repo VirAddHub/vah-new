@@ -5,18 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { parsePromText, sumMetric } from "@/lib/prometheus";
+import { parsePromText, sumMetric, estimateHistogramQuantile, rowsFor } from "@/lib/prometheus";
+import { Switch } from "@/components/ui/switch";
 
 type Point = { ts: number; transitions: number; illegal: number; err5: number };
 
 export default function ForwardingHealthCard() {
   const [text, setText] = useState<string>("");
+  const [promText, setPromText] = useState<string>("");
   const [series, setSeries] = useState<Point[]>([]);
   const [updatedAt, setUpdatedAt] = useState<number>(0);
   const [error, setError] = useState<string>("");
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<number | null>(null);
   const [lastResult, setLastResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [mute, setMute] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("ops_mute_alerts") === "1";
+  });
 
   async function fetchMetrics() {
     try {
@@ -32,6 +38,7 @@ export default function ForwardingHealthCard() {
       
       const t = await r.text();
       setText(t);
+      setPromText(t);
       setUpdatedAt(Date.now());
     } catch (err) {
       console.error('[ForwardingHealthCard] Error fetching metrics:', err);
@@ -79,6 +86,11 @@ export default function ForwardingHealthCard() {
     } finally {
       setRunning(false);
     }
+  }
+
+  function toggleMute(v: boolean) {
+    setMute(v);
+    try { localStorage.setItem("ops_mute_alerts", v ? "1" : "0"); } catch {}
   }
 
   useEffect(() => {
@@ -129,6 +141,36 @@ export default function ForwardingHealthCard() {
     return { illegalSpike, errSpike, stalled };
   }, [series]);
 
+  // Compute advanced metrics
+  const adv = useMemo(() => {
+    if (!promText) return { 
+      p95RP: null as number|null, 
+      p95PD: null as number|null, 
+      p95DD: null as number|null, 
+      slaPct: null as number|null, 
+      webhooks: [] as {provider:string, age:number}[], 
+      flags: [] as {flag:string, state:number}[] 
+    };
+    const p = parsePromText(promText);
+
+    const p95RP = estimateHistogramQuantile(p, "forwarding_transition_latency_ms", 0.95, { from:"Requested", to:"Processing" });
+    const p95PD = estimateHistogramQuantile(p, "forwarding_transition_latency_ms", 0.95, { from:"Processing", to:"Dispatched" });
+    const p95DD = estimateHistogramQuantile(p, "forwarding_transition_latency_ms", 0.95, { from:"Dispatched", to:"Delivered" });
+
+    const met = sumMetric(p, "forwarding_sla_met_total", { window: "2h" });
+    const breached = sumMetric(p, "forwarding_sla_breached_total", { window: "2h" });
+    const total = met + breached;
+    const slaPct = total ? Math.round((met/total)*100) : null;
+
+    const webhookRows = rowsFor(p, "webhook_last_seen_seconds", "provider")
+      .map(r => ({ provider: r.key, age: Math.round(r.value) }));
+
+    const flagRows = rowsFor(p, "feature_flag_state", "flag")
+      .map(r => ({ flag: r.key, state: r.value }));
+
+    return { p95RP, p95PD, p95DD, slaPct, webhooks: webhookRows, flags: flagRows };
+  }, [promText]);
+
   if (error) {
     return (
       <Card className="p-5">
@@ -150,7 +192,11 @@ export default function ForwardingHealthCard() {
     <Card className="p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Forwarding Health</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="opacity-60">Mute UI alerts</span>
+            <Switch checked={mute} onCheckedChange={toggleMute} />
+          </div>
           <Button 
             variant="secondary" 
             size="sm" 
@@ -164,9 +210,9 @@ export default function ForwardingHealthCard() {
               {lastResult.msg}{lastRun ? ` • ${new Date(lastRun).toLocaleTimeString()}` : ""}
             </span>
           )}
-          {uiAlerts.stalled && <Badge variant="destructive">No transitions</Badge>}
-          {uiAlerts.illegalSpike && <Badge variant="destructive">Illegal spike</Badge>}
-          {uiAlerts.errSpike && <Badge variant="destructive">5xx spike</Badge>}
+          {!mute && uiAlerts.stalled && <Badge variant="destructive">No transitions</Badge>}
+          {!mute && uiAlerts.illegalSpike && <Badge variant="destructive">Illegal spike</Badge>}
+          {!mute && uiAlerts.errSpike && <Badge variant="destructive">5xx spike</Badge>}
           <span className="text-xs opacity-60">
             Updated {updatedAt ? new Date(updatedAt).toLocaleTimeString() : 'Never'}
           </span>
@@ -183,6 +229,73 @@ export default function ForwardingHealthCard() {
         <Spark title="Transitions trend" data={series.map(p => ({ x: p.ts, y: p.transitions }))}/>
         <Spark title="Illegal attempts trend" data={series.map(p => ({ x: p.ts, y: p.illegal }))}/>
         <Spark title="5xx errors trend" data={series.map(p => ({ x: p.ts, y: p.err5 }))}/>
+      </div>
+
+      {/* SLA Meter */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium">SLA (Requested → Processing within 2h)</h4>
+          <span className="text-sm">{adv.slaPct === null ? "n/a" : `${adv.slaPct}% met`}</span>
+        </div>
+        <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+          <div className="h-2 bg-emerald-500" style={{ width: `${adv.slaPct ?? 0}%` }} />
+        </div>
+        <p className="mt-1 text-xs opacity-70">Uses counters: forwarding_sla_met_total / _breached_total (window=2h)</p>
+      </Card>
+
+      {/* Latency p95s */}
+      <Card className="p-4">
+        <h4 className="font-medium mb-2">Latency p95</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <LatencyRow label="Req → Proc" ms={adv.p95RP} />
+          <LatencyRow label="Proc → Disp" ms={adv.p95PD} />
+          <LatencyRow label="Disp → Deliv" ms={adv.p95DD} />
+        </div>
+        <p className="mt-1 text-xs opacity-70">From histogram: forwarding_transition_latency_ms_bucket</p>
+      </Card>
+
+      {/* Webhook Freshness + Feature Flags */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium">Webhook Freshness</h4>
+            <span className="text-xs opacity-60">age (s)</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {adv.webhooks.length === 0 && <span className="text-xs opacity-60">n/a</span>}
+            {adv.webhooks.map(w => {
+              const tone = w.age > 7200 ? "bg-red-50 border-red-200 text-red-700"
+                         : w.age > 1800 ? "bg-amber-50 border-amber-200 text-amber-700"
+                         : "bg-emerald-50 border-emerald-200 text-emerald-700";
+              return (
+                <div key={w.provider} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${tone}`}>
+                  <span className="text-sm">{w.provider}</span>
+                  <span className="text-sm">{w.age}s</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium">Feature Flags</h4>
+            <span className="text-xs opacity-60">state</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {adv.flags.length === 0 && <span className="text-xs opacity-60">n/a</span>}
+            {adv.flags.map(f => {
+              const on = (f.state ?? 0) >= 1;
+              const tone = on ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-700";
+              return (
+                <div key={f.flag} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${tone}`}>
+                  <span className="text-sm">{f.flag}</span>
+                  <span className="text-sm">{on ? "ON" : "OFF"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
 
       <div className="flex items-center justify-between">
@@ -244,5 +357,19 @@ function Spark({ title, data }:{ title:string; data:{x:number;y:number}[] }) {
         </ResponsiveContainer>
       </div>
     </Card>
+  );
+}
+
+function LatencyRow({ label, ms }: { label:string; ms:number|null }) {
+  const text = ms === null ? "n/a" : (ms >= 1000 ? `${Math.round(ms/100)/10}s` : `${Math.round(ms)}ms`);
+  const tone = ms === null ? "bg-slate-50 border-slate-200 text-slate-700"
+            : ms > 2*60*60*1000 ? "bg-red-50 border-red-200 text-red-700" // >2h
+            : ms > 15*60*1000 ? "bg-amber-50 border-amber-200 text-amber-700"
+            : "bg-emerald-50 border-emerald-200 text-emerald-700";
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${tone}`}>
+      <div className="text-xs opacity-70">{label}</div>
+      <div className="text-base font-medium">{text}</div>
+    </div>
   );
 }
