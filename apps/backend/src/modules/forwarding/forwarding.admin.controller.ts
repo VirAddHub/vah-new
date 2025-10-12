@@ -36,8 +36,11 @@ function canMove(from: string, to: string): boolean {
     try {
         const fromStatus = toCanonical(from) as MailStatus;
         const toStatus = toCanonical(to) as MailStatus;
-        return isTransitionAllowed(fromStatus, toStatus);
-    } catch {
+        const allowed = isTransitionAllowed(fromStatus, toStatus);
+        console.log(`[canMove] ${from} → ${to} (${fromStatus} → ${toStatus}): ${allowed}`);
+        return allowed;
+    } catch (error) {
+        console.error(`[canMove] Error validating transition ${from} → ${to}:`, error);
         return false;
     }
 }
@@ -179,6 +182,8 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             }
 
             const current = cur.rows[0].status;
+            console.log(`[AdminForwarding] Request ${id} current status: "${current}", attempting to move to: "${nextStatus}"`);
+            console.log(`[AdminForwarding] STRICT_STATUS_GUARD enabled: ${process.env.STRICT_STATUS_GUARD === "1"}`);
             
             // Strict status guard - enforce allowed transitions when enabled
             if (process.env.STRICT_STATUS_GUARD === "1") {
@@ -216,6 +221,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             
             if (!canMove(current, nextStatus)) {
                 await pool.query('ROLLBACK');
+                console.warn(`[AdminForwarding] canMove() rejected transition ${current} → ${nextStatus} for request ${id}`);
                 return res.status(400).json({
                     ok: false,
                     error: 'illegal_transition',
