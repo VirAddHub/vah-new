@@ -38,7 +38,7 @@ const logAdminAction = async (action: string, data?: any) => {
         console.error('Failed to log admin action:', error);
     }
 };
-import { getErrorMessage, getErrorStack } from "../../lib/errors";
+import { BundleAnalysisWidget } from './BundleAnalysisWidget';
 
 interface AdminStats {
     totalUsers: number;
@@ -306,6 +306,16 @@ export function OverviewSection() {
                         </div>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* Performance Monitoring */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <BundleAnalysisWidget 
+                    onViewDetails={() => {
+                        // This would navigate to the bundle analysis section
+                        console.log('Navigate to bundle analysis');
+                    }}
+                />
             </div>
 
             {/* Recent Activity */}
