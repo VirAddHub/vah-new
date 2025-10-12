@@ -333,7 +333,31 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         setShowForwardingConfirmation(false);
         setSelectedMailForForwarding(null);
       } else {
-        throw new Error('Failed to create forwarding request');
+        const errorData = await response.json();
+        
+        // Handle specific error cases
+        if (errorData.error === 'no_forwarding_address') {
+          toast({
+            title: "Forwarding Address Required",
+            description: "Please set your forwarding address in Profile settings before requesting mail forwarding.",
+            variant: "destructive",
+            durationMs: 5000,
+          });
+        } else if (errorData.error === 'invalid_forwarding_address') {
+          toast({
+            title: "Incomplete Forwarding Address",
+            description: "Your forwarding address is incomplete. Please update it in Profile settings with your full name, address, city, and postal code.",
+            variant: "destructive",
+            durationMs: 5000,
+          });
+        } else {
+          toast({
+            title: "Forwarding Request Failed",
+            description: errorData.message || "Failed to create forwarding request. Please try again.",
+            variant: "destructive",
+            durationMs: 5000,
+          });
+        }
       }
     } catch (error) {
       console.error('Error creating forwarding request:', error);
