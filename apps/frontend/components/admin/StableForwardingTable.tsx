@@ -120,8 +120,28 @@ export default function StableForwardingTable() {
     const inProgress = filteredRequests.filter(r => r.status === 'Processing');
     const done = filteredRequests.filter(r => {
       if (r.status === 'Dispatched' || r.status === 'Delivered') {
-        // Only show if dispatched within last 30 days
-        return r.dispatched_at ? r.dispatched_at > thirtyDaysAgo : false;
+        // Debug logging to see what's happening
+        console.log('Done filter check:', {
+          id: r.id,
+          status: r.status,
+          dispatched_at: r.dispatched_at,
+          dispatched_at_type: typeof r.dispatched_at,
+          thirtyDaysAgo,
+          now
+        });
+        
+        // Convert dispatched_at to number if it's a string
+        let dispatchedAt = r.dispatched_at;
+        if (typeof dispatchedAt === 'string') {
+          dispatchedAt = parseInt(dispatchedAt, 10);
+        }
+        
+        // Show all dispatched/delivered items regardless of age for now
+        // TODO: Re-enable 30-day filter once we confirm the timestamp format
+        return true;
+        
+        // Original logic (commented out for debugging):
+        // return dispatchedAt ? dispatchedAt > thirtyDaysAgo : false;
       }
       return false;
     });

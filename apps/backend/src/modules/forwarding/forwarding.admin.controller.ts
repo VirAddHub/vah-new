@@ -112,10 +112,16 @@ export async function adminListForwarding(req: Request, res: Response) {
             });
         }
 
-        // Ensure created_at is a number (PostgreSQL might return BIGINT as string)
+        // Ensure all timestamp fields are numbers (PostgreSQL might return BIGINT as string)
         const processedRows = rows.map(row => ({
             ...row,
-            created_at: typeof row.created_at === 'string' ? parseInt(row.created_at, 10) : row.created_at
+            created_at: typeof row.created_at === 'string' ? parseInt(row.created_at, 10) : row.created_at,
+            updated_at: typeof row.updated_at === 'string' ? parseInt(row.updated_at, 10) : row.updated_at,
+            dispatched_at: typeof row.dispatched_at === 'string' ? parseInt(row.dispatched_at, 10) : row.dispatched_at,
+            delivered_at: typeof row.delivered_at === 'string' ? parseInt(row.delivered_at, 10) : row.delivered_at,
+            processing_at: typeof row.processing_at === 'string' ? parseInt(row.processing_at, 10) : row.processing_at,
+            reviewed_at: typeof row.reviewed_at === 'string' ? parseInt(row.reviewed_at, 10) : row.reviewed_at,
+            cancelled_at: typeof row.cancelled_at === 'string' ? parseInt(row.cancelled_at, 10) : row.cancelled_at
         }));
 
         return res.json({ ok: true, data: processedRows });
