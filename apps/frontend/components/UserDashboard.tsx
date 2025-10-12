@@ -253,7 +253,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         toast({
           title: "Certificate Generated",
           description: "Your proof of address certificate has been downloaded.",
@@ -322,10 +322,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           description: "Your mail forwarding request has been submitted successfully.",
           durationMs: 3000,
         });
-        
+
         // Refresh mail items to update status
         refreshMail();
-        
+
         // Close modal
         setShowForwardingConfirmation(false);
         setSelectedMailForForwarding(null);
@@ -621,10 +621,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <FileCheck className="h-3 w-3 mr-1" />
                                       Open
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Download
-                                    </Button>
                                     <Button
                                       size="sm"
                                       variant="outline"
@@ -723,10 +719,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                     <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
                                       <Eye className="h-3 w-3 mr-1" />
                                       Open
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Download
                                     </Button>
                                     <Button
                                       size="sm"
@@ -849,7 +841,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       <PDFViewerModal
         isOpen={showPDFModal}
         onClose={() => setShowPDFModal(false)}
-        mailItemId={selectedMailForPDF ? parseInt(String(selectedMailForPDF.id)) : null}
+        mailItemId={selectedMailForPDF?.id ? Number(selectedMailForPDF.id) : null}
         mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
         useBlobFallback
       />
