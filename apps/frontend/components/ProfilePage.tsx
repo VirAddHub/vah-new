@@ -29,6 +29,14 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
         company_name: '',
         forwarding_address: ''
     });
+    const [forwardingAddress, setForwardingAddress] = useState({
+        name: '',
+        address1: '',
+        address2: '',
+        city: '',
+        postal: '',
+        country: 'United Kingdom'
+    });
 
     // Load profile on mount
     useEffect(() => {
@@ -45,6 +53,19 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                         company_name: response.data.company_name || '',
                         forwarding_address: response.data.forwarding_address || ''
                     });
+                    
+                    // Parse existing forwarding address into separate fields
+                    if (response.data.forwarding_address) {
+                        const lines = response.data.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
+                        setForwardingAddress({
+                            name: lines[0] || '',
+                            address1: lines[1] || '',
+                            address2: lines[2] || '',
+                            city: lines[lines.length - 2]?.split(',')[0]?.trim() || '',
+                            postal: lines[lines.length - 2]?.split(',')[1]?.trim() || '',
+                            country: lines[lines.length - 1] || 'United Kingdom'
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
@@ -65,7 +86,20 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     const handleSave = async () => {
         try {
             setSaving(true);
-            const response = await profileService.updateProfile(formData);
+            
+            // Combine forwarding address fields into the expected format
+            const combinedAddress = [
+                forwardingAddress.name,
+                forwardingAddress.address1,
+                forwardingAddress.address2,
+                `${forwardingAddress.city}, ${forwardingAddress.postal}`,
+                forwardingAddress.country
+            ].filter(line => line.trim() !== '').join('\n');
+            
+            const response = await profileService.updateProfile({
+                ...formData,
+                forwarding_address: combinedAddress
+            });
             if (response.ok && response.data) {
                 setProfile(response.data);
                 setEditing(false);
@@ -246,30 +280,85 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                 </p>
                             </div>
 
-                            <div>
-                                <Label htmlFor="forwarding_address">Forwarding Address</Label>
-                                <Textarea
-                                    id="forwarding_address"
-                                    value={formData.forwarding_address}
-                                    onChange={(e) => handleChange('forwarding_address', e.target.value)}
-                                    disabled={!editing}
-                                    placeholder="Enter your forwarding address&#10;Include:&#10;- Full name&#10;- Street address&#10;- City, Postal Code&#10;- Country"
-                                    rows={6}
-                                    className="font-mono text-sm"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Format: Name on Line 1, Street Address on Line 2, City and Postal Code on Line 3, Country on Line 4
-                                </p>
-                            </div>
-
-                            {!editing && (
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                    <h4 className="font-medium text-sm text-gray-700 mb-2">Current Address:</h4>
-                                    <pre className="text-sm text-gray-600 whitespace-pre-line">
-                                        {formData.forwarding_address || 'No forwarding address set'}
-                                    </pre>
+                            <div className="space-y-4">
+                                <div>
+                                    <Label className="text-base font-medium">Forwarding Address</Label>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        This address will be used automatically when you request mail forwarding.
+                                        Make sure it's accurate and complete.
+                                    </p>
                                 </div>
-                            )}
+
+                                <div className="grid gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="forwarding_name">Full Name *</Label>
+                                            <Input
+                                                id="forwarding_name"
+                                                value={forwardingAddress.name}
+                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, name: e.target.value })}
+                                                disabled={!editing}
+                                                placeholder="John Doe"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="forwarding_country">Country *</Label>
+                                            <Input
+                                                id="forwarding_country"
+                                                value={forwardingAddress.country}
+                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, country: e.target.value })}
+                                                disabled={!editing}
+                                                placeholder="United Kingdom"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="forwarding_address1">Address Line 1 *</Label>
+                                        <Input
+                                            id="forwarding_address1"
+                                            value={forwardingAddress.address1}
+                                            onChange={(e) => setForwardingAddress({ ...forwardingAddress, address1: e.target.value })}
+                                            disabled={!editing}
+                                            placeholder="123 Main Street"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="forwarding_address2">Address Line 2</Label>
+                                        <Input
+                                            id="forwarding_address2"
+                                            value={forwardingAddress.address2}
+                                            onChange={(e) => setForwardingAddress({ ...forwardingAddress, address2: e.target.value })}
+                                            disabled={!editing}
+                                            placeholder="Apartment 4B (optional)"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="forwarding_city">City *</Label>
+                                            <Input
+                                                id="forwarding_city"
+                                                value={forwardingAddress.city}
+                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, city: e.target.value })}
+                                                disabled={!editing}
+                                                placeholder="London"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="forwarding_postal">Postal Code *</Label>
+                                            <Input
+                                                id="forwarding_postal"
+                                                value={forwardingAddress.postal}
+                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, postal: e.target.value })}
+                                                disabled={!editing}
+                                                placeholder="SW1A 1AA"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             {editing && (
                                 <div className="flex justify-end gap-2 pt-4">
