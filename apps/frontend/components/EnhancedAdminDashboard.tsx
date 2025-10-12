@@ -72,6 +72,7 @@ import {
     Users2,
     CreditCard,
     Building2,
+    Activity,
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import dynamic from 'next/dynamic';
@@ -106,6 +107,10 @@ const WebVitalsSection = dynamic(() => import('./admin/WebVitalsSection').then(m
 });
 
 const BundleAnalysisSection = dynamic(() => import('./admin/BundleAnalysisSection').then(mod => ({ default: mod.BundleAnalysisSection })), {
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const ServiceMonitoring = dynamic(() => import('./admin/ServiceMonitoring').then(mod => ({ default: mod.ServiceMonitoring })), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
@@ -341,6 +346,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
         { id: "web-vitals", label: "Web Vitals", icon: <TrendingUp className="h-4 w-4" /> },
+        { id: "service-monitoring", label: "Service Monitoring", icon: <Activity className="h-4 w-4" /> },
         { id: "bundle-analysis", label: "Bundle Analysis", icon: <FileText className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
@@ -401,6 +407,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <AnalyticsSection />;
             case "web-vitals":
                 return <WebVitalsSection />;
+            case "service-monitoring":
+                return <ServiceMonitoring />;
             case "bundle-analysis":
                 return <BundleAnalysisSection />;
             case "settings":
