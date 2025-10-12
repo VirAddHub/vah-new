@@ -8,7 +8,7 @@ const cache = new Map<string, { at: number; data: any }>();
 const TTL = 60_000; // 60 seconds
 
 function getCacheKey(postcode: string, line1: string): string {
-    return `${postcode}::${line1}`;
+  return `${postcode}::${line1}`;
 }
 
 // loud module-load log so we know the file is actually in the build
@@ -25,9 +25,9 @@ router.get('/debug', (req, res) => {
   const hasApiKey = !!process.env.ADDRESS_API_KEY;
   const apiKeyLength = process.env.ADDRESS_API_KEY?.length || 0;
   const apiKeyPrefix = process.env.ADDRESS_API_KEY?.substring(0, 8) || 'none';
-  
-  return res.json({ 
-    ok: true, 
+
+  return res.json({
+    ok: true,
     debug: {
       hasApiKey,
       apiKeyLength,
@@ -41,7 +41,7 @@ router.get('/debug', (req, res) => {
 // Hardened lookup route with timeout, caching, and observability
 router.get('/lookup', async (req, res) => {
   const t0 = performance.now();
-  
+
   const API_KEY = process.env.ADDRESS_API_KEY;
   if (!API_KEY) {
     console.log('[address] ADDRESS_API_KEY missing');
@@ -75,11 +75,11 @@ router.get('/lookup', async (req, res) => {
     const ctrl = AbortController ? new AbortController() : null;
     const timeout = setTimeout(() => ctrl?.abort(), 6000);
 
-    const r = await fetch(url.toString(), { 
-      headers: { Accept: 'application/json' }, 
-      signal: ctrl?.signal as any 
+    const r = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+      signal: ctrl?.signal as any
     });
-    
+
     clearTimeout(timeout);
 
     if (!r.ok) {
@@ -90,15 +90,15 @@ router.get('/lookup', async (req, res) => {
 
     const data = await r.json();
     const addresses: string[] = Array.isArray((data as any)?.addresses) ? (data as any).addresses : [];
-    
+
     const payload = { ok: true, data: { addresses } };
-    
+
     // Cache successful results
     cache.set(key, { at: Date.now(), data: payload });
-    
+
     const latency = Math.round(performance.now() - t0);
     console.log(`[address] lookup ${postcode} ${line1 ? '(filtered)' : ''} ${addresses.length} results ${latency}ms`);
-    
+
     return res.json(payload);
   } catch (err: any) {
     const latency = Math.round(performance.now() - t0);

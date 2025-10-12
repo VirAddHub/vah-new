@@ -78,7 +78,7 @@ export function AddressCompleter({
     // Address completer API - now using BFF proxy
     const searchAddresses = useCallback(async (searchQuery: string) => {
         console.log('[AddressCompleter] Starting search for:', searchQuery);
-        
+
         // Focus on postcode search - UK postcodes are typically 5-8 characters
         if (!searchQuery || searchQuery.length < 3) {
             console.log('[AddressCompleter] Query too short, clearing suggestions');
@@ -93,9 +93,9 @@ export function AddressCompleter({
         try {
             const url = `/api/bff/address?postcode=${encodeURIComponent(searchQuery)}&line1=`;
             console.log('[AddressCompleter] Fetching from:', url);
-            
+
             const response = await fetch(url, { cache: 'no-store' });
-            
+
             console.log('[AddressCompleter] Response status:', response.status);
             console.log('[AddressCompleter] Response headers:', Object.fromEntries(response.headers.entries()));
 
@@ -168,7 +168,7 @@ export function AddressCompleter({
     const formatPostcode = (postcode: string): string => {
         // Remove all spaces and convert to uppercase
         const cleaned = postcode.replace(/\s/g, '').toUpperCase();
-        
+
         // UK postcode patterns: AA1 1AA, AA11 1AA, A1A 1AA, A11A 1AA, AA1A 1AA, AA11A 1AA
         const patterns = [
             /^([A-Z]{2})(\d)([A-Z])(\d)([A-Z]{2})$/, // AA1A1AA
@@ -178,7 +178,7 @@ export function AddressCompleter({
             /^([A-Z]{2})(\d)([A-Z]{2})(\d)([A-Z]{2})$/, // AA1AA1AA
             /^([A-Z]{2})(\d{2})([A-Z]{2})(\d)([A-Z]{2})$/, // AA11AA1AA
         ];
-        
+
         for (const pattern of patterns) {
             const match = cleaned.match(pattern);
             if (match) {
@@ -186,19 +186,19 @@ export function AddressCompleter({
                 return `${part1}${part2}${part3} ${part4}${part5}`;
             }
         }
-        
+
         // If no pattern matches, return cleaned version
         return cleaned;
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value;
-        
+
         // Auto-format postcode as user types
         if (value.length > 2) {
             value = formatPostcode(value);
         }
-        
+
         setQuery(value);
         setIsSelected(false);
         setError(null);

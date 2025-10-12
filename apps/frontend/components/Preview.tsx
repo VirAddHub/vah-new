@@ -47,12 +47,12 @@ export default function Preview() {
 
                 {/* teaser FAQs to keep the flow */}
                 <div className="mx-auto mt-6 grid gap-3 text-left md:max-w-3xl">
-                    <a href="/help#vah-registered-office" className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60">
-                        <p className="font-medium text-foreground">Can I use your address as my official Registered Office & Director's Service Address?</p>
+                    <a href="/help#vah-registered-office" className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60 hover:border-primary/30 transition-all cursor-pointer">
+                        <p className="font-medium text-foreground hover:text-primary transition-colors">Can I use your address as my official Registered Office & Director's Service Address?</p>
                         <p className="mt-1 text-sm text-muted-foreground">Yes — it's compliant for both with Companies House and HMRC and meets the "appropriate address" requirements.</p>
                     </a>
-                    <a href="/help#billing-cancel" className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60">
-                        <p className="font-medium text-foreground">How easy is it to cancel?</p>
+                    <a href="/help#billing-cancel" className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60 hover:border-primary/30 transition-all cursor-pointer">
+                        <p className="font-medium text-foreground hover:text-primary transition-colors">How easy is it to cancel?</p>
                         <p className="mt-1 text-sm text-muted-foreground">Cancel any time from your dashboard or by email. You'll keep access for 30 days after cancellation.</p>
                     </a>
                 </div>
