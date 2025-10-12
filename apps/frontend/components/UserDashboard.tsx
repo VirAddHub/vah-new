@@ -43,11 +43,7 @@ interface UserDashboardProps {
 // API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
-// Token helper
-const getToken = () => {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem('vah_jwt') || '';
-};
+// Token helper is imported from @/lib/token-manager
 
 // SWR fetcher function
 const fetcher = (url: string) => {
@@ -370,7 +366,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || errorData.error || 'Failed to create forwarding request';
-        
+
         toast({
           title: "Forwarding Request Failed",
           description: errorMessage,

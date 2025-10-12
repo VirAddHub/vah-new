@@ -53,7 +53,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                         company_name: response.data.company_name || '',
                         forwarding_address: response.data.forwarding_address || ''
                     });
-                    
+
                     // Parse existing forwarding address into separate fields
                     if (response.data.forwarding_address) {
                         const lines = response.data.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
@@ -86,7 +86,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     const handleSave = async () => {
         try {
             setSaving(true);
-            
+
             // Combine forwarding address fields into the expected format
             const combinedAddress = [
                 forwardingAddress.name,
@@ -95,7 +95,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                 `${forwardingAddress.city}, ${forwardingAddress.postal}`,
                 forwardingAddress.country
             ].filter(line => line.trim() !== '').join('\n');
-            
+
             const response = await profileService.updateProfile({
                 ...formData,
                 forwarding_address: combinedAddress

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
+import { getToken } from '@/lib/token-manager';
 import {
     Filter,
     Plus,
@@ -31,6 +32,9 @@ import {
 import { apiClient, safe } from "../../lib/apiClient";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
 import { SimpleBlogEditor } from "./SimpleBlogEditor";
+
+// API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
 interface BlogPost {
     slug: string;
@@ -109,9 +113,14 @@ export function BlogSection() {
 
     const handleCreatePost = async () => {
         try {
-            const response = await fetch('/api/bff/admin/blog/posts', {
+            const token = getToken();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const response = await fetch(`${API_BASE}/api/admin/blog/posts`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
+                credentials: 'include',
                 body: JSON.stringify(formData)
             });
             const json = await response.json().catch(() => ({}));
@@ -153,9 +162,14 @@ export function BlogSection() {
         if (!editingPost) return;
 
         try {
-            const response = await fetch(`/api/bff/admin/blog/posts/${editingPost.slug}`, {
+            const token = getToken();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const response = await fetch(`${API_BASE}/api/admin/blog/posts/${editingPost.slug}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
+                credentials: 'include',
                 body: JSON.stringify(formData)
             });
             const json = await response.json().catch(() => ({}));
@@ -198,9 +212,14 @@ export function BlogSection() {
         }
 
         try {
-            const response = await fetch(`/api/bff/admin/blog/posts/${slug}`, {
+            const token = getToken();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const response = await fetch(`${API_BASE}/api/admin/blog/posts/${slug}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
+                headers,
+                credentials: 'include'
             });
             const json = await response.json().catch(() => ({}));
 
@@ -298,28 +317,33 @@ export function BlogSection() {
                         <Plus className="h-4 w-4" />
                         New Post
                     </Button>
-                    <Button 
+                    <Button
                         variant="outline"
                         onClick={() => {
                             // Create a simple blog post directly via API
                             const slug = prompt('Enter slug for the blog post:');
                             if (!slug) return;
-                            
+
                             const title = prompt('Enter title:');
                             if (!title) return;
-                            
+
                             const description = prompt('Enter description:');
                             if (!description) return;
-                            
+
                             const content = prompt('Enter content (markdown):');
                             if (!content) return;
-                            
+
                             const status = confirm('Publish immediately?') ? 'published' : 'draft';
-                            
+
                             // Create the post
-                            fetch('/api/bff/admin/blog/posts', {
+                            const token = getToken();
+                            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+                            if (token) headers.Authorization = `Bearer ${token}`;
+
+                            fetch(`${API_BASE}/api/admin/blog/posts`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers,
+                                credentials: 'include',
                                 body: JSON.stringify({
                                     slug,
                                     title,
@@ -333,18 +357,18 @@ export function BlogSection() {
                                     noindex: false
                                 })
                             })
-                            .then(r => r.json())
-                            .then(result => {
-                                if (result.ok) {
-                                    alert('✅ Blog post created successfully!');
-                                    refetchPosts();
-                                } else {
-                                    alert(`❌ Error: ${result.error || 'Failed to create post'}`);
-                                }
-                            })
-                            .catch(error => {
-                                alert(`❌ Error: ${error.message}`);
-                            });
+                                .then(r => r.json())
+                                .then(result => {
+                                    if (result.ok) {
+                                        alert('✅ Blog post created successfully!');
+                                        refetchPosts();
+                                    } else {
+                                        alert(`❌ Error: ${result.error || 'Failed to create post'}`);
+                                    }
+                                })
+                                .catch(error => {
+                                    alert(`❌ Error: ${error.message}`);
+                                });
                         }}
                         className="flex items-center gap-2"
                     >

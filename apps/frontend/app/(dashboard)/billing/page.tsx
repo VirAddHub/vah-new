@@ -5,6 +5,10 @@ import { swrFetcher } from '@/services/http';
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { getToken } from '@/lib/token-manager';
+
+// API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
 const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
 const formatDateUK = (v?: number | string | null) => {
@@ -26,7 +30,15 @@ export default function BillingPage() {
   const act = async (path: string) => {
     setBusy(path);
     try {
-      const r = await fetch(path, { method: 'POST', credentials: 'include' });
+      const token = getToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const r = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        headers,
+        credentials: 'include'
+      });
       const j = await r.json();
       if (j?.data?.redirect_url) window.location.href = j.data.redirect_url;
     } finally {
@@ -38,9 +50,13 @@ export default function BillingPage() {
     setBusy(cadence);
     try {
       const planId = cadence === 'monthly' ? 3 : 2; // Plan IDs from database
-      const r = await fetch('/api/bff/billing/change-plan', {
+      const token = getToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const r = await fetch(`${API_BASE}/api/billing/change-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ plan_id: planId })
       });
@@ -76,12 +92,12 @@ export default function BillingPage() {
               </div>
               <div className="mt-3 flex gap-2">
                 <button className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium"
-                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  onClick={() => act('/api/billing/reauthorise')}
                   disabled={busy !== null}>
                   Update Payment Method
                 </button>
                 <button className="px-3 py-2 rounded-lg border border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 font-medium"
-                  onClick={() => act('/api/bff/billing/update-bank')}
+                  onClick={() => act('/api/billing/update-bank')}
                   disabled={busy !== null}>
                   Update Bank Details
                 </button>
@@ -95,7 +111,7 @@ export default function BillingPage() {
               <div className="text-sm mt-1 text-red-800 dark:text-red-200">Your payment is overdue. Please update your payment method immediately to avoid service interruption.</div>
               <div className="mt-3">
                 <button className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium"
-                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  onClick={() => act('/api/billing/reauthorise')}
                   disabled={busy !== null}>
                   Update Payment Method
                 </button>
@@ -116,7 +132,7 @@ export default function BillingPage() {
               <div className="text-sm mt-1 text-amber-800 dark:text-amber-200">Your Direct Debit is {o.status}. Please re-authorise to avoid service interruption.</div>
               <div className="mt-3">
                 <button className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium"
-                  onClick={() => act('/api/bff/billing/reauthorise')}
+                  onClick={() => act('/api/billing/reauthorise')}
                   disabled={busy !== null}>
                   Re-authorise Direct Debit
                 </button>
@@ -145,11 +161,11 @@ export default function BillingPage() {
             <div className="text-lg font-semibold text-foreground mb-4">Actions</div>
             <div className="flex flex-wrap gap-3">
               <button className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium"
-                onClick={() => act('/api/bff/billing/update-bank')}
+                onClick={() => act('/api/billing/update-bank')}
                 disabled={busy !== null}>Update bank details</button>
 
               <button className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium"
-                onClick={() => act('/api/bff/billing/reauthorise')}
+                onClick={() => act('/api/billing/reauthorise')}
                 disabled={busy !== null}>Re-authorise mandate</button>
             </div>
             <p className="text-sm text-muted-foreground mt-4">

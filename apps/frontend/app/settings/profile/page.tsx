@@ -64,14 +64,14 @@ export default function ProfilePage() {
                 `${forwardingAddress.city}, ${forwardingAddress.postal}`,
                 forwardingAddress.country
             ].filter(line => line.trim() !== '').join('\n');
-            
+
             console.log('Saving profile with address:', combinedAddress);
-            
+
             const result = await patchMe({
                 ...form,
                 forwarding_address: combinedAddress
             });
-            
+
             console.log('Profile save result:', result);
             setMsg("Saved");
         } catch (e: any) {
