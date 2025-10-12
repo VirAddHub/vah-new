@@ -10,6 +10,9 @@ import { Textarea } from "../ui/textarea";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import StableForwardingTable from "./StableForwardingTable";
 import { useToast } from "../ui/use-toast";
+
+// API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 import {
     Truck,
     Package,
@@ -183,9 +186,9 @@ export function ForwardingSection() {
 
             // Optimistically update the local state based on action
             let newStatus = '';
-            if (action === 'start_processing') newStatus = 'processing';
-            else if (action === 'mark_dispatched') newStatus = 'dispatched';
-            else if (action === 'mark_delivered') newStatus = 'delivered';
+            if (action === 'start_processing') newStatus = 'Processing';
+            else if (action === 'mark_dispatched') newStatus = 'Dispatched';
+            else if (action === 'mark_delivered') newStatus = 'Delivered';
 
             if (newStatus) {
                 setRequests(prevRequests =>
@@ -203,7 +206,15 @@ export function ForwardingSection() {
             }
 
             const token = localStorage.getItem('vah_jwt');
-            const response = await fetch(`/api/admin/forwarding/requests/${requestId}`, {
+            console.log('[ForwardingSection] Making API call:', {
+                url: `${API_BASE}/api/admin/forwarding/requests/${requestId}`,
+                method: 'PATCH',
+                action,
+                extraData,
+                hasToken: !!token
+            });
+            
+            const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -217,10 +228,17 @@ export function ForwardingSection() {
             });
 
             if (!response.ok) {
+                console.error('[ForwardingSection] API call failed:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url
+                });
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('[ForwardingSection] API response:', data);
+            
             if (data.ok) {
                 // Success - keep optimistic update, just refresh stats
                 await loadStats();
