@@ -192,7 +192,7 @@ export default function StableForwardingTable() {
         });
 
         // Refresh data to ensure we have the latest state from the server
-        await loadForwardingRequests();
+        await load();
       } else {
         // Rollback on failure
         setRows(originalRows);
@@ -256,7 +256,7 @@ export default function StableForwardingTable() {
           });
 
           // Refresh data to ensure consistency
-          await loadForwardingRequests();
+          await load();
           return; // Success, exit early
 
         } catch (autoHealError: any) {
