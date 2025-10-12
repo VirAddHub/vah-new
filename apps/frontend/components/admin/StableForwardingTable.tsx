@@ -12,6 +12,7 @@ import { adminApi } from "@/lib/services/http";
 import { Search, Filter } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
+import { useRouter } from "next/navigation";
 import { MAIL_STATUS, type MailStatus, toCanonical, getNextStatuses } from '../../lib/mailStatus';
 import { isRequested, isInProgress, isDone, uiStageFor } from '../../lib/forwardingStages';
 import { updateForwardingByAction } from '../../lib/forwardingActions';
@@ -41,6 +42,7 @@ export default function StableForwardingTable() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
+  const router = useRouter();
 
   // Helper to get allowed next statuses
   const allowedNext = (status: string): MailStatus[] => {
@@ -183,16 +185,16 @@ export default function StableForwardingTable() {
       console.log(`[StableForwardingTable] API response:`, response);
 
       if (response.ok) {
-        // Success - keep the optimistic update, but also refresh data to ensure consistency
+        // Success - keep the optimistic update, then refresh the page data
         console.log('Status updated successfully');
         toast({
           title: "Status Updated",
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
-
-        // Refresh data to ensure we have the latest state from the server
-        await load();
+        
+        // Refresh server components/data to get latest state
+        router.refresh();
       } else {
         // Rollback on failure
         setRows(originalRows);
@@ -254,9 +256,9 @@ export default function StableForwardingTable() {
             description: "Processing → Dispatched",
             durationMs: 3000,
           });
-
-          // Refresh data to ensure consistency
-          await load();
+          
+          // Refresh server components/data to get latest state
+          router.refresh();
           return; // Success, exit early
 
         } catch (autoHealError: any) {
