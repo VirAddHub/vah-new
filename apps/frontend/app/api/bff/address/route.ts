@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ORIGIN = process.env.BACKEND_API_ORIGIN!; // e.g. https://vah-api-staging.onrender.com
+const ORIGIN = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN!; // e.g. https://vah-api-staging.onrender.com
 
 export async function GET(req: NextRequest) {
   console.log('[BFF] Address lookup request started');
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const line1 = u.searchParams.get('line1') || '';
 
   console.log('[BFF] Request params:', { postcode, line1 });
-  console.log('[BFF] BACKEND_API_ORIGIN:', process.env.BACKEND_API_ORIGIN);
+  console.log('[BFF] NEXT_PUBLIC_BACKEND_API_ORIGIN:', process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
 
   const url = `${ORIGIN}/api/address/lookup?postcode=${encodeURIComponent(postcode)}&line1=${encodeURIComponent(line1)}`;
   console.log('[BFF] Backend URL:', url);

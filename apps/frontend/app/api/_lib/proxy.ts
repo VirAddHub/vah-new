@@ -4,13 +4,13 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from "next/server";
 
-const ORIGIN = process.env.BACKEND_API_ORIGIN; // no non-null bang
+const ORIGIN = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN; // no non-null bang
 
 export async function proxy(req: NextRequest, targetPath: string) {
   // Emit a header so you can see what target we're using in Network tab
   if (!ORIGIN) {
-    const hint = { message: 'Missing BACKEND_API_ORIGIN', env: process.env.VERCEL_ENV || 'unknown' };
-    console.error('[proxy] BACKEND_API_ORIGIN missing for env', hint.env);
+    const hint = { message: 'Missing NEXT_PUBLIC_BACKEND_API_ORIGIN', env: process.env.VERCEL_ENV || 'unknown' };
+    console.error('[proxy] NEXT_PUBLIC_BACKEND_API_ORIGIN missing for env', hint.env);
     return new NextResponse(JSON.stringify(hint), {
       status: 500,
       headers: { 'content-type': 'application/json', 'x-proxy-missing-origin': '1' },

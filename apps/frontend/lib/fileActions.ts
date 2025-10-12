@@ -19,7 +19,7 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     const itemId = parseInt(match[1]);
 
     // Use BFF route for safe headers - construct absolute backend URL
-    const apiBaseRaw = process.env.NEXT_PUBLIC_API_BASE || process.env.BACKEND_API_ORIGIN || '';
+    const apiBaseRaw = process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || '';
     const apiBase = apiBaseRaw.replace(/\/+$/, '');
     const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
     const downloadUrl = `${baseWithApi}/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;

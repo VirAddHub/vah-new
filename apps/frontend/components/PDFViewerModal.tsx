@@ -61,7 +61,7 @@ export default function PDFViewerModal({
                 // Build absolute backend URL so the browser sends vah_session automatically
                 const apiBaseRaw =
                     process.env.NEXT_PUBLIC_API_BASE ||
-                    process.env.BACKEND_API_ORIGIN ||
+                    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ||
                     '';
                 const apiBase = apiBaseRaw.replace(/\/+$/, '');
                 const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
