@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Proxies the backend /api/metrics (Prometheus text) through BFF for cookie auth.
 export async function GET(req: NextRequest) {
-  const backend = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN; // Use the frontend env var
+  const backend = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
   if (!backend) return NextResponse.json({ ok: false, error: "NEXT_PUBLIC_BACKEND_API_ORIGIN missing" }, { status: 500 });
 
   const url = `${backend.replace(/\/$/, "")}/metrics`;
@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
       method: "GET", 
       headers: { 
         Accept: "text/plain",
+        // Forward cookies for authentication
+        Cookie: req.headers.get('cookie') || '',
         // Forward any auth headers from the original request
         ...(req.headers.get('authorization') && { 'Authorization': req.headers.get('authorization')! })
       }, 

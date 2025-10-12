@@ -17,8 +17,11 @@ http.interceptors.request.use(
         // Add JWT token for admin endpoints
         if (config.url?.includes('/api/admin/')) {
             const token = localStorage.getItem('vah_jwt');
+            console.log(`[HTTP] Admin request to ${config.url}, token found: ${!!token}`);
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                console.warn(`[HTTP] No JWT token found for admin request to ${config.url}`);
             }
         }
         console.log(`[HTTP] ${config.method?.toUpperCase()} ${config.url}`);

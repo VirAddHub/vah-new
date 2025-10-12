@@ -170,20 +170,30 @@ export default function StableForwardingTable() {
     );
 
     try {
+      const action = getActionFromStatus(newStatus);
+      console.log(`[StableForwardingTable] Updating request ${requestId} to status "${newStatus}" with action "${action}"`);
+      
       const response = await adminApi.updateForwardingRequest(requestId, {
-        action: getActionFromStatus(newStatus)
+        action: action
       });
+
+      console.log(`[StableForwardingTable] API response:`, response);
 
       if (response.ok) {
         // Success - keep the optimistic update, no need to reload
         console.log('Status updated successfully');
+        toast({
+          title: "Status Updated",
+          description: `Request moved to ${newStatus}`,
+          durationMs: 3000,
+        });
       } else {
         // Rollback on failure
         setRows(originalRows);
         console.error('Failed to update status:', response.error);
         toast({
           title: "Status Update Failed",
-          description: "Failed to update status. Please try again.",
+          description: `Failed to update status: ${response.error}`,
           variant: "destructive",
           durationMs: 5000,
         });
@@ -194,7 +204,7 @@ export default function StableForwardingTable() {
       console.error('Error updating status:', error);
       toast({
         title: "Status Update Error",
-        description: "Error updating status. Please try again.",
+        description: `Error updating status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
         durationMs: 5000,
       });
