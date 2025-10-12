@@ -30,6 +30,9 @@ export default function DashboardClient() {
     const handleNavigate = (page: string) => {
         // Handle navigation to different pages
         switch (page) {
+            case 'home':
+                router.push('/');
+                break;
             case 'help':
                 router.push('/help');
                 break;
