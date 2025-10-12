@@ -38,7 +38,7 @@ router.post('/fix-forwarding-addresses', requireAdmin, async (req: Request, res:
 
         console.log(`📊 Found ${usersToFix.rows.length} users to fix`);
 
-        const results = [];
+        const results: Array<{ id: any; email: any; forwarding_address: string }> = [];
 
         for (const user of usersToFix.rows) {
             // Reconstruct forwarding address from individual fields
