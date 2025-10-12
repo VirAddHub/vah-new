@@ -7,9 +7,9 @@ import { getMe, patchMe } from "@/lib/api";
 
 export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ 
-        name: "", 
-        avatarUrl: "", 
+    const [form, setForm] = useState({
+        name: "",
+        avatarUrl: "",
         marketingOptIn: false,
         forwarding_address: ""
     });
@@ -35,7 +35,7 @@ export default function ProfilePage() {
                     forwarding_address: u.forwarding_address ?? ""
                 });
                 setKycStatus(u.kyc_status ?? "");
-                
+
                 // Parse existing forwarding address into separate fields
                 if (u.forwarding_address) {
                     const lines = u.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
@@ -65,13 +65,18 @@ export default function ProfilePage() {
                 forwardingAddress.country
             ].filter(line => line.trim() !== '').join('\n');
             
-            await patchMe({
+            console.log('Saving profile with address:', combinedAddress);
+            
+            const result = await patchMe({
                 ...form,
                 forwarding_address: combinedAddress
             });
+            
+            console.log('Profile save result:', result);
             setMsg("Saved");
         } catch (e: any) {
-            setMsg(e?.payload?.error?.message ?? "Failed");
+            console.error('Profile save error:', e);
+            setMsg(e?.message || e?.payload?.error?.message || "Failed to save");
         }
     }
 
@@ -105,8 +110,8 @@ export default function ProfilePage() {
                     <div className="grid gap-3">
                         <label className="grid gap-1">
                             <span>Full Name *</span>
-                            <input 
-                                className="border rounded p-2" 
+                            <input
+                                className="border rounded p-2"
                                 value={forwardingAddress.name}
                                 onChange={e => setForwardingAddress({ ...forwardingAddress, name: e.target.value })}
                                 placeholder="John Doe"
@@ -114,8 +119,8 @@ export default function ProfilePage() {
                         </label>
                         <label className="grid gap-1">
                             <span>Address Line 1 *</span>
-                            <input 
-                                className="border rounded p-2" 
+                            <input
+                                className="border rounded p-2"
                                 value={forwardingAddress.address1}
                                 onChange={e => setForwardingAddress({ ...forwardingAddress, address1: e.target.value })}
                                 placeholder="123 Main Street"
@@ -123,8 +128,8 @@ export default function ProfilePage() {
                         </label>
                         <label className="grid gap-1">
                             <span>Address Line 2</span>
-                            <input 
-                                className="border rounded p-2" 
+                            <input
+                                className="border rounded p-2"
                                 value={forwardingAddress.address2}
                                 onChange={e => setForwardingAddress({ ...forwardingAddress, address2: e.target.value })}
                                 placeholder="Apartment 4B (optional)"
@@ -133,8 +138,8 @@ export default function ProfilePage() {
                         <div className="grid grid-cols-2 gap-3">
                             <label className="grid gap-1">
                                 <span>City *</span>
-                                <input 
-                                    className="border rounded p-2" 
+                                <input
+                                    className="border rounded p-2"
                                     value={forwardingAddress.city}
                                     onChange={e => setForwardingAddress({ ...forwardingAddress, city: e.target.value })}
                                     placeholder="London"
@@ -142,8 +147,8 @@ export default function ProfilePage() {
                             </label>
                             <label className="grid gap-1">
                                 <span>Postal Code *</span>
-                                <input 
-                                    className="border rounded p-2" 
+                                <input
+                                    className="border rounded p-2"
                                     value={forwardingAddress.postal}
                                     onChange={e => setForwardingAddress({ ...forwardingAddress, postal: e.target.value })}
                                     placeholder="SW1A 1AA"
@@ -152,8 +157,8 @@ export default function ProfilePage() {
                         </div>
                         <label className="grid gap-1">
                             <span>Country *</span>
-                            <input 
-                                className="border rounded p-2" 
+                            <input
+                                className="border rounded p-2"
                                 value={forwardingAddress.country}
                                 onChange={e => setForwardingAddress({ ...forwardingAddress, country: e.target.value })}
                                 placeholder="United Kingdom"
