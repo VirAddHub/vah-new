@@ -41,6 +41,7 @@ export default function StableForwardingTable() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
+  const [isAnyTransitionInProgress, setIsAnyTransitionInProgress] = useState(false);
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
   const router = useRouter();
 
@@ -157,6 +158,7 @@ export default function StableForwardingTable() {
   // Update request status with optimistic updates
   const updateRequestStatus = async (requestId: number, newStatus: string) => {
     setUpdatingStatus(requestId);
+    setIsAnyTransitionInProgress(true);
 
     // Store original state for rollback
     const originalRows = [...rows];
@@ -192,7 +194,7 @@ export default function StableForwardingTable() {
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
-        
+
         // Refresh server components/data to get latest state
         router.refresh();
       } else {
@@ -256,7 +258,7 @@ export default function StableForwardingTable() {
             description: "Processing → Dispatched",
             durationMs: 3000,
           });
-          
+
           // Refresh server components/data to get latest state
           router.refresh();
           return; // Success, exit early
@@ -291,6 +293,7 @@ export default function StableForwardingTable() {
       });
     } finally {
       setUpdatingStatus(null);
+      setIsAnyTransitionInProgress(false);
     }
   };
 
@@ -314,6 +317,7 @@ export default function StableForwardingTable() {
     // Get allowed next statuses based on current status
     const allowedStatuses = allowedNext(request.status);
     const isBusy = updatingStatus === request.id;
+    const isDisabled = isBusy || isAnyTransitionInProgress;
 
     return (
       <Card key={request.id} className="mb-3" data-testid="forwarding-card" data-status={uiStageFor(request.status)}>
@@ -346,7 +350,7 @@ export default function StableForwardingTable() {
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Processing)}
-                    disabled={isBusy}
+                    disabled={isDisabled}
                   >
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
@@ -356,7 +360,7 @@ export default function StableForwardingTable() {
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Dispatched)}
-                    disabled={isBusy}
+                    disabled={isDisabled}
                   >
                     {isBusy ? '...' : 'Mark Dispatched'}
                   </Button>
@@ -366,7 +370,7 @@ export default function StableForwardingTable() {
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Delivered)}
-                    disabled={isBusy}
+                    disabled={isDisabled}
                   >
                     {isBusy ? '...' : 'Mark Delivered'}
                   </Button>
