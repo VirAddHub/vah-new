@@ -61,6 +61,7 @@ import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminActivityRouter from "./server/routes/admin-activity";
 import adminServiceStatusRouter from "./server/routes/admin-service-status";
 import companiesHouseRouter from "./server/routes/companies-house";
+import idealPostcodesRouter from "./server/routes/ideal-postcodes";
 
 // Import maintenance service
 import { systemMaintenance } from "./server/services/maintenance";
@@ -436,6 +437,8 @@ async function start() {
     logger.info('[mount] /api (blog) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
+    app.use('/api', idealPostcodesRouter);
+    logger.info('[mount] /api (ideal-postcodes) mounted');
     app.use('/api/kyc', kycRouter);
     logger.info('[mount] /api/kyc mounted');
     app.use('/api/support', supportRouter);
