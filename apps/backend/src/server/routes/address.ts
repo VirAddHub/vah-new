@@ -22,9 +22,9 @@ router.get('/', (req, res) => {
 // Debug route to test API key and environment
 router.get('/debug', (req, res) => {
   console.log('[address] DEBUG route called');
-  const hasApiKey = !!process.env.ADDRESS_API_KEY;
-  const apiKeyLength = process.env.ADDRESS_API_KEY?.length || 0;
-  const apiKeyPrefix = process.env.ADDRESS_API_KEY?.substring(0, 8) || 'none';
+  const hasApiKey = !!process.env.IDEAL_POSTCODES_API_KEY;
+  const apiKeyLength = process.env.IDEAL_POSTCODES_API_KEY?.length || 0;
+  const apiKeyPrefix = process.env.IDEAL_POSTCODES_API_KEY?.substring(0, 8) || 'none';
 
   return res.json({
     ok: true,
@@ -33,7 +33,8 @@ router.get('/debug', (req, res) => {
       apiKeyLength,
       apiKeyPrefix: `${apiKeyPrefix}...`,
       environment: process.env.NODE_ENV,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      provider: 'Ideal Postcodes'
     }
   });
 });
@@ -42,10 +43,10 @@ router.get('/debug', (req, res) => {
 router.get('/lookup', async (req, res) => {
   const t0 = performance.now();
 
-  const API_KEY = process.env.ADDRESS_API_KEY;
+  const API_KEY = process.env.IDEAL_POSTCODES_API_KEY;
   if (!API_KEY) {
-    console.log('[address] ADDRESS_API_KEY missing');
-    return res.status(500).json({ ok: false, error: 'ADDRESS_API_KEY missing' });
+    console.log('[address] IDEAL_POSTCODES_API_KEY missing');
+    return res.status(500).json({ ok: false, error: 'IDEAL_POSTCODES_API_KEY missing' });
   }
 
   const postcode = String(req.query.postcode || '').trim().toUpperCase();
@@ -68,15 +69,19 @@ router.get('/lookup', async (req, res) => {
   console.log('[address] Looking up postcode:', postcode);
 
   try {
-    const url = new URL(`https://api.getaddress.io/find/${encodeURIComponent(postcode)}/${encodeURIComponent(line1)}`);
-    url.searchParams.set('api-key', API_KEY);
-
+    // Ideal Postcodes API endpoint
+    const url = new URL(`https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(postcode)}`);
+    url.searchParams.set('api_key', API_KEY);
+    
     // Add timeout with AbortController
     const ctrl = AbortController ? new AbortController() : null;
     const timeout = setTimeout(() => ctrl?.abort(), 6000);
 
     const r = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
+      headers: { 
+        Accept: 'application/json',
+        'User-Agent': 'VirtualAddressHub/1.0'
+      },
       signal: ctrl?.signal as any
     });
 
@@ -89,7 +94,20 @@ router.get('/lookup', async (req, res) => {
     }
 
     const data = await r.json();
-    const addresses: string[] = Array.isArray((data as any)?.addresses) ? (data as any).addresses : [];
+    
+    // Transform Ideal Postcodes response to match expected format
+    const addresses: string[] = [];
+    if (data.result && Array.isArray(data.result)) {
+      addresses.push(...data.result.map((addr: any) => {
+        const parts = [];
+        if (addr.line_1) parts.push(addr.line_1);
+        if (addr.line_2) parts.push(addr.line_2);
+        if (addr.line_3) parts.push(addr.line_3);
+        if (addr.post_town) parts.push(addr.post_town);
+        if (addr.postcode) parts.push(addr.postcode);
+        return parts.join(', ');
+      }));
+    }
 
     const payload = { ok: true, data: { addresses } };
 
