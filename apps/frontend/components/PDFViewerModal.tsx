@@ -4,6 +4,7 @@ import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -23,6 +24,7 @@ export default function PDFViewerModal({
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [viewerUrl, setViewerUrl] = React.useState<string | null>(null);
+    const { getPreloadedURL } = usePDFPreloader({ useBlobFallback });
 
     const revokeUrl = React.useCallback(() => {
         try {
@@ -45,6 +47,17 @@ export default function PDFViewerModal({
             try {
                 if (!isOpen || !mailItemId) return;
 
+                // Check if PDF is already preloaded
+                const preloadedUrl = getPreloadedURL(mailItemId);
+                if (preloadedUrl) {
+                    if (!cancelled) {
+                        console.debug('[PDFViewerModal] Using preloaded URL');
+                        setViewerUrl(preloadedUrl);
+                        setLoading(false);
+                    }
+                    return;
+                }
+
                 // Build absolute backend URL so the browser sends vah_session automatically
                 const apiBaseRaw =
                     process.env.NEXT_PUBLIC_API_BASE ||
@@ -59,11 +72,11 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                // Forward JWT via header so BFF can auth to backend and force no-store
+                // Forward JWT via header so BFF can auth to backend
                 const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
                 const res = await fetch(url, {
                     credentials: 'include',
-                    cache: 'no-store',
+                    cache: 'default',
                     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
                 if (!res.ok) {

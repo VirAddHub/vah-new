@@ -31,6 +31,7 @@ import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { VAHLogo } from "./VAHLogo";
 import { useToast } from "./ui/use-toast";
+import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -85,6 +86,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [certLoading, setCertLoading] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
+
+  // PDF preloader for hover optimization
+  const { preloadPDF } = usePDFPreloader();
 
   // SWR hook for mail items with 15s polling
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
@@ -628,6 +632,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <div
                                   className="flex-1 min-w-0 space-y-2 cursor-pointer group"
                                   onClick={() => onOpen(item)}
+                                  onMouseEnter={() => preloadPDF(Number(item.id))}
                                 >
                                   <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
@@ -725,6 +730,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <div
                                   className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
                                   onClick={() => onOpen(item)}
+                                  onMouseEnter={() => preloadPDF(Number(item.id))}
                                 >
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex-1 min-w-0">
