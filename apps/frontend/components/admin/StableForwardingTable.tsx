@@ -121,9 +121,9 @@ export default function StableForwardingTable() {
     const requested = filteredRequests.filter(r => isRequested(r.status));
     const inProgress = filteredRequests.filter(r => isInProgress(r.status));
     const done = filteredRequests.filter(r => isDone(r.status));
-    
+
     // Defensive "Other" column for any items that don't fit the main categories
-    const other = filteredRequests.filter(r => 
+    const other = filteredRequests.filter(r =>
       !isRequested(r.status) && !isInProgress(r.status) && !isDone(r.status)
     );
 
@@ -140,7 +140,7 @@ export default function StableForwardingTable() {
     // Convert UI status to canonical status for API call
     const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing : 
                            newStatus === 'Done' ? MAIL_STATUS.Delivered : 
-                           newStatus;
+                           newStatus; // Already canonical if passed as MAIL_STATUS constant
 
     // Optimistically update the local state with canonical status
     setRows(prevRows =>
@@ -166,16 +166,25 @@ export default function StableForwardingTable() {
         console.log('Status updated successfully');
         toast({
           title: "Status Updated",
-          description: `Request moved to ${newStatus}`,
+          description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
       } else {
         // Rollback on failure
         setRows(originalRows);
         console.error('Failed to update status:', response.error);
+        
+        // Try to surface the server's strict-guard payload if present
+        let errorMsg = "Failed to update status. Please try again.";
+        if (response.error === "illegal_transition") {
+          errorMsg = `Illegal transition: ${response.from} → ${response.to}. Allowed: ${response.allowed?.join(", ")}`;
+        } else if (response.message) {
+          errorMsg = response.message;
+        }
+        
         toast({
           title: "Status Update Failed",
-          description: `Failed to update status: ${response.error}`,
+          description: errorMsg,
           variant: "destructive",
           durationMs: 5000,
         });
@@ -184,9 +193,16 @@ export default function StableForwardingTable() {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
+      
+      // Try to surface the server's strict-guard payload if present
+      let errorMsg = "Error updating status. Please try again.";
+      if (error instanceof Error && error.message.includes("illegal_transition")) {
+        errorMsg = error.message;
+      }
+      
       toast({
         title: "Status Update Error",
-        description: `Error updating status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: errorMsg,
         variant: "destructive",
         durationMs: 5000,
       });
@@ -199,7 +215,10 @@ export default function StableForwardingTable() {
   const getActionFromStatus = (status: string) => {
     switch (status) {
       case 'In Progress': return 'start_processing';
-      case 'Done': return 'mark_delivered'; // FIX: Should be mark_delivered, not mark_dispatched
+      case 'Done': return 'mark_delivered';
+      case MAIL_STATUS.Processing: return 'start_processing';
+      case MAIL_STATUS.Dispatched: return 'mark_dispatched';
+      case MAIL_STATUS.Delivered: return 'mark_delivered';
       default: return 'start_processing';
     }
   };
@@ -264,7 +283,7 @@ export default function StableForwardingTable() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'Done')}
+                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Dispatched)}
                     disabled={updatingStatus === request.id}
                   >
                     {updatingStatus === request.id ? '...' : 'Mark Dispatched'}

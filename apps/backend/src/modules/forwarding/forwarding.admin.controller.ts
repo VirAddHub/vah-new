@@ -197,9 +197,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                             ok: false,
                             error: 'illegal_transition',
                             message: `Illegal transition ${currentStatus} → ${nextStatusCanonical}`,
+                            id: String(id),
                             from: currentStatus,
                             to: nextStatusCanonical,
-                            allowedTransitions: getNextStatuses(currentStatus)
+                            allowed: getNextStatuses(currentStatus)
                         });
                     }
                 } catch (error) {
@@ -218,8 +219,11 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 return res.status(400).json({
                     ok: false,
                     error: 'illegal_transition',
+                    message: `Illegal transition ${current} → ${nextStatus}`,
+                    id: String(id),
                     from: current,
-                    to: nextStatus
+                    to: nextStatus,
+                    allowed: getNextStatuses(toCanonical(current))
                 });
             }
 
