@@ -233,6 +233,101 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/admin/users/deleted
+ * Get soft-deleted users (admin only)
+ */
+router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) => {
+    const pool = getPool();
+    const pageNum = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const search = (req.query.q as string)?.trim();
+    const offset = (pageNum - 1) * limitNum;
+
+    try {
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        let query = `
+            SELECT
+                u.id,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.is_admin,
+                u.status,
+                u.plan_status,
+                u.plan_id,
+                u.kyc_status,
+                u.created_at,
+                u.updated_at,
+                u.deleted_at,
+                u.last_active_at,
+                u.last_login_at,
+                p.name as plan_name,
+                p.interval as plan_interval,
+                p.price_pence as plan_price
+            FROM "user" u
+            LEFT JOIN plans p ON u.plan_id = p.id
+        `;
+
+        // Only show soft-deleted users
+        let whereClause = 'WHERE u.deleted_at IS NOT NULL';
+
+        // Search functionality
+        if (search) {
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                whereClause += ` AND u.id = $${paramIndex}`;
+                params.push(searchNum);
+            } else {
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+                params.push(`%${search}%`);
+            }
+            paramIndex++;
+        }
+
+        query += ` ${whereClause} ORDER BY u.deleted_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        params.push(limitNum, offset);
+
+        const result = await pool.query(query, params);
+
+        // Get total count with same filters
+        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NOT NULL';
+        const countParams: any[] = [];
+        let countParamIndex = 1;
+
+        if (search) {
+            const searchNum = parseInt(String(search));
+            if (!isNaN(searchNum)) {
+                countQuery += ` AND u.id = $${countParamIndex}`;
+                countParams.push(searchNum);
+            } else {
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
+                countParams.push(`%${search}%`);
+            }
+            countParamIndex++;
+        }
+
+        const countResult = await pool.query(countQuery, countParams);
+        const total = parseInt(countResult.rows[0].count);
+
+        return res.json({
+            ok: true,
+            data: result.rows,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                pages: Math.ceil(total / limitNum)
+            }
+        });
+    } catch (error: any) {
+        console.error('[GET /api/admin/users/deleted] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
  * GET /api/admin/users/:id
  * Get specific user (admin only)
  */
@@ -452,101 +547,6 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
 });
 
 /**
- * GET /api/admin/users/deleted
- * Get soft-deleted users (admin only)
- */
-router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) => {
-    const pool = getPool();
-    const pageNum = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
-    const search = (req.query.q as string)?.trim();
-    const offset = (pageNum - 1) * limitNum;
-
-    try {
-        const params: any[] = [];
-        let paramIndex = 1;
-
-        let query = `
-            SELECT
-                u.id,
-                u.email,
-                u.first_name,
-                u.last_name,
-                u.is_admin,
-                u.status,
-                u.plan_status,
-                u.plan_id,
-                u.kyc_status,
-                u.created_at,
-                u.updated_at,
-                u.deleted_at,
-                u.last_active_at,
-                u.last_login_at,
-                p.name as plan_name,
-                p.interval as plan_interval,
-                p.price_pence as plan_price
-            FROM "user" u
-            LEFT JOIN plans p ON u.plan_id = p.id
-        `;
-
-        // Only show soft-deleted users
-        let whereClause = 'WHERE u.deleted_at IS NOT NULL';
-
-        // Search functionality
-        if (search) {
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                whereClause += ` AND u.id = $${paramIndex}`;
-                params.push(searchNum);
-            } else {
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
-                params.push(`%${search}%`);
-            }
-            paramIndex++;
-        }
-
-        query += ` ${whereClause} ORDER BY u.deleted_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(limitNum, offset);
-
-        const result = await pool.query(query, params);
-
-        // Get total count with same filters
-        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NOT NULL';
-        const countParams: any[] = [];
-        let countParamIndex = 1;
-
-        if (search) {
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                countQuery += ` AND u.id = $${countParamIndex}`;
-                countParams.push(searchNum);
-            } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${search}%`);
-            }
-            countParamIndex++;
-        }
-
-        const countResult = await pool.query(countQuery, countParams);
-        const total = parseInt(countResult.rows[0].count);
-
-        return res.json({
-            ok: true,
-            data: result.rows,
-            pagination: {
-                page: pageNum,
-                limit: limitNum,
-                total,
-                pages: Math.ceil(total / limitNum)
-            }
-        });
-    } catch (error: any) {
-        console.error('[GET /api/admin/users/deleted] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
-    }
-});
-
-/**
  * POST /api/admin/users/:id/restore
  * Restore soft-deleted user (admin only)
  */
@@ -618,11 +618,11 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, $2, $3, $4, $5, $6)
         `, [
-            adminId, 
-            'restore_user', 
-            'user', 
-            userId, 
-            JSON.stringify({ 
+            adminId,
+            'restore_user',
+            'user',
+            userId,
+            JSON.stringify({
                 restored_email: email.trim(),
                 restored_name: `${first_name || ''} ${last_name || ''}`.trim(),
                 reactivated: reactivate
@@ -630,8 +630,8 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
             auditTimestamp
         ]);
 
-        return res.json({ 
-            ok: true, 
+        return res.json({
+            ok: true,
             message: 'User restored successfully',
             data: {
                 id: userId,
