@@ -26,7 +26,7 @@
     },
     "dependencies": {
         "@hookform/resolvers": "^3.3.0",
-        "@ideal-postcodes/address-finder-bundled": "^5.0.1",
+        "@ideal-postcodes/address-finder": "^5.2.6",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.0.5",
         "@radix-ui/react-avatar": "^1.0.4",

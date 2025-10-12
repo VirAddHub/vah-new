@@ -43,20 +43,20 @@ export function AddressFinder({
         // Dynamically import Ideal Postcodes AddressFinder
         const loadAddressFinder = async () => {
             try {
-                const { AddressFinder } = await import('@ideal-postcodes/address-finder-bundled');
-                
+                const { AddressFinder } = await import('@ideal-postcodes/address-finder');
+
                 if (!inputRef.current) return;
 
                 // Fetch API key from our backend
                 const keyResponse = await fetch('/api/ideal-postcodes-key');
                 const keyData = await keyResponse.json();
-                
+
                 if (!keyData.ok) {
                     throw new Error(keyData.error || 'Failed to get API key');
                 }
-                
+
                 const apiKey = keyData.apiKey;
-                
+
                 // Setup AddressFinder
                 controllerRef.current = AddressFinder.setup({
                     apiKey: apiKey,
@@ -103,7 +103,7 @@ export function AddressFinder({
                     {required && <span className="text-red-500 ml-1">*</span>}
                 </Label>
             )}
-            
+
             <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input

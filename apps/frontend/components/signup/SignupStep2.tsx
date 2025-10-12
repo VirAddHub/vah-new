@@ -204,7 +204,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                 } else if (company.company_type === 'llp') {
                     updateFormData('business_type', 'llp');
                 }
-                
+
                 // Clear any previous errors
                 setErrors(prev => ({ ...prev, company_number: '' }));
             } else {
@@ -486,7 +486,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            {isManualEntry 
+                                            {isManualEntry
                                                 ? 'Enter an 8-digit company number and we\'ll automatically verify it'
                                                 : 'Selected from Companies House. You can edit if needed.'
                                             }
@@ -611,7 +611,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 <p className="text-sm text-muted-foreground">
                                     This is where we'll forward your mail. Use our smart address finder to quickly select your address.
                                 </p>
-                                
+
                                 <AddressFinder
                                     onAddressSelect={(address) => {
                                         console.log('[SignupStep2] Address selected:', address);
@@ -623,7 +623,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     className="w-full"
                                     outputFields={{
                                         line_1: "#address_line1",
-                                        line_2: "#address_line2", 
+                                        line_2: "#address_line2",
                                         post_town: "#city",
                                         postcode: "#postcode"
                                     }}
