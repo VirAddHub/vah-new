@@ -52,6 +52,17 @@ export default function StableForwardingTable() {
     }
   };
 
+  // Helper to check if a specific transition is allowed
+  const isTransitionAllowed = (currentStatus: string, targetStatus: string): boolean => {
+    try {
+      const current = toCanonical(currentStatus);
+      const target = toCanonical(targetStatus);
+      return getNextStatuses(current).includes(target);
+    } catch {
+      return false;
+    }
+  };
+
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -179,7 +190,7 @@ export default function StableForwardingTable() {
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
-        
+
         // Refresh data to ensure we have the latest state from the server
         await loadForwardingRequests();
       } else {
@@ -206,10 +217,62 @@ export default function StableForwardingTable() {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
-
-      // Try to surface the server's strict-guard payload if present
-      let errorMsg = "Error updating status. Please try again.";
+      
+      // Try auto-heal for illegal transitions
       const payload = error?.payload;
+      if (payload?.error === "illegal_transition" && 
+          payload?.from === MAIL_STATUS.Requested && 
+          payload?.to === MAIL_STATUS.Dispatched &&
+          Array.isArray(payload?.allowed) &&
+          payload.allowed.includes(MAIL_STATUS.Processing)) {
+        
+        console.log('[Auto-heal] Attempting to auto-advance: Requested → Processing → Dispatched');
+        
+        try {
+          // Step 1: Move to Processing
+          await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Processing);
+          setRows(prevRows =>
+            prevRows.map(req =>
+              req.id === requestId
+                ? { ...req, status: MAIL_STATUS.Processing, updated_at: Date.now() }
+                : req
+            )
+          );
+          
+          // Step 2: Move to Dispatched
+          await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Dispatched);
+          setRows(prevRows =>
+            prevRows.map(req =>
+              req.id === requestId
+                ? { ...req, status: MAIL_STATUS.Dispatched, updated_at: Date.now() }
+                : req
+            )
+          );
+          
+          toast({
+            title: "Auto-Advanced",
+            description: "Processing → Dispatched",
+            durationMs: 3000,
+          });
+          
+          // Refresh data to ensure consistency
+          await loadForwardingRequests();
+          return; // Success, exit early
+          
+        } catch (autoHealError: any) {
+          console.error('[Auto-heal] Failed:', autoHealError);
+          toast({
+            title: "Auto-Heal Failed",
+            description: "Couldn't auto-advance. Please try again.",
+            variant: "destructive",
+            durationMs: 5000,
+          });
+          return;
+        }
+      }
+      
+      // Fallback for other errors
+      let errorMsg = "Error updating status. Please try again.";
       if (payload?.error === "illegal_transition") {
         errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
       } else if (payload?.message) {
@@ -217,7 +280,7 @@ export default function StableForwardingTable() {
       } else if (error?.message) {
         errorMsg = error.message;
       }
-
+      
       toast({
         title: "Status Update Error",
         description: errorMsg,
@@ -248,9 +311,7 @@ export default function StableForwardingTable() {
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
     // Get allowed next statuses based on current status
     const allowedStatuses = allowedNext(request.status);
-    const canMoveToProcessing = allowedStatuses.includes(MAIL_STATUS.Processing);
-    const canMoveToDispatched = allowedStatuses.includes(MAIL_STATUS.Dispatched);
-    const canMoveToDelivered = allowedStatuses.includes(MAIL_STATUS.Delivered);
+    const isBusy = updatingStatus === request.id;
 
     return (
       <Card key={request.id} className="mb-3" data-testid="forwarding-card" data-status={uiStageFor(request.status)}>
@@ -278,34 +339,34 @@ export default function StableForwardingTable() {
             <div className="flex items-center gap-2">
               {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
-                {canMoveToProcessing && (
+                {allowedStatuses.includes(MAIL_STATUS.Processing) && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Processing)}
-                    disabled={updatingStatus === request.id}
+                    disabled={isBusy}
                   >
-                    {updatingStatus === request.id ? '...' : 'Start Processing'}
+                    {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {canMoveToDispatched && (
+                {allowedStatuses.includes(MAIL_STATUS.Dispatched) && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Dispatched)}
-                    disabled={updatingStatus === request.id}
+                    disabled={isBusy}
                   >
-                    {updatingStatus === request.id ? '...' : 'Mark Dispatched'}
+                    {isBusy ? '...' : 'Mark Dispatched'}
                   </Button>
                 )}
-                {canMoveToDelivered && (
+                {allowedStatuses.includes(MAIL_STATUS.Delivered) && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Delivered)}
-                    disabled={updatingStatus === request.id}
+                    disabled={isBusy}
                   >
-                    {updatingStatus === request.id ? '...' : 'Mark Delivered'}
+                    {isBusy ? '...' : 'Mark Delivered'}
                   </Button>
                 )}
               </div>
