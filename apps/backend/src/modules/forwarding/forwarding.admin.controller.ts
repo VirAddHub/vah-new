@@ -3,7 +3,8 @@ import { Request, Response } from 'express';
 import { getPool } from '../../server/db';
 import { z } from 'zod';
 import { sendMailForwarded } from '../../lib/mailer';
-import { MAIL_STATUS, normalizeStatus, isTransitionAllowed, type MailStatus } from './mailStatus';
+import { MAIL_STATUS, toCanonical, isTransitionAllowed, getNextStatuses, type MailStatus } from './mailStatus';
+import { metrics } from '../../lib/metrics';
 // import logger from '../../lib/logger'; // Using console for now
 
 const ACTION_TO_STATUS = {
@@ -11,16 +12,16 @@ const ACTION_TO_STATUS = {
     start_processing: MAIL_STATUS.Processing,
     mark_dispatched: MAIL_STATUS.Dispatched,
     mark_delivered: MAIL_STATUS.Delivered,
-    cancel: MAIL_STATUS.Cancelled,
+    cancel: 'Cancelled', // Keep as string since Cancelled is not in our canonical statuses
 } as const;
 
 // Use shared transitions - this will be replaced by the shared constants
 const allowedTransitions: Record<string, string[]> = {
-    [MAIL_STATUS.Requested]: [MAIL_STATUS.Processing, MAIL_STATUS.Cancelled],
-    [MAIL_STATUS.Processing]: [MAIL_STATUS.Dispatched, MAIL_STATUS.Cancelled],
+    [MAIL_STATUS.Requested]: [MAIL_STATUS.Processing],
+    [MAIL_STATUS.Processing]: [MAIL_STATUS.Dispatched],
     [MAIL_STATUS.Dispatched]: [MAIL_STATUS.Delivered],
     [MAIL_STATUS.Delivered]: [],
-    [MAIL_STATUS.Cancelled]: [],
+    'Cancelled': [], // Keep for backward compatibility
 };
 
 const AdminUpdateSchema = z.object({
@@ -33,8 +34,8 @@ const AdminUpdateSchema = z.object({
 // Helper to validate transitions using shared constants
 function canMove(from: string, to: string): boolean {
     try {
-        const fromStatus = normalizeStatus(from) as MailStatus;
-        const toStatus = normalizeStatus(to) as MailStatus;
+        const fromStatus = toCanonical(from) as MailStatus;
+        const toStatus = toCanonical(to) as MailStatus;
         return isTransitionAllowed(fromStatus, toStatus);
     } catch {
         return false;
@@ -178,6 +179,40 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             }
 
             const current = cur.rows[0].status;
+            
+            // Strict status guard - enforce allowed transitions when enabled
+            if (process.env.STRICT_STATUS_GUARD === "1") {
+                try {
+                    const currentStatus = toCanonical(current) as MailStatus;
+                    const nextStatusCanonical = toCanonical(nextStatus) as MailStatus;
+                    
+                    if (!isTransitionAllowed(currentStatus, nextStatusCanonical)) {
+                        await pool.query('ROLLBACK');
+                        console.warn(`[STRICT_STATUS_GUARD] Illegal transition ${currentStatus} → ${nextStatusCanonical} for request ${id}`);
+                        
+                        // Record illegal transition attempt
+                        metrics.recordIllegalTransition(currentStatus, nextStatusCanonical, id);
+                        
+                        return res.status(400).json({
+                            ok: false,
+                            error: 'illegal_transition',
+                            message: `Illegal transition ${currentStatus} → ${nextStatusCanonical}`,
+                            from: currentStatus,
+                            to: nextStatusCanonical,
+                            allowedTransitions: getNextStatuses(currentStatus)
+                        });
+                    }
+                } catch (error) {
+                    await pool.query('ROLLBACK');
+                    console.error(`[STRICT_STATUS_GUARD] Invalid status: ${error}`);
+                    return res.status(400).json({
+                        ok: false,
+                        error: 'invalid_status',
+                        message: 'Invalid status format'
+                    });
+                }
+            }
+            
             if (!canMove(current, nextStatus)) {
                 await pool.query('ROLLBACK');
                 return res.status(400).json({
@@ -222,7 +257,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 sets.push('delivered_at = $3');
                 vals.push(nowTimestamp);
             }
-            if (nextStatus === MAIL_STATUS.Cancelled) {
+            if (nextStatus === 'Cancelled') {
                 sets.push('cancelled_at = $3');
                 vals.push(nowTimestamp);
             }
@@ -264,6 +299,15 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
             // Commit the transaction
             await pool.query('COMMIT');
+
+            // Record successful status transition
+            try {
+                const currentStatus = toCanonical(current) as MailStatus;
+                const nextStatusCanonical = toCanonical(nextStatus) as MailStatus;
+                metrics.recordStatusTransition(currentStatus, nextStatusCanonical);
+            } catch (error) {
+                console.warn(`[METRICS] Failed to record transition: ${error}`);
+            }
 
             // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
             if (nextStatus === MAIL_STATUS.Dispatched || nextStatus === MAIL_STATUS.Delivered) {
