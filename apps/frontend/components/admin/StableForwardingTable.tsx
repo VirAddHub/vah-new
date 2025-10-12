@@ -129,18 +129,33 @@ export default function StableForwardingTable() {
     return { requested, inProgress, done };
   };
 
-  // Update request status
+  // Update request status with optimistic updates
   const updateRequestStatus = async (requestId: number, newStatus: string) => {
     setUpdatingStatus(requestId);
+    
+    // Store original state for rollback
+    const originalRows = [...rows];
+    
+    // Optimistically update the local state
+    setRows(prevRows => 
+      prevRows.map(req => 
+        req.id === requestId 
+          ? { ...req, status: newStatus, updated_at: Date.now() }
+          : req
+      )
+    );
+    
     try {
       const response = await adminApi.updateForwardingRequest(requestId, {
         action: getActionFromStatus(newStatus)
       });
 
       if (response.ok) {
-        // Reload data to get updated status
-        await load();
+        // Success - keep the optimistic update, no need to reload
+        console.log('Status updated successfully');
       } else {
+        // Rollback on failure
+        setRows(originalRows);
         console.error('Failed to update status:', response.error);
         toast({
           title: "Status Update Failed",
@@ -150,6 +165,8 @@ export default function StableForwardingTable() {
         });
       }
     } catch (error) {
+      // Rollback on error
+      setRows(originalRows);
       console.error('Error updating status:', error);
       toast({
         title: "Status Update Error",

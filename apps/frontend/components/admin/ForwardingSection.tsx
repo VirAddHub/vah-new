@@ -177,6 +177,31 @@ export function ForwardingSection() {
     const handleStatusUpdate = async (requestId: number, action: string, extraData?: any) => {
         try {
             setIsMutating(true);
+            
+            // Store original state for rollback
+            const originalRequests = [...requests];
+            
+            // Optimistically update the local state based on action
+            let newStatus = '';
+            if (action === 'start_processing') newStatus = 'processing';
+            else if (action === 'mark_dispatched') newStatus = 'dispatched';
+            else if (action === 'mark_delivered') newStatus = 'delivered';
+            
+            if (newStatus) {
+                setRequests(prevRequests => 
+                    prevRequests.map(req => 
+                        req.id === requestId 
+                            ? { 
+                                ...req, 
+                                status: newStatus, 
+                                updated_at: new Date().toISOString(),
+                                ...extraData 
+                            }
+                            : req
+                    )
+                );
+            }
+            
             const token = localStorage.getItem('vah_jwt');
             const response = await fetch(`/api/admin/forwarding/requests/${requestId}`, {
                 method: 'PATCH',
@@ -197,9 +222,11 @@ export function ForwardingSection() {
 
             const data = await response.json();
             if (data.ok) {
-                await loadRequests(debouncedSearchTerm);
+                // Success - keep optimistic update, just refresh stats
                 await loadStats();
             } else {
+                // Rollback on failure
+                setRequests(originalRequests);
                 throw new Error(data.error || "Failed to update request");
             }
         } catch (err: any) {
