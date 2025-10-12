@@ -163,10 +163,8 @@ export default function StableForwardingTable() {
     // Store original state for rollback
     const originalRows = [...rows];
 
-    // Convert UI status to canonical status for API call
-    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing :
-      newStatus === 'Done' ? MAIL_STATUS.Delivered :
-        newStatus; // Already canonical if passed as MAIL_STATUS constant
+    // Use the status directly - it should already be canonical
+    const canonicalStatus = newStatus;
 
     // Optimistically update the local state with canonical status
     setRows(prevRows =>
@@ -222,61 +220,10 @@ export default function StableForwardingTable() {
       setRows(originalRows);
       console.error('Error updating status:', error);
 
-      // Try auto-heal for illegal transitions
+      // Simple error message - no complex auto-heal logic
       const payload = error?.payload;
-      if (payload?.error === "illegal_transition" &&
-        payload?.from === MAIL_STATUS.Requested &&
-        payload?.to === MAIL_STATUS.Dispatched &&
-        Array.isArray(payload?.allowed) &&
-        payload.allowed.includes(MAIL_STATUS.Processing)) {
-
-        console.log('[Auto-heal] Attempting to auto-advance: Requested → Processing → Dispatched');
-
-        try {
-          // Step 1: Move to Processing
-          await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Processing);
-          setRows(prevRows =>
-            prevRows.map(req =>
-              req.id === requestId
-                ? { ...req, status: MAIL_STATUS.Processing, updated_at: Date.now() }
-                : req
-            )
-          );
-
-          // Step 2: Move to Dispatched
-          await updateForwardingByAction(requestId.toString(), MAIL_STATUS.Dispatched);
-          setRows(prevRows =>
-            prevRows.map(req =>
-              req.id === requestId
-                ? { ...req, status: MAIL_STATUS.Dispatched, updated_at: Date.now() }
-                : req
-            )
-          );
-
-          toast({
-            title: "Auto-Advanced",
-            description: "Processing → Dispatched",
-            durationMs: 3000,
-          });
-
-          // Refresh server components/data to get latest state
-          router.refresh();
-          return; // Success, exit early
-
-        } catch (autoHealError: any) {
-          console.error('[Auto-heal] Failed:', autoHealError);
-          toast({
-            title: "Auto-Heal Failed",
-            description: "Couldn't auto-advance. Please try again.",
-            variant: "destructive",
-            durationMs: 5000,
-          });
-          return;
-        }
-      }
-
-      // Fallback for other errors
       let errorMsg = "Error updating status. Please try again.";
+      
       if (payload?.error === "illegal_transition") {
         errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
       } else if (payload?.message) {
