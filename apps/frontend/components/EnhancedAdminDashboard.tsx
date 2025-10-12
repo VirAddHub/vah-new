@@ -89,10 +89,6 @@ const StableForwardingTable = dynamic(() => import('./admin/StableForwardingTabl
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
-const BillingSection = dynamic(() => import('./admin/BillingSection').then(mod => ({ default: mod.BillingSection })), {
-    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
-});
-
 const AnalyticsSection = dynamic(() => import('./admin/AnalyticsSection').then(mod => ({ default: mod.AnalyticsSection })), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
@@ -342,7 +338,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
-        { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
         { id: "web-vitals", label: "Web Vitals", icon: <TrendingUp className="h-4 w-4" /> },
@@ -400,8 +395,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 />;
             case "forwarding":
                 return <StableForwardingTable />;
-            case "billing":
-                return <BillingSection />;
             case "plans":
                 return <PlansSection />;
             case "analytics":
