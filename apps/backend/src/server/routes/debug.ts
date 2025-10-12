@@ -38,9 +38,9 @@ router.get('/forwarding-address', requireAuth, async (req: Request, res: Respons
         const user = result.rows[0];
 
         // Parse the forwarding address to see if it's valid
-        let parsedAddress = null;
+        let parsedAddress: any = null;
         let addressValid = false;
-        let validationErrors = [];
+        let validationErrors: string[] = [];
 
         if (user.forwarding_address) {
             const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');

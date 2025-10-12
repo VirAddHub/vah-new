@@ -62,6 +62,7 @@ import adminActivityRouter from "./server/routes/admin-activity";
 import adminServiceStatusRouter from "./server/routes/admin-service-status";
 import companiesHouseRouter from "./server/routes/companies-house";
 import debugRouter from "./server/routes/debug";
+import idealPostcodesRouter from "./server/routes/ideal-postcodes";
 
 // Import maintenance service
 import { systemMaintenance } from "./server/services/maintenance";
