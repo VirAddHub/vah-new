@@ -292,6 +292,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return false;
     }
     
+    // TEMPORARILY DISABLED: Allow forwarding even with incomplete address
+    // TODO: Fix user's forwarding address in database
+    return true;
+    
     // Check if user has a complete forwarding address
     if (!userProfile?.forwarding_address) {
       return false;
