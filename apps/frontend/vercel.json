@@ -1,6 +1,6 @@
 {
   "functions": {
-    "apps/frontend/app/api/**/*.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
