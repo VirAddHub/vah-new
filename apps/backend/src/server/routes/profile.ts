@@ -41,6 +41,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 state,
                 postal_code,
                 country,
+                forwarding_address,
                 kyc_status,
                 COALESCE(kyc_verified_at_ms, kyc_verified_at) as kyc_verified_at_ms,
                 kyc_rejection_reason,
