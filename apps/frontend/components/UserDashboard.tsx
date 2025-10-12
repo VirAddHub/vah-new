@@ -287,8 +287,32 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Check if mail item can be forwarded
   const canForward = useCallback((item: MailItem) => {
-    return !isGDPRExpired(item) && item.status === 'received';
-  }, []);
+    // Check basic forwarding eligibility
+    if (isGDPRExpired(item) || item.status !== 'received') {
+      return false;
+    }
+    
+    // Check if user has a complete forwarding address
+    if (!userProfile?.forwarding_address) {
+      return false;
+    }
+    
+    // Parse the forwarding address to check if it's complete
+    const addressLines = userProfile.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
+    const name = addressLines[0] || '';
+    const address1 = addressLines[1] || '';
+    const cityPostal = addressLines[addressLines.length - 2] || '';
+    const country = addressLines[addressLines.length - 1] || '';
+    
+    const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
+    
+    // Check if all required fields are present
+    if (!name || !address1 || !city || !postal) {
+      return false;
+    }
+    
+    return true;
+  }, [userProfile?.forwarding_address]);
 
   // Check if mail item is GDPR expired (30+ days old)
   const isGDPRExpired = useCallback((item: MailItem) => {
@@ -301,12 +325,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Forwarding confirmation handler
   const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
-    console.log('[UI] handleForwardingConfirm called', { 
-      paymentMethod, 
+    console.log('[UI] handleForwardingConfirm called', {
+      paymentMethod,
       hasSelectedMail: !!selectedMailForForwarding,
-      selectedMailId: selectedMailForForwarding?.id 
+      selectedMailId: selectedMailForForwarding?.id
     });
-    
+
     if (!selectedMailForForwarding) {
       console.log('[UI] No selected mail for forwarding, returning early');
       return;
@@ -318,102 +342,56 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     });
 
     try {
-      const token = getToken();
-      const response = await fetch('/api/bff/forwarding/requests', {
+      const r = await fetch('/api/bff/forwarding/request', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          mail_item_id: selectedMailForForwarding.id,
-          method: 'standard',
-          reason: `Forwarding request via ${paymentMethod} payment method`
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mail_item_ids: [selectedMailForForwarding.id] }),
       });
 
-      console.log('[UI] res.status', response.status);
-      const responseText = await response.text();
-      console.log('[UI] res.text', responseText);
+      console.log('[UI] res.status', r.status);
+      const t = await r.text();
+      console.log('[UI] res.text', t);
 
-      if (response.ok) {
-        toast({
-          title: "Forwarding Request Created",
-          description: "Your mail forwarding request has been submitted successfully.",
-          durationMs: 3000,
-        });
-
-        // Refresh mail items to update status
-        refreshMail();
-
-        // Close modal
-        setShowForwardingConfirmation(false);
-        setSelectedMailForForwarding(null);
-      } else {
-        let errorData;
+      const data = (() => {
         try {
-          errorData = JSON.parse(responseText);
-        } catch (e) {
-          errorData = { error: 'parse_error', message: responseText };
+          return JSON.parse(t);
+        } catch {
+          return {};
         }
+      })();
 
-        // Map specific error reasons to user-friendly messages
-        const reason = errorData?.reason || errorData?.error;
-        let title = "Forwarding Request Failed";
-        let description = errorData.message || "Failed to create forwarding request. Please try again.";
-
-        switch (reason) {
-          case 'missing_forwarding_address':
-            title = "Forwarding Address Required";
-            description = "Please set your forwarding address in Profile settings before requesting mail forwarding.";
-            break;
-          case 'invalid_forwarding_address':
-            title = "Incomplete Forwarding Address";
-            description = "Your forwarding address is incomplete. Please update it in Profile settings with your full name, address, city, and postal code.";
-            break;
-          case 'missing_mail_item_id':
-            title = "Invalid Request";
-            description = "Please select a mail item to forward.";
-            break;
-          case 'user_not_found':
-            title = "Account Error";
-            description = "Your account could not be found. Please try logging out and back in.";
-            break;
-          case 'too_old':
-            title = "Item Too Old";
-            description = "That item is beyond the forwarding window.";
-            break;
-          case 'deleted':
-            title = "Item Not Available";
-            description = "That item was deleted.";
-            break;
-          case 'not_owner':
-            title = "Access Denied";
-            description = "You do not own that item.";
-            break;
-          case 'blocked_kyc':
-            title = "KYC Required";
-            description = "Please complete KYC before forwarding.";
-            break;
-          case 'already_requested':
-            title = "Already Requested";
-            description = "You have already requested forwarding for this item.";
-            break;
-        }
-
-        toast({
-          title,
-          description,
-          variant: "destructive",
-          durationMs: 5000,
-        });
+      if (!r.ok || data.ok === false) {
+        const reason = data?.errors?.[0]?.reason || data?.reason || data?.error;
+        const msg =
+          reason === 'too_old' ? 'That item is beyond the forwarding window.' :
+            reason === 'deleted' ? 'That item was deleted.' :
+              reason === 'not_owner' ? 'You do not own that item.' :
+                reason === 'blocked_kyc' ? 'Please complete KYC before forwarding.' :
+                  reason === 'missing_forwarding_address' ? 'Add a forwarding address first.' :
+                    reason === 'invalid_forwarding_address' ? 'Your forwarding address is incomplete.' :
+                      data.message || 'Error creating forwarding request.';
+        throw new Error(msg);
       }
-    } catch (error) {
-      console.error('Error creating forwarding request:', error);
+
+      // Success
       toast({
-        title: "Forwarding Request Error",
-        description: "Error creating forwarding request. Please try again.",
+        title: "Forwarding Request Created",
+        description: "Your mail forwarding request has been submitted successfully.",
+        durationMs: 3000,
+      });
+
+      // Refresh mail items to update status
+      refreshMail();
+
+      // Close modal
+      setShowForwardingConfirmation(false);
+      setSelectedMailForForwarding(null);
+
+    } catch (e: any) {
+      console.error('[UI] fetch error', e);
+      toast({
+        title: "Forwarding Request Failed",
+        description: e.message || "Error creating forwarding request. Please try again.",
         variant: "destructive",
         durationMs: 5000,
       });
@@ -445,7 +423,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
-    
+
     // If a specific mail item is provided, use it directly
     if (mailItem) {
       console.log('[UI] Processing specific mail item:', mailItem.id);
@@ -764,7 +742,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       className="h-9"
                                       onClick={() => handleRequestForwarding(item)}
                                       disabled={!canForward(item)}
-                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                      title={
+                                        isGDPRExpired(item) 
+                                          ? "Cannot forward: GDPR expired (30+ days old)" 
+                                          : !userProfile?.forwarding_address
+                                          ? "Cannot forward: Please set your forwarding address in Profile settings"
+                                          : !canForward(item) 
+                                          ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
+                                          : ""
+                                      }
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
                                       {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
@@ -864,7 +850,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       className="flex-1 h-9"
                                       onClick={() => handleRequestForwarding(item)}
                                       disabled={!canForward(item)}
-                                      title={isGDPRExpired(item) ? "Cannot forward: GDPR expired (30+ days old)" : !canForward(item) ? "Cannot forward at this time" : ""}
+                                      title={
+                                        isGDPRExpired(item) 
+                                          ? "Cannot forward: GDPR expired (30+ days old)" 
+                                          : !userProfile?.forwarding_address
+                                          ? "Cannot forward: Please set your forwarding address in Profile settings"
+                                          : !canForward(item) 
+                                          ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
+                                          : ""
+                                      }
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
                                       {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
