@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { parsePromText, sumMetric } from "@/lib/prometheus";
@@ -13,6 +14,9 @@ export default function ForwardingHealthCard() {
   const [series, setSeries] = useState<Point[]>([]);
   const [updatedAt, setUpdatedAt] = useState<number>(0);
   const [error, setError] = useState<string>("");
+  const [running, setRunning] = useState(false);
+  const [lastRun, setLastRun] = useState<number | null>(null);
+  const [lastResult, setLastResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   async function fetchMetrics() {
     try {
@@ -32,6 +36,48 @@ export default function ForwardingHealthCard() {
     } catch (err) {
       console.error('[ForwardingHealthCard] Error fetching metrics:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  }
+
+  async function runSelfTest() {
+    try {
+      setRunning(true);
+      setLastResult(null);
+      
+      const r = await fetch("/api/bff/ops/self-test", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "x-selftest-secret": process.env.NEXT_PUBLIC_SELFTEST_SECRET || ""
+        }
+      });
+      
+      const j = await r.json();
+      setLastRun(Date.now());
+      
+      if (j?.ok) {
+        setLastResult({ 
+          ok: true, 
+          msg: `✅ Passed in ${j.data?.durationMs ?? "?"} ms` 
+        });
+      } else {
+        setLastResult({ 
+          ok: false, 
+          msg: `❌ Failed: ${j?.error || "Unknown"}` 
+        });
+      }
+      
+      // Pull fresh metrics immediately so the charts reflect the run
+      fetchMetrics();
+    } catch (e: any) {
+      setLastRun(Date.now());
+      setLastResult({ 
+        ok: false, 
+        msg: `❌ Error: ${e?.message || String(e)}` 
+      });
+    } finally {
+      setRunning(false);
     }
   }
 
@@ -105,6 +151,19 @@ export default function ForwardingHealthCard() {
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Forwarding Health</h3>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={runSelfTest} 
+            disabled={running}
+          >
+            {running ? "Running…" : "Run Self-Test"}
+          </Button>
+          {lastResult && (
+            <span className={`text-sm ${lastResult.ok ? "text-emerald-700" : "text-red-700"}`}>
+              {lastResult.msg}{lastRun ? ` • ${new Date(lastRun).toLocaleTimeString()}` : ""}
+            </span>
+          )}
           {uiAlerts.stalled && <Badge variant="destructive">No transitions</Badge>}
           {uiAlerts.illegalSpike && <Badge variant="destructive">Illegal spike</Badge>}
           {uiAlerts.errSpike && <Badge variant="destructive">5xx spike</Badge>}
