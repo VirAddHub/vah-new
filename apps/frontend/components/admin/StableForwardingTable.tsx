@@ -223,7 +223,7 @@ export default function StableForwardingTable() {
       // Simple error message - no complex auto-heal logic
       const payload = error?.payload;
       let errorMsg = "Error updating status. Please try again.";
-      
+
       if (payload?.error === "illegal_transition") {
         errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
       } else if (payload?.message) {
