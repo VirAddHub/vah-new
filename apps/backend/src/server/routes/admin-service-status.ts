@@ -18,7 +18,7 @@ router.get('/gocardless', requireAdmin, async (req: Request, res: Response) => {
         const oneDayAgo = now - (24 * 60 * 60 * 1000);
         const oneHourAgo = now - (60 * 60 * 1000);
 
-        // Check recent webhook activity
+        // Check recent webhook activity (GoCardless uses 'type' column)
         const webhookResult = await pool.query(`
             SELECT 
                 MAX(created_at) as last_webhook,
@@ -26,7 +26,7 @@ router.get('/gocardless', requireAdmin, async (req: Request, res: Response) => {
                 COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
                 COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
             FROM webhook_log 
-            WHERE provider = 'gocardless' 
+            WHERE (type = 'gocardless' OR source = 'gocardless') 
             AND created_at >= $2
         `, [oneHourAgo, oneDayAgo]);
 
@@ -77,7 +77,7 @@ router.get('/sumsub', requireAdmin, async (req: Request, res: Response) => {
         const oneDayAgo = now - (24 * 60 * 60 * 1000);
         const oneHourAgo = now - (60 * 60 * 1000);
 
-        // Check recent webhook activity
+        // Check recent webhook activity (Sumsub - check if it exists)
         const webhookResult = await pool.query(`
             SELECT 
                 MAX(created_at) as last_webhook,
@@ -85,7 +85,7 @@ router.get('/sumsub', requireAdmin, async (req: Request, res: Response) => {
                 COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
                 COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
             FROM webhook_log 
-            WHERE provider = 'sumsub' 
+            WHERE (type = 'sumsub' OR source = 'sumsub') 
             AND created_at >= $2
         `, [oneHourAgo, oneDayAgo]);
 
@@ -135,7 +135,7 @@ router.get('/postmark', requireAdmin, async (req: Request, res: Response) => {
         const oneDayAgo = now - (24 * 60 * 60 * 1000);
         const oneHourAgo = now - (60 * 60 * 1000);
 
-        // Check recent webhook activity
+        // Check recent webhook activity (Postmark - check if it exists)
         const webhookResult = await pool.query(`
             SELECT 
                 MAX(created_at) as last_webhook,
@@ -143,7 +143,7 @@ router.get('/postmark', requireAdmin, async (req: Request, res: Response) => {
                 COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
                 COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
             FROM webhook_log 
-            WHERE provider = 'postmark' 
+            WHERE (type = 'postmark' OR source = 'postmark') 
             AND created_at >= $2
         `, [oneHourAgo, oneDayAgo]);
 
@@ -204,7 +204,7 @@ router.get('/onedrive', requireAdmin, async (req: Request, res: Response) => {
         const oneDayAgo = now - (24 * 60 * 60 * 1000);
         const oneHourAgo = now - (60 * 60 * 1000);
 
-        // Check recent webhook activity
+        // Check recent webhook activity (OneDrive uses 'source' column)
         const webhookResult = await pool.query(`
             SELECT 
                 MAX(created_at) as last_webhook,
@@ -212,7 +212,7 @@ router.get('/onedrive', requireAdmin, async (req: Request, res: Response) => {
                 COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
                 COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
             FROM webhook_log 
-            WHERE provider = 'onedrive' 
+            WHERE source = 'onedrive' 
             AND created_at >= $2
         `, [oneHourAgo, oneDayAgo]);
 
