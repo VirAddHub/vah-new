@@ -157,6 +157,53 @@ export default function CollaborativeForwardingBoard() {
     }
   };
 
+  // Force unlock a request (admin override)
+  const forceUnlockRequest = async (requestId: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/forwarding/requests/${requestId}/force-unlock`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+        }
+      });
+
+      if (response.ok) {
+        setLocks(prev => {
+          const newLocks = new Map(prev);
+          newLocks.delete(requestId);
+          return newLocks;
+        });
+        
+        toast({
+          title: "Force Unlocked",
+          description: "Request is now available for editing",
+          durationMs: 3000,
+        });
+        return true;
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Force Unlock Failed",
+          description: errorData.message || "Could not force unlock request",
+          variant: "destructive",
+          durationMs: 3000,
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to force unlock request:', error);
+      toast({
+        title: "Force Unlock Failed",
+        description: "Network error occurred",
+        variant: "destructive",
+        durationMs: 3000,
+      });
+      return false;
+    }
+  };
+
   // Load forwarding requests with real-time updates
   const load = useCallback(async () => {
     setLoading(true);
@@ -409,17 +456,36 @@ export default function CollaborativeForwardingBoard() {
               
               {/* Lock indicator */}
               {lockInfo && (
-                <div className="mt-2 flex items-center gap-1 text-xs">
-                  {lockedByMe ? (
-                    <>
-                      <Lock className="h-3 w-3 text-blue-600" />
-                      <span className="text-blue-600">You are editing</span>
-                    </>
-                  ) : (
-                    <>
-                      <User className="h-3 w-3 text-orange-600" />
-                      <span className="text-orange-600">{lockInfo.admin_name} is editing</span>
-                    </>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1">
+                    {lockedByMe ? (
+                      <>
+                        <Lock className="h-3 w-3 text-blue-600" />
+                        <span className="text-blue-600">You are editing</span>
+                      </>
+                    ) : (
+                      <>
+                        <User className="h-3 w-3 text-orange-600" />
+                        <span className="text-orange-600">{lockInfo.admin_name} is editing</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Force unlock button for locked requests */}
+                  {lockedByOther && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Force unlock this request from ${lockInfo.admin_name}?`)) {
+                          forceUnlockRequest(request.id);
+                        }
+                      }}
+                    >
+                      Force Unlock
+                    </Button>
                   )}
                 </div>
               )}

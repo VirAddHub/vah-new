@@ -184,6 +184,47 @@ router.get('/admin/forwarding/requests/:id/lock-status', requireAdmin, async (re
   }
 });
 
+// POST /api/admin/forwarding/requests/:id/force-unlock
+router.post('/admin/forwarding/requests/:id/force-unlock', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const admin = req.user;
+    
+    if (!admin) {
+      return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
+
+    const existingLock = locks.get(id);
+    if (!existingLock) {
+      return res.status(404).json({
+        ok: false,
+        error: 'not_locked',
+        message: 'Request is not locked'
+      });
+    }
+
+    // Log the force unlock for audit purposes
+    console.log(`[LockManager] FORCE UNLOCK: Request ${id} force unlocked by ${admin.email} (was locked by ${existingLock.admin_name})`);
+
+    // Force unlock the request (any admin can force unlock)
+    locks.delete(id);
+
+    res.json({
+      ok: true,
+      message: 'Request force unlocked successfully',
+      previous_locker: existingLock.admin_name
+    });
+
+  } catch (error: any) {
+    console.error('[LockManager] Force unlock error:', error);
+    res.status(500).json({
+      ok: false,
+      error: 'internal_error',
+      message: error.message
+    });
+  }
+});
+
 // GET /api/admin/forwarding/locks (get all locks)
 router.get('/admin/forwarding/locks', requireAdmin, async (req: Request, res: Response) => {
   try {
