@@ -310,9 +310,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         credentials: 'include',
         body: JSON.stringify({
           mail_item_id: selectedMailForForwarding.id,
-          payment_method: paymentMethod,
-          // Use the forwarding address from user profile
-          forwarding_address: userProfile?.forwarding_address
+          method: 'standard',
+          reason: `Forwarding request via ${paymentMethod} payment method`
         })
       });
 
