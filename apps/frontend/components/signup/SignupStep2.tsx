@@ -62,10 +62,18 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [showPassword, setShowPassword] = useState(false);
     const [isManualEntry, setIsManualEntry] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Companies House search state
+    const [companySearchQuery, setCompanySearchQuery] = useState('');
+    const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+    const [companySearchLoading, setCompanySearchLoading] = useState(false);
+    const [companySearchError, setCompanySearchError] = useState<string | null>(null);
+    const [showResults, setShowResults] = useState(false);
+
+    const { debouncedSearchTerm: debouncedCompanySearch, setSearchTerm: setCompanySearchTerm } = useSimpleDebouncedSearch(companySearchQuery, 500);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [showResults, setShowResults] = useState(false);
 
     const businessTypes = [
         { value: 'limited_company', label: 'Private Limited Company' },
@@ -138,37 +146,37 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
     // Debounced search for Companies House
     useEffect(() => {
-        if (searchQuery.length < 2 || isManualEntry) {
-            setSearchResults([]);
+        if (debouncedCompanySearch.length < 2 || isManualEntry) {
+            setCompanySearchResults([]);
             setShowResults(false);
             return;
         }
 
         const timer = setTimeout(async () => {
             try {
-                setIsSearching(true);
+                setCompanySearchLoading(true);
                 const response = await fetch(
-                    `/api/bff/companies/search?q=${encodeURIComponent(searchQuery)}`
+                    `/api/bff/companies/search?q=${encodeURIComponent(debouncedCompanySearch)}`
                 );
 
                 if (response.ok) {
                     const result = await response.json();
-                    setSearchResults(result.data || []);
+                    setCompanySearchResults(result.data || []);
                     setShowResults(true);
                 } else {
                     console.error('Companies House API error:', response.status);
-                    setSearchResults([]);
+                    setCompanySearchResults([]);
                 }
             } catch (error) {
                 console.error('Companies House search failed:', error);
-                setSearchResults([]);
+                setCompanySearchResults([]);
             } finally {
-                setIsSearching(false);
+                setCompanySearchLoading(false);
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, isManualEntry]);
+    }, [debouncedCompanySearch, isManualEntry]);
 
     const handleSelectCompany = (company: any) => {
         updateFormData('company_number', company.company_number);
