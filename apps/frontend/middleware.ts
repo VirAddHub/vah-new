@@ -1,40 +1,84 @@
-// middleware.ts
-// Simple, robust middleware for protecting routes
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  // Cache static assets for 1 year
+  if (pathname.startsWith('/_next/static/') || 
+      pathname.startsWith('/images/') || 
+      pathname.startsWith('/icons/') ||
+      pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    response.headers.set(
+      'Cache-Control',
+      'public, max-age=31536000, immutable'
+    );
+  }
+
+  // Cache API routes for 5 minutes with stale-while-revalidate
+  if (pathname.startsWith('/api/')) {
+    // Skip caching for auth and dynamic endpoints
+    if (pathname.includes('/auth/') || 
+        pathname.includes('/webhooks/') ||
+        pathname.includes('/analytics/')) {
+      response.headers.set(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate'
+      );
+    } else {
+      response.headers.set(
+        'Cache-Control',
+        'public, s-maxage=300, stale-while-revalidate=3600'
+      );
+    }
+  }
+
+  // Cache static pages for 1 hour
+  if (pathname === '/' || 
+      pathname === '/about' || 
+      pathname === '/help' || 
+      pathname === '/terms' || 
+      pathname === '/privacy' ||
+      pathname === '/kyc-policy') {
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=3600, stale-while-revalidate=86400'
+    );
+  }
+
+  // Cache blog pages for 30 minutes
+  if (pathname.startsWith('/blog/')) {
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=1800, stale-while-revalidate=3600'
+    );
+  }
+
+  // Add security headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  // Add CORS headers for API routes
+  if (pathname.startsWith('/api/')) {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+
+  return response;
+}
 
 export const config = {
-  // Only protect these routes - middleware will NOT run on other pages
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/dashboard'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
-
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  // Skip internal Next.js routes and static files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.')
-  ) {
-    return NextResponse.next();
-  }
-
-  // Check for JWT token in cookies
-  const jwtToken = req.cookies.get('vah_jwt')?.value;
-  const hasToken = !!jwtToken && jwtToken !== 'null' && jwtToken !== 'undefined' && jwtToken.length > 10;
-
-  // If no valid token, redirect to login with next parameter
-  if (!hasToken) {
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Token exists - allow access to protected route
-  // Note: We don't validate the token here because:
-  // 1. Middleware runs on Edge runtime and can't easily call backend
-  // 2. The backend API will validate the token on every request
-  // 3. If token is invalid, API calls will fail and user will be logged out
-  return NextResponse.next();
-}

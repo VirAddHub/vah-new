@@ -10,6 +10,8 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
+        "build:analyze": "ANALYZE=true next build",
+        "build:check": "npm run build && node scripts/bundle-size-check.js",
         "start": "next start",
         "lint": "next lint",
         "lint:strict": "next lint --max-warnings=0",
@@ -72,10 +74,12 @@
         "tailwindcss-animate": "^1.0.7",
         "typescript": "^5.0.0",
         "vaul": "^0.9.5",
+        "web-vitals": "^5.1.0",
         "winston": "^3.11.0",
         "zod": "^3.22.0"
     },
     "devDependencies": {
+        "@next/bundle-analyzer": "^15.5.4",
         "@testing-library/jest-dom": "^6.1.0",
         "@testing-library/react": "^13.4.0",
         "@types/bcrypt": "^5.0.0",

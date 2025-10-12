@@ -27,8 +27,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
-import PDFViewerModal from "@/components/PDFViewerModal";
+import dynamic from 'next/dynamic';
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
+
+// Dynamic import for PDF viewer modal
+const PDFViewerModal = dynamic(() => import("@/components/PDFViewerModal"), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>,
+  ssr: false
+});
 import { VAHLogo } from "./VAHLogo";
 import { useToast } from "./ui/use-toast";
 

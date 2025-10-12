@@ -74,14 +74,40 @@ import {
     Building2,
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
-import UsersSection from "./admin/UsersSection";
-import PlansSection from "./admin/PlansSection";
-import { MailSection } from "./admin/MailSection";
-import StableForwardingTable from "./admin/StableForwardingTable";
-import { BillingSection } from "./admin/BillingSection";
-import { AnalyticsSection } from "./admin/AnalyticsSection";
-import { SettingsSection } from "./admin/SettingsSection";
-import { BlogSection } from "./admin/BlogSection";
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for heavy admin components
+const UsersSection = dynamic(() => import('./admin/UsersSection'), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const PlansSection = dynamic(() => import('./admin/PlansSection'), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const MailSection = dynamic(() => import('./admin/MailSection').then(mod => ({ default: mod.MailSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const StableForwardingTable = dynamic(() => import('./admin/StableForwardingTable'), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const BillingSection = dynamic(() => import('./admin/BillingSection').then(mod => ({ default: mod.BillingSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const AnalyticsSection = dynamic(() => import('./admin/AnalyticsSection').then(mod => ({ default: mod.AnalyticsSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const SettingsSection = dynamic(() => import('./admin/SettingsSection').then(mod => ({ default: mod.SettingsSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const BlogSection = dynamic(() => import('./admin/BlogSection').then(mod => ({ default: mod.BlogSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
 
 interface AdminDashboardProps {
     onLogout: () => void;

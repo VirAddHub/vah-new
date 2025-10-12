@@ -1,15 +1,41 @@
 {
-    "rewrites": [
-        {
-            "source": "/api/:path*",
-            "destination": "https://vah-api-staging.onrender.com/api/:path*"
-        }
-    ],
-    "env": {
-        "NEXT_PUBLIC_API_URL": "https://vah-api-staging.onrender.com",
-        "NEXT_PUBLIC_API_BASE_URL": "https://vah-api-staging.onrender.com",
-        "NEXT_PUBLIC_APP_URL": "https://vah-frontend-final.vercel.app",
-        "BACKEND_API_ORIGIN": "https://vah-api-staging.onrender.com",
-        "NEXT_PUBLIC_BACKEND_API_ORIGIN": "https://vah-api-staging.onrender.com"
+  "functions": {
+    "apps/frontend/app/api/**/*.ts": {
+      "maxDuration": 30
     }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/bff/(.*)",
+      "destination": "/api/bff/$1"
+    }
+  ]
 }

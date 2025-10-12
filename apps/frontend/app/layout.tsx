@@ -1,15 +1,17 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Montserrat } from 'next/font/google';
 import { ToastProvider } from '@/components/ui/use-toast';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
+import { WebVitalsProvider } from '@/components/WebVitalsProvider';
 
-const inter = Inter({
+const montserrat = Montserrat({
     subsets: ['latin'],
     display: 'swap',
-    weight: ['400', '600'],
+    weight: ['300', '400', '500', '600', '700'],
+    variable: '--font-montserrat',
 });
 
 export const metadata: Metadata = {
@@ -146,12 +148,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     }}
                 />
             </head>
-            <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`}>
-                <SWRProvider>
-                    <Providers>
-                        <ToastProvider>{children}</ToastProvider>
-                    </Providers>
-                </SWRProvider>
+            <body className={`${montserrat.className} min-h-screen bg-background text-foreground antialiased`}>
+                <WebVitalsProvider>
+                    <SWRProvider>
+                        <Providers>
+                            <ToastProvider>{children}</ToastProvider>
+                        </Providers>
+                    </SWRProvider>
+                </WebVitalsProvider>
             </body>
         </html>
     );

@@ -1,10 +1,11 @@
 "use client";
 
 import { SWRConfig } from 'swr';
+import { cachedFetch } from '@/lib/cachedFetch';
 
 // Simple fetcher function defined inline to avoid serialization issues
 async function fetcher(url: string) {
-    const res = await fetch(url, {
+    const res = await cachedFetch(url, {
         headers: {
             accept: 'application/json',
         },
@@ -28,12 +29,16 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
         <SWRConfig
             value={{
                 fetcher,
-                revalidateIfStale: true,
-                revalidateOnFocus: true,
-                revalidateOnReconnect: true,
-                refreshInterval: 30000, // Refresh every 30 seconds
-                dedupingInterval: 10000, // Reduce deduping to 10 seconds for faster updates
-                keepPreviousData: true,
+                revalidateIfStale: false,        // Reduce unnecessary revalidation
+                revalidateOnFocus: false,         // Only for critical data
+                revalidateOnReconnect: true,      // Reconnect when back online
+                refreshInterval: 0,              // Disable automatic refresh
+                dedupingInterval: 2000,          // Reduce from 10s to 2s
+                keepPreviousData: true,          // Keep old data while fetching
+                errorRetryCount: 2,              // Reduce retry attempts
+                errorRetryInterval: 5000,        // Increase retry interval
+                provider: () => new Map(),       // Avoid cross-request bleed
+                focusThrottleInterval: 5000,     // Throttle focus revalidation
             }}
         >
             {children}
