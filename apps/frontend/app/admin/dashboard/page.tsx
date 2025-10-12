@@ -64,6 +64,11 @@ export default function AdminDashboardPage() {
 
     const handleNavigate = (page: string) => {
         console.log('Navigate to:', page);
+        if (page === 'home') {
+            router.push('/');
+        } else {
+            router.push(`/${page}`);
+        }
     };
 
     const handleGoBack = () => {
