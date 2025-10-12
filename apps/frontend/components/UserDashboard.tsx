@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import useSWR from 'swr';
 import {
   Building2,
   FileCheck,
@@ -8,140 +11,87 @@ import {
   Square,
   Mail,
   AlertCircle,
-  LogOut,
-  User,
-  Settings,
-  Menu,
-  X
+  Eye,
+  Calendar,
+  ArrowLeft,
+  RefreshCw
 } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
-import { Separator } from "./ui/separator";
+import { openInline, downloadFile } from "@/lib/fileActions";
 
 interface UserDashboardProps {
   onLogout: () => void;
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, data?: any) => void;
   onGoBack?: () => void;
 }
 
-// Mock mail data for UI display
-const mockMailItems = [
-  {
-    id: "1",
-    sender: "HM Revenue & Customs",
-    description: "Self Assessment Tax Return 2024",
-    receivedDate: "2024-10-01",
-    category: "HMRC",
-    status: "unread",
-    hasAttachment: true,
-  },
-  {
-    id: "2",
-    sender: "Companies House",
-    description: "Annual Confirmation Statement",
-    receivedDate: "2024-09-28",
-    category: "Companies House",
-    status: "read",
-    hasAttachment: true,
-  },
-  {
-    id: "3",
-    sender: "Barclays Bank PLC",
-    description: "Monthly Statement - September 2024",
-    receivedDate: "2024-09-25",
-    category: "Bank",
-    status: "read",
-    hasAttachment: true,
-  },
-  {
-    id: "4",
-    sender: "Amazon Business",
-    description: "Order Confirmation - Office Supplies",
-    receivedDate: "2024-09-22",
-    category: "Commercial",
-    status: "read",
-    hasAttachment: false,
-  },
-  {
-    id: "5",
-    sender: "Royal Mail",
-    description: "Delivery Notification",
-    receivedDate: "2024-09-20",
-    category: "Other",
-    status: "read",
-    hasAttachment: true,
-  },
-];
+// API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+
+// Token helper
+const getToken = () => {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('vah_jwt') || '';
+};
+
+// SWR fetcher function
+const fetcher = (url: string) => {
+  const token = getToken();
+  const headers: Record<string, string> = { 'Accept': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  return fetch(`${API_BASE}${url}`, {
+    headers,
+    credentials: 'include'
+  }).then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  });
+};
+
+// Mail item interface
+interface MailItem {
+  id: string | number;
+  subject?: string;
+  sender_name?: string;
+  received_date?: string;
+  status?: string;
+  tag?: string;
+  is_read?: boolean;
+  created_at?: string;
+  file_url?: string;
+}
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
-  const [selectedMail, setSelectedMail] = useState<string[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedMail, setSelectedMail] = useState<string[]>([]);
 
-  // Get virtual address from user profile or use default
-  const getVirtualAddress = () => {
-    if (userProfile?.virtual_address) {
-      return userProfile.virtual_address;
+  // SWR hook for mail items with 15s polling
+  const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
+    '/api/mail-items',
+    fetcher,
+    {
+      refreshInterval: 15000, // Poll every 15 seconds
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 5000
     }
+  );
 
-    // Fallback to stored user data
-    try {
-      const storedUser = localStorage.getItem('vah_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.virtual_address) {
-          return user.virtual_address;
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing stored user address:', error);
-    }
+  // Extract mail items and metadata
+  const mailItems = useMemo(() => {
+    if (!mailData?.ok) return [];
+    return Array.isArray(mailData.items) ? mailData.items : [];
+  }, [mailData]);
 
-    // Default fallback address
-    return {
-      line1: "71-75 Shelton Street",
-      line2: "Covent Garden",
-      city: "London",
-      postcode: "WC2H 9JQ",
-      country: "United Kingdom"
-    };
-  };
+  const totalItems = mailData?.total || 0;
 
-  const virtualAddress = getVirtualAddress();
-
-  // Get user name from profile or fallback to stored user data
-  const getUserName = () => {
-    if (userProfile?.first_name && userProfile?.last_name) {
-      return `${userProfile.first_name} ${userProfile.last_name}`;
-    }
-
-    // Fallback to stored user data
-    try {
-      const storedUser = localStorage.getItem('vah_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.first_name && user.last_name) {
-          return `${user.first_name} ${user.last_name}`;
-        }
-        if (user.name) {
-          return user.name;
-        }
-        if (user.email) {
-          return user.email.split('@')[0]; // Use email prefix as fallback
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing stored user data:', error);
-    }
-
-    return "User"; // Final fallback
-  };
-
-  // Load user profile on component mount
+  // Load user profile on mount
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
@@ -155,10 +105,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         }
 
         // Fetch fresh user profile from API
-        const token = localStorage.getItem('vah_jwt');
+        const token = getToken();
         if (token) {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-          const response = await fetch(`${apiUrl}/api/profile`, {
+          const response = await fetch(`${API_BASE}/api/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -198,127 +147,108 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   const toggleSelectAll = () => {
-    if (selectedMail.length === mockMailItems.length) {
+    if (selectedMail.length === mailItems.length) {
       setSelectedMail([]);
     } else {
-      setSelectedMail(mockMailItems.map(item => item.id));
+      setSelectedMail(mailItems.map((item: MailItem) => String(item.id)));
     }
   };
 
-  const isAllSelected = selectedMail.length === mockMailItems.length && mockMailItems.length > 0;
+  const isAllSelected = selectedMail.length === mailItems.length && mailItems.length > 0;
   const isSomeSelected = selectedMail.length > 0;
 
   // Check if selected items include HMRC or Companies House
   const selectedHasGovernment = selectedMail.some(id => {
-    const item = mockMailItems.find(m => m.id === id);
-    return item?.category === "HMRC" || item?.category === "Companies House";
+    const item = mailItems.find((m: MailItem) => String(m.id) === id);
+    return item?.tag === "HMRC" || item?.tag === "COMPANIES HOUSE";
   });
 
-  // Download utility functions
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-
-  const extractFilename = (res: Response, fallback: string) => {
-    const cd = res.headers.get('Content-Disposition') || '';
-    const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
-    const raw = decodeURIComponent(m?.[1] || m?.[2] || '').trim();
-    return raw || fallback;
-  };
-
-  const downloadBlob = async (res: Response, fallbackName: string) => {
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = extractFilename(res, fallbackName);
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  // --- real API first: /api/mail-items/:id/scan-url
-  const downloadViaScanUrl = async (mailId: number | string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-    const headers: Record<string, string> = { 'Accept': 'application/json' };
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}/api/mail-items/${mailId}/scan-url`, {
-      method: 'GET',
-      credentials: 'include',             // send cookies if auth is cookie-based
-      headers,
-    });
-    if (!res.ok) return false;
-
-    const data = await res.json(); // expected { ok, url, filename? }
-    if (!data?.ok || !data?.url) return false;
-
-    // Let the browser handle the download (works cross-origin)
-    const a = document.createElement('a');
-    a.href = data.url;
-    if (data.filename) a.download = data.filename; // may be ignored cross-origin, fine
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    return true;
-  };
-
-  // --- optional backend alias: /api/mail-items/:id/download (302 redirect or proxy)
-  const downloadViaAlias = (mailId: number | string) => {
-    // One-liner: browser follows 302 and downloads
-    window.location.href = `${API_BASE}/api/mail-items/${mailId}/download`;
-    return true;
-  };
-
-  // --- dev/test fallback only
-  const downloadViaTest = async (mailId: number | string) => {
-    const testFilename = `test_mail_${mailId}.pdf`;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}/api/test/download/${testFilename}`, {
-      method: 'GET',
-      credentials: 'include',
-      headers,
-    });
-    if (!res.ok) return false;
-    await downloadBlob(res, `mail_scan_${mailId}.pdf`);
-    return true;
-  };
-
-  // PUBLIC API used by your buttons
-  const downloadSingle = async (mailId: number | string) => {
+  // Mark mail item as read
+  const markAsRead = useCallback(async (item: MailItem) => {
     try {
-      // 1) real endpoint (signed URL)
-      if (await downloadViaScanUrl(mailId)) return;
+      const token = getToken();
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
 
-      // 2) alias (if you add it)
-      if (await downloadViaAlias(mailId)) return;
+      const res = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ is_read: true })
+      });
 
-      // 3) dev/test fallback
-      if (process.env.NODE_ENV !== 'production') {
-        if (await downloadViaTest(mailId)) return;
+      if (res.ok) {
+        // Update the SWR cache to reflect the change
+        await refreshMail();
       }
+    } catch (e) {
+      console.error('Error marking item as read:', e);
+      // Don't show error to user - this is a background operation
+    }
+  }, [refreshMail]);
 
-      console.error('Failed to download mail scan (no route available)');
+  // Open handler - uses secure blob streaming, also marks as read
+  const onOpen = useCallback(async (item: MailItem) => {
+    try {
+      await openInline(`${API_BASE}/api/mail-items/${item.id}/download`);
+
+      // Auto-mark as read when opened (if not already read)
+      if (!item.is_read) {
+        await markAsRead(item);
+      }
     } catch (err) {
-      console.error('Error downloading mail scan:', err);
+      console.error('Error opening file:', err);
+      alert('Unable to open file for this item.');
+    }
+  }, [markAsRead]);
+
+  // Download handler - uses secure blob streaming
+  const onDownload = useCallback(async (item: MailItem) => {
+    try {
+      await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Unable to download file. Please try again.');
+    }
+  }, []);
+
+  // Get user name helper
+  const getUserName = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name} ${userProfile.last_name}`;
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name;
+    }
+    if (userProfile?.email) {
+      return userProfile.email.split('@')[0];
+    }
+    return "User"; // Final fallback
+  };
+
+  // Mock virtual address (you can replace this with real data)
+  const virtualAddress = {
+    line1: "71-75 Shelton Street",
+    line2: "Covent Garden",
+    city: "London",
+    postcode: "WC2H 9JQ",
+    country: "United Kingdom"
+  };
+
+  const handleRequestForwarding = () => {
+    if (selectedMail.length > 0) {
+      onNavigate('dashboard-forwarding-confirm', {
+        selectedMailIds: selectedMail,
+        allMailItems: mailItems
+      });
     }
   };
 
-  const downloadSelected = async () => {
-    if (!selectedMail.length) return;
-
-    // Keep it sequential to avoid hammering the server (simple + safe)
-    for (const mailId of selectedMail) {
-      // Ensure you're passing the REAL id from your item, not an index
-      await downloadSingle(mailId);
-      await new Promise(r => setTimeout(r, 300)); // tiny gap
-    }
-  };
-
-  // Show loading state while fetching user data
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
@@ -329,77 +259,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="container-responsive flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <VAHLogo size="md" />
-            <span className="hidden sm:inline-block text-muted-foreground">|</span>
-            <span className="hidden sm:inline-block font-medium">Dashboard</span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')}>
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="sm" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </nav>
-
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-card">
-            <nav className="container-responsive py-4 flex flex-col gap-2">
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-profile')} className="justify-start">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard-settings')} className="justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-              <Separator className="my-2" />
-              <Button variant="ghost" size="sm" onClick={onLogout} className="justify-start">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </nav>
-          </div>
-        )}
-      </header>
-
       {/* Main Content */}
-      <main className="container-responsive py-8">
+      <main className="container mx-auto px-4 py-8">
 
         {/* Welcome Message */}
         <div className="mb-8">
-          <h1 className="mb-2">
-            {loading ? (
-              "Welcome back..."
-            ) : (
-              `Welcome back, ${getUserName()}`
-            )}
-          </h1>
+          <h1 className="mb-2">Welcome back, {getUserName()}</h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
 
@@ -413,10 +278,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <CardTitle>Mail Inbox</CardTitle>
-                    <Badge variant="secondary">{mockMailItems.length} items</Badge>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <CardTitle>Mail Inbox</CardTitle>
+                      <Badge variant="secondary">{totalItems} items</Badge>
+                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground hidden sm:block">
+                      Click on any mail item to view full details and scans
+                    </p>
                   </div>
 
                   {/* Bulk Actions - Show when items selected */}
@@ -425,15 +296,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <Badge variant="default" className="text-sm">
                         {selectedMail.length} selected
                       </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={downloadSelected}
-                      >
+                      <Button size="sm" variant="outline">
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="default">
+                      <Button size="sm" variant="default" onClick={handleRequestForwarding}>
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -448,6 +315,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <button
                     onClick={toggleSelectAll}
                     className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                    disabled={mailItems.length === 0}
                   >
                     {isAllSelected ? (
                       <CheckSquare className="h-4 w-4 text-primary" />
@@ -465,188 +333,37 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     size="sm"
                     onClick={toggleSelectAll}
                     className="w-full"
+                    disabled={mailItems.length === 0}
                   >
                     {isAllSelected ? (
                       <>
                         <CheckSquare className="h-4 w-4 mr-2 text-primary" />
-                        Deselect All ({mockMailItems.length})
+                        Deselect All ({mailItems.length})
                       </>
                     ) : (
                       <>
                         <Square className="h-4 w-4 mr-2" />
-                        Select All ({mockMailItems.length})
+                        Select All ({mailItems.length})
                       </>
                     )}
                   </Button>
                 </div>
 
-                {/* Mail Items List - Desktop */}
-                <div className="hidden sm:block">
-                  <div className="divide-y">
-                    {mockMailItems.map((item) => {
-                      const isSelected = selectedMail.includes(item.id);
-                      const isGovernment = item.category === "HMRC" || item.category === "Companies House";
-
-                      return (
-                        <div
-                          key={item.id}
-                          className={`px-6 py-4 hover:bg-muted/30 transition-colors ${isSelected ? "bg-primary/5" : ""
-                            }`}
-                        >
-                          <div className="flex items-start gap-4">
-                            {/* Checkbox */}
-                            <button
-                              onClick={() => toggleSelectMail(item.id)}
-                              className="mt-1 flex-shrink-0"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-primary" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                              )}
-                            </button>
-
-                            {/* Mail Info */}
-                            <div className="flex-1 min-w-0 space-y-2">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-medium truncate">{item.sender}</h4>
-                                    {item.status === "unread" && (
-                                      <Badge variant="default" className="text-xs">New</Badge>
-                                    )}
-                                    {isGovernment && (
-                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                        Free Forwarding
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    {item.description}
-                                  </p>
-                                </div>
-                                <div className="flex-shrink-0 text-right">
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(item.receivedDate).toLocaleDateString('en-GB', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })}
-                                  </p>
-                                  <Badge variant="secondary" className="mt-1 text-xs">
-                                    {item.category}
-                                  </Badge>
-                                </div>
-                              </div>
-
-                              {/* Individual Actions */}
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => downloadSingle(item.id)}
-                                >
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download Scan
-                                </Button>
-                                <Button size="sm" variant="default">
-                                  <Truck className="h-3 w-3 mr-1" />
-                                  Request Forwarding
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                {/* Error State */}
+                {mailError ? (
+                  <div className="px-6 py-12 text-center">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                    <h3 className="font-medium mb-2">Failed to load mail</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {mailError.message}
+                    </p>
+                    <Button onClick={() => refreshMail()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </Button>
                   </div>
-                </div>
-
-                {/* Mail Items List - Mobile */}
-                <div className="sm:hidden divide-y">
-                  {mockMailItems.map((item) => {
-                    const isSelected = selectedMail.includes(item.id);
-                    const isGovernment = item.category === "HMRC" || item.category === "Companies House";
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
-                      >
-                        <div className="space-y-3">
-                          {/* Header with checkbox */}
-                          <div className="flex items-start gap-3">
-                            <button
-                              onClick={() => toggleSelectMail(item.id)}
-                              className="mt-1 flex-shrink-0"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-primary" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </button>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium break-words mb-1">{item.sender}</h4>
-                                  <p className="text-sm text-muted-foreground break-words">
-                                    {item.description}
-                                  </p>
-                                </div>
-                                {item.status === "unread" && (
-                                  <Badge variant="default" className="text-xs flex-shrink-0">
-                                    New
-                                  </Badge>
-                                )}
-                              </div>
-
-                              {/* Badges */}
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                <Badge variant="secondary" className="text-xs">
-                                  {item.category}
-                                </Badge>
-                                {isGovernment && (
-                                  <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                    Free Forwarding
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(item.receivedDate).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
-                                </span>
-                              </div>
-
-                              {/* Actions */}
-                              <div className="grid grid-cols-2 gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="w-full h-9"
-                                  onClick={() => downloadSingle(item.id)}
-                                >
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download
-                                </Button>
-                                <Button size="sm" variant="default" className="w-full h-9">
-                                  <Truck className="h-3 w-3 mr-1" />
-                                  Forward
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Empty State */}
-                {mockMailItems.length === 0 && (
+                ) : mailItems.length === 0 ? (
+                  /* Empty State */
                   <div className="px-6 py-12 text-center">
                     <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="font-medium mb-2">No mail yet</h3>
@@ -654,6 +371,192 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       Your mail will appear here when it arrives at your virtual address
                     </p>
                   </div>
+                ) : (
+                  <>
+                    {/* Mail Items List - Desktop */}
+                    <div className="hidden sm:block">
+                      <div className="divide-y">
+                        {mailItems.map((item: MailItem) => {
+                          const isSelected = selectedMail.includes(String(item.id));
+                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
+                                }`}
+                            >
+                              <div className="flex items-start gap-4">
+                                {/* Checkbox */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectMail(String(item.id));
+                                  }}
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                                  )}
+                                </button>
+
+                                {/* Mail Info - Clickable */}
+                                <div
+                                  className="flex-1 min-w-0 space-y-2 cursor-pointer group"
+                                  onClick={() => onOpen(item)}
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium truncate group-hover:text-primary transition-colors">
+                                          Inbox Item
+                                        </h4>
+                                        {!item.is_read && (
+                                          <Badge variant="default" className="text-xs">New</Badge>
+                                        )}
+                                        {isGovernment && (
+                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                            Free Forwarding
+                                          </Badge>
+                                        )}
+                                        <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
+                                          <FileCheck className="h-3 w-3" />
+                                          <span className="font-medium">Open</span>
+                                        </div>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                                        From: {item.sender_name || 'Unknown Sender'}
+                                      </p>
+                                    </div>
+                                    <div className="flex-shrink-0 text-right">
+                                      <p className="text-sm text-muted-foreground">
+                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric'
+                                        }) : 'Unknown Date'}
+                                      </p>
+                                      {item.tag && (
+                                        <Badge variant="secondary" className="mt-1 text-xs">
+                                          {item.tag}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
+                                      <FileCheck className="h-3 w-3 mr-1" />
+                                      Open
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => onDownload(item)}>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Mail Items List - Mobile */}
+                    <div className="sm:hidden divide-y">
+                      {mailItems.map((item: MailItem) => {
+                        const isSelected = selectedMail.includes(String(item.id));
+                        const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
+                          >
+                            <div className="space-y-3">
+                              {/* Header with checkbox */}
+                              <div className="flex items-start gap-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectMail(String(item.id));
+                                  }}
+                                  className="mt-1 flex-shrink-0"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                  ) : (
+                                    <Square className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+
+                                <div
+                                  className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+                                  onClick={() => onOpen(item)}
+                                >
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium break-words mb-1">
+                                        Inbox Item
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground break-words">
+                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                          day: 'numeric',
+                                          month: 'short',
+                                          year: 'numeric'
+                                        }) : 'Unknown Date'}
+                                      </p>
+                                    </div>
+                                    {!item.is_read && (
+                                      <Badge variant="default" className="text-xs flex-shrink-0">
+                                        New
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {/* Badges */}
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    {item.tag && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {item.tag}
+                                      </Badge>
+                                    )}
+                                    {isGovernment && (
+                                      <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                                        Free Forwarding
+                                      </Badge>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      }) : 'Unknown Date'}
+                                    </span>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      Open
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onDownload(item)}>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -681,26 +584,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      size="default"
-                      variant="outline"
-                      className="w-full h-10"
-                      onClick={downloadSelected}
-                    >
+                    <Button size="default" variant="outline" className="w-full h-10">
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
-                    <Button size="default" variant="default" className="w-full h-10">
+                    <Button size="default" variant="default" className="w-full h-10" onClick={handleRequestForwarding}>
                       <Truck className="h-4 w-4 mr-2" />
-                      Request Forwarding ({selectedMail.length})
+                      Request Forwarding
                     </Button>
                   </div>
-
-                  {selectedHasGovernment && (
-                    <p className="text-xs text-muted-foreground mt-3">
-                      ✓ Free forwarding available for HMRC/Companies House items
-                    </p>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -752,6 +644,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         </div>
       </main>
+
     </div>
   );
 }
