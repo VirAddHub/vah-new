@@ -718,12 +718,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           <FileCheck className="h-3 w-3" />
                                           <span className="font-medium">Open</span>
                                         </div>
-                                      </div>
-                                      {!shouldHideSender(item.sender_name) && (
-                                        <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                                          {item.sender_name}
-                                        </p>
-                                      )}
                                     </div>
                                     <div className="flex-shrink-0 text-right">
                                       <p className="text-sm text-muted-foreground">
@@ -733,11 +727,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
                                       </p>
-                                      {item.tag && (
-                                        <Badge variant="secondary" className="mt-1 text-xs">
-                                          {item.tag}
-                                        </Badge>
-                                      )}
                                     </div>
                                   </div>
 
@@ -828,11 +817,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                           year: 'numeric'
                                         }) : 'Unknown Date'}
                                       </p>
-                                      {item.tag && (
-                                        <Badge variant="secondary" className="mt-1 text-xs">
-                                          {item.tag}
-                                        </Badge>
-                                      )}
                                     </div>
                                   </div>
 
