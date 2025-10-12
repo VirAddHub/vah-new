@@ -190,6 +190,8 @@ export function ForwardingSection() {
             if (action === 'start_processing') newStatus = MAIL_STATUS.Processing;
             else if (action === 'mark_dispatched') newStatus = MAIL_STATUS.Dispatched;
             else if (action === 'mark_delivered') newStatus = MAIL_STATUS.Delivered;
+            // FIX: Handle mark_reviewed action for backward compatibility
+            else if (action === 'mark_reviewed') newStatus = MAIL_STATUS.Requested;
 
             if (newStatus) {
                 setRequests(prevRequests =>

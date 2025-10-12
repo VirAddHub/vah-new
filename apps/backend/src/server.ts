@@ -61,7 +61,7 @@ import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminActivityRouter from "./server/routes/admin-activity";
 import adminServiceStatusRouter from "./server/routes/admin-service-status";
 import companiesHouseRouter from "./server/routes/companies-house";
-import debugRouter from "./server/routes/debug";
+import debugForwardingStatusRouter from "./server/routes/debug-forwarding-status";
 import idealPostcodesRouter from "./server/routes/ideal-postcodes";
 
 // Import maintenance service
@@ -441,7 +441,8 @@ async function start() {
     app.use('/api', idealPostcodesRouter);
     logger.info('[mount] /api (ideal-postcodes) mounted');
 
-    app.use('/api/debug', debugRouter);
+    app.use('/api/debug', debugRouterLegacy);
+    app.use('/api/debug', debugForwardingStatusRouter);
     logger.info('[mount] /api/debug mounted');
     app.use('/api/kyc', kycRouter);
     logger.info('[mount] /api/kyc mounted');

@@ -117,7 +117,10 @@ export default function StableForwardingTable() {
       : requests;
 
     // Map backend statuses to frontend sections using shared constants
-    const requested = filteredRequests.filter(r => r.status === MAIL_STATUS.Requested);
+    // FIX: Handle both "Requested" and "Reviewed" statuses for backward compatibility
+    const requested = filteredRequests.filter(r =>
+      r.status === MAIL_STATUS.Requested || r.status === 'Reviewed'
+    );
     const inProgress = filteredRequests.filter(r => r.status === MAIL_STATUS.Processing);
     const done = filteredRequests.filter(r => {
       if (r.status === MAIL_STATUS.Dispatched || r.status === MAIL_STATUS.Delivered) {
@@ -204,7 +207,7 @@ export default function StableForwardingTable() {
   const getActionFromStatus = (status: string) => {
     switch (status) {
       case 'In Progress': return 'start_processing';
-      case 'Done': return 'mark_dispatched';
+      case 'Done': return 'mark_delivered'; // FIX: Should be mark_delivered, not mark_dispatched
       default: return 'start_processing';
     }
   };
@@ -226,8 +229,16 @@ export default function StableForwardingTable() {
   // Render a request card
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
     // Determine what actions are available based on current status
-    const canMoveToInProgress = section === 'requested' && (request.status === 'Requested' || request.status === 'Reviewed');
-    const canMoveToDone = section === 'inProgress' && request.status === 'Processing';
+    // FIX: Handle both "Requested" and "Reviewed" statuses for backward compatibility
+    const canMoveToInProgress = section === 'requested' && (
+      request.status === 'Requested' ||
+      request.status === 'Reviewed' ||
+      request.status === MAIL_STATUS.Requested
+    );
+    const canMoveToDone = section === 'inProgress' && (
+      request.status === 'Processing' ||
+      request.status === MAIL_STATUS.Processing
+    );
 
     return (
       <Card key={request.id} className="mb-3">
