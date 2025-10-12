@@ -78,34 +78,38 @@ import dynamic from 'next/dynamic';
 
 // Dynamic imports for heavy admin components
 const UsersSection = dynamic(() => import('./admin/UsersSection'), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const PlansSection = dynamic(() => import('./admin/PlansSection'), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const MailSection = dynamic(() => import('./admin/MailSection').then(mod => ({ default: mod.MailSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const StableForwardingTable = dynamic(() => import('./admin/StableForwardingTable'), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const BillingSection = dynamic(() => import('./admin/BillingSection').then(mod => ({ default: mod.BillingSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const AnalyticsSection = dynamic(() => import('./admin/AnalyticsSection').then(mod => ({ default: mod.AnalyticsSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const SettingsSection = dynamic(() => import('./admin/SettingsSection').then(mod => ({ default: mod.SettingsSection })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
 const BlogSection = dynamic(() => import('./admin/BlogSection').then(mod => ({ default: mod.BlogSection })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const WebVitalsSection = dynamic(() => import('./admin/WebVitalsSection').then(mod => ({ default: mod.WebVitalsSection })), {
   loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
@@ -115,7 +119,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "settings" | "blog";
+type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "settings" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -342,6 +346,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "billing", label: "Billing", icon: <CreditCard className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
+        { id: "web-vitals", label: "Web Vitals", icon: <TrendingUp className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
@@ -403,6 +408,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <PlansSection />;
             case "analytics":
                 return <AnalyticsSection />;
+            case "web-vitals":
+                return <WebVitalsSection />;
             case "settings":
                 return <SettingsSection />;
             case "blog":
