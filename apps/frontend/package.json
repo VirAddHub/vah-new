@@ -25,7 +25,6 @@
         "docs:refresh": "mkdir -p public/api-docs && cp ../backend/docs/public/api.html public/api-docs/index.html"
     },
     "dependencies": {
-        "@vah/shared": "file:../../packages/shared",
         "@hookform/resolvers": "^3.3.0",
         "@ideal-postcodes/address-finder": "^5.2.6",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -45,6 +44,7 @@
         "@types/node": "^20.0.0",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
+        "@vah/shared": "file:../../packages/shared",
         "autoprefixer": "^10.4.0",
         "axios": "^1.6.0",
         "bcrypt": "^5.1.1",
@@ -67,6 +67,7 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-hook-form": "^7.47.0",
+        "recharts": "^3.2.1",
         "redis": "^4.6.0",
         "sharp": "^0.32.0",
         "stripe": "^14.0.0",

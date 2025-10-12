@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import ForwardingHealthCard from '../ops/ForwardingHealthCard';
 import {
     CheckCircle,
     XCircle,
@@ -295,6 +296,10 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
 
     return (
         <div className={className}>
+            {/* Forwarding Health Card */}
+            <ForwardingHealthCard />
+
+            {/* External Services Monitoring */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
