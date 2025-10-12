@@ -72,7 +72,6 @@ import {
     Users2,
     CreditCard,
     Building2,
-    Activity,
 } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import dynamic from 'next/dynamic';

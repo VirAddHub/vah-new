@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 import { NextRequest } from 'next/server';
-import { proxy } from '../../_lib/proxy';
+import { proxy } from '../../../_lib/proxy';
 
 export async function GET(req: NextRequest) {
   return proxy(req, '/api/admin/service-status/sumsub');
