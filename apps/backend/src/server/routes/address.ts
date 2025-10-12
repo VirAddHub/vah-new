@@ -99,7 +99,7 @@ router.get('/lookup', async (req, res) => {
     const addresses: string[] = [];
     if (data.result && Array.isArray(data.result)) {
       addresses.push(...data.result.map((addr: any) => {
-        const parts = [];
+        const parts: string[] = [];
         if (addr.line_1) parts.push(addr.line_1);
         if (addr.line_2) parts.push(addr.line_2);
         if (addr.line_3) parts.push(addr.line_3);
