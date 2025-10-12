@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import useSWR from 'swr';
+import { getToken } from '@/lib/token-manager';
 import {
   Building2,
   FileCheck,
@@ -291,36 +292,36 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (isGDPRExpired(item) || item.status !== 'received') {
       return false;
     }
-    
+
     // TEMPORARILY DISABLED: Allow forwarding even with incomplete address
     // TODO: Fix user's forwarding address in database
     return true;
-    
+
     // Check if user has a complete forwarding address
     if (!userProfile?.forwarding_address) {
       return false;
     }
-    
+
     // Parse the forwarding address using the same logic as the backend
     const addressLines = userProfile.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
-    
+
     // Need at least 4 lines: name, address1, city/postal, country
     if (addressLines.length < 4) {
       return false;
     }
-    
+
     const name = addressLines[0] || '';
     const address1 = addressLines[1] || '';
     const cityPostal = addressLines[addressLines.length - 2] || '';
     const country = addressLines[addressLines.length - 1] || '';
-    
+
     const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
-    
+
     // Check if all required fields are present (same as backend validation)
     if (!name || !address1 || !city || !postal) {
       return false;
     }
-    
+
     return true;
   }, [userProfile?.forwarding_address]);
 
@@ -335,73 +336,53 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Forwarding confirmation handler
   const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
-    console.log('[UI] handleForwardingConfirm called', {
-      paymentMethod,
-      hasSelectedMail: !!selectedMailForForwarding,
-      selectedMailId: selectedMailForForwarding?.id
-    });
-
-    if (!selectedMailForForwarding) {
-      console.log('[UI] No selected mail for forwarding, returning early');
-      return;
-    }
-
-    console.log('[UI] forward click', {
-      mailItemId: selectedMailForForwarding.id,
-      paymentMethod
-    });
+    if (!selectedMailForForwarding) return;
 
     try {
-      const r = await fetch('/api/bff/forwarding/request', {
+      const token = getToken();
+      const response = await fetch('/api/forwarding/requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mail_item_ids: [selectedMailForForwarding.id] }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          mail_item_id: selectedMailForForwarding.id,
+          method: 'standard',
+          reason: `Forwarding request via ${paymentMethod} payment method`
+        })
       });
 
-      console.log('[UI] res.status', r.status);
-      const t = await r.text();
-      console.log('[UI] res.text', t);
+      if (response.ok) {
+        toast({
+          title: "Forwarding Request Created",
+          description: "Your mail forwarding request has been submitted successfully.",
+          durationMs: 3000,
+        });
 
-      const data = (() => {
-        try {
-          return JSON.parse(t);
-        } catch {
-          return {};
-        }
-      })();
+        // Refresh mail items to update status
+        refreshMail();
 
-      if (!r.ok || data.ok === false) {
-        const reason = data?.errors?.[0]?.reason || data?.reason || data?.error;
-        const msg =
-          reason === 'too_old' ? 'That item is beyond the forwarding window.' :
-            reason === 'deleted' ? 'That item was deleted.' :
-              reason === 'not_owner' ? 'You do not own that item.' :
-                reason === 'blocked_kyc' ? 'Please complete KYC before forwarding.' :
-                  reason === 'missing_forwarding_address' ? 'Add a forwarding address first.' :
-                    reason === 'invalid_forwarding_address' ? 'Your forwarding address is incomplete.' :
-                      data.message || 'Error creating forwarding request.';
-        throw new Error(msg);
+        // Close modal
+        setShowForwardingConfirmation(false);
+        setSelectedMailForForwarding(null);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || 'Failed to create forwarding request';
+        
+        toast({
+          title: "Forwarding Request Failed",
+          description: errorMessage,
+          variant: "destructive",
+          durationMs: 5000,
+        });
       }
-
-      // Success
-      toast({
-        title: "Forwarding Request Created",
-        description: "Your mail forwarding request has been submitted successfully.",
-        durationMs: 3000,
-      });
-
-      // Refresh mail items to update status
-      refreshMail();
-
-      // Close modal
-      setShowForwardingConfirmation(false);
-      setSelectedMailForForwarding(null);
-
-    } catch (e: any) {
-      console.error('[UI] fetch error', e);
+    } catch (error: any) {
+      console.error('Forwarding error:', error);
       toast({
         title: "Forwarding Request Failed",
-        description: e.message || "Error creating forwarding request. Please try again.",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
         durationMs: 5000,
       });
