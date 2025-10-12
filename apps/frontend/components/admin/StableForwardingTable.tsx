@@ -149,9 +149,9 @@ export default function StableForwardingTable() {
     const originalRows = [...rows];
 
     // Convert UI status to canonical status for API call
-    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing : 
-                           newStatus === 'Done' ? MAIL_STATUS.Delivered : 
-                           newStatus; // Already canonical if passed as MAIL_STATUS constant
+    const canonicalStatus = newStatus === 'In Progress' ? MAIL_STATUS.Processing :
+      newStatus === 'Done' ? MAIL_STATUS.Delivered :
+        newStatus; // Already canonical if passed as MAIL_STATUS constant
 
     // Optimistically update the local state with canonical status
     setRows(prevRows =>
@@ -164,26 +164,29 @@ export default function StableForwardingTable() {
 
     try {
       console.log(`[StableForwardingTable] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}")`);
-      console.log(`[StableForwardingTable] Current request status from DB:`, rows.find(r => r.id === requestId)?.status);
-      console.log(`[StableForwardingTable] Request details:`, rows.find(r => r.id === requestId));
+      console.log(`[StableForwardingTable] Current request status from DB:`, originalRows.find(r => r.id === requestId)?.status);
+      console.log(`[StableForwardingTable] Request details:`, originalRows.find(r => r.id === requestId));
 
       const response = await updateForwardingByAction(requestId.toString(), canonicalStatus);
 
       console.log(`[StableForwardingTable] API response:`, response);
 
       if (response.ok) {
-        // Success - keep the optimistic update, no need to reload
+        // Success - keep the optimistic update, but also refresh data to ensure consistency
         console.log('Status updated successfully');
         toast({
           title: "Status Updated",
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
+        
+        // Refresh data to ensure we have the latest state from the server
+        await loadForwardingRequests();
       } else {
         // Rollback on failure
         setRows(originalRows);
         console.error('Failed to update status:', response.error);
-        
+
         // Try to surface the server's strict-guard payload if present
         let errorMsg = "Failed to update status. Please try again.";
         if (response.error === "illegal_transition") {
@@ -191,7 +194,7 @@ export default function StableForwardingTable() {
         } else if (response.message) {
           errorMsg = response.message;
         }
-        
+
         toast({
           title: "Status Update Failed",
           description: errorMsg,
@@ -203,7 +206,7 @@ export default function StableForwardingTable() {
       // Rollback on error
       setRows(originalRows);
       console.error('Error updating status:', error);
-      
+
       // Try to surface the server's strict-guard payload if present
       let errorMsg = "Error updating status. Please try again.";
       const payload = error?.payload;
@@ -214,7 +217,7 @@ export default function StableForwardingTable() {
       } else if (error?.message) {
         errorMsg = error.message;
       }
-      
+
       toast({
         title: "Status Update Error",
         description: errorMsg,
