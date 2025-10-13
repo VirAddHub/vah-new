@@ -227,6 +227,11 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       }
     } catch (error) {
       console.error('Failed to load forwarding requests:', error);
+      // Don't show error for rate limiting - just log it
+      if (error instanceof Error && error.message.includes('429')) {
+        console.log('Rate limited - will retry on next poll');
+        return;
+      }
       setError('Failed to load forwarding requests');
     } finally {
       setLoading(false);
@@ -237,10 +242,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   useEffect(() => {
     load();
 
-    // Set up polling for real-time updates
+    // Set up polling for real-time updates - REDUCED FREQUENCY
     const pollInterval = setInterval(() => {
       load();
-    }, 3000); // Poll every 3 seconds
+    }, 10000); // Poll every 10 seconds to avoid rate limits
 
     return () => {
       clearInterval(pollInterval);
@@ -563,6 +568,14 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={load}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
