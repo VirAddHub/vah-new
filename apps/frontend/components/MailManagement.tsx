@@ -245,6 +245,50 @@ export function MailManagement({
         }
     }, [onRefresh, toast]);
 
+    // Forward a mail item
+    const handleForwardItem = useCallback(async (item: MailItem) => {
+        setLoading(true);
+        try {
+            const token = getToken();
+            const headers: Record<string, string> = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const response = await fetch(`${API_BASE}/api/forwarding/requests`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ 
+                    mail_item_ids: [item.id],
+                    notes: `Forward request for mail item ${item.id}`
+                })
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Forward Request Created",
+                    description: `Mail item ${item.id} has been requested for forwarding`,
+                    durationMs: 3000,
+                });
+                onRefresh();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create forward request');
+            }
+        } catch (error) {
+            console.error('Error creating forward request:', error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to create forward request. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+        } finally {
+            setLoading(false);
+        }
+    }, [onRefresh, toast]);
+
     const renderMailItem = (item: MailItem) => (
         <Card key={item.id} className="mb-3 hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -371,8 +415,7 @@ export function MailManagement({
                             variant="outline"
                             size="sm"
                             onClick={() => handleButtonClick(`forward-${item.id}`, () => {
-                                // TODO: Implement forward functionality
-                                console.log('Forward mail item:', item.id);
+                                handleForwardItem(item);
                             })}
                             className={clickedButtons.has(`forward-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
                         >
