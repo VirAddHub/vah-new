@@ -414,16 +414,15 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
+    const canonicalStatus = toCanonical(status);
     const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string, className?: string }> = {
-      'Requested': { variant: 'secondary', label: 'Requested' },
-      'In Progress': { variant: 'default', label: 'In Progress' },
-      'Done': { variant: 'outline', label: 'Done' },
-      'Processing': { variant: 'default', label: 'Processing' },
-      'Dispatched': { variant: 'default', label: 'Dispatched', className: 'bg-green-100 text-green-800 border-green-200' },
-      'Delivered': { variant: 'default', label: 'Delivered', className: 'bg-green-100 text-green-800 border-green-200' },
+      [MAIL_STATUS.Requested]: { variant: 'secondary', label: 'Requested' },
+      [MAIL_STATUS.Processing]: { variant: 'default', label: 'Processing' },
+      [MAIL_STATUS.Dispatched]: { variant: 'default', label: 'Dispatched', className: 'bg-green-100 text-green-800 border-green-200' },
+      [MAIL_STATUS.Delivered]: { variant: 'default', label: 'Delivered', className: 'bg-green-100 text-green-800 border-green-200' },
     };
 
-    const config = statusMap[status] || { variant: 'secondary' as const, label: status };
+    const config = statusMap[canonicalStatus] || { variant: 'secondary' as const, label: status };
     return (
       <Badge
         variant={config.variant}
@@ -533,25 +532,25 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                 {allowedStatuses.includes(MAIL_STATUS.Dispatched) && (
                   <Button
                     size="sm"
-                    variant={request.status === MAIL_STATUS.Dispatched ? "default" : "outline"}
+                    variant={toCanonical(request.status) === MAIL_STATUS.Dispatched ? "default" : "outline"}
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Dispatched)}
                     disabled={isDisabled || lockedByOther}
-                    className={`${lockedByOther ? 'opacity-50' : ''} ${request.status === MAIL_STATUS.Dispatched ? 'bg-green-600 hover:bg-green-700 text-white' : ''
+                    className={`${lockedByOther ? 'opacity-50' : ''} ${toCanonical(request.status) === MAIL_STATUS.Dispatched ? 'bg-green-600 hover:bg-green-700 text-white' : ''
                       }`}
                   >
-                    {isBusy ? '...' : request.status === MAIL_STATUS.Dispatched ? 'Dispatched ✓' : 'Move to Dispatched'}
+                    {isBusy ? '...' : toCanonical(request.status) === MAIL_STATUS.Dispatched ? 'Dispatched ✓' : 'Move to Dispatched'}
                   </Button>
                 )}
                 {allowedStatuses.includes(MAIL_STATUS.Delivered) && (
                   <Button
                     size="sm"
-                    variant={request.status === MAIL_STATUS.Delivered ? "default" : "outline"}
+                    variant={toCanonical(request.status) === MAIL_STATUS.Delivered ? "default" : "outline"}
                     onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Delivered)}
                     disabled={isDisabled || lockedByOther}
-                    className={`${lockedByOther ? 'opacity-50' : ''} ${request.status === MAIL_STATUS.Delivered ? 'bg-green-600 hover:bg-green-700 text-white' : ''
+                    className={`${lockedByOther ? 'opacity-50' : ''} ${toCanonical(request.status) === MAIL_STATUS.Delivered ? 'bg-green-600 hover:bg-green-700 text-white' : ''
                       }`}
                   >
-                    {isBusy ? '...' : request.status === MAIL_STATUS.Delivered ? 'Delivered ✓' : 'Mark Delivered'}
+                    {isBusy ? '...' : toCanonical(request.status) === MAIL_STATUS.Delivered ? 'Delivered ✓' : 'Mark Delivered'}
                   </Button>
                 )}
               </div>
