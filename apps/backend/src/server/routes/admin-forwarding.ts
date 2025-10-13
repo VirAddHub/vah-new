@@ -30,8 +30,8 @@ export function clearAdminForwardingCache(adminId: number) {
 
 // Rate limiting by admin user ID, not IP - admin-friendly limits
 const adminForwardingLimiter = rateLimit({
-    windowMs: 10_000, // 10 seconds
-    limit: 20, // 20 requests per 10 seconds (allows for admin dashboard usage)
+    windowMs: 30_000, // 30 seconds
+    limit: 60, // 60 requests per 30 seconds (generous for admin dashboard usage)
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
@@ -39,7 +39,7 @@ const adminForwardingLimiter = rateLimit({
         return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
     },
     handler: (_req, res) => {
-        res.setHeader("Retry-After", "5");
+        res.setHeader("Retry-After", "30");
         return res.status(429).json({ ok: false, error: "rate_limited" });
     },
 });

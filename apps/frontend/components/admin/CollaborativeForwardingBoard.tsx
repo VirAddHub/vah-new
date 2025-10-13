@@ -288,6 +288,12 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
   // Update request status with conflict prevention
   const updateRequestStatus = async (requestId: number, newStatus: string) => {
+    // Guard against double clicks - if already updating this or any request, bail
+    if (updatingStatus !== null || isAnyTransitionInProgress) {
+      console.log('[CollaborativeBoard] Update already in progress, ignoring click');
+      return;
+    }
+
     // Check if locked by another admin
     if (isLockedByOther(requestId)) {
       const lockInfo = getLockInfo(requestId);
