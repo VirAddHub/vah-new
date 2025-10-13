@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { ChevronDown, Activity, TrendingUp, FileText } from "lucide-react";
+import { ChevronDown, Activity, TrendingUp, FileText, Server } from "lucide-react";
 
 interface MonitoringDropdownProps {
     activeSection: string;
@@ -19,6 +19,7 @@ export function MonitoringDropdown({ activeSection, onSectionChange }: Monitorin
     const [open, setOpen] = useState(false);
 
     const monitoringItems = [
+        { id: "system-health", label: "System Health", icon: <Server className="h-4 w-4" /> },
         { id: "web-vitals", label: "Web Vitals", icon: <TrendingUp className="h-4 w-4" /> },
         { id: "service-monitoring", label: "Service Monitoring", icon: <Activity className="h-4 w-4" /> },
         { id: "bundle-analysis", label: "Bundle Analysis", icon: <FileText className="h-4 w-4" /> },

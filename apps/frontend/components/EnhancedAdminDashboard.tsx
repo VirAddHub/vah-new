@@ -467,9 +467,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 <span className="text-sm">{item.label}</span>
                             </Button>
                         ))}
-                        <MonitoringDropdown 
-                            activeSection={activeSection} 
-                            onSectionChange={(section) => setActiveSection(section as AdminSection)} 
+                        <MonitoringDropdown
+                            activeSection={activeSection}
+                            onSectionChange={(section) => setActiveSection(section as AdminSection)}
                         />
                     </nav>
 
@@ -525,12 +525,12 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 </Button>
                             ))}
                             <div className="col-span-2">
-                                <MonitoringDropdown 
-                                    activeSection={activeSection} 
+                                <MonitoringDropdown
+                                    activeSection={activeSection}
                                     onSectionChange={(section) => {
                                         setActiveSection(section as AdminSection);
                                         setMobileMenuOpen(false);
-                                    }} 
+                                    }}
                                 />
                             </div>
                         </div>

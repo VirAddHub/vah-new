@@ -111,8 +111,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Load deleted users when showDeleted toggle changes
   useEffect(() => {
     if (showDeleted) {
+      console.log('[UsersSection] Loading deleted users...');
       loadDeletedUsers();
     } else {
+      console.log('[UsersSection] Clearing deleted users...');
       setDeletedUsers([]);
     }
   }, [showDeleted]);
@@ -187,10 +189,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const loadDeletedUsers = async () => {
     setDeletedUsersLoading(true);
     try {
+      console.log('[UsersSection] Fetching deleted users from API...');
       const params = new URLSearchParams();
       const res = await adminApi.deletedUsers(params);
+      console.log('[UsersSection] Deleted users API response:', res);
       if (res.ok && res.data) {
         setDeletedUsers(res.data);
+        console.log('[UsersSection] Set deleted users:', res.data.length, 'users');
+      } else {
+        console.error('[UsersSection] API returned error:', res);
       }
     } catch (error) {
       console.error('Failed to load deleted users:', error);
@@ -360,15 +367,22 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Users</h2>
-          <p className="text-sm text-muted-foreground">Total: {users.length}</p>
+          <p className="text-sm text-muted-foreground">
+            {showDeleted ? `Showing ${users.length + deletedUsers.length} users (${users.length} active + ${deletedUsers.length} deleted)` : `Total: ${users.length}`}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant={showDeleted ? "default" : "outline"}
-            onClick={() => setShowDeleted(!showDeleted)}
+            onClick={() => {
+              console.log('[UsersSection] Toggle showDeleted from', showDeleted, 'to', !showDeleted);
+              setShowDeleted(!showDeleted);
+            }}
             size="sm"
+            className="gap-2"
           >
             {showDeleted ? "Hide Deleted" : "Show Deleted"}
+            {deletedUsersLoading && <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>}
           </Button>
           <Input
             placeholder="Search ID, name or email…"
@@ -566,8 +580,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {restoreModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-semibold text-lg mb-2">Restore user</h3>
-            <p className="text-sm text-muted-foreground mb-4">Provide a new unique email.</p>
+            <h3 className="font-semibold text-lg mb-2">Restore Deleted User</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will restore the user account and allow them to log in again. 
+              Provide a new unique email address for the restored account.
+            </p>
             <div className="space-y-3">
               <input
                 className="w-full border rounded px-3 py-2"
