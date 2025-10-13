@@ -194,8 +194,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       const res = await adminApi.deletedUsers(params);
       console.log('[UsersSection] Deleted users API response:', res);
       if (res.ok && res.data) {
-        setDeletedUsers(res.data);
-        console.log('[UsersSection] Set deleted users:', res.data.length, 'users');
+        // Backend returns { items: [...], total: ..., pages: ... }
+        const users = Array.isArray(res.data) ? res.data : res.data.items || [];
+        setDeletedUsers(users);
+        console.log('[UsersSection] Set deleted users:', users.length, 'users');
       } else {
         console.error('[UsersSection] API returned error:', res);
       }
@@ -582,7 +584,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-semibold text-lg mb-2">Restore Deleted User</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              This will restore the user account and allow them to log in again. 
+              This will restore the user account and allow them to log in again.
               Provide a new unique email address for the restored account.
             </p>
             <div className="space-y-3">
