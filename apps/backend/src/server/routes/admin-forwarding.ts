@@ -249,7 +249,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
 });
 
 // POST /api/admin/forwarding/requests/:id/status - Simple status update with normalization
-router.post('/admin/forwarding/requests/:id/status', adminForwardingLimiter, async (req: Request, res: Response) => {
+router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         const status = parseForwardingStatus(req.body.status); // accepts "In Progress", etc.
@@ -264,20 +264,6 @@ router.post('/admin/forwarding/requests/:id/status', adminForwardingLimiter, asy
     }
 });
 
-// POST /api/admin/forwarding/requests/:id/unlock - Clear lock
-router.post('/admin/forwarding/requests/:id/unlock', adminForwardingLimiter, async (req: Request, res: Response) => {
-    try {
-        const id = Number(req.params.id);
-        const pool = getPool();
-        
-        // Clear the lock
-        await pool.query('DELETE FROM forwarding_lock WHERE request_id = $1', [id]);
-        
-        return res.json({ ok: true, data: { id, unlocked: true } });
-    } catch (e: any) {
-        console.error('[admin-forwarding] Unlock error:', e);
-        return res.status(500).json({ ok: false, error: e.message || 'unlock_failed' });
-    }
-});
+// Unlock route is handled by admin-forwarding-locks.ts router
 
 export default router;
