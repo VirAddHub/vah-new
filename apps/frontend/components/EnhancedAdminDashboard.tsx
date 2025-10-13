@@ -19,7 +19,13 @@ import {
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { MonitoringDropdown } from "./admin/MonitoringDropdown";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { apiClient, safe } from "../lib/apiClient";
 import {
     adminService,
@@ -342,9 +348,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
-        { id: "web-vitals", label: "Web Vitals", icon: <TrendingUp className="h-4 w-4" /> },
-        { id: "service-monitoring", label: "Service Monitoring", icon: <Activity className="h-4 w-4" /> },
-        { id: "bundle-analysis", label: "Bundle Analysis", icon: <FileText className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
         { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
@@ -464,6 +467,10 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 <span className="text-sm">{item.label}</span>
                             </Button>
                         ))}
+                        <MonitoringDropdown 
+                            activeSection={activeSection} 
+                            onSectionChange={(section) => setActiveSection(section as AdminSection)} 
+                        />
                     </nav>
 
                     {/* Right Actions */}
@@ -517,6 +524,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                     <span className="truncate">{item.label}</span>
                                 </Button>
                             ))}
+                            <div className="col-span-2">
+                                <MonitoringDropdown 
+                                    activeSection={activeSection} 
+                                    onSectionChange={(section) => {
+                                        setActiveSection(section as AdminSection);
+                                        setMobileMenuOpen(false);
+                                    }} 
+                                />
+                            </div>
                         </div>
                     </div>
                 )}

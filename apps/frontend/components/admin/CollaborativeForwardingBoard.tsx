@@ -277,17 +277,17 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       const status = r.status?.toLowerCase();
       return status === 'requested' || status === 'request';
     });
-    
+
     const inProgress = filteredRequests.filter(r => {
       const status = r.status?.toLowerCase();
-      return status === 'in_progress' || status === 'processing' || status === 'in progress' || 
-             status === 'reviewed' || status === 'review';
+      return status === 'in_progress' || status === 'processing' || status === 'in progress' ||
+        status === 'reviewed' || status === 'review';
     });
-    
+
     const done = filteredRequests.filter(r => {
       const status = r.status?.toLowerCase();
-      return status === 'dispatched' || status === 'delivered' || status === 'shipped' || 
-             status === 'completed' || status === 'complete';
+      return status === 'dispatched' || status === 'delivered' || status === 'shipped' ||
+        status === 'completed' || status === 'complete';
     });
 
     return { requested, inProgress, done, other: [] };
@@ -448,21 +448,21 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
   const getStatusBadge = (status: string) => {
     const normalizedStatus = status?.toLowerCase();
-    
+
     if (normalizedStatus === 'requested' || normalizedStatus === 'request') {
       return <Badge variant="secondary">{FWD_LABEL.requested}</Badge>;
     }
-    if (normalizedStatus === 'in_progress' || normalizedStatus === 'processing' || 
-        normalizedStatus === 'in progress' || normalizedStatus === 'reviewed' || 
-        normalizedStatus === 'review') {
+    if (normalizedStatus === 'in_progress' || normalizedStatus === 'processing' ||
+      normalizedStatus === 'in progress' || normalizedStatus === 'reviewed' ||
+      normalizedStatus === 'review') {
       return <Badge variant="default">{FWD_LABEL.in_progress}</Badge>;
     }
-    if (normalizedStatus === 'dispatched' || normalizedStatus === 'delivered' || 
-        normalizedStatus === 'shipped' || normalizedStatus === 'completed' || 
-        normalizedStatus === 'complete') {
+    if (normalizedStatus === 'dispatched' || normalizedStatus === 'delivered' ||
+      normalizedStatus === 'shipped' || normalizedStatus === 'completed' ||
+      normalizedStatus === 'complete') {
       return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">{FWD_LABEL.dispatched}</Badge>;
     }
-    
+
     return <Badge variant="secondary">{status}</Badge>;
   };
 
@@ -561,31 +561,31 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {(request.status?.toLowerCase() === 'in_progress' || request.status?.toLowerCase() === 'processing' || 
-                  request.status?.toLowerCase() === 'in progress' || request.status?.toLowerCase() === 'reviewed' || 
+                {(request.status?.toLowerCase() === 'in_progress' || request.status?.toLowerCase() === 'processing' ||
+                  request.status?.toLowerCase() === 'in progress' || request.status?.toLowerCase() === 'reviewed' ||
                   request.status?.toLowerCase() === 'review') && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'dispatched')}
-                    disabled={isDisabled || lockedByOther}
-                    className={lockedByOther ? 'opacity-50' : ''}
-                  >
-                    {isBusy ? '...' : 'Mark Done'}
-                  </Button>
-                )}
-                {(request.status?.toLowerCase() === 'dispatched' || request.status?.toLowerCase() === 'delivered' || 
-                  request.status?.toLowerCase() === 'shipped' || request.status?.toLowerCase() === 'completed' || 
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateRequestStatus(request.id, 'dispatched')}
+                      disabled={isDisabled || lockedByOther}
+                      className={lockedByOther ? 'opacity-50' : ''}
+                    >
+                      {isBusy ? '...' : 'Mark Done'}
+                    </Button>
+                  )}
+                {(request.status?.toLowerCase() === 'dispatched' || request.status?.toLowerCase() === 'delivered' ||
+                  request.status?.toLowerCase() === 'shipped' || request.status?.toLowerCase() === 'completed' ||
                   request.status?.toLowerCase() === 'complete') && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    disabled
-                  >
-                    Done ✓
-                  </Button>
-                )}
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled
+                    >
+                      Done ✓
+                    </Button>
+                  )}
               </div>
             </div>
           </div>
