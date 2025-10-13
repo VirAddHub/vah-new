@@ -85,7 +85,7 @@ const PlansSection = dynamic(() => import('./admin/PlansSection'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
-const StableForwardingTable = dynamic(() => import('./admin/StableForwardingTable'), {
+const CollaborativeForwardingBoard = dynamic(() => import('./admin/CollaborativeForwardingBoard'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
@@ -318,7 +318,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         void loadForwardingRequests();
     }, []); // Only run once on mount
 
-    // Forwarding requests polling is now handled by StableForwardingTable component
+    // Forwarding requests polling is now handled by CollaborativeForwardingBoard component
 
     // Check system health using shared heartbeat
     useAdminHeartbeat(async () => {
@@ -396,7 +396,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     isValidating={usersValidating}
                 />;
             case "forwarding":
-                return <StableForwardingTable />;
+                return <CollaborativeForwardingBoard />;
             case "plans":
                 return <PlansSection />;
             case "analytics":

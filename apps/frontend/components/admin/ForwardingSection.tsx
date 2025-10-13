@@ -8,7 +8,7 @@ import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
-import StableForwardingTable from "./StableForwardingTable";
+import CollaborativeForwardingBoard from "./CollaborativeForwardingBoard";
 import { useToast } from "../ui/use-toast";
 import { MAIL_STATUS, type MailStatus } from '../../lib/mailStatus';
 
@@ -552,7 +552,7 @@ export function ForwardingSection() {
             )}
 
             {/* Main Content - Use the new 3-section workflow */}
-            <StableForwardingTable />
+            <CollaborativeForwardingBoard />
 
             {/* Dispatch Modal */}
             {showDispatchModal && selectedRequest && (
