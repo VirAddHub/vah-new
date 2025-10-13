@@ -272,16 +272,23 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       req.address1.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Simple 3-stage categorization - handle both old and new status formats
-    const requested = filteredRequests.filter(r => 
-      r.status === 'requested' || r.status === 'Requested'
-    );
-    const inProgress = filteredRequests.filter(r => 
-      r.status === 'in_progress' || r.status === 'Processing' || r.status === 'In Progress'
-    );
-    const done = filteredRequests.filter(r => 
-      r.status === 'dispatched' || r.status === 'Dispatched' || r.status === 'Delivered'
-    );
+    // Simple 3-stage categorization - map all possible status values to 3 stages
+    const requested = filteredRequests.filter(r => {
+      const status = r.status?.toLowerCase();
+      return status === 'requested' || status === 'request';
+    });
+    
+    const inProgress = filteredRequests.filter(r => {
+      const status = r.status?.toLowerCase();
+      return status === 'in_progress' || status === 'processing' || status === 'in progress' || 
+             status === 'reviewed' || status === 'review';
+    });
+    
+    const done = filteredRequests.filter(r => {
+      const status = r.status?.toLowerCase();
+      return status === 'dispatched' || status === 'delivered' || status === 'shipped' || 
+             status === 'completed' || status === 'complete';
+    });
 
     return { requested, inProgress, done, other: [] };
   };
@@ -440,16 +447,22 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
-    // Handle both old and new status formats
-    if (status === 'requested' || status === 'Requested') {
+    const normalizedStatus = status?.toLowerCase();
+    
+    if (normalizedStatus === 'requested' || normalizedStatus === 'request') {
       return <Badge variant="secondary">{FWD_LABEL.requested}</Badge>;
     }
-    if (status === 'in_progress' || status === 'Processing' || status === 'In Progress') {
+    if (normalizedStatus === 'in_progress' || normalizedStatus === 'processing' || 
+        normalizedStatus === 'in progress' || normalizedStatus === 'reviewed' || 
+        normalizedStatus === 'review') {
       return <Badge variant="default">{FWD_LABEL.in_progress}</Badge>;
     }
-    if (status === 'dispatched' || status === 'Dispatched' || status === 'Delivered') {
+    if (normalizedStatus === 'dispatched' || normalizedStatus === 'delivered' || 
+        normalizedStatus === 'shipped' || normalizedStatus === 'completed' || 
+        normalizedStatus === 'complete') {
       return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">{FWD_LABEL.dispatched}</Badge>;
     }
+    
     return <Badge variant="secondary">{status}</Badge>;
   };
 
@@ -536,8 +549,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             <div className="flex items-center gap-2">
               {getStatusBadge(request.status)}
               <div className="flex gap-1">
-                {/* Simple 2-button system - handle both old and new status formats */}
-                {(request.status === 'requested' || request.status === 'Requested') && (
+                {/* Simple 2-button system - handle all possible status values */}
+                {(request.status?.toLowerCase() === 'requested' || request.status?.toLowerCase() === 'request') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -548,7 +561,9 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {(request.status === 'in_progress' || request.status === 'Processing' || request.status === 'In Progress') && (
+                {(request.status?.toLowerCase() === 'in_progress' || request.status?.toLowerCase() === 'processing' || 
+                  request.status?.toLowerCase() === 'in progress' || request.status?.toLowerCase() === 'reviewed' || 
+                  request.status?.toLowerCase() === 'review') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -559,7 +574,9 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     {isBusy ? '...' : 'Mark Done'}
                   </Button>
                 )}
-                {(request.status === 'dispatched' || request.status === 'Dispatched' || request.status === 'Delivered') && (
+                {(request.status?.toLowerCase() === 'dispatched' || request.status?.toLowerCase() === 'delivered' || 
+                  request.status?.toLowerCase() === 'shipped' || request.status?.toLowerCase() === 'completed' || 
+                  request.status?.toLowerCase() === 'complete') && (
                   <Button
                     size="sm"
                     variant="default"
