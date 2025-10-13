@@ -20,7 +20,8 @@ import {
     Eye,
     Download,
     Calendar,
-    FileCheck
+    FileCheck,
+    ArrowRight
 } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { getToken } from '@/lib/token-manager';
@@ -243,19 +244,9 @@ export function MailManagement({
                             )}
                         </div>
 
-                        <p className="text-sm text-muted-foreground truncate mb-1">
-                            From: {item.sender_name || 'Unknown Sender'}
-                        </p>
-
-                        {formatScannedDate(item) && (
-                            <p className="text-xs text-muted-foreground mb-2">
-                                Scanned: {formatScannedDate(item)}
-                            </p>
-                        )}
-
                         {item.received_date && (
-                            <p className="text-xs text-muted-foreground">
-                                Received: {new Date(item.received_date).toLocaleDateString('en-GB', {
+                            <p className="text-sm text-muted-foreground">
+                                {new Date(item.received_date).toLocaleDateString('en-GB', {
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric'
@@ -350,13 +341,26 @@ export function MailManagement({
                             </Button>
                         )}
 
+                        {/* Forward Button */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                // TODO: Implement forward functionality
+                                console.log('Forward mail item:', item.id);
+                            }}
+                        >
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+
                         {/* View Button */}
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onOpen(item)}
                         >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 mr-1" />
+                            Open
                         </Button>
 
                         {/* Download Button */}
@@ -365,7 +369,8 @@ export function MailManagement({
                             size="sm"
                             onClick={() => onDownload(item)}
                         >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
                         </Button>
                     </div>
                 </div>
