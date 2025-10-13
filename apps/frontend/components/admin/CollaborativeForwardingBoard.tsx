@@ -11,8 +11,7 @@ import { Search, Filter, User, Clock, Lock, CheckCircle } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
-import { MAIL_STATUS, type MailStatus, toCanonical, getNextStatuses } from '../../lib/mailStatus';
-import { isRequested, isInProgress, isDone, uiStageFor } from '../../lib/forwardingStages';
+import { uiStageFor } from '../../lib/forwardingStages';
 import { updateForwardingByAction } from '../../lib/forwardingActions';
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
@@ -78,16 +77,11 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   }, []);
 
   // Helper to get allowed next statuses
-  const allowedNext = (status: string): MailStatus[] => {
-    try {
-      const s = toCanonical(status);
-      const allowed = getNextStatuses(s);
-      console.log(`[DEBUG] Status: ${status} -> Canonical: ${s} -> Allowed:`, allowed);
-      return allowed;
-    } catch (error) {
-      console.error(`[DEBUG] Error getting allowed statuses for ${status}:`, error);
-      return [];
-    }
+  // Simple status transitions for 3-stage Kanban
+  const getNextStatus = (status: string): string | null => {
+    if (status === 'Requested') return 'In Progress';
+    if (status === 'In Progress' || status === 'Processing') return 'Done';
+    return null; // Done is final
   };
 
   // Check if request is locked by another admin
@@ -265,7 +259,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     };
   }, [locks, currentAdmin]);
 
-  // Categorize requests for display
+  // Categorize requests for display - SIMPLIFIED 3-STAGE KANBAN
   const categorizeRequests = (requests: ForwardingRequest[]) => {
     const filteredRequests = requests.filter(req =>
       req.to_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,14 +267,12 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       req.address1.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const requested = filteredRequests.filter(r => isRequested(r.status));
-    const inProgress = filteredRequests.filter(r => isInProgress(r.status));
-    const done = filteredRequests.filter(r => isDone(r.status));
-    const other = filteredRequests.filter(r =>
-      !isRequested(r.status) && !isInProgress(r.status) && !isDone(r.status)
-    );
+    // Simple 3-stage categorization
+    const requested = filteredRequests.filter(r => r.status === 'Requested');
+    const inProgress = filteredRequests.filter(r => r.status === 'In Progress' || r.status === 'Processing');
+    const done = filteredRequests.filter(r => r.status === 'Done' || r.status === 'Dispatched' || r.status === 'Delivered');
 
-    return { requested, inProgress, done, other };
+    return { requested, inProgress, done, other: [] };
   };
 
   // Update request status with conflict prevention
@@ -414,24 +406,17 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
-    const canonicalStatus = toCanonical(status);
-    const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string, className?: string }> = {
-      [MAIL_STATUS.Requested]: { variant: 'secondary', label: 'Requested' },
-      [MAIL_STATUS.Processing]: { variant: 'default', label: 'Processing' },
-      [MAIL_STATUS.Dispatched]: { variant: 'default', label: 'Dispatched', className: 'bg-green-100 text-green-800 border-green-200' },
-      [MAIL_STATUS.Delivered]: { variant: 'default', label: 'Delivered', className: 'bg-green-100 text-green-800 border-green-200' },
-    };
-
-    const config = statusMap[canonicalStatus] || { variant: 'secondary' as const, label: status };
-    return (
-      <Badge
-        variant={config.variant}
-        data-testid="status-badge"
-        className={config.className}
-      >
-        {config.label}
-      </Badge>
-    );
+    // Simple status badges for 3-stage Kanban
+    if (status === 'Requested') {
+      return <Badge variant="secondary">Requested</Badge>;
+    }
+    if (status === 'In Progress' || status === 'Processing') {
+      return <Badge variant="default">In Progress</Badge>;
+    }
+    if (status === 'Done' || status === 'Dispatched' || status === 'Delivered') {
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Done</Badge>;
+    }
+    return <Badge variant="secondary">{status}</Badge>;
   };
 
   // Categorize the requests
@@ -440,7 +425,6 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Render a request card with collaboration features
   const renderRequestCard = (request: ForwardingRequest, section: string) => {
     // Get allowed next statuses based on current status
-    const allowedStatuses = allowedNext(request.status);
     const isBusy = updatingStatus === request.id;
     const isDisabled = isBusy || isAnyTransitionInProgress;
     const lockedByOther = isLockedByOther(request.id);
@@ -518,39 +502,37 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             <div className="flex items-center gap-2">
               {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
-                {allowedStatuses.includes(MAIL_STATUS.Processing) && (
+                {/* Simple 2-button system */}
+                {request.status === 'Requested' && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Processing)}
+                    onClick={() => updateRequestStatus(request.id, 'In Progress')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {allowedStatuses.includes(MAIL_STATUS.Dispatched) && (
+                {(request.status === 'In Progress' || request.status === 'Processing') && (
                   <Button
                     size="sm"
-                    variant={toCanonical(request.status) === MAIL_STATUS.Dispatched ? "default" : "outline"}
-                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Dispatched)}
+                    variant="outline"
+                    onClick={() => updateRequestStatus(request.id, 'Done')}
                     disabled={isDisabled || lockedByOther}
-                    className={`${lockedByOther ? 'opacity-50' : ''} ${toCanonical(request.status) === MAIL_STATUS.Dispatched ? 'bg-green-600 hover:bg-green-700 text-white' : ''
-                      }`}
+                    className={lockedByOther ? 'opacity-50' : ''}
                   >
-                    {isBusy ? '...' : toCanonical(request.status) === MAIL_STATUS.Dispatched ? 'Dispatched ✓' : 'Move to Dispatched'}
+                    {isBusy ? '...' : 'Mark Done'}
                   </Button>
                 )}
-                {allowedStatuses.includes(MAIL_STATUS.Delivered) && (
+                {(request.status === 'Done' || request.status === 'Dispatched' || request.status === 'Delivered') && (
                   <Button
                     size="sm"
-                    variant={toCanonical(request.status) === MAIL_STATUS.Delivered ? "default" : "outline"}
-                    onClick={() => updateRequestStatus(request.id, MAIL_STATUS.Delivered)}
-                    disabled={isDisabled || lockedByOther}
-                    className={`${lockedByOther ? 'opacity-50' : ''} ${toCanonical(request.status) === MAIL_STATUS.Delivered ? 'bg-green-600 hover:bg-green-700 text-white' : ''
-                      }`}
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled
                   >
-                    {isBusy ? '...' : toCanonical(request.status) === MAIL_STATUS.Delivered ? 'Delivered ✓' : 'Mark Delivered'}
+                    Done ✓
                   </Button>
                 )}
               </div>
