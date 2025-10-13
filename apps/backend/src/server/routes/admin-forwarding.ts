@@ -257,6 +257,42 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
         const pool = getPool();
         await pool.query('UPDATE forwarding_request SET status = $1 WHERE id = $2', [status, id]);
         
+        // Send email notification when status changes to "dispatched"
+        if (status === 'dispatched') {
+            try {
+                // Get user and forwarding request details for email
+                const result = await pool.query(`
+                    SELECT 
+                        fr.id, fr.to_name, fr.address1, fr.city, fr.postal, fr.country,
+                        u.email, u.first_name, u.last_name
+                    FROM forwarding_request fr
+                    JOIN users u ON fr.user_id = u.id
+                    WHERE fr.id = $1
+                `, [id]);
+                
+                if (result.rows.length > 0) {
+                    const request = result.rows[0];
+                    const user = {
+                        email: request.email,
+                        first_name: request.first_name,
+                        last_name: request.last_name
+                    };
+                    
+                    await sendMailForwarded({
+                        email: user.email,
+                        name: user.first_name || user.email,
+                        forwarding_address: `${request.address1}, ${request.city} ${request.postal} ${request.country}`.trim(),
+                        forwarded_date: new Date().toLocaleDateString('en-GB')
+                    });
+                    
+                    console.log(`[admin-forwarding-status] Email sent for dispatched request ${id} to ${user.email}`);
+                }
+            } catch (emailError) {
+                console.error('[admin-forwarding-status] Email failed:', emailError);
+                // Don't fail the request - email is secondary
+            }
+        }
+        
         return res.json({ ok: true, data: { id, status, label: FWD_LABEL[status] } });
     } catch (e: any) {
         console.error('[admin-forwarding] Status update error:', e);
