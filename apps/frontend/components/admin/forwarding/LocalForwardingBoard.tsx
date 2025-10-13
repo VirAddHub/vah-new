@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type ColKey = "Requested" | "In Progress" | "Dispatched" | "Delivered";
