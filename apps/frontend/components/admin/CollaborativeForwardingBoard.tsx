@@ -11,7 +11,7 @@ import { Search, Filter, User, Clock, Lock, CheckCircle } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
-import { uiStageFor } from '../../lib/forwardingStages';
+import { FWD_LABEL } from '../../lib/forwardingStatus';
 import { updateForwardingByAction } from '../../lib/forwardingActions';
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
@@ -209,7 +209,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     }
   }, []);
 
-  // Load forwarding requests with real-time updates
+  // Load forwarding requests with real-time updates - WITH DEDUPLICATION
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -238,14 +238,14 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     }
   }, [onDataUpdate, loadLocks]);
 
-  // Real-time polling for updates
+  // Real-time polling for updates - REDUCED FREQUENCY WITH DEDUPLICATION
   useEffect(() => {
     load();
 
     // Set up polling for real-time updates - REDUCED FREQUENCY
     const pollInterval = setInterval(() => {
       load();
-    }, 10000); // Poll every 10 seconds to avoid rate limits
+    }, 15000); // Poll every 15 seconds to avoid rate limits
 
     return () => {
       clearInterval(pollInterval);
@@ -272,10 +272,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       req.address1.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Simple 3-stage categorization - using backend status values
-    const requested = filteredRequests.filter(r => r.status === 'Requested');
-    const inProgress = filteredRequests.filter(r => r.status === 'Processing');
-    const done = filteredRequests.filter(r => r.status === 'Dispatched' || r.status === 'Delivered');
+    // Simple 3-stage categorization - using normalized status values
+    const requested = filteredRequests.filter(r => r.status === 'requested');
+    const inProgress = filteredRequests.filter(r => r.status === 'in_progress');
+    const done = filteredRequests.filter(r => r.status === 'dispatched');
 
     return { requested, inProgress, done, other: [] };
   };
@@ -336,7 +336,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         console.log('Status updated successfully');
         toast({
           title: "Status Updated",
-          description: `Request moved to ${uiStageFor(canonicalStatus)}`,
+          description: `Request moved to ${FWD_LABEL[canonicalStatus as keyof typeof FWD_LABEL] || canonicalStatus}`,
           durationMs: 3000,
         });
 
@@ -411,15 +411,15 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
-    // Simple status badges for 3-stage Kanban - using backend status values
-    if (status === 'Requested') {
-      return <Badge variant="secondary">Requested</Badge>;
+    // Use shared status labels for consistency
+    if (status === 'requested') {
+      return <Badge variant="secondary">{FWD_LABEL.requested}</Badge>;
     }
-    if (status === 'Processing') {
-      return <Badge variant="default">In Progress</Badge>;
+    if (status === 'in_progress') {
+      return <Badge variant="default">{FWD_LABEL.in_progress}</Badge>;
     }
-    if (status === 'Dispatched' || status === 'Delivered') {
-      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Done</Badge>;
+    if (status === 'dispatched') {
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">{FWD_LABEL.dispatched}</Badge>;
     }
     return <Badge variant="secondary">{status}</Badge>;
   };
@@ -444,7 +444,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             'hover:shadow-md'
           }`}
         data-testid="forwarding-card"
-        data-status={uiStageFor(request.status)}
+        data-status={request.status}
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -505,32 +505,32 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             </div>
 
             <div className="flex items-center gap-2">
-              {getStatusBadge(uiStageFor(request.status))}
+              {getStatusBadge(request.status)}
               <div className="flex gap-1">
-                {/* Simple 2-button system - using backend status values */}
-                {request.status === 'Requested' && (
+                {/* Simple 2-button system - using normalized status values */}
+                {request.status === 'requested' && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'Processing')}
+                    onClick={() => updateRequestStatus(request.id, 'in_progress')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {request.status === 'Processing' && (
+                {request.status === 'in_progress' && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'Dispatched')}
+                    onClick={() => updateRequestStatus(request.id, 'dispatched')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
                     {isBusy ? '...' : 'Mark Done'}
                   </Button>
                 )}
-                {(request.status === 'Dispatched' || request.status === 'Delivered') && (
+                {request.status === 'dispatched' && (
                   <Button
                     size="sm"
                     variant="default"

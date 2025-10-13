@@ -8,7 +8,7 @@ import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
-import { concurrencyService } from '../services/concurrency';
+import { parseForwardingStatus, FWD_LABEL } from '../../shared/src/forwardingStatus';
 
 const router = Router();
 
@@ -245,6 +245,38 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
             error: 'database_error',
             message: error.message
         });
+    }
+});
+
+// POST /api/admin/forwarding/requests/:id/status - Simple status update with normalization
+router.post('/admin/forwarding/requests/:id/status', adminForwardingLimiter, async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const status = parseForwardingStatus(req.body.status); // accepts "In Progress", etc.
+        
+        const pool = getPool();
+        await pool.query('UPDATE forwarding_request SET status = $1 WHERE id = $2', [status, id]);
+        
+        return res.json({ ok: true, data: { id, status, label: FWD_LABEL[status] } });
+    } catch (e: any) {
+        console.error('[admin-forwarding] Status update error:', e);
+        return res.status(400).json({ ok: false, error: e.message || 'invalid_status' });
+    }
+});
+
+// POST /api/admin/forwarding/requests/:id/unlock - Clear lock
+router.post('/admin/forwarding/requests/:id/unlock', adminForwardingLimiter, async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const pool = getPool();
+        
+        // Clear the lock
+        await pool.query('DELETE FROM forwarding_lock WHERE request_id = $1', [id]);
+        
+        return res.json({ ok: true, data: { id, unlocked: true } });
+    } catch (e: any) {
+        console.error('[admin-forwarding] Unlock error:', e);
+        return res.status(500).json({ ok: false, error: e.message || 'unlock_failed' });
     }
 });
 
