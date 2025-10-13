@@ -71,3 +71,4 @@ COMMENT ON TABLE forwarding_request IS 'Enhanced forwarding requests with full a
 COMMENT ON TABLE forwarding_charge IS 'Tracks £2 forwarding charges for non-HMRC/Companies House mail';
 COMMENT ON TABLE forwarding_outbox IS 'Outbox pattern for retryable forwarding events';
 
+

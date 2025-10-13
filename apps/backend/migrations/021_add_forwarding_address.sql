@@ -6,3 +6,4 @@ ALTER TABLE "user" ADD COLUMN IF NOT EXISTS forwarding_address TEXT;
 -- Add comment to explain the column
 COMMENT ON COLUMN "user".forwarding_address IS 'User''s forwarding address for mail forwarding requests';
 
+

@@ -15,3 +15,4 @@ COMMENT ON COLUMN "user".payment_retry_count IS 'Number of payment retry attempt
 COMMENT ON COLUMN "user".payment_grace_until IS 'Grace period end timestamp (7 days from first failure)';
 COMMENT ON COLUMN "user".account_suspended_at IS 'Timestamp when account was suspended (after grace period)';
 
+

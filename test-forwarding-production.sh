@@ -136,3 +136,4 @@ echo "2. Set up Render cron job with this command:"
 echo "   curl -sS -X POST $API_BASE/api/internal/forwarding/drain -H \"x-internal-cron-token: \$INTERNAL_CRON_TOKEN\""
 echo "3. Schedule: */5 * * * * (every 5 minutes)"
 
+

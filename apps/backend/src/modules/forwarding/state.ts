@@ -15,3 +15,4 @@ export function canTransition(from: ForwardingState, to: ForwardingState): boole
     return (LegalTransitions[from] || []).includes(to);
 }
 
+
