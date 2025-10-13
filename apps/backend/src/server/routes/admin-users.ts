@@ -65,7 +65,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
         // Filter out soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NULL';
 
-        // Search functionality - now supports ID, email, and name
+        // Search functionality - more precise matching
         if (search) {
             // Check if search is a number (ID search)
             const searchNum = parseInt(String(search));
@@ -73,9 +73,14 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 whereClause += ` AND u.id = $${paramIndex}`;
                 params.push(searchNum);
             } else {
-                // Text search for email, first_name, last_name
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
-                params.push(`%${search}%`);
+                // More precise search: exact email match OR full name match
+                const searchTerm = search.trim();
+                whereClause += ` AND (
+                    u.email ILIKE $${paramIndex} OR 
+                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR
+                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${paramIndex}
+                )`;
+                params.push(`%${searchTerm}%`);
             }
             paramIndex++;
         }
@@ -129,8 +134,12 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${search}%`);
+                countQuery += ` AND (
+                    u.email ILIKE $${countParamIndex} OR 
+                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${countParamIndex} OR
+                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${countParamIndex}
+                )`;
+                countParams.push(`%${search.trim()}%`);
             }
             countParamIndex++;
         }
@@ -254,7 +263,7 @@ router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) =
                 u.first_name,
                 u.last_name,
                 u.is_admin,
-                u.status,
+                'deleted' as status,  -- Override status to show 'deleted' for soft-deleted users
                 u.plan_status,
                 u.plan_id,
                 u.kyc_status,
@@ -273,15 +282,21 @@ router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) =
         // Only show soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NOT NULL';
 
-        // Search functionality
+        // Search functionality - more precise matching
         if (search) {
             const searchNum = parseInt(String(search));
             if (!isNaN(searchNum)) {
                 whereClause += ` AND u.id = $${paramIndex}`;
                 params.push(searchNum);
             } else {
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
-                params.push(`%${search}%`);
+                // More precise search: exact email match OR full name match
+                const searchTerm = search.trim();
+                whereClause += ` AND (
+                    u.email ILIKE $${paramIndex} OR 
+                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR
+                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${paramIndex}
+                )`;
+                params.push(`%${searchTerm}%`);
             }
             paramIndex++;
         }
@@ -302,8 +317,12 @@ router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) =
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${search}%`);
+                countQuery += ` AND (
+                    u.email ILIKE $${countParamIndex} OR 
+                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${countParamIndex} OR
+                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${countParamIndex}
+                )`;
+                countParams.push(`%${search.trim()}%`);
             }
             countParamIndex++;
         }

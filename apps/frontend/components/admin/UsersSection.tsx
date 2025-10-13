@@ -283,11 +283,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     }
   }
 
-  // Server-side filtering - combine active and deleted users based on showDeleted toggle
+  // Server-side filtering - show ONLY deleted users when showDeleted is true
   const displayUsers = useMemo(() => {
     if (showDeleted) {
-      // When showing deleted, combine both active and deleted users
-      return [...users, ...deletedUsers];
+      // When showing deleted, show ONLY deleted users
+      return deletedUsers;
     }
     // When not showing deleted, only show active users
     return users;
