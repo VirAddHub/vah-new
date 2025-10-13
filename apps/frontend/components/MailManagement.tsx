@@ -72,10 +72,10 @@ export function MailManagement({
     const handleButtonClick = useCallback((buttonId: string, action: () => void) => {
         // Add visual feedback
         setClickedButtons(prev => new Set(prev).add(buttonId));
-        
+
         // Execute the action
         action();
-        
+
         // Remove visual feedback after 2 seconds
         setTimeout(() => {
             setClickedButtons(prev => {
@@ -95,9 +95,9 @@ export function MailManagement({
             items = items.filter(item => item.archived);
         } else if (activeTab === "inbox") {
             items = items.filter(item => !item.archived);
-        } else if (activeTab.startsWith("tag:")) {
-            const tag = activeTab.replace("tag:", "");
-            items = items.filter(item => item.tag === tag && !item.archived);
+        } else if (activeTab.startsWith("subject:")) {
+            const subject = activeTab.replace("subject:", "");
+            items = items.filter(item => item.subject === subject && !item.archived);
         }
 
         // Apply search filter
@@ -114,20 +114,20 @@ export function MailManagement({
         return items;
     }, [mailItems, activeTab, searchQuery]);
 
-    // Get unique tags for tag tabs
-    const availableTags = useMemo(() => {
-        const tags = new Set<string>();
+    // Get unique subjects for tag tabs
+    const availableSubjects = useMemo(() => {
+        const subjects = new Set<string>();
         mailItems.forEach(item => {
-            if (item.tag && !item.archived) {
-                tags.add(item.tag);
+            if (item.subject && !item.archived) {
+                subjects.add(item.subject);
             }
         });
-        return Array.from(tags).sort();
+        return Array.from(subjects).sort();
     }, [mailItems]);
 
-    // Tag a mail item
-    const handleTagItem = useCallback(async (item: MailItem, tag: string) => {
-        if (!tag.trim()) return;
+    // Update mail item subject
+    const handleTagItem = useCallback(async (item: MailItem, subject: string) => {
+        if (!subject.trim()) return;
 
         setLoading(true);
         try {
@@ -138,29 +138,29 @@ export function MailManagement({
             };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/mail-items/${item.id}/tag`, {
-                method: 'POST',
+            const response = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
+                method: 'PATCH',
                 headers,
-                body: JSON.stringify({ tag: tag.trim() })
+                body: JSON.stringify({ subject: subject.trim() })
             });
 
             if (response.ok) {
                 toast({
-                    title: "Tag Added",
-                    description: `Mail item tagged as "${tag}"`,
+                    title: "Subject Updated",
+                    description: `Mail item subject updated to "${subject}"`,
                     durationMs: 3000,
                 });
                 onRefresh();
                 setShowTagDialog(false);
                 setNewTag("");
             } else {
-                throw new Error('Failed to add tag');
+                throw new Error('Failed to update subject');
             }
         } catch (error) {
-            console.error('Error adding tag:', error);
+            console.error('Error updating subject:', error);
             toast({
                 title: "Error",
-                description: "Failed to add tag. Please try again.",
+                description: "Failed to update subject. Please try again.",
                 variant: "destructive",
                 durationMs: 5000,
             });
@@ -261,7 +261,7 @@ export function MailManagement({
             const response = await fetch(`${API_BASE}/api/forwarding/requests`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     mail_item_ids: [item.id],
                     notes: `Forward request for mail item ${item.id}`
                 })
@@ -347,16 +347,16 @@ export function MailManagement({
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Add Tag</DialogTitle>
+                                    <DialogTitle>Update Subject</DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                     <div>
-                                        <Label htmlFor="tag">Tag Name</Label>
+                                        <Label htmlFor="subject">Subject</Label>
                                         <Input
-                                            id="tag"
+                                            id="subject"
                                             value={newTag}
                                             onChange={(e) => setNewTag(e.target.value)}
-                                            placeholder="Enter tag name..."
+                                            placeholder="Enter subject..."
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && selectedItem) {
                                                     handleTagItem(selectedItem, newTag);
@@ -365,13 +365,13 @@ export function MailManagement({
                                         />
                                     </div>
                                     <div className="flex gap-2">
-                                <Button
-                                    onClick={() => selectedItem && handleButtonClick(`tag-${selectedItem.id}`, () => handleTagItem(selectedItem, newTag))}
-                                    disabled={!newTag.trim() || loading}
-                                    className={clickedButtons.has(`tag-${selectedItem?.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
-                                >
-                                    Add Tag
-                                </Button>
+                                        <Button
+                                            onClick={() => selectedItem && handleButtonClick(`tag-${selectedItem.id}`, () => handleTagItem(selectedItem, newTag))}
+                                            disabled={!newTag.trim() || loading}
+                                            className={clickedButtons.has(`tag-${selectedItem?.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
+                                        >
+                                            Update Subject
+                                        </Button>
                                         <Button
                                             variant="outline"
                                             onClick={() => {
@@ -481,9 +481,9 @@ export function MailManagement({
                         <Archive className="h-4 w-4" />
                         Archived ({mailItems.filter(item => item.archived).length})
                     </TabsTrigger>
-                    <TabsTrigger value="tags" className="flex items-center gap-2">
+                    <TabsTrigger value="subjects" className="flex items-center gap-2">
                         <Tag className="h-4 w-4" />
-                        Tags ({availableTags.length})
+                        Subjects ({availableSubjects.length})
                     </TabsTrigger>
                 </TabsList>
 
@@ -521,32 +521,32 @@ export function MailManagement({
                     )}
                 </TabsContent>
 
-                {/* Tags Tab */}
-                <TabsContent value="tags" className="space-y-4">
-                    {availableTags.length === 0 ? (
+                {/* Subjects Tab */}
+                <TabsContent value="subjects" className="space-y-4">
+                    {availableSubjects.length === 0 ? (
                         <Card>
                             <CardContent className="p-8 text-center">
                                 <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                <h3 className="text-lg font-medium mb-2">No tags yet</h3>
+                                <h3 className="text-lg font-medium mb-2">No subjects yet</h3>
                                 <p className="text-muted-foreground">
-                                    Add tags to your mail items to organize them better.
+                                    Add subjects to your mail items to organize them better.
                                 </p>
                             </CardContent>
                         </Card>
                     ) : (
                         <div className="space-y-4">
-                            {availableTags.map(tag => (
-                                <div key={tag}>
+                            {availableSubjects.map(subject => (
+                                <div key={subject}>
                                     <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
                                         <Tag className="h-5 w-5" />
-                                        {tag}
+                                        {subject}
                                         <Badge variant="secondary" className="text-xs">
-                                            {mailItems.filter(item => item.tag === tag && !item.archived).length}
+                                            {mailItems.filter(item => item.subject === subject && !item.archived).length}
                                         </Badge>
                                     </h3>
                                     <div className="space-y-2">
                                         {mailItems
-                                            .filter(item => item.tag === tag && !item.archived)
+                                            .filter(item => item.subject === subject && !item.archived)
                                             .map(renderMailItem)
                                         }
                                     </div>

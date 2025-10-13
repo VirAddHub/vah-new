@@ -241,7 +241,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Download handler - uses secure blob streaming
   const onDownload = useCallback(async (item: MailItem) => {
     try {
-          await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
+      await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);
       alert('Unable to download file. Please try again.');
@@ -262,17 +262,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       });
 
       if (response.ok) {
-      const blob = await response.blob();
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+        const a = document.createElement('a');
         a.href = url;
         a.download = 'proof-of-address.pdf';
-      document.body.appendChild(a);
-      a.click();
+        document.body.appendChild(a);
+        a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-      toast({
+        toast({
           title: "Certificate Generated",
           description: "Your proof of address certificate has been downloaded.",
           durationMs: 3000,
@@ -513,8 +513,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <button
                 onClick={() => onNavigate('settings')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Settings className="h-4 w-4" />
+              >
+                <Settings className="h-4 w-4" />
                 Settings
               </button>
               <button
@@ -532,15 +532,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <p className="font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
               </div>
-                <Button
+              <Button
                 variant="outline"
-                  size="sm"
+                size="sm"
                 onClick={onLogout}
-                  className="flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </Button>
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -668,7 +668,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     formatScannedDate={formatScannedDate}
                   />
                 )}
-                  </CardContent>
+              </CardContent>
             </Card>
 
             {/* Free Forwarding Notice */}
