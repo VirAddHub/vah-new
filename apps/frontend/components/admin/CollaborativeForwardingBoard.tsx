@@ -272,10 +272,16 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       req.address1.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Simple 3-stage categorization - using normalized status values
-    const requested = filteredRequests.filter(r => r.status === 'requested');
-    const inProgress = filteredRequests.filter(r => r.status === 'in_progress');
-    const done = filteredRequests.filter(r => r.status === 'dispatched');
+    // Simple 3-stage categorization - handle both old and new status formats
+    const requested = filteredRequests.filter(r => 
+      r.status === 'requested' || r.status === 'Requested'
+    );
+    const inProgress = filteredRequests.filter(r => 
+      r.status === 'in_progress' || r.status === 'Processing' || r.status === 'In Progress'
+    );
+    const done = filteredRequests.filter(r => 
+      r.status === 'dispatched' || r.status === 'Dispatched' || r.status === 'Delivered'
+    );
 
     return { requested, inProgress, done, other: [] };
   };
@@ -411,14 +417,14 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
-    // Use shared status labels for consistency
-    if (status === 'requested') {
+    // Handle both old and new status formats
+    if (status === 'requested' || status === 'Requested') {
       return <Badge variant="secondary">{FWD_LABEL.requested}</Badge>;
     }
-    if (status === 'in_progress') {
+    if (status === 'in_progress' || status === 'Processing' || status === 'In Progress') {
       return <Badge variant="default">{FWD_LABEL.in_progress}</Badge>;
     }
-    if (status === 'dispatched') {
+    if (status === 'dispatched' || status === 'Dispatched' || status === 'Delivered') {
       return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">{FWD_LABEL.dispatched}</Badge>;
     }
     return <Badge variant="secondary">{status}</Badge>;
@@ -507,8 +513,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             <div className="flex items-center gap-2">
               {getStatusBadge(request.status)}
               <div className="flex gap-1">
-                {/* Simple 2-button system - using normalized status values */}
-                {request.status === 'requested' && (
+                {/* Simple 2-button system - handle both old and new status formats */}
+                {(request.status === 'requested' || request.status === 'Requested') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -519,7 +525,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {request.status === 'in_progress' && (
+                {(request.status === 'in_progress' || request.status === 'Processing' || request.status === 'In Progress') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -530,7 +536,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     {isBusy ? '...' : 'Mark Done'}
                   </Button>
                 )}
-                {request.status === 'dispatched' && (
+                {(request.status === 'dispatched' || request.status === 'Dispatched' || request.status === 'Delivered') && (
                   <Button
                     size="sm"
                     variant="default"
