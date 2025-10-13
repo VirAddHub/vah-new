@@ -43,6 +43,7 @@ const logAdminAction = async (action: string, data?: any) => {
     }
 };
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
+import { invalidateMailCache } from "../../lib/swrCacheUtils";
 
 interface MailItem {
     id: number;
@@ -166,7 +167,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_process_mail_item', { itemId });
             await adminApi.updateMailItem(itemId.toString(), { status: 'processed' });
-            refetchMailItems(); // Refetch current data
+            invalidateMailCache(); // Use cache invalidation instead of manual refetch
         } catch (error) {
             await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
@@ -179,7 +180,7 @@ export function MailSection({ }: MailSectionProps) {
         try {
             await logAdminAction('admin_tag_mail_item', { itemId, tag });
             await adminApi.updateMailItem(itemId.toString(), { tag });
-            refetchMailItems(); // Refetch current data
+            invalidateMailCache(); // Use cache invalidation instead of manual refetch
         } catch (error) {
             await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {

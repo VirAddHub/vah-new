@@ -12,6 +12,7 @@ import { useToast } from "../ui/use-toast";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { invalidatePlansCache } from "../../lib/swrCacheUtils";
 
 type Plan = {
   id: number;
@@ -94,7 +95,7 @@ export default function PlansSection() {
         toast({ title: "Success", description: "Plan created successfully" });
         setShowCreateModal(false);
         resetForm();
-        loadPlans();
+        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
       } else {
         toast({
           title: "Error",
@@ -120,7 +121,7 @@ export default function PlansSection() {
         toast({ title: "Success", description: "Plan updated successfully" });
         setEditingPlan(null);
         resetForm();
-        loadPlans();
+        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
       } else {
         toast({
           title: "Error",
@@ -144,7 +145,7 @@ export default function PlansSection() {
       const res = await apiClient.delete(`/api/admin/plans/${id}`);
       if (res.ok) {
         toast({ title: "Success", description: "Plan retired successfully" });
-        loadPlans();
+        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
       } else {
         toast({
           title: "Error",
