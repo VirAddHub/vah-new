@@ -6,15 +6,32 @@ import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { toDateOrNull, nowMs } from '../helpers/time';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const router = Router();
+
+// Admin users rate limiter - very generous for admin dashboard usage
+const adminUsersLimiter = rateLimit({
+    windowMs: 10_000, // 10 seconds
+    limit: 50, // 50 requests per 10 seconds (very generous for admin usage)
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        const u = (req as any).user;
+        return u?.id ? `admin-users:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    },
+    handler: (_req, res) => {
+        res.setHeader("Retry-After", "10");
+        return res.status(429).json({ ok: false, error: "rate_limited" });
+    },
+});
 
 /**
  * GET /api/admin/users
  * Get all users (admin only)
  * Query params: ?page=1&pageSize=50 (or legacy: limit=50)
  */
-router.get('/users', requireAdmin, async (req: Request, res: Response) => {
+router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
     const { page = '1', pageSize, limit = '100', search, status, plan_id, kyc_status, activity } = req.query;
 
@@ -65,7 +82,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
         // Filter out soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NULL';
 
-        // Search functionality - more precise matching
+        // Search functionality - optimized for speed
         if (search) {
             // Check if search is a number (ID search)
             const searchNum = parseInt(String(search));
@@ -73,13 +90,9 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 whereClause += ` AND u.id = $${paramIndex}`;
                 params.push(searchNum);
             } else {
-                // More precise search: exact email match OR full name match
+                // Simplified search for better performance - use individual field matching
                 const searchTerm = search.trim();
-                whereClause += ` AND (
-                    u.email ILIKE $${paramIndex} OR 
-                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR
-                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${paramIndex}
-                )`;
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
             paramIndex++;
@@ -134,11 +147,7 @@ router.get('/users', requireAdmin, async (req: Request, res: Response) => {
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (
-                    u.email ILIKE $${countParamIndex} OR 
-                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${countParamIndex} OR
-                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${countParamIndex}
-                )`;
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
                 countParams.push(`%${search.trim()}%`);
             }
             countParamIndex++;
@@ -245,7 +254,7 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
  * GET /api/admin/users/deleted
  * Get soft-deleted users (admin only)
  */
-router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) => {
+router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
     const pageNum = Math.max(1, parseInt(req.query.page as string) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -282,20 +291,16 @@ router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) =
         // Only show soft-deleted users
         let whereClause = 'WHERE u.deleted_at IS NOT NULL';
 
-        // Search functionality - more precise matching
+        // Search functionality - optimized for speed
         if (search) {
             const searchNum = parseInt(String(search));
             if (!isNaN(searchNum)) {
                 whereClause += ` AND u.id = $${paramIndex}`;
                 params.push(searchNum);
             } else {
-                // More precise search: exact email match OR full name match
+                // Simplified search for better performance
                 const searchTerm = search.trim();
-                whereClause += ` AND (
-                    u.email ILIKE $${paramIndex} OR 
-                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR
-                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${paramIndex}
-                )`;
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
             paramIndex++;
@@ -317,11 +322,7 @@ router.get('/users/deleted', requireAdmin, async (req: Request, res: Response) =
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (
-                    u.email ILIKE $${countParamIndex} OR 
-                    CONCAT(u.first_name, ' ', u.last_name) ILIKE $${countParamIndex} OR
-                    CONCAT(u.last_name, ' ', u.first_name) ILIKE $${countParamIndex}
-                )`;
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
                 countParams.push(`%${search.trim()}%`);
             }
             countParamIndex++;
