@@ -81,8 +81,11 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   const allowedNext = (status: string): MailStatus[] => {
     try {
       const s = toCanonical(status);
-      return getNextStatuses(s);
-    } catch {
+      const allowed = getNextStatuses(s);
+      console.log(`[DEBUG] Status: ${status} -> Canonical: ${s} -> Allowed:`, allowed);
+      return allowed;
+    } catch (error) {
+      console.error(`[DEBUG] Error getting allowed statuses for ${status}:`, error);
       return [];
     }
   };
