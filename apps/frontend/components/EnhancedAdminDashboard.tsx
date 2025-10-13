@@ -397,6 +397,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     pageSize={50}
                     onPageChange={setUsersPage}
                     isValidating={usersValidating}
+                    onRefreshUsers={refetchUsers}
                 />;
             case "forwarding":
                 return <CollaborativeForwardingBoard onDataUpdate={(requests) => {

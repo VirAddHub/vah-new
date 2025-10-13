@@ -36,9 +36,10 @@ interface UsersSectionProps {
     plan_id: string;
     kyc_status: string;
   }) => void;
+  onRefreshUsers?: () => void;
 }
 
-export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange }: UsersSectionProps) {
+export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers }: UsersSectionProps) {
   const { toast } = useToast();
 
   // Search state (raw input)
@@ -235,7 +236,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
 
       // Refresh data from parent and deleted users
-      await Promise.all([loadUserStats(), showDeleted ? loadDeletedUsers() : Promise.resolve()]);
+      await Promise.all([
+        loadUserStats(), 
+        showDeleted ? loadDeletedUsers() : Promise.resolve(),
+        onRefreshUsers ? onRefreshUsers() : Promise.resolve()
+      ]);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message ?? 'Delete failed', variant: 'destructive' });
     } finally {
@@ -262,7 +267,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       toast({ title: 'User restored', description: `User restored with email ${restoreForm.email}` });
 
       // Refresh data from parent and deleted users
-      await Promise.all([loadUserStats(), showDeleted ? loadDeletedUsers() : Promise.resolve()]);
+      await Promise.all([
+        loadUserStats(), 
+        showDeleted ? loadDeletedUsers() : Promise.resolve(),
+        onRefreshUsers ? onRefreshUsers() : Promise.resolve()
+      ]);
 
       // Close modal
       setRestoreModal(null);
