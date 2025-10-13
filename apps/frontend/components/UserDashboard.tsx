@@ -32,7 +32,7 @@ import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { VAHLogo } from "./VAHLogo";
 import { useToast } from "./ui/use-toast";
-import { MailManagement } from "./MailManagement";
+import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 
 interface UserDashboardProps {
   onLogout: () => void;
