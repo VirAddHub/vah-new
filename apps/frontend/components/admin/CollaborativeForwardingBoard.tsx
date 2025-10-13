@@ -12,7 +12,7 @@ import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
 import { FWD_LABEL } from '../../lib/forwardingStatus';
-import { updateForwardingByAction } from '../../lib/forwardingActions';
+// Removed updateForwardingByAction import - now using direct status API
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
 type ForwardingRequest = {
@@ -333,11 +333,28 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     try {
       console.log(`[CollaborativeBoard] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}")`);
 
-      const response = await updateForwardingByAction(requestId.toString(), canonicalStatus);
+      // Use the new status-based API instead of action-based API
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://vah-api-staging.onrender.com';
+      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/status`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+        },
+        body: JSON.stringify({ status: canonicalStatus }),
+      });
 
-      console.log(`[CollaborativeBoard] API response:`, response);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
-      if (response.ok) {
+      const result = await response.json();
+
+      console.log(`[CollaborativeBoard] API response:`, result);
+
+      if (result.ok) {
         // Success - keep the optimistic update, then refresh the page data
         console.log('Status updated successfully');
         toast({
