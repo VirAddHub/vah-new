@@ -104,43 +104,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     return locks.get(requestId) || null;
   };
 
-  // Lock a request for editing
+  // Lock a request for editing (DISABLED - no locking needed for single admin)
   const lockRequest = async (requestId: number): Promise<boolean> => {
-    if (!currentAdmin) return false;
-
-    try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
-      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/lock`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
-        },
-        body: JSON.stringify({
-          admin_id: currentAdmin.id,
-          admin_name: currentAdmin.name || currentAdmin.email || 'Admin'
-        })
-      });
-
-      if (response.ok) {
-        const lockData = await response.json();
-        setLocks(prev => new Map(prev).set(requestId, {
-          request_id: requestId,
-          admin_id: currentAdmin.id,
-          admin_name: currentAdmin.name || currentAdmin.email || 'Admin',
-          locked_at: Date.now()
-        }));
-        return true;
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Lock request failed:', response.status, errorData);
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to lock request:', error);
-      return false;
-    }
+    // Skip locking for now - return true to allow status updates
+    return true;
   };
 
   // Unlock a request
