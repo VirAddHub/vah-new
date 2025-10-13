@@ -91,7 +91,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 params.push(searchNum);
             } else {
                 // Simplified search for better performance - use individual field matching
-                const searchTerm = search.trim();
+                const searchTerm = String(search).trim();
                 whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
@@ -148,7 +148,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 countParams.push(searchNum);
             } else {
                 countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${search.trim()}%`);
+                countParams.push(`%${String(search).trim()}%`);
             }
             countParamIndex++;
         }
@@ -299,7 +299,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 params.push(searchNum);
             } else {
                 // Simplified search for better performance
-                const searchTerm = search.trim();
+                const searchTerm = String(search).trim();
                 whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
@@ -323,7 +323,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 countParams.push(searchNum);
             } else {
                 countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${search.trim()}%`);
+                countParams.push(`%${String(search).trim()}%`);
             }
             countParamIndex++;
         }
