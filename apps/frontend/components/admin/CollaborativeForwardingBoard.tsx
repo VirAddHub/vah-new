@@ -109,7 +109,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     if (!currentAdmin) return false;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/forwarding/requests/${requestId}/lock`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/lock`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -118,7 +119,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         },
         body: JSON.stringify({
           admin_id: currentAdmin.id,
-          admin_name: currentAdmin.name
+          admin_name: currentAdmin.name || currentAdmin.email || 'Admin'
         })
       });
 
@@ -127,12 +128,15 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         setLocks(prev => new Map(prev).set(requestId, {
           request_id: requestId,
           admin_id: currentAdmin.id,
-          admin_name: currentAdmin.name,
+          admin_name: currentAdmin.name || currentAdmin.email || 'Admin',
           locked_at: Date.now()
         }));
         return true;
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Lock request failed:', response.status, errorData);
+        return false;
       }
-      return false;
     } catch (error) {
       console.error('Failed to lock request:', error);
       return false;
@@ -142,7 +146,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Unlock a request
   const unlockRequest = async (requestId: number): Promise<void> => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/forwarding/requests/${requestId}/unlock`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+      await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/unlock`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -164,7 +169,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Force unlock a request (admin override)
   const forceUnlockRequest = async (requestId: number): Promise<boolean> => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/forwarding/requests/${requestId}/force-unlock`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/force-unlock`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -208,6 +214,37 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     }
   };
 
+  // Load locks from server
+  const loadLocks = useCallback(async () => {
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
+      const response = await fetch(`${API_BASE}/api/admin/forwarding/locks`, {
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && Array.isArray(data.locks)) {
+          const newLocks = new Map<number, AdminLock>();
+          data.locks.forEach((lock: any) => {
+            newLocks.set(lock.request_id, {
+              request_id: lock.request_id,
+              admin_id: lock.admin_id,
+              admin_name: lock.admin_name,
+              locked_at: lock.locked_at
+            });
+          });
+          setLocks(newLocks);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load locks:', error);
+    }
+  }, []);
+
   // Load forwarding requests with real-time updates
   const load = useCallback(async () => {
     setLoading(true);
@@ -221,19 +258,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           onDataUpdate(data.data);
         }
 
-        // Update locks from server data
-        const newLocks = new Map<number, AdminLock>();
-        data.data.forEach((req: any) => {
-          if (req.locked_by && req.locked_by_name && req.locked_at) {
-            newLocks.set(req.id, {
-              request_id: req.id,
-              admin_id: req.locked_by,
-              admin_name: req.locked_by_name,
-              locked_at: req.locked_at
-            });
-          }
-        });
-        setLocks(newLocks);
+        // Load locks separately to ensure we have the latest lock information
+        await loadLocks();
       }
     } catch (error) {
       console.error('Failed to load forwarding requests:', error);
@@ -241,7 +267,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onDataUpdate, loadLocks]);
 
   // Real-time polling for updates
   useEffect(() => {
@@ -306,9 +332,9 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     if (!locked) {
       toast({
         title: "Failed to Lock",
-        description: "Could not lock request for editing",
+        description: "Could not lock request for editing. It may be locked by another admin.",
         variant: "destructive",
-        durationMs: 3000,
+        durationMs: 5000,
       });
       return;
     }
