@@ -240,7 +240,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Download handler - uses secure blob streaming
   const onDownload = useCallback(async (item: MailItem) => {
     try {
-      await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
+          await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);
       alert('Unable to download file. Please try again.');
@@ -261,17 +261,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       });
 
       if (response.ok) {
-        const blob = await response.blob();
+      const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+      const a = document.createElement('a');
         a.href = url;
         a.download = 'proof-of-address.pdf';
-        document.body.appendChild(a);
-        a.click();
+      document.body.appendChild(a);
+      a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        toast({
+      toast({
           title: "Certificate Generated",
           description: "Your proof of address certificate has been downloaded.",
           durationMs: 3000,
@@ -512,8 +512,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <button
                 onClick={() => onNavigate('settings')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Settings className="h-4 w-4" />
+                >
+                  <Settings className="h-4 w-4" />
                 Settings
               </button>
               <button
@@ -531,15 +531,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <p className="font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
               </div>
-              <Button
+                <Button
                 variant="outline"
-                size="sm"
+                  size="sm"
                 onClick={onLogout}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
             </div>
           </div>
         </div>
@@ -668,93 +668,85 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 )}
               </CardContent>
             </Card>
-                          const isSelected = selectedMail.includes(String(item.id));
-                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                          return (
-                            <div
-                              key={item.id}
-                              className={`px-6 py-4 transition-all hover:bg-muted/50 ${isSelected ? "bg-primary/5 hover:bg-primary/10" : ""
-                                }`}
-                            >
-                              <div className="flex items-start gap-4">
-                                {/* Checkbox */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSelectMail(String(item.id));
-                                  }}
-                                  className="mt-1 flex-shrink-0"
-                                >
-                                  {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
-                                  ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                                  )}
-                                </button>
+            {/* Free Forwarding Notice */}
+            <Alert className="border-primary/30 bg-primary/5">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription>
+                <strong className="text-foreground">Free Forwarding:</strong> All mail from HMRC and Companies House is forwarded to you at no extra charge. Select these items and use "Request Forwarding" to process them.
+              </AlertDescription>
+            </Alert>
 
-                                {/* Mail Info - Clickable */}
-                                <div
-                                  className="flex-1 min-w-0 space-y-2 cursor-pointer group"
-                                  onClick={() => onOpen(item)}
-                                  onMouseEnter={() => preloadPDF(Number(item.id))}
-                                >
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-medium truncate group-hover:text-primary transition-colors">
-                                          {item.tag || 'Inbox Item'}
-                                        </h4>
-                                        {!item.is_read && (
-                                          <Badge variant="default" className="text-xs">New</Badge>
-                                        )}
-                                        {isGovernment && (
-                                          <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                            Free Forwarding
-                                          </Badge>
-                                        )}
-                                        <div className="hidden group-hover:flex items-center gap-1 text-xs text-primary ml-2">
-                                          <FileCheck className="h-3 w-3" />
-                                          <span className="font-medium">Open</span>
+            {/* Bulk Actions Notice - Mobile */}
+            {isSomeSelected && (
+              <Card className="sm:hidden border-primary/30 bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckSquare className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{selectedMail.length} items selected</span>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedMail([])}>
+                      Clear
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button size="default" variant="outline" className="w-full h-10">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Selected ({selectedMail.length})
+                    </Button>
+                    <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
+                      <Truck className="h-4 w-4 mr-2" />
+                      Request Forwarding
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Help Text */}
+            <div className="text-center py-6 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
+              </p>
                                         </div>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                                        From: {item.tag || 'Unknown Sender'}
-                                      </p>
-                                      {formatScannedDate(item) && (
+          </div>
+
+          {/* Right Column - Virtual Address Sidebar */}
                                         <p className="text-xs text-muted-foreground truncate">
                                           Scanned: {formatScannedDate(item)}
                                         </p>
                                       )}
-                                    </div>
-                                    <div className="flex-shrink-0 text-right">
-                                      <p className="text-sm text-muted-foreground">
-                                        {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                          day: 'numeric',
-                                          month: 'short',
-                                          year: 'numeric'
-                                        }) : 'Unknown Date'}
-                                      </p>
+                                      </div>
+                                      <div className="flex-shrink-0 text-right">
+                                        <p className="text-sm text-muted-foreground">
+                                          {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric'
+                                          }) : 'Unknown Date'}
+                                        </p>
                                       {item.tag && (
                                         <Badge variant="secondary" className="mt-1 text-xs">
                                           {item.tag}
                                         </Badge>
                                       )}
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  {/* Action Buttons */}
-                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                     <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
                                       <FileCheck className="h-3 w-3 mr-1" />
-                                      Open
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
+                                        Open
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
                                       className="h-9"
-                                      onClick={() => handleRequestForwarding(item)}
-                                      disabled={!canForward(item)}
+                                        onClick={() => handleRequestForwarding(item)}
+                                        disabled={!canForward(item)}
                                       title={
                                         isGDPRExpired(item)
                                           ? "Cannot forward: GDPR expired (30+ days old)"
@@ -764,57 +756,57 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                               ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
                                               : ""
                                       }
-                                    >
-                                      <Truck className="h-3 w-3 mr-1" />
-                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
-                                    </Button>
+                                      >
+                                        <Truck className="h-3 w-3 mr-1" />
+                                        {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
+                              );
                         })}
-                      </div>
+                            </div>
                     </div>
 
-                    {/* Mail Items List - Mobile */}
-                    <div className="sm:hidden divide-y">
-                      {mailItems.map((item: MailItem) => {
-                        const isSelected = selectedMail.includes(String(item.id));
-                        const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+                      {/* Mail Items List - Mobile */}
+                      <div className="sm:hidden divide-y">
+                        {mailItems.map((item: MailItem) => {
+                          const isSelected = selectedMail.includes(String(item.id));
+                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
-                        return (
-                          <div
-                            key={item.id}
+                          return (
+                            <div
+                              key={item.id}
                             className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
-                          >
-                            <div className="space-y-3">
-                              {/* Header with checkbox */}
-                              <div className="flex items-start gap-3">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSelectMail(String(item.id));
-                                  }}
-                                  className="mt-1 flex-shrink-0"
-                                >
-                                  {isSelected ? (
+                            >
+                              <div className="space-y-3">
+                                {/* Header with checkbox */}
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleSelectMail(String(item.id));
+                                    }}
+                                    className="mt-1 flex-shrink-0"
+                                  >
+                                    {isSelected ? (
                                     <CheckSquare className="h-5 w-5 text-primary" />
-                                  ) : (
-                                    <Square className="h-5 w-5 text-muted-foreground" />
-                                  )}
-                                </button>
+                                    ) : (
+                                      <Square className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                  </button>
 
-                                <div
-                                  className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
-                                  onClick={() => onOpen(item)}
+                                  <div
+                                    className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+                                    onClick={() => onOpen(item)}
                                   onMouseEnter={() => preloadPDF(Number(item.id))}
-                                >
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="flex-1 min-w-0">
+                                  >
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <div className="flex-1 min-w-0">
                                       <h4 className="font-medium break-words mb-1">
                                         {item.tag || 'Inbox Item'}
-                                      </h4>
+                                          </h4>
                                       <p className="text-sm text-muted-foreground break-words">
                                         Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
                                           day: 'numeric',
@@ -828,7 +820,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                         </p>
                                       )}
                                     </div>
-                                    {!item.is_read && (
+                                          {!item.is_read && (
                                       <Badge variant="default" className="text-xs flex-shrink-0">
                                         New
                                       </Badge>
@@ -841,33 +833,33 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                       <Badge variant="secondary" className="text-xs">
                                         {item.tag}
                                       </Badge>
-                                    )}
-                                    {isGovernment && (
+                                          )}
+                                          {isGovernment && (
                                       <Badge variant="outline" className="text-xs border-primary/50 text-primary">
-                                        Free Forwarding
-                                      </Badge>
-                                    )}
+                                              Free Forwarding
+                                            </Badge>
+                                          )}
                                     <span className="text-xs text-muted-foreground">
-                                      {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                      }) : 'Unknown Date'}
+                                          {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric'
+                                          }) : 'Unknown Date'}
                                     </span>
-                                  </div>
+                                    </div>
 
-                                  {/* Actions */}
-                                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      Open
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="flex-1 h-9"
-                                      onClick={() => handleRequestForwarding(item)}
-                                      disabled={!canForward(item)}
+                                    {/* Actions */}
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                      <Button size="sm" variant="outline" className="flex-1 h-9" onClick={() => onOpen(item)}>
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        Open
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 h-9"
+                                        onClick={() => handleRequestForwarding(item)}
+                                        disabled={!canForward(item)}
                                       title={
                                         isGDPRExpired(item)
                                           ? "Cannot forward: GDPR expired (30+ days old)"
@@ -877,21 +869,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                               ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
                                               : ""
                                       }
-                                    >
-                                      <Truck className="h-3 w-3 mr-1" />
-                                      {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
-                                    </Button>
+                                      >
+                                        <Truck className="h-3 w-3 mr-1" />
+                                        {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
+                          );
+                        })}
+                      </div>
+                    </>
                 )}
-              </CardContent>
+                  </CardContent>
             </Card>
 
             {/* Free Forwarding Notice */}
