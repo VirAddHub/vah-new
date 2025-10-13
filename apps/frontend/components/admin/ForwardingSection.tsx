@@ -552,7 +552,10 @@ export function ForwardingSection() {
             )}
 
             {/* Main Content - Use the new 3-section workflow */}
-            <CollaborativeForwardingBoard />
+            <CollaborativeForwardingBoard onDataUpdate={(requests) => {
+                // Update local state if needed
+                console.log('Forwarding data updated:', requests.length, 'requests');
+            }} />
 
             {/* Dispatch Modal */}
             {showDispatchModal && selectedRequest && (

@@ -396,7 +396,20 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     isValidating={usersValidating}
                 />;
             case "forwarding":
-                return <CollaborativeForwardingBoard />;
+                return <CollaborativeForwardingBoard onDataUpdate={(requests) => {
+                    setForwardingRequests(requests);
+                    // Calculate stats
+                    const stats = {
+                        total: requests.length,
+                        requested: requests.filter((r: any) => r.status === 'Requested').length,
+                        reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
+                        processing: requests.filter((r: any) => r.status === 'Processing').length,
+                        dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
+                        delivered: requests.filter((r: any) => r.status === 'Delivered').length,
+                        cancelled: requests.filter((r: any) => r.status === 'Cancelled').length,
+                    };
+                    setForwardingStats(stats);
+                }} />;
             case "plans":
                 return <PlansSection />;
             case "analytics":

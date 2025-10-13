@@ -43,7 +43,11 @@ type AdminLock = {
   locked_at: number;
 };
 
-export default function CollaborativeForwardingBoard() {
+interface CollaborativeForwardingBoardProps {
+  onDataUpdate?: (requests: ForwardingRequest[]) => void;
+}
+
+export default function CollaborativeForwardingBoard({ onDataUpdate }: CollaborativeForwardingBoardProps = {}) {
   const { toast } = useToast();
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
@@ -212,6 +216,11 @@ export default function CollaborativeForwardingBoard() {
       if (data.ok && Array.isArray(data.data)) {
         setRows(data.data);
         
+        // Notify parent component of data update
+        if (onDataUpdate) {
+          onDataUpdate(data.data);
+        }
+        
         // Update locks from server data
         const newLocks = new Map<number, AdminLock>();
         data.data.forEach((req: any) => {
@@ -337,6 +346,16 @@ export default function CollaborativeForwardingBoard() {
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
+        
+        // Notify parent component of data update
+        if (onDataUpdate) {
+          const updatedRows = rows.map(req =>
+            req.id === requestId
+              ? { ...req, status: canonicalStatus, updated_at: Date.now() }
+              : req
+          );
+          onDataUpdate(updatedRows);
+        }
         
         // Refresh server components/data to get latest state
         router.refresh();
