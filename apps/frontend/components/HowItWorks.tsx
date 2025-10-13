@@ -45,35 +45,33 @@ export default function HowItWorks() {
                     </p>
                 </header>
 
-                {/* timeline layout */}
-                <ol className="relative grid gap-6 md:gap-8">
+                {/* horizontal layout */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     {steps.map((s, i) => (
-                        <li key={s.k} className="relative">
+                        <div key={s.k} className="relative">
                             {/* number badge */}
-                            <div className="absolute -left-0 -top-2 hidden md:block">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm">
-                                    <span className="font-medium text-neutral-800">{i + 1}</span>
+                            <div className="absolute -top-3 left-4 z-10">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm">
+                                    <span className="font-medium text-neutral-800 text-sm">{i + 1}</span>
                                 </div>
                             </div>
 
-                            <div className="md:pl-16">
-                                <div className="rounded-xl border border-border bg-card shadow-sm">
-                                    <div className="p-4 sm:p-6">
-                                        <h3 className="font-bold text-[clamp(1.25rem,2.5vw,1.75rem)] text-primary">{s.title}</h3>
-                                        <ul className="mt-4 space-y-2.5">
-                                            {s.points.map((p) => (
-                                                <li key={p} className="flex gap-3 text-black">
-                                                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                                    <span>{p}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                            <div className="rounded-xl border border-border bg-card shadow-sm h-full">
+                                <div className="p-4 pt-6">
+                                    <h3 className="font-bold text-lg text-primary mb-3">{s.title}</h3>
+                                    <ul className="space-y-2">
+                                        {s.points.map((p) => (
+                                            <li key={p} className="flex gap-2 text-sm text-black">
+                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                                                <span className="leading-relaxed">{p}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
-                        </li>
+                        </div>
                     ))}
-                </ol>
+                </div>
 
                 {/* soft footer note */}
                 <p className="mt-8 text-sm text-muted-foreground">
