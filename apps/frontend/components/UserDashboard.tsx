@@ -666,7 +666,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     formatScannedDate={formatScannedDate}
                   />
                 )}
-              </CardContent>
+                  </CardContent>
             </Card>
 
             {/* Free Forwarding Notice */}
@@ -685,11 +685,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="flex items-center gap-2">
                       <CheckSquare className="h-4 w-4 text-primary" />
                       <span className="font-medium">{selectedMail.length} items selected</span>
-                                        </div>
+                    </div>
                     <Button size="sm" variant="ghost" onClick={() => setSelectedMail([])}>
                       Clear
                     </Button>
-                                      </div>
+                  </div>
 
                   <div className="grid grid-cols-1 gap-2">
                     <Button size="default" variant="outline" className="w-full h-10">
@@ -707,11 +707,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Help Text */}
             <div className="text-center py-6 space-y-2">
-                                        <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
-                                        </p>
-                                      </div>
-                                    </div>
+              </p>
+            </div>
+          </div>
 
           {/* Right Column - Virtual Address Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:self-start">

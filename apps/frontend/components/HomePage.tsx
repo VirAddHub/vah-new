@@ -319,7 +319,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <HowItWorks />
 
             {/* PREVIEW SECTION */}
-            <Preview />
+            <Preview onNavigate={handleNavClick} />
         </main>
     );
 }
