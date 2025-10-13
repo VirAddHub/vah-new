@@ -667,8 +667,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   />
                 )}
               </CardContent>
-                      <div className="divide-y">
-                        {mailItems.map((item: MailItem) => {
+            </Card>
                           const isSelected = selectedMail.includes(String(item.id));
                           const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
 
