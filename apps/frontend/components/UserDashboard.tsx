@@ -56,7 +56,12 @@ const fetcher = (url: string) => {
     headers,
     credentials: 'include'
   }).then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    if (!r.ok) {
+      // Create error with status for better handling
+      const error = new Error(`HTTP ${r.status}`);
+      (error as any).status = r.status;
+      throw error;
+    }
     return r.json();
   });
 };
@@ -104,16 +109,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     });
   };
 
-  // SWR hook for mail items with 15s polling
+  // SWR hook for mail items with reduced polling to prevent 429 errors
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
     '/api/mail-items',
     fetcher,
     {
-      refreshInterval: 15000, // Poll every 15 seconds
+      refreshInterval: 120000, // Poll every 2 minutes to prevent 429 errors
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      errorRetryCount: 3,
-      errorRetryInterval: 5000
+      errorRetryCount: 2, // Reduced retry count
+      errorRetryInterval: 10000, // Increased retry interval
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        // Don't retry on 429 errors - let them fail silently
+        if (error.status === 429) {
+          console.warn('Rate limited - skipping retry');
+          return;
+        }
+        // Only retry up to 2 times for other errors
+        if (retryCount >= 2) return;
+        setTimeout(() => revalidate({ retryCount }), 10000);
+      }
     }
   );
 
