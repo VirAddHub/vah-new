@@ -31,7 +31,7 @@ export function clearAdminForwardingCache(adminId: number) {
 // Rate limiting by admin user ID, not IP - admin-friendly limits
 const adminForwardingLimiter = rateLimit({
     windowMs: 30_000, // 30 seconds
-    limit: 60, // 60 requests per 30 seconds (generous for admin dashboard usage)
+    limit: 100, // 100 requests per 30 seconds (very generous for admin dashboard usage)
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
