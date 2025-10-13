@@ -45,6 +45,7 @@ interface MailManagementProps {
     onRefresh: () => void;
     onOpen: (item: MailItem) => void;
     onDownload: (item: MailItem) => void;
+    onForward?: (item: MailItem) => void;
     formatScannedDate: (item: MailItem) => string | null;
 }
 
@@ -55,6 +56,7 @@ export function MailManagement({
     onRefresh,
     onOpen,
     onDownload,
+    onForward,
     formatScannedDate
 }: MailManagementProps) {
     const { toast } = useToast();
@@ -415,7 +417,12 @@ export function MailManagement({
                             variant="outline"
                             size="sm"
                             onClick={() => handleButtonClick(`forward-${item.id}`, () => {
-                                handleForwardItem(item);
+                                if (onForward) {
+                                    onForward(item);
+                                } else {
+                                    // Fallback to direct API call if no onForward prop provided
+                                    handleForwardItem(item);
+                                }
                             })}
                             className={clickedButtons.has(`forward-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
                         >

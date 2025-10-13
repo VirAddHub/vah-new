@@ -664,6 +664,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     onRefresh={refreshMail}
                     onOpen={onOpen}
                     onDownload={onDownload}
+                    onForward={handleRequestForwarding}
                     formatScannedDate={formatScannedDate}
                   />
                 )}
@@ -781,7 +782,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             setSelectedMailForForwarding(null);
           }}
           mailItem={selectedMailForForwarding}
-          onConfirm={handleForwardingConfirmation}
+          userProfile={userProfile}
+          onConfirm={handleForwardingConfirm}
         />
       )}
     </div>
