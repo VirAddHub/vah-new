@@ -483,7 +483,7 @@ export function MailManagement({
                     </TabsTrigger>
                     <TabsTrigger value="subjects" className="flex items-center gap-2">
                         <Tag className="h-4 w-4" />
-                        Subjects ({availableSubjects.length})
+                        Tags ({availableSubjects.length})
                     </TabsTrigger>
                 </TabsList>
 

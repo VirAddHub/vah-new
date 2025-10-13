@@ -158,12 +158,12 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
 
 /**
  * PATCH /api/mail-items/:id
- * Update mail item (user can only mark as read)
+ * Update mail item (user can update is_read and subject)
  */
 router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
-    const { is_read } = req.body;
+    const { is_read, subject } = req.body;
     const pool = getPool();
 
     if (!mailId) {
@@ -181,7 +181,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
 
-        // Only allow updating is_read and updated_at
+        // Allow updating is_read, subject, and updated_at
         const updates: string[] = [];
         const values: any[] = [];
         let paramIndex = 1;
@@ -189,6 +189,11 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
         if (typeof is_read === 'boolean') {
             updates.push(`is_read = $${paramIndex++}`);
             values.push(is_read);
+        }
+
+        if (typeof subject === 'string') {
+            updates.push(`subject = $${paramIndex++}`);
+            values.push(subject);
         }
 
         updates.push(`updated_at = $${paramIndex++}`);
