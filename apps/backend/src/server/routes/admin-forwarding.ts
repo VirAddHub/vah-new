@@ -266,7 +266,7 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
                         fr.id, fr.to_name, fr.address1, fr.city, fr.postal, fr.country,
                         u.email, u.first_name, u.last_name
                     FROM forwarding_request fr
-                    JOIN users u ON fr.user_id = u.id
+                    JOIN "user" u ON fr.user_id = u.id
                     WHERE fr.id = $1
                 `, [id]);
                 

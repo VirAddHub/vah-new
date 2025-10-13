@@ -250,7 +250,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     return () => {
       clearInterval(pollInterval);
     };
-  }, [load]);
+  }, []); // Remove load from dependencies to prevent infinite loop
 
   // Auto-unlock requests when component unmounts
   useEffect(() => {
