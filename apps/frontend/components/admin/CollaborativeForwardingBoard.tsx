@@ -242,10 +242,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   useEffect(() => {
     load();
 
-    // Set up polling for real-time updates - REDUCED FREQUENCY
+    // Set up polling for real-time updates - DRAMATICALLY REDUCED FREQUENCY
     const pollInterval = setInterval(() => {
       load();
-    }, 15000); // Poll every 15 seconds to avoid rate limits
+    }, 120000); // Poll every 2 minutes to prevent 429 errors
 
     return () => {
       clearInterval(pollInterval);
@@ -570,7 +570,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         <div>
           <h2 className="text-2xl font-bold">Forwarding Requests</h2>
           <p className="text-muted-foreground">
-            Real-time collaborative board • {currentAdmin?.name} is online
+            Updates every 2 minutes • {currentAdmin?.name} is online
           </p>
         </div>
         <div className="flex items-center gap-2">
