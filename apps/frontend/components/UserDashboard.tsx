@@ -658,9 +658,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {/* Mail Items List - Desktop */}
-                    <div className="hidden sm:block">
+                  <MailManagement
+                    mailItems={mailItems}
+                    onRefresh={refreshMail}
+                    onOpen={onOpen}
+                    onDownload={onDownload}
+                    formatScannedDate={formatScannedDate}
+                  />
+                )}
+              </CardContent>
                       <div className="divide-y">
                         {mailItems.map((item: MailItem) => {
                           const isSelected = selectedMail.includes(String(item.id));
