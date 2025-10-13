@@ -685,11 +685,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="flex items-center gap-2">
                       <CheckSquare className="h-4 w-4 text-primary" />
                       <span className="font-medium">{selectedMail.length} items selected</span>
-                    </div>
+                                        </div>
                     <Button size="sm" variant="ghost" onClick={() => setSelectedMail([])}>
                       Clear
                     </Button>
-                  </div>
+                                      </div>
 
                   <div className="grid grid-cols-1 gap-2">
                     <Button size="default" variant="outline" className="w-full h-10">
@@ -707,120 +707,85 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Help Text */}
             <div className="text-center py-6 space-y-2">
-              <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm text-muted-foreground">
                 Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
-              </p>
-                                        </div>
-          </div>
+                                        </p>
+                                      </div>
+                                    </div>
 
           {/* Right Column - Virtual Address Sidebar */}
-                                        <p className="text-xs text-muted-foreground truncate">
-                                          Scanned: {formatScannedDate(item)}
-                                        </p>
-                                      )}
-                                      </div>
-                                      <div className="flex-shrink-0 text-right">
-                                        <p className="text-sm text-muted-foreground">
-                                          {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric'
-                                          }) : 'Unknown Date'}
-                                        </p>
-                                      {item.tag && (
-                                        <Badge variant="secondary" className="mt-1 text-xs">
-                                          {item.tag}
-                                        </Badge>
-                                      )}
-                                      </div>
-                                    </div>
+          <aside className="lg:sticky lg:top-20 lg:self-start">
+            <Card className="border-0">
+              <CardHeader className="pb-3 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm truncate">Your Virtual Business Address</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-3">
+                {/* Address Display */}
+                <div className="bg-muted/50 rounded-lg p-2.5 space-y-0.5">
+                  <p className="text-xs font-medium">{virtualAddress.line1}</p>
+                  <p className="text-xs font-medium">{virtualAddress.line2}</p>
+                  <p className="text-xs font-medium">{virtualAddress.city}</p>
+                  <p className="text-xs font-medium">{virtualAddress.postcode}</p>
+                  <p className="text-xs font-medium">{virtualAddress.country}</p>
+                </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button size="sm" variant="outline" onClick={() => onOpen(item)}>
-                                      <FileCheck className="h-3 w-3 mr-1" />
-                                        Open
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                      className="h-9"
-                                        onClick={() => handleRequestForwarding(item)}
-                                        disabled={!canForward(item)}
-                                      title={
-                                        isGDPRExpired(item)
-                                          ? "Cannot forward: GDPR expired (30+ days old)"
-                                          : !userProfile?.forwarding_address
-                                            ? "Cannot forward: Please set your forwarding address in Profile settings"
-                                            : !canForward(item)
-                                              ? "Cannot forward: Your forwarding address is incomplete. Please update it in Profile settings."
-                                              : ""
-                                      }
-                                      >
-                                        <Truck className="h-3 w-3 mr-1" />
-                                        {isGDPRExpired(item) ? "GDPR Expired" : "Forward"}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              );
-                        })}
-                            </div>
-                    </div>
+                {/* Generate Certificate Button */}
+                <div className="space-y-1.5">
+                  <Button className="w-full" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                    {certLoading ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                        Generate Certificate
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center leading-tight">
+                    Official proof of address
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
 
-                      {/* Mail Items List - Mobile */}
-                      <div className="sm:hidden divide-y">
-                        {mailItems.map((item: MailItem) => {
-                          const isSelected = selectedMail.includes(String(item.id));
-                          const isGovernment = item.tag === "HMRC" || item.tag === "COMPANIES HOUSE";
+        </div>
+      </main>
 
-                          return (
-                            <div
-                              key={item.id}
-                            className={`p-4 ${isSelected ? "bg-primary/5" : ""}`}
-                            >
-                              <div className="space-y-3">
-                                {/* Header with checkbox */}
-                                <div className="flex items-start gap-3">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleSelectMail(String(item.id));
-                                    }}
-                                    className="mt-1 flex-shrink-0"
-                                  >
-                                    {isSelected ? (
-                                    <CheckSquare className="h-5 w-5 text-primary" />
-                                    ) : (
-                                      <Square className="h-5 w-5 text-muted-foreground" />
-                                    )}
-                                  </button>
+      {/* PDF Viewer Modal */}
+      <PDFViewerModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        mailItemId={selectedMailForPDF?.id ? Number(selectedMailForPDF.id) : null}
+        mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
+        useBlobFallback
+      />
 
-                                  <div
-                                    className="flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
-                                    onClick={() => onOpen(item)}
-                                  onMouseEnter={() => preloadPDF(Number(item.id))}
-                                  >
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                      <div className="flex-1 min-w-0">
-                                      <h4 className="font-medium break-words mb-1">
-                                        {item.tag || 'Inbox Item'}
-                                          </h4>
-                                      <p className="text-sm text-muted-foreground break-words">
-                                        Received: {item.received_date ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                                          day: 'numeric',
-                                          month: 'short',
-                                          year: 'numeric'
-                                        }) : 'Unknown Date'}
-                                      </p>
-                                      {formatScannedDate(item) && (
-                                        <p className="text-xs text-muted-foreground break-words">
-                                          Scanned: {formatScannedDate(item)}
-                                        </p>
-                                      )}
-                                    </div>
-                                          {!item.is_read && (
+      {/* Forwarding Confirmation Modal */}
+      {showForwardingConfirmation && selectedMailForForwarding && (
+        <ForwardingConfirmationModal
+          isOpen={showForwardingConfirmation}
+          onClose={() => {
+            setShowForwardingConfirmation(false);
+            setSelectedMailForForwarding(null);
+          }}
+          mailItem={selectedMailForForwarding}
+          onConfirm={handleForwardingConfirmation}
+        />
+      )}
+    </div>
+  );
+}
                                       <Badge variant="default" className="text-xs flex-shrink-0">
                                         New
                                       </Badge>
