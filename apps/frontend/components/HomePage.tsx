@@ -170,9 +170,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* HOW IT WORKS — above pricing */}
-            <HowItWorks />
-
             {/* PRICING */}
             <section
                 id="pricing"
@@ -317,6 +314,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                 </div>
             </section>
+
+            {/* HOW IT WORKS */}
+            <HowItWorks />
 
             {/* PREVIEW SECTION */}
             <Preview />
