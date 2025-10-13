@@ -77,11 +77,11 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   }, []);
 
   // Helper to get allowed next statuses
-  // Simple status transitions for 3-stage Kanban
+  // Simple status transitions for 3-stage Kanban - using backend status values
   const getNextStatus = (status: string): string | null => {
-    if (status === 'Requested') return 'In Progress';
-    if (status === 'In Progress' || status === 'Processing') return 'Done';
-    return null; // Done is final
+    if (status === 'Requested') return 'Processing';
+    if (status === 'Processing') return 'Dispatched';
+    return null; // Dispatched/Delivered are final
   };
 
   // Check if request is locked by another admin
@@ -272,10 +272,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       req.address1.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Simple 3-stage categorization
+    // Simple 3-stage categorization - using backend status values
     const requested = filteredRequests.filter(r => r.status === 'Requested');
-    const inProgress = filteredRequests.filter(r => r.status === 'In Progress' || r.status === 'Processing');
-    const done = filteredRequests.filter(r => r.status === 'Done' || r.status === 'Dispatched' || r.status === 'Delivered');
+    const inProgress = filteredRequests.filter(r => r.status === 'Processing');
+    const done = filteredRequests.filter(r => r.status === 'Dispatched' || r.status === 'Delivered');
 
     return { requested, inProgress, done, other: [] };
   };
@@ -411,14 +411,14 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   };
 
   const getStatusBadge = (status: string) => {
-    // Simple status badges for 3-stage Kanban
+    // Simple status badges for 3-stage Kanban - using backend status values
     if (status === 'Requested') {
       return <Badge variant="secondary">Requested</Badge>;
     }
-    if (status === 'In Progress' || status === 'Processing') {
+    if (status === 'Processing') {
       return <Badge variant="default">In Progress</Badge>;
     }
-    if (status === 'Done' || status === 'Dispatched' || status === 'Delivered') {
+    if (status === 'Dispatched' || status === 'Delivered') {
       return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Done</Badge>;
     }
     return <Badge variant="secondary">{status}</Badge>;
@@ -507,30 +507,30 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             <div className="flex items-center gap-2">
               {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
-                {/* Simple 2-button system */}
+                {/* Simple 2-button system - using backend status values */}
                 {request.status === 'Requested' && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'In Progress')}
+                    onClick={() => updateRequestStatus(request.id, 'Processing')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
                     {isBusy ? '...' : 'Start Processing'}
                   </Button>
                 )}
-                {(request.status === 'In Progress' || request.status === 'Processing') && (
+                {request.status === 'Processing' && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRequestStatus(request.id, 'Done')}
+                    onClick={() => updateRequestStatus(request.id, 'Dispatched')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
                     {isBusy ? '...' : 'Mark Done'}
                   </Button>
                 )}
-                {(request.status === 'Done' || request.status === 'Dispatched' || request.status === 'Delivered') && (
+                {(request.status === 'Dispatched' || request.status === 'Delivered') && (
                   <Button
                     size="sm"
                     variant="default"
