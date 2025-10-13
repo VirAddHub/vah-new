@@ -107,7 +107,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Lock a request for editing
   const lockRequest = async (requestId: number): Promise<boolean> => {
     if (!currentAdmin) return false;
-    
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/admin/forwarding/requests/${requestId}/lock`, {
         method: 'POST',
@@ -150,7 +150,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
         }
       });
-      
+
       setLocks(prev => {
         const newLocks = new Map(prev);
         newLocks.delete(requestId);
@@ -179,7 +179,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           newLocks.delete(requestId);
           return newLocks;
         });
-        
+
         toast({
           title: "Force Unlocked",
           description: "Request is now available for editing",
@@ -215,12 +215,12 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       const data = await adminApi.getForwardingRequests({ limit: 100, offset: 0 });
       if (data.ok && Array.isArray(data.data)) {
         setRows(data.data);
-        
+
         // Notify parent component of data update
         if (onDataUpdate) {
           onDataUpdate(data.data);
         }
-        
+
         // Update locks from server data
         const newLocks = new Map<number, AdminLock>();
         data.data.forEach((req: any) => {
@@ -246,7 +246,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Real-time polling for updates
   useEffect(() => {
     load();
-    
+
     // Set up polling for real-time updates
     const pollInterval = setInterval(() => {
       load();
@@ -346,7 +346,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           description: `Request moved to ${uiStageFor(canonicalStatus)}`,
           durationMs: 3000,
         });
-        
+
         // Notify parent component of data update
         if (onDataUpdate) {
           const updatedRows = rows.map(req =>
@@ -356,7 +356,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
           );
           onDataUpdate(updatedRows);
         }
-        
+
         // Refresh server components/data to get latest state
         router.refresh();
       } else {
@@ -367,7 +367,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         // Simple error message - no complex auto-heal logic
         const payload = response.payload;
         let errorMsg = "Error updating status. Please try again.";
-        
+
         if (payload?.error === "illegal_transition") {
           errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
         } else if (payload?.message) {
@@ -391,7 +391,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       // Simple error message - no complex auto-heal logic
       const payload = error?.payload;
       let errorMsg = "Error updating status. Please try again.";
-      
+
       if (payload?.error === "illegal_transition") {
         errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
       } else if (payload?.message) {
@@ -409,7 +409,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     } finally {
       setUpdatingStatus(null);
       setIsAnyTransitionInProgress(false);
-      
+
       // Unlock the request after a short delay
       setTimeout(() => {
         unlockRequest(requestId);
@@ -442,14 +442,13 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     const lockInfo = getLockInfo(request.id);
 
     return (
-      <Card 
-        key={request.id} 
-        className={`mb-3 transition-all duration-200 ${
-          lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' : 
-          lockedByMe ? 'border-blue-200 bg-blue-50' : 
-          'hover:shadow-md'
-        }`}
-        data-testid="forwarding-card" 
+      <Card
+        key={request.id}
+        className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' :
+            lockedByMe ? 'border-blue-200 bg-blue-50' :
+              'hover:shadow-md'
+          }`}
+        data-testid="forwarding-card"
         data-status={uiStageFor(request.status)}
       >
         <CardContent className="p-4">
@@ -472,7 +471,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                   </div>
                 )}
               </div>
-              
+
               {/* Lock indicator */}
               {lockInfo && (
                 <div className="mt-2 flex items-center justify-between text-xs">
@@ -489,7 +488,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                       </>
                     )}
                   </div>
-                  
+
                   {/* Force unlock button for locked requests */}
                   {lockedByOther && (
                     <Button
@@ -509,7 +508,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2">
               {getStatusBadge(uiStageFor(request.status))}
               <div className="flex gap-1">
