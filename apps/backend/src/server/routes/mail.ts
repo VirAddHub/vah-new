@@ -213,6 +213,122 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
 });
 
 /**
+ * POST /api/mail-items/:id/tag
+ * Add or update tag for mail item
+ */
+router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const mailId = parseInt(req.params.id);
+    const { tag } = req.body;
+    const pool = getPool();
+
+    if (!mailId) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    if (typeof tag !== 'string' || !tag.trim()) {
+        return res.status(400).json({ ok: false, error: 'invalid_tag' });
+    }
+
+    try {
+        // Verify ownership
+        const check = await pool.query(
+            'SELECT id FROM mail_item WHERE id = $1 AND user_id = $2',
+            [mailId, userId]
+        );
+
+        if (check.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        // Update tag
+        const result = await pool.query(
+            'UPDATE mail_item SET tag = $1, updated_at = $2 WHERE id = $3 RETURNING *',
+            [tag.trim(), Date.now(), mailId]
+        );
+
+        return res.json({ ok: true, data: result.rows[0] });
+    } catch (error: any) {
+        console.error('[POST /api/mail-items/:id/tag] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * DELETE /api/mail-items/:id
+ * Archive mail item (soft delete)
+ */
+router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const mailId = parseInt(req.params.id);
+    const pool = getPool();
+
+    if (!mailId) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    try {
+        // Verify ownership
+        const check = await pool.query(
+            'SELECT id FROM mail_item WHERE id = $1 AND user_id = $2',
+            [mailId, userId]
+        );
+
+        if (check.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        // Soft delete (archive)
+        const result = await pool.query(
+            'UPDATE mail_item SET deleted = true, updated_at = $1 WHERE id = $2 RETURNING *',
+            [Date.now(), mailId]
+        );
+
+        return res.json({ ok: true, data: result.rows[0] });
+    } catch (error: any) {
+        console.error('[DELETE /api/mail-items/:id] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/mail-items/:id/restore
+ * Restore archived mail item
+ */
+router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const mailId = parseInt(req.params.id);
+    const pool = getPool();
+
+    if (!mailId) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    try {
+        // Verify ownership
+        const check = await pool.query(
+            'SELECT id FROM mail_item WHERE id = $1 AND user_id = $2',
+            [mailId, userId]
+        );
+
+        if (check.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        // Restore (unarchive)
+        const result = await pool.query(
+            'UPDATE mail_item SET deleted = false, updated_at = $1 WHERE id = $2 RETURNING *',
+            [Date.now(), mailId]
+        );
+
+        return res.json({ ok: true, data: result.rows[0] });
+    } catch (error: any) {
+        console.error('[POST /api/mail-items/:id/restore] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
  * GET /api/mail-items/:id/scan-url
  * Get download URL for mail scan
  */
