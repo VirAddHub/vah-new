@@ -276,7 +276,8 @@ export function MailManagement({
                                     disabled={loading}
                                 >
                                     <Plus className="h-4 w-4 mr-1" />
-                                    <Tag className="h-4 w-4" />
+                                    <Tag className="h-4 w-4 mr-1" />
+                                    Tag
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -328,7 +329,8 @@ export function MailManagement({
                                 onClick={() => handleRestoreItem(item)}
                                 disabled={loading}
                             >
-                                <ArchiveRestore className="h-4 w-4" />
+                                <ArchiveRestore className="h-4 w-4 mr-1" />
+                                Restore
                             </Button>
                         ) : (
                             <Button
@@ -337,7 +339,8 @@ export function MailManagement({
                                 onClick={() => handleArchiveItem(item)}
                                 disabled={loading}
                             >
-                                <Archive className="h-4 w-4" />
+                                <Archive className="h-4 w-4 mr-1" />
+                                Archive
                             </Button>
                         )}
 
@@ -350,7 +353,8 @@ export function MailManagement({
                                 console.log('Forward mail item:', item.id);
                             }}
                         >
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowRight className="h-4 w-4 mr-1" />
+                            Forward
                         </Button>
 
                         {/* View Button */}
