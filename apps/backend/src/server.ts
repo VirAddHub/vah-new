@@ -62,6 +62,7 @@ import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminActivityRouter from "./server/routes/admin-activity";
 import adminServiceStatusRouter from "./server/routes/admin-service-status";
+import adminMetricsGrowthRouter from "./server/routes/admin-metrics-growth";
 import companiesHouseRouter from "./server/routes/companies-house";
 import opsSelfTestRouter from "./server/routes/ops-selftest";
 import idealPostcodesRouter from "./server/routes/ideal-postcodes";
@@ -438,6 +439,8 @@ async function start() {
     logger.info('[mount] /api/admin (activity) mounted');
     app.use('/api/admin', adminServiceStatusRouter);
     logger.info('[mount] /api/admin (service-status) mounted');
+    app.use('/api/admin', adminMetricsGrowthRouter);
+    logger.info('[mount] /api/admin (metrics-growth) mounted');
     app.use('/api/admin', adminBlogRouter);
     logger.info('[mount] /api/admin (blog) mounted');
     app.use('/api', blogRouter);
