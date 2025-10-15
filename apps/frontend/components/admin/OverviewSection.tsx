@@ -39,6 +39,18 @@ const logAdminAction = async (action: string, data?: any) => {
     }
 };
 import { BundleAnalysisWidget } from './BundleAnalysisWidget';
+import AdminMetricsGrowthCard from './AdminMetricsGrowthCard';
+
+const getErrorMessage = (error: any): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return 'Unknown error occurred';
+};
+
+const getErrorStack = (error: any): string => {
+    if (error instanceof Error) return error.stack || '';
+    return '';
+};
 
 interface AdminStats {
     totalUsers: number;
@@ -307,6 +319,9 @@ export function OverviewSection() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Growth Metrics */}
+            <AdminMetricsGrowthCard />
 
             {/* Performance Monitoring */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
