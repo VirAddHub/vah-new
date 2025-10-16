@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
+import { FEATURES } from '@/lib/config';
 
 interface SignupStep3Props {
     onComplete: () => void;
@@ -253,17 +254,35 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                     {/* Payment Button */}
                     <div className="text-center">
-                        <ScrollToTopButton
-                            onClick={handlePayment}
-                            disabled={isProcessing || isLoading}
-                            className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
-                        </ScrollToTopButton>
-                        <p className="text-sm text-muted-foreground">
-                            You&apos;ll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
-                        </p>
+                        {FEATURES.payments ? (
+                            <>
+                                <ScrollToTopButton
+                                    onClick={handlePayment}
+                                    disabled={isProcessing || isLoading}
+                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
+                                </ScrollToTopButton>
+                                <p className="text-sm text-muted-foreground">
+                                    You&apos;ll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <ScrollToTopButton
+                                    onClick={handlePayment}
+                                    disabled={isProcessing || isLoading}
+                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    {isProcessing || isLoading ? 'Processing...' : `Complete Signup – ${displayPrice}`}
+                                </ScrollToTopButton>
+                                <p className="text-sm text-muted-foreground">
+                                    Payments are disabled on this environment. Your account will be created without payment setup.
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     {/* What Happens Next Card */}
