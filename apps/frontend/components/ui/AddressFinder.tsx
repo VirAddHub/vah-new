@@ -77,6 +77,7 @@ export function AddressFinder({
             } catch (err) {
                 console.error('[AddressFinder] Failed to load:', err);
                 setError("Address finder failed to load. Please enter your address manually.");
+                // Don't show error overlay - let user continue typing
             }
         };
 
@@ -129,10 +130,10 @@ export function AddressFinder({
             </div>
 
             {error && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                    <AlertCircle className="h-3 w-3 inline mr-1" />
+                    {error}
+                </div>
             )}
 
             {isLoaded && (

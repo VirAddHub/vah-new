@@ -617,14 +617,69 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     This is where we'll forward your mail. Use our smart address finder to quickly select your address.
                                 </p>
 
+                                {/* Address input fields - visible for AddressFinder to populate */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <Label htmlFor="address_line1" className="text-sm font-medium">
+                                            Address Line 1 *
+                                        </Label>
+                                        <Input
+                                            id="address_line1"
+                                            value={formData.address_line1}
+                                            onChange={(e) => updateFormData('address_line1', e.target.value)}
+                                            placeholder="Enter your address line 1"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <Label htmlFor="address_line2" className="text-sm font-medium">
+                                            Address Line 2
+                                        </Label>
+                                        <Input
+                                            id="address_line2"
+                                            value={formData.address_line2}
+                                            onChange={(e) => updateFormData('address_line2', e.target.value)}
+                                            placeholder="Enter your address line 2 (optional)"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <Label htmlFor="city" className="text-sm font-medium">
+                                            City/Town *
+                                        </Label>
+                                        <Input
+                                            id="city"
+                                            value={formData.city}
+                                            onChange={(e) => updateFormData('city', e.target.value)}
+                                            placeholder="Enter your city or town"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <Label htmlFor="postcode" className="text-sm font-medium">
+                                            Postcode *
+                                        </Label>
+                                        <Input
+                                            id="postcode"
+                                            value={formData.postcode}
+                                            onChange={(e) => updateFormData('postcode', e.target.value)}
+                                            placeholder="Enter your postcode"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* AddressFinder for autocomplete */}
                                 <AddressFinder
                                     onAddressSelect={(address) => {
                                         console.log('[SignupStep2] Address selected:', address);
                                         // AddressFinder will automatically populate the fields via outputFields
                                     }}
-                                    placeholder="Start typing your forwarding address..."
-                                    label="Forwarding Address"
-                                    required={true}
+                                    placeholder="Start typing your postcode to find your address..."
+                                    label="Quick Address Lookup (Optional)"
+                                    required={false}
                                     className="w-full"
                                     outputFields={{
                                         line_1: "#address_line1",
@@ -633,30 +688,6 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         postcode: "#postcode"
                                     }}
                                 />
-
-                                {/* Hidden address input fields for AddressFinder to populate */}
-                                <div className="hidden">
-                                    <Input
-                                        id="address_line1"
-                                        value={formData.address_line1}
-                                        onChange={(e) => updateFormData('address_line1', e.target.value)}
-                                    />
-                                    <Input
-                                        id="address_line2"
-                                        value={formData.address_line2}
-                                        onChange={(e) => updateFormData('address_line2', e.target.value)}
-                                    />
-                                    <Input
-                                        id="city"
-                                        value={formData.city}
-                                        onChange={(e) => updateFormData('city', e.target.value)}
-                                    />
-                                    <Input
-                                        id="postcode"
-                                        value={formData.postcode}
-                                        onChange={(e) => updateFormData('postcode', e.target.value)}
-                                    />
-                                </div>
                             </div>
                         </div>
                     </div>
