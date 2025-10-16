@@ -17,7 +17,6 @@ interface SignupStep3Props {
 }
 
 export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error }: SignupStep3Props) {
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'direct_debit' | 'card'>('direct_debit');
     const [isProcessing, setIsProcessing] = useState(false);
     const { plans } = usePlans();
 
@@ -144,76 +143,39 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     {/* Payment Method Selection Card */}
                     <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
                         <div className="px-6 pt-6">
-                            <h4 className="leading-none">Choose Payment Method</h4>
+                            <h4 className="leading-none">Payment Method</h4>
                         </div>
-                        <div className="px-6 pb-6 space-y-4">
-                            {/* Direct Debit Option */}
-                            <div
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'direct_debit'
-                                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                                    : 'border-border hover:border-primary/50'
-                                    }`}
-                                role="button"
-                                aria-pressed={selectedPaymentMethod === 'direct_debit'}
-                                onClick={() => setSelectedPaymentMethod('direct_debit')}
-                            >
+                        <div className="px-6 pb-6">
+                            {/* GoCardless Direct Debit - Only Option */}
+                            <div className="p-4 border border-primary ring-2 ring-primary/20 bg-primary/5 rounded-lg">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPaymentMethod === 'direct_debit'
-                                            ? 'border-primary bg-primary'
-                                            : 'border-muted-foreground'
-                                            }`}>
-                                            {selectedPaymentMethod === 'direct_debit' && (
-                                                <div className="w-2 h-2 rounded-full bg-white"></div>
-                                            )}
+                                        <div className="w-4 h-4 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+                                            <div className="w-2 h-2 rounded-full bg-white"></div>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Direct Debit (Recommended)</p>
-                                            <p className="text-sm text-muted-foreground">Secure, regulated by GoCardless</p>
+                                            <p className="font-medium">Direct Debit via GoCardless</p>
+                                            <p className="text-sm text-muted-foreground">Secure, regulated payment processing</p>
                                         </div>
                                     </div>
-                                    <Badge variant="secondary">Preferred</Badge>
+                                    <Badge variant="secondary">Secure</Badge>
                                 </div>
-                                {selectedPaymentMethod === 'direct_debit' && (
-                                    <div className="mt-3 ml-7 space-y-2">
-                                        <div className="flex items-center gap-2 text-sm text-primary">
-                                            <Check className="h-4 w-4" />
-                                            <span>Protected by the Direct Debit Guarantee</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-primary">
-                                            <Check className="h-4 w-4" />
-                                            <span>No card fees</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-primary">
-                                            <Check className="h-4 w-4" />
-                                            <span>Easy to cancel anytime</span>
-                                        </div>
+                                <div className="mt-3 ml-7 space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                        <Check className="h-4 w-4" />
+                                        <span>Protected by the Direct Debit Guarantee</span>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Credit/Debit Card Option */}
-                            <div
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedPaymentMethod === 'card'
-                                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                                    : 'border-border hover:border-primary/50'
-                                    }`}
-                                role="button"
-                                aria-pressed={selectedPaymentMethod === 'card'}
-                                onClick={() => setSelectedPaymentMethod('card')}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedPaymentMethod === 'card'
-                                        ? 'border-primary bg-primary'
-                                        : 'border-muted-foreground'
-                                        }`}>
-                                        {selectedPaymentMethod === 'card' && (
-                                            <div className="w-2 h-2 rounded-full bg-white"></div>
-                                        )}
+                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                        <Check className="h-4 w-4" />
+                                        <span>No card fees or hidden charges</span>
                                     </div>
-                                    <div>
-                                        <p className="font-medium">Credit/Debit Card</p>
-                                        <p className="text-sm text-muted-foreground">Visa, Mastercard, American Express</p>
+                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                        <Check className="h-4 w-4" />
+                                        <span>Easy to cancel anytime</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                        <Check className="h-4 w-4" />
+                                        <span>FCA regulated and secure</span>
                                     </div>
                                 </div>
                             </div>
@@ -224,7 +186,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     <Alert className="mb-8">
                         <Shield className="h-4 w-4" />
                         <AlertDescription>
-                            <strong>Your payment is secure.</strong> We use bank-level encryption and are PCI DSS compliant. We never store your payment details on our servers.
+                            <strong>Your payment is secure.</strong> We use GoCardless for Direct Debit processing, which is FCA regulated and PCI DSS compliant. We never store your payment details on our servers.
                         </AlertDescription>
                     </Alert>
 
@@ -265,7 +227,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
                                 </ScrollToTopButton>
                                 <p className="text-sm text-muted-foreground">
-                                    You&apos;ll be redirected to GoCardless to set up your {selectedPaymentMethod === 'direct_debit' ? 'Direct Debit' : 'card payment'}.
+                                    You&apos;ll be redirected to GoCardless to set up your Direct Debit mandate.
                                 </p>
                             </>
                         ) : (
