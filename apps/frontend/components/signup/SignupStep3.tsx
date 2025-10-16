@@ -16,6 +16,7 @@ interface SignupStep3Props {
     error?: string | null;
 }
 
+// Payment step - GoCardless Direct Debit only
 export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error }: SignupStep3Props) {
     const [isProcessing, setIsProcessing] = useState(false);
     const { plans } = usePlans();
