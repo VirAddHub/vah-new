@@ -6,5 +6,5 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
-  return proxy(req, "/api/admin/billing/metrics");
+  return proxy(req, "/admin/billing/metrics");
 }

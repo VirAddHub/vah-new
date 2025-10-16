@@ -19,3 +19,4 @@ CREATE INDEX IF NOT EXISTS idx_fr_status_created ON forwarding_request(status, c
 CREATE INDEX IF NOT EXISTS idx_fr_user_status ON forwarding_request(user_id, status);
 
 
+

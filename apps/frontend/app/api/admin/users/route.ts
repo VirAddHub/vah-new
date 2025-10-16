@@ -6,9 +6,9 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
-  return proxy(req, "/api/admin/users");
+  return proxy(req, "/admin/users");
 }
 
 export async function POST(req: NextRequest) {
-  return proxy(req, "/api/admin/users");
+  return proxy(req, "/admin/users");
 }

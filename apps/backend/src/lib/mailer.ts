@@ -250,7 +250,7 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
             to: email,
             templateAlias: Templates.MailForwarded,
             model: {
-                first_name: name,
+                name: name,
                 forwarding_address: forwarding_address || 'Your forwarding address',
                 forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
             },

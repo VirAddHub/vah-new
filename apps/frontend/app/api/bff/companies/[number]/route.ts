@@ -16,5 +16,5 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return proxy(req, `/api/companies-house/company/${companyNumber}`);
+  return proxy(req, `/companies-house/company/${companyNumber}`);
 }

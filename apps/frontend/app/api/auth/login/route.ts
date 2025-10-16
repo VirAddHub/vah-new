@@ -6,5 +6,5 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
-  return proxy(req, "/api/auth/login");
+  return proxy(req, "/auth/login");
 }

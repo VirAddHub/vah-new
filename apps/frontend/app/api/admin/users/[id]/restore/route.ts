@@ -6,5 +6,5 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/api/admin/users/${params.id}/restore`);
+  return proxy(req, `/admin/users/${params.id}/restore`);
 }

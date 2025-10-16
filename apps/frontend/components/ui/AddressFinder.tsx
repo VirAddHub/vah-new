@@ -64,25 +64,14 @@ export function AddressFinder({
                 const apiKey = keyData.apiKey;
 
                 // Setup AddressFinder
-                controllerRef.current = AddressFinder.setup({
+                const controller = AddressFinder.setup({
                     apiKey: apiKey,
                     inputField: inputRef.current,
-                    outputFields: outputFields,
-                    onCheckFailed: () => {
-                        setError("Address finder is temporarily unavailable. Please enter your address manually.");
-                    },
-                    onAddressSelected: (address: any) => {
-                        console.log('[AddressFinder] Address selected:', address);
-                        if (onAddressSelect) {
-                            onAddressSelect(address);
-                        }
-                        setError(null);
-                    },
-                    onError: (error: any) => {
-                        console.error('[AddressFinder] Error:', error);
-                        setError("Address search failed. Please try again or enter manually.");
-                    }
+                    outputFields: outputFields
                 });
+
+                console.log('[AddressFinder] Controller created:', controller);
+                controllerRef.current = controller;
 
                 setIsLoaded(true);
             } catch (err) {
@@ -95,11 +84,22 @@ export function AddressFinder({
 
         // Cleanup on unmount
         return () => {
-            if (controllerRef.current) {
-                controllerRef.current.destroy();
+            if (controllerRef.current && isLoaded) {
+                console.log('[AddressFinder] Cleaning up controller:', controllerRef.current);
+                if (typeof controllerRef.current.destroy === 'function') {
+                    try {
+                        controllerRef.current.destroy();
+                        console.log('[AddressFinder] Controller destroyed successfully');
+                    } catch (error) {
+                        console.warn('[AddressFinder] Error during cleanup:', error);
+                    }
+                } else {
+                    console.warn('[AddressFinder] Controller does not have destroy method:', controllerRef.current);
+                }
+                controllerRef.current = null;
             }
         };
-    }, [outputFields, onAddressSelect]);
+    }, [outputFields, onAddressSelect, isLoaded]);
 
     return (
         <div className={`space-y-2 ${className}`}>

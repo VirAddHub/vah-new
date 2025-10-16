@@ -16,3 +16,4 @@ COMMENT ON COLUMN "user".payment_grace_until IS 'Grace period end timestamp (7 d
 COMMENT ON COLUMN "user".account_suspended_at IS 'Timestamp when account was suspended (after grace period)';
 
 
+

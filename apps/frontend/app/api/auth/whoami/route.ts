@@ -6,5 +6,5 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
-  return proxy(req, "/api/auth/whoami");
+  return proxy(req, "/auth/whoami");
 }

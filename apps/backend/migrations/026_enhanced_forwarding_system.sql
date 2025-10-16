@@ -72,3 +72,4 @@ COMMENT ON TABLE forwarding_charge IS 'Tracks £2 forwarding charges for non-HMR
 COMMENT ON TABLE forwarding_outbox IS 'Outbox pattern for retryable forwarding events';
 
 
+

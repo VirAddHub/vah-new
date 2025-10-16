@@ -6,5 +6,5 @@ import { NextRequest } from 'next/server';
 import { proxy } from '../../../_lib/proxy';
 
 export async function GET(req: NextRequest) {
-  return proxy(req, '/api/admin/service-status/sumsub');
+  return proxy(req, '/admin/service-status/sumsub');
 }

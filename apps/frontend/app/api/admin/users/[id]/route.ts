@@ -6,13 +6,13 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/api/admin/users/${params.id}`);
+  return proxy(req, `/admin/users/${params.id}`);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/api/admin/users/${params.id}`);
+  return proxy(req, `/admin/users/${params.id}`);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/api/admin/users/${params.id}`);
+  return proxy(req, `/admin/users/${params.id}`);
 }
