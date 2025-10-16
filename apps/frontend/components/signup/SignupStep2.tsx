@@ -614,11 +614,33 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     Forwarding Address
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    This is where we'll forward your mail. Use our smart address finder to quickly select your address.
+                                    This is where we'll forward your mail. Start by searching for your address, or enter it manually below.
                                 </p>
 
-                                {/* Address input fields - visible for AddressFinder to populate */}
-                                <div className="space-y-3">
+                                {/* AddressFinder - Primary method */}
+                                <AddressFinder
+                                    onAddressSelect={(address) => {
+                                        console.log('[SignupStep2] Address selected:', address);
+                                        // AddressFinder will automatically populate the fields via outputFields
+                                    }}
+                                    placeholder="Start typing your postcode to find your address..."
+                                    label="Find Your Address"
+                                    required={false}
+                                    className="w-full"
+                                    outputFields={{
+                                        line_1: "#address_line1",
+                                        line_2: "#address_line2",
+                                        post_town: "#city",
+                                        postcode: "#postcode"
+                                    }}
+                                />
+
+                                {/* Manual entry fields - Fallback method */}
+                                <div className="space-y-3 pt-4 border-t border-gray-200">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span>Or enter your address manually:</span>
+                                    </div>
+                                    
                                     <div>
                                         <Label htmlFor="address_line1" className="text-sm font-medium">
                                             Address Line 1 *
@@ -670,24 +692,6 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         />
                                     </div>
                                 </div>
-
-                                {/* AddressFinder for autocomplete */}
-                                <AddressFinder
-                                    onAddressSelect={(address) => {
-                                        console.log('[SignupStep2] Address selected:', address);
-                                        // AddressFinder will automatically populate the fields via outputFields
-                                    }}
-                                    placeholder="Start typing your postcode to find your address..."
-                                    label="Quick Address Lookup (Optional)"
-                                    required={false}
-                                    className="w-full"
-                                    outputFields={{
-                                        line_1: "#address_line1",
-                                        line_2: "#address_line2",
-                                        post_town: "#city",
-                                        postcode: "#postcode"
-                                    }}
-                                />
                             </div>
                         </div>
                     </div>
