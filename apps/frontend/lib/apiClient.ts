@@ -232,7 +232,7 @@ export type SupportInfo = {
 export const supportApi = {
     async get(): Promise<ApiResponse<SupportInfo>> {
         try {
-            const data = await get<SupportInfo>('/support');
+            const data = await get<SupportInfo>('/api/support');
             if (!data.ok) return data;
             const body = data.data ?? data;
             if (body && typeof body === 'object') return { ok: true, data: body as SupportInfo };
