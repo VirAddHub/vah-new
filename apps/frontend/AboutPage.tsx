@@ -225,32 +225,36 @@ export function AboutPage() {
                 </Card>
 
                 {/* Why We Exist */}
-                <div className="mb-12 text-center">
-                    <h2 className="text-4xl font-bold text-primary mb-6">
-                        Why We Exist
-                    </h2>
-                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
-                        Too many founders face risks – fines, exposure, or
-                        legal complications – by using their home address,
-                        or by overpaying for outdated services. We created
-                        VirtualAddressHub as a modern, no-fuss alternative:
-                    </p>
-                    <div className="max-w-3xl mx-auto">
-                        <ul className="space-y-4">
-                            {whyWeExistPoints.map((point) => (
-                                <li
-                                    key={point}
-                                    className="flex items-start gap-4 text-left"
-                                >
-                                    <Check className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-                                    <span className="text-base text-foreground leading-relaxed">
-                                        {point}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
+                <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
+                    <CardHeader className="text-center pb-6">
+                        <CardTitle className="text-4xl font-bold text-primary mb-6">
+                            Why We Exist
+                        </CardTitle>
+                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
+                            Too many founders face risks – fines, exposure, or
+                            legal complications – by using their home address,
+                            or by overpaying for outdated services. We created
+                            VirtualAddressHub as a modern, no-fuss alternative:
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="max-w-3xl mx-auto">
+                            <ul className="space-y-4">
+                                {whyWeExistPoints.map((point) => (
+                                    <li
+                                        key={point}
+                                        className="flex items-start gap-4 text-left"
+                                    >
+                                        <Check className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                                        <span className="text-base text-foreground leading-relaxed">
+                                            {point}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Who We Support */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
