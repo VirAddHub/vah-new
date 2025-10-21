@@ -13,10 +13,10 @@ export const Templates = {
     InvoiceSent: "invoice-sent", // pragma: allowlist secret
     PaymentFailed: "payment-failed", // pragma: allowlist secret
 
-    // KYC
-    KycSubmitted: "kyc-submitted", // pragma: allowlist secret
-    KycApproved: "kyc-approved", // pragma: allowlist secret
-    KycRejected: "kyc-rejected", // pragma: allowlist secret
+    // KYC (simplified - only approved notifications)
+    // KycSubmitted: "kyc-submitted", // DISABLED - too noisy
+    KycApproved: "kyc-approved", // pragma: allowlist secret - KEEP THIS ONE
+    // KycRejected: "kyc-rejected", // DISABLED - users can check dashboard
 
     // Support
     SupportRequestReceived: "support-request-received", // pragma: allowlist secret

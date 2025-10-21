@@ -155,11 +155,8 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                 break;
 
             case "kyc-submitted":
-                await sendKycSubmitted({
-                    email,
-                    name,
-                    cta_url: `${ENV.APP_BASE_URL}/profile`
-                });
+                // DISABLED: Too noisy, users can check dashboard
+                console.log(`[DEV] KYC Submitted email disabled for ${email}`);
                 break;
 
             case "kyc-approved":
@@ -174,12 +171,8 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                 break;
 
             case "kyc-rejected":
-                await sendKycRejected({
-                    email,
-                    name,
-                    reason: payload.reason || "Document quality issue",
-                    cta_url: `${ENV.APP_BASE_URL}/profile`
-                });
+                // DISABLED: Users can check dashboard for details
+                console.log(`[DEV] KYC Rejected email disabled for ${email}`);
                 break;
 
             case "support-request-received":

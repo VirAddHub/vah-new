@@ -156,18 +156,19 @@ export async function sendPaymentFailed({ email, name, cta_url }: { email: strin
     });
 }
 
-// KYC
-export async function sendKycSubmitted({ email, name, cta_url }: { email: string; name?: string; cta_url?: string }): Promise<void> {
-    if (!emailGuard(ENV.EMAIL_KYC)) return;
-    await sendTemplateEmail({
-        to: email,
-        templateAlias: Templates.KycSubmitted,
-        model: {
-            name,
-            profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
-        },
-    });
-}
+// KYC (simplified - only approved notifications)
+// DISABLED: sendKycSubmitted - too noisy, users can check dashboard
+// export async function sendKycSubmitted({ email, name, cta_url }: { email: string; name?: string; cta_url?: string }): Promise<void> {
+//     if (!emailGuard(ENV.EMAIL_KYC)) return;
+//     await sendTemplateEmail({
+//         to: email,
+//         templateAlias: Templates.KycSubmitted,
+//         model: {
+//             name,
+//             profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
+//         },
+//     });
+// }
 
 export async function sendKycApproved({ email, name, cta_url, virtualAddressLine1, virtualAddressLine2, postcode }: { email: string; name?: string; cta_url?: string; virtualAddressLine1?: string; virtualAddressLine2?: string; postcode?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_KYC)) return;
@@ -184,18 +185,19 @@ export async function sendKycApproved({ email, name, cta_url, virtualAddressLine
     });
 }
 
-export async function sendKycRejected({ email, name, reason, cta_url }: { email: string; name?: string; reason?: string; cta_url?: string }): Promise<void> {
-    if (!emailGuard(ENV.EMAIL_KYC)) return;
-    await sendTemplateEmail({
-        to: email,
-        templateAlias: Templates.KycRejected,
-        model: {
-            name,
-            reason,
-            profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
-        },
-    });
-}
+// DISABLED: sendKycRejected - users can check dashboard for details
+// export async function sendKycRejected({ email, name, reason, cta_url }: { email: string; name?: string; reason?: string; cta_url?: string }): Promise<void> {
+//     if (!emailGuard(ENV.EMAIL_KYC)) return;
+//     await sendTemplateEmail({
+//         to: email,
+//         templateAlias: Templates.KycRejected,
+//         model: {
+//             name,
+//             reason,
+//             profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
+//         },
+//     });
+// }
 
 // Support
 export async function sendSupportRequestReceived({ email, name, ticket_id, cta_url }: { email: string; name?: string; ticket_id?: string; cta_url?: string }): Promise<void> {
