@@ -9,38 +9,43 @@ interface BlogPostProps {
 }
 
 export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
-    const post = await getPostBySlug(params.slug)
-    const base = 'https://virtualaddresshub.co.uk'
-    const title = `${post.title} | VirtualAddressHub`
-    const description =
-        post.excerpt ||
-        'Your official London business address with same-day mail scanning and full compliance.'
+  const post = await getPostBySlug(params.slug)
+  const base = 'https://virtualaddresshub.co.uk'
+  const title = `${post.title} | VirtualAddressHub`
+  const description =
+    post.excerpt ||
+    'Your official London business address with same-day mail scanning and full compliance.'
 
-    return {
-        title,
-        description,
-        alternates: { canonical: `${base}/blog/${post.slug}` },
-        openGraph: {
-            type: 'article',
-            url: `${base}/blog/${post.slug}`,
-            title: post.title,
-            description,
-            images: [
-                {
-                    url: post.ogImage || '/images/og-image.jpg',
-                    width: 1200,
-                    height: 630,
-                    alt: post.title,
-                },
-            ],
+  // Make OG image absolute (social scrapers need full URL)
+  const og = post.ogImage?.startsWith('http')
+    ? post.ogImage
+    : `${base}${post.ogImage || '/images/og-image.jpg'}`
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `${base}/blog/${post.slug}` },
+    openGraph: {
+      type: 'article',
+      url: `${base}/blog/${post.slug}`,
+      title: post.title,
+      description,
+      images: [
+        {
+          url: og,
+          width: 1200,
+          height: 630,
+          alt: post.title,
         },
-        twitter: {
-            card: 'summary_large_image',
-            title: post.title,
-            description,
-            images: [post.ogImage || '/images/og-image.jpg'],
-        },
-    }
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description,
+      images: [og],
+    },
+  }
 }
 
 // Helper function to get post data (you can replace this with your actual data source)
@@ -97,7 +102,7 @@ export default function BlogPost({ params }: BlogPostProps) {
                 onNavigate={handleNavigate}
                 onBack={handleBack}
             />
-
+            
             {/* Related Posts Section */}
             <section className="mt-12 border-t pt-6 max-w-4xl mx-auto px-4">
                 <h2 className="font-semibold mb-3 text-foreground">You might also like</h2>
@@ -110,6 +115,37 @@ export default function BlogPost({ params }: BlogPostProps) {
                     </li>
                 </ul>
             </section>
+
+            {/* Article + Breadcrumb JSON-LD Schema */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Article",
+                        "headline": params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        "datePublished": new Date().toISOString(),
+                        "dateModified": new Date().toISOString(),
+                        "author": { "@type": "Organization", "name": "VirtualAddressHub" },
+                        "publisher": { "@type": "Organization", "name": "VirtualAddressHub" },
+                        "image": [`https://virtualaddresshub.co.uk/images/og-image.jpg`],
+                        "mainEntityOfPage": `https://virtualaddresshub.co.uk/blog/${params.slug}`
+                    })
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            { "@type": "ListItem", "position": 1, "name": "Blog", "item": "https://virtualaddresshub.co.uk/blog" },
+                            { "@type": "ListItem", "position": 2, "name": params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), "item": `https://virtualaddresshub.co.uk/blog/${params.slug}` }
+                        ]
+                    })
+                }}
+            />
         </div>
     );
 }

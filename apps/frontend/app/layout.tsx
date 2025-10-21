@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ui/use-toast';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
 import { WebVitalsProvider } from '@/components/WebVitalsProvider';
+import Script from 'next/script';
 
 const montserrat = Montserrat({
     subsets: ['latin'],
@@ -156,22 +157,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </Providers>
                     </SWRProvider>
                 </WebVitalsProvider>
-
-                {/* Google Analytics 4 */}
+                
+                {/* Google Analytics 4 - Using next/script for safer loading */}
                 {process.env.NEXT_PUBLIC_GA_ID && (
-                    <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}></script>
-                )}
-                {process.env.NEXT_PUBLIC_GA_ID && (
-                    <script
-                        dangerouslySetInnerHTML={{
-                            __html: `
+                    <>
+                        <Script
+                            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+                            strategy="afterInteractive"
+                        />
+                        <Script id="ga4" strategy="afterInteractive">
+                            {`
                                 window.dataLayer = window.dataLayer || [];
                                 function gtag(){dataLayer.push(arguments);}
                                 gtag('js', new Date());
                                 gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { anonymize_ip: true });
-                            `,
-                        }}
-                    />
+                            `}
+                        </Script>
+                    </>
                 )}
             </body>
         </html>

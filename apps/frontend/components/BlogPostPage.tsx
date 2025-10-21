@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -204,16 +205,13 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <a
-                                        href="/pricing"
+                                    <Link 
+                                        href="/pricing" 
                                         className="text-primary hover:underline font-medium"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            onNavigate?.('pricing');
-                                        }}
+                                        prefetch
                                     >
                                         View Our Pricing Plans
-                                    </a>
+                                    </Link>
                                     <p className="text-sm text-muted-foreground mt-1">
                                         See our competitive pricing for virtual business addresses
                                     </p>
@@ -222,16 +220,13 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <a
-                                        href="/about"
+                                    <Link 
+                                        href="/about" 
                                         className="text-primary hover:underline font-medium"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            onNavigate?.('about');
-                                        }}
+                                        prefetch
                                     >
                                         Learn About VirtualAddressHub
-                                    </a>
+                                    </Link>
                                     <p className="text-sm text-muted-foreground mt-1">
                                         Discover why 1000+ businesses trust us with their address needs
                                     </p>
@@ -240,16 +235,13 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <a
-                                        href="/help"
+                                    <Link 
+                                        href="/help" 
                                         className="text-primary hover:underline font-medium"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            onNavigate?.('help');
-                                        }}
+                                        prefetch
                                     >
                                         Get Help & Support
-                                    </a>
+                                    </Link>
                                     <p className="text-sm text-muted-foreground mt-1">
                                         Find answers to common questions about our services
                                     </p>
@@ -287,16 +279,13 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                                                 </Badge>
                                             )}
                                             <h3 className="font-semibold text-lg leading-tight">
-                                                <a
+                                                <Link 
                                                     href={`/blog/${relatedPost.slug}`}
                                                     className="text-foreground hover:text-primary transition-colors"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        onNavigate?.('blog-post', { slug: relatedPost.slug });
-                                                    }}
+                                                    prefetch
                                                 >
                                                     {relatedPost.title}
-                                                </a>
+                                                </Link>
                                             </h3>
                                             <p className="text-sm text-muted-foreground line-clamp-3">
                                                 {relatedPost.description}
