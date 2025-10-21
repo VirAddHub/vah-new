@@ -157,9 +157,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </Providers>
                     </SWRProvider>
                 </WebVitalsProvider>
-                
-                {/* Google Analytics 4 - Using next/script for safer loading */}
-                {process.env.NEXT_PUBLIC_GA_ID && (
+
+                {/* Google Analytics 4 - Disabled for staging until GDPR compliance */}
+                {process.env.NEXT_PUBLIC_GA_ID && process.env.NODE_ENV === 'production' && (
                     <>
                         <Script
                             src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
@@ -174,6 +174,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             `}
                         </Script>
                     </>
+                )}
+
+                {/* Staging notice - remove when going live */}
+                {!process.env.NEXT_PUBLIC_GA_ID && (
+                    <div style={{ display: 'none' }}>
+                        {/* GA4 disabled for GDPR compliance assessment */}
+                    </div>
                 )}
             </body>
         </html>
