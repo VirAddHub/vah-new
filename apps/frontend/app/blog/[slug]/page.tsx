@@ -1,5 +1,6 @@
 import { BlogPostPage } from '@/components/BlogPostPage';
 import { Metadata } from 'next';
+import { getPostBySlug } from '@/lib/posts';
 
 interface BlogPostProps {
     params: {
@@ -7,38 +8,39 @@ interface BlogPostProps {
     };
 }
 
-// Generate metadata for blog posts
 export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
-    const { slug } = params;
-    
-    // You can fetch post data here or use a static mapping
-    const postData = getPostData(slug);
-    
+    const post = await getPostBySlug(params.slug)
+    const base = 'https://virtualaddresshub.co.uk'
+    const title = `${post.title} | VirtualAddressHub`
+    const description =
+        post.excerpt ||
+        'Your official London business address with same-day mail scanning and full compliance.'
+
     return {
-        title: `${postData.title} | VirtualAddressHub Blog`,
-        description: postData.excerpt,
-        keywords: [
-            'virtual business address',
-            'London business address',
-            'UK company formation',
-            'business compliance',
-            'virtual office',
-            'mail forwarding'
-        ],
+        title,
+        description,
+        alternates: { canonical: `${base}/blog/${post.slug}` },
         openGraph: {
-            title: postData.title,
-            description: postData.excerpt,
             type: 'article',
-            publishedTime: postData.publishedTime,
-            authors: ['VirtualAddressHub'],
-            tags: [postData.category],
+            url: `${base}/blog/${post.slug}`,
+            title: post.title,
+            description,
+            images: [
+                {
+                    url: post.ogImage || '/images/og-image.jpg',
+                    width: 1200,
+                    height: 630,
+                    alt: post.title,
+                },
+            ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: postData.title,
-            description: postData.excerpt,
+            title: post.title,
+            description,
+            images: [post.ogImage || '/images/og-image.jpg'],
         },
-    };
+    }
 }
 
 // Helper function to get post data (you can replace this with your actual data source)
@@ -63,7 +65,7 @@ function getPostData(slug: string) {
             publishedTime: '2024-01-05T00:00:00Z'
         }
     };
-    
+
     return posts[slug] || {
         title: 'Blog Post',
         excerpt: 'Read our latest insights on virtual business addresses and UK compliance.',
@@ -89,10 +91,25 @@ export default function BlogPost({ params }: BlogPostProps) {
     };
 
     return (
-        <BlogPostPage
-            slug={params.slug}
-            onNavigate={handleNavigate}
-            onBack={handleBack}
-        />
+        <div>
+            <BlogPostPage
+                slug={params.slug}
+                onNavigate={handleNavigate}
+                onBack={handleBack}
+            />
+
+            {/* Related Posts Section */}
+            <section className="mt-12 border-t pt-6 max-w-4xl mx-auto px-4">
+                <h2 className="font-semibold mb-3 text-foreground">You might also like</h2>
+                <ul className="space-y-2">
+                    {/* This will be populated by the BlogPostPage component */}
+                    <li>
+                        <a href="/blog" className="hover:underline text-primary">
+                            View all blog posts
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
     );
 }

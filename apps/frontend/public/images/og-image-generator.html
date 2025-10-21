@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAH OG Image Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .og-container {
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #d97706;
+        }
+
+        .og-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            padding: 40px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 700;
+            color: #d97706;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            font-size: 32px;
+            font-weight: 600;
+            color: #f9fafb;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            font-weight: 400;
+            color: #d1d5db;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            font-size: 18px;
+            font-weight: 500;
+            color: #d97706;
+            padding: 12px 24px;
+            background: rgba(217, 119, 6, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+        }
+
+        .bg-pattern {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .bg-pattern-2 {
+            position: absolute;
+            bottom: -100px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .url {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            font-size: 16px;
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="instructions">
+        <h3>📸 How to Create OG Image:</h3>
+        <ol>
+            <li>Right-click on the image below</li>
+            <li>Select "Save image as..."</li>
+            <li>Save as <code>og-image.jpg</code></li>
+            <li>Upload to <code>/public/images/</code></li>
+        </ol>
+        <p><strong>Or:</strong> Use browser dev tools to screenshot the .og-container div at 1200x630px</p>
+    </div>
+
+    <div class="og-container">
+        <div class="bg-pattern"></div>
+        <div class="bg-pattern-2"></div>
+
+        <div class="og-content">
+            <div class="logo">VirtualAddressHub</div>
+            <div class="tagline">Professional London Business Address</div>
+            <div class="subtitle">Secure • Compliant • Seamless</div>
+
+            <div class="features">
+                <div class="feature">Virtual Office</div>
+                <div class="feature">Mail Forwarding</div>
+                <div class="feature">Company Formation</div>
+            </div>
+        </div>
+
+        <div class="url">virtualaddresshub.co.uk</div>
+    </div>
+</body>
+
+</html>
