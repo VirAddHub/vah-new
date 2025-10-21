@@ -161,7 +161,7 @@ export function AboutPage() {
                 {/* Header */}
                 <div className="text-center mb-12">
                     <h1 className="text-5xl lg:text-6xl font-bold text-primary mb-6">
-                        About Us
+                        About VirtualAddressHub
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
                         We empower UK businesses with a secure, compliant
