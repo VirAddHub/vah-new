@@ -7,9 +7,17 @@ import { modelBuilders, BuildArgs } from './template-models';
 const postmark = require('postmark');
 
 let _client: any | null = null;
+let _warned = false;
+
 function getClient() {
     if (!_client) {
-        if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
+        if (!ENV.POSTMARK_TOKEN) {
+            if (!_warned) {
+                console.warn('[mailer] POSTMARK_TOKEN not set – emails are disabled for this env');
+                _warned = true;
+            }
+            return null;
+        }
         _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
     }
     return _client;
@@ -242,40 +250,15 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
 
 export async function sendMailForwarded({ email, name, forwarding_address, forwarded_date }: { email: string; name?: string; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
-
-    const client = getClient();
-    if (!client) return;
-
-    try {
-        // Try the template first
-        await sendTemplateEmail({
-            to: email,
-            templateAlias: Templates.MailForwarded,
-            model: {
-                name: name,
-                forwarding_address: forwarding_address || 'Your forwarding address',
-                forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
-            },
-        });
-    } catch (error) {
-        console.error('ForwardingCompleted template failed, sending fallback email:', error);
-
-        // Send a proper fallback email instead of generic notification
-        await client.sendEmail({
-            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
-            To: email,
-            Subject: 'Mail Forwarded Successfully',
-            HtmlBody: `
-                <p>Hi ${name || 'there'},</p>
-                <p>Your mail has been successfully forwarded!</p>
-                <p><strong>Forwarding Address:</strong> ${forwarding_address || 'Your forwarding address'}</p>
-                <p><strong>Forwarded Date:</strong> ${forwarded_date || new Date().toLocaleDateString('en-GB')}</p>
-                <p>Thank you for using VirtualAddressHub!</p>
-            `,
-            MessageStream: ENV.POSTMARK_STREAM,
-            ReplyTo: ENV.EMAIL_REPLY_TO,
-        });
-    }
+    await sendTemplateEmail({
+        to: email,
+        templateAlias: Templates.MailForwarded,
+        model: {
+            name,
+            forwarding_address: forwarding_address || 'Your forwarding address',
+            forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
+        },
+    });
 }
 
 export async function sendMailReceivedAfterCancellation({ email, name, subject, cta_url }: { email: string; name?: string; subject?: string; cta_url?: string }): Promise<void> {

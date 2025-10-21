@@ -9,43 +9,43 @@ interface BlogPostProps {
 }
 
 export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
-  const post = await getPostBySlug(params.slug)
-  const base = 'https://virtualaddresshub.co.uk'
-  const title = `${post.title} | VirtualAddressHub`
-  const description =
-    post.excerpt ||
-    'Your official London business address with same-day mail scanning and full compliance.'
+    const post = await getPostBySlug(params.slug)
+    const base = 'https://virtualaddresshub.co.uk'
+    const title = `${post.title} | VirtualAddressHub`
+    const description =
+        post.excerpt ||
+        'Your official London business address with same-day mail scanning and full compliance.'
 
-  // Make OG image absolute (social scrapers need full URL)
-  const og = post.ogImage?.startsWith('http')
-    ? post.ogImage
-    : `${base}${post.ogImage || '/images/og-image.jpg'}`
+    // Make OG image absolute (social scrapers need full URL)
+    const og = post.ogImage?.startsWith('http')
+        ? post.ogImage
+        : `${base}${post.ogImage || '/images/og-image.jpg'}`
 
-  return {
-    title,
-    description,
-    alternates: { canonical: `${base}/blog/${post.slug}` },
-    openGraph: {
-      type: 'article',
-      url: `${base}/blog/${post.slug}`,
-      title: post.title,
-      description,
-      images: [
-        {
-          url: og,
-          width: 1200,
-          height: 630,
-          alt: post.title,
+    return {
+        title,
+        description,
+        alternates: { canonical: `${base}/blog/${post.slug}` },
+        openGraph: {
+            type: 'article',
+            url: `${base}/blog/${post.slug}`,
+            title: post.title,
+            description,
+            images: [
+                {
+                    url: og,
+                    width: 1200,
+                    height: 630,
+                    alt: post.title,
+                },
+            ],
         },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description,
-      images: [og],
-    },
-  }
+        twitter: {
+            card: 'summary_large_image',
+            title: post.title,
+            description,
+            images: [og],
+        },
+    }
 }
 
 // Helper function to get post data (you can replace this with your actual data source)
@@ -102,7 +102,7 @@ export default function BlogPost({ params }: BlogPostProps) {
                 onNavigate={handleNavigate}
                 onBack={handleBack}
             />
-            
+
             {/* Related Posts Section */}
             <section className="mt-12 border-t pt-6 max-w-4xl mx-auto px-4">
                 <h2 className="font-semibold mb-3 text-foreground">You might also like</h2>

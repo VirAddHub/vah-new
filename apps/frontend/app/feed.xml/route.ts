@@ -4,9 +4,9 @@ import { getAllPosts } from '@/lib/posts'
 export const revalidate = 3600
 
 export async function GET() {
-  const base = 'https://virtualaddresshub.co.uk'
-  const posts = await getAllPosts().catch(() => [])
-  const items = posts.map((p: any) => `
+    const base = 'https://virtualaddresshub.co.uk'
+    const posts = await getAllPosts().catch(() => [])
+    const items = posts.map((p: any) => `
     <item>
       <title><![CDATA[${p.title || p.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}]]></title>
       <link>${base}/blog/${p.slug}</link>
@@ -16,7 +16,7 @@ export async function GET() {
     </item>
   `).join('')
 
-  const xml = `<?xml version="1.0" encoding="UTF-8" ?>
+    const xml = `<?xml version="1.0" encoding="UTF-8" ?>
   <rss version="2.0">
     <channel>
       <title>VirtualAddressHub Blog</title>
@@ -26,7 +26,7 @@ export async function GET() {
     </channel>
   </rss>`
 
-  return new NextResponse(xml, {
-    headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
-  })
+    return new NextResponse(xml, {
+        headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
+    })
 }

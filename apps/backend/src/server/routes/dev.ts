@@ -14,9 +14,9 @@ import {
     sendPlanCancelled,
     sendInvoiceSent,
     sendPaymentFailed,
-    sendKycSubmitted,
+    // sendKycSubmitted, // disabled
     sendKycApproved,
-    sendKycRejected,
+    // sendKycRejected,  // disabled
     sendSupportRequestReceived,
     sendSupportRequestClosed,
     sendMailScanned,
@@ -26,23 +26,29 @@ import {
 
 const router = Router();
 
+function safeEqual(a = '', b = '') {
+    if (a.length !== b.length) return false;
+    let r = 0;
+    for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return r === 0;
+}
+
+let _devWarned = false;
 function ensureAllowed(req: any, res: any, next: any) {
-    // Security: Disable in production
-    if (ENV.NODE_ENV === "production") {
-        return res.status(404).json({ ok: false, error: "not found" });
+    if (ENV.NODE_ENV === 'production') {
+        return res.status(404).json({ ok: false, error: 'not found' });
     }
-
-    // Security: Require secret to be configured
     if (!ENV.DEV_SEED_SECRET) {
-        return res.status(404).json({ ok: false, error: "not found" });
+        if (!_devWarned) {
+            console.warn('[dev] DEV_SEED_SECRET not set; dev endpoints disabled');
+            _devWarned = true;
+        }
+        return res.status(404).json({ ok: false, error: 'not found' });
     }
-
-    // Security: Require correct header
-    const secret = req.headers["x-dev-seed-secret"];
-    if (!secret || secret !== ENV.DEV_SEED_SECRET) {
-        return res.status(401).json({ ok: false, error: "unauthorized" });
+    const secret = String(req.headers['x-dev-seed-secret'] || '');
+    if (!safeEqual(secret, ENV.DEV_SEED_SECRET)) {
+        return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
-
     next();
 }
 
@@ -59,13 +65,14 @@ router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
     try {
         // Insert user into database
         const pool = getPool();
+        const insertedAt = new Date().toISOString();
         await pool.query(
-            `INSERT INTO users (id, email, first_name, created_at, status) 
-       VALUES ($1, $2, $3, $4, $5)`,
-            [id, email, firstName, new Date().toISOString(), "active"]
+            `INSERT INTO users (id, email, first_name, created_at, status)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, email, firstName, insertedAt, 'active']
         );
 
-        return res.json({ ok: true, userId: id, email, firstName });
+        return res.json({ ok: true, userId: id, email, firstName, createdAt: insertedAt });
     } catch (error: any) {
         console.error("Failed to seed user:", error);
         return res.status(500).json({ ok: false, error: error.message });
@@ -88,7 +95,7 @@ router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
  *  - support-request-received (payload: { ticketId: string })
  *  - support-request-closed (payload: { ticketId: string })
  *  - mail-scanned (payload: { subject?: string })
- *  - mail-forwarded (payload: { trackingNumber?: string, carrier?: string })
+ *  - mail-forwarded (payload: { forwarding_address?: string, forwarded_date?: string })
  *  - mail-after-cancellation (payload: { subject?: string })
  */
 router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
@@ -207,7 +214,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                     email,
                     name,
                     forwarding_address: payload.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
-                    forwarded_date: payload.forwarded_date || new Date().toLocaleDateString('en-GB')
+                    forwarded_date: payload.forwarded_date || new Date().toISOString()
                 });
                 break;
 

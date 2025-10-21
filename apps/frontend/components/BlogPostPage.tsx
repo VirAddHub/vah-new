@@ -205,8 +205,8 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <Link 
-                                        href="/pricing" 
+                                    <Link
+                                        href="/pricing"
                                         className="text-primary hover:underline font-medium"
                                         prefetch
                                     >
@@ -220,8 +220,8 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <Link 
-                                        href="/about" 
+                                    <Link
+                                        href="/about"
                                         className="text-primary hover:underline font-medium"
                                         prefetch
                                     >
@@ -235,8 +235,8 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
                                 <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div>
-                                    <Link 
-                                        href="/help" 
+                                    <Link
+                                        href="/help"
                                         className="text-primary hover:underline font-medium"
                                         prefetch
                                     >
@@ -279,7 +279,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                                                 </Badge>
                                             )}
                                             <h3 className="font-semibold text-lg leading-tight">
-                                                <Link 
+                                                <Link
                                                     href={`/blog/${relatedPost.slug}`}
                                                     className="text-foreground hover:text-primary transition-colors"
                                                     prefetch
