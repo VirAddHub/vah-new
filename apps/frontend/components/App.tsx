@@ -2,74 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@/contexts/NavigationContext';
-import dynamic from 'next/dynamic';
+import { HomePage } from './HomePage';
+import { BlogPage } from './BlogPage';
+import { BlogPostPage } from './BlogPostPage';
+import { PlansPage } from './PlansPage';
+import { TermsPage } from './TermsPage';
+import { PrivacyPolicyPage } from './PrivacyPolicyPage';
+import { KYCPolicyPage } from './KYCPolicyPage';
+import { HelpPage } from './HelpPage';
+import ContactPage from './ContactPage';
+import { SignupPage } from './SignupPage';
+import { BillingDashboard } from './BillingDashboard';
+import { KYCDashboard } from './KYCDashboard';
+import { ProfilePage } from './ProfilePage';
+import AccountPage from '../app/(dashboard)/account/page';
+import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
-
-// Dynamic imports for heavy components
-const HomePage = dynamic(() => import('./HomePage').then(mod => ({ default: mod.HomePage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const AboutPage = dynamic(() => import('./AboutPage').then(mod => ({ default: mod.AboutPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const BlogPage = dynamic(() => import('./BlogPage').then(mod => ({ default: mod.BlogPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const BlogPostPage = dynamic(() => import('./BlogPostPage').then(mod => ({ default: mod.BlogPostPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const PlansPage = dynamic(() => import('./PlansPage').then(mod => ({ default: mod.PlansPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const TermsPage = dynamic(() => import('./TermsPage').then(mod => ({ default: mod.TermsPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const PrivacyPolicyPage = dynamic(() => import('./PrivacyPolicyPage').then(mod => ({ default: mod.PrivacyPolicyPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const KYCPolicyPage = dynamic(() => import('./KYCPolicyPage').then(mod => ({ default: mod.KYCPolicyPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const HelpPage = dynamic(() => import('./HelpPage').then(mod => ({ default: mod.HelpPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const ContactPage = dynamic(() => import('./ContactPage'), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const SignupPage = dynamic(() => import('./SignupPage').then(mod => ({ default: mod.SignupPage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const BillingDashboard = dynamic(() => import('./BillingDashboard').then(mod => ({ default: mod.BillingDashboard })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const KYCDashboard = dynamic(() => import('./KYCDashboard').then(mod => ({ default: mod.KYCDashboard })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const ProfilePage = dynamic(() => import('./ProfilePage').then(mod => ({ default: mod.ProfilePage })), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
-
-const AccountPage = dynamic(() => import('../app/(dashboard)/account/page'), {
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-});
+import { ThemeProvider } from "./ui/theme";
+import { PWAInstallPrompt, OfflineIndicator, NotificationPermission, ServiceWorkerRegistration, PWAStatus } from "./pwa/PWAFeatures";
+import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
 
 export function App() {
   const { currentPage, navigate, goBack } = useNavigation();
   const [signupData, setSignupData] = useState<any>(null);
+
+  // Layer 2: HTML Preload for Montserrat fonts
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap';
+    link.as = 'style';
+    link.onload = function () {
+      (this as any).rel = 'stylesheet';
+    };
+    document.head.appendChild(link);
+  }, []);
 
   const handleNavigate = (page: string, data?: any) => {
     if (page === 'signup' && data) {
@@ -82,8 +50,6 @@ export function App() {
     switch (currentPage) {
       case 'home':
         return <HomePage onNavigate={handleNavigate} />;
-      case 'about':
-        return <AboutPage />;
       case 'blog':
         return <BlogPage onNavigate={navigate} />;
       case 'blog-post':
@@ -189,12 +155,28 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation onNavigate={navigate} />
-      <main className="flex-1">
-        {renderPage()}
-      </main>
-      <Footer onNavigate={navigate} />
-    </div>
+    <ThemeProvider>
+      {/* PWA Features */}
+      <ServiceWorkerRegistration />
+      <PWAInstallPrompt />
+      <OfflineIndicator />
+      <NotificationPermission />
+      <PWAStatus />
+
+      {/* SEO Schema Markup */}
+      <SchemaInjection schema={SchemaMarkup.organization} />
+      <SchemaInjection schema={SchemaMarkup.service} />
+
+      {/* Font Loading */}
+      <FontLoader />
+
+      <div className="min-h-screen flex flex-col">
+        <Navigation onNavigate={navigate} />
+        <main className="flex-1">
+          {renderPage()}
+        </main>
+        <Footer onNavigate={navigate} />
+      </div>
+    </ThemeProvider>
   );
 }

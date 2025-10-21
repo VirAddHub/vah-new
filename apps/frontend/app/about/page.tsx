@@ -82,6 +82,34 @@ export default function AboutPage() {
                         </section>
 
                         <section className="mb-12">
+                            <h2 className="text-3xl font-semibold mb-6">Why We Exist</h2>
+                            <p className="text-lg leading-relaxed mb-6">
+                                Too many founders face risks – fines, exposure, or legal complications – by using their home address,
+                                or by overpaying for outdated services. We created VirtualAddressHub as a modern, no-fuss alternative:
+                            </p>
+                            <div className="bg-card p-6 rounded-lg border border-border">
+                                <ul className="space-y-4">
+                                    <li className="flex items-start">
+                                        <span className="text-primary mr-3">✓</span>
+                                        <span><strong>Fully compliant:</strong> With all UK laws, including new Companies House rules.</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-primary mr-3">✓</span>
+                                        <span><strong>Fairly priced:</strong> No surprises, no mark-ups.</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-primary mr-3">✓</span>
+                                        <span><strong>Fast to set up:</strong> With secure ID checks and instant dashboard access.</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-primary mr-3">✓</span>
+                                        <span><strong>Made for modern businesses:</strong> Designed for remote-first operations and digital convenience.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section className="mb-12">
                             <h2 className="text-3xl font-semibold mb-6">Why Choose VirtualAddressHub?</h2>
                             <ul className="space-y-4 text-lg">
                                 <li className="flex items-start">
