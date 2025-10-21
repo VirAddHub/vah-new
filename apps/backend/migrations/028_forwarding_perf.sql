@@ -20,3 +20,4 @@ CREATE INDEX IF NOT EXISTS idx_fr_user_status ON forwarding_request(user_id, sta
 
 
 
+

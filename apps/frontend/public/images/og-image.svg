@@ -1,0 +1,41 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="pattern1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#d97706;stop-opacity:0.1" />
+      <stop offset="70%" style="stop-color:#d97706;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="pattern2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#d97706;stop-opacity:0.05" />
+      <stop offset="70%" style="stop-color:#d97706;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Background patterns -->
+  <circle cx="1000" cy="100" r="150" fill="url(#pattern1)"/>
+  <circle cx="200" cy="500" r="200" fill="url(#pattern2)"/>
+  
+  <!-- Main content -->
+  <text x="600" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="#d97706">VirtualAddressHub</text>
+  <text x="600" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#f9fafb">Professional London Business Address</text>
+  <text x="600" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#d1d5db">Secure • Compliant • Seamless</text>
+  
+  <!-- Feature badges -->
+  <rect x="350" y="380" width="120" height="40" rx="8" fill="rgba(217, 119, 6, 0.1)" stroke="rgba(217, 119, 6, 0.3)" stroke-width="1"/>
+  <text x="410" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="500" fill="#d97706">Virtual Office</text>
+  
+  <rect x="490" y="380" width="120" height="40" rx="8" fill="rgba(217, 119, 6, 0.1)" stroke="rgba(217, 119, 6, 0.3)" stroke-width="1"/>
+  <text x="550" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="500" fill="#d97706">Mail Forwarding</text>
+  
+  <rect x="630" y="380" width="120" height="40" rx="8" fill="rgba(217, 119, 6, 0.1)" stroke="rgba(217, 119, 6, 0.3)" stroke-width="1"/>
+  <text x="690" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="500" fill="#d97706">Company Formation</text>
+  
+  <!-- URL -->
+  <text x="1100" y="600" text-anchor="end" font-family="Arial, sans-serif" font-size="16" font-weight="400" fill="#9ca3af">virtualaddresshub.com</text>
+</svg>

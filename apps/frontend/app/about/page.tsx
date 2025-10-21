@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
-import { generateMetadata, businessSchema } from '@/lib/seo'
+import { businessSchema } from '@/lib/seo'
 
-export const metadata: Metadata = generateMetadata({
+export const metadata: Metadata = {
     title: 'About VirtualAddressHub - Professional London Business Address Service',
     description: 'Learn about VirtualAddressHub, the leading provider of professional London business addresses, virtual office services, and mail forwarding solutions for UK businesses.',
     keywords: [
@@ -12,8 +12,7 @@ export const metadata: Metadata = generateMetadata({
         'UK business address service',
         'professional address solutions'
     ],
-    canonical: '/about',
-})
+}
 
 export default function AboutPage() {
     return (

@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, User, Mail, Phone, Building2, MapPin, Save, Edit } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Building2, MapPin, Save, Edit, ShieldCheck, CheckCircle, Loader2 } from "lucide-react";
 import { profileService, UserProfile } from "@/lib/services/profile.service";
 import { useToast } from "./ui/use-toast";
 
@@ -29,14 +29,6 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
         company_name: '',
         forwarding_address: ''
     });
-    const [forwardingAddress, setForwardingAddress] = useState({
-        name: '',
-        address1: '',
-        address2: '',
-        city: '',
-        postal: '',
-        country: 'United Kingdom'
-    });
 
     // Load profile on mount
     useEffect(() => {
@@ -53,19 +45,6 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                         company_name: response.data.company_name || '',
                         forwarding_address: response.data.forwarding_address || ''
                     });
-
-                    // Parse existing forwarding address into separate fields
-                    if (response.data.forwarding_address) {
-                        const lines = response.data.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
-                        setForwardingAddress({
-                            name: lines[0] || '',
-                            address1: lines[1] || '',
-                            address2: lines[2] || '',
-                            city: lines[lines.length - 2]?.split(',')[0]?.trim() || '',
-                            postal: lines[lines.length - 2]?.split(',')[1]?.trim() || '',
-                            country: lines[lines.length - 1] || 'United Kingdom'
-                        });
-                    }
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
@@ -86,20 +65,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     const handleSave = async () => {
         try {
             setSaving(true);
-
-            // Combine forwarding address fields into the expected format
-            const combinedAddress = [
-                forwardingAddress.name,
-                forwardingAddress.address1,
-                forwardingAddress.address2,
-                `${forwardingAddress.city}, ${forwardingAddress.postal}`,
-                forwardingAddress.country
-            ].filter(line => line.trim() !== '').join('\n');
-
-            const response = await profileService.updateProfile({
-                ...formData,
-                forwarding_address: combinedAddress
-            });
+            const response = await profileService.updateProfile(formData);
             if (response.ok && response.data) {
                 setProfile(response.data);
                 setEditing(false);
@@ -135,10 +101,12 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading profile...</p>
+            <div className="min-h-screen bg-background">
+                <div className="container-modern py-24">
+                    <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                        <p className="text-muted-foreground">Loading profile...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -147,259 +115,267 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <div className="border-b bg-card">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm" onClick={onGoBack} className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back
-                        </Button>
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
+                <div className="container-modern py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onGoBack}
+                                className="btn-outline"
+                            >
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Back
+                            </Button>
+                            <h1 className="text-2xl font-bold">Profile Settings</h1>
+                        </div>
+                        
                         <div className="flex items-center gap-2">
-                            <User className="h-5 w-5 text-primary" />
-                            <h1 className="text-2xl font-semibold">Profile Settings</h1>
+                            {editing ? (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setEditing(false)}
+                                        className="btn-outline"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="btn-primary"
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-4 w-4" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    onClick={() => setEditing(true)}
+                                    className="btn-primary"
+                                >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Profile
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="container-modern py-8">
+                {/* Profile Overview */}
+                <div className="mb-8">
+                    <Card className="card-modern p-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-2xl flex items-center justify-center">
+                                <User className="h-10 w-10 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-bold mb-2">
+                                    {profile?.first_name} {profile?.last_name}
+                                </h2>
+                                <p className="text-muted-foreground mb-2">{profile?.email}</p>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="success" className="bg-success/20 text-success">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Verified Account
+                                    </Badge>
+                                    <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                        <ShieldCheck className="w-3 h-3 mr-1" />
+                                        Active Service
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Profile Form */}
+                <div className="grid gap-8 lg:grid-cols-2">
                     {/* Personal Information */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
+                    <Card className="card-modern">
+                        <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <User className="h-5 w-5" />
                                 Personal Information
                             </CardTitle>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditing(!editing)}
-                            >
-                                <Edit className="h-4 w-4 mr-2" />
-                                {editing ? 'Cancel' : 'Edit'}
-                            </Button>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <Label htmlFor="first_name">First Name</Label>
+                                    <Label htmlFor="first_name" className="text-sm font-medium mb-2 block">
+                                        First Name
+                                    </Label>
                                     <Input
                                         id="first_name"
                                         value={formData.first_name}
                                         onChange={(e) => handleChange('first_name', e.target.value)}
-                                        disabled={!editing || profile?.kyc_status === 'verified'}
+                                        disabled={!editing}
+                                        className="form-input"
                                         placeholder="Enter your first name"
                                     />
-                                    {profile?.kyc_status === 'verified' && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Name cannot be changed after KYC verification
-                                        </p>
-                                    )}
                                 </div>
                                 <div>
-                                    <Label htmlFor="last_name">Last Name</Label>
+                                    <Label htmlFor="last_name" className="text-sm font-medium mb-2 block">
+                                        Last Name
+                                    </Label>
                                     <Input
                                         id="last_name"
                                         value={formData.last_name}
                                         onChange={(e) => handleChange('last_name', e.target.value)}
-                                        disabled={!editing || profile?.kyc_status === 'verified'}
+                                        disabled={!editing}
+                                        className="form-input"
                                         placeholder="Enter your last name"
                                     />
-                                    {profile?.kyc_status === 'verified' && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Name cannot be changed after KYC verification
-                                        </p>
-                                    )}
                                 </div>
                             </div>
-
+                            
                             <div>
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input
-                                    id="email"
-                                    value={profile?.email || ''}
-                                    disabled
-                                    className="bg-gray-50"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Email cannot be changed. Contact support if needed.
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="phone">Phone Number</Label>
+                                <Label htmlFor="phone" className="text-sm font-medium mb-2 block">
+                                    Phone Number
+                                </Label>
                                 <Input
                                     id="phone"
                                     value={formData.phone}
                                     onChange={(e) => handleChange('phone', e.target.value)}
                                     disabled={!editing}
+                                    className="form-input"
                                     placeholder="Enter your phone number"
                                 />
                             </div>
+                        </CardContent>
+                    </Card>
 
+                    {/* Business Information */}
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Building2 className="h-5 w-5" />
+                                Business Information
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
                             <div>
-                                <Label htmlFor="company_name">Company Name</Label>
+                                <Label htmlFor="company_name" className="text-sm font-medium mb-2 block">
+                                    Company Name
+                                </Label>
                                 <Input
                                     id="company_name"
                                     value={formData.company_name}
                                     onChange={(e) => handleChange('company_name', e.target.value)}
                                     disabled={!editing}
-                                    placeholder="Enter your company name (optional)"
+                                    className="form-input"
+                                    placeholder="Enter your company name"
                                 />
                             </div>
-
-                            {editing && (
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" onClick={() => setEditing(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSave} disabled={saving}>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? 'Saving...' : 'Save Changes'}
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Forwarding Address */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Forwarding Address
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="p-4 bg-blue-50 rounded-lg">
-                                <h4 className="font-medium text-sm text-blue-900 mb-2">Important</h4>
-                                <p className="text-sm text-blue-800">
-                                    This address will be used for all mail forwarding requests.
-                                    Make sure it's accurate and complete.
-                                </p>
+                            
+                            <div>
+                                <Label htmlFor="forwarding_address" className="text-sm font-medium mb-2 block">
+                                    Forwarding Address
+                                </Label>
+                                <Textarea
+                                    id="forwarding_address"
+                                    value={formData.forwarding_address}
+                                    onChange={(e) => handleChange('forwarding_address', e.target.value)}
+                                    disabled={!editing}
+                                    className="form-input"
+                                    placeholder="Enter your forwarding address"
+                                    rows={3}
+                                />
                             </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <Label className="text-base font-medium">Forwarding Address</Label>
-                                    <p className="text-sm text-muted-foreground mb-4">
-                                        This address will be used automatically when you request mail forwarding.
-                                        Make sure it's accurate and complete.
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="forwarding_name">Full Name *</Label>
-                                            <Input
-                                                id="forwarding_name"
-                                                value={forwardingAddress.name}
-                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, name: e.target.value })}
-                                                disabled={!editing}
-                                                placeholder="John Doe"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="forwarding_country">Country *</Label>
-                                            <Input
-                                                id="forwarding_country"
-                                                value={forwardingAddress.country}
-                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, country: e.target.value })}
-                                                disabled={!editing}
-                                                placeholder="United Kingdom"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="forwarding_address1">Address Line 1 *</Label>
-                                        <Input
-                                            id="forwarding_address1"
-                                            value={forwardingAddress.address1}
-                                            onChange={(e) => setForwardingAddress({ ...forwardingAddress, address1: e.target.value })}
-                                            disabled={!editing}
-                                            placeholder="123 Main Street"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="forwarding_address2">Address Line 2</Label>
-                                        <Input
-                                            id="forwarding_address2"
-                                            value={forwardingAddress.address2}
-                                            onChange={(e) => setForwardingAddress({ ...forwardingAddress, address2: e.target.value })}
-                                            disabled={!editing}
-                                            placeholder="Apartment 4B (optional)"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="forwarding_city">City *</Label>
-                                            <Input
-                                                id="forwarding_city"
-                                                value={forwardingAddress.city}
-                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, city: e.target.value })}
-                                                disabled={!editing}
-                                                placeholder="London"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="forwarding_postal">Postal Code *</Label>
-                                            <Input
-                                                id="forwarding_postal"
-                                                value={forwardingAddress.postal}
-                                                onChange={(e) => setForwardingAddress({ ...forwardingAddress, postal: e.target.value })}
-                                                disabled={!editing}
-                                                placeholder="SW1A 1AA"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {editing && (
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" onClick={() => setEditing(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSave} disabled={saving}>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? 'Saving...' : 'Save Address'}
-                                    </Button>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Account Information */}
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Building2 className="h-5 w-5" />
-                            Account Information
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label>Account Status</Label>
-                                <div className="mt-1">
-                                    <Badge variant="default">Active</Badge>
+                {/* Service Information */}
+                <div className="mt-8">
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5" />
+                                Service Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <div>
+                                    <h4 className="font-semibold mb-2">Your London Address</h4>
+                                    <p className="text-muted-foreground mb-2">
+                                        This is your professional business address for all official correspondence.
+                                    </p>
+                                    <div className="p-4 bg-muted/50 rounded-xl">
+                                        <p className="font-mono text-sm">
+                                            {profile?.london_address || '123 Business Street, London, EC1A 4HD'}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-semibold mb-2">Service Status</h4>
+                                    <p className="text-muted-foreground mb-2">
+                                        Your current service plan and status.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <Badge variant="success" className="bg-success/20 text-success">
+                                            Active Service
+                                        </Badge>
+                                        <Badge variant="secondary" className="bg-primary/20 text-primary">
+                                            Premium Plan
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <Label>Member Since</Label>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
-                                </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Account Actions */}
+                <div className="mt-8">
+                    <Card className="card-modern">
+                        <CardHeader>
+                            <CardTitle>Account Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('dashboard')}
+                                    className="btn-outline"
+                                >
+                                    <User className="mr-2 h-4 w-4" />
+                                    View Dashboard
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('help')}
+                                    className="btn-outline"
+                                >
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Contact Support
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onNavigate('pricing')}
+                                    className="btn-outline"
+                                >
+                                    <Building2 className="mr-2 h-4 w-4" />
+                                    Manage Plan
+                                </Button>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );
