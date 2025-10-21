@@ -14,9 +14,9 @@ import {
     sendPlanCancelled,
     sendInvoiceSent,
     sendPaymentFailed,
-    // sendKycSubmitted, // disabled
+    sendKycSubmitted,
     sendKycApproved,
-    // sendKycRejected,  // disabled
+    sendKycRejected,
     sendSupportRequestReceived,
     sendSupportRequestClosed,
     sendMailScanned,
@@ -26,29 +26,23 @@ import {
 
 const router = Router();
 
-function safeEqual(a = '', b = '') {
-    if (a.length !== b.length) return false;
-    let r = 0;
-    for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    return r === 0;
-}
-
-let _devWarned = false;
 function ensureAllowed(req: any, res: any, next: any) {
-    if (ENV.NODE_ENV === 'production') {
-        return res.status(404).json({ ok: false, error: 'not found' });
+    // Security: Disable in production
+    if (ENV.NODE_ENV === "production") {
+        return res.status(404).json({ ok: false, error: "not found" });
     }
+
+    // Security: Require secret to be configured
     if (!ENV.DEV_SEED_SECRET) {
-        if (!_devWarned) {
-            console.warn('[dev] DEV_SEED_SECRET not set; dev endpoints disabled');
-            _devWarned = true;
-        }
-        return res.status(404).json({ ok: false, error: 'not found' });
+        return res.status(404).json({ ok: false, error: "not found" });
     }
-    const secret = String(req.headers['x-dev-seed-secret'] || '');
-    if (!safeEqual(secret, ENV.DEV_SEED_SECRET)) {
-        return res.status(401).json({ ok: false, error: 'unauthorized' });
+
+    // Security: Require correct header
+    const secret = req.headers["x-dev-seed-secret"];
+    if (!secret || secret !== ENV.DEV_SEED_SECRET) {
+        return res.status(401).json({ ok: false, error: "unauthorized" });
     }
+
     next();
 }
 
@@ -65,14 +59,13 @@ router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
     try {
         // Insert user into database
         const pool = getPool();
-        const insertedAt = new Date().toISOString();
         await pool.query(
-            `INSERT INTO users (id, email, first_name, created_at, status)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [id, email, firstName, insertedAt, 'active']
+            `INSERT INTO users (id, email, first_name, created_at, status) 
+       VALUES ($1, $2, $3, $4, $5)`,
+            [id, email, firstName, new Date().toISOString(), "active"]
         );
 
-        return res.json({ ok: true, userId: id, email, firstName, createdAt: insertedAt });
+        return res.json({ ok: true, userId: id, email, firstName });
     } catch (error: any) {
         console.error("Failed to seed user:", error);
         return res.status(500).json({ ok: false, error: error.message });
@@ -95,7 +88,7 @@ router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
  *  - support-request-received (payload: { ticketId: string })
  *  - support-request-closed (payload: { ticketId: string })
  *  - mail-scanned (payload: { subject?: string })
- *  - mail-forwarded (payload: { forwarding_address?: string, forwarded_date?: string })
+ *  - mail-forwarded (payload: { trackingNumber?: string, carrier?: string })
  *  - mail-after-cancellation (payload: { subject?: string })
  */
 router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
@@ -162,8 +155,11 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                 break;
 
             case "kyc-submitted":
-                // DISABLED: Too noisy, users can check dashboard
-                console.log(`[DEV] KYC Submitted email disabled for ${email}`);
+                await sendKycSubmitted({
+                    email,
+                    name,
+                    cta_url: `${ENV.APP_BASE_URL}/profile`
+                });
                 break;
 
             case "kyc-approved":
@@ -178,8 +174,12 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                 break;
 
             case "kyc-rejected":
-                // DISABLED: Users can check dashboard for details
-                console.log(`[DEV] KYC Rejected email disabled for ${email}`);
+                await sendKycRejected({
+                    email,
+                    name,
+                    reason: payload.reason || "Document quality issue",
+                    cta_url: `${ENV.APP_BASE_URL}/profile`
+                });
                 break;
 
             case "support-request-received":
@@ -214,7 +214,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
                     email,
                     name,
                     forwarding_address: payload.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
-                    forwarded_date: payload.forwarded_date || new Date().toISOString()
+                    forwarded_date: payload.forwarded_date || new Date().toLocaleDateString('en-GB')
                 });
                 break;
 

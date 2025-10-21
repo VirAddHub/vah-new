@@ -1,35 +1,62 @@
 import { MetadataRoute } from 'next'
-import { getAllPosts } from '@/lib/posts'
 
-export const revalidate = 3600 // 1 hour
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = 'https://virtualaddresshub.co.uk'
-  const posts = await getAllPosts().catch(() => []) as Array<{
-    slug: string
-    updatedAt?: string | Date
-    createdAt?: string | Date
-  }>
-
-  const toISO = (d?: string | Date) =>
-    d ? new Date(d).toISOString() : new Date().toISOString()
-
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: base, lastModified: toISO() },
-    { url: `${base}/pricing`, lastModified: toISO() },
-    { url: `${base}/help`, lastModified: toISO() },
-    { url: `${base}/about`, lastModified: toISO() },
-    { url: `${base}/contact`, lastModified: toISO() },
-    { url: `${base}/terms`, lastModified: toISO() },
-    { url: `${base}/privacy`, lastModified: toISO() },
-    { url: `${base}/kyc-policy`, lastModified: toISO() },
-    { url: `${base}/blog`, lastModified: toISO() },
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://virtualaddresshub.com'
+  
+  return [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/help`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/kyc-policy`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ]
-
-  const blogRoutes: MetadataRoute.Sitemap = posts.map((p) => ({
-    url: `${base}/blog/${p.slug}`,
-    lastModified: toISO(p.updatedAt ?? p.createdAt),
-  }))
-
-  return [...staticRoutes, ...blogRoutes]
 }

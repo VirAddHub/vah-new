@@ -17,4 +17,3 @@ COMMENT ON COLUMN "user".account_suspended_at IS 'Timestamp when account was sus
 
 
 
-

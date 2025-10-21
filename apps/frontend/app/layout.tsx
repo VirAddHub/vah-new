@@ -6,7 +6,6 @@ import { ToastProvider } from '@/components/ui/use-toast';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
 import { WebVitalsProvider } from '@/components/WebVitalsProvider';
-import Script from 'next/script';
 
 const montserrat = Montserrat({
     subsets: ['latin'],
@@ -157,31 +156,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         </Providers>
                     </SWRProvider>
                 </WebVitalsProvider>
-
-                {/* Google Analytics 4 - Disabled for staging until GDPR compliance */}
-                {process.env.NEXT_PUBLIC_GA_ID && process.env.NODE_ENV === 'production' && (
-                    <>
-                        <Script
-                            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-                            strategy="afterInteractive"
-                        />
-                        <Script id="ga4" strategy="afterInteractive">
-                            {`
-                                window.dataLayer = window.dataLayer || [];
-                                function gtag(){dataLayer.push(arguments);}
-                                gtag('js', new Date());
-                                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { anonymize_ip: true });
-                            `}
-                        </Script>
-                    </>
-                )}
-
-                {/* Staging notice - remove when going live */}
-                {!process.env.NEXT_PUBLIC_GA_ID && (
-                    <div style={{ display: 'none' }}>
-                        {/* GA4 disabled for GDPR compliance assessment */}
-                    </div>
-                )}
             </body>
         </html>
     );

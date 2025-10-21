@@ -4,8 +4,6 @@ import { useSignup } from '../hooks/useSignup';
 import { SignupStep1 } from './signup/SignupStep1';
 import { SignupStep2 } from './signup/SignupStep2';
 import { SignupStep3 } from './signup/SignupStep3';
-import { CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react';
-import { Button } from './ui/button';
 
 interface SignupPageProps {
     onNavigate?: (page: string) => void;
@@ -40,31 +38,32 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
     if (isComplete) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="w-full max-w-2xl">
-                    <div className="card-modern p-8 text-center">
-                        <div className="w-20 h-20 bg-gradient-to-br from-success to-success/90 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-10 h-10 text-white" />
+                <div className="w-full max-w-2xl text-center">
+                    <div className="mb-8">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
                         </div>
-                        <h1 className="text-3xl font-bold mb-4 text-gradient">Welcome to VirtualAddressHub!</h1>
-                        <p className="text-lg text-muted-foreground mb-8 text-balance">
+                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">Welcome to VirtualAddressHub!</h1>
+                        <p className="text-lg text-muted-foreground mb-8">
                             Your account has been created successfully. You'll receive an email with next steps shortly.
                         </p>
-                        
-                        <div className="space-y-4">
-                            <Button
-                                onClick={() => onNavigate?.('home')}
-                                className="w-full btn-primary"
-                            >
-                                Return to Home
-                            </Button>
-                            <Button
-                                onClick={resetSignup}
-                                variant="outline"
-                                className="w-full btn-outline"
-                            >
-                                Start Another Signup
-                            </Button>
-                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <button
+                            onClick={() => onNavigate?.('home')}
+                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-md px-6"
+                        >
+                            Return to Home
+                        </button>
+                        <button
+                            onClick={resetSignup}
+                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-12 rounded-md px-6"
+                        >
+                            Start Another Signup
+                        </button>
                     </div>
                 </div>
             </div>
@@ -102,13 +101,6 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                 />
             );
         default:
-            return (
-                <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                    <div className="text-center">
-                        <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                        <p className="text-muted-foreground">Loading signup...</p>
-                    </div>
-                </div>
-            );
+            return null;
     }
 }

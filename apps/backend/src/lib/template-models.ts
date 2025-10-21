@@ -93,10 +93,10 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
   }),
 
   // KYC
-  // [Templates.KycSubmitted]: (a) => ({
-  //   name: a.name,
-  //   cta_url: a.profileUrl ?? a.ctaUrl,
-  // }),
+  [Templates.KycSubmitted]: (a) => ({
+    name: a.name,
+    cta_url: a.profileUrl ?? a.ctaUrl,
+  }),
   [Templates.KycApproved]: (a) => ({
     name: a.firstName ?? a.name,
     virtual_address_line_1: a.virtualAddressLine1,
@@ -104,11 +104,11 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     postcode: a.postcode,
     dashboard_link: a.dashboardUrl ?? a.ctaUrl,
   }),
-  // [Templates.KycRejected]: (a) => ({
-  //   name: a.name,
-  //   reason: a.reason ?? "Verification was not approved",
-  //   cta_url: a.profileUrl ?? a.ctaUrl,
-  // }),
+  [Templates.KycRejected]: (a) => ({
+    name: a.name,
+    reason: a.reason ?? "Verification was not approved",
+    cta_url: a.profileUrl ?? a.ctaUrl,
+  }),
 
   // SUPPORT
   [Templates.SupportRequestReceived]: (a) => ({

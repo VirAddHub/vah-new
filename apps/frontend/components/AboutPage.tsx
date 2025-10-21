@@ -12,7 +12,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
-import { Shield, Users, Mail, Check, Send, Loader2, Building2, Clock, Globe, Award, Heart } from "lucide-react";
+import { Shield, Users, Mail, Check, Send, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function AboutPage() {
@@ -52,370 +52,394 @@ export function AboutPage() {
         loadHealthData();
     }, []);
 
-    // Handle contact form submission
+    // Contact form submission
     const handleContactSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormLoading(true);
         setFormError('');
+        setFormSuccess(false);
 
         try {
-            const response = await apiClient.post('/api/contact', contactForm);
-            if (response.ok) {
-                setFormSuccess(true);
-                setContactForm({
-                    name: '',
-                    email: '',
-                    subject: '',
-                    message: '',
-                    company: '',
-                    inquiryType: 'general'
-                });
-            } else {
-                setFormError('Failed to send message. Please try again.');
-            }
+            await apiClient.post('/api/contact', contactForm);
+            setFormSuccess(true);
+            setContactForm({ name: '', email: '', subject: '', message: '', company: '', inquiryType: 'general' });
         } catch (error) {
-            console.error('Contact form error:', error);
             setFormError('Failed to send message. Please try again.');
         } finally {
             setFormLoading(false);
         }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setContactForm(prev => ({ ...prev, [name]: value }));
-    };
+    const whatWeDoPoints = [
+        "Registered Office & Director's Address: Use our central London address with Companies House and HMRC.",
+        "Business Address for Everyday Use: Ideal for banks, websites, invoicing, and formal correspondence.",
+        "Same-Day Mail Scanning: All incoming post is scanned and uploaded to your dashboard the same day it arrives.",
+        "Secure Digital Access: View, download, tag, or delete your scanned letters – anytime, anywhere.",
+        "Optional Mail Forwarding: HMRC and Companies House letters are forwarded free. All other mail can be forwarded for just £2 per item (covering postage & handling).",
+        "Built-In Compliance: Fully GDPR-compliant and AML-supervised – your data is protected, always.",
+        "No Lock-In, No Nonsense: Cancel anytime. No hidden charges, no long-term contracts.",
+    ];
+
+    const whyWeExistPoints = [
+        "Fully compliant: With all UK laws, including new Companies House rules.",
+        "Fairly priced: No surprises, no mark-ups.",
+        "Fast to set up: With secure ID checks and instant dashboard access.",
+        "Made for modern businesses: Designed for remote-first operations and digital convenience.",
+    ];
+
+    const whoWeSupport = [
+        "UK start-ups and growing companies",
+        "Remote founders, freelancers & consultants",
+        "International entrepreneurs expanding to the UK",
+        "Agencies, tradespeople, digital nomads, and side hustlers",
+        "Anyone needing a legitimate, compliant UK business address – minus the office overhead.",
+    ];
+
+    const compliancePoints = [
+        "Supervised by HMRC for Anti-Money Laundering (AML).",
+        "Registered with the ICO (UK GDPR compliance).",
+        "Run by a UK private limited company.",
+        "Based in London, with a real, staffed mail-handling location.",
+    ];
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Hero Section */}
-            <section className="section-padding bg-gradient-to-b from-background to-muted/30">
-                <div className="container-modern">
-                    <div className="text-center mb-16">
-                        <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
-                            About <span className="text-gradient">VirtualAddressHub</span>
-                        </h1>
-                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-balance">
-                            We're on a mission to make UK business formation accessible, compliant, and professional for entrepreneurs worldwide. 
-                            Our virtual office services provide the foundation for your business success.
-                        </p>
-                    </div>
+        <div className="py-12 bg-background">
+            <div className="max-w-7xl mx-auto px-6">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold tracking-tight text-gray-900 mb-6">
+                        About Us
+                    </h1>
+                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+                        We empower UK businesses with a secure, compliant
+                        London presence – without the traditional office.
+                        Whether you're launching a start-up, working from
+                        home, or operating from abroad, we simplify
+                        compliance, protect your privacy, and manage your
+                        official post professionally.
+                    </p>
+                </div>
 
-                    {/* Stats */}
-                    <div className="grid gap-6 md:grid-cols-4 mb-16">
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Users className="h-8 w-8 text-white" />
+                {/* What We Do */}
+                <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
+                    <CardHeader className="p-6">
+                        <CardTitle className="flex items-center gap-3 text-[clamp(1.25rem,2.5vw,1.75rem)] font-semibold text-gray-900">
+                            <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
+                                <Mail className="h-5 w-5 text-gray-600" />
                             </div>
-                            <div className="text-3xl font-bold text-gradient mb-2">1000+</div>
-                            <p className="text-muted-foreground">Businesses Served</p>
-                        </div>
-                        
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Building2 className="h-8 w-8 text-white" />
-                            </div>
-                            <div className="text-3xl font-bold text-gradient mb-2">5+</div>
-                            <p className="text-muted-foreground">Years Experience</p>
-                        </div>
-                        
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Globe className="h-8 w-8 text-white" />
-                            </div>
-                            <div className="text-3xl font-bold text-gradient mb-2">50+</div>
-                            <p className="text-muted-foreground">Countries Served</p>
-                        </div>
-                        
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Award className="h-8 w-8 text-white" />
-                            </div>
-                            <div className="text-3xl font-bold text-gradient mb-2">100%</div>
-                            <p className="text-muted-foreground">Compliance Rate</p>
-                        </div>
+                            What We Do
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0 space-y-4">
+                        <p className="text-lg text-muted-foreground leading-relaxed">
+                            VirtualAddressHub provides a London-based virtual
+                            address service built on legal compliance, digital
+                            convenience, and total transparency. Every
+                            subscription includes:
+                        </p>
+                        <ul className="space-y-4">
+                            {whatWeDoPoints.map((point) => (
+                                <li
+                                    key={point}
+                                    className="flex items-start gap-4"
+                                >
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
+                                    <span className="text-base text-foreground leading-relaxed">
+                                        {point}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                {/* Why We Exist */}
+                <div className="mb-12 text-center">
+                    <h2 className="text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-6">
+                        Why We Exist
+                    </h2>
+                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed">
+                        Too many founders face risks – fines, exposure, or
+                        legal complications – by using their home address,
+                        or by overpaying for outdated services. We created
+                        VirtualAddressHub as a modern, no-fuss alternative:
+                    </p>
+                    <div className="max-w-3xl mx-auto">
+                        <ul className="space-y-4">
+                            {whyWeExistPoints.map((point) => (
+                                <li
+                                    key={point}
+                                    className="flex items-start gap-4 text-left"
+                                >
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
+                                    <span className="text-base text-foreground leading-relaxed">
+                                        {point}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
-            </section>
 
-            {/* Our Story */}
-            <section className="section-padding">
-                <div className="container-modern">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-                        <div>
-                            <h2 className="text-3xl font-bold mb-6">
-                                Our <span className="text-gradient">Story</span>
-                            </h2>
-                            <div className="space-y-4 text-muted-foreground leading-relaxed">
-                                <p>
-                                    VirtualAddressHub was born from a simple observation: starting a UK business shouldn't be complicated, 
-                                    expensive, or require physical presence in London. As entrepreneurs ourselves, we experienced firsthand 
-                                    the challenges of international business formation.
-                                </p>
-                                <p>
-                                    We built VirtualAddressHub to provide a seamless, compliant, and professional solution that allows 
-                                    businesses worldwide to establish a credible UK presence without the overhead of traditional office space.
-                                </p>
-                                <p>
-                                    Today, we're proud to serve over 1000 businesses across 50+ countries, helping them navigate UK 
-                                    regulations while maintaining their global operations.
-                                </p>
+                {/* Who We Support */}
+                <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
+                    <CardHeader className="p-6">
+                        <CardTitle className="flex items-center gap-3 text-[clamp(1.25rem,2.5vw,1.75rem)] font-semibold text-gray-900">
+                            <div className="w-8 h-8 bg-gray-100 rounded-[12px] flex items-center justify-center">
+                                <Users className="h-5 w-5 text-gray-600" />
                             </div>
-                        </div>
-                        
-                        <div className="relative">
-                            <div className="card-modern p-8">
-                                <ImageWithFallback
-                                    src="/images/london_office.jpg"
-                                    alt="Our London office location"
-                                    className="aspect-[4/3] w-full rounded-xl object-cover"
-                                />
-                                <div className="mt-6">
-                                    <h3 className="text-xl font-semibold mb-2">Central London Location</h3>
-                                    <p className="text-muted-foreground">
-                                        Our prestigious address in the heart of London provides your business with the credibility and 
-                                        professional image it deserves.
-                                    </p>
+                            Who We Support
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {whoWeSupport.map((item) => (
+                                <li
+                                    key={item}
+                                    className="flex items-start gap-4"
+                                >
+                                    <Check className="h-5 w-5 mt-1 text-gray-600 flex-shrink-0" />
+                                    <span className="text-base text-foreground leading-relaxed">
+                                        {item}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                {/* Compliance */}
+                <Card className="mb-12">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-[clamp(1.75rem,4.5vw,3.5rem)] font-semibold text-primary">
+                            <Shield className="h-5 w-5 text-gray-600" />
+                            Our Compliance Promise
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-lg text-muted-foreground">
+                            We take your privacy, security, and legal standing
+                            seriously. That's why VirtualAddressHub is:
+                        </p>
+                        <ul className="space-y-3">
+                            {compliancePoints.map((point) => (
+                                <li
+                                    key={point}
+                                    className="flex items-start gap-3"
+                                >
+                                    <Check className="h-4 w-4 mt-1 text-gray-600 flex-shrink-0" />
+                                    <span className="text-base text-foreground leading-relaxed">
+                                        {point}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="text-base text-muted-foreground">
+                            You can review our full{" "}
+                            <a
+                                href="/privacy"
+                                className="text-gray-600 hover:underline"
+                            >
+                                Privacy Policy
+                            </a>
+                            ,{" "}
+                            <a
+                                href="/terms"
+                                className="text-gray-600 hover:underline"
+                            >
+                                Terms of Service
+                            </a>
+                            , and{" "}
+                            <a
+                                href="/kyc-policy"
+                                className="text-gray-600 hover:underline"
+                            >
+                                KYC Policy
+                            </a>{" "}
+                            any time.
+                        </p>
+                    </CardContent>
+                </Card>
+
+                {/* Company Stats */}
+                {healthData && (
+                    <Card className="mb-12 bg-gray-50 border border-line">
+                        <CardContent className="p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+                                Our Performance
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                                <div>
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                        {healthData.uptime ? `${Math.round(healthData.uptime)}%` : '99.9%'}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">Uptime</div>
+                                </div>
+                                <div>
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                        1000+
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">Active Users</div>
+                                </div>
+                                <div>
+                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                        50,000+
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">Mail Processed</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+                        </CardContent>
+                    </Card>
+                )}
 
-            {/* Values */}
-            <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
-                <div className="container-modern">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-6">
-                            Our <span className="text-gradient">Values</span>
-                        </h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-                            These core principles guide everything we do and shape how we serve our clients.
-                        </p>
-                    </div>
+                {/* Contact Form */}
+                <div className="text-center">
+                    <h2 className="text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-6">
+                        Got Questions? Speak to Our UK Team.
+                    </h2>
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+                        We're not a call centre; we're a small, dedicated UK
+                        team who understands what it's like to run lean,
+                        modern businesses. Need help or want to chat before
+                        signing up? We're here to help.
+                    </p>
 
-                    <div className="grid gap-8 md:grid-cols-3">
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Shield className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-4">Compliance First</h3>
-                            <p className="text-muted-foreground">
-                                We ensure every service meets the highest standards of UK regulation, including the latest ECCT Act 2023 requirements.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/90 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Heart className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-4">Client Success</h3>
-                            <p className="text-muted-foreground">
-                                Your success is our success. We're committed to providing exceptional service that helps your business thrive.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Clock className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-4">Efficiency</h3>
-                            <p className="text-muted-foreground">
-                                We streamline complex processes to save you time and effort, so you can focus on growing your business.
-                            </p>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* Team */}
-            <section className="section-padding">
-                <div className="container-modern">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-6">
-                            Meet Our <span className="text-gradient">Team</span>
-                        </h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-                            Experienced professionals dedicated to making your UK business journey smooth and successful.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-8 md:grid-cols-3">
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Users className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Expert Team</h3>
-                            <p className="text-muted-foreground">
-                                Our team combines deep knowledge of UK business law with modern technology to deliver exceptional service.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary/90 rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Award className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Certified Professionals</h3>
-                            <p className="text-muted-foreground">
-                                All our team members are certified and regularly trained on the latest UK regulations and compliance requirements.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Mail className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">24/7 Support</h3>
-                            <p className="text-muted-foreground">
-                                Our support team is available to help you with any questions or concerns, ensuring you're never alone in your journey.
-                            </p>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section className="section-padding bg-gradient-to-b from-background to-muted/30">
-                <div className="container-modern">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-6">
-                            Get In <span className="text-gradient">Touch</span>
-                        </h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-                            Have questions about our services? We'd love to hear from you. Send us a message and we'll respond within 24 hours.
-                        </p>
-                    </div>
-
-                    <div className="max-w-2xl mx-auto">
-                        <Card className="card-modern p-8">
+                    <Card className="max-w-2xl mx-auto">
+                        <CardContent className="p-6">
                             {formSuccess ? (
                                 <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-success to-success/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                        <Check className="h-8 w-8 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold mb-2">Message Sent Successfully!</h3>
-                                    <p className="text-muted-foreground mb-6">
-                                        Thank you for reaching out. We'll get back to you within 24 hours.
+                                    <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                        Message Sent Successfully!
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        We'll get back to you within 24 hours.
                                     </p>
-                                    <Button
-                                        onClick={() => setFormSuccess(false)}
-                                        className="btn-primary"
-                                    >
-                                        Send Another Message
-                                    </Button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleContactSubmit} className="space-y-6">
-                                    <div className="grid gap-6 md:grid-cols-2">
+                                <form onSubmit={handleContactSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <Label htmlFor="name" className="text-sm font-medium mb-2 block">
-                                                Full Name *
-                                            </Label>
+                                            <Label htmlFor="name">Name *</Label>
                                             <Input
                                                 id="name"
-                                                name="name"
                                                 value={contactForm.name}
-                                                onChange={handleInputChange}
+                                                onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
                                                 required
-                                                className="form-input"
                                                 placeholder="Your full name"
                                             />
                                         </div>
-                                        
                                         <div>
-                                            <Label htmlFor="email" className="text-sm font-medium mb-2 block">
-                                                Email Address *
-                                            </Label>
+                                            <Label htmlFor="email">Email *</Label>
                                             <Input
                                                 id="email"
-                                                name="email"
                                                 type="email"
                                                 value={contactForm.email}
-                                                onChange={handleInputChange}
+                                                onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
                                                 required
-                                                className="form-input"
                                                 placeholder="your@email.com"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="grid gap-6 md:grid-cols-2">
-                                        <div>
-                                            <Label htmlFor="company" className="text-sm font-medium mb-2 block">
-                                                Company Name
-                                            </Label>
-                                            <Input
-                                                id="company"
-                                                name="company"
-                                                value={contactForm.company}
-                                                onChange={handleInputChange}
-                                                className="form-input"
-                                                placeholder="Your company name"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <Label htmlFor="subject" className="text-sm font-medium mb-2 block">
-                                                Subject *
-                                            </Label>
-                                            <Input
-                                                id="subject"
-                                                name="subject"
-                                                value={contactForm.subject}
-                                                onChange={handleInputChange}
-                                                required
-                                                className="form-input"
-                                                placeholder="What's this about?"
-                                            />
-                                        </div>
+                                    <div>
+                                        <Label htmlFor="company">Company (Optional)</Label>
+                                        <Input
+                                            id="company"
+                                            value={contactForm.company}
+                                            onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
+                                            placeholder="Your company name"
+                                        />
                                     </div>
 
                                     <div>
-                                        <Label htmlFor="message" className="text-sm font-medium mb-2 block">
-                                            Message *
-                                        </Label>
+                                        <Label htmlFor="subject">Subject *</Label>
+                                        <Input
+                                            id="subject"
+                                            value={contactForm.subject}
+                                            onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
+                                            required
+                                            placeholder="What's this about?"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="message">Message *</Label>
                                         <Textarea
                                             id="message"
-                                            name="message"
                                             value={contactForm.message}
-                                            onChange={handleInputChange}
+                                            onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
                                             required
-                                            rows={6}
-                                            className="form-input"
-                                            placeholder="Tell us how we can help you..."
+                                            placeholder="Tell us how we can help..."
+                                            rows={4}
                                         />
                                     </div>
 
                                     {formError && (
-                                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                                            <p className="text-destructive text-sm">{formError}</p>
+                                        <div className="text-red-500 text-sm text-center">
+                                            {formError}
                                         </div>
                                     )}
 
                                     <Button
                                         type="submit"
                                         disabled={formLoading}
-                                        className="w-full btn-primary"
+                                        className="w-full"
                                     >
                                         {formLoading ? (
                                             <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Sending Message...
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Sending...
                                             </>
                                         ) : (
                                             <>
-                                                <Send className="mr-2 h-4 w-4" />
+                                                <Send className="h-4 w-4 mr-2" />
                                                 Send Message
                                             </>
                                         )}
                                     </Button>
                                 </form>
                             )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Alternative Contact Methods */}
+                    <div className="mt-8 max-w-md mx-auto space-y-4">
+                        <Card className="bg-card border border-border">
+                            <CardContent className="p-4">
+                                <div className="text-lg font-semibold mb-1 text-gray-900">
+                                    Email Support
+                                </div>
+                                <div className="text-base text-muted-foreground">
+                                    <a
+                                        href="mailto:support@virtualaddresshub.co.uk"
+                                        className="text-gray-600 hover:underline break-all"
+                                    >
+                                        support@virtualaddresshub.co.uk
+                                    </a>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-card border border-border">
+                            <CardContent className="p-4">
+                                <div className="text-lg font-semibold mb-1 text-gray-900">
+                                    WhatsApp Support
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Fast, secure, and confidential support with end-to-end encryption.
+                                </p>
+                                <a
+                                    href="https://wa.me/YOURWHATSAPPNUMBER"
+                                    className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                                >
+                                    Message on WhatsApp
+                                </a>
+                            </CardContent>
                         </Card>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
     );
 }

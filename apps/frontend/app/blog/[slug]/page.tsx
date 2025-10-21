@@ -1,6 +1,5 @@
 import { BlogPostPage } from '@/components/BlogPostPage';
 import { Metadata } from 'next';
-import { getPostBySlug } from '@/lib/posts';
 
 interface BlogPostProps {
     params: {
@@ -8,44 +7,38 @@ interface BlogPostProps {
     };
 }
 
+// Generate metadata for blog posts
 export async function generateMetadata({ params }: BlogPostProps): Promise<Metadata> {
-    const post = await getPostBySlug(params.slug)
-    const base = 'https://virtualaddresshub.co.uk'
-    const title = `${post.title} | VirtualAddressHub`
-    const description =
-        post.excerpt ||
-        'Your official London business address with same-day mail scanning and full compliance.'
-
-    // Make OG image absolute (social scrapers need full URL)
-    const og = post.ogImage?.startsWith('http')
-        ? post.ogImage
-        : `${base}${post.ogImage || '/images/og-image.jpg'}`
-
+    const { slug } = params;
+    
+    // You can fetch post data here or use a static mapping
+    const postData = getPostData(slug);
+    
     return {
-        title,
-        description,
-        alternates: { canonical: `${base}/blog/${post.slug}` },
+        title: `${postData.title} | VirtualAddressHub Blog`,
+        description: postData.excerpt,
+        keywords: [
+            'virtual business address',
+            'London business address',
+            'UK company formation',
+            'business compliance',
+            'virtual office',
+            'mail forwarding'
+        ],
         openGraph: {
+            title: postData.title,
+            description: postData.excerpt,
             type: 'article',
-            url: `${base}/blog/${post.slug}`,
-            title: post.title,
-            description,
-            images: [
-                {
-                    url: og,
-                    width: 1200,
-                    height: 630,
-                    alt: post.title,
-                },
-            ],
+            publishedTime: postData.publishedTime,
+            authors: ['VirtualAddressHub'],
+            tags: [postData.category],
         },
         twitter: {
             card: 'summary_large_image',
-            title: post.title,
-            description,
-            images: [og],
+            title: postData.title,
+            description: postData.excerpt,
         },
-    }
+    };
 }
 
 // Helper function to get post data (you can replace this with your actual data source)
@@ -70,7 +63,7 @@ function getPostData(slug: string) {
             publishedTime: '2024-01-05T00:00:00Z'
         }
     };
-
+    
     return posts[slug] || {
         title: 'Blog Post',
         excerpt: 'Read our latest insights on virtual business addresses and UK compliance.',
@@ -96,56 +89,10 @@ export default function BlogPost({ params }: BlogPostProps) {
     };
 
     return (
-        <div>
-            <BlogPostPage
-                slug={params.slug}
-                onNavigate={handleNavigate}
-                onBack={handleBack}
-            />
-
-            {/* Related Posts Section */}
-            <section className="mt-12 border-t pt-6 max-w-4xl mx-auto px-4">
-                <h2 className="font-semibold mb-3 text-foreground">You might also like</h2>
-                <ul className="space-y-2">
-                    {/* This will be populated by the BlogPostPage component */}
-                    <li>
-                        <a href="/blog" className="hover:underline text-primary">
-                            View all blog posts
-                        </a>
-                    </li>
-                </ul>
-            </section>
-
-            {/* Article + Breadcrumb JSON-LD Schema */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "Article",
-                        "headline": params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                        "datePublished": new Date().toISOString(),
-                        "dateModified": new Date().toISOString(),
-                        "author": { "@type": "Organization", "name": "VirtualAddressHub" },
-                        "publisher": { "@type": "Organization", "name": "VirtualAddressHub" },
-                        "image": [`https://virtualaddresshub.co.uk/images/og-image.jpg`],
-                        "mainEntityOfPage": `https://virtualaddresshub.co.uk/blog/${params.slug}`
-                    })
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "BreadcrumbList",
-                        "itemListElement": [
-                            { "@type": "ListItem", "position": 1, "name": "Blog", "item": "https://virtualaddresshub.co.uk/blog" },
-                            { "@type": "ListItem", "position": 2, "name": params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), "item": `https://virtualaddresshub.co.uk/blog/${params.slug}` }
-                        ]
-                    })
-                }}
-            />
-        </div>
+        <BlogPostPage
+            slug={params.slug}
+            onNavigate={handleNavigate}
+            onBack={handleBack}
+        />
     );
 }

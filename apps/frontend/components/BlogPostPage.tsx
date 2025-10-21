@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, Calendar, Clock, Share2, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { FAQSchema, getFAQSet } from "./FAQSchema";
 
 interface BlogPostPageProps {
     slug: string;
@@ -17,7 +15,6 @@ interface BlogPostPageProps {
 
 export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     const [post, setPost] = useState<any>(null);
-    const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -31,8 +28,6 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
 
                 if (data.ok) {
                     setPost(data.data);
-                    // Fetch related posts
-                    await fetchRelatedPosts(data.data.tags || []);
                 } else {
                     setError('Post not found');
                 }
@@ -47,36 +42,15 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         fetchBlogPost();
     }, [slug]);
 
-    // Fetch related posts based on tags
-    const fetchRelatedPosts = async (tags: string[]) => {
-        try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-            const response = await fetch(`${apiUrl}/api/blog/posts`);
-            const data = await response.json();
-
-            if (data.ok) {
-                // Filter posts with similar tags, excluding current post
-                const related = data.data
-                    .filter((p: any) => p.slug !== slug && p.status === 'published')
-                    .filter((p: any) => p.tags && p.tags.some((tag: string) => tags.includes(tag)))
-                    .slice(0, 3); // Limit to 3 related posts
-
-                setRelatedPosts(related);
-            }
-        } catch (err) {
-            console.error('Error fetching related posts:', err);
-        }
-    };
-
     // Add structured data for individual blog posts
     const generateStructuredData = (post: any) => ({
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         "headline": post.title,
         "description": post.description,
-        "url": `https://virtualaddresshub.com/blog/${post.slug}`,
-        "datePublished": post.dateLong,
-        "dateModified": post.updated || post.dateLong,
+        "url": `https://virtualaddresshub.com/blog/${slug}`,
+        "datePublished": post.date,
+        "dateModified": post.updated || post.date,
         "author": {
             "@type": "Organization",
             "name": "VirtualAddressHub",
@@ -93,17 +67,19 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         },
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `https://virtualaddresshub.com/blog/${post.slug}`
+            "@id": `https://virtualaddresshub.com/blog/${slug}`
         },
-        "keywords": post.tags?.join(', ') || '',
-        "articleSection": post.tags?.[0] || 'Business',
-        "wordCount": post.content?.split(' ').length || 0
+        "image": post.cover,
+        "articleSection": post.tags?.[0] || "General",
+        "wordCount": post.content?.split(' ').length || 0,
+        "timeRequired": post.readTime
     });
 
+    // Loading state
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
+            <div className="min-h-screen bg-background py-12">
+                <div className="container mx-auto px-4 text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                     <p className="text-muted-foreground">Loading blog post...</p>
                 </div>
@@ -111,13 +87,16 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         );
     }
 
+    // Error state
     if (error || !post) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Post Not Found</h1>
-                    <p className="text-muted-foreground mb-6">{error || 'The requested blog post could not be found.'}</p>
-                    <Button onClick={onBack} variant="outline">
+            <div className="min-h-screen bg-background py-12">
+                <div className="container mx-auto px-4 text-center">
+                    <h1 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] tracking-tight mb-6">Blog Post Not Found</h1>
+                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                        {error || "The blog post you're looking for doesn't exist."}
+                    </p>
+                    <Button onClick={onBack} variant="outline" className="px-6 py-3 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back to Blog
                     </Button>
@@ -196,111 +175,6 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         </CardContent>
                     </Card>
                 </div>
-
-                {/* Internal Links Section */}
-                <div className="max-w-4xl mx-auto mt-16">
-                    <div className="bg-muted/30 rounded-lg p-8">
-                        <h2 className="text-2xl font-semibold mb-6 text-foreground">Explore More</h2>
-                        <div className="grid gap-4">
-                            <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
-                                <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <Link
-                                        href="/pricing"
-                                        className="text-primary hover:underline font-medium"
-                                        prefetch
-                                    >
-                                        View Our Pricing Plans
-                                    </Link>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        See our competitive pricing for virtual business addresses
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
-                                <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <Link
-                                        href="/about"
-                                        className="text-primary hover:underline font-medium"
-                                        prefetch
-                                    >
-                                        Learn About VirtualAddressHub
-                                    </Link>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Discover why 1000+ businesses trust us with their address needs
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-4 bg-background rounded-lg border">
-                                <ExternalLink className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <Link
-                                        href="/help"
-                                        className="text-primary hover:underline font-medium"
-                                        prefetch
-                                    >
-                                        Get Help & Support
-                                    </Link>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Find answers to common questions about our services
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* FAQ Section - Show relevant FAQs based on post tags */}
-                {post.tags && post.tags.some((tag: string) =>
-                    ['virtual-address', 'company-formation', 'mail-forwarding'].includes(tag.toLowerCase())
-                ) && (
-                        <div className="max-w-4xl mx-auto mt-12">
-                            <FAQSchema
-                                faqs={getFAQSet(post.tags.find((tag: string) =>
-                                    ['virtual-address', 'company-formation', 'mail-forwarding'].includes(tag.toLowerCase())
-                                )?.toLowerCase() || 'virtual-address')}
-                            />
-                        </div>
-                    )}
-
-                {/* Related Posts Section */}
-                {relatedPosts.length > 0 && (
-                    <div className="max-w-4xl mx-auto mt-12">
-                        <h2 className="text-2xl font-semibold mb-6 text-foreground">You Might Also Like</h2>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {relatedPosts.map((relatedPost) => (
-                                <Card key={relatedPost.slug} className="hover:shadow-lg transition-shadow">
-                                    <CardContent className="p-6">
-                                        <div className="space-y-3">
-                                            {relatedPost.tags && relatedPost.tags.length > 0 && (
-                                                <Badge variant="secondary" className="text-xs">
-                                                    {relatedPost.tags[0]}
-                                                </Badge>
-                                            )}
-                                            <h3 className="font-semibold text-lg leading-tight">
-                                                <Link
-                                                    href={`/blog/${relatedPost.slug}`}
-                                                    className="text-foreground hover:text-primary transition-colors"
-                                                    prefetch
-                                                >
-                                                    {relatedPost.title}
-                                                </Link>
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground line-clamp-3">
-                                                {relatedPost.description}
-                                            </p>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Calendar className="h-3 w-3" />
-                                                {relatedPost.dateLong}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* Article Footer */}
                 <div className="max-w-4xl mx-auto mt-16 pt-8 border-t border-border">

@@ -7,6 +7,10 @@ import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { getToken } from '@/lib/token-manager';
+
+// API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
 interface BlogPostForm {
     slug: string;
@@ -52,11 +56,14 @@ noindex: false
 ${formData.content}`;
 
             // Send to backend to create MDX file
-            const response = await fetch('/api/bff/admin/blog/posts', {
+            const token = getToken();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const response = await fetch(`${API_BASE}/api/admin/blog/posts`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
+                credentials: 'include',
                 body: JSON.stringify({
                     slug: formData.slug,
                     title: formData.title,
