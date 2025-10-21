@@ -7,9 +7,9 @@ import {
     sendPlanCancelled,
     sendInvoiceSent,
     sendPaymentFailed,
-    sendKycSubmitted,
+    // sendKycSubmitted, // disabled
     sendKycApproved,
-    sendKycRejected,
+    // sendKycRejected,  // disabled
     sendSupportRequestReceived,
     sendSupportRequestClosed,
     sendMailScanned,
@@ -146,15 +146,12 @@ router.post('/debug-email', async (req, res) => {
 
             // KYC
             case 'kyc-submitted':
-                await sendKycSubmitted({
-                    email,
-                    name: name || 'Test User',
-                    cta_url: req.body.cta_url
-                });
+                // DISABLED: Too noisy, users can check dashboard
+                console.log(`[DEBUG] KYC Submitted email disabled for ${email}`);
                 result = {
                     type: 'kyc-submitted',
-                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/profile`,
-                    status: 'sent'
+                    status: 'disabled',
+                    message: 'KYC submitted emails are disabled - users can check dashboard'
                 };
                 break;
 
@@ -172,16 +169,12 @@ router.post('/debug-email', async (req, res) => {
                 break;
 
             case 'kyc-rejected':
-                await sendKycRejected({
-                    email,
-                    name: name || 'Test User',
-                    reason: req.body.reason,
-                    cta_url: req.body.cta_url
-                });
+                // DISABLED: Users can check dashboard for details
+                console.log(`[DEBUG] KYC Rejected email disabled for ${email}`);
                 result = {
                     type: 'kyc-rejected',
-                    cta: req.body.cta_url || `${ENV.APP_BASE_URL}/profile`,
-                    status: 'sent'
+                    status: 'disabled',
+                    message: 'KYC rejected emails are disabled - users can check dashboard'
                 };
                 break;
 
