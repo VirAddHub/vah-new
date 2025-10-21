@@ -17,8 +17,6 @@ export function Header({ onNavigate }: HeaderProps) {
         { label: 'Blog', page: 'blog' },
         { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
-        { label: 'User Dashboard', page: 'dashboard' },
-        { label: 'Admin Portal', page: 'admin' },
     ];
 
     const handleNavClick = (page: string) => {
@@ -48,7 +46,7 @@ export function Header({ onNavigate }: HeaderProps) {
                 {/* Auth Buttons */}
                 <div className="hidden md:flex items-center gap-3">
                     <Button
-                        onClick={() => handleNavClick('login')}
+                        onClick={() => handleNavClick('signup')}
                         className="rounded-md bg-primary px-4 py-2 text-white text-sm font-medium hover:bg-primary/90"
                     >
                         Get started
@@ -82,7 +80,7 @@ export function Header({ onNavigate }: HeaderProps) {
                         ))}
                         <div className="pt-4">
                             <Button
-                                onClick={() => handleNavClick('login')}
+                                onClick={() => handleNavClick('signup')}
                                 className="w-full rounded-md bg-primary text-white font-medium hover:bg-primary/90"
                             >
                                 Get started
