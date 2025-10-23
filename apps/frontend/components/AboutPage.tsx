@@ -33,22 +33,25 @@ export function AboutPage() {
     const [formSuccess, setFormSuccess] = useState(false);
     const [formError, setFormError] = useState('');
 
-    // Load health data for company stats
+    // Load health data for company stats (optional, don't block page render)
     useEffect(() => {
         const loadHealthData = async () => {
             try {
-                setLoading(true);
                 const response = await apiClient.get('/api/health');
                 if (response.ok) {
                     setHealthData(response.data);
                 }
             } catch (error) {
                 console.error('Failed to load health data:', error);
+                // Don't block page render if health data fails to load
             } finally {
                 setLoading(false);
             }
         };
 
+        // Set loading to false immediately so page renders
+        setLoading(false);
+        // Load health data in background
         loadHealthData();
     }, []);
 
@@ -61,7 +64,7 @@ export function AboutPage() {
 
         try {
             await apiClient.post('/api/contact', contactForm);
-            setFormSuccess(true);
+                setFormSuccess(true);
             setContactForm({ name: '', email: '', subject: '', message: '', company: '', inquiryType: 'general' });
         } catch (error) {
             setFormError('Failed to send message. Please try again.');
@@ -109,7 +112,7 @@ export function AboutPage() {
                 <div className="text-center mb-12">
                     <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold tracking-tight text-gray-900 mb-6">
                         About Us
-                    </h1>
+                        </h1>
                     <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
                         We empower UK businesses with a secure, compliant
                         London presence – without the traditional office.
@@ -117,8 +120,8 @@ export function AboutPage() {
                         home, or operating from abroad, we simplify
                         compliance, protect your privacy, and manage your
                         official post professionally.
-                    </p>
-                </div>
+                        </p>
+                    </div>
 
                 {/* What We Do */}
                 <Card className="mb-12 bg-card shadow-sm border border-border rounded-[16px]">
@@ -259,44 +262,42 @@ export function AboutPage() {
                             any time.
                         </p>
                     </CardContent>
-                </Card>
+                        </Card>
 
                 {/* Company Stats */}
-                {healthData && (
-                    <Card className="mb-12 bg-gray-50 border border-line">
-                        <CardContent className="p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-                                Our Performance
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                                <div>
-                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
-                                        {healthData.uptime ? `${Math.round(healthData.uptime)}%` : '99.9%'}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">Uptime</div>
-                                </div>
-                                <div>
-                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
-                                        1000+
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">Active Users</div>
-                                </div>
-                                <div>
-                                    <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
-                                        50,000+
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">Mail Processed</div>
-                                </div>
+                <Card className="mb-12 bg-gray-50 border border-line">
+                    <CardContent className="p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+                            Our Performance
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                            <div>
+                                <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                    {healthData?.uptime ? `${Math.round(healthData.uptime)}%` : '99.9%'}
+                    </div>
+                                <div className="text-sm text-muted-foreground">Uptime</div>
                             </div>
-                        </CardContent>
-                    </Card>
-                )}
+                            <div>
+                                <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                    1000+
+                                </div>
+                                <div className="text-sm text-muted-foreground">Active Users</div>
+                            </div>
+                            <div>
+                                <div className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold text-primary mb-1">
+                                    50,000+
+                                </div>
+                                <div className="text-sm text-muted-foreground">Mail Processed</div>
+                            </div>
+                        </div>
+                    </CardContent>
+                        </Card>
 
                 {/* Contact Form */}
                 <div className="text-center">
                     <h2 className="text-[clamp(1.75rem,4.5vw,3rem)] font-bold text-gray-900 mb-6">
                         Got Questions? Speak to Our UK Team.
-                    </h2>
+                        </h2>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
                         We're not a call centre; we're a small, dedicated UK
                         team who understands what it's like to run lean,
@@ -342,25 +343,25 @@ export function AboutPage() {
                                         </div>
                                     </div>
 
-                                    <div>
+                                        <div>
                                         <Label htmlFor="company">Company (Optional)</Label>
-                                        <Input
-                                            id="company"
-                                            value={contactForm.company}
+                                            <Input
+                                                id="company"
+                                                value={contactForm.company}
                                             onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
-                                            placeholder="Your company name"
-                                        />
-                                    </div>
-
-                                    <div>
+                                                placeholder="Your company name"
+                                            />
+                                        </div>
+                                        
+                                        <div>
                                         <Label htmlFor="subject">Subject *</Label>
-                                        <Input
-                                            id="subject"
-                                            value={contactForm.subject}
+                                            <Input
+                                                id="subject"
+                                                value={contactForm.subject}
                                             onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
-                                            required
-                                            placeholder="What's this about?"
-                                        />
+                                                required
+                                                placeholder="What's this about?"
+                                            />
                                     </div>
 
                                     <div>
