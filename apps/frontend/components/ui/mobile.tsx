@@ -121,19 +121,19 @@ export function TouchGesture({
           </div>
         </div>
       )}
-      
+
       {children}
     </div>
   );
 }
 
 // Mobile-specific navigation component
-export function MobileNavigation({ 
-  currentPage, 
-  onNavigate 
-}: { 
-  currentPage: string; 
-  onNavigate: (page: string) => void; 
+export function MobileNavigation({
+  currentPage,
+  onNavigate
+}: {
+  currentPage: string;
+  onNavigate: (page: string) => void;
 }) {
   const navItems = [
     { id: 'home', label: 'Home', icon: '🏠' },
@@ -144,17 +144,16 @@ export function MobileNavigation({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 md:hidden">
-      <div className="flex items-center justify-around py-2">
+    <nav className="nav-mobile md:hidden">
+      <div className="flex items-center justify-around">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
-              currentPage === item.id
+            className={`nav-mobile-item ${currentPage === item.id
                 ? 'text-primary bg-primary/10'
                 : 'text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             <span className="text-lg">{item.icon}</span>
             <span className="text-xs font-medium">{item.label}</span>
@@ -166,12 +165,12 @@ export function MobileNavigation({
 }
 
 // Mobile-optimized card component
-export function MobileCard({ 
-  children, 
+export function MobileCard({
+  children,
   className = '',
-  onClick 
-}: { 
-  children: React.ReactNode; 
+  onClick
+}: {
+  children: React.ReactNode;
   className?: string;
   onClick?: () => void;
 }) {
@@ -190,13 +189,13 @@ export function MobileCard({
 }
 
 // Mobile-optimized button component
-export function MobileButton({ 
-  children, 
+export function MobileButton({
+  children,
   className = '',
   onClick,
   variant = 'primary'
-}: { 
-  children: React.ReactNode; 
+}: {
+  children: React.ReactNode;
   className?: string;
   onClick?: () => void;
   variant?: 'primary' | 'secondary' | 'outline';
