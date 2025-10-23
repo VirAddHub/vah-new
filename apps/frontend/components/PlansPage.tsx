@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Check, Info, Loader2, CreditCard, Star, ShieldCheck, Clock, Users } from 'lucide-react';
+import { Check, Info, Loader2, CreditCard } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 
 interface PlansPageProps {
     onNavigate: (page: string, data?: any) => void;
@@ -76,12 +75,14 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
     if (loading) {
         return (
             <div className="bg-background">
-                <section className="section-padding">
-                    <div className="container-modern">
-                        <div className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                                <p className="text-muted-foreground">Loading pricing plans...</p>
+                <section className="py-12 bg-background text-foreground">
+                    <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+                        <div className="mx-auto max-w-7xl">
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                                    <p className="text-muted-foreground">Loading pricing plans...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -92,246 +93,229 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
 
     return (
         <div className="bg-background">
-            <section className="section-mobile">
-                <div className="container-mobile">
-                    {/* Header */}
-                    <div className="text-center mb-16">
-                        <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
-                            Choose Your <span className="text-gradient">Perfect Plan</span>
-                        </h1>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance mb-8">
-                            Professional London business address service with transparent pricing. No hidden fees, no surprises.
-                        </p>
-
-                        {/* Billing Toggle */}
-                        <div className="flex items-center justify-center gap-4 mb-8">
-                            <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                Monthly
-                            </span>
-                            <button
-                                onClick={() => setIsAnnual(!isAnnual)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isAnnual ? 'bg-primary' : 'bg-muted'
-                                    }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-1'
-                                        }`}
-                                />
-                            </button>
-                            <span className={`text-sm font-medium ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                Annual
-                            </span>
-                            {isAnnual && (
-                                <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground">
-                                    Save 20%
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Pricing Cards */}
-                    <div className="grid-mobile-1 lg:grid-cols-3 mb-16">
-                        {/* Basic Plan */}
-                        <div className="pricing-card-mobile">
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold mb-2">Basic</h3>
-                                <p className="text-muted-foreground mb-4">Perfect for small businesses</p>
-                                <div className="text-4xl font-bold text-gradient mb-2">
-                                    £{isAnnual ? '120' : '12'}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                    {isAnnual ? '/year' : '/month'}
-                                </div>
-                            </div>
-
-                            <ul className="space-y-3 mb-8">
-                                {includedFeatures.slice(0, 4).map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                                        <span className="text-sm text-muted-foreground">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Button
-                                onClick={() => handleSelectPlan('basic')}
-                                disabled={processingPayment}
-                                className="w-full btn-outline btn-mobile mobile-touch-target"
-                            >
-                                {processingPayment ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Choose Basic'
-                                )}
-                            </Button>
-                        </div>
-
-                        {/* Professional Plan - Featured */}
-                        <div className="pricing-card featured">
-                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1">
-                                    <Star className="w-3 h-3 mr-1" />
-                                    Most Popular
-                                </Badge>
-                            </div>
-
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold mb-2">Professional</h3>
-                                <p className="text-muted-foreground mb-4">Ideal for growing businesses</p>
-                                <div className="text-4xl font-bold text-gradient mb-2">
-                                    £{isAnnual ? '180' : '18'}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                    {isAnnual ? '/year' : '/month'}
-                                </div>
-                            </div>
-
-                            <ul className="space-y-3 mb-8">
-                                {includedFeatures.map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                                        <span className="text-sm text-muted-foreground">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Button
-                                onClick={() => handleSelectPlan('professional')}
-                                disabled={processingPayment}
-                                className="w-full btn-primary"
-                            >
-                                {processingPayment ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Choose Professional'
-                                )}
-                            </Button>
-                        </div>
-
-                        {/* Enterprise Plan */}
-                        <div className="pricing-card">
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
-                                <p className="text-muted-foreground mb-4">For large organizations</p>
-                                <div className="text-4xl font-bold text-gradient mb-2">
-                                    £{isAnnual ? '300' : '30'}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                    {isAnnual ? '/year' : '/month'}
-                                </div>
-                            </div>
-
-                            <ul className="space-y-3 mb-8">
-                                {includedFeatures.map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                                        <span className="text-sm text-muted-foreground">{feature}</span>
-                                    </li>
-                                ))}
-                                <li className="flex items-start gap-3">
-                                    <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm text-muted-foreground">Priority support & dedicated account manager</span>
-                                </li>
-                            </ul>
-
-                            <Button
-                                onClick={() => handleSelectPlan('enterprise')}
-                                disabled={processingPayment}
-                                className="w-full btn-outline"
-                            >
-                                {processingPayment ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Choose Enterprise'
-                                )}
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Features Section */}
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-16">
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <ShieldCheck className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Fully Compliant</h3>
-                            <p className="text-muted-foreground">Meets all UK regulations including ECCT Act 2023</p>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Clock className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Same-Day Service</h3>
-                            <p className="text-muted-foreground">Digital mail scanning within hours of arrival</p>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                <Users className="h-8 w-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Trusted by 1000+</h3>
-                            <p className="text-muted-foreground">Businesses across the UK and beyond</p>
-                        </div>
-                    </div>
-
-                    {/* Mail Rules */}
-                    <div className="card-modern p-8 mb-16">
-                        <h2 className="text-2xl font-bold mb-6 text-center">Mail Handling Rules</h2>
-                        <div className="grid gap-6 md:grid-cols-2">
+            <section className="py-12 bg-background text-foreground">
+                <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+                    <div className="mx-auto max-w-7xl">
+                        {/* Header with billing toggle */}
+                        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                             <div>
-                                <h3 className="text-lg font-semibold mb-4">What's Included</h3>
-                                <ul className="space-y-2">
-                                    {mailRulesFeatures.slice(0, 2).map((feature, index) => (
-                                        <li key={index} className="flex items-start gap-2">
-                                            <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                                            <span className="text-sm text-muted-foreground">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <h2 className="text-4xl lg:text-6xl font-bold tracking-tight text-primary">
+                                    Simple, Transparent Pricing
+                                </h2>
+                                <p className="mt-3 max-w-2xl text-muted-foreground text-lg">
+                                    One plan. Everything you need for a compliant, professional London presence— with same-day digital mail and full control from your dashboard.
+                                </p>
                             </div>
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Additional Services</h3>
-                                <ul className="space-y-2">
-                                    {mailRulesFeatures.slice(2).map((feature, index) => (
-                                        <li key={index} className="flex items-start gap-2">
-                                            <Check className="h-4 w-4 text-secondary mt-1 flex-shrink-0" />
-                                            <span className="text-sm text-muted-foreground">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* At a Glance */}
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold mb-8">At a Glance</h2>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                            {atAGlanceFeatures.map((feature, index) => (
-                                <div key={index} className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">
-                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                    <span className="text-sm text-muted-foreground">{feature}</span>
+                            {/* Billing Toggle */}
+                            <div role="group" aria-label="Billing period" className="bg-muted flex h-11 w-fit items-center rounded-md p-1 text-sm">
+                                <div className="grid h-full grid-cols-2 w-full">
+                                    <button
+                                        onClick={() => setIsAnnual(false)}
+                                        className={`h-full rounded-md px-5 font-semibold transition-all ${!isAnnual
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        Monthly
+                                    </button>
+                                    <button
+                                        onClick={() => setIsAnnual(true)}
+                                        className={`h-full rounded-md px-5 font-semibold transition-all flex items-center justify-center gap-2 ${isAnnual
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        Annual
+                                        <span className="items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
+                                            Save 25%
+                                        </span>
+                                    </button>
                                 </div>
-                            ))}
+                            </div>
+                        </div>
+
+                        {/* Main content grid */}
+                        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                            {/* Main pricing card - 2 columns */}
+                            <div className="lg:col-span-2">
+                                <div className="relative rounded-lg border border-border bg-card p-5 shadow-sm">
+                                    {/* Plan header */}
+                                    <div className="mb-5 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-primary font-semibold">Virtual Mailbox</p>
+                                            <h3 className="text-2xl font-semibold mt-1 text-primary">
+                                                London Business Address + Same-Day Digital Mail
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    {/* Pricing */}
+                                    <div className="flex flex-wrap items-baseline gap-3">
+                                        <div className="leading-none">
+                                            <span className="text-4xl font-semibold text-primary">
+                                                £{(() => {
+                                                    const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                    return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
+                                                })()}
+                                            </span>
+                                            <span className="ml-1 text-base text-primary">
+                                                {isAnnual ? '/year' : '/month'}
+                                            </span>
+                                        </div>
+                                        {isAnnual && (
+                                            <p className="text-sm text-primary mt-1">
+                                                ≈ £{(() => {
+                                                    const plan = plans.find(p => p.interval === 'year');
+                                                    return plan ? ((plan.price_pence / 100) / 12).toFixed(2) : '7.50';
+                                                })()}/month • 2 months free
+                                            </p>
+                                        )}
+                                        <p className="text-sm text-primary">Cancel anytime. No hidden fees.</p>
+                                    </div>
+
+                                    {/* Separator */}
+                                    <div className="bg-border shrink-0 h-px w-full my-5"></div>
+
+                                    {/* Features grid */}
+                                    <div className="grid gap-8 md:grid-cols-2">
+                                        {/* Included features */}
+                                        <div>
+                                            <h4 className="mb-3 font-medium text-primary">Included</h4>
+                                            <ul className="space-y-3 text-sm text-foreground/90">
+                                                {includedFeatures.map((feature, index) => (
+                                                    <li key={index} className="flex items-start gap-3">
+                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                            <Check className="h-3.5 w-3.5 text-primary" />
+                                                        </span>
+                                                        <span>{feature}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        {/* Your Mail, Your Rules */}
+                                        <div>
+                                            <h4 className="mb-3 font-medium text-primary">Your Mail, Your Rules</h4>
+                                            <ul className="space-y-3 text-sm text-foreground/90">
+                                                {mailRulesFeatures.map((feature, index) => (
+                                                    <li key={index} className="flex items-start gap-3">
+                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                            <Check className="h-3.5 w-3.5 text-primary" />
+                                                        </span>
+                                                        <span>{feature}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {/* International forwarding note */}
+                                            <div className="mt-4 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground flex items-start gap-2">
+                                                <Info className="h-4 w-4 mt-0.5" />
+                                                <p>
+                                                    International forwarding is available on request and billed at carrier rates (postage) with a small handling fee shown at checkout — charged to your subscription, not before dispatch.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Error Display */}
+                                    {(error || paymentError) && (
+                                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
+                                            {error || paymentError}
+                                        </div>
+                                    )}
+
+                                    {/* Action buttons */}
+                                    <div className="mt-6 flex flex-col gap-3">
+                                        <Button
+                                            onClick={() => {
+                                                const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                handleSelectPlan(plan?.id);
+                                            }}
+                                            disabled={processingPayment || loading}
+                                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 w-full sm:w-auto sm:min-w-48 font-medium"
+                                        >
+                                            {processingPayment ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <CreditCard className="h-4 w-4 mr-2" />
+                                                    Choose Plan — £{(() => {
+                                                        const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
+                                                        return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
+                                                    })()}{isAnnual ? '/yr' : '/mo'}
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => onNavigate('terms')}
+                                                className="h-10 px-6 w-full font-medium"
+                                            >
+                                                View Terms
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => onNavigate('privacy')}
+                                                className="h-10 px-6 w-full font-medium"
+                                            >
+                                                View Privacy Policy
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Service note */}
+                                    <p className="mt-3 text-xs text-muted-foreground">
+                                        Service activates after quick ID verification. You can switch billing period in your dashboard at any time.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Sidebar - At a glance */}
+                            <aside>
+                                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                                    <h4 className="text-xl font-semibold text-primary">At a glance</h4>
+                                    <ul className="mt-4 space-y-3 text-sm text-foreground/90">
+                                        {atAGlanceFeatures.map((feature, index) => (
+                                            <li key={index} className="flex items-start gap-3">
+                                                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                    <Check className="h-3.5 w-3.5 text-primary" />
+                                                </span>
+                                                <span>{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {/* Separator */}
+                                    <div className="bg-border shrink-0 h-px w-full my-5"></div>
+
+                                    {/* Support links */}
+                                    <div className="text-sm text-muted-foreground">
+                                        Questions?{' '}
+                                        <a
+                                            className="text-primary underline underline-offset-4 hover:text-primary/80 cursor-pointer"
+                                            onClick={() => onNavigate('contact')}
+                                        >
+                                            Email support
+                                        </a>
+                                        {' '}or{' '}
+                                        <button
+                                            className="text-primary underline underline-offset-4 hover:text-primary/80"
+                                            onClick={() => onNavigate('faq')}
+                                        >
+                                            read the FAQs
+                                        </button>
+                                        .
+                                    </div>
+                                </div>
+                            </aside>
                         </div>
                     </div>
-
-                    {/* Error Display */}
-                    {paymentError && (
-                        <div className="mt-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                            <p className="text-destructive text-sm">{paymentError}</p>
-                        </div>
-                    )}
                 </div>
             </section>
         </div>
