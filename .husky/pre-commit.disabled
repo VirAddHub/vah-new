@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔒 Running content guardrails..."
+
+# Allow initial setup of content.ts
+if git diff --cached --name-only | grep -E 'src/content/' && ! git log --oneline -1 | grep -q "implement AI guardrails"; then
+  echo "✅ Allowing initial content.ts setup"
+else
+  # Block edits to content source of truth after initial setup
+  if git diff --cached --name-only | grep -E 'src/content/'; then
+    echo "🚫 Content is locked. Edit via approved flow only."
+    echo "   Content changes must go through: src/content/content.ts"
+    exit 1
+  fi
+fi
+
+# Block invented marketing phrases in changed files
+CHANGED=$(git diff --cached -U0 | tr -d '\r')
+
+# Disallow common fake claims (but allow in documentation and test files)
+if echo "$CHANGED" | grep -Ei '\+.*(trusted by|#\s*users|millions of|award[- ]winning|world.?class|leading|premier|best|top-rated)' | grep -v -E '\.(md|txt|test\.ts)$'; then
+  echo "🚫 Detected invented marketing claim. Remove it."
+  echo "   Use only content from src/content/content.ts"
+  exit 1
+fi
+
+# Disallow adding % or £ numbers unless in content.ts or pricing component
+if echo "$CHANGED" | grep -E '^\+.*[%£][0-9]' | grep -v 'src/content/content.ts' | grep -v 'pricing'; then
+  echo "🚫 New numeric claims detected. Put pricing/text only in src/content/content.ts."
+  exit 1
+fi
+
+# Disallow hardcoded company stats
+if echo "$CHANGED" | grep -Ei '\+.*(1000\+|50,000\+|99\.9%)' | grep -v 'src/content/content.ts'; then
+  echo "🚫 Hardcoded company stats detected. Use copy.stats from content.ts"
+  exit 1
+fi
+
+# Check for mobile-only changes (should not touch copy)
+if echo "$CHANGED" | grep -E '^\+.*className.*(mobile|responsive|sm:|md:|lg:)'; then
+  echo "✅ Mobile/responsive changes detected - checking for copy changes..."
+  if echo "$CHANGED" | grep -E '^\+.*[A-Za-z]{10,}'; then
+    echo "⚠️  Text changes detected with mobile changes. Ensure only layout/spacing changed."
+  fi
+fi
+
+echo "✅ Content guardrails passed"
