@@ -20,7 +20,6 @@ import { FontLoader } from './FontLoader';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
-import { PWAInstallPrompt, OfflineIndicator, NotificationPermission, ServiceWorkerRegistration, PWAStatus } from "./pwa/PWAFeatures";
 import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
 
 export function App() {
@@ -156,13 +155,6 @@ export function App() {
 
   return (
     <ThemeProvider>
-      {/* PWA Features */}
-      <ServiceWorkerRegistration />
-      <PWAInstallPrompt />
-      <OfflineIndicator />
-      <NotificationPermission />
-      <PWAStatus />
-
       {/* SEO Schema Markup */}
       <SchemaInjection schema={SchemaMarkup.organization} />
       <SchemaInjection schema={SchemaMarkup.service} />

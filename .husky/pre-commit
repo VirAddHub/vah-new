@@ -23,6 +23,13 @@ if [ -n "$UI_FILES" ]; then
       echo "   Use only content from src/content/content.ts"
       exit 1
     fi
+    
+    # Block PWA prompts and notification requests
+    if git diff --cached "$file" | grep -Ei '\+.*(install.*app|enable.*notification|PWAInstallPrompt|NotificationPermission|beforeinstallprompt|ServiceWorkerRegistration)'; then
+      echo "🚫 PWA install/notification prompts are disabled. Remove them."
+      echo "   These features are not wanted in this application."
+      exit 1
+    fi
   done
 fi
 

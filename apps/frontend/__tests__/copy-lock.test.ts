@@ -6,10 +6,10 @@ const contentDir = "apps/frontend/src/content";
 
 test("no hardcoded marketing text in UI", () => {
   const re = /trusted by|award|#\s*users|million|GDPR-certified|leading|premier|best|top-rated|1000\+|50,000\+|99\.9%/i;
-  
+
   for (const dir of uiDirs) {
     if (!fs.existsSync(dir)) continue;
-    
+
     const files = walk(dir, [".tsx", ".ts", ".jsx", ".js"]);
     for (const f of files) {
       const src = fs.readFileSync(f, "utf8");
@@ -29,6 +29,22 @@ test("content.ts is properly frozen", () => {
   const src = fs.readFileSync(contentPath, "utf8");
   if (!src.includes("Object.freeze(copy)")) {
     throw new Error("Content object must be frozen to prevent mutation");
+  }
+});
+
+test("no PWA prompts or notification requests in UI", () => {
+  const re = /install.*app|enable.*notification|PWAInstallPrompt|NotificationPermission|beforeinstallprompt|ServiceWorkerRegistration/i;
+  
+  for (const dir of uiDirs) {
+    if (!fs.existsSync(dir)) continue;
+    
+    const files = walk(dir, [".tsx", ".ts", ".jsx", ".js"]);
+    for (const f of files) {
+      const src = fs.readFileSync(f, "utf8");
+      if (re.test(src) && !f.includes("test") && !f.includes("spec")) {
+        throw new Error(`PWA prompt found in ${f}. These features are disabled.`);
+      }
+    }
   }
 });
 
