@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { generateMetadata, businessSchema } from '@/lib/seo'
+import Section from '@/components/ui/Section'
 
 export const metadata: Metadata = generateMetadata({
     title: 'About VirtualAddressHub - Professional London Business Address Service',
@@ -18,16 +19,19 @@ export const metadata: Metadata = generateMetadata({
 export default function AboutPage() {
     return (
         <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-16">
-                <article className="max-w-4xl mx-auto">
+            <Section>
+                <article className="prose-mobile mx-auto">
+                    {/* COPY-LOCK: do not alter text, numbers, or claims */}
                     <header className="text-center mb-12">
                         <h1 className="text-4xl font-bold mb-6">About VirtualAddressHub</h1>
                         <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                             Your trusted partner for professional London business addresses and virtual office solutions
                         </p>
                     </header>
+                    {/* /COPY-LOCK */}
 
                     <div className="prose prose-lg max-w-none">
+                        {/* COPY-LOCK: do not alter text, numbers, or claims */}
                         <section className="mb-12">
                             <h2 className="text-3xl font-semibold mb-6">Who We Are</h2>
                             <p className="text-lg leading-relaxed mb-6">
@@ -43,11 +47,14 @@ export default function AboutPage() {
                                 regulatory requirements.
                             </p>
                         </section>
+                        {/* /COPY-LOCK */}
 
+                        {/* Mobile-first grid that stacks on small screens */}
                         <section className="mb-12">
                             <h2 className="text-3xl font-semibold mb-6">Our Services</h2>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="bg-card p-6 rounded-lg border border-border">
+                            <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2">
+                                {/* COPY-LOCK: do not alter text, numbers, or claims */}
+                                <div className="card-mobile p-6">
                                     <h3 className="text-xl font-semibold mb-4">Virtual Business Address</h3>
                                     <p className="text-muted-foreground">
                                         A prestigious London address for company registration, HMRC correspondence,
@@ -55,7 +62,7 @@ export default function AboutPage() {
                                         and maintaining compliance with UK regulations.
                                     </p>
                                 </div>
-                                <div className="bg-card p-6 rounded-lg border border-border">
+                                <div className="card-mobile p-6">
                                     <h3 className="text-xl font-semibold mb-4">Mail Forwarding Service</h3>
                                     <p className="text-muted-foreground">
                                         Secure digital mail scanning with same-day processing. Receive your mail
@@ -63,14 +70,14 @@ export default function AboutPage() {
                                         when needed. Free forwarding for official HMRC and Companies House documents.
                                     </p>
                                 </div>
-                                <div className="bg-card p-6 rounded-lg border border-border">
+                                <div className="card-mobile p-6">
                                     <h3 className="text-xl font-semibold mb-4">Compliance Support</h3>
                                     <p className="text-muted-foreground">
                                         Expert guidance on UK business compliance requirements, including HMRC
                                         regulations, Companies House filings, and director service address requirements.
                                     </p>
                                 </div>
-                                <div className="bg-card p-6 rounded-lg border border-border">
+                                <div className="card-mobile p-6">
                                     <h3 className="text-xl font-semibold mb-4">Virtual Office Solutions</h3>
                                     <p className="text-muted-foreground">
                                         Complete virtual office package including business address, mail handling,
@@ -78,16 +85,18 @@ export default function AboutPage() {
                                         from anywhere in the world.
                                     </p>
                                 </div>
+                                {/* /COPY-LOCK */}
                             </div>
                         </section>
 
+                        {/* COPY-LOCK: do not alter text, numbers, or claims */}
                         <section className="mb-12">
                             <h2 className="text-3xl font-semibold mb-6">Why We Exist</h2>
                             <p className="text-lg leading-relaxed mb-6">
                                 Too many founders face risks – fines, exposure, or legal complications – by using their home address,
                                 or by overpaying for outdated services. We created VirtualAddressHub as a modern, no-fuss alternative:
                             </p>
-                            <div className="bg-card p-6 rounded-lg border border-border">
+                            <div className="card-mobile p-6">
                                 <ul className="space-y-4">
                                     <li className="flex items-start">
                                         <span className="text-primary mr-3">✓</span>
@@ -168,9 +177,10 @@ export default function AboutPage() {
                                 </p>
                             </div>
                         </section>
+                        {/* /COPY-LOCK */}
                     </div>
                 </article>
-            </div>
+            </Section>
 
             <script
                 type="application/ld+json"

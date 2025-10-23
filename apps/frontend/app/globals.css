@@ -850,3 +850,40 @@ iframe {
         transform: translateY(-1px);
     }
 }
+
+/* ========================================
+   MOBILE-FIRST TYPE SCALE & UTILITIES
+   ======================================== */
+
+/* Mobile-first type scale using clamp */
+:root {
+  --va-h1: clamp(1.625rem, 2.5vw + 1.1rem, 2.5rem);
+  --va-h2: clamp(1.375rem, 2vw + 1rem, 2rem);
+  --va-h3: clamp(1.125rem, 1.6vw + 0.95rem, 1.5rem);
+  --va-body: clamp(0.975rem, 0.5vw + 0.9rem, 1.0625rem);
+  --va-lead: clamp(1.05rem, 1vw + 0.95rem, 1.2rem);
+}
+
+/* Readability: measure + line-height */
+.prose-mobile {
+  max-width: 65ch;
+  line-height: 1.65;
+  font-size: var(--va-body);
+}
+
+/* Headings scale without hard-coded px */
+.prose-mobile h1 { font-size: var(--va-h1); line-height: 1.15; }
+.prose-mobile h2 { font-size: var(--va-h2); line-height: 1.2; }
+.prose-mobile h3 { font-size: var(--va-h3); line-height: 1.25; }
+
+/* Touch target + spacing helpers */
+.tt-min { min-height: 44px; min-width: 44px; }
+.safe-pad { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+
+/* Cards look good on mobile by default */
+.card-mobile {
+  @apply rounded-2xl shadow-sm border border-zinc-200 bg-white;
+}
+
+/* Reduce ragged edges for lists on small screens */
+.prose-mobile ul, .prose-mobile ol { padding-left: 1.1rem; }

@@ -25,7 +25,7 @@ test("content.ts is properly frozen", () => {
   if (!fs.existsSync(contentPath)) {
     throw new Error(`Content file not found at ${contentPath}`);
   }
-  
+
   const src = fs.readFileSync(contentPath, "utf8");
   if (!src.includes("Object.freeze(copy)")) {
     throw new Error("Content object must be frozen to prevent mutation");
@@ -34,10 +34,10 @@ test("content.ts is properly frozen", () => {
 
 test("no PWA prompts or notification requests in UI", () => {
   const re = /install.*app|enable.*notification|PWAInstallPrompt|NotificationPermission|beforeinstallprompt|ServiceWorkerRegistration/i;
-  
+
   for (const dir of uiDirs) {
     if (!fs.existsSync(dir)) continue;
-    
+
     const files = walk(dir, [".tsx", ".ts", ".jsx", ".js"]);
     for (const f of files) {
       const src = fs.readFileSync(f, "utf8");
