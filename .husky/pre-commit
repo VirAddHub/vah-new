@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔒 Running content guardrails..."
+
+# Block edits to content source of truth (after initial setup)
+if git diff --cached --name-only | grep -E 'src/content/' && ! git log --oneline -1 | grep -q "implement AI guardrails"; then
+  echo "🚫 Content is locked. Edit via approved flow only."
+  echo "   Content changes must go through: src/content/content.ts"
+  exit 1
+fi
+
+# Block invented marketing phrases in UI files only
+CHANGED=$(git diff --cached -U0 | tr -d '\r')
+
+# Check only UI files for marketing claims
+UI_FILES=$(git diff --cached --name-only | grep -E '\.(tsx|ts|jsx|js)$' | grep -v -E '(test|spec|content|pre-commit)' || true)
+
+if [ -n "$UI_FILES" ]; then
+  for file in $UI_FILES; do
+    if git diff --cached "$file" | grep -Ei '\+.*(trusted by|#\s*users|millions of|award[- ]winning|world.?class|leading|premier|best|top-rated)'; then
+      echo "🚫 Detected invented marketing claim in $file. Remove it."
+      echo "   Use only content from src/content/content.ts"
+      exit 1
+    fi
+  done
+fi
+
+echo "✅ Content guardrails passed"
