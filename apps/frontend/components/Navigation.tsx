@@ -33,7 +33,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
     return (
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
-            <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+            <div className="safe-pad mx-auto max-w-screen-xl py-4 flex items-center justify-between">
                 {/* Logo */}
                 <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
 
@@ -71,7 +71,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     <Button
                         variant="ghost"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2"
+                        className="tt-min p-2"
                     >
                         {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                     </Button>
@@ -81,12 +81,12 @@ export function Navigation({ onNavigate }: NavigationProps) {
             {/* Mobile menu */}
             {isMenuOpen && (
                 <div className="md:hidden border-t border-border/50 bg-background">
-                    <div className="px-6 pt-4 pb-6 space-y-2">
+                    <div className="safe-pad pt-4 pb-6 space-y-2">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page)}
-                                className="block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
+                                className="tt-min block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
                             >
                                 {item.label}
                             </button>
@@ -94,13 +94,13 @@ export function Navigation({ onNavigate }: NavigationProps) {
                         <div className="pt-4 space-y-3">
                             <button
                                 onClick={() => handleNavClick('login')}
-                                className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                                className="tt-min w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
                             >
                                 Log in
                             </button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="w-full rounded-md bg-primary text-white font-medium hover:bg-primary/90"
+                                className="tt-min w-full rounded-md bg-primary text-white font-medium hover:bg-primary/90"
                             >
                                 Get started
                             </Button>

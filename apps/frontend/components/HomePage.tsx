@@ -73,14 +73,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
         });
 
     return (
-        <main className="bg-background text-foreground">
+                <main className="bg-background text-foreground">
             {/* HERO */}
             <section
                 className="relative overflow-hidden"
                 aria-label="Hero"
             >
                 <div className="absolute right-[-8rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-primary/20 to-primary/40 blur-3xl opacity-40" />
-                <div className="mx-auto max-w-7xl px-6 pt-20 pb-12">
+                <div className="safe-pad mx-auto max-w-screen-xl pt-20 pb-12">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <h1
@@ -113,7 +113,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="w-full h-12 px-6 rounded-[16px] btn-primary text-primary-foreground"
+                                className="tt-min w-full h-12 px-6 rounded-[16px] btn-primary text-primary-foreground"
                             >
                                 Secure My London Address — Start Today
                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -136,30 +136,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
-                            </p>
+                        </p>
 
-                            <div className="mt-10">
+                        <div className="mt-10">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
+                                    className="tt-min h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
                                 >
                                     Secure My London Address — Start Today
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
-                            <div className="mt-8 flex flex-wrap gap-2">
-                                <Badge variant="secondary" className="text-sm">
-                                    ICO — Registered
-                                </Badge>
-                                <Badge variant="secondary" className="text-sm">
-                                    HMRC — AML Supervised
-                                </Badge>
-                                <Badge variant="secondary" className="text-sm">
-                                    GDPR — Aligned
-                                </Badge>
-                            </div>
+                        <div className="mt-8 flex flex-wrap gap-2">
+                            <Badge variant="secondary" className="text-sm">
+                                ICO — Registered
+                            </Badge>
+                            <Badge variant="secondary" className="text-sm">
+                                HMRC — AML Supervised
+                            </Badge>
+                            <Badge variant="secondary" className="text-sm">
+                                GDPR — Aligned
+                            </Badge>
                         </div>
+                    </div>
                         <div className="lg:col-span-5">
                             <MailboxPreviewCard
                                 showPriceBadge={true}
@@ -176,7 +176,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 className="py-8 md:py-12 bg-muted/30"
                 aria-label="Pricing"
             >
-                <div className="mx-auto max-w-4xl px-6">
+                <div className="safe-pad mx-auto max-w-4xl">
                     <div className="text-center mb-8">
                         <h2
                             className="font-bold leading-tight text-[clamp(1.75rem,4.5vw,3rem)] text-primary mb-4"
@@ -186,8 +186,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <p className="text-lg text-muted-foreground">
                             No hidden fees. Cancel anytime.
                         </p>
-                    </div>
-
+                        </div>
+                        
                     {/* Billing Toggle */}
                     <div className="mb-6 flex justify-center">
                         <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm">
@@ -212,7 +212,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     >
                                         Monthly
                                     </Label>
-                                </div>
+                            </div>
                                 <div className="has-[[data-state=checked]]:bg-primary has-[[data-state=checked]]:text-primary-foreground rounded-lg transition-all relative">
                                     <RadioGroupItem
                                         id="billing-annual"
@@ -230,8 +230,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1">
                                             Save {monthlySavingsPct}%
                                         </Badge>
-                                    </div>
-                                </div>
+                        </div>
+                            </div>
                             </RadioGroup>
                         </div>
                     </div>
@@ -244,7 +244,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Most Popular
                             </span>
                         </div>
-
+                        
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
                                 <h3 className="text-xl font-bold text-primary mb-4">
@@ -259,15 +259,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         <span className="text-sm text-muted-foreground">
                                             {priceSuffix}
                                         </span>
-                                    </div>
+                            </div>
                                     <p className="text-sm text-black mb-1">
                                         {subCopy}
                                     </p>
                                     <p className="text-sm text-black font-medium">
                                         {fineCopy}
                                     </p>
-                                </div>
-
+                        </div>
+                        
                                 {/* Features List - Compact */}
                                 <div className="space-y-2 mb-6 text-left">
                                     {[
