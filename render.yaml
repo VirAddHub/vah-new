@@ -1,0 +1,102 @@
+# Render Deployment Configuration
+# This file configures Render for zero-downtime deployments
+
+# Backend Service Configuration
+backend_service:
+  name: "vah-backend"
+  runtime: "node"
+  build_command: "npm install && npm run build:prod"
+  start_command: "npm run start:prod"
+  health_check_path: "/api/health"
+  auto_deploy: true
+  branch: "main"
+  
+  # Environment Variables
+  environment_variables:
+    NODE_ENV: "production"
+    DATABASE_URL: "${DATABASE_URL}"
+    REDIS_URL: "${REDIS_URL}"
+    SESSION_SECRET: "${SESSION_SECRET}"
+    JWT_SECRET: "${JWT_SECRET}"
+    
+  # Scaling
+  min_instances: 1
+  max_instances: 3
+  
+  # Health Checks
+  health_check_grace_period: 300
+  health_check_interval: 30
+  health_check_timeout: 10
+  health_check_healthy_threshold: 2
+  health_check_unhealthy_threshold: 3
+
+# Frontend Service Configuration  
+frontend_service:
+  name: "vah-frontend"
+  runtime: "node"
+  build_command: "npm install && npm run build"
+  start_command: "npm run start"
+  health_check_path: "/"
+  auto_deploy: true
+  branch: "main"
+  
+  # Environment Variables
+  environment_variables:
+    NODE_ENV: "production"
+    NEXT_PUBLIC_API_URL: "${BACKEND_URL}"
+    NEXT_PUBLIC_APP_URL: "${FRONTEND_URL}"
+    
+  # Scaling
+  min_instances: 1
+  max_instances: 2
+
+# Database Configuration
+database:
+  name: "vah-postgres"
+  plan: "starter"
+  region: "oregon"
+  version: "16"
+  
+  # Backup Configuration
+  backup_retention: "7d"
+  backup_schedule: "daily"
+  
+  # Connection Pooling
+  max_connections: 20
+  connection_timeout: 30
+
+# Redis Configuration (for sessions)
+redis:
+  name: "vah-redis"
+  plan: "starter"
+  region: "oregon"
+  
+  # Persistence
+  persistence: "aof"
+  maxmemory_policy: "allkeys-lru"
+
+# Deployment Strategy
+deployment_strategy:
+  # Blue-Green Deployment
+  blue_green: true
+  
+  # Health Checks
+  health_check:
+    path: "/api/health"
+    timeout: 10
+    interval: 30
+    retries: 3
+    
+  # Rollback Configuration
+  rollback:
+    automatic: true
+    triggers:
+      - error_rate: ">5%"
+      - response_time: ">2000ms"
+      - health_check_failures: ">3"
+      
+  # Zero-Downtime Settings
+  zero_downtime:
+    enabled: true
+    drain_timeout: 30
+    termination_grace_period: 30
