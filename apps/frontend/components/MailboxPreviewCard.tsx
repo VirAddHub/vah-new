@@ -12,82 +12,113 @@ export function MailboxPreviewCard({
 }: MailboxPreviewCardProps) {
     return (
         <div className="relative">
-            <div className="relative rounded-3xl bg-card border border-border p-6 shadow-2xl">
+            <div className="shadow-neutral-900/10 bg-white border-neutral-200 border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative shadow-2xl backdrop-blur-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+                <div className="flex items-center justify-between pb-4 border-b border-neutral-200 mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Mail className="w-5 h-5 text-primary" />
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                data-lucide="mail" className="lucide lucide-mail w-5 h-5 text-emerald-600">
+                                <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
+                                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                            </svg>
                         </div>
                         <div>
-                            <p className="font-semibold">VirtualAddressHub</p>
-                            <p className="text-xs text-muted-foreground">
-                                Your Mail Dashboard
-                            </p>
+                            <p className="font-semibold text-sm text-neutral-900">Your Mail Dashboard</p>
+                            <p className="text-xs text-neutral-500">Real-time updates</p>
                         </div>
                     </div>
-                    <Badge variant="secondary" className="rounded-full">
-                        3 New
-                    </Badge>
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full">3 New</span>
                 </div>
 
-                {/* Mail Items Preview */}
-                <div className="space-y-3">
-                    {[
-                        {
-                            sender: "HMRC",
-                            subject: "VAT Return Notice",
-                            tag: "Free Forward",
-                            urgent: true,
-                        },
-                        {
-                            sender: "Companies House",
-                            subject: "Annual Confirmation",
-                            tag: "Free Forward",
-                            urgent: false,
-                        },
-                        {
-                            sender: "Barclays Bank",
-                            subject: "Account Statement",
-                            tag: "Scanned",
-                            urgent: false,
-                        },
-                    ].map((item, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center gap-3 rounded-xl bg-muted/50 p-4 hover:bg-muted transition-colors cursor-pointer"
-                        >
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <ScanLine className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">
-                                    {item.sender}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                    {item.subject}
-                                </p>
-                            </div>
-                            <Badge
-                                variant={item.urgent ? "default" : "secondary"}
-                                className="text-xs"
-                            >
-                                {item.tag}
-                            </Badge>
+                {/* Mail Items */}
+                <div className="space-y-2.5 mb-4">
+                    <div
+                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                data-lucide="file-text" className="lucide lucide-file-text w-4 h-4 text-red-600">
+                                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                                <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                                <path d="M10 9H8"></path>
+                                <path d="M16 13H8"></path>
+                                <path d="M16 17H8"></path>
+                            </svg>
                         </div>
-                    ))}
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-neutral-900 truncate">HMRC</p>
+                            <p className="text-xs text-neutral-500 truncate">VAT Return Notice</p>
+                        </div>
+                        <span className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md flex-shrink-0">Free Forward</span>
+                    </div>
+
+                    <div
+                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                data-lucide="building-2" className="lucide lucide-building-2 w-4 h-4 text-blue-600">
+                                <path d="M10 12h4"></path>
+                                <path d="M10 8h4"></path>
+                                <path d="M14 21v-3a2 2 0 0 0-4 0v3"></path>
+                                <path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path>
+                                <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-neutral-900 truncate">Companies House</p>
+                            <p className="text-xs text-neutral-500 truncate">Annual Confirmation</p>
+                        </div>
+                        <span className="px-2 py-1 bg-neutral-200 text-neutral-700 text-xs font-medium rounded-md flex-shrink-0">Scanned</span>
+                    </div>
+
+                    <div
+                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                data-lucide="landmark" className="lucide lucide-landmark w-4 h-4 text-purple-600">
+                                <path d="M10 18v-7"></path>
+                                <path
+                                    d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z">
+                                </path>
+                                <path d="M14 18v-7"></path>
+                                <path d="M18 18v-7"></path>
+                                <path d="M3 22h18"></path>
+                                <path d="M6 18v-7"></path>
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-neutral-900 truncate">Barclays Bank</p>
+                            <p className="text-xs text-neutral-500 truncate">Account Statement</p>
+                        </div>
+                        <span className="px-2 py-1 bg-neutral-200 text-neutral-700 text-xs font-medium rounded-md flex-shrink-0">Today</span>
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Scanned today
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <Shield className="w-3 h-3" />
-                        Secure & Private
-                    </span>
+                <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            data-lucide="clock" className="lucide lucide-clock w-3.5 h-3.5">
+                            <path d="M12 6v6l4 2"></path>
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
+                        <span>Scanned today</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            data-lucide="shield" className="lucide lucide-shield w-3.5 h-3.5">
+                            <path
+                                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z">
+                            </path>
+                        </svg>
+                        <span>Secure &amp; Private</span>
+                    </div>
                 </div>
             </div>
 
