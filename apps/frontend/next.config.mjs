@@ -20,6 +20,16 @@ const nextConfig = {
       fallback: [],
     };
   },
+  
+  async redirects() {
+    return [
+      {
+        source: '/about',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
