@@ -22,7 +22,6 @@ export default function MobileNav() {
                 <nav id="mnav" className="safe-pad mx-auto max-w-screen-xl pb-2">
                     <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white">
                         <li><Link className="block px-4 py-3 tt-min" href="/pricing">Pricing</Link></li>
-                        <li><Link className="block px-4 py-3 tt-min" href="/about">About</Link></li>
                         <li><Link className="block px-4 py-3 tt-min" href="/help">Help</Link></li>
                         <li><Link className="block px-4 py-3 tt-min" href="/login">Login</Link></li>
                     </ul>

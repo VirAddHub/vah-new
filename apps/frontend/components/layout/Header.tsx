@@ -15,7 +15,6 @@ export function Header({ onNavigate }: HeaderProps) {
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
     ];
 

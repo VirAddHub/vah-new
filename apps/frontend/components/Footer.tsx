@@ -50,7 +50,6 @@ export function Footer({ onNavigate }: FooterProps) {
     const navigation: NavItem[] = [
         { label: "Pricing", page: "pricing" },
         { label: "Blog", page: "blog" },
-        { label: "About Us", page: "about" },
         { label: "Help", page: "help" },
     ];
 
@@ -58,7 +57,6 @@ export function Footer({ onNavigate }: FooterProps) {
         { label: "Privacy Policy", page: "privacy" },
         { label: "Terms of Service", page: "terms" },
         { label: "KYC Policy", page: "kyc" },
-        { label: "About Us", page: "about" },
     ];
 
     const contacts: ContactItem[] = [

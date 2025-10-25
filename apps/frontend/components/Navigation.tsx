@@ -15,7 +15,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'About Us', page: 'about' },
         { label: 'Help', page: 'help' },
         { label: 'Sign Up', page: 'signup' },
     ];
