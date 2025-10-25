@@ -1,9 +1,9 @@
 /* Enhanced Color Scheme - Modern & Professional */
 :root {
   /* Primary - Modern Blue-Green */
-  --primary: 200 100% 50%;
+  --primary: 233 100% 9%;
   --primary-foreground: 0 0% 100%;
-  --primary-hover: 200 100% 45%;
+  --primary-hover: 233 100% 12%;
   
   /* Secondary - Warm Accent */
   --secondary: 25 95% 60%;
