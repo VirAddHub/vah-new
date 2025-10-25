@@ -44,7 +44,7 @@ router.post("/blog/upload", upload.single('image'), (req, res) => {
         const originalName = req.file.originalname;
         const extension = path.extname(originalName);
         const filename = `blog-${timestamp}${extension}`;
-        
+
         // Save file to uploads directory
         const filePath = path.join(UPLOADS_DIR, filename);
         fs.writeFileSync(filePath, req.file.buffer);

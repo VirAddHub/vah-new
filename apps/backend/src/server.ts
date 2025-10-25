@@ -445,7 +445,7 @@ async function start() {
     logger.info('[mount] /api/admin (blog) mounted');
     app.use('/api', blogRouter);
     logger.info('[mount] /api (blog) mounted');
-    
+
     // Media upload routes
     const adminMediaRouter = require(path.join(routesDir, 'admin-media'));
     app.use('/api/admin', adminMediaRouter);

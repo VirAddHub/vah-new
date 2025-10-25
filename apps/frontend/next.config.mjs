@@ -16,7 +16,7 @@ const nextConfig = {
       { protocol: "https", hostname: "i.ibb.co" },
     ],
   },
-  
+
   async rewrites() {
     return {
       // Apply this rewrite BEFORE checking Next's filesystem routes (pages/api or app/api)
@@ -31,7 +31,7 @@ const nextConfig = {
       fallback: [],
     };
   },
-  
+
   async redirects() {
     return [
       {

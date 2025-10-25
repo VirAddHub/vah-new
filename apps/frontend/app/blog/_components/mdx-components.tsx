@@ -8,9 +8,9 @@ export const mdxComponents = {
       width={1200}
       height={630}
       sizes="(max-width: 768px) 100vw, 800px"
-      style={{ 
-        width: "100%", 
-        height: "auto", 
+      style={{
+        width: "100%",
+        height: "auto",
         borderRadius: "12px",
         margin: "1rem 0"
       }}
