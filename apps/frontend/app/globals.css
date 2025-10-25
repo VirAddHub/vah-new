@@ -172,7 +172,7 @@ iframe {
         --color-background: #FFFFFF;
         --color-foreground: #212325;
         --color-muted: #6B7280;
-        
+
         /* Enhanced brand navy */
         --primary: 233 100% 9%;
         /* More vibrant primary */
@@ -208,29 +208,65 @@ iframe {
         --accent-900: 145 50% 15%;
 
         /* Accent color utilities */
-.bg-accent { background-color: hsl(var(--accent)); }
-.text-accent { color: hsl(var(--accent)); }
-.border-accent { border-color: hsl(var(--accent)); }
-.hover\:bg-accent:hover { background-color: hsl(var(--accent)); }
-.hover\:text-accent:hover { color: hsl(var(--accent)); }
-.hover\:border-accent:hover { border-color: hsl(var(--accent)); }
+        .bg-accent {
+            background-color: hsl(var(--accent));
+        }
 
-/* Trust badge styling */
-.bg-trust-badge { background-color: hsl(var(--accent-50)); }
-.text-trust-badge { color: hsl(var(--accent-700)); }
-.border-trust-badge { border-color: hsl(var(--accent-200)); }
+        .text-accent {
+            color: hsl(var(--accent));
+        }
 
-/* Success/accent button styling */
-.btn-accent {
-    background-color: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-    border: 1px solid hsl(var(--accent));
-}
+        .border-accent {
+            border-color: hsl(var(--accent));
+        }
 
-.btn-accent:hover {
-    background-color: hsl(var(--accent-hover));
-    border-color: hsl(var(--accent-hover));
-}
+        .hover\:bg-accent:hover {
+            background-color: hsl(var(--accent));
+        }
+
+        .hover\:text-accent:hover {
+            color: hsl(var(--accent));
+        }
+
+        .hover\:border-accent:hover {
+            border-color: hsl(var(--accent));
+        }
+
+        /* Accent scale utilities */
+        .bg-accent-50 { background-color: hsl(var(--accent-50)); }
+        .bg-accent-200 { background-color: hsl(var(--accent-200)); }
+        .bg-accent-700 { background-color: hsl(var(--accent-700)); }
+        .text-accent-50 { color: hsl(var(--accent-50)); }
+        .text-accent-200 { color: hsl(var(--accent-200)); }
+        .text-accent-700 { color: hsl(var(--accent-700)); }
+        .border-accent-50 { border-color: hsl(var(--accent-50)); }
+        .border-accent-200 { border-color: hsl(var(--accent-200)); }
+        .border-accent-700 { border-color: hsl(var(--accent-700)); }
+
+        /* Trust badge styling */
+        .bg-trust-badge {
+            background-color: hsl(var(--accent-50));
+        }
+
+        .text-trust-badge {
+            color: hsl(var(--accent-700));
+        }
+
+        .border-trust-badge {
+            border-color: hsl(var(--accent-200));
+        }
+
+        /* Success/accent button styling */
+        .btn-accent {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+            border: 1px solid hsl(var(--accent));
+        }
+
+        .btn-accent:hover {
+            background-color: hsl(var(--accent-hover));
+            border-color: hsl(var(--accent-hover));
+        }
 
         /* Enhanced utility colors */
         --secondary: 0 0% 100%;
