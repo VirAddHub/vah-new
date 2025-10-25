@@ -101,6 +101,8 @@ iframe {
 }
 
 /* Force Montserrat font loading and fallback */
+@import url('https://fonts.googleapis.com/css2?family=Mundial:wght@300;400;500;600;700;800&display=swap');
+
 @font-face {
     font-family: 'Montserrat-Fallback';
     src: local('Montserrat'), local('ui-sans-serif'), local('system-ui');
@@ -109,8 +111,8 @@ iframe {
 
 /* Tailwind V4 Theme Configuration */
 @theme {
-    --font-family-sans: 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    --font-family-serif: 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-family-sans: 'Mundial', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-family-serif: 'Mundial', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 
     --color-background: hsl(var(--background));
     --color-foreground: hsl(var(--foreground));
@@ -172,7 +174,7 @@ iframe {
         --color-background: #FFFFFF;
         --color-foreground: #212325;
         --color-muted: #6B7280;
-        
+
         /* Enhanced brand dark blue-gray */
         --primary: 210 24% 24%;
         /* More vibrant primary */
@@ -294,9 +296,11 @@ iframe {
             border-color: hsl(var(--accent-hover));
         }
 
-        /* Enhanced utility colors */
-        --secondary: 0 0% 100%;
-        --secondary-foreground: 220 10% 15%;
+        /* Mundial font utilities */
+        .font-mundial-600 {
+            font-family: 'Mundial', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            font-weight: 600;
+        }
 
         --muted: 210 5% 96%;
         /* Subtle neutral for muted sections */
@@ -439,12 +443,12 @@ iframe {
     input,
     textarea,
     label {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        font-family: 'Mundial', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
 
     html,
     body {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !important;
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
         transition: background-color .25s ease, color .25s ease, border-color .25s ease;
@@ -460,7 +464,7 @@ iframe {
     h4,
     h5,
     h6 {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
     }
 
     h1 {
@@ -519,7 +523,7 @@ iframe {
     input,
     textarea,
     label {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
     }
 
     p {
@@ -641,11 +645,11 @@ iframe {
 
     /* Force Montserrat on specific Tailwind utilities */
     .font-sans {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
     }
 
     .font-serif {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
     }
 
     .font-mono {
@@ -656,12 +660,12 @@ iframe {
     html.fonts-loaded *,
     html.fonts-loaded *:before,
     html.fonts-loaded *:after {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
     }
 
     /* Blog Post Content Styling */
     .prose h2 {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
         font-size: 1.875rem;
         font-weight: 600;
         line-height: 1.3;
@@ -671,7 +675,7 @@ iframe {
     }
 
     .prose h3 {
-        font-family: 'Montserrat', 'Montserrat-Fallback', ui-sans-serif, system-ui !important;
+        font-family: 'Mundial', ui-sans-serif, system-ui !important;
         font-size: 1.5rem;
         font-weight: 600;
         line-height: 1.4;
