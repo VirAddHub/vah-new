@@ -167,30 +167,30 @@ iframe {
         /* Very light neutral for feature bands */
 
         /* Dual-tone color system */
-        --color-primary: #00092E;
+        --color-primary: #2f3e4c;
         --color-accent: #166534;
         --color-background: #FFFFFF;
         --color-foreground: #212325;
         --color-muted: #6B7280;
-
-        /* Enhanced brand navy */
-        --primary: 233 100% 9%;
+        
+        /* Enhanced brand dark blue-gray */
+        --primary: 210 24% 24%;
         /* More vibrant primary */
         --primary-foreground: 0 0% 100%;
-        --primary-hover: 233 100% 12%;
+        --primary-hover: 210 24% 20%;
         /* Darker hover state */
 
-        /* Enhanced primary scale */
-        --primary-50: 233 100% 97%;
-        --primary-100: 233 100% 90%;
-        --primary-200: 233 100% 80%;
-        --primary-300: 233 100% 70%;
-        --primary-400: 233 100% 60%;
-        --primary-500: 233 100% 50%;
-        --primary-600: 233 100% 40%;
-        --primary-700: 233 100% 30%;
-        --primary-800: 233 100% 20%;
-        --primary-900: 233 100% 15%;
+        /* Enhanced primary scale - dark blue-gray */
+        --primary-50: 210 24% 97%;
+        --primary-100: 210 24% 90%;
+        --primary-200: 210 24% 80%;
+        --primary-300: 210 24% 70%;
+        --primary-400: 210 24% 60%;
+        --primary-500: 210 24% 50%;
+        --primary-600: 210 24% 40%;
+        --primary-700: 210 24% 30%;
+        --primary-800: 210 24% 25%;
+        --primary-900: 210 24% 20%;
 
         /* Accent green scale */
         --accent: 145 50% 25%;

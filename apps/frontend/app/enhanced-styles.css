@@ -1,16 +1,16 @@
 /* Enhanced Color Scheme - Dual-tone Navy & Green */
 :root {
   /* Dual-tone color system */
-  --color-primary: #00092E;
+  --color-primary: #2f3e4c;
   --color-accent: #166534;
   --color-background: #FFFFFF;
   --color-foreground: #212325;
   --color-muted: #6B7280;
-
-  /* Primary - Navy */
-  --primary: 233 100% 9%;
+  
+  /* Primary - Dark Blue-Gray */
+  --primary: 210 24% 24%;
   --primary-foreground: 0 0% 100%;
-  --primary-hover: 233 100% 12%;
+  --primary-hover: 210 24% 20%;
 
   /* Accent - Soft Green */
   --accent: 145 50% 25%;
