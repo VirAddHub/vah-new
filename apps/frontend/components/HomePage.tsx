@@ -146,17 +146,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
-                        <div className="mt-8 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                ICO — Registered
-                            </span>
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                HMRC — AML Supervised
-                            </span>
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                GDPR — Aligned
-                            </span>
-                        </div>
+                            <div className="mt-8 flex flex-wrap gap-2">
+                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
+                                    ICO — Registered
+                                </span>
+                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
+                                    HMRC — AML Supervised
+                                </span>
+                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
+                                    GDPR — Aligned
+                                </span>
+                            </div>
                         </div>
                         <div className="lg:col-span-5">
                             <MailboxPreviewCard

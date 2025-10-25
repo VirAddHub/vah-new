@@ -6,12 +6,12 @@
   --color-background: #FFFFFF;
   --color-foreground: #212325;
   --color-muted: #6B7280;
-  
+
   /* Primary - Navy */
   --primary: 233 100% 9%;
   --primary-foreground: 0 0% 100%;
   --primary-hover: 233 100% 12%;
-  
+
   /* Accent - Soft Green */
   --accent: 145 50% 25%;
   --accent-foreground: 0 0% 100%;

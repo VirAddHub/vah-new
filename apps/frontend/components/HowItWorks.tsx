@@ -3,33 +3,33 @@
 import { Check } from 'lucide-react';
 
 const steps = [
-  {
-    k: 'verify',
-    title: 'Verify your account',
-    points: [
-      'Create your account and upload ID & proof of address (KYC/AML).',
-      'We review and confirm. You\'ll be notified when approved.',
-      'Your Central London address appears in your dashboard once approved.'
-    ]
-  },
-  {
-    k: 'use',
-    title: 'Use your address everywhere',
-    points: [
-      'Update Companies House (Registered Office & Director\'s Service Address).',
-      'Use with HMRC, banks, suppliers and clients.',
-      'A real, physical address — never a P.O. Box.'
-    ]
-  },
-  {
-    k: 'handle',
-    title: 'We handle your mail',
-    points: [
-      'Same-day letter scanning on business days to your dashboard.',
-      'Free UK forwarding for HMRC & Companies House letters (on request).',
-      'Other UK letters forwarded for £2 per item + postage. Letters only — no parcels.'
-    ]
-  }
+    {
+        k: 'verify',
+        title: 'Verify your account',
+        points: [
+            'Create your account and upload ID & proof of address (KYC/AML).',
+            'We review and confirm. You\'ll be notified when approved.',
+            'Your Central London address appears in your dashboard once approved.'
+        ]
+    },
+    {
+        k: 'use',
+        title: 'Use your address everywhere',
+        points: [
+            'Update Companies House (Registered Office & Director\'s Service Address).',
+            'Use with HMRC, banks, suppliers and clients.',
+            'A real, physical address — never a P.O. Box.'
+        ]
+    },
+    {
+        k: 'handle',
+        title: 'We handle your mail',
+        points: [
+            'Same-day letter scanning on business days to your dashboard.',
+            'Free UK forwarding for HMRC & Companies House letters (on request).',
+            'Other UK letters forwarded for £2 per item + postage. Letters only — no parcels.'
+        ]
+    }
 ];
 
 export default function HowItWorks() {

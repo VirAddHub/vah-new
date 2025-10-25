@@ -233,15 +233,41 @@ iframe {
         }
 
         /* Accent scale utilities */
-        .bg-accent-50 { background-color: hsl(var(--accent-50)); }
-        .bg-accent-200 { background-color: hsl(var(--accent-200)); }
-        .bg-accent-700 { background-color: hsl(var(--accent-700)); }
-        .text-accent-50 { color: hsl(var(--accent-50)); }
-        .text-accent-200 { color: hsl(var(--accent-200)); }
-        .text-accent-700 { color: hsl(var(--accent-700)); }
-        .border-accent-50 { border-color: hsl(var(--accent-50)); }
-        .border-accent-200 { border-color: hsl(var(--accent-200)); }
-        .border-accent-700 { border-color: hsl(var(--accent-700)); }
+        .bg-accent-50 {
+            background-color: hsl(var(--accent-50));
+        }
+
+        .bg-accent-200 {
+            background-color: hsl(var(--accent-200));
+        }
+
+        .bg-accent-700 {
+            background-color: hsl(var(--accent-700));
+        }
+
+        .text-accent-50 {
+            color: hsl(var(--accent-50));
+        }
+
+        .text-accent-200 {
+            color: hsl(var(--accent-200));
+        }
+
+        .text-accent-700 {
+            color: hsl(var(--accent-700));
+        }
+
+        .border-accent-50 {
+            border-color: hsl(var(--accent-50));
+        }
+
+        .border-accent-200 {
+            border-color: hsl(var(--accent-200));
+        }
+
+        .border-accent-700 {
+            border-color: hsl(var(--accent-700));
+        }
 
         /* Trust badge styling */
         .bg-trust-badge {

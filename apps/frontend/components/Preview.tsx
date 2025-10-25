@@ -39,14 +39,14 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
 
                 {/* quick actions */}
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                    <button 
-                        onClick={() => onNavigate?.('help')} 
+                    <button
+                        onClick={() => onNavigate?.('help')}
                         className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-5 py-2.5 text-sm text-foreground shadow-sm transition hover:bg-accent"
                     >
                         Visit Help Centre ↗
                     </button>
-                    <button 
-                        onClick={() => onNavigate?.('contact')} 
+                    <button
+                        onClick={() => onNavigate?.('contact')}
                         className="text-sm text-primary underline-offset-4 hover:underline"
                     >
                         Contact support ↗
@@ -55,15 +55,15 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
 
                 {/* teaser FAQs to keep the flow */}
                 <div className="mx-auto mt-6 grid gap-3 text-left md:max-w-3xl">
-                    <button 
-                        onClick={() => onNavigate?.('help')} 
+                    <button
+                        onClick={() => onNavigate?.('help')}
                         className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60 hover:border-primary/30 transition-all cursor-pointer w-full text-left"
                     >
                         <p className="font-medium text-foreground hover:text-primary transition-colors">Can I use your address as my official Registered Office & Director's Service Address?</p>
                         <p className="mt-1 text-sm text-muted-foreground">Yes — it's compliant for both with Companies House and HMRC and meets the "appropriate address" requirements.</p>
                     </button>
-                    <button 
-                        onClick={() => onNavigate?.('help')} 
+                    <button
+                        onClick={() => onNavigate?.('help')}
                         className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60 hover:border-primary/30 transition-all cursor-pointer w-full text-left"
                     >
                         <p className="font-medium text-foreground hover:text-primary transition-colors">How easy is it to cancel?</p>
@@ -72,8 +72,8 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
                 </div>
 
                 <div className="mt-4">
-                    <button 
-                        onClick={() => onNavigate?.('help')} 
+                    <button
+                        onClick={() => onNavigate?.('help')}
                         className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                     >
                         Browse all FAQs →
