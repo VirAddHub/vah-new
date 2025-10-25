@@ -1,33 +1,41 @@
-/* Enhanced Color Scheme - Modern & Professional */
+/* Enhanced Color Scheme - Dual-tone Navy & Green */
 :root {
-  /* Primary - Modern Blue-Green */
+  /* Dual-tone color system */
+  --color-primary: #00092E;
+  --color-accent: #166534;
+  --color-background: #FFFFFF;
+  --color-foreground: #212325;
+  --color-muted: #6B7280;
+  
+  /* Primary - Navy */
   --primary: 233 100% 9%;
   --primary-foreground: 0 0% 100%;
   --primary-hover: 233 100% 12%;
   
-  /* Secondary - Warm Accent */
-  --secondary: 25 95% 60%;
-  --secondary-foreground: 0 0% 100%;
-  
+  /* Accent - Soft Green */
+  --accent: 145 50% 25%;
+  --accent-foreground: 0 0% 100%;
+  --accent-hover: 145 50% 20%;
+
   /* Background - Clean & Modern */
   --background: 0 0% 100%;
   --foreground: 220 15% 15%;
-  
+
   /* Muted - Subtle Grays */
   --muted: 220 15% 96%;
   --muted-foreground: 220 10% 45%;
-  
+
   /* Border - Subtle */
   --border: 220 15% 90%;
-  
+
   /* Card - Clean */
   --card: 0 0% 100%;
   --card-foreground: 220 15% 15%;
-  
+
   /* Accent - Highlight */
   --accent: 200 100% 95%;
   --accent-foreground: 200 100% 20%;
-  
+
   /* Success, Warning, Error */
   --success: 142 76% 36%;
   --warning: 38 92% 50%;
@@ -84,16 +92,16 @@ html {
 
 /* Enhanced Gradient Backgrounds */
 .gradient-hero {
-  background: linear-gradient(135deg, 
-    hsl(var(--primary)) 0%, 
-    hsl(var(--secondary)) 50%, 
-    hsl(var(--primary)) 100%);
+  background: linear-gradient(135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--secondary)) 50%,
+      hsl(var(--primary)) 100%);
 }
 
 .gradient-card {
-  background: linear-gradient(145deg, 
-    hsl(var(--card)) 0%, 
-    hsl(var(--accent)) 100%);
+  background: linear-gradient(145deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--accent)) 100%);
 }
 
 /* Enhanced Animations */
@@ -102,6 +110,7 @@ html {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -113,6 +122,7 @@ html {
     opacity: 0;
     transform: translateX(-30px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -211,17 +221,22 @@ html {
 
 /* Enhanced Loading States */
 .loading-shimmer {
-  background: linear-gradient(90deg, 
-    hsl(var(--muted)) 25%, 
-    hsl(var(--accent)) 50%, 
-    hsl(var(--muted)) 75%);
+  background: linear-gradient(90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--accent)) 50%,
+      hsl(var(--muted)) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Enhanced Responsive Design */
@@ -229,7 +244,7 @@ html {
   .container-modern {
     @apply px-4;
   }
-  
+
   .section-padding {
     @apply py-12;
   }

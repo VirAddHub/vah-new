@@ -17,7 +17,7 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
                         'Human support · UK working hours',
                     ].map((line) => (
                         <li key={line} className="flex items-start gap-3 text-black">
-                            <svg className="mt-1 h-4 w-4 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5" /></svg>
+                            <svg className="mt-1 h-4 w-4 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5" /></svg>
                             <span>{line}</span>
                         </li>
                     ))}

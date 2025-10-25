@@ -166,7 +166,14 @@ iframe {
         --section-alt: 210 5% 98%;
         /* Very light neutral for feature bands */
 
-        /* Enhanced brand dark blue */
+        /* Dual-tone color system */
+        --color-primary: #00092E;
+        --color-accent: #166534;
+        --color-background: #FFFFFF;
+        --color-foreground: #212325;
+        --color-muted: #6B7280;
+        
+        /* Enhanced brand navy */
         --primary: 233 100% 9%;
         /* More vibrant primary */
         --primary-foreground: 0 0% 100%;
@@ -184,6 +191,46 @@ iframe {
         --primary-700: 233 100% 30%;
         --primary-800: 233 100% 20%;
         --primary-900: 233 100% 15%;
+
+        /* Accent green scale */
+        --accent: 145 50% 25%;
+        --accent-foreground: 0 0% 100%;
+        --accent-hover: 145 50% 20%;
+        --accent-50: 145 50% 97%;
+        --accent-100: 145 50% 90%;
+        --accent-200: 145 50% 80%;
+        --accent-300: 145 50% 70%;
+        --accent-400: 145 50% 60%;
+        --accent-500: 145 50% 50%;
+        --accent-600: 145 50% 40%;
+        --accent-700: 145 50% 30%;
+        --accent-800: 145 50% 20%;
+        --accent-900: 145 50% 15%;
+
+        /* Accent color utilities */
+.bg-accent { background-color: hsl(var(--accent)); }
+.text-accent { color: hsl(var(--accent)); }
+.border-accent { border-color: hsl(var(--accent)); }
+.hover\:bg-accent:hover { background-color: hsl(var(--accent)); }
+.hover\:text-accent:hover { color: hsl(var(--accent)); }
+.hover\:border-accent:hover { border-color: hsl(var(--accent)); }
+
+/* Trust badge styling */
+.bg-trust-badge { background-color: hsl(var(--accent-50)); }
+.text-trust-badge { color: hsl(var(--accent-700)); }
+.border-trust-badge { border-color: hsl(var(--accent-200)); }
+
+/* Success/accent button styling */
+.btn-accent {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    border: 1px solid hsl(var(--accent));
+}
+
+.btn-accent:hover {
+    background-color: hsl(var(--accent-hover));
+    border-color: hsl(var(--accent-hover));
+}
 
         /* Enhanced utility colors */
         --secondary: 0 0% 100%;

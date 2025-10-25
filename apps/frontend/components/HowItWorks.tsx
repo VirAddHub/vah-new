@@ -62,7 +62,7 @@ export default function HowItWorks() {
                                     <ul className="space-y-2">
                                         {s.points.map((p) => (
                                             <li key={p} className="flex gap-2 text-sm text-black">
-                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
                                                 <span className="leading-relaxed">{p}</span>
                                             </li>
                                         ))}

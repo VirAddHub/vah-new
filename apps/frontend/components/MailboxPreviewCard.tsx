@@ -51,7 +51,7 @@ export function MailboxPreviewCard({
                             <p className="font-medium text-sm text-neutral-900 truncate">HMRC</p>
                             <p className="text-xs text-neutral-500 truncate">VAT Return Notice</p>
                         </div>
-                        <span className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded-md flex-shrink-0">Free Forward</span>
+                        <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-md flex-shrink-0">Free Forward</span>
                     </div>
 
                     <div
@@ -124,7 +124,7 @@ export function MailboxPreviewCard({
 
             {/* Floating badge */}
             {showPriceBadge && (
-                <div className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-6 py-3 rounded-2xl shadow-lg">
+                <div className="absolute -bottom-4 -right-4 bg-accent text-accent-foreground px-6 py-3 rounded-2xl shadow-lg">
                     <p className="text-xs uppercase tracking-wide opacity-90">
                         Live in Minutes
                     </p>
