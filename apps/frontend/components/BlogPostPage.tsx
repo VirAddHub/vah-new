@@ -6,6 +6,8 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import { mdxComponents } from "../app/blog/_components/mdx-components";
 
 interface BlogPostPageProps {
     slug: string;
@@ -168,10 +170,9 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 <div className="max-w-4xl mx-auto">
                     <Card className="border-0 shadow-none bg-transparent">
                         <CardContent className="px-0">
-                            <div
-                                className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: post.content }}
-                            />
+                            <div className="prose prose-lg max-w-none">
+                                <MDXRemote source={post.content} components={mdxComponents} />
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

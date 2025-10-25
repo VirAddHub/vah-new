@@ -445,6 +445,12 @@ async function start() {
     logger.info('[mount] /api/admin (blog) mounted');
     app.use('/api', blogRouter);
     logger.info('[mount] /api (blog) mounted');
+    
+    // Media upload routes
+    const adminMediaRouter = require(path.join(routesDir, 'admin-media'));
+    app.use('/api/admin', adminMediaRouter);
+    app.use('/api', adminMediaRouter);
+    logger.info('[mount] /api/admin (media) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api', idealPostcodesRouter);

@@ -6,6 +6,17 @@ console.log('[next.config] BACKEND_API_ORIGIN:', BACKEND_API_ORIGIN);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "vah-api-staging.onrender.com" },
+      { protocol: "https", hostname: "virtualaddresshub.co.uk" },
+      { protocol: "https", hostname: "imgbb.com" },
+      { protocol: "https", hostname: "i.ibb.co" },
+    ],
+  },
+  
   async rewrites() {
     return {
       // Apply this rewrite BEFORE checking Next's filesystem routes (pages/api or app/api)
