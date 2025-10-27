@@ -25,7 +25,7 @@ export function Header({ onNavigate }: HeaderProps) {
 
     return (
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
-            <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+            <div className="safe-pad mx-auto max-w-screen-xl py-4 flex items-center justify-between">
                 {/* Logo */}
                 <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
 
@@ -67,7 +67,7 @@ export function Header({ onNavigate }: HeaderProps) {
             {/* Mobile menu */}
             {isMenuOpen && (
                 <div className="md:hidden border-t border-border/50 bg-background">
-                    <div className="px-6 pt-4 pb-6 space-y-2">
+                    <div className="safe-pad pt-4 pb-6 space-y-2">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
