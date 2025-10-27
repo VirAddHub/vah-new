@@ -891,7 +891,7 @@ iframe {
     }
 
     .text-gradient {
-        @apply bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent;
+        @apply bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent;
     }
 
     .text-balance {
