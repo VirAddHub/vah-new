@@ -24,7 +24,7 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
                 </ul>
 
                 <div className="mt-6">
-                    <a href="#" className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-2.5 text-primary-foreground shadow-sm transition hover:bg-primary/90">
+                    <a href="#" className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-primary to-accent px-6 py-2.5 text-white shadow-sm transition hover:shadow-md">
                         Get started — Secure my London address
                     </a>
                     <p className="mt-2 text-sm text-muted-foreground">£9.99/month · cancel anytime</p>

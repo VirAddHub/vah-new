@@ -69,7 +69,7 @@ html {
 
 /* Enhanced Button Styles */
 .btn-primary {
-  @apply bg-gradient-to-r from-primary to-primary-hover text-primary-foreground;
+  @apply bg-gradient-to-r from-primary via-primary/90 to-accent text-white;
   @apply hover:shadow-lg hover:scale-105 transition-all duration-200;
   @apply border-0 rounded-xl px-6 py-3 font-semibold;
   @apply focus:ring-2 focus:ring-primary/50 focus:outline-none;

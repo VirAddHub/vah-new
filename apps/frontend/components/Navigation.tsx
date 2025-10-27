@@ -59,7 +59,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     </button>
                     <Button
                         onClick={() => handleNavClick('signup')}
-                        className="rounded-md bg-primary px-4 py-2 text-white text-sm lg:text-base leading-[1.2] font-medium hover:bg-primary/90"
+                        className="rounded-md bg-gradient-to-r from-primary to-accent px-4 py-2 text-white text-sm lg:text-base leading-[1.2] font-medium hover:shadow-md hover:scale-105 transition-all duration-200"
                     >
                         Get started
                     </Button>
@@ -99,7 +99,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                             </button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="tt-min w-full rounded-md bg-primary text-white font-medium hover:bg-primary/90"
+                                className="tt-min w-full rounded-md bg-gradient-to-r from-primary to-accent text-white font-medium hover:shadow-md transition-all duration-200"
                             >
                                 Get started
                             </Button>

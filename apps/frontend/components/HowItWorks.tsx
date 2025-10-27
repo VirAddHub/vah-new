@@ -51,8 +51,8 @@ export default function HowItWorks() {
                         <div key={s.k} className="relative">
                             {/* number badge */}
                             <div className="absolute -top-3 left-4 z-10">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm">
-                                    <span className="font-medium text-neutral-800 text-sm">{i + 1}</span>
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent bg-accent shadow-sm">
+                                    <span className="font-bold text-white text-sm">{i + 1}</span>
                                 </div>
                             </div>
 
