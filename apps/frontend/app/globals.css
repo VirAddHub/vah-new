@@ -396,8 +396,8 @@ iframe {
         --primary-foreground: 0 0% 100%;
         --primary-hover: 233 100% 12%;
 
-        --secondary: 213 20% 10%;
-        --secondary-foreground: 210 10% 90%;
+        --secondary: 180 7% 62%;
+        --secondary-foreground: 0 0% 100%;
 
         --muted: 216 15% 15%;
         /* Better dark muted */

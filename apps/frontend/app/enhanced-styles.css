@@ -12,6 +12,10 @@
   --primary-foreground: 0 0% 100%;
   --primary-hover: 210 25% 20%;
 
+  /* Secondary - Soft Blue-Gray */
+  --secondary: 180 7% 62%;
+  --secondary-foreground: 0 0% 100%;
+
   /* Accent - Soft Green */
   --accent: 145 50% 25%;
   --accent-foreground: 0 0% 100%;
