@@ -13,7 +13,7 @@ const buttonVariants = cva(
                     // VAH green
                     "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border border-[color-mix(in_oklab,hsl(var(--primary))_85%,hsl(var(--border)))] shadow-[var(--shadow-sm)] hover:bg-[hsl(var(--primary-hover))] hover:shadow-[var(--shadow-md)]",
                 secondary:
-                    "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50",
+                    "bg-secondary text-secondary-foreground border border-secondary hover:bg-secondary/90",
                 outline:
                     "bg-transparent text-gray-900 border border-gray-200 hover:bg-gray-50",
                 ghost:
