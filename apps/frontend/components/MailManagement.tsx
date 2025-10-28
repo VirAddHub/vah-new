@@ -67,25 +67,7 @@ export function MailManagement({
     const [showTagDialog, setShowTagDialog] = useState(false);
     const [newTag, setNewTag] = useState("");
     const [loading, setLoading] = useState(false);
-    const [clickedButtons, setClickedButtons] = useState<Set<string>>(new Set());
-
-    // Helper function to handle button clicks with visual feedback
-    const handleButtonClick = useCallback((buttonId: string, action: () => void) => {
-        // Add visual feedback
-        setClickedButtons(prev => new Set(prev).add(buttonId));
-
-        // Execute the action
-        action();
-
-        // Remove visual feedback after 2 seconds
-        setTimeout(() => {
-            setClickedButtons(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(buttonId);
-                return newSet;
-            });
-        }, 2000);
-    }, []);
+    // Remove temporary visual-feedback click handling; use direct handlers instead
 
     // Filter mail items based on active tab
     const filteredItems = useMemo(() => {
@@ -389,9 +371,8 @@ export function MailManagement({
                                     </div>
                                     <div className="flex gap-2">
                                         <Button
-                                            onClick={() => selectedItem && handleButtonClick(`tag-${selectedItem.id}`, () => handleTagItem(selectedItem, newTag))}
+                                            onClick={() => selectedItem && handleTagItem(selectedItem, newTag)}
                                             disabled={!newTag.trim() || loading}
-                                            className={clickedButtons.has(`tag-${selectedItem?.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
                                         >
                                             Update Subject
                                         </Button>
@@ -415,9 +396,8 @@ export function MailManagement({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleButtonClick(`restore-${item.id}`, () => handleRestoreItem(item))}
+                                onClick={() => handleRestoreItem(item)}
                                 disabled={loading}
-                                className={clickedButtons.has(`restore-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
                             >
                                 <ArchiveRestore className="h-4 w-4 mr-1" />
                                 Restore
@@ -426,9 +406,8 @@ export function MailManagement({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleButtonClick(`archive-${item.id}`, () => handleArchiveItem(item))}
+                                onClick={() => handleArchiveItem(item)}
                                 disabled={loading}
-                                className={clickedButtons.has(`archive-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
                             >
                                 <Archive className="h-4 w-4 mr-1" />
                                 Archive
@@ -439,15 +418,13 @@ export function MailManagement({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleButtonClick(`forward-${item.id}`, () => {
+                            onClick={() => {
                                 if (onForward) {
                                     onForward(item);
                                 } else {
-                                    // Fallback to direct API call if no onForward prop provided
                                     handleForwardItem(item);
                                 }
-                            })}
-                            className={clickedButtons.has(`forward-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
+                            }}
                         >
                             <ArrowRight className="h-4 w-4 mr-1" />
                             Forward
@@ -457,8 +434,7 @@ export function MailManagement({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleButtonClick(`open-${item.id}`, () => onOpen(item))}
-                            className={clickedButtons.has(`open-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
+                            onClick={() => onOpen(item)}
                         >
                             <Eye className="h-4 w-4 mr-1" />
                             Open
@@ -468,8 +444,7 @@ export function MailManagement({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleButtonClick(`download-${item.id}`, () => onDownload(item))}
-                            className={clickedButtons.has(`download-${item.id}`) ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}
+                            onClick={() => onDownload(item)}
                         >
                             <Download className="h-4 w-4 mr-1" />
                             Download
