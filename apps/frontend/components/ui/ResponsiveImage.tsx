@@ -20,3 +20,5 @@ export default function ResponsiveImage({ rounded = true, className, ...rest }: 
 function clsx(...a: (string | false | null | undefined)[]) {
     return a.filter(Boolean).join(" ");
 }
+
+

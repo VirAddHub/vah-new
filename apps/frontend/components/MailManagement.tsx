@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import {
     Plus,
     Search,
@@ -37,7 +38,7 @@ interface MailItem {
     created_at?: string;
     scanned_at?: string;
     file_url?: string;
-    archived?: boolean;
+    deleted?: boolean; // Backend uses 'deleted' field
 }
 
 interface MailManagementProps {
@@ -90,14 +91,14 @@ export function MailManagement({
     const filteredItems = useMemo(() => {
         let items = mailItems;
 
-        // Filter by tab
+        // Filter by tab - backend uses 'deleted' field to indicate archived status
         if (activeTab === "archived") {
-            items = items.filter(item => item.archived);
+            items = items.filter(item => item.deleted);
         } else if (activeTab === "inbox") {
-            items = items.filter(item => !item.archived);
+            items = items.filter(item => !item.deleted);
         } else if (activeTab.startsWith("subject:")) {
             const subject = activeTab.replace("subject:", "");
-            items = items.filter(item => item.subject === subject && !item.archived);
+            items = items.filter(item => item.subject === subject && !item.deleted);
         }
 
         // Apply search filter
@@ -118,7 +119,7 @@ export function MailManagement({
     const availableSubjects = useMemo(() => {
         const subjects = new Set<string>();
         mailItems.forEach(item => {
-            if (item.subject && !item.archived) {
+            if (item.subject && !item.deleted) {
                 subjects.add(item.subject);
             }
         });
@@ -304,7 +305,7 @@ export function MailManagement({
                             {!item.is_read && (
                                 <Badge variant="default" className="text-xs">New</Badge>
                             )}
-                            {item.archived && (
+                            {item.deleted && (
                                 <Badge variant="outline" className="text-xs">Archived</Badge>
                             )}
                         </div>
@@ -351,18 +352,40 @@ export function MailManagement({
                                 </DialogHeader>
                                 <div className="space-y-4">
                                     <div>
-                                        <Label htmlFor="subject">Subject</Label>
-                                        <Input
-                                            id="subject"
-                                            value={newTag}
-                                            onChange={(e) => setNewTag(e.target.value)}
-                                            placeholder="Enter subject..."
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && selectedItem) {
-                                                    handleTagItem(selectedItem, newTag);
-                                                }
-                                            }}
-                                        />
+                                        <Label htmlFor="subject">Select or Create Subject</Label>
+                                        <div className="space-y-2">
+                                            <Select
+                                                value={newTag}
+                                                onValueChange={(value) => {
+                                                    setNewTag(value);
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select an existing subject or type new one below" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {availableSubjects.map((subject) => (
+                                                        <SelectItem key={subject} value={subject}>
+                                                            {subject}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="text-xs text-muted-foreground">
+                                                Or type a new subject name:
+                                            </div>
+                                            <Input
+                                                id="subject"
+                                                value={newTag}
+                                                onChange={(e) => setNewTag(e.target.value)}
+                                                placeholder="Enter new subject..."
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && selectedItem && newTag.trim()) {
+                                                        handleTagItem(selectedItem, newTag);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button
@@ -388,7 +411,7 @@ export function MailManagement({
                         </Dialog>
 
                         {/* Archive/Restore Button */}
-                        {item.archived ? (
+                        {item.deleted ? (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -475,11 +498,11 @@ export function MailManagement({
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="inbox" className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        Inbox ({mailItems.filter(item => !item.archived).length})
+                        Inbox ({mailItems.filter(item => !item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger value="archived" className="flex items-center gap-2">
                         <Archive className="h-4 w-4" />
-                        Archived ({mailItems.filter(item => item.archived).length})
+                        Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger value="subjects" className="flex items-center gap-2">
                         <Tag className="h-4 w-4" />
@@ -541,12 +564,12 @@ export function MailManagement({
                                         <Tag className="h-5 w-5" />
                                         {subject}
                                         <Badge variant="secondary" className="text-xs">
-                                            {mailItems.filter(item => item.subject === subject && !item.archived).length}
+                                            {mailItems.filter(item => item.subject === subject && !item.deleted).length}
                                         </Badge>
                                     </h3>
                                     <div className="space-y-2">
                                         {mailItems
-                                            .filter(item => item.subject === subject && !item.archived)
+                                            .filter(item => item.subject === subject && !item.deleted)
                                             .map(renderMailItem)
                                         }
                                     </div>

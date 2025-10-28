@@ -79,14 +79,18 @@ router.use(noConditional);
 /**
  * GET /api/mail-items
  * Get all mail items for current user (with pagination support)
- * Query params: ?page=1&pageSize=20
+ * Query params: ?page=1&pageSize=20&includeArchived=true
  */
 router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
+    const includeArchived = req.query.includeArchived === 'true';
 
     try {
+        // Build the query based on whether to include archived items
+        const deletedFilter = includeArchived ? '' : 'AND m.deleted = false';
+
         const result = await selectPaged(
             `SELECT
                 m.*,
@@ -100,7 +104,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 END as gdpr_expired
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.user_id = $1 AND m.deleted = false
+            WHERE m.user_id = $1 ${deletedFilter}
             ORDER BY m.created_at DESC`,
             [userId],
             page,

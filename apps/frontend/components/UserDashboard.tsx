@@ -78,6 +78,7 @@ interface MailItem {
   created_at?: string;
   scanned_at?: string;
   file_url?: string;
+  deleted?: boolean; // Backend uses 'deleted' field for archived status
 }
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
@@ -110,8 +111,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   // SWR hook for mail items with reduced polling to prevent 429 errors
+  // Include archived items by default so the frontend can filter them
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
-    '/api/mail-items',
+    '/api/mail-items?includeArchived=true',
     fetcher,
     {
       refreshInterval: 120000, // Poll every 2 minutes to prevent 429 errors
@@ -157,20 +159,20 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         const token = getToken();
         if (token) {
           const response = await fetch(`${API_BASE}/api/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
+            headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
-        });
+          });
 
-        if (response.ok) {
+          if (response.ok) {
             const data = await response.json();
             if (data.ok && data.data) {
               setUserProfile(data.data);
               // Update localStorage with fresh data
               localStorage.setItem('vah_user', JSON.stringify(data.data));
             }
-        } else {
+          } else {
             console.warn('Failed to fetch user profile, using stored data');
           }
         }
@@ -188,7 +190,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Select/Deselect functions
   const toggleSelectMail = (id: string) => {
-    setSelectedMail(prev => 
+    setSelectedMail(prev =>
       prev.includes(id)
         ? prev.filter(mailId => mailId !== id)
         : [...prev, id]
@@ -242,7 +244,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const onOpen = useCallback(async (item: MailItem) => {
     try {
       setSelectedMailForPDF(item);
-    setShowPDFModal(true);
+      setShowPDFModal(true);
 
       // Auto-mark as read when opened (if not already read)
       if (!item.is_read) {
@@ -515,7 +517,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <div className="flex items-center gap-4">
               <VAHLogo onNavigate={onNavigate} size="md" showText={true} />
             </div>
-            
+
             {/* Navigation Links */}
             <nav className="hidden md:flex items-center gap-6">
               <button
@@ -586,11 +588,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <CardTitle>Mail Inbox</CardTitle>
                       <Badge variant="secondary">{totalItems} items</Badge>
                       {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                </div>
+                    </div>
                     <p className="text-sm text-muted-foreground hidden sm:block">
                       Click on any mail item to view full details and scans
-                  </p>
-              </div>
+                    </p>
+                  </div>
 
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
@@ -606,7 +608,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
-                </div>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -626,11 +628,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     )}
                     {isAllSelected ? "Deselect All" : "Select All"}
                   </button>
-        </div>
+                </div>
 
                 {/* Select All - Mobile */}
                 <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
-            <Button
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={toggleSelectAll}
@@ -641,14 +643,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       <>
                         <CheckSquare className="h-4 w-4 mr-2 text-primary" />
                         Deselect All ({mailItems.length})
-                </>
-              ) : (
-                <>
+                      </>
+                    ) : (
+                      <>
                         <Square className="h-4 w-4 mr-2" />
                         Select All ({mailItems.length})
-                </>
-              )}
-            </Button>
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 {/* Error State */}
@@ -662,8 +664,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Button onClick={() => refreshMail()}>
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Try Again
-            </Button>
-          </div>
+                    </Button>
+                  </div>
                 ) : mailItems.length === 0 ? (
                   /* Empty State */
                   <div className="px-6 py-12 text-center">
@@ -672,7 +674,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <p className="text-sm text-muted-foreground">
                       Your mail will appear here when it arrives at your virtual address
                     </p>
-        </div>
+                  </div>
                 ) : (
                   <MailManagement
                     mailItems={mailItems}
@@ -716,8 +718,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding
-                </Button>
-              </div>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -728,8 +730,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
               </p>
             </div>
-              </div>
-              
+          </div>
+
           {/* Right Column - Virtual Address Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <Card className="border-0">
@@ -740,7 +742,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-sm truncate">Your Virtual Business Address</CardTitle>
-            </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 pt-3">
@@ -771,16 +773,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <p className="text-xs text-muted-foreground text-center leading-tight">
                     Official proof of address
                   </p>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardContent>
+            </Card>
           </aside>
 
-      </div>
+        </div>
       </main>
 
       {/* PDF Viewer Modal */}
-        <PDFViewerModal
+      <PDFViewerModal
         isOpen={showPDFModal}
         onClose={() => setShowPDFModal(false)}
         mailItemId={selectedMailForPDF?.id ? Number(selectedMailForPDF.id) : null}

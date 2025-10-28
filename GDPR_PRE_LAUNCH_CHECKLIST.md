@@ -215,3 +215,5 @@
 **Remember**: GDPR compliance is not optional. Take the time to do it right, and you'll avoid costly fines and legal issues. Your users will also appreciate the transparency and control over their data.
 
 **Status**: 🟡 **STAGING MODE - GDPR COMPLIANCE IN PROGRESS**
+
+
