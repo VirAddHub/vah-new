@@ -26,6 +26,9 @@ export const Templates = {
     MailScanned: "mail-scanned", // pragma: allowlist secret
     MailForwarded: "mail-forwarded", // pragma: allowlist secret
     MailAfterCancellation: "mail-received-after-cancellation", // pragma: allowlist secret
+
+    // Quiz / Marketing
+    QuizDay0: "quiz-day0", // pragma: allowlist secret - TODO: Create this template in Postmark
 } as const;
 
 export type TemplateKey = keyof typeof Templates;

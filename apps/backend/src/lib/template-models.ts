@@ -46,6 +46,13 @@ export type BuildArgs = {
   effectiveDate?: string;
 
   reason?: string;
+
+  // Quiz / Marketing
+  score?: number | string;
+  segment?: "high" | "mid" | "low";
+  bookingUrl?: string;
+  booking_url?: string;
+  cta_url?: string;
 } & AnyDict;
 
 type ModelBuilder = (a: BuildArgs) => AnyDict;
@@ -137,5 +144,14 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     name: a.name,
     subject: a.subjectLine,
     cta_url: a.ctaUrl,
+  }),
+
+  // QUIZ / MARKETING
+  [Templates.QuizDay0]: (a) => ({
+    name: a.name || a.firstName || "there",
+    score: String(a.score ?? 0),
+    segment: a.segment || "low",
+    cta_url: a.ctaUrl || a.cta_url,
+    booking_url: a.bookingUrl || a.booking_url,
   }),
 };

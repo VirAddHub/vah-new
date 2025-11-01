@@ -84,11 +84,13 @@ APP_BASE_URL=https://virtualaddresshub.co.uk
 CALCOM_BOOKING_URL=https://cal.com/virtualaddresshub/15min
 ```
 
-### 4. Create Postmark Email Template
+### 4. Create Postmark Email Template ⚠️ REQUIRED
 
-1. Go to Postmark Dashboard → Templates
-2. Create a new template with alias: **`quiz-day0`**
-3. Set subject: `Your Business Address Compliance Score: {{score}}`
+**Important**: The quiz email template must be created in Postmark before the quiz will send emails.
+
+1. Go to Postmark Dashboard → Templates → Create Template
+2. Set the **Template Alias** to: **`quiz-day0`** (must match exactly)
+3. Set subject line: `Your Business Address Compliance Score: {{score}}`
 4. Copy the HTML template from below:
 
 ```html
@@ -172,7 +174,11 @@ CALCOM_BOOKING_URL=https://cal.com/virtualaddresshub/15min
 </html>
 ```
 
-**Note:** Postmark uses Handlebars syntax. If your template engine doesn't support `{{#if_equals}}`, use simple conditionals or contact us for alternative syntax.
+**Note:** 
+- Postmark uses Handlebars syntax
+- The template alias **must be exactly** `quiz-day0` (case-sensitive)
+- Template variables available: `{{name}}`, `{{score}}`, `{{segment}}`, `{{cta_url}}`, `{{booking_url}}`
+- If you don't create this template, the system will fall back to a simple email, but it's recommended to create the full template for better UX
 
 ### 5. Test the Integration
 

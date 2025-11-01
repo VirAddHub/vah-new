@@ -2,6 +2,8 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { getPool } from "../db";
 import { ENV } from "../../env";
+import { sendTemplateEmail } from "../../lib/mailer";
+import { Templates } from "../../lib/postmark-templates";
 
 export const quizRouter = Router();
 
@@ -46,35 +48,27 @@ quizRouter.post("/submit", async (req: Request, res: Response) => {
         const ctaUrl = `${ENV.APP_BASE_URL || 'https://virtualaddresshub.co.uk'}/pricing`;
         const bookingUrl = process.env.CALCOM_BOOKING_URL || `https://cal.com/virtualaddresshub/15min`;
 
-        // Send Day-0 email via Postmark template
+        // Send Day-0 email via standardized Postmark template system
+        // NOTE: Template "quiz-day0" must be created in Postmark Dashboard
+        // If template doesn't exist, sendTemplateEmail will fall back to a simple email
         try {
-            const postmark = require('postmark');
-            const postmarkClient = ENV.POSTMARK_TOKEN ? new postmark.ServerClient(ENV.POSTMARK_TOKEN) : null;
-
-            if (postmarkClient && ENV.POSTMARK_TOKEN) {
-                await postmarkClient.sendEmailWithTemplate({
-                    From: ENV.EMAIL_FROM_NAME
-                        ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>`
-                        : ENV.EMAIL_FROM,
-                    To: email,
-                    TemplateAlias: "quiz-day0", // Create this template in Postmark
-                    TemplateModel: {
-                        name: name || "there",
-                        score: score,
-                        segment: segment,
-                        cta_url: ctaUrl,
-                        booking_url: bookingUrl,
-                    },
-                    MessageStream: ENV.POSTMARK_STREAM || "outbound",
-                    ...(ENV.EMAIL_REPLY_TO ? { ReplyTo: ENV.EMAIL_REPLY_TO } : {}),
-                });
-                console.log(`[quiz] Email sent to ${email}`);
-            } else {
-                console.warn('[quiz] Postmark not configured, skipping email');
-            }
+            await sendTemplateEmail({
+                to: email,
+                templateAlias: Templates.QuizDay0, // Template alias: "quiz-day0"
+                model: {
+                    name: name || undefined,
+                    firstName: name?.split(' ')[0] || undefined,
+                    score: score,
+                    segment: segment,
+                    ctaUrl: ctaUrl,
+                    bookingUrl: bookingUrl,
+                },
+            });
+            console.log(`[quiz] Email sent to ${email} using template ${Templates.QuizDay0}`);
         } catch (emailError: any) {
             console.error('[quiz] Failed to send email:', emailError);
             // Don't fail the request if email fails - lead is already saved
+            // The sendTemplateEmail function has built-in fallback to simple email
         }
 
         return res.json({ ok: true, message: "Quiz submission recorded" });
