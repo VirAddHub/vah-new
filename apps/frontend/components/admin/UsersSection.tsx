@@ -84,10 +84,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
 
-  // Reset page when search changes (after debounce)
+  // Reset page when search changes (after debounce) or when filters change
   useEffect(() => {
     onPageChange(1);
-  }, [debouncedQ, onPageChange]);
+  }, [debouncedQ, statusFilter, planFilter, kycFilter, onPageChange]);
 
   // Call onFiltersChange when any filter changes (use debounced query)
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         kyc_status: kycFilter === "__all__" ? "" : kycFilter,
       });
     }
-  }, [q, statusFilter, planFilter, kycFilter, onFiltersChange]);
+  }, [debouncedQ, statusFilter, planFilter, kycFilter, onFiltersChange]);
 
   // Load user stats
   const loadUserStats = useCallback(async () => {
@@ -284,21 +284,26 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   }
 
   // Server-side filtering - show ONLY deleted users when showDeleted is true
+  // Backend already returns paginated data, so we don't need to paginate again
   const displayUsers = useMemo(() => {
     if (showDeleted) {
       // When showing deleted, show ONLY deleted users
       return deletedUsers;
     }
-    // When not showing deleted, only show active users
+    // When not showing deleted, only show active users (already paginated by backend)
     return users;
   }, [users, deletedUsers, showDeleted]);
 
-  // Pagination helpers - paginate the display users
-  const totalFiltered = displayUsers.length;
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedUsers = displayUsers.slice(startIndex, endIndex);
-  const hasNext = useMemo(() => endIndex < totalFiltered, [endIndex, totalFiltered]);
+  // Pagination helpers - use backend total for accurate counts
+  const totalFiltered = showDeleted ? deletedUsers.length : total; // Use backend total for active users
+  const hasNext = useMemo(() => {
+    if (showDeleted) {
+      // For deleted users, check if there are more items (no backend pagination yet)
+      return deletedUsers.length >= pageSize;
+    }
+    // For active users, backend provides accurate pagination info
+    return (page * pageSize) < total;
+  }, [page, pageSize, total, deletedUsers.length, showDeleted]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
   return (
@@ -368,6 +373,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             setStatusFilter("__all__");
             setPlanFilter("__all__");
             setKycFilter("__all__");
+            setQ(""); // Also clear search
+            onPageChange(1); // Reset to first page
           }}
         >
           Clear Filters
@@ -437,14 +444,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedUsers.length === 0 ? (
+              {displayUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedUsers.map((u) => (
+                displayUsers.map((u) => (
                   <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-red-50" : ""}>
                     <TableCell className="font-mono text-sm">
                       {u.id}
