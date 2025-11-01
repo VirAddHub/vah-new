@@ -98,22 +98,25 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
             paramIndex++;
         }
 
-        // Status filter
-        if (status) {
+        // Status filter (skip if __all__)
+        if (status && status !== '__all__') {
             whereClause += ` AND u.status = $${paramIndex}`;
             params.push(String(status));
             paramIndex++;
         }
 
-        // Plan filter
-        if (plan_id) {
-            whereClause += ` AND u.plan_id = $${paramIndex}`;
-            params.push(parseInt(String(plan_id)));
-            paramIndex++;
+        // Plan filter (skip if __all__)
+        if (plan_id && plan_id !== '__all__') {
+            const planIdNum = parseInt(String(plan_id));
+            if (!isNaN(planIdNum)) {
+                whereClause += ` AND u.plan_id = $${paramIndex}`;
+                params.push(planIdNum);
+                paramIndex++;
+            }
         }
 
-        // KYC status filter
-        if (kyc_status) {
+        // KYC status filter (skip if __all__)
+        if (kyc_status && kyc_status !== '__all__') {
             whereClause += ` AND u.kyc_status = $${paramIndex}`;
             params.push(String(kyc_status));
             paramIndex++;
@@ -153,19 +156,22 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
             countParamIndex++;
         }
 
-        if (status) {
+        if (status && status !== '__all__') {
             countQuery += ` AND u.status = $${countParamIndex}`;
             countParams.push(String(status));
             countParamIndex++;
         }
 
-        if (plan_id) {
-            countQuery += ` AND u.plan_id = $${countParamIndex}`;
-            countParams.push(parseInt(String(plan_id)));
-            countParamIndex++;
+        if (plan_id && plan_id !== '__all__') {
+            const planIdNum = parseInt(String(plan_id));
+            if (!isNaN(planIdNum)) {
+                countQuery += ` AND u.plan_id = $${countParamIndex}`;
+                countParams.push(planIdNum);
+                countParamIndex++;
+            }
         }
 
-        if (kyc_status) {
+        if (kyc_status && kyc_status !== '__all__') {
             countQuery += ` AND u.kyc_status = $${countParamIndex}`;
             countParams.push(String(kyc_status));
             countParamIndex++;
