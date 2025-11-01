@@ -1,4 +1,29 @@
+/**
+ * @deprecated This API client is deprecated. Use `import api from "@/lib/http"` instead.
+ * 
+ * Migration guide:
+ * - Replace `import { apiClient } from "@/lib/api-client"` with `import api from "@/lib/http"`
+ * - Replace `apiClient.get()` with `api.get()`
+ * - Replace `apiClient.post()` with `api.post()`
+ * - Error handling: Check `res.ok` instead of `isOk(res)`
+ * 
+ * This file will be removed after all usages are migrated.
+ */
 // ---- Types ----------------------------------------------------
+
+// Dev-only deprecation warning
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    const warnOnce = () => {
+        if (!(window as any).__apiClientDeprecationWarned) {
+            console.warn(
+                '[DEPRECATED] "@/lib/api-client" is deprecated. Use "@/lib/http" instead. ' +
+                'See migration guide in lib/api-client.ts'
+            );
+            (window as any).__apiClientDeprecationWarned = true;
+        }
+    };
+    setTimeout(warnOnce, 0);
+}
 
 import { UnknownRecord } from './types';
 import { setToken, clearToken, getToken, setStoredUser } from './token-manager';

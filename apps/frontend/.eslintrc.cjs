@@ -1,5 +1,33 @@
 module.exports = {
-  rules: {},
+  rules: {
+    // Ban deprecated API client imports (warn in dev, error in CI)
+    "no-restricted-imports": ["warn", {
+      "paths": [
+        {
+          "name": "@/lib/apiClient",
+          "message": "Use @/lib/http instead. This import is deprecated."
+        },
+        {
+          "name": "@/lib/api-client",
+          "message": "Use @/lib/http instead. This import is deprecated."
+        },
+        {
+          "name": "@/lib/api",
+          "message": "Use @/lib/http instead. This import is deprecated."
+        },
+        {
+          "name": "@/lib/apiDirect",
+          "message": "Use @/lib/http instead. This import is deprecated."
+        }
+      ]
+    },
+      // Warn against localStorage token reads (security risk)
+      "no-restricted-properties": ["warn", {
+        "object": "localStorage",
+        "property": "getItem",
+        "message": "Auth uses HttpOnly cookies. Do not read tokens client-side. Use api from @/lib/http which handles auth automatically."
+      }]
+  },
   overrides: [
     // Keep content quote rule relaxed for components with lots of text
     {

@@ -3,13 +3,16 @@
  * Uses en-GB locale consistently across the app
  */
 
+const tz = "Europe/London";
 const gbDate = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
     day: "2-digit",
     month: "short",
     year: "numeric",
 });
 
 const gbDateTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -18,6 +21,7 @@ const gbDateTime = new Intl.DateTimeFormat("en-GB", {
 });
 
 const gbDateShort = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

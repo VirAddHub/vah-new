@@ -1,4 +1,28 @@
+/**
+ * @deprecated This API client is deprecated. Use `import api from "@/lib/http"` instead.
+ * 
+ * Migration guide:
+ * - Replace `import { api } from "@/lib/api"` with `import api from "@/lib/http"`
+ * - The new client uses BFF endpoints and cookie-based auth automatically
+ * 
+ * This file will be removed after all usages are migrated.
+ */
 // apps/frontend/lib/api.ts
+
+// Dev-only deprecation warning
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  const warnOnce = () => {
+    if (!(window as any).__apiDeprecationWarned) {
+      console.warn(
+        '[DEPRECATED] "@/lib/api" is deprecated. Use "@/lib/http" instead. ' +
+        'See migration guide in lib/api.ts'
+      );
+      (window as any).__apiDeprecationWarned = true;
+    }
+  };
+  setTimeout(warnOnce, 0);
+}
+
 import { API } from './api-base';
 import { getToken } from './token-manager';
 import { safeJson } from './http';

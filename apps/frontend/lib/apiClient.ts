@@ -1,4 +1,30 @@
+/**
+ * @deprecated This API client is deprecated. Use `import api from "@/lib/http"` instead.
+ * 
+ * Migration guide:
+ * - Replace `import { apiClient } from "@/lib/apiClient"` with `import api from "@/lib/http"`
+ * - Replace `apiClient.get()` with `api.get()`
+ * - Replace `apiClient.post()` with `api.post()`
+ * - Error handling: Check `res.ok` instead of `isOk(res)`
+ * 
+ * This file will be removed after all usages are migrated.
+ */
 // apps/frontend/lib/apiClient.ts
+
+// Dev-only deprecation warning
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    const warnOnce = () => {
+        if (!(window as any).__apiClientDeprecationWarned) {
+            console.warn(
+                '[DEPRECATED] "@/lib/apiClient" is deprecated. Use "@/lib/http" instead. ' +
+                'See migration guide in lib/apiClient.ts'
+            );
+            (window as any).__apiClientDeprecationWarned = true;
+        }
+    };
+    // Warn on module load
+    setTimeout(warnOnce, 0);
+}
 
 // Re-export types & helpers for components
 export type { User } from '../types/user';
