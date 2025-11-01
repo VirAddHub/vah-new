@@ -231,29 +231,41 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // 🔒 Abort previous request before firing a new one
     const abortRef = useRef<AbortController | null>(null);
 
-    // Load forwarding requests for overview using centralized HTTP service
-    const loadForwardingRequests = useCallback(async () => {
+    // Load forwarding stats from dedicated endpoint (more accurate than client-side counting)
+    const loadForwardingStats = useCallback(async () => {
         if (mountedRef.current) setIsLoadingForwarding(true);
         try {
-            const data = await adminApi.getForwardingRequests({ limit: 50, offset: 0 });
-            if (mountedRef.current && data.ok && Array.isArray(data.data)) {
-                const requests = data.data;
-                setForwardingRequests(requests);
+            const token = localStorage.getItem('vah_jwt');
+            const response = await fetch('/api/admin/forwarding/stats', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
 
-                // Calculate stats
-                const stats = {
-                    total: requests.length,
-                    requested: requests.filter((r: any) => r.status === 'Requested').length,
-                    reviewed: requests.filter((r: any) => r.status === 'Reviewed').length,
-                    processing: requests.filter((r: any) => r.status === 'Processing').length,
-                    dispatched: requests.filter((r: any) => r.status === 'Dispatched').length,
-                    delivered: requests.filter((r: any) => r.status === 'Delivered').length,
-                    cancelled: requests.filter((r: any) => r.status === 'Cancelled').length,
-                };
-                setForwardingStats(stats);
+            if (mountedRef.current && response.ok) {
+                const result = await response.json();
+                if (result.ok && result.data) {
+                    setForwardingStats({
+                        total: result.data.total || 0,
+                        requested: result.data.Requested || 0,
+                        reviewed: result.data.Reviewed || 0,
+                        processing: result.data.Processing || 0,
+                        dispatched: result.data.Dispatched || 0,
+                        delivered: result.data.Delivered || 0,
+                        cancelled: result.data.Cancelled || 0,
+                    });
+                }
+            }
+
+            // Also load recent requests for the "Recent Requests" section
+            const data = await adminApi.getForwardingRequests({ limit: 10, offset: 0 });
+            if (mountedRef.current && data.ok && Array.isArray(data.data)) {
+                setForwardingRequests(data.data);
             }
         } catch (error) {
-            console.error('Error loading forwarding requests:', error);
+            console.error('Error loading forwarding stats:', error);
         } finally {
             if (mountedRef.current) setIsLoadingForwarding(false);
         }
@@ -321,10 +333,18 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     useEffect(() => {
         console.debug('[Admin] Loading overview on mount');
         void loadOverview();
-        void loadForwardingRequests();
+        void loadForwardingStats();
     }, []); // Only run once on mount
 
-    // Forwarding requests polling is now handled by CollaborativeForwardingBoard component
+    // Poll forwarding stats every 30 seconds when on overview section
+    useEffect(() => {
+        if (activeSection === 'overview') {
+            const interval = setInterval(() => {
+                void loadForwardingStats();
+            }, 30000); // Poll every 30 seconds
+            return () => clearInterval(interval);
+        }
+    }, [activeSection, loadForwardingStats]);
 
     // Check system health using shared heartbeat
     useAdminHeartbeat(async () => {

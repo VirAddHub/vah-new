@@ -47,6 +47,46 @@ const adminForwardingLimiter = rateLimit({
 // Apply admin auth to all routes
 router.use(requireAdmin);
 
+/**
+ * GET /api/admin/forwarding/stats
+ * Get forwarding request status counts (admin only)
+ */
+router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res: Response) => {
+    const pool = getPool();
+    try {
+        const result = await pool.query(`
+            SELECT 
+                status,
+                COUNT(*) as count
+            FROM forwarding_request
+            GROUP BY status
+        `);
+
+        // Build stats object with all status counts
+        const stats: Record<string, number> = {
+            total: 0,
+            Requested: 0,
+            Reviewed: 0,
+            Processing: 0,
+            Dispatched: 0,
+            Delivered: 0,
+            Cancelled: 0,
+        };
+
+        result.rows.forEach((row: any) => {
+            const status = row.status || 'Requested';
+            const count = parseInt(row.count) || 0;
+            stats[status] = count;
+            stats.total += count;
+        });
+
+        return res.json({ ok: true, data: stats });
+    } catch (error: any) {
+        console.error('[GET /api/admin/forwarding/stats] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
 // GET /api/admin/forwarding/requests?status=Requested&q=...&limit=50&offset=0
 router.get('/forwarding/requests',
     adminForwardingLimiter,
