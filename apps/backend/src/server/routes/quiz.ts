@@ -2,8 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { getPool } from "../db";
 import { ENV } from "../../env";
-import { sendTemplateEmail } from "../../lib/mailer";
-import { Templates } from "../../lib/postmark-templates";
+import { sendTemplateEmail, Templates } from "../../services/mailer";
 
 export const quizRouter = Router();
 
@@ -48,23 +47,35 @@ quizRouter.post("/submit", async (req: Request, res: Response) => {
         const ctaUrl = `${ENV.APP_BASE_URL || 'https://virtualaddresshub.co.uk'}/pricing`;
         const bookingUrl = process.env.CALCOM_BOOKING_URL || `https://cal.com/virtualaddresshub/15min`;
 
-        // Send Day-0 email via standardized Postmark template system
-        // NOTE: Template "quiz-day0" must be created in Postmark Dashboard
-        // If template doesn't exist, sendTemplateEmail will fall back to a simple email
+        // Build segment label for template
+        const segmentLabel = segment === "high" ? "High" : segment === "mid" ? "Mid" : "Low";
+        const introText = segment === "high"
+            ? "Great job! You're already compliant in most areas."
+            : segment === "mid"
+                ? "You're on the right track, but there's room for improvement."
+                : "There are several areas where compliance can be strengthened.";
+
+        // Send Day-0 email via new mailer with alias-first, TemplateId fallback, and plain-text fallback
+        // NOTE: Template alias "quiz-day0" should exist in Postmark Dashboard
+        // Fallback TemplateId: 42035123 (if alias is missing)
+        // Final fallback: plain-text email if both fail
         try {
-            await sendTemplateEmail({
+            const result = await sendTemplateEmail({
                 to: email,
-                templateAlias: Templates.QuizDay0, // Template alias: "quiz-day0"
+                alias: Templates.QuizDay0,
+                templateIdFallback: 42035123,
                 model: {
-                    name: name || undefined,
-                    firstName: name?.split(' ')[0] || undefined,
+                    name: name || "there",
                     score: score,
-                    segment: segment,
-                    ctaUrl: ctaUrl,
-                    bookingUrl: bookingUrl,
+                    segment_label: segmentLabel,
+                    intro_text: introText,
+                    cta_label: "View Pricing",
+                    cta_url: ctaUrl,
+                    has_booking: true,
+                    booking_url: bookingUrl,
                 },
             });
-            console.log(`[quiz] Email sent to ${email} using template ${Templates.QuizDay0}`);
+            console.log(`[quiz] Email sent to ${email} (mode: ${result})`);
         } catch (emailError: any) {
             console.error('[quiz] Failed to send email:', emailError);
             // Don't fail the request if email fails - lead is already saved

@@ -5,7 +5,7 @@ module.exports = {
     },
     testTimeout: 20000,
     moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
-    testMatch: ['**/tests/**/*.spec.ts', '**/tests/**/*.spec.js'],
+    testMatch: ['**/tests/**/*.spec.ts', '**/tests/**/*.spec.js', '**/src/services/**/*.test.ts'],
     collectCoverageFrom: [
         'src/**/*.{ts,js}',
         'server/**/*.{ts,js}',
