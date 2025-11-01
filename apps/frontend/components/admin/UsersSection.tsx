@@ -237,7 +237,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       // Refresh data from parent and deleted users
       await Promise.all([
-        loadUserStats(), 
+        loadUserStats(),
         showDeleted ? loadDeletedUsers() : Promise.resolve(),
         onRefreshUsers ? onRefreshUsers() : Promise.resolve()
       ]);
@@ -268,7 +268,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       // Refresh data from parent and deleted users
       await Promise.all([
-        loadUserStats(), 
+        loadUserStats(),
         showDeleted ? loadDeletedUsers() : Promise.resolve(),
         onRefreshUsers ? onRefreshUsers() : Promise.resolve()
       ]);

@@ -80,6 +80,7 @@ import supportRouter from "./server/routes/support";
 import contactRouter from "./server/routes/contact";
 import addressRouterImport from "./server/routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
+import { quizRouter } from "./server/routes/quiz";
 
 // handle CJS/ESM default interop safely
 const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
@@ -466,6 +467,9 @@ async function start() {
     logger.info('[mount] /api/support mounted');
     app.use('/api/contact', contactRouter);
     logger.info('[mount] /api/contact mounted');
+
+    app.use('/api/quiz', quizRouter);
+    logger.info('[mount] /api/quiz mounted');
 
     // BFF mail scan routes (buffer and serve with safe headers)
     app.use('/api/bff', bffMailScanRouter);

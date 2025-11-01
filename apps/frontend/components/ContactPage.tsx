@@ -20,8 +20,9 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
-import { contactApi, supportApi } from "@/lib/apiClient";
-import { isOk } from "@/types/api";
+import api from "@/lib/http";
+import { isEmail, validateRequired } from "@/lib/validators";
+import { useAsync } from "@/hooks/useAsync";
 
 interface ContactPageProps {
     onNavigate?: (page: string) => void;
@@ -33,12 +34,7 @@ type InquiryType =
     | "technical"
     | "billing";
 
-// For development/demo purposes, we'll use a mock endpoint
-import { API_BASE } from "@/lib/config";
-
-const CONTACT_ENDPOINT = API_BASE
-    ? `${API_BASE}/api/contact`
-    : "/api/contact";
+// Removed old API_BASE config - now using unified api client
 
 export default function ContactPage({ onNavigate }: ContactPageProps) {
     // Support information state
@@ -54,27 +50,29 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         inquiryType: "general" as InquiryType,
         website: "", // honeypot: must stay empty
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    // Use async hook for form submission
+    const { run: submitForm, loading: isSubmitting, error: submitError } = useAsync(async (data: typeof formData) => {
+        const res = await api.post("/contact/submit", data);
+        if (!res.ok) throw new Error(res.message);
+        return res.data;
+    });
 
     // Load support information
     useEffect(() => {
         const loadSupportInfo = async () => {
             try {
                 setLoadingSupport(true);
-                const res = await supportApi.get();
-                if (isOk(res)) {
+                const res = await api.get("/support/info");
+                if (res.ok) {
                     setSupportInfo(res.data);
                 } else {
-                    setErrorMsg(res.error || 'Unable to load support info.');
+                    setErrorMsg(res.message || 'Unable to load support info.');
                 }
             } catch (err: any) {
-                setErrorMsg(
-                    err?.response?.data?.error ??
-                    (err as Error)?.message ??
-                    'Unable to load support info.'
-                );
+                setErrorMsg(err?.message ?? 'Unable to load support info.');
             } finally {
                 setLoadingSupport(false);
             }
@@ -83,61 +81,39 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         loadSupportInfo();
     }, []);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErrorMsg(null);
 
-        // basic client-side validation
-        if (!formData.name.trim())
-            return setErrorMsg("Please enter your name");
-        if (
-            !formData.email.trim() ||
-            !emailRegex.test(formData.email)
-        )
-            return setErrorMsg("Please enter a valid email address");
-        if (!formData.subject.trim())
-            return setErrorMsg("Please enter a subject");
-        if (!formData.message.trim())
-            return setErrorMsg("Please enter your message");
-
-        setIsSubmitting(true);
+        // Client-side validation using centralized validators
         try {
-            // Call the contact API using the unified client
-            const response = await contactApi.send(formData);
-
-            if (isOk(response)) {
-                setIsSubmitted(true);
-                setFormData({
-                    name: "",
-                    email: "",
-                    company: "",
-                    subject: "",
-                    message: "",
-                    inquiryType: "general",
-                    website: "",
-                });
-            } else {
-                // unified ApiErr shape: { ok:false, error, code? }
-                // fallback in case legacy API still returns { message }
-                const legacyMsg =
-                    typeof (response as any)?.message === 'string'
-                        ? ((response as any).message as string)
-                        : undefined;
-                setErrorMsg(response.error || legacyMsg || "Unable to send message. Please try again.");
+            validateRequired("Name", formData.name);
+            validateRequired("Email", formData.email);
+            if (!isEmail(formData.email)) {
+                throw new Error("Please enter a valid email address");
             }
+            validateRequired("Subject", formData.subject);
+            validateRequired("Message", formData.message);
+        } catch (validationError: any) {
+            setErrorMsg(validationError.message);
+            return;
+        }
+
+        try {
+            await submitForm(formData);
+            setIsSubmitted(true);
+            setFormData({
+                name: "",
+                email: "",
+                company: "",
+                subject: "",
+                message: "",
+                inquiryType: "general",
+                website: "",
+            });
         } catch (err: unknown) {
-            // prefer server error payload if available
-            const msg =
-                // axios style: response.data.error
-                (err as any)?.response?.data?.error
-                // fetch style: message
-                ?? (err as Error)?.message
-                ?? "Something went wrong. Please try again in a moment.";
+            const msg = (err as Error)?.message ?? "Something went wrong. Please try again in a moment.";
             setErrorMsg(msg);
-        } finally {
-            setIsSubmitting(false);
         }
     }
 

@@ -1,33 +1,50 @@
-// apps/frontend/lib/http.ts
-export async function safeJson(res: Response): Promise<any> {
-    // 204 No Content or zero length → return null
-    if (res.status === 204) return null;
+/**
+ * Unified API client for frontend
+ * All requests go through BFF endpoints with cookie-based auth
+ * No localStorage tokens needed - uses HttpOnly cookies
+ */
 
-    const len = res.headers.get('content-length');
-    if (len === '0') return null;
+export type ApiError = { ok: false; status: number; code?: string; message: string };
+export type ApiOk<T> = { ok: true; data: T };
+export type ApiResponse<T> = ApiOk<T> | ApiError;
 
-    const ctype = res.headers.get('content-type') || '';
-    if (!ctype.includes('application/json')) {
-        // If it's not JSON, try text. Empty text -> null
-        const text = await res.text().catch(() => '');
-        if (!text) return null;
-        try { return JSON.parse(text); } catch {
-            // Not JSON, return raw text so callers can branch if they care
-            return { _nonJson: true, text };
-        }
-    }
-
-    // It says JSON — but it might still be empty (streamed / buggy server)
-    const text = await res.text().catch(() => '');
-    if (!text) return null;
-    try { return JSON.parse(text); } catch {
-        // Last resort: return the raw text wrapped so we don't explode
-        return { _jsonParseError: true, text };
-    }
+function normaliseError(status: number, payload: any): ApiError {
+    const code = payload?.code || payload?.error;
+    const message = payload?.message || payload?.error || "Request failed";
+    return { ok: false, status, code, message };
 }
 
-// Safe parse helper for localStorage values
-export function safeParse<T>(raw: string | null): T | null {
-    if (!raw) return null;
-    try { return JSON.parse(raw) as T; } catch { return null; }
+async function request<T>(
+    path: string,
+    opts: RequestInit & { base?: string } = {}
+): Promise<ApiOk<T> | ApiError> {
+    const base = opts.base ?? "/api/bff";
+    const url = path.startsWith("http") ? path : `${base}${path}`;
+
+    const res = await fetch(url, {
+        credentials: "include",
+        headers: {
+            "content-type": "application/json",
+            ...(opts.headers || {}),
+        },
+        ...opts,
+    });
+
+    const isJson = (res.headers.get("content-type") || "").includes("application/json");
+    const body = isJson ? await res.json() : await res.text();
+
+    if (!res.ok) return normaliseError(res.status, body);
+    return (body?.ok !== undefined ? body : { ok: true, data: body }) as ApiOk<T>;
 }
+
+export const api = {
+    get: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "GET" }),
+    post: <T>(path: string, body?: unknown, init?: RequestInit) =>
+        request<T>(path, { ...init, method: "POST", body: body ? JSON.stringify(body) : undefined }),
+    put: <T>(path: string, body?: unknown, init?: RequestInit) =>
+        request<T>(path, { ...init, method: "PUT", body: body ? JSON.stringify(body) : undefined }),
+    del: <T>(path: string, init?: RequestInit) =>
+        request<T>(path, { ...init, method: "DELETE" }),
+};
+
+export default api;

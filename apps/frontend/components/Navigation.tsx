@@ -15,12 +15,15 @@ export function Navigation({ onNavigate }: NavigationProps) {
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
+        { label: 'Compliance Check', page: 'compliance-check', href: '/compliance-check' },
         { label: 'Help', page: 'help' },
         { label: 'Sign Up', page: 'signup' },
     ];
 
-    const handleNavClick = (page: string) => {
-        if (page === 'login') {
+    const handleNavClick = (page: string, href?: string) => {
+        if (href) {
+            window.location.href = href;
+        } else if (page === 'login') {
             window.location.href = '/login';
         } else if (page === 'signup') {
             window.location.href = '/signup';
@@ -41,7 +44,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     {navItems.map((item) => (
                         <button
                             key={item.label}
-                            onClick={() => handleNavClick(item.page)}
+                            onClick={() => handleNavClick(item.page, (item as any).href)}
                             className="hover:text-foreground transition-colors font-medium"
                         >
                             {item.label}
@@ -84,7 +87,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
-                                onClick={() => handleNavClick(item.page)}
+                                onClick={() => handleNavClick(item.page, (item as any).href)}
                                 className="tt-min block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
                             >
                                 {item.label}

@@ -33,4 +33,11 @@ if [ -n "$UI_FILES" ]; then
   done
 fi
 
+# Block duplicate/backup files (e.g., "File 2.tsx") - but allow deletions
+if git diff --cached --name-only --diff-filter=A | grep -E ' 2\.(tsx|ts|jsx|js)$' >/dev/null; then
+  echo "❌ Backup-style files detected (\" 2.tsx\"). Please delete or rename."
+  echo "   Git history is sufficient for backups - no need for duplicate files."
+  exit 1
+fi
+
 echo "✅ Content guardrails passed"
