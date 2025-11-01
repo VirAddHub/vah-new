@@ -1,9 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { getPool } from "../db";
-import { sendTemplateEmail } from "../lib/mailer";
-import { Templates } from "../lib/postmark-templates";
-import { ENV } from "../env";
+import { ENV } from "../../env";
 
 export const quizRouter = Router();
 
