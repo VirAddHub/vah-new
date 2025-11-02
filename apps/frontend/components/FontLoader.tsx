@@ -13,22 +13,15 @@ export function FontLoader() {
                 if ('fonts' in document) {
                     await document.fonts.ready;
 
-                    // Specifically check for Montserrat
-                    const montserratFaces = Array.from(document.fonts).filter(
-                        (font: FontFace) => font.family.includes('Montserrat')
+                    // Check for Inter (loaded via next/font)
+                    const interFaces = Array.from(document.fonts).filter(
+                        (font: FontFace) => font.family.includes('Inter')
                     );
 
-                    if (montserratFaces.length > 0) {
+                    if (interFaces.length > 0) {
                         setFontsLoaded(true);
                     } else {
-                        // Force load Montserrat
-                        const font = new FontFace('Montserrat', 'url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXpsog.woff2)', {
-                            weight: '400',
-                            style: 'normal'
-                        });
-
-                        await font.load();
-                        document.fonts.add(font);
+                        // Fonts loaded via next/font, just mark as loaded
                         setFontsLoaded(true);
                     }
                 } else {
@@ -47,9 +40,7 @@ export function FontLoader() {
     // Apply font immediately via CSS
     useEffect(() => {
         if (fontsLoaded) {
-            // Force apply Montserrat to body
-            document.body.style.fontFamily = "'Montserrat', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-
+            // Font is already applied via next/font CSS variables - don't override
             // Add a class to indicate fonts are loaded
             document.documentElement.classList.add('fonts-loaded');
         }

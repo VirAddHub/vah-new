@@ -60,17 +60,14 @@
 }
 
 /* Enhanced Typography */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Font is loaded via next/font in layout.tsx - no need to import here */
 
-/* Apply Inter as primary font */
-html {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+/* Font applied via CSS variables in globals.css */
 
 /* Enhanced Button Styles */
 .btn-primary {
-  @apply bg-gradient-to-r from-primary via-primary/90 to-accent text-white;
-  @apply hover:shadow-lg hover:scale-105 transition-all duration-200;
+  @apply bg-primary text-primary-foreground;
+  @apply hover:bg-[hsl(var(--primary-hover))] hover:shadow-lg hover:scale-105 transition-all duration-200;
   @apply border-0 rounded-xl px-6 py-3 font-semibold;
   @apply focus:ring-2 focus:ring-primary/50 focus:outline-none;
 }

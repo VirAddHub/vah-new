@@ -292,12 +292,6 @@ iframe {
         --muted-foreground: 220 10% 35%;
         /* Better contrast on white */
 
-        --accent: 210 5% 94%;
-        /* Subtle accent for hover states */
-        --accent-foreground: 220 10% 15%;
-        --accent-hover: 210 5% 90%;
-        /* Slightly darker on hover */
-
         /* Enhanced semantic colors */
         --destructive: 0 70% 50%;
         --destructive-foreground: 0 0% 100%;
@@ -319,10 +313,10 @@ iframe {
         --switch-background: 0 0% 90%;
 
         /* focus & selection */
-        --ring: 145 50% 25% / 0.28;
-        /* more visible on white */
-        --selection: 145 50% 25% / 0.12;
-        /* subtle green selection */
+        --ring: 229 100% 66% / 0.28;
+        /* primary blue focus ring */
+        --selection: 229 100% 66% / 0.12;
+        /* subtle primary blue selection */
 
         /* charts */
         --chart-1: 210 37% 9%;
@@ -377,9 +371,9 @@ iframe {
         --popover: 213 20% 10%;
         --popover-foreground: 210 10% 90%;
 
-        --primary: 233 100% 9%;
+        --primary: 229 100% 66%;
         --primary-foreground: 0 0% 100%;
-        --primary-hover: 233 100% 12%;
+        --primary-hover: 229 100% 60%;
 
         --secondary: 180 7% 62%;
         --secondary-foreground: 0 0% 100%;
@@ -409,8 +403,8 @@ iframe {
         --input: 209 20% 15%;
         --input-background: 213 20% 10%;
 
-        --ring: 0 0% 100% / .08;
-        --selection: 145 50% 25% / .14;
+        --ring: 229 100% 66% / 0.28;
+        --selection: 229 100% 66% / 0.12;
 
         --chart-1: 206 18% 92%;
         --chart-2: 145 41% 22%;
@@ -516,13 +510,14 @@ iframe {
 
     /* Enhanced button styling */
     .btn-primary {
-        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
-        box-shadow: 0 4px 12px rgba(33, 78, 52, 0.3);
+        background: hsl(var(--primary));
+        box-shadow: 0 4px 12px rgba(82, 114, 255, 0.3);
         transition: all 0.2s ease;
     }
 
     .btn-primary:hover {
-        box-shadow: 0 6px 20px rgba(33, 78, 52, 0.4);
+        background: hsl(var(--primary-hover));
+        box-shadow: 0 6px 20px rgba(82, 114, 255, 0.4);
         transform: translateY(-1px);
     }
 
