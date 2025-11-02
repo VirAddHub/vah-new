@@ -7,8 +7,8 @@ export default function FooterComplianceCTA() {
 
     return (
         <section className="mx-auto my-16 max-w-5xl rounded-2xl border border-neutral-200 bg-white px-6 py-10 text-center shadow-sm">
-            <h3 className="text-2xl font-semibold">Still unsure about compliance?</h3>
-            <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+            <h3 className="text-h2 sm:text-h2-lg">Still unsure about compliance?</h3>
+            <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
                 Take the <strong>free 3-minute Compliance Check</strong> to see if your current setup meets UK Companies House and HMRC requirements under the Economic Crime Act.
             </p>
             <div className="mt-4">

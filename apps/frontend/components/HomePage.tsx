@@ -85,13 +85,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto max-w-screen-xl pt-20 pb-12">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 text-h1 sm:text-h1-lg tracking-tight">
                             Professional London Business Address Service.
                             <span className="block text-gray-900">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                        <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
                             One London address for every official use.
                             Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
@@ -123,13 +123,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Desktop: Horizontal Layout - Text First */}
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
-                            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                            <h1 className="mt-4 text-h1 sm:text-h1-lg tracking-tight">
                                 Professional London Business Address Service.
                                 <span className="block text-gray-900">
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
-                            <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                            <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>
@@ -174,10 +174,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
             >
                 <div className="safe-pad mx-auto max-w-4xl">
                     <div className="text-center mb-8">
-                        <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
+                        <h2 className="mt-4 text-h2 sm:text-h2-lg">
                             Simple, All-Inclusive Pricing
                         </h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                        <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
                             No hidden fees. Cancel anytime.
                         </p>
                     </div>
@@ -241,7 +241,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-base font-semibold mb-4">
+                                <h3 className="text-h3 mb-4">
                                     All-In-One Plan
                                 </h3>
 
@@ -300,7 +300,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
-                                <p className="mt-4 text-xs text-neutral-600">
+                                <p className="mt-4 text-small text-neutral-600">
                                     HMRC & Companies House mail forwarding is free in the UK. Other letters can be forwarded for £2 per item (covering postage & handling).
                                 </p>
                             </div>
