@@ -16,7 +16,8 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
         const pool = getPool();
 
         // Pre-compute BIGINT epoch-ms bounds for index-friendly queries
-        const thirtyDaysAgoMs = Math.floor((Date.now() / 1000 - 30 * 24 * 60 * 60) * 1000);
+        // Date.now() returns milliseconds, so subtract 30 days worth of milliseconds
+        const thirtyDaysAgoMs = Math.floor(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const thisMonthStartMs = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime());
         const lastMonthStartMs = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getTime());
 
