@@ -1,16 +1,16 @@
 /* Enhanced Color Scheme - Dual-tone Navy & Green */
 :root {
   /* Dual-tone color system */
-  --color-primary: #5272FF;
+  --color-primary: #20603A;
   --color-accent: #166534;
   --color-background: #FFFFFF;
   --color-foreground: #212325;
   --color-muted: #6B7280;
 
-  /* Primary - VAH Brand Blue #5272FF */
-  --primary: 229 100% 66%;
+  /* Primary - VAH Brand Green #20603A */
+  --primary: 144 50% 25%;
   --primary-foreground: 0 0% 100%;
-  --primary-hover: 229 100% 60%;
+  --primary-hover: 144 50% 20%;
 
   /* Secondary - Soft Blue-Gray */
   --secondary: 180 7% 62%;

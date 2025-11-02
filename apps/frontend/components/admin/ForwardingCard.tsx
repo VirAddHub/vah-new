@@ -13,7 +13,7 @@ export default function ForwardingCard({ data, loading }: { data?: any; loading?
         <div className="rounded-2xl p-4 bg-white shadow-sm">
             <div className="flex items-center justify-between mb-3">
                 <div className="font-medium">Forwarding Requests</div>
-                <Link href="/admin/forwarding" className="text-sm underline" style={{ color: '#5272FF' }}>
+                <Link href="/admin/forwarding" className="text-sm underline" style={{ color: '#20603A' }}>
                     View All
                 </Link>
             </div>
@@ -39,7 +39,7 @@ export default function ForwardingCard({ data, loading }: { data?: any; loading?
                                 </div>
                             </div>
                             {r.href && (
-                                <Link href={r.href} className="text-sm underline ml-2 flex-shrink-0" style={{ color: '#5272FF' }}>
+                                <Link href={r.href} className="text-sm underline ml-2 flex-shrink-0" style={{ color: '#20603A' }}>
                                     Open
                                 </Link>
                             )}

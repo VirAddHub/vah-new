@@ -91,7 +91,7 @@ export function VAHLogo({
             {/* Logo Square */}
             <div
                 className={cn(
-                    "bg-primary rounded-lg flex items-center justify-center font-bold",
+                    "bg-[#20603A] rounded-lg flex items-center justify-center font-bold",
                     "transform transition-transform duration-200 ease-in-out group-hover:scale-105 group-active:scale-95",
                     // Dynamic sizing for the square based on `size` prop
                     size === "sm" && "w-6 h-6 text-xs",
@@ -100,12 +100,12 @@ export function VAHLogo({
                     size === "xl" && "w-12 h-12 text-lg"
                 )}
             >
-                <span className="text-primary-foreground">{initials}</span>
+                <span className="text-white">{initials}</span>
             </div>
 
             {/* Full Name Text */}
             {showText && (
-                <span className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
+                <span className="font-semibold text-foreground group-hover:text-[#20603A] transition-colors duration-200">
                     {fullName}
                 </span>
             )}
