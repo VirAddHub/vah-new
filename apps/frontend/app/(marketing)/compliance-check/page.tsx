@@ -48,7 +48,7 @@ export default function ComplianceCheckPage() {
                 <h1 className="mt-4 text-h1 sm:text-h1-lg tracking-tight">
                     Is Your Business Address Fully HMRC-Compliant?
                 </h1>
-                <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
                     Find out if your registered or trading address meets the latest UK Companies House and HMRC requirements.
                     Answer 15 quick questions to reveal hidden risks, protect your privacy, and get instant recommendations.
                 </p>
