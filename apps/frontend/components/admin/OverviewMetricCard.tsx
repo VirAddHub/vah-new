@@ -21,20 +21,24 @@ export default function OverviewMetricCard({
         );
     }
 
-    const body = (
+    if (href) {
+        return (
+            <Link href={href} className="block group">
+                <div className="rounded-2xl p-4 shadow-sm bg-white hover:shadow-md transition group-hover:border-2" style={{ borderColor: '#5272FF' }}>
+                    <div className="text-sm text-neutral-500">{title}</div>
+                    <div className="text-2xl font-semibold group-hover:transition-colors" style={{ color: '#5272FF' }}>{value}</div>
+                    {sub && <div className="text-xs text-neutral-500 mt-1">{sub}</div>}
+                </div>
+            </Link>
+        );
+    }
+
+    return (
         <div className="rounded-2xl p-4 shadow-sm bg-white hover:shadow-md transition">
             <div className="text-sm text-neutral-500">{title}</div>
             <div className="text-2xl font-semibold">{value}</div>
             {sub && <div className="text-xs text-neutral-500 mt-1">{sub}</div>}
         </div>
-    );
-
-    return href ? (
-        <Link href={href} className="block">
-            {body}
-        </Link>
-    ) : (
-        body
     );
 }
 
