@@ -20,6 +20,16 @@ export async function GET(req: NextRequest) {
             credentials: "include"
         });
 
+        if (!r.ok) {
+            const errorData = await r.json().catch(() => ({ ok: false, severity: 'down', error: r.statusText }));
+            return NextResponse.json(errorData, {
+                status: r.status,
+                headers: {
+                    "Cache-Control": "no-cache, no-store, must-revalidate"
+                }
+            });
+        }
+
         const data = await r.json();
         return NextResponse.json(data, {
             status: r.status,
