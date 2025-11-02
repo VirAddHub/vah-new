@@ -109,13 +109,18 @@ export async function adminListForwarding(req: Request, res: Response) {
         values.push(limit, offset);
 
         const pool = getPool();
+        // Order by dispatched_at for dispatched requests, otherwise by created_at
+        const orderBy = status === 'Dispatched'
+            ? 'ORDER BY COALESCE(fr.dispatched_at, fr.created_at) DESC'
+            : 'ORDER BY fr.created_at DESC';
+
         const sql = `
       SELECT fr.*, mi.subject, mi.tag, u.email
       FROM forwarding_request fr
       JOIN mail_item mi ON mi.id = fr.mail_item_id
       JOIN "user" u ON u.id = fr.user_id
       ${where}
-      ORDER BY fr.created_at DESC
+      ${orderBy}
       LIMIT $${values.length - 1} OFFSET $${values.length}
     `;
 
@@ -164,7 +169,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
     }
 
     const { action, status, courier, tracking_number, admin_notes } = parse.data;
-    
+
     // Normalize to ACTION
     let normalizedAction = action as keyof typeof ACTION_TO_STATUS | undefined;
     if (!normalizedAction && status) {
@@ -172,22 +177,22 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             const nextCanon = toCanonical(status);
             normalizedAction = STATUS_TO_ACTION[nextCanon];
         } catch (error) {
-            return res.status(422).json({ 
-                ok: false, 
-                error: "invalid_payload", 
-                message: `Invalid status format: ${status}` 
+            return res.status(422).json({
+                ok: false,
+                error: "invalid_payload",
+                message: `Invalid status format: ${status}`
             });
         }
     }
-    
+
     if (!normalizedAction) {
-        return res.status(422).json({ 
-            ok: false, 
-            error: "invalid_payload", 
-            message: "Missing or invalid action/status. Must provide either 'action' or 'status'." 
+        return res.status(422).json({
+            ok: false,
+            error: "invalid_payload",
+            message: "Missing or invalid action/status. Must provide either 'action' or 'status'."
         });
     }
-    
+
     const nextStatus = ACTION_TO_STATUS[normalizedAction];
 
     try {
@@ -217,21 +222,21 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             const current = cur.rows[0].status;
             console.log(`[AdminForwarding] Request ${id} current status: "${current}", attempting to move to: "${nextStatus}"`);
             console.log(`[AdminForwarding] STRICT_STATUS_GUARD enabled: ${process.env.STRICT_STATUS_GUARD === "1"}`);
-            
+
             // Strict status guard - enforce allowed transitions when enabled
             if (process.env.STRICT_STATUS_GUARD === "1") {
                 try {
                     const currentStatus = toCanonical(current) as MailStatus;
                     const nextStatusCanonical = toCanonical(nextStatus) as MailStatus;
                     const allowed = getNextStatuses(currentStatus);
-                    
+
                     if (!allowed.includes(nextStatusCanonical)) {
                         await pool.query('ROLLBACK');
                         console.warn(`[STRICT_STATUS_GUARD] Illegal transition ${currentStatus} → ${nextStatusCanonical} for request ${id}`);
-                        
+
                         // Record illegal transition attempt
                         metrics.recordIllegalTransition(currentStatus, nextStatusCanonical, id);
-                        
+
                         return res.status(400).json({
                             ok: false,
                             error: 'illegal_transition',
@@ -252,7 +257,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                     });
                 }
             }
-            
+
             if (!canMove(current, nextStatus)) {
                 await pool.query('ROLLBACK');
                 console.warn(`[AdminForwarding] canMove() rejected transition ${current} → ${nextStatus} for request ${id}`);
@@ -386,10 +391,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             }
 
             console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
-            
+
             // Clear cache to ensure fresh data on next GET request
             clearAdminForwardingCache(admin.id);
-            
+
             return res.json({ ok: true, data: upd.rows[0] });
 
         } catch (transactionError) {

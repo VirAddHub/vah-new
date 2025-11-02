@@ -219,6 +219,10 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         cancelled: 0,
     });
 
+    // Recent activity state
+    const [recentActivity, setRecentActivity] = useState<any[]>([]);
+    const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+
     // ⛔️ Ensure we never setState after unmount
     const mountedRef = useRef(true);
     useEffect(() => {
@@ -231,12 +235,53 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     // 🔒 Abort previous request before firing a new one
     const abortRef = useRef<AbortController | null>(null);
 
+    // Load recent activity from backend
+    const loadRecentActivity = useCallback(async () => {
+        if (mountedRef.current) setIsLoadingActivity(true);
+        try {
+            const token = localStorage.getItem('vah_jwt');
+            const response = await fetch('/api/admin/activity', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            if (mountedRef.current && response.ok) {
+                const result = await response.json();
+                if (result.ok && result.data && Array.isArray(result.data.activities)) {
+                    // Format activities for the UI component
+                    const formatted = result.data.activities.slice(0, 10).map((activity: any) => ({
+                        id: activity.id,
+                        title: activity.title || 'Activity',
+                        description: activity.description || 'No description',
+                        time: activity.time || 'Unknown time',
+                        timestamp: activity.timestamp,
+                        type: activity.type
+                    }));
+                    setRecentActivity(formatted);
+                    // Also update metrics for consistency
+                    setMetrics((prev: any) => ({
+                        ...prev,
+                        recent_activity: formatted
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Error loading recent activity:', error);
+        } finally {
+            if (mountedRef.current) setIsLoadingActivity(false);
+        }
+    }, []);
+
     // Load forwarding stats from dedicated endpoint (more accurate than client-side counting)
     const loadForwardingStats = useCallback(async () => {
         if (mountedRef.current) setIsLoadingForwarding(true);
         try {
             const token = localStorage.getItem('vah_jwt');
-            const response = await fetch('/api/admin/forwarding/stats', {
+            // Load stats for last 90 days to show recent activity (excluding very old requests)
+            const response = await fetch('/api/admin/forwarding/stats?days=90', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -260,9 +305,20 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             }
 
             // Also load recent requests for the "Recent Requests" section
-            const data = await adminApi.getForwardingRequests({ limit: 10, offset: 0 });
+            // Load all statuses to show recent dispatched requests too
+            const data = await adminApi.getForwardingRequests({ limit: 10, offset: 0, status: 'all' });
             if (mountedRef.current && data.ok && Array.isArray(data.data)) {
-                setForwardingRequests(data.data);
+                // Sort by dispatched_at if status is Dispatched, otherwise by created_at
+                const sorted = data.data.sort((a: any, b: any) => {
+                    const aDate = a.status === 'Dispatched' && a.dispatched_at
+                        ? a.dispatched_at
+                        : a.created_at;
+                    const bDate = b.status === 'Dispatched' && b.dispatched_at
+                        ? b.dispatched_at
+                        : b.created_at;
+                    return bDate - aDate;
+                });
+                setForwardingRequests(sorted);
             }
         } catch (error) {
             console.error('Error loading forwarding stats:', error);
@@ -275,19 +331,69 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const loadOverview = useCallback(async () => {
         setIsLoadingOverview(true);
         try {
-            const [usersRes, mailRes, forwardsRes, billingRes] = await Promise.all([
-                adminService.getUsers(),
-                adminService.getMailItems(),
-                adminService.getForwardingRequests(),
-                adminService.getAuditLogs({ limit: 1, offset: 0 })
+            const token = localStorage.getItem('vah_jwt');
+
+            // Use the actual backend stats endpoint for accurate counts
+            const [usersStatsRes, mailStatsRes, forwardingStatsRes, billingRes] = await Promise.all([
+                fetch('/api/admin/users/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                }).then(r => r.ok ? r.json() : { ok: false, data: null }),
+
+                // Get total mail count
+                fetch('/api/admin/mail-items?pageSize=1', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                }).then(r => r.ok ? r.json() : { ok: false, data: { total: 0 } }),
+
+                // Get forwarding stats (counts by status)
+                fetch('/api/admin/forwarding/stats?days=90', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                }).then(r => r.ok ? r.json() : { ok: false, data: null }),
+
+                // Try to get billing metrics
+                fetch('/api/admin/billing/metrics', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                }).then(r => r.ok ? r.json() : { ok: false, data: { monthlyRevenuePence: 0 } }).catch(() => ({ ok: false, data: { monthlyRevenuePence: 0 } }))
             ]);
 
+            // Extract user stats
+            const userStats = usersStatsRes.ok && usersStatsRes.data ? usersStatsRes.data : {};
+
+            // Extract mail total
+            const mailTotal = mailStatsRes.ok && mailStatsRes.data?.total ? mailStatsRes.data.total : 0;
+
+            // Extract forwarding stats - count active forwards (Requested, Reviewed, Processing)
+            const forwardingData = forwardingStatsRes.ok && forwardingStatsRes.data ? forwardingStatsRes.data : {};
+            const activeForwards = (forwardingData.Requested || 0) +
+                (forwardingData.Reviewed || 0) +
+                (forwardingData.Processing || 0);
+
+            // Extract billing revenue
+            const revenue = billingRes.ok && billingRes.data?.monthlyRevenuePence
+                ? billingRes.data.monthlyRevenuePence
+                : 0;
+
             setOverview({
-                users: usersRes.ok ? Array.isArray(usersRes.data) ? usersRes.data.length : 0 : 0,
-                deletedUsers: usersRes.ok ? Array.isArray(usersRes.data) ? usersRes.data.filter((u: any) => u.deleted_at).length : 0 : 0,
-                monthlyRevenuePence: 0, // TODO: implement billing metrics endpoint
-                mailProcessed: mailRes.ok ? Array.isArray(mailRes.data) ? mailRes.data.length : 0 : 0,
-                activeForwards: forwardsRes.ok ? Array.isArray(forwardsRes.data) ? forwardsRes.data.filter((f: any) => f.status === 'pending').length : 0 : 0,
+                users: userStats.total || 0,
+                deletedUsers: userStats.deleted || 0,
+                monthlyRevenuePence: revenue,
+                mailProcessed: mailTotal,
+                activeForwards: activeForwards,
             });
         } catch (err) {
             console.error('Error loading overview:', err);
@@ -317,7 +423,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 system_health: {
                     status: 'operational'
                 },
-                recent_activity: []
+                recent_activity: recentActivity // Keep existing activity state
             });
 
             // Also update the overview state with the correct user count
@@ -334,6 +440,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         console.debug('[Admin] Loading overview on mount');
         void loadOverview();
         void loadForwardingStats();
+        void loadRecentActivity();
     }, []); // Only run once on mount
 
     // Poll forwarding stats every 30 seconds when on overview section
@@ -404,6 +511,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     forwardingRequests={forwardingRequests}
                     forwardingStats={forwardingStats}
                     isLoadingForwarding={isLoadingForwarding}
+                    recentActivity={recentActivity}
+                    isLoadingActivity={isLoadingActivity}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
             case "users":
@@ -456,6 +565,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     forwardingRequests={forwardingRequests}
                     forwardingStats={forwardingStats}
                     isLoadingForwarding={isLoadingForwarding}
+                    recentActivity={recentActivity}
+                    isLoadingActivity={isLoadingActivity}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
         }
@@ -601,6 +712,8 @@ function OverviewSection({
     forwardingRequests,
     forwardingStats,
     isLoadingForwarding,
+    recentActivity,
+    isLoadingActivity,
     onViewForwarding
 }: {
     metrics: any;
@@ -609,11 +722,13 @@ function OverviewSection({
     forwardingRequests: any[];
     forwardingStats: any;
     isLoadingForwarding: boolean;
+    recentActivity: any[];
+    isLoadingActivity: boolean;
     onViewForwarding: () => void;
 }) {
     const totals = safe(metrics?.totals, {});
     const systemHealth = safe(metrics?.system_health, {});
-    const recentActivity = safe(metrics?.recent_activity, []);
+    // recentActivity is passed as a prop from parent component
 
     return (
         <div className="space-y-4">
@@ -736,7 +851,9 @@ function OverviewSection({
                                             <span className="font-medium truncate">{request.to_name}</span>
                                         </div>
                                         <div className="text-xs text-muted-foreground">
-                                            {new Date(request.created_at).toLocaleDateString()}
+                                            {request.status === 'Dispatched' && request.dispatched_at
+                                                ? new Date(request.dispatched_at).toLocaleDateString()
+                                                : new Date(request.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
                                 ))}

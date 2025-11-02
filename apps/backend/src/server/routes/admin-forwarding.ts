@@ -54,11 +54,18 @@ router.use(requireAdmin);
 router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res: Response) => {
     const pool = getPool();
     try {
+        // Optional date range query params (default to all time)
+        const days = req.query.days ? parseInt(req.query.days as string) : null;
+        const dateFilter = days
+            ? `WHERE to_timestamp(created_at/1000) >= NOW() - INTERVAL '${days} days'`
+            : '';
+
         const result = await pool.query(`
             SELECT 
                 status,
                 COUNT(*) as count
             FROM forwarding_request
+            ${dateFilter}
             GROUP BY status
         `);
 
