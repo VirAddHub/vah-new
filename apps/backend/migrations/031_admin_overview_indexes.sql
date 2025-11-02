@@ -15,6 +15,8 @@ CREATE INDEX IF NOT EXISTS idx_mail_item_deleted ON mail_item(deleted);
 CREATE INDEX IF NOT EXISTS idx_forwarding_request_status ON forwarding_request(status);
 CREATE INDEX IF NOT EXISTS idx_forwarding_request_created_at ON forwarding_request(created_at);
 CREATE INDEX IF NOT EXISTS idx_forwarding_request_dispatched_at ON forwarding_request(dispatched_at) WHERE dispatched_at IS NOT NULL;
+-- Functional index for case-insensitive status queries (if using LOWER() in WHERE)
+CREATE INDEX IF NOT EXISTS idx_forwarding_status_lower ON forwarding_request (LOWER(status));
 
 -- Invoice indexes for revenue calculations (if table exists)
 DO $$

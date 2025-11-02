@@ -15,6 +15,11 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
     try {
         const pool = getPool();
 
+        // Pre-compute BIGINT epoch-ms bounds for index-friendly queries
+        const thirtyDaysAgoMs = Math.floor((Date.now() / 1000 - 30 * 24 * 60 * 60) * 1000);
+        const thisMonthStartMs = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime());
+        const lastMonthStartMs = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getTime());
+
         // Execute all queries in parallel for performance
         const [
             usersTotalResult,
@@ -29,19 +34,14 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
             // Total users (not deleted)
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NULL`),
             
-            // Active users (logged in last 30 days) - handles BIGINT or TIMESTAMP last_login_at
+            // Active users (logged in last 30 days) - last_login_at is BIGINT epoch-ms
+            // Use COALESCE to count users who signed up but never logged in as "active" (based on created_at)
             pool.query(`
                 SELECT COUNT(*)::int AS c
                 FROM "user" u
                 WHERE u.deleted_at IS NULL
-                  AND (
-                    CASE 
-                      WHEN pg_typeof(u.last_login_at) = 'bigint'::regtype 
-                        THEN to_timestamp((u.last_login_at)/1000.0)
-                      ELSE (u.last_login_at)::timestamptz
-                    END
-                  ) >= date_trunc('day', now() - interval '30 days')
-            `),
+                  AND COALESCE(u.last_login_at, u.created_at) >= $1
+            `, [thirtyDaysAgoMs]),
             
             // KYC pending
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NULL AND u.kyc_status IN ('pending', 'reverify_required')`),
@@ -49,33 +49,33 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
             // Deleted users
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NOT NULL`),
             
-            // Mail items last 30 days (created_at is BIGINT epoch-ms)
+            // Mail items last 30 days (created_at is BIGINT epoch-ms) - use BIGINT comparison for index
             pool.query(`
                 SELECT COUNT(*)::int AS c
                 FROM mail_item m
                 WHERE COALESCE(m.deleted, false) = false
-                  AND to_timestamp(m.created_at/1000.0) >= date_trunc('day', now() - interval '30 days')
-            `),
+                  AND m.created_at >= $1
+            `, [thirtyDaysAgoMs]),
             
-            // Active forwarding requests (status values may be lowercase)
+            // Active forwarding requests - use LOWER() for case-insensitive matching (consider adding functional index)
             pool.query(`SELECT COUNT(*)::int AS c FROM forwarding_request f WHERE LOWER(f.status) IN ('requested', 'reviewed', 'processing')`),
             
-            // Revenue this month (from invoices - status='paid', created_at is BIGINT epoch-ms)
+            // Revenue this month (from invoices - status='paid', created_at is BIGINT epoch-ms) - use BIGINT comparison
             pool.query(`
                 SELECT COALESCE(SUM(amount_pence), 0)::bigint AS p
                 FROM invoices i
                 WHERE i.status = 'paid'
-                  AND to_timestamp(i.created_at/1000.0) >= date_trunc('month', now())
-            `),
+                  AND i.created_at >= $1
+            `, [thisMonthStartMs]),
             
-            // Revenue last month
+            // Revenue last month - use BIGINT comparisons
             pool.query(`
                 SELECT COALESCE(SUM(amount_pence), 0)::bigint AS p
                 FROM invoices i
                 WHERE i.status = 'paid'
-                  AND to_timestamp(i.created_at/1000.0) >= date_trunc('month', now() - interval '1 month')
-                  AND to_timestamp(i.created_at/1000.0) < date_trunc('month', now())
-            `),
+                  AND i.created_at >= $1
+                  AND i.created_at < $2
+            `, [lastMonthStartMs, thisMonthStartMs]),
         ]);
 
         const usersTotal = parseInt(usersTotalResult.rows[0]?.c || '0');
