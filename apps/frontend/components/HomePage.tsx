@@ -91,7 +91,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg">
+                        <p className="mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg">
                             One London address for every official use.
                             Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
@@ -129,7 +129,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
-                            <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg lg:text-xl">
+                            <p className="mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg lg:text-xl">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>
