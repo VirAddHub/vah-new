@@ -56,17 +56,16 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
     try {
         // Optional date range query params (default to 90 days)
         const days = Math.min(Number(req.query.days || 90), 365);
-
-        // Get counts by status (created_at is BIGINT milliseconds)
-        const cutoffMs = Date.now() - (days * 24 * 60 * 60 * 1000);
+        
+        // Get counts by status (created_at is BIGINT epoch-ms)
         const countsResult = await pool.query(`
             SELECT 
                 status,
                 COUNT(*)::int AS c
             FROM forwarding_request
-            WHERE created_at >= $1
+            WHERE to_timestamp(created_at/1000.0) >= NOW() - ($1 || ' days')::interval
             GROUP BY status
-        `, [cutoffMs]);
+        `, [days]);
 
         // Build counts object
         const counts: Record<string, number> = {};
@@ -76,7 +75,7 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
         });
 
         // Get recent requests (latest 10)
-        // Note: created_at and dispatched_at are BIGINT milliseconds
+        // Note: created_at and dispatched_at are BIGINT epoch-ms; sort by dispatched_at if available, else created_at
         const recentResult = await pool.query(`
             SELECT 
                 id,
@@ -85,10 +84,9 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
                 mail_item_id,
                 status,
                 to_name,
-                dispatched_at,
-                COALESCE(dispatched_at, created_at) as sort_date
+                dispatched_at
             FROM forwarding_request
-            ORDER BY sort_date DESC
+            ORDER BY COALESCE(dispatched_at, created_at) DESC
             LIMIT 10
         `);
 
