@@ -426,6 +426,42 @@ iframe {
         /* ~150% as specified */
     }
 
+    /* Ensure white background on mobile - overrides dark mode and all other styles */
+    @media (max-width: 1023px) {
+
+        html,
+        html.dark,
+        body,
+        body>div,
+        body>div>div,
+        #__next,
+        #__next>div {
+            background-color: #ffffff !important;
+            --background: 0 0% 100% !important;
+        }
+
+        main,
+        main>*,
+        main>*>*,
+        .bg-background,
+        .bg-card,
+        .bg-slate-900,
+        .bg-neutral-900,
+        .bg-gray-900,
+        .bg-slate-800,
+        .bg-neutral-800,
+        [class*="bg-background"],
+        [class*="bg-card"] {
+            background-color: #ffffff !important;
+        }
+
+        /* Override any backdrop or overlay backgrounds */
+        .backdrop-blur-md,
+        .backdrop-blur-sm {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+        }
+    }
+
     h1 {
         font-size: var(--fs-h1);
         line-height: 1.1;

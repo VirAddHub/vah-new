@@ -184,7 +184,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     {/* Billing Toggle */}
                     <div className="mb-6 flex justify-center">
-                        <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm">
+                        <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm overflow-visible relative">
                             <RadioGroup
                                 defaultValue={billing}
                                 className="grid grid-cols-2"
@@ -207,7 +207,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Monthly
                                     </Label>
                                 </div>
-                                <div className="has-[[data-state=checked]]:bg-primary has-[[data-state=checked]]:text-primary-foreground rounded-lg transition-all relative">
+                                <div className="has-[[data-state=checked]]:bg-primary has-[[data-state=checked]]:text-primary-foreground rounded-lg transition-all relative overflow-visible">
                                     <RadioGroupItem
                                         id="billing-annual"
                                         value="annual"
@@ -220,8 +220,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Annual
                                     </Label>
                                     {/* Save badge */}
-                                    <div className="absolute -top-2 -right-2">
-                                        <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1">
+                                    <div className="absolute -top-2 -right-2 z-20">
+                                        <Badge className="bg-primary text-white text-xs px-2 py-1 whitespace-nowrap shadow-md">
                                             Save {monthlySavingsPct}%
                                         </Badge>
                                     </div>
@@ -232,12 +232,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     {/* Pricing Card */}
                     <div className="relative">
-                        {/* Most Popular badge */}
-                        <div className="pointer-events-none absolute -top-4 right-8 z-10">
-                            <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
-                                Most Popular
-                            </span>
-                        </div>
+                        {/* Most Popular badge - only show for monthly */}
+                        {!isAnnual && (
+                            <div className="pointer-events-none absolute -top-4 right-8 z-10">
+                                <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
+                                    Most Popular
+                                </span>
+                            </div>
+                        )}
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">

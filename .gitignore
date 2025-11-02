@@ -133,3 +133,6 @@ apps/frontend/out/
 # Documentation files - keep local but don't push
 COMPLETE_FLOW_DOCUMENTATION.md
 MISSING_IMPLEMENTATIONS.md
+
+# Local template file
+quiz-day0-template.html

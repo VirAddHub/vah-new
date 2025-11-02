@@ -148,7 +148,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     }}
                 />
             </head>
-            <body className={`${inter.variable} font-sans min-h-screen bg-background text-foreground antialiased`}>
+            <body className={`${inter.variable} font-sans min-h-screen bg-white md:bg-background text-foreground antialiased`}>
                 <WebVitalsProvider>
                     <SWRProvider>
                         <Providers>

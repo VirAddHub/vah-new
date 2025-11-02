@@ -22,7 +22,7 @@ export default function PricingPage() {
         <header className="text-center mb-16">
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6">Simple, Transparent Pricing</h1>
           <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
-            Professional London business address services with no hidden fees. 
+            Professional London business address services with no hidden fees.
             Choose the plan that works for your business.
           </p>
         </header>
@@ -36,7 +36,7 @@ export default function PricingPage() {
                 <div className="text-4xl font-bold text-primary mb-2">£29.99</div>
                 <div className="text-muted-foreground">per month</div>
               </div>
-              
+
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <span className="text-primary mr-3">✓</span>
@@ -63,7 +63,7 @@ export default function PricingPage() {
                   <span>Email notifications</span>
                 </li>
               </ul>
-              
+
               <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
                 Get Started
               </button>
@@ -76,13 +76,13 @@ export default function PricingPage() {
                   Most Popular
                 </span>
               </div>
-              
+
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-semibold mb-4">Professional</h2>
                 <div className="text-4xl font-bold text-primary mb-2">£49.99</div>
                 <div className="text-muted-foreground">per month</div>
               </div>
-              
+
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <span className="text-primary mr-3">✓</span>
@@ -109,7 +109,7 @@ export default function PricingPage() {
                   <span>Document storage (1 year)</span>
                 </li>
               </ul>
-              
+
               <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
                 Get Started
               </button>
@@ -122,7 +122,7 @@ export default function PricingPage() {
                 <div className="text-4xl font-bold text-primary mb-2">£99.99</div>
                 <div className="text-muted-foreground">per month</div>
               </div>
-              
+
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <span className="text-primary mr-3">✓</span>
@@ -149,7 +149,7 @@ export default function PricingPage() {
                   <span>Extended document storage (3 years)</span>
                 </li>
               </ul>
-              
+
               <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
                 Contact Sales
               </button>
@@ -163,32 +163,32 @@ export default function PricingPage() {
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-base font-semibold mb-4">What's included in the monthly fee?</h3>
                 <p className="text-sm text-neutral-600">
-                  Your monthly fee includes your professional London business address, mail scanning, 
-                  secure digital storage, and access to our online dashboard. Additional services like 
+                  Your monthly fee includes your professional London business address, mail scanning,
+                  secure digital storage, and access to our online dashboard. Additional services like
                   forwarding may have separate charges depending on your plan.
                 </p>
               </div>
-              
+
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-base font-semibold mb-4">Can I change my plan anytime?</h3>
                 <p className="text-sm text-neutral-600">
-                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect 
+                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect
                   immediately, and we'll prorate any differences in your next billing cycle.
                 </p>
               </div>
-              
+
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-base font-semibold mb-4">Is there a setup fee?</h3>
                 <p className="text-sm text-neutral-600">
-                  No setup fees, no hidden costs. You only pay your monthly subscription fee. 
+                  No setup fees, no hidden costs. You only pay your monthly subscription fee.
                   Some additional services like international forwarding may have separate charges.
                 </p>
               </div>
-              
+
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-base font-semibold mb-4">How quickly is mail processed?</h3>
                 <p className="text-sm text-neutral-600">
-                  Mail is typically scanned and uploaded to your dashboard within 24 hours of receipt. 
+                  Mail is typically scanned and uploaded to your dashboard within 24 hours of receipt.
                   Priority customers may receive same-day processing for urgent items.
                 </p>
               </div>
@@ -199,7 +199,7 @@ export default function PricingPage() {
           <section className="text-center bg-primary/5 p-12 rounded-lg border border-primary/20">
             <h2 className="mt-4 text-2xl font-semibold sm:text-3xl mb-6">Ready to Get Started?</h2>
             <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base mb-8">
-              Join over 1,000 businesses who trust VirtualAddressHub for their professional 
+              Join over 1,000 businesses who trust VirtualAddressHub for their professional
               London business address needs.
             </p>
             <button className="bg-primary text-primary-foreground px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary/90 transition-colors">
