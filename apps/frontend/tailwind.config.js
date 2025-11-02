@@ -21,6 +21,9 @@ module.exports = {
             },
         },
         extend: {
+            fontFamily: {
+                sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
             screens: {
                 xs: "360px",
                 sm: "640px",
@@ -81,7 +84,7 @@ module.exports = {
                     foreground: "hsl(var(--card-foreground))",
                 },
                 brand: {
-                    DEFAULT: "#0A7AFF",
+                    DEFAULT: "#5272FF",
                     fg: "#ffffff",
                 },
                 // Neutral helpers for color cleanup

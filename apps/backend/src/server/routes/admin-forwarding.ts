@@ -56,11 +56,11 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
     try {
         // Optional date range query params (default to 90 days)
         const days = Math.min(Number(req.query.days || 90), 365);
-        
+
         // Pre-compute BIGINT epoch-ms bound for index-friendly query
         // Date.now() returns milliseconds, so subtract days worth of milliseconds
         const cutoffMs = Math.floor(Date.now() - days * 24 * 60 * 60 * 1000);
-        
+
         // Get counts by status (created_at is BIGINT epoch-ms) - use BIGINT comparison for index
         const countsResult = await pool.query(`
             SELECT 

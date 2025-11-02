@@ -34,7 +34,7 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
         ] = await Promise.all([
             // Total users (not deleted)
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NULL`),
-            
+
             // Active users (logged in last 30 days) - last_login_at is BIGINT epoch-ms
             // Use COALESCE to count users who signed up but never logged in as "active" (based on created_at)
             pool.query(`
@@ -43,13 +43,13 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
                 WHERE u.deleted_at IS NULL
                   AND COALESCE(u.last_login_at, u.created_at) >= $1
             `, [thirtyDaysAgoMs]),
-            
+
             // KYC pending
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NULL AND u.kyc_status IN ('pending', 'reverify_required')`),
-            
+
             // Deleted users
             pool.query(`SELECT COUNT(*)::int AS c FROM "user" u WHERE u.deleted_at IS NOT NULL`),
-            
+
             // Mail items last 30 days (created_at is BIGINT epoch-ms) - use BIGINT comparison for index
             pool.query(`
                 SELECT COUNT(*)::int AS c
@@ -57,10 +57,10 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
                 WHERE COALESCE(m.deleted, false) = false
                   AND m.created_at >= $1
             `, [thirtyDaysAgoMs]),
-            
+
             // Active forwarding requests - use LOWER() for case-insensitive matching (consider adding functional index)
             pool.query(`SELECT COUNT(*)::int AS c FROM forwarding_request f WHERE LOWER(f.status) IN ('requested', 'reviewed', 'processing')`),
-            
+
             // Revenue this month (from invoices - status='paid', created_at is BIGINT epoch-ms) - use BIGINT comparison
             pool.query(`
                 SELECT COALESCE(SUM(amount_pence), 0)::bigint AS p
@@ -68,7 +68,7 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
                 WHERE i.status = 'paid'
                   AND i.created_at >= $1
             `, [thisMonthStartMs]),
-            
+
             // Revenue last month - use BIGINT comparisons
             pool.query(`
                 SELECT COALESCE(SUM(amount_pence), 0)::bigint AS p
