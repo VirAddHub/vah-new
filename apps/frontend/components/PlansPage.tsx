@@ -99,10 +99,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                         {/* Header with billing toggle */}
                         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                             <div>
-                                <h2 className="mt-4 text-h1 sm:text-h1-lg tracking-tight">
+                                <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
                                     Simple, Transparent Pricing
                                 </h2>
-                                <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
+                                <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
                                     One plan. Everything you need for a compliant, professional London presence— with same-day digital mail and full control from your dashboard.
                                 </p>
                             </div>
@@ -144,7 +144,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <div className="mb-5 flex items-center justify-between">
                                         <div>
                                             <p className="text-primary font-semibold">Virtual Mailbox</p>
-                                            <h3 className="text-h3 mt-1">
+                                            <h3 className="text-base font-semibold mt-1">
                                                 London Business Address + Same-Day Digital Mail
                                             </h3>
                                         </div>

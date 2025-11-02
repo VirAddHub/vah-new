@@ -92,10 +92,10 @@ export function AboutPage() {
             <section className="section-mobile bg-gradient-to-b from-background to-muted/30">
                 <div className="container-mobile">
                     <div className="text-center mb-16">
-                        <h1 className="text-h1 sm:text-h1-lg text-balance mb-6">
+                        <h1 className="font-bold leading-tight text-[clamp(2rem,5vw,4rem)] text-balance mb-6">
                             About <span className="text-gradient">VirtualAddressHub</span>
                         </h1>
-                        <p className="text-body sm:text-body-lg text-muted-foreground max-w-3xl mx-auto text-balance">
+                        <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-balance">
                             We're on a mission to make UK business formation accessible, compliant, and professional for entrepreneurs worldwide.
                             Our virtual office services provide the foundation for your business success.
                         </p>
@@ -143,7 +143,7 @@ export function AboutPage() {
                 <div className="container-mobile">
                     <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
                         <div>
-                            <h2 className="text-h2 sm:text-h2-lg mb-6">
+                            <h2 className="text-3xl font-bold mb-6">
                                 Our <span className="text-gradient">Story</span>
                             </h2>
                             <div className="space-y-4 text-muted-foreground leading-relaxed">
@@ -171,8 +171,8 @@ export function AboutPage() {
                                     className="aspect-[4/3] w-full rounded-xl object-cover"
                                 />
                                 <div className="mt-6">
-                                    <h3 className="text-h3 mb-2">Central London Location</h3>
-                                    <p className="text-body text-muted-foreground">
+                                    <h3 className="text-xl font-semibold mb-2">Central London Location</h3>
+                                    <p className="text-muted-foreground">
                                         Our prestigious address in the heart of London provides your business with the credibility and
                                         professional image it deserves.
                                     </p>
@@ -187,10 +187,10 @@ export function AboutPage() {
             <section className="section-mobile bg-gradient-to-b from-muted/30 to-background">
                 <div className="container-mobile">
                     <div className="text-center mb-16">
-                        <h2 className="text-h2 sm:text-h2-lg mb-6">
+                        <h2 className="text-3xl font-bold mb-6">
                             Our <span className="text-gradient">Values</span>
                         </h2>
-                        <p className="text-body sm:text-body-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
                             These core principles guide everything we do and shape how we serve our clients.
                         </p>
                     </div>
@@ -200,8 +200,8 @@ export function AboutPage() {
                             <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Shield className="h-8 w-8 text-white" />
                             </div>
-                            <h3 className="text-h3 mb-4">Compliance First</h3>
-                            <p className="text-body text-muted-foreground">
+                            <h3 className="text-xl font-semibold mb-4">Compliance First</h3>
+                            <p className="text-muted-foreground">
                                 We ensure every service meets the highest standards of UK regulation, including the latest ECCT Act 2023 requirements.
                             </p>
                         </Card>
@@ -233,10 +233,10 @@ export function AboutPage() {
             <section className="section-mobile">
                 <div className="container-mobile">
                     <div className="text-center mb-16">
-                        <h2 className="text-h2 sm:text-h2-lg mb-6">
+                        <h2 className="text-3xl font-bold mb-6">
                             Meet Our <span className="text-gradient">Team</span>
                         </h2>
-                        <p className="text-body sm:text-body-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
                             Experienced professionals dedicated to making your UK business journey smooth and successful.
                         </p>
                     </div>
@@ -246,8 +246,8 @@ export function AboutPage() {
                             <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-full mx-auto mb-4 flex items-center justify-center">
                                 <Users className="h-10 w-10 text-white" />
                             </div>
-                            <h3 className="text-h3 mb-2">Expert Team</h3>
-                            <p className="text-body text-muted-foreground">
+                            <h3 className="text-xl font-semibold mb-2">Expert Team</h3>
+                            <p className="text-muted-foreground">
                                 Our team combines deep knowledge of UK business law with modern technology to deliver exceptional service.
                             </p>
                         </Card>
@@ -279,10 +279,10 @@ export function AboutPage() {
             <section className="section-padding bg-gradient-to-b from-background to-muted/30">
                 <div className="container-modern">
                     <div className="text-center mb-16">
-                        <h2 className="text-h2 sm:text-h2-lg mb-6">
+                        <h2 className="text-3xl font-bold mb-6">
                             Get In <span className="text-gradient">Touch</span>
                         </h2>
-                        <p className="text-body sm:text-body-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
                             Have questions about our services? We'd love to hear from you. Send us a message and we'll respond within 24 hours.
                         </p>
                     </div>
@@ -294,8 +294,8 @@ export function AboutPage() {
                                     <div className="w-16 h-16 bg-gradient-to-br from-success to-success/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
                                         <Check className="h-8 w-8 text-white" />
                                     </div>
-                                    <h3 className="text-h3 mb-2">Message Sent Successfully!</h3>
-                                    <p className="text-body text-muted-foreground mb-6">
+                                    <h3 className="text-xl font-semibold mb-2">Message Sent Successfully!</h3>
+                                    <p className="text-muted-foreground mb-6">
                                         Thank you for reaching out. We'll get back to you within 24 hours.
                                     </p>
                                     <Button

@@ -37,10 +37,10 @@ export default function HowItWorks() {
         <section className="w-full py-8">
             <div className="mx-auto max-w-6xl px-6">
                 <header className="mx-auto max-w-3xl text-center mb-8">
-                    <h2 className="mt-4 text-h2 sm:text-h2-lg">
+                    <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
                         How it works — clear, compliant, no surprises
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
+                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
                         Verification first. Address issued next. Then professional mail handling.
                     </p>
                 </header>
@@ -58,10 +58,10 @@ export default function HowItWorks() {
 
                             <div className="rounded-xl border border-border bg-card shadow-sm h-full">
                                 <div className="p-4 pt-6">
-                                    <h3 className="text-h3 mb-3">{s.title}</h3>
+                                    <h3 className="text-base font-semibold mb-3">{s.title}</h3>
                                     <ul className="space-y-2">
                                         {s.points.map((p) => (
-                                            <li key={p} className="flex gap-2 text-body text-neutral-600">
+                                            <li key={p} className="flex gap-2 text-sm text-neutral-600">
                                                 <Check className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
                                                 <span className="leading-relaxed">{p}</span>
                                             </li>
@@ -74,7 +74,7 @@ export default function HowItWorks() {
                 </div>
 
                 {/* soft footer note */}
-                <p className="mt-8 text-small text-neutral-500">
+                <p className="mt-8 text-xs text-neutral-500">
                     Transparent pricing: one plan at £9.99/month. HMRC & Companies House forwarding free on request.
                 </p>
             </div>

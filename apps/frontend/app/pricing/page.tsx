@@ -20,8 +20,8 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-16">
         <header className="text-center mb-16">
-          <h1 className="mt-4 text-h1 sm:text-h1-lg tracking-tight mb-6">Simple, Transparent Pricing</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6">Simple, Transparent Pricing</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
             Professional London business address services with no hidden fees. 
             Choose the plan that works for your business.
           </p>
@@ -32,7 +32,7 @@ export default function PricingPage() {
             {/* Starter Plan */}
             <div className="bg-card border border-border rounded-lg p-8 relative">
               <div className="text-center mb-8">
-                <h2 className="text-h2 sm:text-h2-lg mb-4">Starter</h2>
+                <h2 className="text-2xl font-semibold mb-4">Starter</h2>
                 <div className="text-4xl font-bold text-primary mb-2">£29.99</div>
                 <div className="text-muted-foreground">per month</div>
               </div>
@@ -158,11 +158,11 @@ export default function PricingPage() {
 
           {/* FAQ Section */}
           <section className="mb-16">
-            <h2 className="mt-4 text-h2 sm:text-h2-lg text-center mb-12">Frequently Asked Questions</h2>
+            <h2 className="mt-4 text-2xl font-semibold sm:text-3xl text-center mb-12">Frequently Asked Questions</h2>
             <div className="max-w-4xl mx-auto space-y-8">
               <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-h3 mb-4">What's included in the monthly fee?</h3>
-                <p className="text-body text-neutral-600">
+                <h3 className="text-base font-semibold mb-4">What's included in the monthly fee?</h3>
+                <p className="text-sm text-neutral-600">
                   Your monthly fee includes your professional London business address, mail scanning, 
                   secure digital storage, and access to our online dashboard. Additional services like 
                   forwarding may have separate charges depending on your plan.
@@ -197,8 +197,8 @@ export default function PricingPage() {
 
           {/* CTA Section */}
           <section className="text-center bg-primary/5 p-12 rounded-lg border border-primary/20">
-            <h2 className="mt-4 text-h2 sm:text-h2-lg mb-6">Ready to Get Started?</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-balance text-body sm:text-body-lg text-neutral-600 mb-8">
+            <h2 className="mt-4 text-2xl font-semibold sm:text-3xl mb-6">Ready to Get Started?</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base mb-8">
               Join over 1,000 businesses who trust VirtualAddressHub for their professional 
               London business address needs.
             </p>
