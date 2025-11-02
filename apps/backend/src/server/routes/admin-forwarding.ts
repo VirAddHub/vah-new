@@ -54,40 +54,59 @@ router.use(requireAdmin);
 router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res: Response) => {
     const pool = getPool();
     try {
-        // Optional date range query params (default to all time)
-        const days = req.query.days ? parseInt(req.query.days as string) : null;
-        const dateFilter = days
-            ? `WHERE to_timestamp(created_at/1000) >= NOW() - INTERVAL '${days} days'`
-            : '';
+        // Optional date range query params (default to 90 days)
+        const days = Math.min(Number(req.query.days || 90), 365);
 
-        const result = await pool.query(`
+        // Get counts by status (created_at is BIGINT milliseconds)
+        const cutoffMs = Date.now() - (days * 24 * 60 * 60 * 1000);
+        const countsResult = await pool.query(`
             SELECT 
                 status,
-                COUNT(*) as count
+                COUNT(*)::int AS c
             FROM forwarding_request
-            ${dateFilter}
+            WHERE created_at >= $1
             GROUP BY status
-        `);
+        `, [cutoffMs]);
 
-        // Build stats object with all status counts
-        const stats: Record<string, number> = {
-            total: 0,
-            Requested: 0,
-            Reviewed: 0,
-            Processing: 0,
-            Dispatched: 0,
-            Delivered: 0,
-            Cancelled: 0,
-        };
-
-        result.rows.forEach((row: any) => {
-            const status = row.status || 'Requested';
-            const count = parseInt(row.count) || 0;
-            stats[status] = count;
-            stats.total += count;
+        // Build counts object
+        const counts: Record<string, number> = {};
+        countsResult.rows.forEach((row: any) => {
+            const status = (row.status || 'Requested').toLowerCase();
+            counts[status] = parseInt(row.c) || 0;
         });
 
-        return res.json({ ok: true, data: stats });
+        // Get recent requests (latest 10)
+        // Note: created_at and dispatched_at are BIGINT milliseconds
+        const recentResult = await pool.query(`
+            SELECT 
+                id,
+                created_at,
+                user_id,
+                mail_item_id,
+                status,
+                to_name,
+                dispatched_at,
+                COALESCE(dispatched_at, created_at) as sort_date
+            FROM forwarding_request
+            ORDER BY sort_date DESC
+            LIMIT 10
+        `);
+
+        const recent = recentResult.rows.map((r: any) => ({
+            id: r.id,
+            at: r.created_at,
+            user_id: r.user_id,
+            mail_item_id: r.mail_item_id,
+            status: r.status,
+            to_name: r.to_name,
+            href: `/admin/forwarding/${r.id}`,
+        }));
+
+        return res.json({
+            ok: true,
+            counts,
+            recent,
+        });
     } catch (error: any) {
         console.error('[GET /api/admin/forwarding/stats] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

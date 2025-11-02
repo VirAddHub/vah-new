@@ -36,6 +36,13 @@ import {
 import { useAuthedSWR } from "../lib/useAuthedSWR";
 import { useAdminHeartbeat } from "../hooks/useAdminHeartbeat";
 import { adminApi } from "../lib/services/http";
+import { useAdminOverview, useAdminHealth, useAdminActivity, useForwardingStats } from "../lib/hooks/useAdminOverview";
+import OverviewMetricCard from "./admin/OverviewMetricCard";
+import { StatusBadge } from "./admin/StatusBadge";
+import RecentActivityCard from "./admin/RecentActivityCard";
+import ForwardingCard from "./admin/ForwardingCard";
+import SystemHealthCard from "./admin/SystemHealthCard";
+import SystemSummaryCard from "./admin/SystemSummaryCard";
 import {
     Mail,
     Users,
@@ -505,14 +512,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         switch (activeSection) {
             case "overview":
                 return <OverviewSection
-                    metrics={metrics}
-                    overview={overview}
-                    systemStatus={systemStatus}
-                    forwardingRequests={forwardingRequests}
-                    forwardingStats={forwardingStats}
-                    isLoadingForwarding={isLoadingForwarding}
-                    recentActivity={recentActivity}
-                    isLoadingActivity={isLoadingActivity}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
             case "users":
@@ -559,14 +558,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <BlogSection />;
             default:
                 return <OverviewSection
-                    metrics={metrics}
-                    overview={overview}
-                    systemStatus={systemStatus}
-                    forwardingRequests={forwardingRequests}
-                    forwardingStats={forwardingStats}
-                    isLoadingForwarding={isLoadingForwarding}
-                    recentActivity={recentActivity}
-                    isLoadingActivity={isLoadingActivity}
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
         }
@@ -680,273 +671,79 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 }
 
 // Enhanced Section Components
-function OverviewSection({
-    metrics,
-    overview,
-    systemStatus,
-    forwardingRequests,
-    forwardingStats,
-    isLoadingForwarding,
-    recentActivity,
-    isLoadingActivity,
-    onViewForwarding
-}: {
-    metrics: any;
-    overview: any;
-    systemStatus: 'operational' | 'degraded' | 'down';
-    forwardingRequests: any[];
-    forwardingStats: any;
-    isLoadingForwarding: boolean;
-    recentActivity: any[];
-    isLoadingActivity: boolean;
-    onViewForwarding: () => void;
-}) {
-    const totals = safe(metrics?.totals, {});
-    const systemHealth = safe(metrics?.system_health, {});
-    // recentActivity is passed as a prop from parent component
+function OverviewSection({ onViewForwarding }: { onViewForwarding: () => void }) {
+    // Use new hooks for data fetching
+    const { data: overview, isLoading: ovLoading } = useAdminOverview();
+    const { data: health } = useAdminHealth();
+    const { data: activity } = useAdminActivity(10);
+    const { data: forwarding } = useForwardingStats(90);
+
+    const m = overview?.metrics;
+    const links = overview?.links;
+    const severity = health?.severity || 'down';
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Admin Overview</h1>
                     <p className="text-sm text-muted-foreground">System status and key metrics</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`gap-1 text-xs ${systemStatus === 'operational' ? 'border-green-500' :
-                        systemStatus === 'degraded' ? 'border-yellow-500' :
-                            'border-red-500'
-                        }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${systemStatus === 'operational' ? 'bg-green-500' :
-                            systemStatus === 'degraded' ? 'bg-yellow-500' :
-                                'bg-red-500'
-                            }`} />
-                        {systemStatus === 'operational' ? 'Operational' :
-                            systemStatus === 'degraded' ? 'Degraded' :
-                                'Down'}
-                    </Badge>
-                </div>
+                <StatusBadge severity={severity} />
             </div>
 
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <MetricCard
+            {/* Metrics grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <OverviewMetricCard
                     title="Users"
-                    value={metrics?.totals?.users?.toLocaleString() || '0'}
-                    change=""
-                    trend="up"
-                    icon={<Users2 className="h-4 w-4 text-blue-500" />}
+                    value={m?.totals?.users?.toLocaleString() ?? '—'}
+                    href={links?.users}
+                    loading={ovLoading}
                 />
-                <MetricCard
-                    title="Active"
-                    value={metrics?.totals?.active_users?.toLocaleString() || '0'}
-                    change=""
-                    trend="up"
-                    icon={<Users2 className="h-4 w-4 text-green-500" />}
+                <OverviewMetricCard
+                    title="Active (30d)"
+                    value={m?.totals?.active_users?.toLocaleString() ?? '—'}
+                    href={links?.active_users}
+                    loading={ovLoading}
                 />
-                <MetricCard
+                <OverviewMetricCard
                     title="KYC Pending"
-                    value={metrics?.totals?.pending_kyc?.toLocaleString() || '0'}
-                    change=""
-                    trend="up"
-                    icon={<Users2 className="h-4 w-4 text-yellow-500" />}
+                    value={m?.totals?.pending_kyc?.toLocaleString() ?? '—'}
+                    href={links?.pending_kyc}
+                    loading={ovLoading}
                 />
-                <MetricCard
-                    title="Revenue"
-                    value={`£${(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    change="Monthly"
-                    trend="up"
-                    icon={<DollarSign className="h-4 w-4 text-green-500" />}
+                <OverviewMetricCard
+                    title="Revenue (This Month)"
+                    value={`£${((m?.revenue?.this_month_pence || 0) / 100).toFixed(2)}`}
+                    href={links?.revenue}
+                    sub={m?.revenue?.delta_pct == null ? '—' : `${m.revenue.delta_pct.toFixed(1)}% vs last month`}
+                    loading={ovLoading}
                 />
-                <MetricCard
-                    title="Mail"
-                    value={overview.mailProcessed.toLocaleString()}
-                    change=""
-                    trend="up"
-                    icon={<Mail className="h-4 w-4 text-purple-500" />}
+                <OverviewMetricCard
+                    title="Mail (30d)"
+                    value={m?.mail?.last30d?.toLocaleString() ?? '—'}
+                    href={links?.mail}
+                    loading={ovLoading}
                 />
-                <MetricCard
-                    title="Forwards"
-                    value={overview.activeForwards.toLocaleString()}
-                    change="Active"
-                    trend="up"
-                    icon={<Truck className="h-4 w-4 text-orange-500" />}
+                <OverviewMetricCard
+                    title="Active Forwards"
+                    value={m?.forwards?.active?.toLocaleString() ?? '—'}
+                    href={links?.forwards}
+                    loading={ovLoading}
                 />
             </div>
 
-            {/* Forwarding Requests Summary */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Forwarding Requests
-                        {isLoadingForwarding && (
-                            <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-                        )}
-                    </CardTitle>
-                    <Button variant="outline" size="sm" onClick={onViewForwarding} className="text-xs">
-                        View All
-                    </Button>
-                </CardHeader>
-                <CardContent className="py-3">
-                    <div className="grid grid-cols-4 gap-3 mb-3">
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">{forwardingStats.requested}</div>
-                            <div className="text-xs text-muted-foreground">Requested</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-yellow-600">{forwardingStats.reviewed}</div>
-                            <div className="text-xs text-muted-foreground">Reviewed</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-purple-600">{forwardingStats.processing}</div>
-                            <div className="text-xs text-muted-foreground">Processing</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-lg font-bold text-orange-600">{forwardingStats.dispatched}</div>
-                            <div className="text-xs text-muted-foreground">Dispatched</div>
-                        </div>
-                    </div>
+            {/* Forwarding card */}
+            <ForwardingCard data={forwarding} loading={!forwarding && !ovLoading} />
 
-                    {forwardingRequests.length > 0 && (
-                        <div className="space-y-1">
-                            <h4 className="font-medium text-xs text-muted-foreground">Recent Requests</h4>
-                            <div className="space-y-1">
-                                {forwardingRequests.slice(0, 3).map((request: any) => (
-                                    <div key={request.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={
-                                                request.status === 'Requested' ? 'default' :
-                                                    request.status === 'Reviewed' ? 'secondary' :
-                                                        request.status === 'Processing' ? 'outline' :
-                                                            request.status === 'Dispatched' ? 'destructive' : 'secondary'
-                                            } className="text-xs px-1 py-0">
-                                                {request.status}
-                                            </Badge>
-                                            <span className="font-medium truncate">{request.to_name}</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {request.status === 'Dispatched' && request.dispatched_at
-                                                ? new Date(request.dispatched_at).toLocaleDateString()
-                                                : new Date(request.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {forwardingRequests.length === 0 && !isLoadingForwarding && (
-                        <div className="text-center py-2 text-muted-foreground">
-                            <Truck className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                            <p className="text-xs">No forwarding requests</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Dashboard Grid */}
+            {/* Dashboard grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Recent Activity */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between py-3">
-                        <CardTitle className="text-base">Recent Activity</CardTitle>
-                        <Button variant="outline" size="sm" className="text-xs">View All</Button>
-                    </CardHeader>
-                    <CardContent className="py-3">
-                        <div className="space-y-2">
-                            {recentActivity.length > 0 ? (
-                                recentActivity.map((activity: any, index: number) => (
-                                    <ActivityItem
-                                        key={index}
-                                        icon={<UserCheck className="h-3 w-3 text-green-500" />}
-                                        title={activity.title || "Activity"}
-                                        description={activity.description || "No description"}
-                                        time={activity.time || "Unknown time"}
-                                    />
-                                ))
-                            ) : (
-                                <div className="text-center py-4 text-muted-foreground">
-                                    <Activity className="h-6 w-6 mx-auto mb-1 opacity-50" />
-                                    <p className="text-xs">No activity yet</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* System Status */}
-                <Card>
-                    <CardHeader className="py-3">
-                        <CardTitle className="text-base">System Health</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-3">
-                        <div className="space-y-2">
-                            <StatusItem
-                                label="Mail Processing API"
-                                status="operational"
-                                uptime="99.98%"
-                            />
-                            <StatusItem
-                                label="KYC Verification (Sumsub)"
-                                status="operational"
-                                uptime="99.95%"
-                            />
-                            <StatusItem
-                                label="Payment Gateway"
-                                status="operational"
-                                uptime="99.99%"
-                            />
-                            <StatusItem
-                                label="Database Performance"
-                                status="warning"
-                                uptime="97.82%"
-                            />
-                            <StatusItem
-                                label="Email Notifications"
-                                status="operational"
-                                uptime="99.87%"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* System Summary */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">System Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Total Users</span>
-                                <span className="font-semibold">{overview.users.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Deleted Users</span>
-                                <span className="font-semibold text-red-600">{overview.deletedUsers.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Mail Processed</span>
-                                <span className="font-semibold">{overview.mailProcessed.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Active Forwards</span>
-                                <span className="font-semibold">{overview.activeForwards.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Monthly Revenue</span>
-                                <span className="font-semibold">
-                                    £{(overview.monthlyRevenuePence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">System Status</span>
-                                <span className="font-semibold text-green-600">Operational</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <RecentActivityCard data={activity} loading={!activity && !ovLoading} />
+                <div className="space-y-4">
+                    <SystemHealthCard />
+                    <SystemSummaryCard data={overview} loading={ovLoading} />
+                </div>
             </div>
         </div>
     );

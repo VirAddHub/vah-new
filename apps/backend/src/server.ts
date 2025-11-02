@@ -442,6 +442,10 @@ async function start() {
     logger.info('[mount] /api/admin (service-status) mounted');
     app.use('/api/admin', adminMetricsGrowthRouter);
     logger.info('[mount] /api/admin (metrics-growth) mounted');
+    app.use('/api/admin/health', adminHealthRouter);
+    logger.info('[mount] /api/admin/health mounted');
+    app.use('/api/admin/overview', adminOverviewRouter);
+    logger.info('[mount] /api/admin/overview mounted');
     app.use('/api/admin', adminBlogRouter);
     logger.info('[mount] /api/admin (blog) mounted');
     app.use('/api', blogRouter);
