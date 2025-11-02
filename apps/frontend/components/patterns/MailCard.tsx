@@ -52,7 +52,7 @@ export default function MailCard({
         <div className="flex gap-2 pt-2">
           <Button
             onClick={() => onToggle(item)}
-            variant={isExpanded ? 'default' : 'outline'}
+            variant={isExpanded ? 'primary' : 'ghost'}
             className="flex-1 h-10"
             disabled={isLoading}
             aria-label={isExpanded ? 'Close mail' : 'View mail'}

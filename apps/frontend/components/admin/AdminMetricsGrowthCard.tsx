@@ -61,26 +61,26 @@ export default function AdminMetricsGrowthCard() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Growth (last {windowDays} days)</CardTitle>
         <div className="flex items-center gap-2">
-          <Button 
-            variant={windowDays === 30 ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setWindowDays(30)} 
+          <Button
+            variant={windowDays === 30 ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setWindowDays(30)}
             aria-label="30 days"
           >
             30d
           </Button>
-          <Button 
-            variant={windowDays === 60 ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setWindowDays(60)} 
+          <Button
+            variant={windowDays === 60 ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setWindowDays(60)}
             aria-label="60 days"
           >
             60d
           </Button>
-          <Button 
-            variant={windowDays === 90 ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setWindowDays(90)} 
+          <Button
+            variant={windowDays === 90 ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setWindowDays(90)}
             aria-label="90 days"
           >
             90d
@@ -107,44 +107,44 @@ export default function AdminMetricsGrowthCard() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={merged}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="day" 
-                tick={{ fontSize: 12 }} 
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 12 }}
                 tickFormatter={(value) => {
                   const date = new Date(value);
                   return `${date.getMonth() + 1}/${date.getDate()}`;
                 }}
               />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
+              <Tooltip
                 labelFormatter={(value) => {
                   const date = new Date(value);
                   return date.toLocaleDateString();
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="signups" 
-                name="Signups" 
-                stroke="#3B82F6" 
+              <Line
+                type="monotone"
+                dataKey="signups"
+                name="Signups"
+                stroke="#3B82F6"
                 strokeWidth={2}
-                dot={false} 
+                dot={false}
               />
-              <Line 
-                type="monotone" 
-                dataKey="items" 
-                name="Mail received" 
-                stroke="#10B981" 
+              <Line
+                type="monotone"
+                dataKey="items"
+                name="Mail received"
+                stroke="#10B981"
                 strokeWidth={2}
-                dot={false} 
+                dot={false}
               />
-              <Line 
-                type="monotone" 
-                dataKey="requests" 
-                name="Forwarding requests" 
-                stroke="#8B5CF6" 
+              <Line
+                type="monotone"
+                dataKey="requests"
+                name="Forwarding requests"
+                stroke="#8B5CF6"
                 strokeWidth={2}
-                dot={false} 
+                dot={false}
               />
             </LineChart>
           </ResponsiveContainer>

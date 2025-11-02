@@ -452,7 +452,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             setCompanySearchTerm('');
                                             setShowResults(false);
                                         }}
-                                        variant={!isManualEntry ? "default" : "outline"}
+                                        variant={!isManualEntry ? "primary" : "ghost"}
                                         className="h-8"
                                     >
                                         <Search className="h-4 w-4 mr-2" />
@@ -464,7 +464,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             setIsManualEntry(true);
                                             setShowResults(false);
                                         }}
-                                        variant={isManualEntry ? "default" : "outline"}
+                                        variant={isManualEntry ? "primary" : "ghost"}
                                         className="h-8"
                                     >
                                         Enter Manually
@@ -640,7 +640,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <span>Or enter your address manually:</span>
                                     </div>
-                                    
+
                                     <div>
                                         <Label htmlFor="address_line1" className="text-sm font-medium">
                                             Address Line 1 *
@@ -653,7 +653,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             required
                                         />
                                     </div>
-                                    
+
                                     <div>
                                         <Label htmlFor="address_line2" className="text-sm font-medium">
                                             Address Line 2
@@ -665,7 +665,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             placeholder="Enter your address line 2 (optional)"
                                         />
                                     </div>
-                                    
+
                                     <div>
                                         <Label htmlFor="city" className="text-sm font-medium">
                                             City/Town *
@@ -678,7 +678,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             required
                                         />
                                     </div>
-                                    
+
                                     <div>
                                         <Label htmlFor="postcode" className="text-sm font-medium">
                                             Postcode *

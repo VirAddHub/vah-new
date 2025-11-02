@@ -432,6 +432,7 @@ iframe {
         font-weight: 700;
         letter-spacing: -0.02em;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     h2 {
@@ -440,6 +441,7 @@ iframe {
         font-weight: 600;
         letter-spacing: -0.01em;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     h3 {
@@ -448,6 +450,7 @@ iframe {
         font-weight: 600;
         letter-spacing: -0.01em;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     h4 {
@@ -456,6 +459,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     h5 {
@@ -464,6 +468,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     h6 {
@@ -472,6 +477,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
+        color: #20603A;
     }
 
     /* Body text uses Inter via font-sans */
@@ -510,15 +516,13 @@ iframe {
 
     /* Enhanced button styling */
     .btn-primary {
-        background: hsl(var(--primary));
-        box-shadow: 0 4px 12px rgba(82, 114, 255, 0.3);
+        background: #20603A;
+        color: white;
         transition: all 0.2s ease;
     }
 
     .btn-primary:hover {
-        background: hsl(var(--primary-hover));
-        box-shadow: 0 6px 20px rgba(82, 114, 255, 0.4);
-        transform: translateY(-1px);
+        background: #1a5230;
     }
 
     .btn-secondary {
@@ -605,6 +609,7 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 3rem;
         margin-bottom: 1.5rem;
+        color: #20603A;
     }
 
     .prose h3 {
@@ -614,6 +619,7 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 2.5rem;
         margin-bottom: 1rem;
+        color: #20603A;
     }
 
     .prose p {
@@ -867,18 +873,15 @@ iframe {
 
     /* Button utilities (if you use class-based buttons anywhere) */
     .btn-primary {
-        background: hsl(var(--primary));
-        color: hsl(var(--primary-foreground));
-        border: 1px solid color-mix(in oklab, hsl(var(--primary)) 85%, hsl(var(--border)));
+        background: #20603A;
+        color: white;
+        border: none;
         border-radius: var(--radius);
-        box-shadow: var(--shadow-sm);
-        transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+        transition: background-color .15s ease;
     }
 
     .btn-primary:hover {
-        background: hsl(var(--primary-hover));
-        box-shadow: var(--shadow-md);
-        transform: translateY(-1px);
+        background: #1a5230;
     }
 
     .btn-secondary {

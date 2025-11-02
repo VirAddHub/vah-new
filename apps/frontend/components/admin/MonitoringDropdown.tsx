@@ -32,7 +32,7 @@ export function MonitoringDropdown({ activeSection, onSectionChange }: Monitorin
         <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
                 <Button
-                    variant={isMonitoringActive ? "default" : "ghost"}
+                    variant={isMonitoringActive ? "primary" : "ghost"}
                     size="sm"
                     className="gap-1.5 h-8 px-3"
                 >

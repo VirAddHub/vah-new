@@ -62,7 +62,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     </button>
                     <Button
                         onClick={() => handleNavClick('signup')}
-                        className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium hover:bg-[hsl(var(--primary-hover))] hover:shadow-md hover:scale-105 transition-all duration-200"
+                        className="rounded-md px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200"
                     >
                         Get started
                     </Button>
@@ -102,7 +102,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                             </button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="tt-min w-full rounded-md bg-primary text-primary-foreground font-medium hover:bg-[hsl(var(--primary-hover))] hover:shadow-md transition-all duration-200"
+                                className="tt-min w-full rounded-md font-medium transition-all duration-200"
                             >
                                 Get started
                             </Button>

@@ -391,7 +391,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
         <div className="flex gap-2">
           <Button
-            variant={showDeleted ? "default" : "outline"}
+            variant={showDeleted ? "primary" : "ghost"}
             onClick={() => {
               console.log('[UsersSection] Toggle showDeleted from', showDeleted, 'to', !showDeleted);
               setShowDeleted(!showDeleted);

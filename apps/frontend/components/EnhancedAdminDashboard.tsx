@@ -581,7 +581,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         {menuItems.map((item) => (
                             <Button
                                 key={item.id}
-                                variant={activeSection === item.id ? "default" : "ghost"}
+                                variant={activeSection === item.id ? "primary" : "ghost"}
                                 size="sm"
                                 onClick={() => setActiveSection(item.id as AdminSection)}
                                 className="gap-1.5 h-8 px-3"
@@ -635,7 +635,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                             {menuItems.map((item) => (
                                 <Button
                                     key={item.id}
-                                    variant={activeSection === item.id ? "default" : "outline"}
+                                    variant={activeSection === item.id ? "primary" : "ghost"}
                                     size="sm"
                                     onClick={() => {
                                         setActiveSection(item.id as AdminSection);

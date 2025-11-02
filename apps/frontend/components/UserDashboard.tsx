@@ -604,7 +604,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="default" onClick={() => handleRequestForwarding()}>
+                      <Button size="sm" variant="primary" onClick={() => handleRequestForwarding()}>
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -711,11 +711,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    <Button size="default" variant="outline" className="w-full h-10">
+                    <Button size="md" variant="ghost" className="w-full h-10">
                       <Download className="h-4 w-4 mr-2" />
                       Download Selected ({selectedMail.length})
                     </Button>
-                    <Button size="default" variant="default" className="w-full h-10" onClick={() => handleRequestForwarding()}>
+                    <Button size="md" variant="primary" className="w-full h-10" onClick={() => handleRequestForwarding()}>
                       <Truck className="h-4 w-4 mr-2" />
                       Request Forwarding
                     </Button>
