@@ -426,7 +426,7 @@ iframe {
         /* ~150% as specified */
     }
 
-    /* Ensure white background on mobile - overrides dark mode and all other styles */
+    /* Ensure white background and dark text on mobile - overrides dark mode and all other styles */
     @media (max-width: 1023px) {
 
         html,
@@ -438,6 +438,8 @@ iframe {
         #__next>div {
             background-color: #ffffff !important;
             --background: 0 0% 100% !important;
+            --foreground: 220 10% 15% !important;
+            color: #212325 !important;
         }
 
         main,
@@ -453,6 +455,27 @@ iframe {
         [class*="bg-background"],
         [class*="bg-card"] {
             background-color: #ffffff !important;
+        }
+
+        /* Ensure all text is dark on mobile */
+        body,
+        p,
+        h1, h2, h3, h4, h5, h6,
+        span:not(.text-primary):not(.text-[#20603A]),
+        .text-foreground,
+        .text-muted-foreground,
+        .text-neutral-600,
+        .text-neutral-700,
+        .text-gray-600,
+        .text-gray-700 {
+            color: #212325 !important;
+        }
+
+        /* Keep links and primary colored text */
+        a:not(.text-white):not(.text-primary-foreground),
+        .text-primary,
+        .text-[#20603A] {
+            color: #20603A !important;
         }
 
         /* Override any backdrop or overlay backgrounds */
