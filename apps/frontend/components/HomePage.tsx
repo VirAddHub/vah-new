@@ -85,13 +85,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto max-w-screen-xl pt-20 pb-12">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
                             Professional London Business Address Service.
                             <span className="block text-gray-900">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                        <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg">
                             One London address for every official use.
                             Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
@@ -123,13 +123,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Desktop: Horizontal Layout - Text First */}
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
-                            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
                                 Professional London Business Address Service.
                                 <span className="block text-gray-900">
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
-                            <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                            <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg lg:text-xl">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>
