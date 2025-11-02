@@ -63,6 +63,8 @@ import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminActivityRouter from "./server/routes/admin-activity";
 import adminServiceStatusRouter from "./server/routes/admin-service-status";
 import adminMetricsGrowthRouter from "./server/routes/admin-metrics-growth";
+import adminHealthRouter from "./server/routes/admin-health";
+import adminOverviewRouter from "./server/routes/admin-overview";
 import companiesHouseRouter from "./server/routes/companies-house";
 import opsSelfTestRouter from "./server/routes/ops-selftest";
 import idealPostcodesRouter from "./server/routes/ideal-postcodes";
