@@ -1,7 +1,7 @@
 // hooks/usePlans.ts
 // Shared hook for fetching and managing plans data across components
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../lib/apiClient';
 
 export interface Plan {
@@ -119,7 +119,8 @@ export function usePricing() {
     const monthlyPrice = monthlyPlan?.price ?? fallbackMonthlyPrice;
     const annualPrice = annualPlan?.price ?? fallbackAnnualPrice;
     
-    const monthlySavingsPct = useCallback(() => {
+    const monthlySavingsPct = useMemo(() => {
+        if (monthlyPrice <= 0 || annualPrice <= 0) return 0;
         const saved = monthlyPrice * 12 - annualPrice;
         const pct = (saved / (monthlyPrice * 12)) * 100;
         return Math.round(pct);
@@ -128,7 +129,7 @@ export function usePricing() {
     return {
         monthlyPrice,
         annualPrice,
-        monthlySavingsPct: monthlySavingsPct(),
+        monthlySavingsPct,
         monthlyPlan,
         annualPlan,
         loading,
