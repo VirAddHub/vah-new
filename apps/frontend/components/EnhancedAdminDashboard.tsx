@@ -672,31 +672,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
             {/* Main Content */}
             <main className="p-4 lg:p-6">
-                {/* Deleted Users Banner */}
-                {overview?.deletedUsers > 0 && (
-                    <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                <div>
-                                    <h3 className="font-medium text-orange-800">Deleted Users</h3>
-                                    <p className="text-sm text-orange-600">
-                                        {overview.deletedUsers} user{overview.deletedUsers !== 1 ? 's' : ''} have been deleted
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setActiveSection('users')}
-                                className="text-orange-700 border-orange-300 hover:bg-orange-100"
-                            >
-                                View Users
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
                 {renderContent()}
             </main>
 
@@ -936,35 +911,6 @@ function OverviewSection({
                     </CardContent>
                 </Card>
 
-                {/* Pending Actions */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Pending Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            <PendingAction
-                                priority="high"
-                                title="KYC Reviews"
-                                count={Number(totals && typeof totals === 'object' && 'pending_kyc' in totals ? totals.pending_kyc || 0 : 0)}
-                                action="Review Pending"
-                            />
-                            <PendingAction
-                                priority="medium"
-                                title="Suspended Users"
-                                count={Number(totals && typeof totals === 'object' && 'suspended_users' in totals ? totals.suspended_users || 0 : 0)}
-                                action="Review Status"
-                            />
-                            <PendingAction
-                                priority="low"
-                                title="Active Forwards"
-                                count={overview.activeForwards}
-                                action="Process Queue"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
                 {/* System Summary */}
                 <Card>
                     <CardHeader>
@@ -1087,32 +1033,3 @@ function StatusItem({ label, status, uptime }: {
     );
 }
 
-function PendingAction({ priority, title, count, action }: {
-    priority: "high" | "medium" | "low";
-    title: string;
-    count: number;
-    action: string;
-}) {
-    const priorityColors = {
-        high: "text-red-600 bg-red-50",
-        medium: "text-yellow-600 bg-yellow-50",
-        low: "text-blue-600 bg-blue-50"
-    };
-
-    return (
-        <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-                <Badge className={priorityColors[priority]} variant="secondary">
-                    {priority}
-                </Badge>
-                <div>
-                    <p className="text-sm font-medium">{title}</p>
-                    <p className="text-xs text-muted-foreground">{count} items</p>
-                </div>
-            </div>
-            <Button size="sm" variant="outline">
-                {action}
-            </Button>
-        </div>
-    );
-}
