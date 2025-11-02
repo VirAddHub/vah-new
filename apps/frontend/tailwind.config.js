@@ -41,7 +41,16 @@ module.exports = {
                 content: "72ch",
             },
             fontSize: {
-                // Fluid typography using clamp for responsive scaling
+                // Standardized typography scale
+                h1: ["1.875rem", { lineHeight: "2.25rem", fontWeight: "600" }], // 30px
+                "h1-lg": ["2.25rem", { lineHeight: "2.75rem", fontWeight: "600" }], // 36px
+                h2: ["1.5rem", { lineHeight: "2rem", fontWeight: "600" }], // 24px
+                "h2-lg": ["1.875rem", { lineHeight: "2.25rem", fontWeight: "600" }], // 30px
+                h3: ["1rem", { lineHeight: "1.5rem", fontWeight: "500" }], // 16px
+                body: ["0.875rem", { lineHeight: "1.5rem", fontWeight: "400" }], // 14px
+                "body-lg": ["1rem", { lineHeight: "1.75rem", fontWeight: "400" }], // 16px
+                small: ["0.75rem", { lineHeight: "1.25rem", fontWeight: "400" }], // 12px
+                // Fluid typography using clamp for responsive scaling (kept for backward compatibility)
                 "fluid-sm": ["clamp(0.9rem, 0.85rem + 0.2vw, 1rem)", { lineHeight: "1.5" }],
                 "fluid-base": ["clamp(1rem, 0.95rem + 0.35vw, 1.125rem)", { lineHeight: "1.6" }],
                 "fluid-lg": ["clamp(1.125rem, 1.05rem + 0.5vw, 1.25rem)", { lineHeight: "1.6" }],
