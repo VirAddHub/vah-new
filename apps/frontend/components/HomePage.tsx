@@ -174,10 +174,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
             >
                 <div className="safe-pad mx-auto max-w-4xl">
                     <div className="text-center mb-8">
-                        <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
+                        <h2 className="mt-4 text-2xl font-semibold sm:text-3xl tracking-tight">
                             Simple, All-Inclusive Pricing
                         </h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base leading-snug">
                             No hidden fees. Cancel anytime.
                         </p>
                     </div>
@@ -243,23 +243,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
                             <div className="text-center">
-                                <h3 className="text-base font-semibold mb-4">
+                                <h3 className="text-base font-semibold mb-4 tracking-tight">
                                     All-In-One Plan
                                 </h3>
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="text-3xl font-bold text-black">
+                                        <span className="tracking-tight text-[28px] sm:text-[32px] font-semibold text-black">
                                             {priceLabel}
                                         </span>
-                                        <span className="text-sm text-muted-foreground">
+                                        <span className="text-body sm:text-body-lg text-neutral-500">
                                             {priceSuffix}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-black mb-1">
+                                    <p className="text-sm text-black mb-1 leading-snug">
                                         {subCopy}
                                     </p>
-                                    <p className="text-sm text-black font-medium">
+                                    <p className="text-sm text-black font-medium leading-snug">
                                         {fineCopy}
                                     </p>
                                 </div>
@@ -286,7 +286,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                                     <path d="M20 6L9 17l-5-5" />
                                                 </svg>
                                             </div>
-                                            <span className="text-xs text-black leading-relaxed">
+                                            <span className="text-xs text-black leading-relaxed sm:leading-snug">
                                                 {feature}
                                             </span>
                                         </div>
@@ -296,7 +296,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="w-full h-12 text-base font-semibold rounded-lg"
+                                    className="w-full tracking-tight text-base font-semibold rounded-lg"
                                 >
                                     {isAnnual ? `Choose Annual — ${priceLabel}${priceSuffix}` : `Secure My London Address Now`}
                                     <ArrowRight className="ml-2 h-4 w-4" />
