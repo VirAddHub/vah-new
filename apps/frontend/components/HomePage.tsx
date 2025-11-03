@@ -112,7 +112,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight"
+                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
                             >
                                 Secure My London Address — Start Today
                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -138,7 +138,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="tt-min px-8 rounded-[16px] btn-primary text-primary-foreground tracking-tight"
+                                    className="tt-min px-8 rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
                                 >
                                     Secure My London Address — Start Today
                                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -296,7 +296,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="w-full tracking-tight text-base font-semibold rounded-lg"
+                                    className="w-full tracking-tight text-base font-semibold rounded-lg !h-14"
                                 >
                                     {isAnnual ? `Choose Annual — ${priceLabel}${priceSuffix}` : `Secure My London Address Now`}
                                     <ArrowRight className="ml-2 h-4 w-4" />
