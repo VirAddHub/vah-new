@@ -14,7 +14,7 @@ export default async function BlogPage() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-12">
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-[#20603A]">Virtual Business Address & UK Compliance Blog</h1>
+      <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-[#20603A]">Blog</h1>
       {posts.length === 0 ? (
         <p className="opacity-70">No posts yet.</p>
       ) : (
