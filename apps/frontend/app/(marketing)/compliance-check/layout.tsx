@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
     title: "Free Business Address Compliance Check | VirtualAddressHub",
@@ -17,6 +19,12 @@ export default function ComplianceCheckLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return children;
+    return (
+        <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+        </div>
+    );
 }
 
