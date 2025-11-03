@@ -112,7 +112,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="tt-min w-full h-12 px-6 rounded-[16px] btn-primary text-primary-foreground"
+                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight"
                             >
                                 Secure My London Address — Start Today
                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -138,7 +138,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="tt-min h-12 px-8 rounded-[16px] btn-primary text-primary-foreground"
+                                    className="tt-min px-8 rounded-[16px] btn-primary text-primary-foreground tracking-tight"
                                 >
                                     Secure My London Address — Start Today
                                     <ArrowRight className="ml-2 h-4 w-4" />
