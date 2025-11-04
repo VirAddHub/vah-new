@@ -20,7 +20,7 @@ import {
 } from "./ui/card";
 
 import { Badge } from "./ui/badge";
-import api from "@/lib/http";
+import { apiClient } from "@/lib/apiClient";
 import { isEmail, validateRequired } from "@/lib/validators";
 import { useAsync } from "@/hooks/useAsync";
 
@@ -55,8 +55,15 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
     // Use async hook for form submission
     const { run: submitForm, loading: isSubmitting, error: submitError } = useAsync(async (data: typeof formData) => {
-        const res = await api.post("/contact/submit", data);
-        if (!res.ok) throw new Error(res.message);
+        const res = await apiClient.post("/api/contact", {
+            name: data.name,
+            email: data.email,
+            subject: data.subject,
+            message: data.message,
+            inquiryType: data.inquiryType,
+            website: data.website,
+        });
+        if (!res.ok) throw new Error(res.error || "Failed to send message");
         return res.data;
     });
 
@@ -65,11 +72,11 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         const loadSupportInfo = async () => {
             try {
                 setLoadingSupport(true);
-                const res = await api.get("/support/info");
+                const res = await apiClient.get("/api/support/info");
                 if (res.ok) {
                     setSupportInfo(res.data);
                 } else {
-                    setErrorMsg(res.message || 'Unable to load support info.');
+                    setErrorMsg(res.error || 'Unable to load support info.');
                 }
             } catch (err: any) {
                 setErrorMsg(err?.message ?? 'Unable to load support info.');
