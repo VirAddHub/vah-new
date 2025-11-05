@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { getPool } from '../../db';
 import { sendTemplateEmail } from '../../../lib/mailer';
+import { Templates } from '../../../lib/postmark-templates';
 import { APP_BASE_URL } from '../../../config/env';
 import { withTimeout } from '../../../lib/withTimeout';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
@@ -84,7 +85,7 @@ router.post('/reset-password-request', limiter, async (req, res) => {
       withTimeout(
         sendTemplateEmail({
           to: user.email,
-          templateAlias: 'password-reset-email',
+          templateAlias: Templates.PasswordReset,
           model: {
             firstName: user.name || user.first_name || 'there',
             resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
@@ -93,7 +94,14 @@ router.post('/reset-password-request', limiter, async (req, res) => {
         }),
         2000,
         'email send'
-      ).catch(e => console.error('[reset] email', e.message));
+      ).catch(e => {
+        console.error('[reset] email send failed:', {
+          message: e.message,
+          stack: e.stack,
+          email: user.email,
+          templateAlias: Templates.PasswordReset,
+        });
+      });
     } catch (e: any) {
       console.error('[reset] fatal', e.message);
     }

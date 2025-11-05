@@ -3,6 +3,7 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { generateRawToken, hashToken, verifyToken } from '../security/reset-token';
 import { sendTemplateEmail } from '../../lib/mailer';
+import { Templates } from '../../lib/postmark-templates';
 import { ENV } from '../../env';
 
 // Config via env with sensible defaults
@@ -64,7 +65,7 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
         try {
           await sendTemplateEmail({
             to: user.email,
-            templateAlias: 'password-reset-email',
+            templateAlias: Templates.PasswordReset,
             model: {
               firstName: firstName,
               name: fullName || firstName,          // safe extra for template
@@ -73,8 +74,13 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
             },
           });
         } catch (err) {
-          // We still return 200; just log
-          console.error('password-reset email send failed', err);
+          // We still return 200; just log with details
+          console.error('password-reset email send failed:', {
+            message: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+            email: user.email,
+            templateAlias: Templates.PasswordReset,
+          });
         }
       } catch (tokenErr) {
         console.error('password-reset token creation failed', tokenErr);
