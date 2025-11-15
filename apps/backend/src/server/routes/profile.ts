@@ -347,8 +347,9 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.pipe(res);
 
         // ===== LOGO/BRAND (Top-left, 40px margin-bottom) =====
+        // PDFKit doesn't support SVG well, so we use PNG for PDFs
         const configuredLogoPath = process.env.VAH_LOGO_PATH;
-        const defaultLogoPath = path.resolve(__dirname, '../../../../frontend/public/images/logo.svg');
+        const defaultLogoPath = path.resolve(__dirname, '../../../../frontend/public/images/logo.png');
         const alternativeLogoPath = path.resolve(__dirname, '../../../../frontend/public/icons/icon-512.png');
         const logoPath = configuredLogoPath || defaultLogoPath;
         let drewImage = false;
