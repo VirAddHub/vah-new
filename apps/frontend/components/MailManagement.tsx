@@ -390,90 +390,93 @@ export function MailManagement({
         <div className="space-y-6">
             {/* Search Bar */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                     placeholder="Search mail by sender, subject, tag, or date..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-amber-500 focus:ring-amber-500/20"
                 />
             </div>
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="inbox" className="flex items-center gap-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
+                    <TabsTrigger 
+                        value="inbox" 
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                    >
                         <Mail className="h-4 w-4" />
                         Inbox ({mailItems.filter(item => !item.deleted).length})
                     </TabsTrigger>
-                    <TabsTrigger value="archived" className="flex items-center gap-2">
+                    <TabsTrigger 
+                        value="archived" 
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                    >
                         <Archive className="h-4 w-4" />
                         Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
-                    <TabsTrigger value="subjects" className="flex items-center gap-2">
+                    <TabsTrigger 
+                        value="subjects" 
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                    >
                         <Tag className="h-4 w-4" />
                         Tags ({availableSubjects.length})
                     </TabsTrigger>
                 </TabsList>
 
                 {/* Inbox Tab */}
-                <TabsContent value="inbox" className="space-y-4">
+                <TabsContent value="inbox" className="mt-6 space-y-3">
                     {filteredItems.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-8 text-center">
-                                <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                <h3 className="text-lg font-medium mb-2">No mail items</h3>
-                                <p className="text-muted-foreground">
-                                    {searchQuery ? 'No items match your search.' : 'Your inbox is empty.'}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="py-12 text-center">
+                            <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
+                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No mail items</h3>
+                            <p className="text-sm text-neutral-500">
+                                {searchQuery ? 'No items match your search.' : 'Your inbox is empty.'}
+                            </p>
+                        </div>
                     ) : (
                         filteredItems.map(renderMailItem)
                     )}
                 </TabsContent>
 
                 {/* Archived Tab */}
-                <TabsContent value="archived" className="space-y-4">
+                <TabsContent value="archived" className="mt-6 space-y-3">
                     {filteredItems.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-8 text-center">
-                                <Archive className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                <h3 className="text-lg font-medium mb-2">No archived items</h3>
-                                <p className="text-muted-foreground">
-                                    {searchQuery ? 'No archived items match your search.' : 'You haven\'t archived any mail yet.'}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="py-12 text-center">
+                            <Archive className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
+                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No archived items</h3>
+                            <p className="text-sm text-neutral-500">
+                                {searchQuery ? 'No archived items match your search.' : 'You haven\'t archived any mail yet.'}
+                            </p>
+                        </div>
                     ) : (
                         filteredItems.map(renderMailItem)
                     )}
                 </TabsContent>
 
                 {/* Subjects Tab */}
-                <TabsContent value="subjects" className="space-y-4">
+                <TabsContent value="subjects" className="mt-6 space-y-6">
                     {availableSubjects.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-8 text-center">
-                                <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                <h3 className="text-lg font-medium mb-2">No subjects yet</h3>
-                                <p className="text-muted-foreground">
-                                    Add subjects to your mail items to organize them better.
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="py-12 text-center">
+                            <Tag className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
+                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No subjects yet</h3>
+                            <p className="text-sm text-neutral-500">
+                                Add subjects to your mail items to organize them better.
+                            </p>
+                        </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {availableSubjects.map(subject => (
                                 <div key={subject}>
-                                    <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                                        <Tag className="h-5 w-5" />
+                                    <h3 className="text-base font-semibold text-neutral-800 mb-4 flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-amber-600" />
                                         {subject}
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700">
                                             {mailItems.filter(item => item.subject === subject && !item.deleted).length}
                                         </Badge>
                                     </h3>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {mailItems
                                             .filter(item => item.subject === subject && !item.deleted)
                                             .map(renderMailItem)

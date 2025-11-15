@@ -579,20 +579,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="space-y-6">
 
             {/* Mail Inbox Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-primary" />
-                      <CardTitle>Mail Inbox</CardTitle>
-                      <Badge variant="secondary">{totalItems} items</Badge>
-                      {mailLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                    </div>
-                    <p className="text-sm text-muted-foreground hidden sm:block">
-                      Click on any mail item to view full details and scans
+            <Card className="border-neutral-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-neutral-800">
+                      Mail Inbox
+                    </h2>
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                      {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
                     </p>
                   </div>
+                  <p className="text-sm text-neutral-500">
+                    Click on any mail item to view full details and scans
+                  </p>
 
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
@@ -734,14 +735,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
           {/* Right Column - Virtual Address Sidebar */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
-            <Card className="border-0">
-              <CardHeader className="pb-3 border border-primary/20 rounded-lg">
+            <Card className="border-neutral-200 shadow-sm">
+              <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <Building2 className="h-4 w-4 text-primary" />
+                  <div className="p-1.5 bg-amber-50 rounded-lg">
+                    <Building2 className="h-4 w-4 text-amber-700" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm truncate">Your Virtual Business Address</CardTitle>
+                    <CardTitle className="text-sm font-medium text-neutral-800 truncate">Your Virtual Business Address</CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -757,7 +758,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Generate Certificate Button */}
                 <div className="space-y-1.5">
-                  <Button className="w-full" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
                     {certLoading ? (
                       <>
                         <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />

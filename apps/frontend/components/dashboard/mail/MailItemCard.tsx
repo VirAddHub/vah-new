@@ -32,12 +32,12 @@ export function MailItemCard({
   disabled = false,
 }: MailItemCardProps) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm p-3 sm:p-4">
+    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm p-3 sm:p-4 hover:shadow-md transition-all">
       {/* Header Row */}
       <div className="flex items-start justify-between gap-4 mb-3">
         {/* Left: Title and Date */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-900 truncate">
+          <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-800 truncate">
             {title}
           </h4>
           {date && (
@@ -59,7 +59,7 @@ export function MailItemCard({
       </div>
 
       {/* Actions Row */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 mt-3">
         {/* Tag Button */}
         <Button
           variant="outline"
