@@ -8,7 +8,6 @@ import {
     Clock,
     MapPin,
 } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
 
 interface FooterProps {
     onNavigate?: (page: string) => void;
@@ -125,9 +124,9 @@ export function Footer({ onNavigate }: FooterProps) {
                     <div>
                         <button
                             onClick={() => handleNavClick("home")}
-                            className="mb-2 hover:scale-[1.02] transition-transform"
+                            className="mb-2 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                         >
-                            <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
+                            VirtualAddressHub
                         </button>
                         <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-prose mb-2">
                             Professional virtual address for UK business. Fully compliant.

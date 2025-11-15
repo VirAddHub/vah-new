@@ -5,7 +5,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { VAHLogo } from './VAHLogo';
 import { postJson } from '@/lib/api';
 
 interface ForgotPasswordPageProps {
@@ -139,9 +138,6 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
     <>
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
-        <div className="flex justify-center mb-4 sm:mb-6">
-          <VAHLogo size="lg" />
-        </div>
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">Reset Your Password</h1>
         <p className="text-muted-foreground text-base sm:text-lg">
           Enter your email address and we'll send you instructions to reset your password
@@ -284,9 +280,6 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
     <>
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
-        <div className="flex justify-center mb-4 sm:mb-6">
-          <VAHLogo size="lg" />
-        </div>
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">Create New Password</h1>
         <p className="text-muted-foreground text-base sm:text-lg">
           Enter a strong new password for your account

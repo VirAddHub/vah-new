@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
 
 interface NavigationProps {
     onNavigate: (page: string) => void;
@@ -36,8 +35,13 @@ export function Navigation({ onNavigate }: NavigationProps) {
     return (
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
             <div className="safe-pad mx-auto max-w-screen-xl py-4 flex items-center justify-between">
-                {/* Logo */}
-                <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
+                {/* Brand Name */}
+                <button
+                    onClick={() => onNavigate('home')}
+                    className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                    VirtualAddressHub
+                </button>
 
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex gap-8 text-sm lg:text-base leading-[1.2] text-muted-foreground">

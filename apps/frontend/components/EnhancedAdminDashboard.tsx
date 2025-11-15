@@ -86,7 +86,6 @@ import {
     CreditCard,
     Building2,
 } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
 import dynamic from 'next/dynamic';
 
 // Dynamic imports for heavy admin components
@@ -573,7 +572,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         onClick={() => onNavigate?.('home')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <VAHLogo onNavigate={onNavigate} size="lg" showText={true} />
+                        <span className="text-lg font-semibold text-foreground">VirtualAddressHub</span>
                     </button>
 
                     {/* Desktop Navigation */}

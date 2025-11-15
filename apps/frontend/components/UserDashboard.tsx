@@ -30,7 +30,6 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
-import { VAHLogo } from "./VAHLogo";
 import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
@@ -513,9 +512,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="safe-pad mx-auto max-w-screen-xl">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
+            {/* Brand Name */}
             <div className="flex items-center gap-4">
-              <VAHLogo onNavigate={onNavigate} size="md" showText={true} />
+              <button
+                onClick={() => onNavigate('home')}
+                className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
+              >
+                VirtualAddressHub
+              </button>
             </div>
 
             {/* Navigation Links */}
