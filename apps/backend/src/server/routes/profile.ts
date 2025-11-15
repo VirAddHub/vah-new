@@ -358,7 +358,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         try {
             if (fs.existsSync(logoPath)) {
-                // Draw logo at top-left (50px from left, 70px from top), width 120px
+                // Draw logo at top-left (50px from left margin, 70px from top of page), width 120px
                 const imgWidth = 120;
                 doc.image(logoPath, 50, 70, { width: imgWidth });
                 drewImage = true;
@@ -383,7 +383,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         }
 
         // ===== TITLE BLOCK (40px margin-bottom from logo) =====
-        // Position after logo: logo height (~120px) + 40px margin = 160px from top
+        // Position after logo: logo at 70px + logo height (~120px) + 40px margin = 230px from top
         doc.y = drewImage ? 230 : 200; // Logo at 70px + 120px height + 40px margin
 
         // Title: 22px, font-weight 600, margin-bottom 10px
