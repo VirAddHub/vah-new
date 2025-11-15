@@ -1,25 +1,25 @@
 /* Enhanced Color Scheme - Dual-tone Navy & Green */
 :root {
   /* Dual-tone color system */
-  --color-primary: #20603A;
-  --color-accent: #166534;
+  --color-primary: #1e3a8a;
+  --color-accent: #1e40af;
   --color-background: #FFFFFF;
   --color-foreground: #212325;
   --color-muted: #6B7280;
 
-  /* Primary - VAH Brand Green #20603A */
-  --primary: 144 50% 25%;
+  /* Primary - VAH Brand Navy Blue #1e3a8a */
+  --primary: 221 64% 33%;
   --primary-foreground: 0 0% 100%;
-  --primary-hover: 144 50% 20%;
+  --primary-hover: 221 64% 28%;
 
   /* Secondary - Soft Blue-Gray */
   --secondary: 180 7% 62%;
   --secondary-foreground: 0 0% 100%;
 
-  /* Accent - Soft Green */
-  --accent: 145 50% 25%;
+  /* Accent - Soft Blue */
+  --accent: 221 70% 35%;
   --accent-foreground: 0 0% 100%;
-  --accent-hover: 145 50% 20%;
+  --accent-hover: 221 70% 30%;
 
   /* Background - Clean & Modern */
   --background: 0 0% 100%;
@@ -66,10 +66,10 @@
 
 /* Enhanced Button Styles */
 .btn-primary {
-  @apply bg-[#20603A] text-white;
-  @apply hover:bg-[#1a5230] transition-all duration-200;
+  @apply bg-[#1e3a8a] text-white;
+  @apply hover:bg-[#1e40af] transition-all duration-200;
   @apply border-0 rounded-xl px-6 py-3 font-semibold;
-  @apply focus:ring-2 focus:ring-[#20603A]/50 focus:outline-none;
+  @apply focus:ring-2 focus:ring-[#1e3a8a]/50 focus:outline-none;
 }
 
 .btn-secondary {

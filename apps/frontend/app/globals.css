@@ -159,35 +159,35 @@ iframe {
         /* Very light neutral for feature bands */
 
         /* Dual-tone color system */
-        --color-primary: #20603A;
-        --color-accent: #166534;
+        --color-primary: #1e3a8a;
+        --color-accent: #1e40af;
         --color-background: #FFFFFF;
         --color-foreground: #212325;
         --color-muted: #6B7280;
 
-        /* VAH Brand Green #20603A */
-        --primary: 144 50% 25%;
+        /* VAH Brand Navy Blue #1e3a8a */
+        --primary: 221 64% 33%;
         /* Brand primary color */
         --primary-foreground: 0 0% 100%;
-        --primary-hover: 144 50% 20%;
+        --primary-hover: 221 64% 28%;
         /* Slightly darker hover state */
 
-        /* Brand primary scale - #20603A based */
-        --primary-50: 144 50% 97%;
-        --primary-100: 144 50% 93%;
-        --primary-200: 144 50% 86%;
-        --primary-300: 144 50% 79%;
-        --primary-400: 144 50% 72%;
-        --primary-500: 144 50% 25%;
-        --primary-600: 144 50% 20%;
-        --primary-700: 144 50% 18%;
-        --primary-800: 144 50% 15%;
-        --primary-900: 144 50% 12%;
+        /* Brand primary scale - #1e3a8a based */
+        --primary-50: 221 64% 97%;
+        --primary-100: 221 64% 93%;
+        --primary-200: 221 64% 86%;
+        --primary-300: 221 64% 79%;
+        --primary-400: 221 64% 72%;
+        --primary-500: 221 64% 33%;
+        --primary-600: 221 64% 28%;
+        --primary-700: 221 64% 25%;
+        --primary-800: 221 64% 20%;
+        --primary-900: 221 64% 15%;
 
-        /* Accent green scale */
-        --accent: 145 50% 25%;
+        /* Accent blue scale */
+        --accent: 221 70% 35%;
         --accent-foreground: 0 0% 100%;
-        --accent-hover: 145 50% 20%;
+        --accent-hover: 221 70% 30%;
         --accent-50: 145 50% 97%;
         --accent-100: 145 50% 90%;
         --accent-200: 145 50% 80%;
@@ -575,13 +575,13 @@ iframe {
 
     /* Enhanced button styling */
     .btn-primary {
-        background: #20603A;
+        background: #1e3a8a;
         color: white;
         transition: all 0.2s ease;
     }
 
     .btn-primary:hover {
-        background: #1a5230;
+        background: #1e40af;
     }
 
     .btn-secondary {

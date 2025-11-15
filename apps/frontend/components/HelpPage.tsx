@@ -233,7 +233,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Hero */}
         <section className="text-center space-y-4">
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl text-[#20603A]">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl text-[#1e3a8a]">
             Help Centre & FAQs
           </h1>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto">

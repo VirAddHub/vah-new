@@ -26,7 +26,7 @@ const sizes: Record<Size, string> = {
 
 const variants: Record<Variant, string> = {
     primary:
-        "bg-[#20603A] text-white hover:bg-[#1a5230] focus-visible:ring-[#20603A]",
+        "bg-[#1e3a8a] text-white hover:bg-[#1e40af] focus-visible:ring-[#1e3a8a]",
     secondary:
         "bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-900",
     ghost:
@@ -36,7 +36,7 @@ const variants: Record<Variant, string> = {
     destructive:
         "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
     link:
-        "bg-transparent text-[#20603A] underline-offset-4 hover:underline focus-visible:ring-[#20603A]",
+        "bg-transparent text-[#1e3a8a] underline-offset-4 hover:underline focus-visible:ring-[#1e3a8a]",
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

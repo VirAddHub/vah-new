@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Color Comparison</title>
+    <style>
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .color-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .current {
+            background: #20603A;
+        }
+
+        .new {
+            background: rgb(97, 229, 41);
+        }
+
+        .color-info {
+            margin-bottom: 20px;
+        }
+
+        .color-code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .example-button {
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px 5px 0;
+        }
+
+        .current-btn {
+            background: #20603A;
+        }
+
+        .new-btn {
+            background: rgb(97, 229, 41);
+            color: #000;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .pros-cons {
+            margin-top: 20px;
+        }
+
+        .pros-cons ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pros-cons li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .pros-cons li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #16a34a;
+        }
+
+        .cons li:before {
+            content: "✗";
+            color: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="comparison">
+        <div class="color-card">
+            <h2>Current Green</h2>
+            <div class="color-swatch current"></div>
+            <div class="color-info">
+                <div class="color-code">Hex: #20603A</div>
+                <div class="color-code">RGB: 32, 96, 58</div>
+            </div>
+            <button class="example-button current-btn">Get Started</button>
+            <button class="example-button current-btn">Learn More</button>
+            <div class="pros-cons">
+                <h3>Pros:</h3>
+                <ul>
+                    <li>Professional & trustworthy</li>
+                    <li>Excellent contrast with white text</li>
+                    <li>Suited for business services</li>
+                    <li>Classic, timeless look</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="color-card">
+            <h2>New Green (Your Suggestion)</h2>
+            <div class="color-swatch new"></div>
+            <div class="color-info">
+                <div class="color-code">Hex: #61E529</div>
+                <div class="color-code">RGB: 97, 229, 41</div>
+            </div>
+            <button class="example-button new-btn">Get Started</button>
+            <button class="example-button new-btn">Learn More</button>
+            <div class="pros-cons">
+                <h3>Pros:</h3>
+                <ul>
+                    <li>Modern & energetic</li>
+                    <li>Eye-catching & vibrant</li>
+                    <li>Tech startup feel</li>
+                    <li>Stand out from competitors</li>
+                </ul>
+                <h3>Cons:</h3>
+                <ul class="cons">
+                    <li>May be too bright for professional services</li>
+                    <li>Lower contrast (needs dark text)</li>
+                    <li>Less traditional/trustworthy feel</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

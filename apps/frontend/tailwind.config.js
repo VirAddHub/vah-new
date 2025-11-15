@@ -93,7 +93,7 @@ module.exports = {
                     foreground: "hsl(var(--card-foreground))",
                 },
                 brand: {
-                    DEFAULT: "#20603A",
+                    DEFAULT: "#1e3a8a",
                     fg: "#ffffff",
                 },
                 // Neutral helpers for color cleanup

@@ -9,8 +9,8 @@ async function generateLogoPNG() {
     // Clear with transparent background
     ctx.clearRect(0, 0, 400, 100);
     
-    // Green color
-    const green = '#20603A';
+    // Navy blue color
+    const navy = '#1e3a8a';
     const darkGrey = '#374151';
     
     // Draw mailbox icon
@@ -19,7 +19,7 @@ async function generateLogoPNG() {
     const iconSize = 40;
     
     // Mailbox body (rounded rectangle)
-    ctx.fillStyle = green;
+    ctx.fillStyle = navy;
     ctx.beginPath();
     ctx.roundRect(iconX, iconY, iconSize * 0.6, iconSize * 0.45, 3);
     ctx.fill();
@@ -30,7 +30,7 @@ async function generateLogoPNG() {
     ctx.fill();
     
     // Mailbox door line
-    ctx.strokeStyle = green;
+    ctx.strokeStyle = navy;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(iconX + 8, iconY + 12);
@@ -38,7 +38,7 @@ async function generateLogoPNG() {
     ctx.stroke();
     
     // Mailbox post
-    ctx.fillStyle = green;
+    ctx.fillStyle = navy;
     ctx.fillRect(iconX + iconSize * 0.25, iconY + iconSize * 0.45, 5, 10);
     
     // Wi-Fi signal flag
@@ -46,7 +46,7 @@ async function generateLogoPNG() {
     const flagY = iconY;
     
     // Flag pole
-    ctx.strokeStyle = green;
+    ctx.strokeStyle = navy;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(flagX, flagY);
@@ -54,7 +54,7 @@ async function generateLogoPNG() {
     ctx.stroke();
     
     // Signal waves
-    ctx.strokeStyle = green;
+    ctx.strokeStyle = navy;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.arc(flagX, flagY, 8, -Math.PI / 2, 0);
@@ -76,7 +76,7 @@ async function generateLogoPNG() {
     ctx.fillText('VirtualAddress', iconX + iconSize + 20, iconY + 28);
     
     // Text: Hub (green)
-    ctx.fillStyle = green;
+    ctx.fillStyle = navy;
     ctx.font = 'bold 28px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     const virtualAddressWidth = ctx.measureText('VirtualAddress').width;
     ctx.fillText('Hub', iconX + iconSize + 20 + virtualAddressWidth + 5, iconY + 28);
