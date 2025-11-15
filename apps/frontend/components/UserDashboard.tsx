@@ -435,10 +435,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   // Mock virtual address (you can replace this with real data)
   const virtualAddress = {
-    line1: "71-75 Shelton Street",
-    line2: "Covent Garden",
+    line1: "54-58 Tanner Street",
+    line2: "2nd Floor",
     city: "London",
-    postcode: "WC2H 9JQ",
+    postcode: "SE1 3PH",
     country: "United Kingdom"
   };
 

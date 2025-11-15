@@ -437,8 +437,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#000000')
             .fontSize(11)
             .font('Helvetica')
-            .text('71-75 Shelton Street, Covent Garden', 30, doc.y)
-            .text('London WC2H 9JQ', 30, doc.y + 16)
+            .text('54-58 Tanner Street, 2nd Floor', 30, doc.y)
+            .text('London SE1 3PH', 30, doc.y + 16)
             .text('United Kingdom', 30, doc.y + 32);
 
         // ===== ACCOUNT DETAILS SECTION =====
@@ -515,7 +515,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#9CA3AF')
             .fontSize(7)
             .font('Helvetica')
-            .text('VirtualAddressHub Ltd · 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, UK', { align: 'center' })
+            .text('VirtualAddressHub Ltd · 54-58 Tanner Street, 2nd Floor, London SE1 3PH, UK', { align: 'center' })
             .text('support@virtualaddresshub.co.uk  |  www.virtualaddresshub.co.uk', { align: 'center' })
             .text('Registered in England · VAT No: [VAT_NUMBER]', { align: 'center' });
 
