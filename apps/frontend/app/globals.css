@@ -461,7 +461,7 @@ iframe {
         body,
         p,
         h1, h2, h3, h4, h5, h6,
-        span:not(.text-primary):not(.text-[#20603A]),
+        span:not(.text-primary):not(.text-[#1e3a8a]),
         .text-foreground,
         .text-muted-foreground,
         .text-neutral-600,
@@ -474,8 +474,8 @@ iframe {
         /* Keep links and primary colored text */
         a:not(.text-white):not(.text-primary-foreground),
         .text-primary,
-        .text-[#20603A] {
-            color: #20603A !important;
+        .text-[#1e3a8a] {
+            color: #1e3a8a !important;
         }
 
         /* Override any backdrop or overlay backgrounds */
@@ -491,7 +491,7 @@ iframe {
         font-weight: 700;
         letter-spacing: -0.02em;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     h2 {
@@ -500,7 +500,7 @@ iframe {
         font-weight: 600;
         letter-spacing: -0.01em;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     h3 {
@@ -509,7 +509,7 @@ iframe {
         font-weight: 600;
         letter-spacing: -0.01em;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     h4 {
@@ -518,7 +518,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     h5 {
@@ -527,7 +527,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     h6 {
@@ -536,7 +536,7 @@ iframe {
         font-weight: 500;
         letter-spacing: 0;
         word-wrap: break-word;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     /* Body text uses Inter via font-sans */
@@ -668,7 +668,7 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 3rem;
         margin-bottom: 1.5rem;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     .prose h3 {
@@ -678,7 +678,7 @@ iframe {
         letter-spacing: -0.01em;
         margin-top: 2.5rem;
         margin-bottom: 1rem;
-        color: #20603A;
+        color: #1e3a8a;
     }
 
     .prose p {
@@ -932,7 +932,7 @@ iframe {
 
     /* Button utilities (if you use class-based buttons anywhere) */
     .btn-primary {
-        background: #20603A;
+        background: #1e3a8a;
         color: white;
         border: none;
         border-radius: var(--radius);
@@ -940,7 +940,7 @@ iframe {
     }
 
     .btn-primary:hover {
-        background: #1a5230;
+        background: #1e40af;
     }
 
     .btn-secondary {

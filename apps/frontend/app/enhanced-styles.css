@@ -79,8 +79,8 @@
 }
 
 .btn-outline {
-  @apply border-2 border-[#20603A] text-[#20603A] bg-transparent;
-  @apply hover:bg-[#20603A] hover:text-white;
+  @apply border-2 border-[#1e3a8a] text-[#1e3a8a] bg-transparent;
+  @apply hover:bg-[#1e3a8a] hover:text-white;
   @apply transition-all duration-200 rounded-xl px-6 py-3 font-semibold;
 }
 
