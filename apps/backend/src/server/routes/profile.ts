@@ -531,7 +531,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .font('Helvetica')
             .text('VirtualAddressHub Ltd · 54-58 Tanner Street, 2nd Floor, London SE1 3PH, United Kingdom', { align: 'center' })
             .text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', { align: 'center' })
-            .text('Registered in England', { align: 'center' });
+            .text('Registered in England · VAT No: [VAT_NUMBER]', { align: 'center' });
 
         // Finalize PDF
         doc.end();
