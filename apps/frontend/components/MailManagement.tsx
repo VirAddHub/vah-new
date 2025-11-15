@@ -24,6 +24,7 @@ import {
     FileCheck,
     ArrowRight
 } from "lucide-react";
+import { MailItemCard } from "./dashboard/mail/MailItemCard";
 import { useToast } from "./ui/use-toast";
 import { getToken } from '@/lib/token-manager';
 
@@ -274,186 +275,116 @@ export function MailManagement({
         }
     }, [onRefresh, toast]);
 
-    const renderMailItem = (item: MailItem) => (
-        <Card key={item.id} className="mb-3 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                    {/* Mail Info */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium truncate">
-                                {item.tag || 'Inbox Item'}
-                            </h4>
-                            {!item.is_read && (
-                                <Badge variant="default" className="text-xs">New</Badge>
-                            )}
-                            {item.deleted && (
-                                <Badge variant="outline" className="text-xs">Archived</Badge>
-                            )}
-                        </div>
+    const renderMailItem = (item: MailItem) => {
+        // Determine title: use subject, sender name, or tag, or fallback
+        const title = item.subject || item.sender_name || item.tag || 'Inbox Item';
+        
+        // Format date
+        const formattedDate = item.received_date
+            ? new Date(item.received_date).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            })
+            : undefined;
 
-                        {item.received_date && (
-                            <p className="text-sm text-muted-foreground">
-                                {new Date(item.received_date).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                })}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        {/* Tag Button */}
-                        <Dialog open={showTagDialog && selectedItem?.id === item.id} onOpenChange={(open) => {
-                            if (!open) {
-                                setShowTagDialog(false);
-                                setSelectedItem(null);
-                                setNewTag("");
+        return (
+            <div key={item.id} className="mb-3">
+                {/* Tag Dialog - kept separate for functionality */}
+                <Dialog open={showTagDialog && selectedItem?.id === item.id} onOpenChange={(open) => {
+                    if (!open) {
+                        setShowTagDialog(false);
+                        setSelectedItem(null);
+                        setNewTag("");
+                    }
+                }}>
+                    <MailItemCard
+                        title={title}
+                        date={formattedDate}
+                        tag={item.tag}
+                        isArchived={item.deleted}
+                        onTag={() => {
+                            setSelectedItem(item);
+                            setShowTagDialog(true);
+                        }}
+                        onArchive={() => handleArchiveItem(item)}
+                        onForward={() => {
+                            if (onForward) {
+                                onForward(item);
+                            } else {
+                                handleForwardItem(item);
                             }
-                        }}>
-                            <DialogTrigger asChild>
+                        }}
+                        onOpen={() => onOpen(item)}
+                        onDownload={() => onDownload(item)}
+                        onRestore={item.deleted ? () => handleRestoreItem(item) : undefined}
+                        disabled={loading}
+                    />
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Update Subject</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="subject">Select or Create Subject</Label>
+                                <div className="space-y-2">
+                                    <Select
+                                        value={newTag}
+                                        onValueChange={(value) => {
+                                            setNewTag(value);
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an existing subject or type new one below" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableSubjects.map((subject) => (
+                                                <SelectItem key={subject} value={subject}>
+                                                    {subject}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <div className="text-xs text-muted-foreground">
+                                        Or type a new subject name:
+                                    </div>
+                                    <Input
+                                        id="subject"
+                                        value={newTag}
+                                        onChange={(e) => setNewTag(e.target.value)}
+                                        placeholder="Enter new subject..."
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && selectedItem && newTag.trim()) {
+                                                handleTagItem(selectedItem, newTag);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => selectedItem && handleTagItem(selectedItem, newTag)}
+                                    disabled={!newTag.trim() || loading}
+                                >
+                                    Update Subject
+                                </Button>
                                 <Button
                                     variant="outline"
-                                    size="sm"
                                     onClick={() => {
-                                        setSelectedItem(item);
-                                        setShowTagDialog(true);
+                                        setShowTagDialog(false);
+                                        setSelectedItem(null);
+                                        setNewTag("");
                                     }}
-                                    disabled={loading}
                                 >
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    <Tag className="h-4 w-4 mr-1" />
-                                    Tag
+                                    Cancel
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Update Subject</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="subject">Select or Create Subject</Label>
-                                        <div className="space-y-2">
-                                            <Select
-                                                value={newTag}
-                                                onValueChange={(value) => {
-                                                    setNewTag(value);
-                                                }}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select an existing subject or type new one below" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {availableSubjects.map((subject) => (
-                                                        <SelectItem key={subject} value={subject}>
-                                                            {subject}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <div className="text-xs text-muted-foreground">
-                                                Or type a new subject name:
-                                            </div>
-                                            <Input
-                                                id="subject"
-                                                value={newTag}
-                                                onChange={(e) => setNewTag(e.target.value)}
-                                                placeholder="Enter new subject..."
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && selectedItem && newTag.trim()) {
-                                                        handleTagItem(selectedItem, newTag);
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            onClick={() => selectedItem && handleTagItem(selectedItem, newTag)}
-                                            disabled={!newTag.trim() || loading}
-                                        >
-                                            Update Subject
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => {
-                                                setShowTagDialog(false);
-                                                setSelectedItem(null);
-                                                setNewTag("");
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-
-                        {/* Archive/Restore Button */}
-                        {item.deleted ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRestoreItem(item)}
-                                disabled={loading}
-                            >
-                                <ArchiveRestore className="h-4 w-4 mr-1" />
-                                Restore
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleArchiveItem(item)}
-                                disabled={loading}
-                            >
-                                <Archive className="h-4 w-4 mr-1" />
-                                Archive
-                            </Button>
-                        )}
-
-                        {/* Forward Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                if (onForward) {
-                                    onForward(item);
-                                } else {
-                                    handleForwardItem(item);
-                                }
-                            }}
-                        >
-                            <ArrowRight className="h-4 w-4 mr-1" />
-                            Forward
-                        </Button>
-
-                        {/* View Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onOpen(item)}
-                        >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Open
-                        </Button>
-
-                        {/* Download Button */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onDownload(item)}
-                        >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-6">
