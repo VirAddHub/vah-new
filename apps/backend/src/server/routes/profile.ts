@@ -332,10 +332,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             year: 'numeric'
         });
 
-        // Create PDF document with tighter margins for single page
+        // Create PDF document with wide margins for clean, airy layout
         const doc = new PDFDocument({
             size: 'A4',
-            margin: 30
+            margin: 60 // Wide margins for professional spacing
         });
 
         // Set response headers
@@ -345,8 +345,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // Pipe PDF to response
         doc.pipe(res);
 
-        // ===== BRAND HEADER (Top Center) =====
-        // Try to embed a real logo image; fall back to text if not available
+        // ===== LOGO/HEADER (Top Left or Center) =====
         const configuredLogoPath = process.env.VAH_LOGO_PATH;
         const defaultLogoPath = path.resolve(__dirname, '../../../../frontend/public/icons/icon-512.png');
         const alternativeLogoPath = path.resolve(__dirname, '../../../../frontend/public/icons/icon-192.png');
@@ -358,165 +357,180 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         try {
             if (fs.existsSync(logoPath)) {
-                // Draw on the right side with constrained width
-                const imgWidth = 100; // slightly smaller for right alignment
-                const pageWidth = (doc as any).page.width || 595.28; // pdfkit default A4 width in pt
-                const x = pageWidth - imgWidth - 30; // 30pt margin from right edge
-                doc.image(logoPath, x, 20, { width: imgWidth });
+                // Draw logo at top-left with constrained width
+                const imgWidth = 120;
+                doc.image(logoPath, 60, 60, { width: imgWidth });
                 drewImage = true;
-                console.log('[Certificate] Successfully drew logo image on right side');
+                console.log('[Certificate] Successfully drew logo image at top-left');
             } else if (fs.existsSync(alternativeLogoPath)) {
-                // Try alternative logo path
                 console.log('[Certificate] Trying alternative logo path:', alternativeLogoPath);
-                const imgWidth = 100;
-                const pageWidth = (doc as any).page.width || 595.28;
-                const x = pageWidth - imgWidth - 30; // 30pt margin from right edge
-                doc.image(alternativeLogoPath, x, 20, { width: imgWidth });
+                const imgWidth = 120;
+                doc.image(alternativeLogoPath, 60, 60, { width: imgWidth });
                 drewImage = true;
-                console.log('[Certificate] Successfully drew alternative logo image on right side');
+                console.log('[Certificate] Successfully drew alternative logo image at top-left');
             }
         } catch (error) {
             console.error('[Certificate] Error loading logo image:', error);
         }
 
         if (!drewImage) {
-            console.log('[Certificate] Falling back to text logo on right side');
+            console.log('[Certificate] Falling back to text logo');
             doc.fillColor('#214E34')
-                .fontSize(28)
+                .fontSize(32)
                 .font('Helvetica-Bold')
-                .text('VAH', 30, 20, { align: 'right' });
+                .text('VirtualAddressHub', 60, 70);
         }
 
-        // ===== MAIN HEADLINE =====
-        doc.moveDown(1.2);
+        // ===== LARGE TOP WHITESPACE =====
+        // Move down 70-80px from logo position for airy spacing
+        doc.y = drewImage ? 200 : 150; // Large top margin
+
+        // ===== TITLE (Left-aligned, Bold, 18-20px) =====
         doc.fillColor('#000000')
             .fontSize(20)
             .font('Helvetica-Bold')
-            .text('Letter of Certification', { align: 'center' });
+            .text('Letter of Certification', { align: 'left' });
 
-        // ===== DATE (Smaller, Right-aligned) =====
-        doc.moveDown(0.3);
-        doc.fillColor('#666666')
-            .fontSize(10)
-            .font('Helvetica')
-            .text(`Date: ${currentDate}`, { align: 'right' });
-
-        // ===== DIVIDER LINE =====
+        // ===== DATE (Directly under title, subtle 12-14px) =====
         doc.moveDown(0.5);
-        doc.strokeColor('#E5E7EB')
-            .lineWidth(1)
-            .moveTo(30, doc.y)
-            .lineTo(565, doc.y)
-            .stroke();
+        doc.fillColor('#666666')
+            .fontSize(13)
+            .font('Helvetica')
+            .text(`Date: ${currentDate}`, { align: 'left' });
+
+        // ===== GENEROUS SPACING BEFORE BODY =====
+        doc.moveDown(2.0); // 24-32px equivalent spacing
 
         // ===== SALUTATION =====
-        doc.moveDown(0.8);
         doc.fillColor('#000000')
-            .fontSize(11)
+            .fontSize(13)
             .font('Helvetica')
-            .text('To Whom It May Concern,');
+            .text('To Whom It May Concern,', { align: 'left' });
 
-        // ===== MAIN BODY =====
-        doc.moveDown(0.8);
+        // ===== MAIN BODY (12-13px, 1.5 line-height) =====
+        doc.moveDown(1.2); // 20-28px spacing before section
         doc.fillColor('#000000')
-            .fontSize(11)
+            .fontSize(13)
             .font('Helvetica')
             .text(
-                'This is to confirm that the following company is registered at:',
-                { paragraphGap: 6 }
+                'This letter confirms that the following company is registered at:',
+                { 
+                    align: 'left',
+                    lineGap: 6,
+                    paragraphGap: 8
+                }
             );
 
         // ===== REGISTERED ADDRESS BLOCK =====
-        doc.moveDown(0.6);
-        doc.fillColor('#214E34')
-            .fontSize(11)
+        doc.moveDown(1.5); // Generous spacing before section header
+
+        doc.fillColor('#000000')
+            .fontSize(15)
             .font('Helvetica-Bold')
-            .text('Registered Business Address:', 30, doc.y);
+            .text('Registered Business Address', { align: 'left' });
+
+        doc.moveDown(0.4);
+        doc.fillColor('#000000')
+            .fontSize(13)
+            .font('Helvetica')
+            .text('54-58 Tanner Street, 2nd Floor, London SE1 3PH, United Kingdom', { align: 'left' });
+
+        // ===== ACCOUNT DETAILS SECTION =====
+        doc.moveDown(1.8); // 40-50px spacing before signature block area
+
+        // Business name - use company_name as primary, fallback to individual name
+        const businessName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
+
+        doc.fillColor('#000000')
+            .fontSize(15)
+            .font('Helvetica-Bold')
+            .text('Account Holder', { align: 'left' });
 
         doc.moveDown(0.3);
         doc.fillColor('#000000')
-            .fontSize(11)
+            .fontSize(13)
             .font('Helvetica')
-            .text('54-58 Tanner Street, 2nd Floor', 30, doc.y)
-            .text('London SE1 3PH', 30, doc.y + 16)
-            .text('United Kingdom', 30, doc.y + 32);
+            .text(businessName, { align: 'left' });
 
-        // ===== ACCOUNT DETAILS SECTION =====
-        doc.moveDown(1.0);
-
-        // Company/Individual name
-        const displayName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
-
-        doc.fillColor('#000000')
-            .fontSize(11)
-            .font('Helvetica-Bold')
-            .text('Account Holder:', 30, doc.y);
-
-        doc.fillColor('#000000')
-            .fontSize(11)
-            .font('Helvetica')
-            .text(displayName, 30, doc.y + 4);
-
-        doc.moveDown(0.5);
+        doc.moveDown(1.2);
 
         // Contact details
         doc.fillColor('#000000')
-            .fontSize(11)
+            .fontSize(15)
             .font('Helvetica-Bold')
-            .text('Contact Name:', 30, doc.y);
-
-        doc.fillColor('#000000')
-            .fontSize(11)
-            .font('Helvetica')
-            .text(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'N/A', 30, doc.y + 4);
-
-        // ===== TERMS PARAGRAPH =====
-        doc.moveDown(1.0);
-
-        doc.fillColor('#000000')
-            .fontSize(11)
-            .font('Helvetica')
-            .text(
-                'Under the terms of a verified digital mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.',
-                { paragraphGap: 6 }
-            );
-
-        doc.text(
-            'Subject to ongoing compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company\'s Trading or Correspondence Address. This confirmation does not confer rights of physical occupation or tenancy.',
-            { paragraphGap: 8 }
-        );
-
-        // ===== CLOSING =====
-        doc.moveDown(1.0);
-        doc.fillColor('#000000')
-            .fontSize(11)
-            .font('Helvetica')
-            .text('Sincerely,', 30, doc.y);
+            .text('Contact Name', { align: 'left' });
 
         doc.moveDown(0.3);
         doc.fillColor('#000000')
-            .fontSize(11)
+            .fontSize(13)
+            .font('Helvetica')
+            .text(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team', { align: 'left' });
+
+        // ===== TERMS PARAGRAPH =====
+        doc.moveDown(2.0); // Large spacing before terms
+
+        doc.fillColor('#000000')
+            .fontSize(13)
+            .font('Helvetica')
+            .text(
+                'Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.',
+                { 
+                    align: 'left',
+                    lineGap: 6,
+                    paragraphGap: 12
+                }
+            );
+
+        doc.text(
+            'Subject to continued compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company\'s Trading or Correspondence Address. This certification does not grant any rights of physical occupation or tenancy.',
+            { 
+                align: 'left',
+                lineGap: 6,
+                paragraphGap: 12
+            }
+        );
+
+        // ===== CLOSING =====
+        doc.moveDown(2.0); // 40-50px spacing before signature
+        doc.fillColor('#000000')
+            .fontSize(13)
+            .font('Helvetica')
+            .text('Sincerely,', { align: 'left' });
+
+        doc.moveDown(0.5);
+        doc.fillColor('#000000')
+            .fontSize(13)
             .font('Helvetica-Bold')
-            .text('VirtualAddressHub Customer Support', 30, doc.y);
+            .text('VirtualAddressHub Customer Support', { align: 'left' });
 
         // ===== FOOTER =====
-        doc.moveDown(1.2);
+        // Calculate position at bottom of page with lots of whitespace
+        const pageHeight = (doc as any).page.height || 842; // A4 height in points
+        const footerStartY = pageHeight - 80; // Position footer 80pt from bottom (lots of whitespace above)
 
-        // Add subtle divider line above footer
+        // Ensure we don't overlap content - if current position is too low, move footer down
+        if (doc.y > footerStartY - 20) {
+            doc.y = footerStartY - 20; // Add extra space before footer
+        } else {
+            // Move to footer position with generous whitespace
+            doc.y = footerStartY;
+        }
+
+        // Add thin divider line above footer
         doc.strokeColor('#E5E7EB')
             .lineWidth(0.5)
-            .moveTo(30, doc.y)
-            .lineTo(565, doc.y)
+            .moveTo(60, doc.y)
+            .lineTo(535, doc.y) // 60pt margin on each side
             .stroke();
 
-        doc.moveDown(0.4);
+        doc.moveDown(1.0); // Generous spacing after divider
 
-        // Footer content with smaller, muted text
+        // Footer content with smaller, muted text (9-10px)
         doc.fillColor('#9CA3AF')
-            .fontSize(7)
+            .fontSize(10)
             .font('Helvetica')
-            .text('VirtualAddressHub Ltd · 54-58 Tanner Street, 2nd Floor, London SE1 3PH, UK', { align: 'center' })
-            .text('support@virtualaddresshub.co.uk  |  www.virtualaddresshub.co.uk', { align: 'center' })
+            .text('VirtualAddressHub Ltd · 54-58 Tanner Street, 2nd Floor, London SE1 3PH, United Kingdom', { align: 'center' })
+            .text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', { align: 'center' })
             .text('Registered in England · VAT No: [VAT_NUMBER]', { align: 'center' });
 
         // Finalize PDF
