@@ -548,7 +548,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#666666')
             .fontSize(10)
             .font('Helvetica')
-            .text('VirtualAddressHub Ltd · 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
+            .text('VirtualAddressHub Ltd · 2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
                 align: 'center',
                 lineGap: 4 // line-height 1.4 equivalent
             })
