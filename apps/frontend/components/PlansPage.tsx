@@ -97,12 +97,12 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 <div className="container mx-auto px-6 sm:px-8 lg:px-12">
                     <div className="mx-auto max-w-7xl">
                         {/* Header with billing toggle */}
-                        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8 md:mb-10">
                             <div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                                <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
                                     Simple, Transparent Pricing
-                                </h2>
-                                <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                                </h1>
+                                <p className="mx-auto mt-2 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
                                     One plan. Everything you need for a compliant, professional London presence— with same-day digital mail and full control from your dashboard.
                                 </p>
                             </div>
@@ -136,56 +136,56 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                         </div>
 
                         {/* Main content grid */}
-                        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <div className="mt-8 grid grid-cols-1 gap-8 lg:gap-10 lg:grid-cols-3">
                             {/* Main pricing card - 2 columns */}
                             <div className="lg:col-span-2">
-                                <div className="relative rounded-lg border border-border bg-card p-5 shadow-sm">
+                                <div className="relative rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm">
                                     {/* Plan header */}
-                                    <div className="mb-5 flex items-center justify-between">
+                                    <div className="mb-6 flex items-center justify-between">
                                         <div>
-                                            <p className="text-primary font-semibold">Virtual Mailbox</p>
-                                            <h3 className="text-base font-semibold mt-1">
+                                            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">Virtual Mailbox</p>
+                                            <h2 className="text-xl md:text-2xl font-semibold leading-snug mt-1 text-foreground">
                                                 London Business Address + Same-Day Digital Mail
-                                            </h3>
+                                            </h2>
                                         </div>
                                     </div>
 
                                     {/* Pricing */}
-                                    <div className="flex flex-wrap items-baseline gap-3">
-                                        <div className="leading-none">
-                                            <span className="text-4xl font-semibold text-primary">
+                                    <div className="mt-4 inline-flex flex-col gap-1 rounded-2xl border border-border/60 bg-background/60 px-4 py-3 shadow-sm">
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-4xl md:text-5xl font-semibold leading-none text-foreground">
                                                 £{(() => {
                                                     const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
-                                                    return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
+                                                    return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.98');
                                                 })()}
                                             </span>
-                                            <span className="ml-1 text-base text-primary">
+                                            <span className="text-base md:text-lg text-muted-foreground ml-1">
                                                 {isAnnual ? '/year' : '/month'}
                                             </span>
                                         </div>
                                         {isAnnual && (
-                                            <p className="text-sm text-primary mt-1">
+                                            <p className="text-sm text-muted-foreground mt-1">
                                                 ≈ £{(() => {
                                                     const plan = plans.find(p => p.interval === 'year');
                                                     return plan ? ((plan.price_pence / 100) / 12).toFixed(2) : '7.50';
                                                 })()}/month • 2 months free
                                             </p>
                                         )}
-                                        <p className="text-sm text-primary">Cancel anytime. No hidden fees.</p>
+                                        <p className="text-sm md:text-base text-muted-foreground mt-1">Cancel anytime. No hidden fees.</p>
                                     </div>
 
                                     {/* Separator */}
-                                    <div className="bg-border shrink-0 h-px w-full my-5"></div>
+                                    <div className="bg-border shrink-0 h-px w-full my-6 md:my-8"></div>
 
                                     {/* Features grid */}
                                     <div className="grid gap-8 md:grid-cols-2">
                                         {/* Included features */}
                                         <div>
-                                            <h4 className="mb-3 font-medium text-primary">Included</h4>
-                                            <ul className="space-y-3 text-sm text-foreground/90">
+                                            <h3 className="text-lg md:text-xl font-semibold tracking-tight text-foreground mb-3">Included</h3>
+                                            <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-muted-foreground">
                                                 {includedFeatures.map((feature, index) => (
                                                     <li key={index} className="flex items-start gap-3">
-                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                                                             <Check className="h-3.5 w-3.5 text-primary" />
                                                         </span>
                                                         <span>{feature}</span>
@@ -196,11 +196,11 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
 
                                         {/* Your Mail, Your Rules */}
                                         <div>
-                                            <h4 className="mb-3 font-medium text-primary">Your Mail, Your Rules</h4>
-                                            <ul className="space-y-3 text-sm text-foreground/90">
+                                            <h3 className="text-lg md:text-xl font-semibold tracking-tight text-foreground mb-3">Your Mail, Your Rules</h3>
+                                            <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-muted-foreground">
                                                 {mailRulesFeatures.map((feature, index) => (
                                                     <li key={index} className="flex items-start gap-3">
-                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                                                             <Check className="h-3.5 w-3.5 text-primary" />
                                                         </span>
                                                         <span>{feature}</span>
@@ -209,8 +209,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                             </ul>
 
                                             {/* International forwarding note */}
-                                            <div className="mt-4 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground flex items-start gap-2">
-                                                <Info className="h-4 w-4 mt-0.5" />
+                                            <div className="mt-4 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs md:text-sm text-muted-foreground flex items-start gap-2">
+                                                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                 <p>
                                                     International forwarding is available on request and billed at carrier rates (postage) with a small handling fee shown at checkout — charged to your subscription, not before dispatch.
                                                 </p>
@@ -278,12 +278,12 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
 
                             {/* Sidebar - At a glance */}
                             <aside>
-                                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-                                    <h4 className="text-xl font-semibold text-primary">At a glance</h4>
-                                    <ul className="mt-4 space-y-3 text-sm text-foreground/90">
+                                <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm">
+                                    <h3 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">At a glance</h3>
+                                    <ul className="mt-4 space-y-2 md:space-y-3 text-sm md:text-base text-muted-foreground">
                                         {atAGlanceFeatures.map((feature, index) => (
                                             <li key={index} className="flex items-start gap-3">
-                                                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                                                     <Check className="h-3.5 w-3.5 text-primary" />
                                                 </span>
                                                 <span>{feature}</span>

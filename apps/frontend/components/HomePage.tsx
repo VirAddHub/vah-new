@@ -85,7 +85,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto max-w-screen-xl pt-20 pb-12">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
-                        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+                        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl text-primary">
                             Professional London Business Address Service.
                             <span className="block text-foreground">
                                 Compliant. Private. Seamless.
@@ -123,7 +123,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Desktop: Horizontal Layout - Text First */}
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
-                            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+                            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl text-primary">
                                 Professional London Business Address Service.
                                 <span className="block text-foreground">
                                     Compliant. Private. Seamless.
