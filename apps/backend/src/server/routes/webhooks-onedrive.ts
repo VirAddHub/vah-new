@@ -42,34 +42,34 @@ const isoToMs = (iso: string) => {
   return isNaN(date.getTime()) ? null : date.getTime();
 };
 
-// Auto-detect tag from filename/sender/subject
+// Auto-detect tag from filename/sender/subject (returns lowercase slug)
 const detectTag = (filename: string, sender?: string, subject?: string): string => {
   const text = `${filename} ${sender || ''} ${subject || ''}`.toUpperCase();
 
-  // Check for HMRC
-  if (text.includes('HMRC') || text.includes('HM REVENUE') || text.includes('TAX')) {
-    return 'HMRC';
+  // Check for HMRC (most specific first)
+  if (/(HMRC|HM REVENUE|HM-REVENUE|TAX|VAT|CORPORATION TAX|CT|SELF-ASSESSMENT|SA|PAYE|INCOME TAX|CORPORATION)/.test(text)) {
+    return 'hmrc';
   }
 
   // Check for Companies House
-  if (text.includes('COMPANIES HOUSE') || text.includes('COMPANIESHOUSE')) {
-    return 'COMPANIES HOUSE';
+  if (/(COMPANIES HOUSE|COMPANIESHOUSE|COMPANIES-HOUSE|CH|CO-HOUSE)/.test(text)) {
+    return 'companies_house';
   }
 
-  // Check for other common senders
-  if (text.includes('BANK') || text.includes('BARCLAYS') || text.includes('LLOYDS') || text.includes('HSBC')) {
-    return 'Bank';
+  // Check for banks
+  if (/(BANK|BARCLAYS|LLOYDS|HSBC|NATWEST|MONZO|STARLING|HALIFAX|SANTANDER|NATIONWIDE|FIRST-DIRECT|TSB|RBS|ROYAL BANK)/.test(text)) {
+    return 'bank';
   }
 
-  if (text.includes('INSURANCE')) {
-    return 'Insurance';
+  if (/(INSURANCE|POLICY|PREMIUM|COVER)/.test(text)) {
+    return 'insurance';
   }
 
-  if (text.includes('UTILITY') || text.includes('ELECTRIC') || text.includes('GAS') || text.includes('WATER')) {
-    return 'Utilities';
+  if (/(UTILITY|ELECTRIC|GAS|WATER|BRITISH GAS|EDF|E-ON|NPOWER|SCOTTISH POWER)/.test(text)) {
+    return 'utilities';
   }
 
-  return 'General';
+  return 'other';
 };
 
 // Parse date from UK or ISO format to ISO string
@@ -142,19 +142,52 @@ const extractFromFilename = (name: string): FilenameData => {
   };
 };
 
-// Normalize tag from raw filename token
+// Normalize tag from raw filename token to lowercase slug
 const normaliseTag = (tagRaw?: string | null): string => {
   const t = (tagRaw || "").toLowerCase();
 
-  if (t.includes("hmrc")) return "HMRC";
-  if (t.includes("companies")) return "COMPANIES HOUSE";
-  if (/(bank|barclays|hsbc|lloyds|natwest|monzo|starling)/.test(t)) return "BANK";
-  if (/(insur|policy)/.test(t)) return "INSURANCE";
-  if (/(util|gas|electric|water|octopus|ovo|thames)/.test(t)) return "UTILITIES";
-  if (!t) return "GENERAL";
+  // HMRC detection (most specific first)
+  if (/(hmrc|hm-revenue|hm-revenue-and-customs|tax|vat|corporation-tax|ct|self-assessment|sa|paye|income-tax|corporation|corporationtax)/.test(t)) {
+    return "hmrc";
+  }
 
-  // Convert kebab-case to proper case
-  return t.replace(/-/g, ' ').toUpperCase();
+  // Companies House detection
+  if (/(companies|companieshouse|companies-house|ch|co-house|cohouse)/.test(t)) {
+    return "companies_house";
+  }
+
+  // Bank detection
+  if (/(bank|barclays|hsbc|lloyds|natwest|monzo|starling|halifax|santander|nationwide|first-direct|tsb|rbs|royal-bank)/.test(t)) {
+    return "bank";
+  }
+
+  // Insurance detection
+  if (/(insur|policy|premium|cover)/.test(t)) {
+    return "insurance";
+  }
+
+  // Utilities detection
+  if (/(util|gas|electric|water|octopus|ovo|thames|british-gas|edf|e-on|npower|scottish-power|utility)/.test(t)) {
+    return "utilities";
+  }
+
+  if (!t) return "other";
+
+  // Convert to slug (kebab-case, lowercase)
+  return t.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || "other";
+};
+
+// Convert tag slug to human-readable title for subject
+const tagToTitle = (tagSlug: string): string => {
+  const titleMap: Record<string, string> = {
+    hmrc: "HMRC",
+    companies_house: "Companies House",
+    bank: "Bank Statement",
+    insurance: "Insurance",
+    utilities: "Utilities",
+    other: "General Mail",
+  };
+  return titleMap[tagSlug] || tagSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 // ---- Per-route raw capture ----
@@ -273,7 +306,12 @@ router.post('/', async (req: any, res) => {
 
     // Determine final values with priority: webhook payload > filename extraction > fallback
     const finalUserId = userId || filenameData?.userId || null;
-    const tag = providedTag || filenameData?.tag || detectTag(cleanName, sender, subject);
+    // Get raw tag (may be uppercase or mixed case)
+    const rawTag = providedTag || filenameData?.tag || detectTag(cleanName, sender, subject);
+    // Normalize to lowercase slug
+    const tagSlug = normaliseTag(rawTag);
+    // Generate human-readable subject from tag
+    const initialSubject = tagToTitle(tagSlug);
     const receivedDate = filenameData?.dateIso || null;
 
     console.log('[OneDrive Webhook] Processing details:', {
@@ -284,7 +322,9 @@ router.post('/', async (req: any, res) => {
       originalPath: path,
       cleanPath,
       providedTag,
-      finalTag: tag,
+      rawTag,
+      finalTag: tagSlug,
+      initialSubject,
       receivedDate,
       sender,
       subject,
@@ -329,6 +369,9 @@ router.post('/', async (req: any, res) => {
             // Create a generic filename since we don't have the real one
             const genericName = `onedrive_file_${Date.now()}.pdf`;
             const idempotencyKey = `onedrive_${itemId || `placeholder_${Date.now()}`}`;
+            // Use default tag and subject
+            const defaultTagSlug = 'other';
+            const defaultSubject = tagToTitle(defaultTagSlug);
 
             // Insert mail item
             const result = await pool.query(
@@ -355,14 +398,14 @@ router.post('/', async (req: any, res) => {
               [
                 idempotencyKey,
                 extractedUserId,
-                genericName,
+                defaultSubject,
                 'OneDrive Scan',
                 new Date(receivedAtMs).toISOString().split('T')[0],
                 webUrl,
                 size,
                 true,
                 'received',
-                tag,
+                defaultTagSlug,
                 `OneDrive file (extracted from URL: ${webUrl})`,
                 receivedAtMs,
                 now,
@@ -503,14 +546,14 @@ router.post('/', async (req: any, res) => {
       [
         idempotencyKey,           // $1: idempotency_key
         finalUserId,              // $2: user_id
-        cleanName,                // $3: subject (use filename as subject)
+        initialSubject,           // $3: subject (human-readable title from tag)
         'OneDrive Scan',          // $4: sender_name
         new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date (YYYY-MM-DD)
         webUrl,                   // $6: scan_file_url
         size,                     // $7: file_size
         true,                     // $8: scanned (true for OneDrive files)
         'received',               // $9: status
-        tag,                      // $10: tag (provided, auto-detected, or 'General')
+        tagSlug,                  // $10: tag (lowercase slug: hmrc, companies_house, bank, etc.)
         `OneDrive path: ${cleanPath}`, // $11: notes
         receivedAtMs,             // $12: received_at_ms
         now,                      // $13: created_at

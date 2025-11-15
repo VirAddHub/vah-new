@@ -3,10 +3,14 @@ import crypto from 'node:crypto';
 import { getPool } from '../../server/db';
 import { LegalTransitions } from './state';
 
-const OFFICIAL_TAGS = new Set(['HMRC', 'COMPANIES HOUSE', 'COMPANIES_HOUSE']);
+// Free forwarding tags (lowercase slugs)
+const FREE_FORWARD_TAGS = new Set(['hmrc', 'companies_house']);
 
 function isOfficialMail(tag: string | null | undefined): boolean {
-    return tag ? OFFICIAL_TAGS.has(tag.toUpperCase()) : false;
+    if (!tag) return false;
+    // Normalize to lowercase for comparison
+    const normalized = tag.toLowerCase().replace(/\s+/g, '_');
+    return FREE_FORWARD_TAGS.has(normalized);
 }
 
 export interface CreateForwardingInput {

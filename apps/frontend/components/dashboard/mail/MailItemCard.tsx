@@ -47,15 +47,17 @@ export function MailItemCard({
           )}
         </div>
 
-        {/* Right: Tag Badge (only if tag exists) */}
-        {tag && (
-          <Badge
-            className="bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-50 shrink-0"
-            variant="outline"
-          >
-            {tag}
-          </Badge>
-        )}
+        {/* Right: Tag Badge */}
+        <Badge
+          className={`shrink-0 ${
+            tag && tag !== "Untagged"
+              ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-50"
+              : "bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+          }`}
+          variant="outline"
+        >
+          {tag || "Untagged"}
+        </Badge>
       </div>
 
       {/* Actions Row */}

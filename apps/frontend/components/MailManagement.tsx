@@ -79,9 +79,9 @@ export function MailManagement({
             items = items.filter(item => item.deleted);
         } else if (activeTab === "inbox") {
             items = items.filter(item => !item.deleted);
-        } else if (activeTab.startsWith("subject:")) {
-            const subject = activeTab.replace("subject:", "");
-            items = items.filter(item => item.subject === subject && !item.deleted);
+        } else if (activeTab.startsWith("tag:")) {
+            const tag = activeTab.replace("tag:", "");
+            items = items.filter(item => item.tag === tag && !item.deleted);
         }
 
         // Apply search filter
@@ -98,20 +98,36 @@ export function MailManagement({
         return items;
     }, [mailItems, activeTab, searchQuery]);
 
-    // Get unique subjects for tag tabs
-    const availableSubjects = useMemo(() => {
-        const subjects = new Set<string>();
+    // Tag mapping: slug -> display label
+    const tagMeta: Record<string, { label: string; color: string }> = {
+        hmrc: { label: "HMRC", color: "green" },
+        companies_house: { label: "Companies House", color: "green" },
+        bank: { label: "Bank", color: "amber" },
+        insurance: { label: "Insurance", color: "blue" },
+        utilities: { label: "Utilities", color: "purple" },
+        other: { label: "Other", color: "slate" },
+    };
+
+    // Get unique tags for tag tabs
+    const availableTags = useMemo(() => {
+        const tags = new Set<string>();
         mailItems.forEach(item => {
-            if (item.subject && !item.deleted) {
-                subjects.add(item.subject);
+            if (item.tag && !item.deleted) {
+                tags.add(item.tag);
             }
         });
-        return Array.from(subjects).sort();
+        return Array.from(tags).sort();
     }, [mailItems]);
 
-    // Update mail item subject
-    const handleTagItem = useCallback(async (item: MailItem, subject: string) => {
-        if (!subject.trim()) return;
+    // Get tag display label
+    const getTagLabel = useCallback((tag: string | null | undefined): string => {
+        if (!tag) return "Untagged";
+        return tagMeta[tag]?.label || tag;
+    }, []);
+
+    // Update mail item tag
+    const handleTagItem = useCallback(async (item: MailItem, tag: string) => {
+        if (!tag.trim()) return;
 
         setLoading(true);
         try {
@@ -122,36 +138,36 @@ export function MailManagement({
             };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
-                method: 'PATCH',
+            const response = await fetch(`${API_BASE}/api/mail-items/${item.id}/tag`, {
+                method: 'POST',
                 headers,
-                body: JSON.stringify({ subject: subject.trim() })
+                body: JSON.stringify({ tag: tag.trim() })
             });
 
             if (response.ok) {
                 toast({
-                    title: "Subject Updated",
-                    description: `Mail item subject updated to "${subject}"`,
+                    title: "Tag Updated",
+                    description: `Mail item tagged as "${getTagLabel(tag.trim())}"`,
                     durationMs: 3000,
                 });
                 onRefresh();
                 setShowTagDialog(false);
                 setNewTag("");
             } else {
-                throw new Error('Failed to update subject');
+                throw new Error('Failed to update tag');
             }
         } catch (error) {
-            console.error('Error updating subject:', error);
+            console.error('Error updating tag:', error);
             toast({
                 title: "Error",
-                description: "Failed to update subject. Please try again.",
+                description: "Failed to update tag. Please try again.",
                 variant: "destructive",
                 durationMs: 5000,
             });
         } finally {
             setLoading(false);
         }
-    }, [onRefresh, toast]);
+    }, [onRefresh, toast, getTagLabel]);
 
     // Archive a mail item
     const handleArchiveItem = useCallback(async (item: MailItem) => {
@@ -276,8 +292,8 @@ export function MailManagement({
     }, [onRefresh, toast]);
 
     const renderMailItem = (item: MailItem) => {
-        // Determine title: use subject, sender name, or tag, or fallback
-        const title = item.subject || item.sender_name || item.tag || 'Inbox Item';
+        // Determine title: use subject, sender name, or fallback (NOT tag)
+        const title = item.subject || item.sender_name || 'Inbox item';
         
         // Format date
         const formattedDate = item.received_date
@@ -301,7 +317,7 @@ export function MailManagement({
                     <MailItemCard
                         title={title}
                         date={formattedDate}
-                        tag={item.tag}
+                        tag={getTagLabel(item.tag)}
                         isArchived={item.deleted}
                         onTag={() => {
                             setSelectedItem(item);
@@ -322,11 +338,11 @@ export function MailManagement({
                     />
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Update Subject</DialogTitle>
+                            <DialogTitle>Update Tag</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
                             <div>
-                                <Label htmlFor="subject">Select or Create Subject</Label>
+                                <Label htmlFor="tag">Select or Create Tag</Label>
                                 <div className="space-y-2">
                                     <Select
                                         value={newTag}
@@ -335,24 +351,29 @@ export function MailManagement({
                                         }}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select an existing subject or type new one below" />
+                                            <SelectValue placeholder="Select an existing tag or type new one below" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {availableSubjects.map((subject) => (
-                                                <SelectItem key={subject} value={subject}>
-                                                    {subject}
+                                            {Object.entries(tagMeta).map(([slug, meta]) => (
+                                                <SelectItem key={slug} value={slug}>
+                                                    {meta.label}
+                                                </SelectItem>
+                                            ))}
+                                            {availableTags.filter(tag => !tagMeta[tag]).map((tag) => (
+                                                <SelectItem key={tag} value={tag}>
+                                                    {getTagLabel(tag)}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                     <div className="text-xs text-muted-foreground">
-                                        Or type a new subject name:
+                                        Or type a new tag slug (e.g., "hmrc", "companies_house", "bank"):
                                     </div>
                                     <Input
-                                        id="subject"
+                                        id="tag"
                                         value={newTag}
                                         onChange={(e) => setNewTag(e.target.value)}
-                                        placeholder="Enter new subject..."
+                                        placeholder="Enter tag slug..."
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && selectedItem && newTag.trim()) {
                                                 handleTagItem(selectedItem, newTag);
@@ -366,7 +387,7 @@ export function MailManagement({
                                     onClick={() => selectedItem && handleTagItem(selectedItem, newTag)}
                                     disabled={!newTag.trim() || loading}
                                 >
-                                    Update Subject
+                                    Update Tag
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -417,11 +438,11 @@ export function MailManagement({
                         Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger 
-                        value="subjects" 
+                        value="tags" 
                         className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Tag className="h-4 w-4" />
-                        Tags ({availableSubjects.length})
+                        Tags ({availableTags.length})
                     </TabsTrigger>
                 </TabsList>
 
@@ -455,30 +476,30 @@ export function MailManagement({
                     )}
                 </TabsContent>
 
-                {/* Subjects Tab */}
-                <TabsContent value="subjects" className="mt-6 space-y-6">
-                    {availableSubjects.length === 0 ? (
+                {/* Tags Tab */}
+                <TabsContent value="tags" className="mt-6 space-y-6">
+                    {availableTags.length === 0 ? (
                         <div className="py-12 text-center">
                             <Tag className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No subjects yet</h3>
+                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No tags yet</h3>
                             <p className="text-sm text-neutral-500">
-                                Add subjects to your mail items to organize them better.
+                                Add tags to your mail items to organize them better.
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {availableSubjects.map(subject => (
-                                <div key={subject}>
+                            {availableTags.map(tag => (
+                                <div key={tag}>
                                     <h3 className="text-base font-semibold text-neutral-800 mb-4 flex items-center gap-2">
                                         <Tag className="h-4 w-4 text-amber-600" />
-                                        {subject}
+                                        {getTagLabel(tag)}
                                         <Badge variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700">
-                                            {mailItems.filter(item => item.subject === subject && !item.deleted).length}
+                                            {mailItems.filter(item => item.tag === tag && !item.deleted).length}
                                         </Badge>
                                     </h3>
                                     <div className="space-y-3">
                                         {mailItems
-                                            .filter(item => item.subject === subject && !item.deleted)
+                                            .filter(item => item.tag === tag && !item.deleted)
                                             .map(renderMailItem)
                                         }
                                     </div>
