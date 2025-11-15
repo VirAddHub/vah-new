@@ -95,7 +95,7 @@ export default function ProfilePage() {
                         disabled={kycStatus === 'verified'}
                     />
                     {kycStatus === 'verified' && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                             Name cannot be changed after KYC verification
                         </p>
                     )}
@@ -165,16 +165,16 @@ export default function ProfilePage() {
                             />
                         </label>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                         This address will be used automatically when you request mail forwarding.
                     </p>
                 </div>
                 <label className="inline-flex items-center gap-2">
                     <input type="checkbox" checked={form.marketingOptIn}
                         onChange={e => setForm({ ...form, marketingOptIn: e.target.checked })} />
-                    <span>Marketing opt-in</span>
+                    <span className="text-foreground">Marketing opt-in</span>
                 </label>
-                <button className="rounded-2xl px-4 py-2 bg-black text-white">Save</button>
+                <button className="rounded-2xl px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90">Save</button>
                 {msg && <p className="text-sm">{msg}</p>}
             </form>
         </main>

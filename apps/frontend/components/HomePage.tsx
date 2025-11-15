@@ -87,11 +87,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="lg:hidden">
                         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
                             Professional London Business Address Service.
-                            <span className="block text-gray-900">
+                            <span className="block text-foreground">
                                 Compliant. Private. Seamless.
                             </span>
                         </h1>
-                        <p className="mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg">
+                        <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
                             One London address for every official use.
                             Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
@@ -125,11 +125,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="lg:col-span-7">
                             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
                                 Professional London Business Address Service.
-                                <span className="block text-gray-900">
+                                <span className="block text-foreground">
                                     Compliant. Private. Seamless.
                                 </span>
                             </h1>
-                            <p className="mt-3 max-w-2xl text-balance text-base text-neutral-600 sm:text-lg lg:text-xl">
+                            <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>
@@ -177,7 +177,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <h2 className="mt-4 text-2xl font-semibold sm:text-3xl tracking-tight">
                             Simple, All-Inclusive Pricing
                         </h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base leading-snug">
+                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base leading-snug">
                             No hidden fees. Cancel anytime.
                         </p>
                     </div>
@@ -221,7 +221,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </Label>
                                     {/* Save badge */}
                                     <div className="absolute -top-2 -right-2 z-20">
-                                        <Badge className="bg-primary text-white text-xs px-2 py-1 whitespace-nowrap shadow-md">
+                                        <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1 whitespace-nowrap shadow-md">
                                             Save {monthlySavingsPct}%
                                         </Badge>
                                     </div>
@@ -249,17 +249,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="tracking-tight text-[28px] sm:text-[32px] font-semibold text-black">
+                                        <span className="tracking-tight text-[28px] sm:text-[32px] font-semibold text-foreground">
                                             {priceLabel}
                                         </span>
-                                        <span className="text-body sm:text-body-lg text-neutral-500">
+                                        <span className="text-body sm:text-body-lg text-muted-foreground">
                                             {priceSuffix}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-black mb-1 leading-snug">
+                                    <p className="text-sm text-foreground mb-1 leading-snug">
                                         {subCopy}
                                     </p>
-                                    <p className="text-sm text-black font-medium leading-snug">
+                                    <p className="text-sm text-foreground font-medium leading-snug">
                                         {fineCopy}
                                     </p>
                                 </div>
@@ -275,10 +275,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         "Cancel Anytime"
                                     ].map((feature, index) => (
                                         <div key={index} className="flex items-start gap-2">
-                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center mt-0.5">
+                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center mt-0.5">
                                                 <svg
                                                     viewBox="0 0 24 24"
-                                                    className="h-2.5 w-2.5 text-gray-600"
+                                                    className="h-2.5 w-2.5 text-primary"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     strokeWidth="2"
@@ -286,7 +286,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                                     <path d="M20 6L9 17l-5-5" />
                                                 </svg>
                                             </div>
-                                            <span className="text-xs text-black leading-relaxed sm:leading-snug">
+                                            <span className="text-xs text-foreground leading-relaxed sm:leading-snug">
                                                 {feature}
                                             </span>
                                         </div>
@@ -302,7 +302,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
-                                <p className="mt-4 text-xs text-neutral-600">
+                                <p className="mt-4 text-xs text-muted-foreground">
                                     HMRC & Companies House mail forwarding is free in the UK. Other letters can be forwarded for £2 per item (covering postage & handling).
                                 </p>
                             </div>

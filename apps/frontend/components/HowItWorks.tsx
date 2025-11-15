@@ -40,7 +40,7 @@ export default function HowItWorks() {
                     <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
                         How it works — clear, compliant, no surprises
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
                         Verification first. Address issued next. Then professional mail handling.
                     </p>
                 </header>
@@ -61,8 +61,8 @@ export default function HowItWorks() {
                                     <h3 className="text-base font-semibold mb-3">{s.title}</h3>
                                     <ul className="space-y-2">
                                         {s.points.map((p) => (
-                                            <li key={p} className="flex gap-2 text-sm text-neutral-600">
-                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
+                                            <li key={p} className="flex gap-2 text-sm text-muted-foreground">
+                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                                                 <span className="leading-relaxed">{p}</span>
                                             </li>
                                         ))}
@@ -74,7 +74,7 @@ export default function HowItWorks() {
                 </div>
 
                 {/* soft footer note */}
-                <p className="mt-8 text-xs text-neutral-500">
+                <p className="mt-8 text-xs text-muted-foreground">
                     Transparent pricing: one plan at £9.99/month. HMRC & Companies House forwarding free on request.
                 </p>
             </div>

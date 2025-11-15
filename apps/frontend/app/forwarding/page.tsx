@@ -162,12 +162,12 @@ export default function ForwardingPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'Requested': return 'bg-yellow-100 text-yellow-800';
-            case 'Reviewed': return 'bg-blue-100 text-blue-800';
-            case 'Processing': return 'bg-purple-100 text-purple-800';
-            case 'Dispatched': return 'bg-orange-100 text-orange-800';
-            case 'Delivered': return 'bg-green-100 text-green-800';
-            case 'Cancelled': return 'bg-red-100 text-red-800';
+            case 'Requested': return 'bg-warning/10 text-warning-foreground';
+            case 'Reviewed': return 'bg-primary/10 text-primary-foreground';
+            case 'Processing': return 'bg-primary/10 text-primary-foreground';
+            case 'Dispatched': return 'bg-warning/10 text-warning-foreground';
+            case 'Delivered': return 'bg-success/10 text-success-foreground';
+            case 'Cancelled': return 'bg-destructive/10 text-destructive-foreground';
             default: return 'bg-muted text-muted-foreground';
         }
     };

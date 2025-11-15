@@ -6,13 +6,13 @@ export default function ComplianceBanner() {
     };
 
     return (
-        <section className="mx-auto my-12 max-w-5xl rounded-2xl border border-neutral-200 bg-neutral-50 px-6 py-8 shadow-sm">
+        <section className="mx-auto my-12 max-w-5xl rounded-2xl border border-border bg-muted/30 px-6 py-8 shadow-sm">
             <div className="grid items-center gap-6 sm:grid-cols-2">
                 <div>
-                    <h2 className="text-2xl font-semibold">
+                    <h2 className="text-2xl font-semibold text-foreground">
                         ⚖️ Is Your Business Address HMRC-Compliant?
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-neutral-600 sm:text-base">
+                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
                         Most founders don't realise their current virtual office can fail new Companies House rules. Take the free 3-minute check and get instant recommendations.
                     </p>
                 </div>
@@ -23,7 +23,7 @@ export default function ComplianceBanner() {
                     >
                         Take the Free Quiz
                     </button>
-                    <p className="mt-2 text-xs text-neutral-500">Quick, free, no obligation.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Quick, free, no obligation.</p>
                 </div>
             </div>
         </section>

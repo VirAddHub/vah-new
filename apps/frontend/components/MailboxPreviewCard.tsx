@@ -12,34 +12,34 @@ export function MailboxPreviewCard({
 }: MailboxPreviewCardProps) {
     return (
         <div className="relative">
-            <div className="shadow-neutral-900/10 bg-white border-neutral-200 border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative shadow-2xl backdrop-blur-xl">
+            <div className="shadow-neutral-900/10 bg-card border-border border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative shadow-2xl backdrop-blur-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-neutral-200 mb-4">
+                <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                data-lucide="mail" className="lucide lucide-mail w-5 h-5 text-emerald-600">
+                                data-lucide="mail" className="lucide lucide-mail w-5 h-5 text-primary">
                                 <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
                                 <rect x="2" y="4" width="20" height="16" rx="2"></rect>
                             </svg>
                         </div>
                         <div>
-                            <p className="font-semibold text-sm text-neutral-900">Your Mail Dashboard</p>
-                            <p className="text-xs text-neutral-500">Real-time updates</p>
+                            <p className="font-semibold text-sm text-foreground">Your Mail Dashboard</p>
+                            <p className="text-xs text-muted-foreground">Real-time updates</p>
                         </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full">3 New</span>
+                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">3 New</span>
                 </div>
 
                 {/* Mail Items */}
                 <div className="space-y-2.5 mb-4">
                     <div
-                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
-                        <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        className="flex items-center gap-3 p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-destructive/10 rounded-lg flex items-center justify-center flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                data-lucide="file-text" className="lucide lucide-file-text w-4 h-4 text-red-600">
+                                data-lucide="file-text" className="lucide lucide-file-text w-4 h-4 text-destructive">
                                 <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
                                 <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
                                 <path d="M10 9H8"></path>
@@ -48,18 +48,18 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-neutral-900 truncate">HMRC</p>
-                            <p className="text-xs text-neutral-500 truncate">VAT Return Notice</p>
+                            <p className="font-medium text-sm text-foreground truncate">HMRC</p>
+                            <p className="text-xs text-muted-foreground truncate">VAT Return Notice</p>
                         </div>
                         <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-md flex-shrink-0">Free Forward</span>
                     </div>
 
                     <div
-                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
-                        <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        className="flex items-center gap-3 p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                data-lucide="building-2" className="lucide lucide-building-2 w-4 h-4 text-blue-600">
+                                data-lucide="building-2" className="lucide lucide-building-2 w-4 h-4 text-primary">
                                 <path d="M10 12h4"></path>
                                 <path d="M10 8h4"></path>
                                 <path d="M14 21v-3a2 2 0 0 0-4 0v3"></path>
@@ -68,18 +68,18 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-neutral-900 truncate">Companies House</p>
-                            <p className="text-xs text-neutral-500 truncate">Annual Confirmation</p>
+                            <p className="font-medium text-sm text-foreground truncate">Companies House</p>
+                            <p className="text-xs text-muted-foreground truncate">Annual Confirmation</p>
                         </div>
-                        <span className="px-2 py-1 bg-neutral-200 text-neutral-700 text-xs font-medium rounded-md flex-shrink-0">Scanned</span>
+                        <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md flex-shrink-0">Scanned</span>
                     </div>
 
                     <div
-                        className="flex items-center gap-3 p-3 bg-neutral-50 hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer group">
-                        <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        className="flex items-center gap-3 p-3 bg-muted/50 hover:bg-muted rounded-xl transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                data-lucide="landmark" className="lucide lucide-landmark w-4 h-4 text-purple-600">
+                                data-lucide="landmark" className="lucide lucide-landmark w-4 h-4 text-primary">
                                 <path d="M10 18v-7"></path>
                                 <path
                                     d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z">
@@ -91,16 +91,16 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-neutral-900 truncate">Barclays Bank</p>
-                            <p className="text-xs text-neutral-500 truncate">Account Statement</p>
+                            <p className="font-medium text-sm text-foreground truncate">Barclays Bank</p>
+                            <p className="text-xs text-muted-foreground truncate">Account Statement</p>
                         </div>
-                        <span className="px-2 py-1 bg-neutral-200 text-neutral-700 text-xs font-medium rounded-md flex-shrink-0">Today</span>
+                        <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md flex-shrink-0">Today</span>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             data-lucide="clock" className="lucide lucide-clock w-3.5 h-3.5">
@@ -109,7 +109,7 @@ export function MailboxPreviewCard({
                         </svg>
                         <span>Scanned today</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             data-lucide="shield" className="lucide lucide-shield w-3.5 h-3.5">

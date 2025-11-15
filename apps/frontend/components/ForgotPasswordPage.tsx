@@ -138,20 +138,20 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   const renderEmailStep = () => (
     <>
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <VAHLogo size="lg" />
         </div>
-        <h1 className="text-3xl font-bold mb-2">Reset Your Password</h1>
-        <p className="text-muted-foreground text-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Reset Your Password</h1>
+        <p className="text-muted-foreground text-base sm:text-lg">
           Enter your email address and we'll send you instructions to reset your password
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSendResetLink} className="space-y-6">
+      <form onSubmit={handleSendResetLink} className="space-y-4 sm:space-y-6">
         <div>
-          <Label htmlFor="email" className="text-base font-medium">
+          <Label htmlFor="email" className="text-sm sm:text-base font-medium">
             Email Address
           </Label>
           <div className="mt-2 relative">
@@ -161,18 +161,18 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="pl-12 h-12 text-base"
+              className="pl-12 h-11 sm:h-12 text-base"
               disabled={loading}
               autoComplete="email"
               autoFocus
             />
-            <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Mail className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
           </div>
         </div>
 
         <Button
           type="submit"
-          className="w-full h-12 text-base font-medium"
+          className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
           disabled={loading || !email.trim()}
         >
           {loading ? (
@@ -187,8 +187,8 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       </form>
 
       {/* Additional Info */}
-      <div className="mt-8 space-y-4 text-center">
-        <div className="text-sm text-muted-foreground">
+      <div className="mt-6 sm:mt-8 space-y-4 text-center">
+        <div className="text-xs sm:text-sm text-muted-foreground">
           <p>Don't have an account?
             <button
               onClick={() => onNavigate('signup')}
@@ -200,13 +200,13 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         </div>
 
         <div className="pt-4 border-t border-border">
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3">
             Having trouble? Our support team is here to help.
           </p>
           <Button
             variant="outline"
             onClick={() => onNavigate('contact')}
-            className="text-sm"
+            className="text-xs sm:text-sm h-10 sm:h-11"
           >
             Contact Support
           </Button>
@@ -218,20 +218,20 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   const renderSentStep = () => (
     <>
       {/* Success Icon */}
-      <div className="text-center mb-8">
-        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle className="h-10 w-10 text-green-600" />
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+          <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
         </div>
-        <h1 className="text-3xl font-bold mb-2">Check Your Email</h1>
-        <p className="text-muted-foreground text-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Check Your Email</h1>
+        <p className="text-muted-foreground text-base sm:text-lg">
           We've sent password reset instructions to your email address
         </p>
       </div>
 
       {/* Instructions */}
-      <Card className="p-6 bg-muted/30 border-border/50 mb-6">
-        <h3 className="font-semibold mb-3">What to do next:</h3>
-        <ol className="text-sm text-muted-foreground space-y-2">
+      <Card className="p-4 sm:p-6 bg-muted/30 border-border/50 mb-6">
+        <h3 className="font-semibold mb-3 text-sm sm:text-base">What to do next:</h3>
+        <ol className="text-xs sm:text-sm text-muted-foreground space-y-2">
           <li className="flex items-start gap-2">
             <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5">1</span>
             <span>Check your email inbox for a message from VirtualAddressHub</span>
@@ -249,7 +249,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
       {/* Actions */}
       <div className="space-y-4">
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-xs sm:text-sm text-muted-foreground">
           <p>Didn't receive the email? Check your spam folder or
             <button
               onClick={() => onNavigate('reset-password')}
@@ -260,18 +260,18 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
             variant="outline"
             onClick={() => onNavigate('login')}
-            className="flex-1"
+            className="flex-1 h-10 sm:h-11 text-xs sm:text-sm"
           >
             Back to Login
           </Button>
           <Button
             onClick={() => onNavigate('contact')}
             variant="outline"
-            className="flex-1"
+            className="flex-1 h-10 sm:h-11 text-xs sm:text-sm"
           >
             Contact Support
           </Button>
@@ -283,20 +283,20 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   const renderResetStep = () => (
     <>
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <VAHLogo size="lg" />
         </div>
-        <h1 className="text-3xl font-bold mb-2">Create New Password</h1>
-        <p className="text-muted-foreground text-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Create New Password</h1>
+        <p className="text-muted-foreground text-base sm:text-lg">
           Enter a strong new password for your account
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleResetPassword} className="space-y-6">
+      <form onSubmit={handleResetPassword} className="space-y-4 sm:space-y-6">
         <div>
-          <Label htmlFor="password" className="text-base font-medium">
+          <Label htmlFor="password" className="text-sm sm:text-base font-medium">
             New Password
           </Label>
           <Input
@@ -305,18 +305,18 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your new password"
-            className="mt-2 h-12 text-base"
+            className="mt-2 h-11 sm:h-12 text-base"
             disabled={loading}
             autoComplete="new-password"
             autoFocus
           />
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Must be at least 8 characters with at least one letter and one number
           </p>
         </div>
 
         <div>
-          <Label htmlFor="confirm-password" className="text-base font-medium">
+          <Label htmlFor="confirm-password" className="text-sm sm:text-base font-medium">
             Confirm New Password
           </Label>
           <Input
@@ -325,7 +325,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm your new password"
-            className="mt-2 h-12 text-base"
+            className="mt-2 h-11 sm:h-12 text-base"
             disabled={loading}
             autoComplete="new-password"
           />
@@ -333,7 +333,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
         <Button
           type="submit"
-          className="w-full h-12 text-base font-medium"
+          className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
           disabled={loading || !password.trim() || !confirmPassword.trim()}
         >
           {loading ? (
@@ -348,12 +348,12 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       </form>
 
       {/* Security Note */}
-      <Card className="mt-6 p-4 bg-blue-50 border-blue-200">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-blue-900 mb-1">Security Tip</p>
-            <p className="text-blue-800">
+      <Card className="mt-6 p-3 sm:p-4 bg-primary/5 border-primary/20">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="text-xs sm:text-sm">
+            <p className="font-medium text-foreground mb-1">Security Tip</p>
+            <p className="text-muted-foreground">
               Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.
             </p>
           </div>
@@ -363,19 +363,19 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   );
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md relative">
         {/* Back Button */}
         <button
           onClick={onGoBack}
-          className="absolute top-8 left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg"
+          className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg z-10"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back</span>
+          <span className="text-sm font-medium hidden sm:inline">Back</span>
         </button>
 
         {/* Main Card */}
-        <Card className="p-8 shadow-lg border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card className="p-4 sm:p-6 md:p-8 shadow-lg border-border/50 bg-card/80 backdrop-blur-sm">
           {step === 'email' && renderEmailStep()}
           {step === 'sent' && renderSentStep()}
           {step === 'reset' && renderResetStep()}
@@ -383,21 +383,26 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
         {/* Message Alert */}
         {message && (
-          <Alert className={`mt-4 ${message.type === 'error'
-            ? 'border-red-200 bg-red-50'
-            : 'border-green-200 bg-green-50'
-            }`}>
+          <Alert 
+            variant={message.type === 'error' ? 'destructive' : 'default'}
+            className={`mt-4 ${message.type === 'error'
+              ? 'border-destructive/50 bg-destructive/10'
+              : 'border-primary/50 bg-primary/10'
+            }`}
+          >
             {message.type === 'error' ? (
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 text-destructive" />
             ) : (
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4 text-primary" />
             )}
-            <AlertDescription>{message.text}</AlertDescription>
+            <AlertDescription className={message.type === 'error' ? 'text-destructive' : 'text-foreground'}>
+              {message.text}
+            </AlertDescription>
           </Alert>
         )}
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6 sm:mt-8">
           <p className="text-xs text-muted-foreground">
             © 2024 VirtualAddressHub. All rights reserved.
           </p>
