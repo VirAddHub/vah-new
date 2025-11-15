@@ -75,7 +75,7 @@ async function generateLogoPNG() {
     ctx.font = 'bold 28px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.fillText('VirtualAddress', iconX + iconSize + 20, iconY + 28);
     
-    // Text: Hub (green)
+    // Text: Hub (navy blue)
     ctx.fillStyle = navy;
     ctx.font = 'bold 28px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     const virtualAddressWidth = ctx.measureText('VirtualAddress').width;

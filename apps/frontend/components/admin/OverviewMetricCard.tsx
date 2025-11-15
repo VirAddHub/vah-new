@@ -24,9 +24,9 @@ export default function OverviewMetricCard({
     if (href) {
         return (
             <Link href={href} className="block group">
-                <div className="rounded-2xl p-4 shadow-sm bg-white hover:shadow-md transition group-hover:border-2" style={{ borderColor: '#1e3a8a' }}>
+                <div className="rounded-2xl p-4 shadow-sm bg-white hover:shadow-md transition group-hover:border-2 group-hover:border-primary">
                     <div className="text-sm text-neutral-500">{title}</div>
-                    <div className="text-2xl font-semibold group-hover:transition-colors" style={{ color: '#1e3a8a' }}>{value}</div>
+                    <div className="text-2xl font-semibold group-hover:transition-colors group-hover:text-primary">{value}</div>
                     {sub && <div className="text-xs text-neutral-500 mt-1">{sub}</div>}
                 </div>
             </Link>

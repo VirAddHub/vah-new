@@ -66,10 +66,10 @@
 
 /* Enhanced Button Styles */
 .btn-primary {
-  @apply bg-[#1e3a8a] text-white;
-  @apply hover:bg-[#1e40af] transition-all duration-200;
+  @apply bg-primary text-primary-foreground;
+  @apply hover:bg-primary/90 transition-all duration-200;
   @apply border-0 rounded-xl px-6 py-3 font-semibold;
-  @apply focus:ring-2 focus:ring-[#1e3a8a]/50 focus:outline-none;
+  @apply focus:ring-2 focus:ring-primary/50 focus:outline-none;
 }
 
 .btn-secondary {
@@ -79,8 +79,8 @@
 }
 
 .btn-outline {
-  @apply border-2 border-[#1e3a8a] text-[#1e3a8a] bg-transparent;
-  @apply hover:bg-[#1e3a8a] hover:text-white;
+  @apply border-2 border-primary text-primary bg-transparent;
+  @apply hover:bg-primary hover:text-primary-foreground;
   @apply transition-all duration-200 rounded-xl px-6 py-3 font-semibold;
 }
 

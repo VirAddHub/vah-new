@@ -29,7 +29,7 @@ export default function RecentActivityCard({ data, loading }: { data?: any; load
         <div className="rounded-2xl p-4 bg-white shadow-sm">
             <div className="flex items-center justify-between mb-2">
                 <div className="font-medium">Recent Activity</div>
-                <Link href="/admin/activity" className="text-sm underline" style={{ color: '#1e3a8a' }}>
+                <Link href="/admin/activity" className="text-sm underline text-primary">
                     View All
                 </Link>
             </div>
@@ -49,7 +49,7 @@ export default function RecentActivityCard({ data, loading }: { data?: any; load
                             </div>
                         </div>
                         {a.href && (
-                            <Link href={a.href} className="text-sm underline ml-2 flex-shrink-0" style={{ color: '#1e3a8a' }}>
+                            <Link href={a.href} className="text-sm underline ml-2 flex-shrink-0 text-primary">
                                 Open
                             </Link>
                         )}
