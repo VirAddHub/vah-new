@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -86,29 +87,26 @@ export function VAHLogo({
             'aria-label': `${fullName} homepage`
         };
 
+    // Dynamic logo sizing based on `size` prop
+    const logoDimensions = {
+        sm: { width: 120, height: 30 },
+        md: { width: 160, height: 40 },
+        lg: { width: 200, height: 50 },
+        xl: { width: 240, height: 60 },
+    }[size || "md"];
+
     return (
         <LogoElement {...logoProps}>
-            {/* Logo Square */}
-            <div
-                className={cn(
-                    "bg-[#20603A] rounded-lg flex items-center justify-center font-bold",
-                    "transform transition-transform duration-200 ease-in-out group-hover:scale-105 group-active:scale-95",
-                    // Dynamic sizing for the square based on `size` prop
-                    size === "sm" && "w-6 h-6 text-xs",
-                    size === "md" && "w-8 h-8 text-sm",
-                    size === "lg" && "w-10 h-10 text-base",
-                    size === "xl" && "w-12 h-12 text-lg"
-                )}
-            >
-                <span className="text-white">{initials}</span>
+            <div className="flex items-center">
+                <Image
+                    src="/images/logo.svg"
+                    alt={fullName}
+                    width={logoDimensions.width}
+                    height={logoDimensions.height}
+                    className="h-auto transition-opacity duration-200 group-hover:opacity-90"
+                    priority
+                />
             </div>
-
-            {/* Full Name Text */}
-            {showText && (
-                <span className="font-semibold text-foreground group-hover:text-[#20603A] transition-colors duration-200">
-                    {fullName}
-                </span>
-            )}
         </LogoElement>
     );
 }

@@ -105,7 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             "name": "VirtualAddressHub",
                             "alternateName": "VAH",
                             "url": "https://virtualaddresshub.com",
-                            "logo": "https://virtualaddresshub.com/images/logo.png",
+                            "logo": "https://virtualaddresshub.com/images/logo.svg",
                             "description": "Professional London business address service with secure digital mail forwarding and virtual office solutions.",
                             "foundingDate": "2024",
                             "address": {
