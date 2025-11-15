@@ -420,7 +420,7 @@ router.post('/', async (req: any, res) => {
               await sendMailScanned({
                 email: user.email,
                 name: user.first_name,
-                subject: `New mail received - ${tag}`,
+                subject: `New mail received - ${tagToTitle(defaultTagSlug)}`,
                 cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
               });
               console.log('[OneDrive Webhook] Email notification sent to:', user.email);
@@ -568,7 +568,7 @@ router.post('/', async (req: any, res) => {
       userId: finalUserId,
       subject: mailItem.subject,
       status: mailItem.status,
-      tag: tag,
+      tag: tagSlug,
       receivedDate: new Date(receivedAtMs).toISOString().split('T')[0]
     });
 
@@ -577,7 +577,7 @@ router.post('/', async (req: any, res) => {
       await sendMailScanned({
         email: user.email,
         name: user.first_name,
-        subject: `New mail received - ${tag}`,
+        subject: `New mail received - ${tagToTitle(tagSlug)}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
       console.log('[OneDrive Webhook] Email notification sent to:', user.email);
