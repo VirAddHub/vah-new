@@ -436,7 +436,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#000000')
             .fontSize(13)
             .font('Helvetica')
-            .text('2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
+            .text('54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
                 align: 'left',
                 lineHeight: 1.55,
                 width: 550
@@ -548,7 +548,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#666666')
             .fontSize(10)
             .font('Helvetica')
-            .text('VirtualAddressHub Ltd · 2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
+            .text('VirtualAddressHub Ltd · 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
                 align: 'center',
                 lineGap: 4 // line-height 1.4 equivalent
             })
@@ -556,7 +556,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 align: 'center',
                 lineGap: 4
             })
-            .text('Registered in England · VAT No: [VAT_NUMBER]', { 
+            .text('Registered in England', { 
                 align: 'center',
                 lineGap: 4
             });
