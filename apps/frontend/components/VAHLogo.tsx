@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -98,13 +97,14 @@ export function VAHLogo({
     return (
         <LogoElement {...logoProps}>
             <div className="flex items-center">
-                <Image
+                {/* Use img tag for SVG since Next.js Image doesn't optimize SVGs well */}
+                <img
                     src="/images/logo.svg"
                     alt={fullName}
                     width={logoDimensions.width}
                     height={logoDimensions.height}
                     className="h-auto transition-opacity duration-200 group-hover:opacity-90"
-                    priority
+                    style={{ maxWidth: '100%', height: 'auto' }}
                 />
             </div>
         </LogoElement>
