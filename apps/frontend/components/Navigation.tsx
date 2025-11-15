@@ -16,7 +16,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
         { label: 'Compliance Check', page: 'compliance-check', href: '/compliance-check' },
-        { label: 'Help', page: 'help' },
+        { label: 'Help', page: 'help', href: '/help' },
         { label: 'Sign Up', page: 'signup' },
     ];
 
