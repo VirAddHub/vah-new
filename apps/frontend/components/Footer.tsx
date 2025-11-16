@@ -126,7 +126,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             onClick={() => handleNavClick("home")}
                             className="mb-2 text-xl font-semibold text-foreground hover:text-primary transition-colors"
                         >
-                            VirtualAddressHub
+                            VirtualAddress<span className="text-primary">Hub</span>
                         </button>
                         <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-prose mb-2">
                             Professional virtual address for UK business. Fully compliant.
@@ -187,7 +187,7 @@ export function Footer({ onNavigate }: FooterProps) {
                         <div className="space-y-1 text-xs text-muted-foreground leading-tight">
                             <div>
                                 <span className="font-medium text-foreground">Company:</span>{" "}
-                                <span>VirtualAddressHub Ltd</span>
+                                <span>VirtualAddress<span className="text-primary">Hub</span> Ltd</span>
                             </div>
                             <div>
                                 <span className="font-medium text-foreground">Co. No:</span>{" "}
@@ -214,7 +214,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     <div className="flex flex-wrap gap-4 justify-between items-center text-xs text-muted-foreground">
                         <div>
                             &copy; {new Date().getFullYear()}{" "}
-                            VirtualAddressHub. All rights reserved.
+                            VirtualAddress<span className="text-primary">Hub</span>. All rights reserved.
                         </div>
                     </div>
                 </div>
