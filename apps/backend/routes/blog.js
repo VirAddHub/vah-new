@@ -25,27 +25,32 @@ function getAllPostSlugs() {
 
 // Helper function to get post by slug
 function getPostBySlug(slug) {
-    const filePath = path.join(POSTS_DIR, `${slug}.mdx`);
-    if (!fs.existsSync(filePath)) return null;
+    try {
+        const filePath = path.join(POSTS_DIR, `${slug}.mdx`);
+        if (!fs.existsSync(filePath)) return null;
 
-    const raw = fs.readFileSync(filePath, "utf8");
-    const { data, content } = matter(raw);
+        const raw = fs.readFileSync(filePath, "utf8");
+        const { data, content } = matter(raw);
 
-    return {
-        slug,
-        title: data.title || "",
-        description: data.description || "",
-        date: data.date || new Date().toISOString(),
-        updated: data.updated || null,
-        tags: data.tags || [],
-        cover: data.cover || "",
-        status: data.status || "published",
-        ogTitle: data.ogTitle || "",
-        ogDesc: data.ogDesc || "",
-        noindex: data.noindex || false,
-        content,
-        excerpt: content.substring(0, 200) + "..."
-    };
+        return {
+            slug,
+            title: data.title || "",
+            description: data.description || "",
+            date: data.date || new Date().toISOString(),
+            updated: data.updated || null,
+            tags: data.tags || [],
+            cover: data.cover || "",
+            status: data.status || "published",
+            ogTitle: data.ogTitle || "",
+            ogDesc: data.ogDesc || "",
+            noindex: data.noindex || false,
+            content,
+            excerpt: content.substring(0, 200) + "..."
+        };
+    } catch (error) {
+        console.error(`[getPostBySlug] Error reading post "${slug}":`, error);
+        return null;
+    }
 }
 
 // Helper function to format date
@@ -110,39 +115,69 @@ router.get("/blog/posts", (req, res) => {
 router.get("/blog/posts/:slug", (req, res) => {
     try {
         const { slug } = req.params;
+        
+        if (!slug || typeof slug !== 'string') {
+            return res.status(400).json({ 
+                ok: false, 
+                error: "invalid_slug",
+                message: "Invalid blog post slug" 
+            });
+        }
+
         const post = getPostBySlug(slug);
 
         if (!post) {
-            return res.status(404).json({ ok: false, error: "Post not found" });
+            return res.status(404).json({ 
+                ok: false, 
+                error: "post_not_found",
+                message: "Blog post not found" 
+            });
         }
 
         if (post.status !== "published") {
-            return res.status(404).json({ ok: false, error: "Post not found" });
+            return res.status(404).json({ 
+                ok: false, 
+                error: "post_not_found",
+                message: "Blog post not found" 
+            });
         }
 
-        const dateFormatted = formatDate(post.date);
-        const responseData = {
-            slug: post.slug,
-            title: post.title,
-            description: post.description,
-            date: post.date,
-            dateLong: dateFormatted.long,
-            dateShort: dateFormatted.short,
-            updated: post.updated,
-            tags: post.tags,
-            cover: post.cover,
-            ogTitle: post.ogTitle,
-            ogDesc: post.ogDesc,
-            noindex: post.noindex,
-            content: post.content,
-            excerpt: post.excerpt,
-            readTime: estimateReadTime(post.content)
-        };
+        try {
+            const dateFormatted = formatDate(post.date);
+            const responseData = {
+                slug: post.slug,
+                title: post.title,
+                description: post.description,
+                date: post.date,
+                dateLong: dateFormatted.long,
+                dateShort: dateFormatted.short,
+                updated: post.updated,
+                tags: post.tags,
+                cover: post.cover,
+                ogTitle: post.ogTitle,
+                ogDesc: post.ogDesc,
+                noindex: post.noindex,
+                content: post.content,
+                excerpt: post.excerpt,
+                readTime: estimateReadTime(post.content)
+            };
 
-        res.json({ ok: true, data: responseData });
+            return res.json({ ok: true, data: responseData });
+        } catch (formatError) {
+            console.error("[blog post] Error formatting response:", formatError);
+            return res.status(500).json({ 
+                ok: false, 
+                error: "format_error",
+                message: "Failed to format blog post data" 
+            });
+        }
     } catch (error) {
-        console.error("Error fetching blog post:", error);
-        res.status(500).json({ ok: false, error: "Failed to fetch post" });
+        console.error("[blog post] Unexpected error:", error);
+        return res.status(500).json({ 
+            ok: false, 
+            error: "internal_error",
+            message: "An unexpected error occurred while fetching the blog post" 
+        });
     }
 });
 
