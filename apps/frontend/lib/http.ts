@@ -47,4 +47,25 @@ export const api = {
         request<T>(path, { ...init, method: "DELETE" }),
 };
 
+/**
+ * Safely parse JSON from a Response object
+ * Returns null if parsing fails or response is not JSON
+ */
+export async function safeJson(res: Response): Promise<any> {
+    try {
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+            const text = await res.text();
+            return text || null;
+        }
+        const text = await res.text();
+        if (!text || !text.trim()) {
+            return null;
+        }
+        return JSON.parse(text);
+    } catch (error) {
+        return null;
+    }
+}
+
 export default api;

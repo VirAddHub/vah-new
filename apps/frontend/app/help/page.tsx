@@ -6,9 +6,6 @@ import { HelpPage } from '@/components/HelpPage';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/Footer';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = false;
-
 export default function Help() {
     const router = useRouter();
 
