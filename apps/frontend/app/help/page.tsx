@@ -63,7 +63,7 @@ export default function Help() {
     return (
         <div className="min-h-screen flex flex-col relative">
             <Header onNavigate={handleNavigate} />
-            <main className="flex-1 relative z-0">
+            <main className="flex-1 relative z-0 w-full">
                 <HelpPage onNavigate={handleNavigate} onGoBack={handleGoBack} />
             </main>
             <Footer onNavigate={handleNavigate} />
