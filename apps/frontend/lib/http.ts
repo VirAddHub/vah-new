@@ -50,18 +50,21 @@ export const api = {
 /**
  * Safely parse JSON from a Response object
  * Returns null if parsing fails or response is not JSON
+ * Note: This consumes the response body, so it can only be called once per response
  */
 export async function safeJson(res: Response): Promise<any> {
     try {
         const contentType = res.headers.get("content-type") || "";
-        if (!contentType.includes("application/json")) {
-            const text = await res.text();
-            return text || null;
-        }
         const text = await res.text();
+        
         if (!text || !text.trim()) {
             return null;
         }
+        
+        if (!contentType.includes("application/json")) {
+            return text;
+        }
+        
         return JSON.parse(text);
     } catch (error) {
         return null;
