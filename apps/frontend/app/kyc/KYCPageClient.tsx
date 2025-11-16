@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Footer } from '../Footer';
+import { KYCPolicyPage } from '@/components/KYCPolicyPage';
 import { createNavigationHandler } from '@/lib/navigation-handler';
 
-export function FooterWithNav() {
+export function KYCPageClient() {
     const router = useRouter();
     const handleNavigate = createNavigationHandler(router);
-    return <Footer onNavigate={handleNavigate} />;
+    return <KYCPolicyPage onNavigate={handleNavigate} />;
 }
 

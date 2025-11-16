@@ -1,28 +1,29 @@
-"use client";
+import type { Metadata } from 'next';
+import { SignupPage } from '../../components/SignupPage';
+import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
+import { FooterWithNav } from '@/components/layout/FooterWithNav';
+import { SignupPageClient } from './SignupPageClient';
+
+export const metadata: Metadata = {
+    title: 'Sign Up | VirtualAddressHub',
+    description: 'Create your VirtualAddressHub account and get a professional London business address. Start your free trial today.',
+    openGraph: {
+        title: 'Sign Up | VirtualAddressHub',
+        description: 'Create your VirtualAddressHub account and get a professional London business address.',
+        url: 'https://virtualaddresshub.com/signup',
+    },
+};
 
 export const dynamic = 'force-dynamic';
 
-import { SignupPage } from '../../components/SignupPage';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/Footer';
-
 export default function Signup() {
-    const handleNavigate = (page: string) => {
-        if (page === 'home') {
-            window.location.href = '/';
-        }
-    };
-
-    // Add debugging for deployment issues
-    console.log('Signup page loaded successfully - Force deployment trigger v2');
-
     return (
-        <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-                <SignupPage onNavigate={handleNavigate} />
+        <div className="min-h-screen flex flex-col relative">
+            <HeaderWithNav />
+            <main className="flex-1 relative z-0 w-full">
+                <SignupPageClient />
             </main>
-            <Footer />
+            <FooterWithNav />
         </div>
     );
 }

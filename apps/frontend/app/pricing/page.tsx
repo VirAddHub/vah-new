@@ -1,5 +1,7 @@
 import { Metadata } from 'next'
 import { generateMetadata, serviceSchema } from '@/lib/seo'
+import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
+import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
 export const metadata: Metadata = generateMetadata({
   title: 'Pricing - Virtual London Business Address Plans | VirtualAddressHub',
@@ -17,7 +19,9 @@ export const metadata: Metadata = generateMetadata({
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col relative">
+      <HeaderWithNav />
+      <main className="flex-1 relative z-0 w-full bg-background">
       <div className="container mx-auto px-4 py-16">
         <header className="text-center mb-16">
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6">Simple, Transparent Pricing</h1>
@@ -209,12 +213,14 @@ export default function PricingPage() {
         </div>
       </div>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(serviceSchema)
-        }}
-      />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(serviceSchema)
+          }}
+        />
+      </main>
+      <FooterWithNav />
     </div>
   )
 }

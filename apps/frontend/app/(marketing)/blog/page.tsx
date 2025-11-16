@@ -1,3 +1,17 @@
+import type { Metadata } from 'next';
+import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
+import { FooterWithNav } from '@/components/layout/FooterWithNav';
+
+export const metadata: Metadata = {
+    title: 'Blog | VirtualAddressHub',
+    description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, mail forwarding, and business tips from VirtualAddressHub.',
+    openGraph: {
+        title: 'Blog | VirtualAddressHub',
+        description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding.',
+        url: 'https://virtualaddresshub.com/blog',
+    },
+};
+
 export const revalidate = 300;
 
 async function getPosts() {
@@ -13,7 +27,9 @@ export default async function BlogPage() {
   const posts = await getPosts();
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-12">
+    <div className="min-h-screen flex flex-col relative">
+      <HeaderWithNav />
+      <main className="flex-1 relative z-0 w-full max-w-5xl mx-auto px-4 py-12">
       <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-primary">Blog</h1>
       {posts.length === 0 ? (
         <p className="opacity-70 text-muted-foreground">No posts yet.</p>
@@ -32,6 +48,8 @@ export default async function BlogPage() {
           ))}
         </ul>
       )}
-    </main>
+      </main>
+      <FooterWithNav />
+    </div>
   );
 }

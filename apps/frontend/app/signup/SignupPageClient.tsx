@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Footer } from '../Footer';
+import { SignupPage } from '@/components/SignupPage';
 import { createNavigationHandler } from '@/lib/navigation-handler';
 
-export function FooterWithNav() {
+export function SignupPageClient() {
     const router = useRouter();
     const handleNavigate = createNavigationHandler(router);
-    return <Footer onNavigate={handleNavigate} />;
+    return <SignupPage onNavigate={handleNavigate} />;
 }
 

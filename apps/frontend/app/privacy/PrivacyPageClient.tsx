@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Footer } from '../Footer';
+import { PrivacyPolicyPage } from '@/components/PrivacyPolicyPage';
 import { createNavigationHandler } from '@/lib/navigation-handler';
 
-export function FooterWithNav() {
+export function PrivacyPageClient() {
     const router = useRouter();
     const handleNavigate = createNavigationHandler(router);
-    return <Footer onNavigate={handleNavigate} />;
+    return <PrivacyPolicyPage onNavigate={handleNavigate} />;
 }
 

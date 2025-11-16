@@ -1,72 +1,26 @@
-'use client';
+import type { Metadata } from 'next';
+import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
+import { FooterWithNav } from '@/components/layout/FooterWithNav';
+import { HelpPageClient } from './HelpPageClient';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { HelpPage } from '@/components/HelpPage';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/Footer';
+export const metadata: Metadata = {
+    title: 'Help Centre & FAQs | VirtualAddressHub',
+    description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more. Fast answers and friendly support.',
+    openGraph: {
+        title: 'Help Centre & FAQs | VirtualAddressHub',
+        description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more.',
+        url: 'https://virtualaddresshub.com/help',
+    },
+};
 
 export default function Help() {
-    const router = useRouter();
-
-    // Scroll to top on mount
-    useEffect(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, []);
-
-    const handleNavigate = (page: string) => {
-        // Scroll to top before navigation
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        
-        // Handle navigation based on page
-        switch (page) {
-            case 'home':
-                router.push('/');
-                break;
-            case 'pricing':
-                router.push('/pricing');
-                break;
-            case 'blog':
-                router.push('/blog');
-                break;
-            case 'signup':
-                router.push('/signup');
-                break;
-            case 'login':
-                router.push('/login');
-                break;
-            case 'help':
-                router.push('/help');
-                break;
-            case 'contact':
-                router.push('/contact');
-                break;
-            case 'privacy':
-                router.push('/privacy');
-                break;
-            case 'terms':
-                router.push('/terms');
-                break;
-            case 'compliance-check':
-                router.push('/compliance-check');
-                break;
-            default:
-                router.push(`/${page}`);
-        }
-    };
-
-    const handleGoBack = () => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        window.history.back();
-    };
-
     return (
         <div className="min-h-screen flex flex-col relative">
-            <Header onNavigate={handleNavigate} />
+            <HeaderWithNav />
             <main className="flex-1 relative z-0 w-full">
-                <HelpPage onNavigate={handleNavigate} onGoBack={handleGoBack} />
+                <HelpPageClient />
             </main>
-            <Footer onNavigate={handleNavigate} />
+            <FooterWithNav />
         </div>
     );
 }
