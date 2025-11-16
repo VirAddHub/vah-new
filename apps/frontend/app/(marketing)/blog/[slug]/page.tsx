@@ -6,11 +6,42 @@ import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
 async function getPost(slug: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-  const r = await fetch(`${base}/api/blog/posts/${encodeURIComponent(slug)}`, { cache: "no-store" });
-  if (!r.ok) return null;
-  const j = await r.json();
-  return j?.data ?? null;
+  try {
+    // Use BFF route for better error handling
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+    
+    const r = await fetch(`${baseUrl}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`, { 
+      cache: "no-store",
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!r.ok) {
+      console.error(`Blog post fetch failed: ${r.status} ${r.statusText}`);
+      return null;
+    }
+    
+    const contentType = r.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await r.text();
+      console.error(`Expected JSON but got ${contentType}. Response:`, text.substring(0, 200));
+      return null;
+    }
+    
+    const j = await r.json();
+    if (!j.ok) {
+      console.error('Blog post API error:', j.error);
+      return null;
+    }
+    
+    return j?.data ?? null;
+  } catch (error) {
+    console.error('Error fetching blog post:', error);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
