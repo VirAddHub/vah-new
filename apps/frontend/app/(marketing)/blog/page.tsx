@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
@@ -36,10 +37,13 @@ export default async function BlogPage() {
       ) : (
         <ul className="grid sm:grid-cols-2 gap-6">
           {posts.map((p: any) => (
-            <li key={p.slug} className="border border-border rounded-xl p-4 bg-card">
-              <a href={`/blog/${p.slug}`} className="text-base font-semibold text-foreground hover:text-primary">
+            <li key={p.slug} className="border border-border rounded-xl p-4 bg-card hover:border-primary/50 transition-colors">
+              <Link 
+                href={`/blog/${p.slug}`} 
+                className="block text-base font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+              >
                 {p.title}
-              </a>
+              </Link>
               <p className="text-sm text-muted-foreground mt-1">{p.excerpt}</p>
               <div className="text-xs text-muted-foreground mt-2">
                 {p.dateLong} · {p.readTime}
