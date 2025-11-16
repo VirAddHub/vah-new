@@ -31,7 +31,25 @@ async function getPost(slug: string) {
       return null;
     }
     
-    const j = await r.json();
+    // Safely parse JSON - handle cases where response might not be valid JSON
+    let j;
+    try {
+      const text = await r.text();
+      if (!text || !text.trim()) {
+        console.error('[Blog Post] Empty response body');
+        return null;
+      }
+      j = JSON.parse(text);
+    } catch (parseError) {
+      console.error('[Blog Post] JSON parse error:', parseError);
+      return null;
+    }
+    
+    if (!j || typeof j !== 'object') {
+      console.error('[Blog Post] Invalid response format:', typeof j);
+      return null;
+    }
+    
     if (!j.ok) {
       console.error('Blog post API error:', j.error);
       return null;
