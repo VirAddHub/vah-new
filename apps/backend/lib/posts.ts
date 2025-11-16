@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { fileURLToPath } from "node:url";
 
 export type PostFrontMatter = {
     title: string;
@@ -16,7 +17,12 @@ export type PostFrontMatter = {
 };
 export type Post = { slug: string; frontMatter: PostFrontMatter; content: string; };
 
-const POSTS_DIR = path.join(process.cwd(), "content", "blog");
+// Blog posts directory - points to root-level /content/blog
+// __dirname equivalent for ES modules: go up 3 levels from apps/backend/lib to repo root, then into content/blog
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const POSTS_DIR = path.resolve(__dirname, '..', '..', '..', 'content', 'blog');
+console.log('BLOG_DIR ->', POSTS_DIR);
 
 export function getAllPostSlugs(): string[] {
     if (!fs.existsSync(POSTS_DIR)) return [];

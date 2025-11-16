@@ -5,8 +5,10 @@ const matter = require("gray-matter");
 
 const router = express.Router();
 
-// Blog posts directory
-const POSTS_DIR = path.join(process.cwd(), "content", "blog");
+// Blog posts directory - points to root-level /content/blog
+// __dirname is apps/backend/routes, so go up 3 levels to repo root, then into content/blog
+const POSTS_DIR = path.resolve(__dirname, '..', '..', '..', 'content', 'blog');
+console.log('BLOG_DIR ->', POSTS_DIR);
 
 // Ensure posts directory exists
 if (!fs.existsSync(POSTS_DIR)) {
