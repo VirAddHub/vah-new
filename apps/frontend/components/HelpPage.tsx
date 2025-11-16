@@ -220,7 +220,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background relative z-0">
+    <div className="w-full bg-background relative z-0">
       <div className="max-w-5xl mx-auto px-6 py-12 space-y-12 relative z-0">
         {/* JSON-LD for SEO */}
         <script
