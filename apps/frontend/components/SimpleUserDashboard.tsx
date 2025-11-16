@@ -54,7 +54,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                             onClick={() => onNavigate('home')}
                             className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
                         >
-                            VirtualAddressHub
+                            VirtualAddress<span className="text-primary">Hub</span>
                         </button>
                         <div>
                             <p className="text-sm text-muted-foreground">Dashboard</p>

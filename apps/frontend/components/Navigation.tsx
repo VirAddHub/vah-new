@@ -43,7 +43,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     onClick={() => onNavigate('home')}
                     className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
                 >
-                    VirtualAddressHub
+                    VirtualAddress<span className="text-primary">Hub</span>
                 </button>
 
                 {/* Desktop Navigation */}

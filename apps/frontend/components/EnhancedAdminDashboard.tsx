@@ -572,7 +572,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         onClick={() => onNavigate?.('home')}
                         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                     >
-                        <span className="text-lg font-semibold text-foreground">VirtualAddressHub</span>
+                        <span className="text-lg font-semibold text-foreground">VirtualAddress<span className="text-primary">Hub</span></span>
                     </button>
 
                     {/* Desktop Navigation */}
