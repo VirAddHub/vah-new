@@ -1,68 +1,29 @@
-'use client';
+import type { Metadata } from "next";
+import { HeaderWithNav } from "@/components/layout/HeaderWithNav";
+import { FooterWithNav } from "@/components/layout/FooterWithNav";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/Footer";
+export const metadata: Metadata = {
+    title: "Free Business Address Compliance Check | VirtualAddressHub",
+    description:
+        "Take our 3-minute quiz to see if your business address meets UK Companies House and HMRC rules under the Economic Crime Act. Instant score and recommendations.",
+    openGraph: {
+        title: "Free Business Address Compliance Check | VirtualAddressHub",
+        description:
+            "Take our 3-minute quiz to see if your business address meets UK Companies House and HMRC rules under the Economic Crime Act.",
+        url: "https://virtualaddresshub.com/compliance-check",
+    },
+};
 
 export default function ComplianceCheckLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const router = useRouter();
-
-    // Scroll to top on mount
-    useEffect(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, []);
-
-    const handleNavigate = (page: string) => {
-        // Scroll to top before navigation
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        
-        // Handle navigation based on page
-        switch (page) {
-            case 'home':
-                router.push('/');
-                break;
-            case 'pricing':
-                router.push('/pricing');
-                break;
-            case 'blog':
-                router.push('/blog');
-                break;
-            case 'signup':
-                router.push('/signup');
-                break;
-            case 'login':
-                router.push('/login');
-                break;
-            case 'help':
-                router.push('/help');
-                break;
-            case 'contact':
-                router.push('/contact');
-                break;
-            case 'privacy':
-                router.push('/privacy');
-                break;
-            case 'terms':
-                router.push('/terms');
-                break;
-            case 'compliance-check':
-                router.push('/compliance-check');
-                break;
-            default:
-                router.push(`/${page}`);
-        }
-    };
-
     return (
         <div className="min-h-screen flex flex-col relative">
-            <Header onNavigate={handleNavigate} />
+            <HeaderWithNav />
             <main className="flex-1 relative z-0 w-full">{children}</main>
-            <Footer onNavigate={handleNavigate} />
+            <FooterWithNav />
         </div>
     );
 }
