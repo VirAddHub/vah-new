@@ -21,27 +21,35 @@ async function getPost(slug: string) {
       return null;
     }
     
-    // Check content type before parsing JSON
-    const contentType = r.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      // Clone response to read text without consuming original
-      const clonedResponse = r.clone();
-      const text = await clonedResponse.text();
-      console.error(`[Blog Post] Expected JSON but got ${contentType}. Response preview:`, text.substring(0, 200));
+    // Always read as text first, then parse JSON safely
+    // This prevents errors if the response is HTML or plain text
+    let text: string;
+    try {
+      text = await r.text();
+    } catch (readError) {
+      console.error('[Blog Post] Failed to read response body:', readError);
       return null;
     }
     
-    // Safely parse JSON - handle cases where response might not be valid JSON
+    if (!text || !text.trim()) {
+      console.error('[Blog Post] Empty response body');
+      return null;
+    }
+    
+    // Check if response looks like JSON (starts with { or [)
+    const trimmed = text.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      console.error(`[Blog Post] Response is not JSON. Content-Type: ${r.headers.get('content-type')}, Preview:`, trimmed.substring(0, 200));
+      return null;
+    }
+    
+    // Safely parse JSON
     let j;
     try {
-      const text = await r.text();
-      if (!text || !text.trim()) {
-        console.error('[Blog Post] Empty response body');
-        return null;
-      }
       j = JSON.parse(text);
     } catch (parseError) {
       console.error('[Blog Post] JSON parse error:', parseError);
+      console.error('[Blog Post] Response preview:', trimmed.substring(0, 200));
       return null;
     }
     
