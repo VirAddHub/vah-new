@@ -24,7 +24,9 @@ async function getPost(slug: string) {
     // Check content type before parsing JSON
     const contentType = r.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      const text = await r.text();
+      // Clone response to read text without consuming original
+      const clonedResponse = r.clone();
+      const text = await clonedResponse.text();
       console.error(`[Blog Post] Expected JSON but got ${contentType}. Response preview:`, text.substring(0, 200));
       return null;
     }
