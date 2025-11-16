@@ -8,9 +8,10 @@ import { FooterWithNav } from '@/components/layout/FooterWithNav';
 async function getPost(slug: string) {
   try {
     // Use BFF route for better error handling
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+    // In server components, we can call the BFF route directly via internal fetch
+    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 
+                    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                    'http://localhost:3000';
     
     const r = await fetch(`${baseUrl}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`, { 
       cache: "no-store",
@@ -40,7 +41,27 @@ async function getPost(slug: string) {
     return j?.data ?? null;
   } catch (error) {
     console.error('Error fetching blog post:', error);
-    return null;
+    // Fallback to direct backend call if BFF fails
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+      const r = await fetch(`${backendUrl}/api/blog/posts/${encodeURIComponent(slug)}`, { 
+        cache: "no-store",
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      if (!r.ok) return null;
+      
+      const contentType = r.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) return null;
+      
+      const j = await r.json();
+      return j?.data ?? null;
+    } catch (fallbackError) {
+      console.error('Fallback blog post fetch also failed:', fallbackError);
+      return null;
+    }
   }
 }
 
