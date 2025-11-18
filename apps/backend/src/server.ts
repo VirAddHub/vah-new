@@ -54,6 +54,7 @@ import mailRouter from "./server/routes/mail";
 import billingRouter from "./server/routes/billing";
 import paymentsRouter from "./server/routes/payments";
 import adminUsersRouter from "./server/routes/admin-users";
+import adminChVerificationRouter from "./server/routes/admin-ch-verification";
 import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminForwardingDebugRouter from "./server/routes/admin-forwarding-debug";
 import adminForwardingLocksRouter from "./server/routes/admin-forwarding-locks";
@@ -426,7 +427,6 @@ async function start() {
     logger.info('[mount] /api/email-prefs (new) mounted');
     app.use('/api/admin', adminUsersRouter);
     logger.info('[mount] /api/admin (users) mounted');
-    const adminChVerificationRouter = require(path.join(routesDir, 'admin-ch-verification'));
     app.use('/api/admin', adminChVerificationRouter);
     logger.info('[mount] /api/admin (ch-verification) mounted');
     app.use('/api/admin', adminForwardingRouter);
