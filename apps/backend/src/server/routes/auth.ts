@@ -183,6 +183,38 @@ router.post("/test-email", async (req, res) => {
     }
 });
 
+// CH Verification email test endpoint
+router.post("/test-ch-email", async (req, res) => {
+    try {
+        const { email, type, name } = req.body;
+        if (!email) {
+            return res.status(400).json({ ok: false, error: "email_required" });
+        }
+
+        const { sendChVerificationNudge, sendChVerificationReminder } = await import("../../lib/mailer");
+
+        const emailType = type || 'nudge';
+        if (emailType === 'nudge') {
+            await sendChVerificationNudge({
+                email,
+                first_name: name || 'Test User'
+            });
+        } else if (emailType === 'reminder') {
+            await sendChVerificationReminder({
+                email,
+                first_name: name || 'Test User'
+            });
+        } else {
+            return res.status(400).json({ ok: false, error: "invalid_type", message: "Type must be 'nudge' or 'reminder'" });
+        }
+
+        res.json({ ok: true, message: `CH verification ${emailType} email sent successfully` });
+    } catch (error: any) {
+        console.error('[test-ch-email] error:', error);
+        res.status(500).json({ ok: false, error: error.message || 'email_failed' });
+    }
+});
+
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({
     // Contact
