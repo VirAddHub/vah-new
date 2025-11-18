@@ -63,8 +63,10 @@ export async function sendTemplateEmail(opts: {
             ReplyTo: ENV.EMAIL_REPLY_TO,
             MessageStream: ENV.POSTMARK_STREAM,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error(`Failed to send template email ${opts.templateAlias}:`, error);
+        console.error(`Template model sent:`, JSON.stringify(TemplateModel, null, 2));
+        console.error(`Postmark error details:`, error?.response?.body || error?.message || error);
         // Graceful fallback - send simple email
         await client.sendEmail({
             From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
@@ -290,6 +292,7 @@ export async function sendMailReceivedAfterCancellation({ email, name, subject, 
 }
 
 // Companies House Verification
+// Uses Postmark template alias: ch-verification-nudge (update in postmark-templates.ts if different)
 export async function sendChVerificationNudge(user: { email: string; first_name?: string }): Promise<void> {
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
@@ -307,6 +310,7 @@ export async function sendChVerificationNudge(user: { email: string; first_name?
     });
 }
 
+// Uses Postmark template alias: code-your-own-5 (update in postmark-templates.ts if different)
 export async function sendChVerificationReminder(user: { email: string; first_name?: string }): Promise<void> {
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;

@@ -28,8 +28,10 @@ export const Templates = {
     MailAfterCancellation: "mail-received-after-cancellation", // pragma: allowlist secret
 
     // Companies House Verification
+    // Uses Postmark template alias: ch-verification-nudge (or code-your-own-* if different)
     ChVerificationNudge: "ch-verification-nudge", // pragma: allowlist secret
-    ChVerificationReminder: "ch-verification-reminder", // pragma: allowlist secret
+    // Uses Postmark template alias: code-your-own-5 (update if different)
+    ChVerificationReminder: "code-your-own-5", // pragma: allowlist secret
 
     // Quiz / Marketing
     QuizDay0: "quiz-day0", // pragma: allowlist secret - TODO: Create this template in Postmark
