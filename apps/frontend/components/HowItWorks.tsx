@@ -8,8 +8,9 @@ const steps = [
         title: 'Verify your account',
         points: [
             'Create your account and upload ID & proof of address (KYC/AML).',
-            'We review and confirm. You\'ll be notified when approved.',
-            'Your Central London address appears in your dashboard once approved.'
+            'We review your details and approve your account.',
+            'Companies House now requires identity verification for all directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.',
+            'Your Central London address appears in your dashboard once everything is complete.'
         ]
     },
     {
@@ -18,7 +19,7 @@ const steps = [
         points: [
             'Update Companies House (Registered Office & Director\'s Service Address).',
             'Use with HMRC, banks, suppliers and clients.',
-            'A real, physical address — never a P.O. Box.'
+            'A real central London address — never a P.O. Box.'
         ]
     },
     {
@@ -27,7 +28,8 @@ const steps = [
         points: [
             'Same-day letter scanning on business days to your dashboard.',
             'Free UK forwarding for HMRC & Companies House letters (on request).',
-            'Other UK letters forwarded for £2 per item + postage. Letters only — no parcels.'
+            'Other UK letters forwarded for £2 per item, which covers postage and admin.',
+            'Letters only — no parcels.'
         ]
     }
 ];
@@ -47,17 +49,10 @@ export default function HowItWorks() {
 
                 {/* horizontal layout */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    {steps.map((s, i) => (
+                    {steps.map((s) => (
                         <div key={s.k} className="relative">
-                            {/* number badge */}
-                            <div className="absolute -top-3 left-4 z-10">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent bg-accent shadow-sm">
-                                    <span className="font-bold text-white text-sm">{i + 1}</span>
-                                </div>
-                            </div>
-
                             <div className="rounded-xl border border-border bg-card shadow-sm h-full">
-                                <div className="p-4 pt-6">
+                                <div className="p-4">
                                     <h3 className="text-base font-semibold mb-3">{s.title}</h3>
                                     <ul className="space-y-2">
                                         {s.points.map((p) => (
