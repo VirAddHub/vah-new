@@ -410,6 +410,15 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
     } = req.body;
 
     try {
+        // Get current user state to detect KYC status transition
+        let previousKycStatus: string | null = null;
+        if (typeof kyc_status === 'string') {
+            const currentUser = await pool.query('SELECT kyc_status, companies_house_verified FROM "user" WHERE id = $1', [userId]);
+            if (currentUser.rows.length > 0) {
+                previousKycStatus = currentUser.rows[0].kyc_status || null;
+            }
+        }
+
         const updates: string[] = [];
         const values: any[] = [];
         let paramIndex = 1;
@@ -484,6 +493,12 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
             values.push(kyc_status);
+
+            // Set kyc_approved_at when transitioning to approved
+            if (kyc_status === 'approved' && previousKycStatus !== 'approved') {
+                updates.push(`kyc_approved_at = $${paramIndex++}`);
+                values.push(new Date().toISOString());
+            }
         }
 
         // Handle timestamp fields with proper date conversion
@@ -525,6 +540,24 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
         `, [adminId, userId, JSON.stringify(req.body), TimestampUtils.forTableField('admin_audit', 'created_at')]);
+
+        // Trigger CH verification nudge if KYC just became approved
+        if (typeof kyc_status === 'string' && kyc_status === 'approved' && previousKycStatus !== 'approved') {
+            const updatedUser = result.rows[0];
+            if (updatedUser && !updatedUser.companies_house_verified) {
+                // Fire-and-forget email send
+                import('../lib/mailer').then(({ sendChVerificationNudge }) => {
+                    sendChVerificationNudge({
+                        email: updatedUser.email,
+                        first_name: updatedUser.first_name,
+                    }).catch((err) => {
+                        console.error('[Admin] Failed to send CH verification nudge:', err);
+                    });
+                }).catch((err) => {
+                    console.error('[Admin] Failed to import mailer:', err);
+                });
+            }
+        }
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

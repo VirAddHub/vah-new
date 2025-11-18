@@ -441,6 +441,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
+  // Check if user can use the address (KYC approved + CH verified)
+  const kycApproved = userProfile?.kyc_status === "approved";
+  const chVerified = userProfile?.companies_house_verified === true;
+  const canUseAddress = kycApproved && chVerified;
+
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
 
@@ -752,33 +757,60 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </CardHeader>
               <CardContent className="space-y-3 pt-3">
                 {/* Address Display */}
-                <div className="bg-muted/50 rounded-lg p-2.5 space-y-0.5">
-                  <p className="text-xs font-medium">{virtualAddress.line1}</p>
-                  <p className="text-xs font-medium">{virtualAddress.line2}</p>
-                  <p className="text-xs font-medium">{virtualAddress.city}</p>
-                  <p className="text-xs font-medium">{virtualAddress.postcode}</p>
-                  <p className="text-xs font-medium">{virtualAddress.country}</p>
-                </div>
+                {canUseAddress ? (
+                  <>
+                    <div className="bg-muted/50 rounded-lg p-2.5 space-y-0.5">
+                      <p className="text-xs font-medium">{virtualAddress.line1}</p>
+                      <p className="text-xs font-medium">{virtualAddress.line2}</p>
+                      <p className="text-xs font-medium">{virtualAddress.city}</p>
+                      <p className="text-xs font-medium">{virtualAddress.postcode}</p>
+                      <p className="text-xs font-medium">{virtualAddress.country}</p>
+                    </div>
 
-                {/* Generate Certificate Button */}
-                <div className="space-y-1.5">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
-                    {certLoading ? (
-                      <>
-                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        Generating…
-                      </>
-                    ) : (
-                      <>
+                    {/* Generate Certificate Button */}
+                    <div className="space-y-1.5">
+                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                        {certLoading ? (
+                          <>
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            Generating…
+                          </>
+                        ) : (
+                          <>
+                            <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                            Generate Certificate
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center leading-tight">
+                        Official proof of address
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Locked State */}
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        We'll show your full VirtualAddressHub address here once your ID checks are approved and your Companies House identity verification is complete for all directors and PSCs.
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Please complete identity verification via GOV.UK / Companies House and upload proof using the Companies House verification card in your dashboard.
+                      </p>
+                    </div>
+
+                    {/* Disabled Generate Certificate Button */}
+                    <div className="space-y-1.5">
+                      <Button className="w-full bg-amber-600/50 hover:bg-amber-600/50 text-white cursor-not-allowed" size="sm" disabled>
                         <FileCheck className="h-3.5 w-3.5 mr-1.5" />
                         Generate Certificate
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center leading-tight">
-                    Official proof of address
-                  </p>
-                </div>
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center leading-tight">
+                        Address will be available once verification is complete
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </aside>

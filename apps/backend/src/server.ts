@@ -426,6 +426,9 @@ async function start() {
     logger.info('[mount] /api/email-prefs (new) mounted');
     app.use('/api/admin', adminUsersRouter);
     logger.info('[mount] /api/admin (users) mounted');
+    const adminChVerificationRouter = require(path.join(routesDir, 'admin-ch-verification'));
+    app.use('/api/admin', adminChVerificationRouter);
+    logger.info('[mount] /api/admin (ch-verification) mounted');
     app.use('/api/admin', adminForwardingRouter);
     logger.info('[mount] /api/admin (forwarding) mounted');
     app.use('/api', adminForwardingDebugRouter);

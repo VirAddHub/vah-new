@@ -79,6 +79,8 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 kyc_status,
                 COALESCE(kyc_verified_at_ms, kyc_verified_at) as kyc_verified_at_ms,
                 kyc_rejection_reason,
+                companies_house_verified,
+                ch_verification_proof_url,
                 plan_id,
                 subscription_status,
                 created_at,
