@@ -1,6 +1,6 @@
 export default function Preview({ onNavigate }: { onNavigate?: (page: string) => void }) {
     return (
-        <main className="min-h-screen w-full bg-muted/30 py-8">
+        <main className="w-full bg-muted/30 py-16">
             <section className="mx-auto max-w-4xl px-6 text-center">
                 <h2 className="mt-4 text-2xl font-semibold sm:text-3xl text-primary">London address for modern businesses</h2>
                 <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
