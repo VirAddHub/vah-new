@@ -1,106 +1,127 @@
 import type { Metadata } from 'next';
-import { notFound } from "next/navigation";
-import { MDXRemote } from "next-mdx-remote/rsc";
-import { mdxComponents } from "../mdx-components";
+import { notFound } from 'next/navigation';
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
-async function getPost(slug: string) {
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
+type BlogPost = {
+  slug: string;
+  title: string;
+  description?: string;
+  excerpt?: string;
+  date?: string;
+  dateLong?: string;
+  readTime?: string;
+  content?: string;
+  html?: string;
+};
+
+const FALLBACK_ORIGIN = 'http://localhost:3000';
+
+function resolveAppBaseUrl() {
+  const envUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_BASE_URL ||
+    process.env.VERCEL_URL;
+
+  if (!envUrl) return FALLBACK_ORIGIN;
+  if (envUrl.startsWith('http')) return envUrl;
+  return `https://${envUrl}`;
+}
+
+async function getPost(slug: string): Promise<BlogPost | null> {
   try {
-    // In server components, we can call the backend API directly
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-    const r = await fetch(`${backendUrl}/api/blog/posts/${encodeURIComponent(slug)}`, { 
-      cache: "no-store",
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-    
-    if (!r.ok) {
-      console.error(`Blog post fetch failed: ${r.status} ${r.statusText}`);
+    const base = resolveAppBaseUrl();
+    const res = await fetch(
+      `${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`,
+      {
+        cache: 'no-store',
+        headers: { accept: 'application/json' },
+      },
+    );
+
+    if (!res.ok) {
       return null;
     }
-    
-    // Always read as text first, then parse JSON safely
-    // This prevents errors if the response is HTML or plain text
-    let text: string;
-    try {
-      text = await r.text();
-    } catch (readError) {
-      console.error('[Blog Post] Failed to read response body:', readError);
-      return null;
-    }
-    
-    if (!text || !text.trim()) {
-      console.error('[Blog Post] Empty response body');
-      return null;
-    }
-    
-    // Check if response looks like JSON (starts with { or [)
-    const trimmed = text.trim();
-    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-      console.error(`[Blog Post] Response is not JSON. Content-Type: ${r.headers.get('content-type')}, Preview:`, trimmed.substring(0, 200));
-      return null;
-    }
-    
-    // Safely parse JSON
-    let j;
-    try {
-      j = JSON.parse(text);
-    } catch (parseError) {
-      console.error('[Blog Post] JSON parse error:', parseError);
-      console.error('[Blog Post] Response preview:', trimmed.substring(0, 200));
-      return null;
-    }
-    
-    if (!j || typeof j !== 'object') {
-      console.error('[Blog Post] Invalid response format:', typeof j);
-      return null;
-    }
-    
-    if (!j.ok) {
-      console.error('Blog post API error:', j.error);
-      return null;
-    }
-    
-    return j?.data ?? null;
+
+    const json = await res.json().catch(() => null);
+    if (!json?.ok || !json?.data) return null;
+    return json.data as BlogPost;
   } catch (error) {
-    console.error('Error fetching blog post:', error);
+    console.error('[BlogPostPage] Failed to fetch post', error);
     return null;
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) {
     return {
       title: 'Post Not Found | VirtualAddressHub Blog',
     };
   }
+
+  const description =
+    post.description || post.excerpt || 'Read this article on the VirtualAddressHub blog.';
+
   return {
     title: `${post.title} | VirtualAddressHub Blog`,
-    description: post.excerpt || 'Read this article on the VirtualAddressHub blog.',
+    description,
     openGraph: {
       title: post.title,
-      description: post.excerpt || 'Read this article on the VirtualAddressHub blog.',
+      description,
       url: `https://virtualaddresshub.com/blog/${params.slug}`,
     },
   };
 }
 
-export default async function PostPage({ params }: { params: { slug: string }}) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const post = await getPost(params.slug);
-  if (!post) return notFound();
+
+  if (!post) {
+    return notFound();
+  }
+
+  const publishedDate = post.dateLong ?? post.date ?? '';
+  const details = [publishedDate, post.readTime].filter(Boolean).join(' · ');
+  const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
 
   return (
     <div className="min-h-screen flex flex-col relative">
       <HeaderWithNav />
       <main className="flex-1 relative z-0 w-full">
-        <article className="max-w-3xl mx-auto px-4 py-10 prose prose-neutral">
-          <h1 className="mb-2">{post.title}</h1>
-          <div className="text-sm opacity-70 mb-8">{post.dateLong} · {post.readTime}</div>
-          <MDXRemote source={post.content} components={mdxComponents} />
-        </article>
+        <div className="max-w-3xl mx-auto px-4 py-12">
+          <p className="text-sm text-muted-foreground">{details}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground">
+            {post.title}
+          </h1>
+          {post.description && (
+            <p className="mt-3 text-lg text-muted-foreground">
+              {post.description}
+            </p>
+          )}
+
+          {hasHtml ? (
+            <article
+              className="prose prose-neutral max-w-none mt-8"
+              dangerouslySetInnerHTML={{ __html: post.html as string }}
+            />
+          ) : (
+            <article className="prose prose-neutral max-w-none mt-8 whitespace-pre-wrap">
+              {post.content}
+            </article>
+          )}
+        </div>
       </main>
       <FooterWithNav />
     </div>

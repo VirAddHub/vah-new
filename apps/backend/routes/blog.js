@@ -113,70 +113,53 @@ router.get("/blog/posts", (req, res) => {
 
 // GET /api/blog/posts/:slug - Get specific blog post for public display
 router.get("/blog/posts/:slug", (req, res) => {
-    try {
-        const { slug } = req.params;
-        
-        if (!slug || typeof slug !== 'string') {
-            return res.status(400).json({ 
-                ok: false, 
-                error: "invalid_slug",
-                message: "Invalid blog post slug" 
-            });
-        }
+    const { slug } = req.params;
 
+    if (!slug || typeof slug !== 'string') {
+        return res.status(400).json({
+            ok: false,
+            error: "invalid_slug",
+            message: "Invalid blog post slug"
+        });
+    }
+
+    try {
         const post = getPostBySlug(slug);
 
-        if (!post) {
-            return res.status(404).json({ 
-                ok: false, 
-                error: "post_not_found",
-                message: "Blog post not found" 
+        if (!post || post.status !== "published") {
+            return res.status(404).json({
+                ok: false,
+                error: "not_found",
+                message: "Post not found"
             });
         }
 
-        if (post.status !== "published") {
-            return res.status(404).json({ 
-                ok: false, 
-                error: "post_not_found",
-                message: "Blog post not found" 
-            });
-        }
+        const dateFormatted = formatDate(post.date);
+        const responseData = {
+            slug: post.slug,
+            title: post.title,
+            description: post.description,
+            date: post.date,
+            dateLong: dateFormatted.long,
+            dateShort: dateFormatted.short,
+            updated: post.updated,
+            tags: post.tags,
+            cover: post.cover,
+            ogTitle: post.ogTitle,
+            ogDesc: post.ogDesc,
+            noindex: post.noindex,
+            content: post.content,
+            excerpt: post.excerpt,
+            readTime: estimateReadTime(post.content)
+        };
 
-        try {
-            const dateFormatted = formatDate(post.date);
-            const responseData = {
-                slug: post.slug,
-                title: post.title,
-                description: post.description,
-                date: post.date,
-                dateLong: dateFormatted.long,
-                dateShort: dateFormatted.short,
-                updated: post.updated,
-                tags: post.tags,
-                cover: post.cover,
-                ogTitle: post.ogTitle,
-                ogDesc: post.ogDesc,
-                noindex: post.noindex,
-                content: post.content,
-                excerpt: post.excerpt,
-                readTime: estimateReadTime(post.content)
-            };
-
-            return res.json({ ok: true, data: responseData });
-        } catch (formatError) {
-            console.error("[blog post] Error formatting response:", formatError);
-            return res.status(500).json({ 
-                ok: false, 
-                error: "format_error",
-                message: "Failed to format blog post data" 
-            });
-        }
+        return res.json({ ok: true, data: responseData });
     } catch (error) {
-        console.error("[blog post] Unexpected error:", error);
-        return res.status(500).json({ 
-            ok: false, 
-            error: "internal_error",
-            message: "An unexpected error occurred while fetching the blog post" 
+        console.error("[GET /api/blog/posts/:slug] error:", error);
+        return res.status(500).json({
+            ok: false,
+            error: "server_error",
+            message: error?.message || "Unexpected error"
         });
     }
 });

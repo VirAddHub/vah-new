@@ -4,13 +4,13 @@ import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
 export const metadata: Metadata = {
+  title: 'Blog | VirtualAddressHub',
+  description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, mail forwarding, and business tips from VirtualAddressHub.',
+  openGraph: {
     title: 'Blog | VirtualAddressHub',
-    description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, mail forwarding, and business tips from VirtualAddressHub.',
-    openGraph: {
-        title: 'Blog | VirtualAddressHub',
-        description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding.',
-        url: 'https://virtualaddresshub.com/blog',
-    },
+    description: 'Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding.',
+    url: 'https://virtualaddresshub.com/blog',
+  },
 };
 
 export const revalidate = 300;
@@ -31,27 +31,38 @@ export default async function BlogPage() {
     <div className="min-h-screen flex flex-col relative">
       <HeaderWithNav />
       <main className="flex-1 relative z-0 w-full max-w-5xl mx-auto px-4 py-12">
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-primary">Blog</h1>
-      {posts.length === 0 ? (
-        <p className="opacity-70 text-muted-foreground">No posts yet.</p>
-      ) : (
-        <ul className="grid sm:grid-cols-2 gap-6">
-          {posts.map((p: any) => (
-            <li key={p.slug} className="border border-border rounded-xl p-4 bg-card hover:border-primary/50 transition-colors">
-              <Link 
-                href={`/blog/${p.slug}`} 
-                className="block text-base font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-primary">Blog</h1>
+        {posts.length === 0 ? (
+          <p className="opacity-70 text-muted-foreground">No posts yet.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-6">
+            {posts.map((p: any) => (
+              <Link
+                key={p.slug}
+                href={`/blog/${p.slug}`}
+                className="group block h-full rounded-xl border border-border bg-card p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 hover:border-primary/50"
               >
-                {p.title}
+                <article className="flex h-full flex-col gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {p.category || "General"}
+                    </p>
+                    <h2 className="mt-1 text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {p.title}
+                    </h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {p.excerpt || p.description || ""}
+                  </p>
+                  <div className="mt-auto text-xs text-muted-foreground">
+                    {p.dateLong || ""}
+                    {p.readTime ? ` · ${p.readTime}` : ""}
+                  </div>
+                </article>
               </Link>
-              <p className="text-sm text-muted-foreground mt-1">{p.excerpt}</p>
-              <div className="text-xs text-muted-foreground mt-2">
-                {p.dateLong} · {p.readTime}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+            ))}
+          </div>
+        )}
       </main>
       <FooterWithNav />
     </div>
