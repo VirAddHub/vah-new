@@ -310,7 +310,7 @@ export async function sendChVerificationNudge(user: { email: string; first_name?
     });
 }
 
-// Uses Postmark template alias: code-your-own-5 (update in postmark-templates.ts if different)
+// Uses Postmark template alias: ch-verification-reminder
 export async function sendChVerificationReminder(user: { email: string; first_name?: string }): Promise<void> {
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
