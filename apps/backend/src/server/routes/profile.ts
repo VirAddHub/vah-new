@@ -6,7 +6,7 @@ import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 
 const router = Router();
 
@@ -33,7 +33,7 @@ const chVerificationUpload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req, file, cb: (error: Error | null, acceptFile: boolean) => void) => {
+    fileFilter: (req, file, cb: FileFilterCallback) => {
         // Allow images and PDFs
         if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
             cb(null, true);
