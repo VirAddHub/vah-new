@@ -49,10 +49,17 @@ export default function HowItWorks() {
 
                 {/* horizontal layout */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    {steps.map((s) => (
+                    {steps.map((s, i) => (
                         <div key={s.k} className="relative">
+                            {/* number badge */}
+                            <div className="absolute -top-3 left-4 z-10">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent bg-accent shadow-sm">
+                                    <span className="font-bold text-white text-sm">{i + 1}</span>
+                                </div>
+                            </div>
+
                             <div className="rounded-xl border border-border bg-card shadow-sm h-full">
-                                <div className="p-4">
+                                <div className="p-4 pt-6">
                                     <h3 className="text-base font-semibold mb-3">{s.title}</h3>
                                     <ul className="space-y-2">
                                         {s.points.map((p) => (

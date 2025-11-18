@@ -6,8 +6,42 @@ import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import multer from 'multer';
 
 const router = Router();
+
+// Configure multer for file uploads (Companies House verification)
+const uploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(process.cwd(), 'data', 'ch-verification');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const userId = (req as any).user?.id;
+        const timestamp = Date.now();
+        const ext = path.extname(file.originalname);
+        const filename = `ch-verification-${userId}-${timestamp}${ext}`;
+        cb(null, filename);
+    }
+});
+
+const chVerificationUpload = multer({
+    storage: uploadStorage,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow images and PDFs
+        if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files and PDFs are allowed'), false);
+        }
+    }
+});
 
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -417,7 +451,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .font('Helvetica')
             .text(
                 'This letter confirms that the following company is registered at:',
-                { 
+                {
                     align: 'left',
                     lineHeight: 1.55,
                     width: 550 // max-width: 550px
@@ -437,7 +471,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#000000')
             .fontSize(13)
             .font('Helvetica')
-            .text('54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
+            .text('54–58 Tanner Street, London SE1 3PH, United Kingdom', {
                 align: 'left',
                 lineHeight: 1.55,
                 width: 550
@@ -459,7 +493,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#000000')
             .fontSize(13)
             .font('Helvetica')
-            .text(businessName, { 
+            .text(businessName, {
                 align: 'left',
                 lineHeight: 1.55,
                 width: 550
@@ -478,7 +512,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#000000')
             .fontSize(13)
             .font('Helvetica')
-            .text(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team', { 
+            .text(`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team', {
                 align: 'left',
                 lineHeight: 1.55,
                 width: 550
@@ -492,7 +526,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .font('Helvetica')
             .text(
                 'Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.',
-                { 
+                {
                     align: 'left',
                     lineHeight: 1.55,
                     width: 550
@@ -503,7 +537,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         doc.text(
             'Subject to continued compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company\'s Trading or Correspondence Address. This certification does not grant any rights of physical occupation or tenancy.',
-            { 
+            {
                 align: 'left',
                 lineHeight: 1.55,
                 width: 550
@@ -549,15 +583,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#666666')
             .fontSize(10)
             .font('Helvetica')
-            .text('VirtualAddressHub Ltd · 2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', { 
+            .text('VirtualAddressHub Ltd · 2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', {
                 align: 'center',
                 lineGap: 4 // line-height 1.4 equivalent
             })
-            .text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', { 
+            .text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', {
                 align: 'center',
                 lineGap: 4
             })
-            .text('Registered in England', { 
+            .text('Registered in England', {
                 align: 'center',
                 lineGap: 4
             });
@@ -568,6 +602,133 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('[GET /api/profile/certificate] error:', error);
         return res.status(500).json({ ok: false, error: 'certificate_generation_failed', message: error.message });
+    }
+});
+
+/**
+ * GET /api/profile/ch-verification
+ * Get Companies House verification status for current user
+ */
+router.get("/ch-verification", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                companies_house_verified,
+                ch_verification_proof_url
+            FROM "user"
+            WHERE id = $1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        return res.json({
+            ok: true,
+            data: {
+                companies_house_verified: result.rows[0].companies_house_verified || false,
+                ch_verification_proof_url: result.rows[0].ch_verification_proof_url || null
+            }
+        });
+    } catch (error: any) {
+        console.error('[GET /api/profile/ch-verification] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/profile/ch-verification
+ * Upload Companies House verification proof and mark as verified
+ */
+router.post("/ch-verification", requireAuth, chVerificationUpload.single('file'), async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+
+    try {
+        if (!req.file) {
+            return res.status(400).json({ ok: false, error: 'missing_file', message: 'No file provided' });
+        }
+
+        // Build the proof URL (relative path or full URL depending on your setup)
+        const proofUrl = `/api/profile/media/ch-verification/${req.file.filename}`;
+        const fullUrl = process.env.API_BASE_URL
+            ? `${process.env.API_BASE_URL}${proofUrl}`
+            : proofUrl;
+
+        // Update user record
+        await pool.query(`
+            UPDATE "user"
+            SET 
+                companies_house_verified = true,
+                ch_verification_proof_url = $1,
+                updated_at = $2
+            WHERE id = $3
+        `, [fullUrl, Date.now(), userId]);
+
+        return res.json({
+            ok: true,
+            data: {
+                companies_house_verified: true,
+                ch_verification_proof_url: fullUrl
+            }
+        });
+    } catch (error: any) {
+        console.error('[POST /api/profile/ch-verification] error:', error);
+        return res.status(500).json({ ok: false, error: 'upload_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/media/ch-verification/:filename
+ * Serve uploaded Companies House verification files (auth-protected)
+ */
+router.get("/media/ch-verification/:filename", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { filename } = req.params;
+    const pool = getPool();
+
+    try {
+        // Verify the file belongs to the current user
+        const userResult = await pool.query(`
+            SELECT ch_verification_proof_url
+            FROM "user"
+            WHERE id = $1
+        `, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const proofUrl = userResult.rows[0].ch_verification_proof_url;
+        if (!proofUrl || !proofUrl.includes(filename)) {
+            return res.status(403).json({ ok: false, error: 'forbidden', message: 'File does not belong to this user' });
+        }
+
+        const filePath = path.join(process.cwd(), 'data', 'ch-verification', filename);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ ok: false, error: 'file_not_found' });
+        }
+
+        // Determine content type
+        const ext = path.extname(filename).toLowerCase();
+        const contentType = ext === '.pdf'
+            ? 'application/pdf'
+            : ext.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+                ? `image/${ext.slice(1)}`
+                : 'application/octet-stream';
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+    } catch (error: any) {
+        console.error('[GET /api/media/ch-verification/:filename] error:', error);
+        return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
     }
 });
 
