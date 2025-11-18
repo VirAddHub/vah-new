@@ -67,7 +67,7 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
                         className="block rounded-md border border-dashed border-border bg-card/40 p-4 hover:bg-card/60 hover:border-primary/30 transition-all cursor-pointer w-full text-left"
                     >
                         <p className="text-base font-semibold text-foreground hover:text-primary transition-colors">How easy is it to cancel?</p>
-                        <p className="mt-1 text-sm text-muted-foreground">Cancel any time from your dashboard or by email. You'll keep access for 30 days after cancellation.</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Cancel any time from your dashboard or by email.</p>
                     </button>
                 </div>
 

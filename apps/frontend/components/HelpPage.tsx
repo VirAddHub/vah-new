@@ -114,7 +114,7 @@ Please note: The address cannot be used for personal post, residential use, reta
     id: "billing-cancel",
     category: "Pricing & Billing",
     q: "How easy is it to cancel?",
-    a: `Very easy. You can cancel anytime from your dashboard or by emailing support. After cancellation, you retain dashboard access for 30 days before full closure.`,
+    a: `Very easy. You can cancel anytime from your dashboard or by emailing support.`,
   },
 
   // Compliance & Security
