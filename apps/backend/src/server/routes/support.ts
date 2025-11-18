@@ -14,24 +14,40 @@ function requireAuth(req: Request, res: Response, next: Function) {
     next();
 }
 
+const SUPPORT_INFO = {
+    email: 'support@virtualaddresshub.co.uk',
+    phone: '+44 20 1234 5678',
+    hours: 'Monday - Friday: 9:00 AM - 6:00 PM GMT',
+    whatsapp: '+44 20 1234 5678',
+    address: '123 Business Street, London, SW1A 1AA, United Kingdom'
+};
+
+function sendSupportInfo(res: Response) {
+    return res.json({ ok: true, data: SUPPORT_INFO });
+}
+
 /**
  * GET /api/support
  * Get support information (contact details, hours, etc.)
  */
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
     try {
-        // Return static support information
-        const supportInfo = {
-            email: 'support@virtualaddresshub.co.uk',
-            phone: '+44 20 1234 5678',
-            hours: 'Monday - Friday: 9:00 AM - 6:00 PM GMT',
-            whatsapp: '+44 20 1234 5678',
-            address: '123 Business Street, London, SW1A 1AA, United Kingdom'
-        };
-
-        return res.json({ ok: true, data: supportInfo });
+        return sendSupportInfo(res);
     } catch (error: any) {
         console.error('[GET /api/support] error:', error);
+        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/support/info
+ * Backwards-compatible alias for legacy clients expecting /info
+ */
+router.get('/info', async (_req: Request, res: Response) => {
+    try {
+        return sendSupportInfo(res);
+    } catch (error: any) {
+        console.error('[GET /api/support/info] error:', error);
         return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
     }
 });
