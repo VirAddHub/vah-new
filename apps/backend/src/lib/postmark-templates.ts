@@ -27,6 +27,10 @@ export const Templates = {
     MailForwarded: "mail-forwarded", // pragma: allowlist secret
     MailAfterCancellation: "mail-received-after-cancellation", // pragma: allowlist secret
 
+    // Companies House Verification
+    ChVerificationNudge: "ch-verification-nudge", // pragma: allowlist secret
+    ChVerificationReminder: "ch-verification-reminder", // pragma: allowlist secret
+
     // Quiz / Marketing
     QuizDay0: "quiz-day0", // pragma: allowlist secret - TODO: Create this template in Postmark
 } as const;

@@ -14,7 +14,9 @@ import {
     sendSupportRequestClosed,
     sendMailScanned,
     sendMailForwarded,
-    sendMailReceivedAfterCancellation
+    sendMailReceivedAfterCancellation,
+    sendChVerificationNudge,
+    sendChVerificationReminder
 } from '../../lib/mailer';
 import { ENV } from '../../env';
 
@@ -43,7 +45,7 @@ router.post('/debug-email', async (req, res) => {
             return res.status(400).json({
                 error: 'Email is required',
                 usage: {
-                    type: 'password-reset|password-changed|welcome|plan-cancelled|invoice-sent|payment-failed|kyc-submitted|kyc-approved|kyc-rejected|support-received|support-closed|mail-scanned|mail-forwarded|mail-after-cancellation',
+                    type: 'password-reset|password-changed|welcome|plan-cancelled|invoice-sent|payment-failed|kyc-submitted|kyc-approved|kyc-rejected|support-received|support-closed|mail-scanned|mail-forwarded|mail-after-cancellation|ch-verification-nudge|ch-verification-reminder',
                     email: 'test@example.com',
                     name: 'Test User (optional)',
                     cta_url: 'https://example.com (for password-reset, welcome, payment-failed)',
@@ -258,6 +260,29 @@ router.post('/debug-email', async (req, res) => {
                 };
                 break;
 
+            // Companies House Verification
+            case 'ch-verification-nudge':
+                await sendChVerificationNudge({
+                    email,
+                    first_name: name || 'Test User'
+                });
+                result = {
+                    type: 'ch-verification-nudge',
+                    status: 'sent'
+                };
+                break;
+
+            case 'ch-verification-reminder':
+                await sendChVerificationReminder({
+                    email,
+                    first_name: name || 'Test User'
+                });
+                result = {
+                    type: 'ch-verification-reminder',
+                    status: 'sent'
+                };
+                break;
+
             default:
                 return res.status(400).json({
                     error: 'Invalid type. Use one of the supported types.',
@@ -266,7 +291,8 @@ router.post('/debug-email', async (req, res) => {
                         'plan-cancelled', 'invoice-sent', 'payment-failed',
                         'kyc-submitted', 'kyc-approved', 'kyc-rejected',
                         'support-received', 'support-closed',
-                        'mail-scanned', 'mail-forwarded', 'mail-after-cancellation'
+                        'mail-scanned', 'mail-forwarded', 'mail-after-cancellation',
+                        'ch-verification-nudge', 'ch-verification-reminder'
                     ]
                 });
         }

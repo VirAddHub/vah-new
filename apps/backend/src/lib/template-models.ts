@@ -146,6 +146,16 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     cta_url: a.ctaUrl,
   }),
 
+  // COMPANIES HOUSE VERIFICATION
+  [Templates.ChVerificationNudge]: (a) => ({
+    first_name: a.firstName ?? a.name ?? "there",
+    cta_url: a.ctaUrl ?? a.cta_url,
+  }),
+  [Templates.ChVerificationReminder]: (a) => ({
+    first_name: a.firstName ?? a.name ?? "there",
+    cta_url: a.ctaUrl ?? a.cta_url,
+  }),
+
   // QUIZ / MARKETING
   [Templates.QuizDay0]: (a) => ({
     name: a.name || a.firstName || "there",

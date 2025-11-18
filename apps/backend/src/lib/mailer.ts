@@ -288,3 +288,38 @@ export async function sendMailReceivedAfterCancellation({ email, name, subject, 
         },
     });
 }
+
+// Companies House Verification
+export async function sendChVerificationNudge(user: { email: string; first_name?: string }): Promise<void> {
+    if (!user.email) return;
+    if (!emailGuard(ENV.EMAIL_KYC)) return;
+
+    const appUrl = ENV.APP_BASE_URL?.replace(/\/$/, '') || 'https://virtualaddresshub.co.uk';
+    const ctaUrl = `${appUrl}/account`;
+
+    await sendTemplateEmail({
+        to: user.email,
+        templateAlias: Templates.ChVerificationNudge,
+        model: {
+            firstName: user.first_name || 'there',
+            ctaUrl,
+        },
+    });
+}
+
+export async function sendChVerificationReminder(user: { email: string; first_name?: string }): Promise<void> {
+    if (!user.email) return;
+    if (!emailGuard(ENV.EMAIL_KYC)) return;
+
+    const appUrl = ENV.APP_BASE_URL?.replace(/\/$/, '') || 'https://virtualaddresshub.co.uk';
+    const ctaUrl = `${appUrl}/account`;
+
+    await sendTemplateEmail({
+        to: user.email,
+        templateAlias: Templates.ChVerificationReminder,
+        model: {
+            firstName: user.first_name || 'there',
+            ctaUrl,
+        },
+    });
+}
