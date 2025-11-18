@@ -33,7 +33,7 @@ const chVerificationUpload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (req, file, cb: (error: Error | null, acceptFile: boolean) => void) => {
         // Allow images and PDFs
         if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
             cb(null, true);

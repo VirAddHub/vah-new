@@ -546,7 +546,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             const updatedUser = result.rows[0];
             if (updatedUser && !updatedUser.companies_house_verified) {
                 // Fire-and-forget email send
-                import('../lib/mailer').then(({ sendChVerificationNudge }) => {
+                import('../../lib/mailer').then(({ sendChVerificationNudge }) => {
                     sendChVerificationNudge({
                         email: updatedUser.email,
                         first_name: updatedUser.first_name,
