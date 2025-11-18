@@ -33,12 +33,14 @@ const chVerificationUpload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req, file, cb: FileFilterCallback) => {
+    fileFilter: (req, file, cb) => {
         // Allow images and PDFs
         if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
             cb(null, true);
         } else {
-            cb(new Error('Only image files and PDFs are allowed'), false);
+            // Multer 2.x FileFilterCallback expects null for errors, but we pass Error for rejection
+            // Type assertion needed due to strict multer 2.x types
+            (cb as any)(new Error('Only image files and PDFs are allowed'), false);
         }
     }
 });
