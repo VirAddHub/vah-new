@@ -310,7 +310,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
         {/* Contact CTA */}
         <section className="text-center space-y-3 pt-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-primary">
             Still need help?
           </h3>
           <p className="text-muted-foreground text-sm max-w-xl mx-auto">
@@ -320,6 +320,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           <div className="flex flex-wrap justify-center gap-3">
             <Button
               variant="default"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => onNavigate?.("contact")}
             >
               Contact Support
