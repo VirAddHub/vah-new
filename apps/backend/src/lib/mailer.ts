@@ -188,12 +188,13 @@ export async function sendKycSubmitted({ email, name, cta_url }: { email: string
 
 export async function sendKycApproved({ email, name, cta_url, virtualAddressLine1, virtualAddressLine2, postcode }: { email: string; name?: string; cta_url?: string; virtualAddressLine1?: string; virtualAddressLine2?: string; postcode?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_KYC)) return;
+    // Note: template model builder maps firstName -> name, dashboardUrl -> dashboard_link
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.KycApproved,
         model: {
             firstName: name,
-            dashboardUrl: cta_url || buildAppUrl('/profile'),
+            dashboardUrl: cta_url || buildAppUrl('/account'),
             virtualAddressLine1,
             virtualAddressLine2,
             postcode,

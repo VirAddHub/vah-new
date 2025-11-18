@@ -13,48 +13,36 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('system');
+  // Force light mode - dark mode disabled
+  const [theme, setTheme] = useState<Theme>('light');
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    // Get saved theme or default to system
-    const savedTheme = localStorage.getItem('theme') as Theme || 'system';
-    setTheme(savedTheme);
+    // Always use light mode - ignore saved theme preference
+    setTheme('light');
+    // Clear any saved dark theme preference
+    localStorage.setItem('theme', 'light');
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
-    
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setActualTheme(systemTheme);
-      root.classList.toggle('dark', systemTheme === 'dark');
-    } else {
-      setActualTheme(theme);
-      root.classList.toggle('dark', theme === 'dark');
-    }
-
-    // Save theme preference
-    localStorage.setItem('theme', theme);
+    // Always force light mode - remove dark class if present
+    setActualTheme('light');
+    root.classList.remove('dark');
+    // Save light theme preference
+    localStorage.setItem('theme', 'light');
   }, [theme]);
 
-  useEffect(() => {
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        const systemTheme = mediaQuery.matches ? 'dark' : 'light';
-        setActualTheme(systemTheme);
-        document.documentElement.classList.toggle('dark', systemTheme === 'dark');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  // Override setTheme to always force light mode
+  const forceLightTheme = () => {
+    setTheme('light');
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, actualTheme }}>
+    <ThemeContext.Provider value={{ theme: 'light', setTheme: forceLightTheme, actualTheme: 'light' }}>
       {children}
     </ThemeContext.Provider>
   );

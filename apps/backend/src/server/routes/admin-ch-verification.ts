@@ -20,8 +20,8 @@ router.get('/ch-verification-reminders', requireAdmin, async (req: Request, res:
         // Find users who:
         // 1. Are KYC approved
         // 2. Are NOT Companies House verified
-        // 3. Were approved at least 3 days ago
-        // 4. Haven't received a reminder in the last 3 days (or never)
+        // 3. Were approved at least 24 hours ago
+        // 4. Haven't received a reminder in the last 24 hours (or never)
         const result = await pool.query(`
             SELECT 
                 id,
@@ -36,10 +36,10 @@ router.get('/ch-verification-reminders', requireAdmin, async (req: Request, res:
                 kyc_status = 'approved'
                 AND (companies_house_verified IS FALSE OR companies_house_verified IS NULL)
                 AND kyc_approved_at IS NOT NULL
-                AND kyc_approved_at <= NOW() - INTERVAL '3 days'
+                AND kyc_approved_at <= NOW() - INTERVAL '24 hours'
                 AND (
                     ch_reminder_last_sent_at IS NULL 
-                    OR ch_reminder_last_sent_at <= NOW() - INTERVAL '3 days'
+                    OR ch_reminder_last_sent_at <= NOW() - INTERVAL '24 hours'
                 )
                 AND deleted_at IS NULL
             ORDER BY kyc_approved_at ASC

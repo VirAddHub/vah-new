@@ -97,6 +97,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <link rel="icon" href="/favicon.ico" sizes="any" />
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                 <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            // Force light mode - remove dark class immediately
+                            (function() {
+                                document.documentElement.classList.remove('dark');
+                                localStorage.setItem('theme', 'light');
+                            })();
+                        `,
+                    }}
+                />
+                <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify({
@@ -148,7 +159,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     }}
                 />
             </head>
-            <body className={`${inter.variable} font-sans min-h-screen bg-white md:bg-background text-foreground antialiased`}>
+            <body className={`${inter.variable} font-sans min-h-screen bg-white md:bg-background text-foreground antialiased`} suppressHydrationWarning>
                 <WebVitalsProvider>
                     <SWRProvider>
                         <Providers>

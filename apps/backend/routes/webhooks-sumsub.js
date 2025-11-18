@@ -56,10 +56,10 @@ router.post('/', async (req, res) => {
   // Resolve the user row: prefer externalUserId if you set it to user.id; fallback by applicantId
   let userRow = null;
   if (externalUserId) {
-    userRow = await db.get('SELECT id FROM "user" WHERE id = $1', [Number(externalUserId)]);
+    userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE id = $1', [Number(externalUserId)]);
   }
   if (!userRow && applicantId) {
-    userRow = await db.get('SELECT id FROM "user" WHERE sumsub_applicant_id = $1', [applicantId]);
+    userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE sumsub_applicant_id = $1', [applicantId]);
   }
   if (!userRow) {
     // store orphan webhook for audit, then 200 (Sumsub expects 2xx)
@@ -67,8 +67,10 @@ router.post('/', async (req, res) => {
     return res.json({ ok: true, ignored: true });
   }
 
+  const previousKycStatus = userRow.kyc_status;
   const now = Date.now();
   const statusText = reviewAnswer || reviewStatus || 'unknown';
+  const reviewIsGreen = reviewAnswer === 'GREEN' || reviewStatus === 'completed';
 
   await db.transaction(async (txDb) => {
     // Update Sumsub-specific fields
@@ -82,25 +84,54 @@ router.post('/', async (req, res) => {
       WHERE id = $6
     `, [applicantId || null, statusText, now, rejectReason, JSON.stringify(payload).slice(0, 50000), userRow.id]);
 
-    // Update KYC status based on Sumsub response
+    // Update KYC status based on Sumsub response - use "approved" as canonical status
     let kycStatus = 'pending';
-    if (reviewAnswer === 'GREEN' || reviewStatus === 'completed') {
-      kycStatus = 'verified';
+    if (reviewIsGreen) {
+      kycStatus = 'approved';
     } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
       kycStatus = 'rejected';
     }
 
-    // Update user's KYC status
+    // Update user's KYC status and set kyc_approved_at if transitioning to approved
+    const updates = [`kyc_status = $1`, `updated_at = $2`];
+    const values = [kycStatus, now];
+    let paramIndex = 3;
+
+    if (kycStatus === 'approved' && previousKycStatus !== 'approved') {
+      // Set kyc_approved_at timestamp on first approval (use ISO string for consistency with admin route)
+      updates.push(`kyc_approved_at = $${paramIndex++}`);
+      values.push(new Date().toISOString());
+    }
+
+    values.push(userRow.id);
     await txDb.run(`
       UPDATE "user"
-      SET kyc_status = $1,
-          kyc_verified_at = $2,
-          updated_at = $2
-      WHERE id = $3
-    `, [kycStatus, now, userRow.id]);
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+    `, values);
 
     console.log(`[SumsubWebhook] Updated user ${userRow.id} KYC status to: ${kycStatus}`);
   });
+
+  // Send KYC approved email if transitioning to approved for the first time
+  const becameApproved = reviewIsGreen && previousKycStatus !== 'approved';
+  if (becameApproved) {
+    // Fire-and-forget email send
+    import('../src/lib/mailer').then(({ sendKycApproved }) => {
+      const userName = userRow.first_name 
+        ? `${userRow.first_name}${userRow.last_name ? ' ' + userRow.last_name : ''}`
+        : userRow.email?.split('@')[0] || 'there';
+      
+      sendKycApproved({
+        email: userRow.email,
+        name: userName,
+      }).catch((err) => {
+        console.error('[SumsubWebhook] Failed to send KYC approved email:', err);
+      });
+    }).catch((err) => {
+      console.error('[SumsubWebhook] Failed to import mailer:', err);
+    });
+  }
 
   // Send notification to user
   notify({

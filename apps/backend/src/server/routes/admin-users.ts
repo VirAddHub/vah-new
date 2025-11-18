@@ -541,17 +541,21 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
         `, [adminId, userId, JSON.stringify(req.body), TimestampUtils.forTableField('admin_audit', 'created_at')]);
 
-        // Trigger CH verification nudge if KYC just became approved
+        // Send KYC approved email if KYC just became approved
         if (typeof kyc_status === 'string' && kyc_status === 'approved' && previousKycStatus !== 'approved') {
             const updatedUser = result.rows[0];
-            if (updatedUser && !updatedUser.companies_house_verified) {
+            if (updatedUser && updatedUser.email) {
                 // Fire-and-forget email send
-                import('../../lib/mailer').then(({ sendChVerificationNudge }) => {
-                    sendChVerificationNudge({
+                import('../../lib/mailer').then(({ sendKycApproved }) => {
+                    const userName = updatedUser.first_name 
+                        ? `${updatedUser.first_name}${updatedUser.last_name ? ' ' + updatedUser.last_name : ''}`
+                        : updatedUser.email?.split('@')[0] || 'there';
+                    
+                    sendKycApproved({
                         email: updatedUser.email,
-                        first_name: updatedUser.first_name,
+                        name: userName,
                     }).catch((err) => {
-                        console.error('[Admin] Failed to send CH verification nudge:', err);
+                        console.error('[Admin] Failed to send KYC approved email:', err);
                     });
                 }).catch((err) => {
                     console.error('[Admin] Failed to import mailer:', err);
