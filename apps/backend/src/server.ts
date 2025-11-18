@@ -641,6 +641,11 @@ async function start() {
         console.log(`[server] listening on port ${PORT} (NODE_ENV=${env})`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
+        
+        // Debug logging for APP_BASE_URL (non-production only)
+        if (env !== 'production') {
+            console.log('[boot] APP_BASE_URL:', process.env.APP_BASE_URL || '(not set - will use default)');
+        }
 
         // Log Graph API configuration
         logGraphConfigAtStartup();

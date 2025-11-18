@@ -6,6 +6,21 @@ import { modelBuilders, BuildArgs } from './template-models';
 // Use CommonJS require for Postmark to avoid import issues
 const postmark = require('postmark');
 
+/**
+ * Builds a full URL from APP_BASE_URL and a path.
+ * Throws an error if APP_BASE_URL is not set (ensures production always has it configured).
+ */
+export function buildAppUrl(path: string = '/dashboard'): string {
+    const base = ENV.APP_BASE_URL;
+    if (!base) {
+        throw new Error('APP_BASE_URL is not defined in environment variables. Set it in Render dashboard.');
+    }
+    // Remove trailing slash from base, ensure path starts with /
+    const cleanBase = base.replace(/\/$/, '');
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${cleanBase}${cleanPath}`;
+}
+
 let _client: any | null = null;
 function getClient() {
     if (!_client) {
@@ -127,7 +142,7 @@ export async function sendPlanCancelled({ email, name, end_date, cta_url }: { em
         model: {
             name,
             endDate: end_date,
-            billingUrl: cta_url || `${ENV.APP_BASE_URL}/billing`,
+            billingUrl: cta_url || buildAppUrl('/billing'),
         },
     });
 }
@@ -141,7 +156,7 @@ export async function sendInvoiceSent({ email, name, invoice_number, amount, cta
             name,
             invoiceNumber: invoice_number,
             amount,
-            billingUrl: cta_url || `${ENV.APP_BASE_URL}/billing`,
+            billingUrl: cta_url || buildAppUrl('/billing'),
         },
     });
 }
@@ -166,7 +181,7 @@ export async function sendKycSubmitted({ email, name, cta_url }: { email: string
         templateAlias: Templates.KycSubmitted,
         model: {
             name,
-            profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
+            profileUrl: cta_url || buildAppUrl('/profile'),
         },
     });
 }
@@ -178,7 +193,7 @@ export async function sendKycApproved({ email, name, cta_url, virtualAddressLine
         templateAlias: Templates.KycApproved,
         model: {
             firstName: name,
-            dashboardUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
+            dashboardUrl: cta_url || buildAppUrl('/profile'),
             virtualAddressLine1,
             virtualAddressLine2,
             postcode,
@@ -194,7 +209,7 @@ export async function sendKycRejected({ email, name, reason, cta_url }: { email:
         model: {
             name,
             reason,
-            profileUrl: cta_url || `${ENV.APP_BASE_URL}/profile`,
+            profileUrl: cta_url || buildAppUrl('/profile'),
         },
     });
 }
@@ -208,7 +223,7 @@ export async function sendSupportRequestReceived({ email, name, ticket_id, cta_u
         model: {
             name,
             ticketId: ticket_id,
-            ctaUrl: cta_url || `${ENV.APP_BASE_URL}/support`,
+            ctaUrl: cta_url || buildAppUrl('/support'),
         },
     });
 }
@@ -221,7 +236,7 @@ export async function sendSupportRequestClosed({ email, name, ticket_id, cta_url
         model: {
             name,
             ticketId: ticket_id,
-            ctaUrl: cta_url || `${ENV.APP_BASE_URL}/support`,
+            ctaUrl: cta_url || buildAppUrl('/support'),
         },
     });
 }
@@ -235,7 +250,7 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
         model: {
             name,
             subjectLine: subject || 'Mail scanned and ready',
-            ctaUrl: cta_url || `${ENV.APP_BASE_URL}/mail`,
+            ctaUrl: cta_url || buildAppUrl('/mail'),
         },
     });
 }
@@ -286,7 +301,7 @@ export async function sendMailReceivedAfterCancellation({ email, name, subject, 
         model: {
             name,
             subjectLine: subject || 'Mail received after cancellation',
-            ctaUrl: cta_url || `${ENV.APP_BASE_URL}/mail`,
+            ctaUrl: cta_url || buildAppUrl('/mail'),
         },
     });
 }
@@ -297,8 +312,7 @@ export async function sendChVerificationNudge(user: { email: string; first_name?
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
 
-    const appUrl = ENV.APP_BASE_URL?.replace(/\/$/, '') || 'https://virtualaddresshub.co.uk';
-    const ctaUrl = `${appUrl}/account`;
+    const ctaUrl = buildAppUrl('/account');
 
     await sendTemplateEmail({
         to: user.email,
@@ -315,8 +329,7 @@ export async function sendChVerificationReminder(user: { email: string; first_na
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
 
-    const appUrl = ENV.APP_BASE_URL?.replace(/\/$/, '') || 'https://virtualaddresshub.co.uk';
-    const ctaUrl = `${appUrl}/account`;
+    const ctaUrl = buildAppUrl('/account');
 
     await sendTemplateEmail({
         to: user.email,

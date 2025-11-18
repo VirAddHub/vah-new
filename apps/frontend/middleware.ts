@@ -2,19 +2,47 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
   const { pathname } = request.nextUrl;
 
-  // Cache static assets for 1 year
-  if (pathname.startsWith('/_next/static/') || 
-      pathname.startsWith('/images/') || 
-      pathname.startsWith('/icons/') ||
-      pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
-    response.headers.set(
-      'Cache-Control',
-      'public, max-age=31536000, immutable'
-    );
+  // Skip internal routes and static assets
+  if (pathname.startsWith('/_next') || 
+      pathname.startsWith('/api') || 
+      pathname.includes('.')) {
+    const response = NextResponse.next();
+    // Cache static assets for 1 year
+    if (pathname.startsWith('/_next/static/') || 
+        pathname.startsWith('/images/') || 
+        pathname.startsWith('/icons/') ||
+        pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      response.headers.set(
+        'Cache-Control',
+        'public, max-age=31536000, immutable'
+      );
+    }
+    return response;
   }
+
+  // Protected routes that require authentication
+  const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin'];
+  const isProtectedRoute = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
+
+  // Check for authentication cookie
+  if (isProtectedRoute) {
+    const sessionCookie = request.cookies.get('vah_session');
+    const hasValidSession = sessionCookie && 
+                           sessionCookie.value !== 'null' && 
+                           sessionCookie.value !== 'undefined' && 
+                           sessionCookie.value.length > 10;
+
+    if (!hasValidSession) {
+      // Redirect to login with next parameter
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  const response = NextResponse.next();
 
   // Cache API routes for 5 minutes with stale-while-revalidate
   if (pathname.startsWith('/api/')) {

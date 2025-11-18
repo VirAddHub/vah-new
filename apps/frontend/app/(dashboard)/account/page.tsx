@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -27,9 +28,9 @@ const formatDateUK = (v?: number | string | null) => {
 };
 
 export default function AccountPage() {
-    const { data: overview } = useSWR('/api/billing/overview', swrFetcher);
-    const { data: invoices } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
-    const { data: userData } = useSWR('/api/auth/whoami', swrFetcher);
+    const { data: overview, error: overviewError } = useSWR('/api/billing/overview', swrFetcher);
+    const { data: invoices, error: invoicesError } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
+    const { data: userData, error: userDataError } = useSWR('/api/auth/whoami', swrFetcher);
 
     const [busy, setBusy] = useState<string | null>(null);
     const [profileForm, setProfileForm] = useState({
@@ -44,6 +45,48 @@ export default function AccountPage() {
     const o = overview?.data;
     const items = invoices?.data?.items ?? [];
     const user = userData?.data?.user;
+
+    // Check for unauthenticated state (401 errors or unauthenticated error messages)
+    // Axios errors have response.status, and SWR errors may have status directly
+    const isUnauthenticated = 
+        (userDataError && (
+            (userDataError as any)?.response?.status === 401 || 
+            (userDataError as any)?.status === 401 || 
+            (userDataError as any)?.message?.includes('unauthenticated')
+        )) ||
+        (overviewError && (
+            (overviewError as any)?.response?.status === 401 || 
+            (overviewError as any)?.status === 401
+        )) ||
+        (invoicesError && (
+            (invoicesError as any)?.response?.status === 401 || 
+            (invoicesError as any)?.status === 401
+        )) ||
+        (userData?.ok === false && userData?.error === 'unauthenticated');
+
+    // Show login prompt if unauthenticated (even if middleware is bypassed)
+    if (isUnauthenticated) {
+        return (
+            <div className="min-h-screen flex flex-col bg-background">
+                <Navigation onNavigate={() => { }} />
+                <main className="flex-1 flex items-center justify-center">
+                    <div className="max-w-xl py-12 px-6">
+                        <h1 className="text-xl font-semibold text-foreground">Please log in</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            You need to be signed in to view your account. Log in and we&apos;ll bring you straight back here.
+                        </p>
+                        <Link
+                            href="/login?next=/account"
+                            className="mt-4 inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 transition-colors"
+                        >
+                            Log in
+                        </Link>
+                    </div>
+                </main>
+                <Footer onNavigate={() => { }} />
+            </div>
+        );
+    }
 
     // Initialize profile form when user data loads
     useEffect(() => {
