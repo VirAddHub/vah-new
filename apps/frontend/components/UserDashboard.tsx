@@ -444,6 +444,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Check if user can use the address (KYC approved + CH verified)
   const kycApproved = userProfile?.kyc_status === "approved";
   const chVerified = userProfile?.companies_house_verified === true;
+  const chVerificationStatus = userProfile?.ch_verification_status || (chVerified ? 'approved' : 'not_submitted');
   const canUseAddress = kycApproved && chVerified;
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
@@ -796,6 +797,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Please complete identity verification via GOV.UK / Companies House and upload proof using the Companies House verification card in your dashboard.
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {chVerificationStatus === 'submitted'
+                          ? "Thanks! We've received your Companies House proof and will review it shortly."
+                          : chVerificationStatus === 'rejected'
+                            ? "Your last upload needs attention. Please re-upload a clearer screenshot using the verification card."
+                            : "Once you've finished the GOV.UK verification, upload a quick confirmation so we can enable your address."}
                       </p>
                     </div>
 

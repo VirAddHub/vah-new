@@ -83,6 +83,10 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 kyc_rejection_reason,
                 companies_house_verified,
                 ch_verification_proof_url,
+                ch_verification_status,
+                ch_verification_submitted_at,
+                ch_verification_reviewed_at,
+                ch_verification_notes,
                 plan_id,
                 subscription_status,
                 created_at,
@@ -621,7 +625,11 @@ router.get("/ch-verification", requireAuth, async (req: Request, res: Response) 
         const result = await pool.query(`
             SELECT 
                 companies_house_verified,
-                ch_verification_proof_url
+                ch_verification_proof_url,
+                ch_verification_status,
+                ch_verification_submitted_at,
+                ch_verification_reviewed_at,
+                ch_verification_notes
             FROM "user"
             WHERE id = $1
         `, [userId]);
@@ -630,11 +638,16 @@ router.get("/ch-verification", requireAuth, async (req: Request, res: Response) 
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
 
+        const row = result.rows[0];
         return res.json({
             ok: true,
             data: {
-                companies_house_verified: result.rows[0].companies_house_verified || false,
-                ch_verification_proof_url: result.rows[0].ch_verification_proof_url || null
+                companies_house_verified: row.companies_house_verified || false,
+                ch_verification_proof_url: row.ch_verification_proof_url || null,
+                ch_verification_status: row.ch_verification_status || 'not_submitted',
+                ch_verification_submitted_at: row.ch_verification_submitted_at || null,
+                ch_verification_reviewed_at: row.ch_verification_reviewed_at || null,
+                ch_verification_notes: row.ch_verification_notes || null
             }
         });
     } catch (error: any) {
@@ -663,21 +676,25 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
             : proofUrl;
 
         // Update user record
-        await pool.query(`
+        const now = Date.now();
+        const updateResult = await pool.query(`
             UPDATE "user"
             SET 
-                companies_house_verified = true,
+                companies_house_verified = false,
                 ch_verification_proof_url = $1,
+                ch_verification_status = 'submitted',
+                ch_verification_submitted_at = NOW(),
+                ch_verification_reviewed_at = NULL,
+                ch_verification_reviewer_id = NULL,
+                ch_verification_notes = NULL,
                 updated_at = $2
             WHERE id = $3
-        `, [fullUrl, Date.now(), userId]);
+            RETURNING companies_house_verified, ch_verification_proof_url, ch_verification_status, ch_verification_submitted_at, ch_verification_reviewed_at, ch_verification_notes
+        `, [fullUrl, now, userId]);
 
         return res.json({
             ok: true,
-            data: {
-                companies_house_verified: true,
-                ch_verification_proof_url: fullUrl
-            }
+            data: updateResult.rows[0]
         });
     } catch (error: any) {
         console.error('[POST /api/profile/ch-verification] error:', error);

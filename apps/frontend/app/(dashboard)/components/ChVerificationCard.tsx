@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle, Upload, AlertCircle, Loader2, Clock, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { API_BASE } from '@/lib/config';
 
 export function ChVerificationCard() {
   const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher);
@@ -17,6 +19,18 @@ export function ChVerificationCard() {
   const status = data?.data;
   const isLoading = !data && !error;
   const isVerified = status?.companies_house_verified === true;
+  const statusCode = status?.ch_verification_status || (isVerified ? 'approved' : 'not_submitted');
+  const submittedAt = formatDate(status?.ch_verification_submitted_at);
+  const reviewedAt = formatDate(status?.ch_verification_reviewed_at);
+  const adminNotes = status?.ch_verification_notes || null;
+  const proofUrl = status?.ch_verification_proof_url || null;
+  const resolvedProofUrl = proofUrl
+    ? proofUrl.startsWith('http')
+      ? proofUrl
+      : `${API_BASE.replace(/\/$/, '')}${proofUrl}`
+    : null;
+  const isPendingReview = statusCode === 'submitted';
+  const isRejected = statusCode === 'rejected';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -74,7 +88,7 @@ export function ChVerificationCard() {
 
       toast({
         title: 'Verification proof uploaded',
-        description: 'Your Companies House verification has been confirmed.',
+        description: 'Thanks! Our team will review your submission shortly.',
       });
 
       // Refetch status
@@ -110,7 +124,7 @@ export function ChVerificationCard() {
     );
   }
 
-  if (isVerified) {
+  if (isVerified || statusCode === 'approved') {
     return (
       <Card>
         <CardHeader>
@@ -129,15 +143,15 @@ export function ChVerificationCard() {
           <p className="text-sm text-muted-foreground">
             You can now safely use your VirtualAddressHub address for your Registered Office and Director's Service Address.
           </p>
-          {status?.ch_verification_proof_url && (
+          {resolvedProofUrl && (
             <div className="pt-2">
               <a
-                href={status.ch_verification_proof_url}
+                href={resolvedProofUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-primary hover:underline"
               >
-                View proof →
+                View submitted proof →
               </a>
             </div>
           )}
@@ -149,15 +163,21 @@ export function ChVerificationCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Companies House identity verification</CardTitle>
+        <CardTitle className="flex items-center justify-between gap-2">
+          <span>Companies House identity verification</span>
+          <Badge variant="outline" className="text-xs">
+            {statusLabel(statusCode)}
+          </Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {renderStatusAlert({ statusCode, submittedAt, reviewedAt, adminNotes })}
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
             Companies House now requires identity verification for all directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.
           </p>
           <p className="text-sm text-muted-foreground">
-            Please complete the identity check via GOV.UK / Companies House, then upload a quick screenshot or confirmation below.
+            Please complete the identity check via GOV.UK / Companies House, then upload a quick screenshot or confirmation below. Uploading another file will replace your previous submission.
           </p>
         </div>
 
@@ -195,6 +215,19 @@ export function ChVerificationCard() {
           </Button>
         </form>
 
+        {resolvedProofUrl && (
+          <div className="text-sm">
+            <a
+              href={resolvedProofUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              View latest upload →
+            </a>
+          </div>
+        )}
+
         {error && (
           <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
@@ -207,5 +240,71 @@ export function ChVerificationCard() {
       </CardContent>
     </Card>
   );
+}
+
+function formatDate(value?: string | number | null) {
+  if (!value) return null;
+  const date = typeof value === 'number' ? new Date(value) : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function statusLabel(code: string) {
+  switch (code) {
+    case 'submitted':
+      return 'Awaiting review';
+    case 'rejected':
+      return 'Action required';
+    case 'approved':
+      return 'Verified';
+    default:
+      return 'Not submitted';
+  }
+}
+
+function renderStatusAlert({
+  statusCode,
+  submittedAt,
+  reviewedAt,
+  adminNotes,
+}: {
+  statusCode: string;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  adminNotes: string | null;
+}) {
+  if (statusCode === 'submitted') {
+    return (
+      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+        <Clock className="h-4 w-4" />
+        <AlertTitle>Proof received</AlertTitle>
+        <AlertDescription>
+          We received your Companies House verification proof {submittedAt ? `on ${submittedAt}` : 'and it is waiting in the review queue'}. We&apos;ll double-check
+          it and email you once it&apos;s approved.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (statusCode === 'rejected') {
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Needs attention</AlertTitle>
+        <AlertDescription className="space-y-1">
+          <p>Your previous upload was rejected {reviewedAt ? `on ${reviewedAt}` : ''}. Please upload a clearer confirmation.</p>
+          {adminNotes && <p className="text-sm font-medium">Reason: {adminNotes}</p>}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return null;
 }
 

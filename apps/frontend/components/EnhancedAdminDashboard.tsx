@@ -125,13 +125,17 @@ const ServiceMonitoring = dynamic(() => import('./admin/ServiceMonitoring').then
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
+const ChVerificationQueue = dynamic(() => import('./admin/ChVerificationQueue'), {
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
 interface AdminDashboardProps {
     onLogout: () => void;
     onNavigate?: (page: string, data?: any) => void;
     onGoBack?: () => void;
 }
 
-type AdminSection = "overview" | "users" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "bundle-analysis" | "service-monitoring" | "settings" | "blog";
+type AdminSection = "overview" | "users" | "ch-verification" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "bundle-analysis" | "service-monitoring" | "settings" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -478,6 +482,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
     const menuItems = [
         { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+        { id: "ch-verification", label: "Verification", icon: <Shield className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "analytics", label: "Analytics", icon: <PieChart className="h-4 w-4" /> },
@@ -517,6 +522,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <UsersSection
                     users={users}
                     loading={usersLoading}
+            case "ch-verification":
+                return <ChVerificationQueue />;
                     error={usersError?.message || null}
                     onFiltersChange={handleFiltersChange}
                     total={usersTotal}
