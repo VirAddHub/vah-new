@@ -265,6 +265,29 @@ export function TermsPage({ onNavigate }: TermsPageProps) {
             support@virtualaddresshub.co.uk
           </p>
         </section>
+
+        {/* 17. Regulatory Information */}
+        <section className="space-y-2">
+          <h2 className="text-xl font-semibold">
+            17. Regulatory Information
+          </h2>
+          <p className="text-muted-foreground">
+            VirtualAddressHub Ltd is a UK company providing virtual registered office and mail handling services. We comply with the UK General Data Protection Regulation (UK GDPR), the Data Protection Act 2018, and the Money Laundering Regulations 2017 (as amended).
+          </p>
+          <p className="text-muted-foreground">
+            We are registered with the Information Commissioner's Office (ICO) as a data controller and supervised by HM Revenue & Customs (HMRC) for Anti-Money Laundering (AML) as a Trust or Company Service Provider (TCSP).
+          </p>
+        </section>
+
+        {/* 18. AML Supervision */}
+        <section className="space-y-2">
+          <h2 className="text-xl font-semibold">
+            18. AML Supervision
+          </h2>
+          <p className="text-muted-foreground">
+            As part of our AML obligations, we verify the identity of all customers and, where relevant, their directors and persons with significant control (PSCs) before activating any address service. We apply enhanced checks in higher-risk situations and maintain full AML policies, records, and monitoring procedures. Where required, we report suspicious activity to the National Crime Agency (NCA) in line with UK law.
+          </p>
+        </section>
       </main>
     </div>
   );

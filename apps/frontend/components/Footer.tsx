@@ -58,7 +58,6 @@ export function Footer({ onNavigate }: FooterProps) {
         { label: "Privacy Policy", page: "privacy" },
         { label: "Terms of Service", page: "terms" },
         { label: "KYC Policy", page: "kyc" },
-        { label: "About Us", page: "about" },
     ];
 
     const contacts: ContactItem[] = [

@@ -135,19 +135,16 @@ export function PrivacyPolicyPage({
           </ul>
         </section>
 
-        {/* 6. Cookie Policy */}
+        {/* 6. Cookies */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            6. Cookie Policy
+            6. Cookies
           </h2>
           <p className="text-muted-foreground">
-            We only use strictly necessary cookies for login, security, and session management.
+            We only use strictly necessary cookies needed to keep you logged in, maintain secure sessions, and protect against fraud and abuse. We do not use analytics, advertising, or tracking cookies.
           </p>
           <p className="text-muted-foreground">
-            No analytics, tracking, or marketing cookies.
-          </p>
-          <p className="text-muted-foreground">
-            No cookie banner required under PECR.
+            Because our cookies are strictly necessary for the service to function, a cookie banner is not required under the UK Privacy and Electronic Communications Regulations (PECR). You can control cookies at browser level, but disabling them may prevent you from using the dashboard securely.
           </p>
         </section>
 
