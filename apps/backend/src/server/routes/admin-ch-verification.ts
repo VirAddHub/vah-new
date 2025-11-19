@@ -266,13 +266,35 @@ router.get('/ch-verification/proof/:userId', requireAdmin, async (req: Request, 
 
         const proofUrl: string | null = result.rows[0].ch_verification_proof_url;
         if (!proofUrl) {
-            return res.status(404).json({ ok: false, error: 'file_not_found' });
+            return res.status(404).json({ ok: false, error: 'no_proof_uploaded' });
         }
 
-        const filename = path.basename(proofUrl);
+        const sanitizedUrl = proofUrl.trim();
+        const withoutQuery = sanitizedUrl.split('?')[0].split('#')[0];
+        const mediaPrefix = '/api/profile/media/';
+        const prefixIndex = withoutQuery.indexOf(mediaPrefix);
+        const relativePath = prefixIndex !== -1
+            ? withoutQuery.slice(prefixIndex + mediaPrefix.length)
+            : withoutQuery.replace(/^https?:\/\/[^/]+\/api\/profile\/media\//i, '');
+
+        const filename = path.basename(relativePath || withoutQuery);
+
+        if (!filename || filename === '.' || filename === '..') {
+            console.error('[admin CH proof] invalid proof path', {
+                userId,
+                proofUrl
+            });
+            return res.status(400).json({ ok: false, error: 'invalid_proof_path' });
+        }
+
         const filePath = path.join(process.cwd(), 'data', 'ch-verification', filename);
 
         if (!fs.existsSync(filePath)) {
+            console.warn('[admin CH proof] file not found', {
+                userId,
+                proofUrl,
+                resolvedPath: filePath
+            });
             return res.status(404).json({ ok: false, error: 'file_not_found' });
         }
 
