@@ -320,7 +320,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           <div className="flex flex-wrap justify-center gap-3">
             <Button
               variant="default"
-              className="bg-primary hover:bg-primary/90"
+              className="bg-primary text-white hover:bg-primary/90"
               onClick={() => onNavigate?.("contact")}
             >
               Contact Support

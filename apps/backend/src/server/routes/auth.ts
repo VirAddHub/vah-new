@@ -368,7 +368,9 @@ router.post("/login", async (req, res) => {
         }
 
         // Check KYC verification status (except for admins)
-        if (!userData.is_admin && userData.kyc_status !== 'verified') {
+        // Accept both 'verified' (legacy) and 'approved' (current) as valid KYC statuses
+        const isKycApproved = userData.kyc_status === 'verified' || userData.kyc_status === 'approved';
+        if (!userData.is_admin && !isKycApproved) {
             return res.status(403).json({
                 ok: false,
                 error: "kyc_verification_required",

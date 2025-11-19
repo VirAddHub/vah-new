@@ -45,8 +45,8 @@ export default function LoginPage() {
             localStorage.setItem('vah_jwt', token);
             localStorage.setItem('vah_user', JSON.stringify(data.data.user));
 
-            // Set cookie for middleware
-            document.cookie = `vah_jwt=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+            // Set cookie for middleware (must match middleware cookie name: vah_session)
+            document.cookie = `vah_session=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
 
             // Redirect to dashboard
             const isAdmin = data.data.user.is_admin || data.data.user.role === 'admin';
