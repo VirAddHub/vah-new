@@ -186,12 +186,12 @@ export default function AccountPage() {
 
                     {/* Payment Status Alerts */}
                     {o?.account_status === 'grace_period' && o?.grace_period && (
-                        <div className="rounded-xl p-4 border border-amber-500 bg-amber-100 dark:bg-amber-900/20 dark:border-amber-400">
-                            <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
+                        <div className="rounded-xl p-4 border border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-400">
+                            <div className="flex items-center gap-2 font-semibold text-emerald-900 dark:text-emerald-100">
                                 <AlertCircle className="h-5 w-5" />
                                 Payment Failed - Grace Period
                             </div>
-                            <div className="text-sm mt-1 text-amber-800 dark:text-amber-200">
+                            <div className="text-sm mt-1 text-emerald-800 dark:text-emerald-200">
                                 Your payment failed, but you have {o.grace_period.days_left} days to update your payment method.
                                 This is attempt #{o.grace_period.retry_count + 1}.
                             </div>
@@ -199,7 +199,7 @@ export default function AccountPage() {
                                 <Button
                                     onClick={() => act('/api/billing/reauthorise')}
                                     disabled={busy !== null}
-                                    className="bg-amber-600 hover:bg-amber-700"
+                                    className="bg-emerald-600 hover:bg-emerald-700"
                                 >
                                     Update Payment Method
                                 </Button>
@@ -207,7 +207,7 @@ export default function AccountPage() {
                                     variant="outline"
                                     onClick={() => act('/api/billing/update-bank')}
                                     disabled={busy !== null}
-                                    className="border-amber-600 text-amber-600 hover:bg-amber-50"
+                                    className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
                                 >
                                     Update Bank Details
                                 </Button>
