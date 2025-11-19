@@ -8,7 +8,19 @@ ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_unsubscribed_at TIMESTAMPTZ;
 ALTER TABLE "user" ADD COLUMN IF NOT EXISTS state TEXT;
 
 -- 3. Add billing_interval column to payment table (for payments endpoint)
-ALTER TABLE payment ADD COLUMN IF NOT EXISTS billing_interval TEXT;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'payment'
+    ) THEN
+        ALTER TABLE payment ADD COLUMN IF NOT EXISTS billing_interval TEXT;
+    ELSE
+        RAISE NOTICE 'Skipping payment table update because payment table does not exist';
+    END IF;
+END
+$$;
 
 -- 4. Add item_id column to forwarding_request table (for forwarding endpoint)
 ALTER TABLE forwarding_request ADD COLUMN IF NOT EXISTS item_id BIGINT REFERENCES mail_item(id);
@@ -49,7 +61,19 @@ CREATE INDEX IF NOT EXISTS idx_kyc_status_user_id ON kyc_status(user_id);
 -- 8. Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_email_unsubscribed_at ON "user"(email_unsubscribed_at);
 CREATE INDEX IF NOT EXISTS idx_user_state ON "user"(state);
-CREATE INDEX IF NOT EXISTS idx_payment_billing_interval ON payment(billing_interval);
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'payment'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_payment_billing_interval ON payment(billing_interval);
+    ELSE
+        RAISE NOTICE 'Skipping payment index creation because payment table does not exist';
+    END IF;
+END
+$$;
 CREATE INDEX IF NOT EXISTS idx_forwarding_request_item_id ON forwarding_request(item_id);
 
 -- 9. Update the updated_at trigger for new tables
