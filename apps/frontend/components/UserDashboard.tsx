@@ -33,6 +33,7 @@ import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
 import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
+import { ChVerificationCard } from "@/app/(dashboard)/components/ChVerificationCard";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -587,6 +588,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
           {/* Left Column - Main Content */}
           <div className="space-y-6">
+
+            {/* Companies House Verification */}
+            <ChVerificationCard />
 
             {/* Mail Inbox Section */}
             <Card className="border-neutral-200 shadow-sm">
