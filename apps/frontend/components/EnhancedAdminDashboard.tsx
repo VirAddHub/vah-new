@@ -519,20 +519,22 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                     onViewForwarding={() => setActiveSection('forwarding')}
                 />;
             case "users":
-                return <UsersSection
-                    users={users}
-                    loading={usersLoading}
+                return (
+                    <UsersSection
+                        users={users}
+                        loading={usersLoading}
+                        error={usersError?.message || null}
+                        onFiltersChange={handleFiltersChange}
+                        total={usersTotal}
+                        page={usersPage}
+                        pageSize={50}
+                        onPageChange={setUsersPage}
+                        isValidating={usersValidating}
+                        onRefreshUsers={refetchUsers}
+                    />
+                );
             case "ch-verification":
                 return <ChVerificationQueue />;
-                    error={usersError?.message || null}
-                    onFiltersChange={handleFiltersChange}
-                    total={usersTotal}
-                    page={usersPage}
-                    pageSize={50}
-                    onPageChange={setUsersPage}
-                    isValidating={usersValidating}
-                    onRefreshUsers={refetchUsers}
-                />;
             case "forwarding":
                 return <CollaborativeForwardingBoard onDataUpdate={(requests) => {
                     setForwardingRequests(requests);
