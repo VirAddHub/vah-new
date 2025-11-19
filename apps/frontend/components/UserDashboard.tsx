@@ -539,6 +539,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 Billing
               </button>
               <button
+                onClick={() => window.location.href = '/account'}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <User className="h-4 w-4" />
+                Account
+              </button>
+              <button
                 onClick={() => onNavigate('settings')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -560,6 +567,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <p className="font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
               </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.location.href = '/account'}
+                className="tt-min flex items-center gap-2"
+              >
+                <User className="h-4 w-4" />
+                Account
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
