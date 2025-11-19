@@ -178,9 +178,7 @@ export default function ChVerificationQueue() {
                   const statusTag = submission.ch_verification_status ?? 'not_submitted';
                   const badgeClass = STATUS_BADGE[statusTag] ?? STATUS_BADGE.default;
                   const proofHref = submission.ch_verification_proof_url
-                    ? submission.ch_verification_proof_url.startsWith('http')
-                      ? submission.ch_verification_proof_url
-                      : `${API_BASE.replace(/\/$/, "")}${submission.ch_verification_proof_url}`
+                    ? `/api/bff/admin/ch-verification/proof?userId=${submission.id}`
                     : null;
                   const busy = actionUserId === submission.id;
                   return (

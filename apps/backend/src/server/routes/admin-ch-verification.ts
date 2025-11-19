@@ -5,6 +5,8 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { sendChVerificationReminder } from '../../lib/mailer';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
@@ -236,6 +238,59 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
     } catch (error: any) {
         console.error('[POST /api/admin/ch-verification/:userId/reject] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/admin/ch-verification/proof/:userId
+ * Stream the Companies House verification proof for a user (admin only)
+ */
+router.get('/ch-verification/proof/:userId', requireAdmin, async (req: Request, res: Response) => {
+    const pool = getPool();
+    const userId = parseInt(req.params.userId, 10);
+
+    if (Number.isNaN(userId)) {
+        return res.status(400).json({ ok: false, error: 'invalid_user_id' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT ch_verification_proof_url
+            FROM "user"
+            WHERE id = $1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const proofUrl: string | null = result.rows[0].ch_verification_proof_url;
+        if (!proofUrl) {
+            return res.status(404).json({ ok: false, error: 'file_not_found' });
+        }
+
+        const filename = path.basename(proofUrl);
+        const filePath = path.join(process.cwd(), 'data', 'ch-verification', filename);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ ok: false, error: 'file_not_found' });
+        }
+
+        const ext = path.extname(filename).toLowerCase();
+        const contentType = ext === '.pdf'
+            ? 'application/pdf'
+            : ext.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+                ? `image/${ext.slice(1)}`
+                : 'application/octet-stream';
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+    } catch (error: any) {
+        console.error('[GET /api/admin/ch-verification/proof/:userId] error:', error);
+        return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
     }
 });
 
