@@ -539,7 +539,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 Billing
               </button>
               <button
-                onClick={() => window.location.href = '/account'}
+                onClick={() => onNavigate('account')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <User className="h-4 w-4" />
@@ -570,7 +570,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => window.location.href = '/account'}
+                onClick={() => onNavigate('account')}
                 className="tt-min flex items-center gap-2"
               >
                 <User className="h-4 w-4" />
