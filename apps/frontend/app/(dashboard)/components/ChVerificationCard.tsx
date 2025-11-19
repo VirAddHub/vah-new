@@ -32,6 +32,11 @@ export function ChVerificationCard() {
       ? proofUrl
       : `${API_BASE.replace(/\/$/, '')}${proofUrl}`
     : null;
+  const proxyProofUrl = resolvedProofUrl
+    ? `/api/bff/ch-verification/proof?url=${encodeURIComponent(resolvedProofUrl)}`
+    : proofUrl
+      ? `/api/bff/ch-verification/proof?path=${encodeURIComponent(proofUrl)}`
+      : null;
   const isPendingReview = statusCode === 'submitted';
   const isRejected = statusCode === 'rejected';
 
@@ -161,10 +166,10 @@ export function ChVerificationCard() {
           <p className="text-sm text-muted-foreground">
             You can now safely use your VirtualAddressHub address for your Registered Office and Director's Service Address.
           </p>
-          {resolvedProofUrl && (
+          {proxyProofUrl && (
             <div className="pt-2">
               <a
-                href={resolvedProofUrl}
+                href={proxyProofUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-primary hover:underline"
@@ -240,10 +245,10 @@ export function ChVerificationCard() {
           </Button>
         </form>
 
-        {resolvedProofUrl && (
+        {proxyProofUrl && (
           <div className="text-sm">
             <a
-              href={resolvedProofUrl}
+              href={proxyProofUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
