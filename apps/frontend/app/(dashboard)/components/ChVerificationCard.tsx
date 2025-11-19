@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,12 @@ export function ChVerificationCard() {
     : null;
   const isPendingReview = statusCode === 'submitted';
   const isRejected = statusCode === 'rejected';
+
+  useEffect(() => {
+    if (statusCode === 'approved') {
+      setFeedback(null);
+    }
+  }, [statusCode]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
