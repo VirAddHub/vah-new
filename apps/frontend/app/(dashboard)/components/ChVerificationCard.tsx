@@ -11,10 +11,13 @@ import { CheckCircle, Upload, AlertCircle, Loader2, Clock, XCircle } from 'lucid
 import { toast } from '@/hooks/use-toast';
 import { API_BASE } from '@/lib/config';
 
+type Feedback = { type: 'success' | 'error'; message: string } | null;
+
 export function ChVerificationCard() {
   const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [feedback, setFeedback] = useState<Feedback>(null);
 
   const status = data?.data;
   const isLoading = !data && !error;
@@ -90,6 +93,10 @@ export function ChVerificationCard() {
         title: 'Verification proof uploaded',
         description: 'Thanks! Our team will review your submission shortly.',
       });
+      setFeedback({
+        type: 'success',
+        message: 'Proof uploaded successfully. We’ll review it shortly.',
+      });
 
       // Refetch status
       mutate();
@@ -98,10 +105,15 @@ export function ChVerificationCard() {
       const fileInput = document.getElementById('ch-verification-file') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
     } catch (err: any) {
+      const description = err.message || 'Failed to upload verification proof. Please try again.';
       toast({
         title: 'Upload failed',
-        description: err.message || 'Failed to upload verification proof. Please try again.',
+        description,
         variant: 'destructive',
+      });
+      setFeedback({
+        type: 'error',
+        message: description,
       });
     } finally {
       setUploading(false);
@@ -171,6 +183,13 @@ export function ChVerificationCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {feedback && (
+          <Alert variant={feedback.type === 'error' ? 'destructive' : 'default'}>
+            {feedback.type === 'error' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4 text-green-600" />}
+            <AlertTitle>{feedback.type === 'error' ? 'Upload failed' : 'Upload received'}</AlertTitle>
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
+        )}
         {renderStatusAlert({ statusCode, submittedAt, reviewedAt, adminNotes })}
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
