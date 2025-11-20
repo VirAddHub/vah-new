@@ -190,24 +190,24 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     loadUserProfile();
   }, [loadUserProfile]);
 
-  // Listen for CH verification approval to refresh profile
+  // Listen for CH verification approval to refresh profile (debounced)
   useEffect(() => {
-    const handleChVerificationApproved = () => {
-      console.log('CH verification approved - refreshing user profile');
-      loadUserProfile();
-    };
+    let refreshTimeout: NodeJS.Timeout | null = null;
 
-    const handleRefreshUserProfile = () => {
-      console.log('Refresh user profile event received');
-      loadUserProfile();
+    const handleChVerificationApproved = () => {
+      // Debounce to prevent multiple rapid refreshes
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        console.log('CH verification approved - refreshing user profile');
+        loadUserProfile();
+      }, 1000);
     };
 
     window.addEventListener('ch-verification-approved', handleChVerificationApproved);
-    window.addEventListener('refresh-user-profile', handleRefreshUserProfile);
 
     return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
       window.removeEventListener('ch-verification-approved', handleChVerificationApproved);
-      window.removeEventListener('refresh-user-profile', handleRefreshUserProfile);
     };
   }, [loadUserProfile]);
 

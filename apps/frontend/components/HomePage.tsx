@@ -86,10 +86,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl text-primary">
-                            Professional London Business Address Service.
-                            <span className="block text-foreground">
-                                Compliant. Private. Seamless.
-                            </span>
+                            Your London Business Address <br />
+                            Trusted, Central, <br />
+                            Professional.
                         </h1>
                         <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
                             Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
@@ -127,10 +126,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl text-primary">
-                                Professional London Business Address Service.
-                                <span className="block text-foreground">
-                                    Compliant. Private. Seamless.
-                                </span>
+                                Your London Business Address <br />
+                                Trusted, Central, <br />
+                                Professional.
                             </h1>
                             <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
                                 Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
@@ -240,11 +238,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="relative">
                         {/* Most Popular badge - only show for monthly */}
                         {!isAnnual && (
-                        <div className="pointer-events-none absolute -top-4 right-8 z-10">
-                            <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
-                                Most Popular
-                            </span>
-                        </div>
+                            <div className="pointer-events-none absolute -top-4 right-8 z-10">
+                                <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
+                                    Most Popular
+                                </span>
+                            </div>
                         )}
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">

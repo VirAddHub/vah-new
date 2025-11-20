@@ -15,7 +15,13 @@ type Feedback = { type: 'success' | 'error'; message: string } | null;
 
 export function ChVerificationCard() {
   const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher, {
-    refreshInterval: 30000, // Refresh every 30 seconds to catch admin approvals
+    // Only refresh if status is 'submitted' (waiting for approval), otherwise stop polling
+    refreshInterval: (latestData) => {
+      const status = latestData?.data;
+      const statusCode = status?.ch_verification_status || (status?.companies_house_verified ? 'approved' : 'not_submitted');
+      // Only poll if waiting for review, stop once approved/rejected
+      return statusCode === 'submitted' ? 60000 : 0; // 60 seconds if pending, 0 if done
+    },
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
   });
@@ -23,6 +29,7 @@ export function ChVerificationCard() {
   const [file, setFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [wasVerified, setWasVerified] = useState(false);
+  const [hasTriggeredRefresh, setHasTriggeredRefresh] = useState(false);
 
   const status = data?.data;
   const isLoading = !data && !error;
@@ -45,23 +52,21 @@ export function ChVerificationCard() {
   const isPendingReview = statusCode === 'submitted';
   const isRejected = statusCode === 'rejected';
 
-  // Track when verification status changes to approved and trigger profile refresh
+  // Track when verification status changes to approved and trigger profile refresh (only once)
   useEffect(() => {
-    if ((isVerified || statusCode === 'approved') && !wasVerified) {
+    if ((isVerified || statusCode === 'approved') && !wasVerified && !hasTriggeredRefresh) {
       setWasVerified(true);
+      setHasTriggeredRefresh(true);
       setFeedback(null);
-      // Dispatch custom event to trigger user profile refresh
-      window.dispatchEvent(new CustomEvent('ch-verification-approved'));
-      // Also trigger a page refresh of user data
-      if (typeof window !== 'undefined' && window.location) {
-        // Trigger a soft refresh of user profile data
-        const event = new Event('refresh-user-profile');
-        window.dispatchEvent(event);
-      }
+      // Dispatch custom event to trigger user profile refresh (debounced)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('ch-verification-approved'));
+      }, 500);
     } else if (!isVerified && statusCode !== 'approved') {
       setWasVerified(false);
+      setHasTriggeredRefresh(false);
     }
-  }, [isVerified, statusCode, wasVerified]);
+  }, [isVerified, statusCode, wasVerified, hasTriggeredRefresh]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
