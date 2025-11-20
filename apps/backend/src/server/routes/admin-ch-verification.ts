@@ -244,6 +244,7 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
 /**
  * GET /api/admin/ch-verification/proof/:userId
  * Stream the Companies House verification proof for a user (admin only)
+ * Handles both full URLs and relative paths stored in ch_verification_proof_url
  */
 router.get('/ch-verification/proof/:userId', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();

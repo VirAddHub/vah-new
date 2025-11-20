@@ -92,6 +92,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </span>
                         </h1>
                         <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
+                            Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
+                        </p>
+                        <p className="mt-4 text-base text-muted-foreground leading-relaxed">
                             One London address for every official use.
                             Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                         </p>
@@ -130,6 +133,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </h1>
                             <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
+                                Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
+                            </p>
+                            <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                                 One London address for every official use.
                                 Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
                             </p>

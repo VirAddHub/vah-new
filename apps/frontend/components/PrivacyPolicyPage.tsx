@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo } from "react";
 import { Button } from "./ui/button";
 
 interface PrivacyPolicyPageProps {
-  onNavigate?: (page: string) => void; // e.g. onNavigate("contact")
+  onNavigate?: (page: string) => void;
 }
 
 export function PrivacyPolicyPage({
@@ -26,12 +25,7 @@ export function PrivacyPolicyPage({
 
         <section className="space-y-3">
           <p className="text-muted-foreground">
-            At VirtualAddressHub, your privacy matters. We only
-            collect the information we need to deliver your
-            service securely, legally, and efficiently. This
-            policy explains how we handle your data in
-            accordance with the UK GDPR and the Data Protection
-            Act 2018.
+            At VirtualAddressHub, your privacy matters. We only collect the information required to deliver your service securely, legally, and efficiently. This policy explains how we handle your data in accordance with the UK GDPR, the Data Protection Act 2018, and HMRC AML regulations.
           </p>
         </section>
 
@@ -45,9 +39,8 @@ export function PrivacyPolicyPage({
               <span className="font-medium text-foreground">
                 Business name:
               </span>{" "}
-              VirtualAddressHub
+              VirtualAddressHub Ltd
             </p>
-            {/* Registered address removed as requested */}
             <p>
               <span className="font-medium text-foreground">
                 Company number:
@@ -68,7 +61,7 @@ export function PrivacyPolicyPage({
             </p>
             <p>
               <span className="font-medium text-foreground">
-                Contact email:
+                Contact:
               </span>{" "}
               support@virtualaddresshub.co.uk
             </p>
@@ -81,29 +74,22 @@ export function PrivacyPolicyPage({
             2. What We Collect
           </h2>
           <p className="text-muted-foreground">
-            Depending on how you use our service, we may
-            collect:
+            We may collect the following depending on your usage:
           </p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Your name</li>
-            <li>Email address and phone number</li>
+            <li>Name</li>
+            <li>Email and phone</li>
             <li>Billing and forwarding address</li>
-            <li>
-              Scanned mail sent to your VirtualAddressHub
-              address
-            </li>
-            <li>
-              Proof of ID and address (for legal compliance)
-            </li>
-            <li>
-              Login and usage logs (e.g. IP address, browser
-              type, device info)
-            </li>
-            <li>Essential cookie data (see Section 6)</li>
+            <li>Scanned mail data</li>
+            <li>Identity documents</li>
+            <li>Login and security logs</li>
+            <li>Payment/subscription data (from GoCardless)</li>
+            <li>Essential cookie information</li>
+            <li>Support interactions</li>
+            <li>Operational logs</li>
           </ul>
           <p className="text-muted-foreground">
-            Scanned mail is stored via secure cloud folders
-            accessible only to you and authorised staff.
+            Scanned mail is stored securely on Microsoft OneDrive for Business.
           </p>
         </section>
 
@@ -113,98 +99,52 @@ export function PrivacyPolicyPage({
             3. Why We Use Your Data
           </h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              Provide your virtual address and mail-handling
-              service
-            </li>
-            <li>
-              Verify your identity (to meet HMRC AML
-              regulations)
-            </li>
-            <li>Notify you when mail is received</li>
-            <li>Deliver scanned post through your dashboard</li>
-            <li>Forward mail when requested</li>
-            <li>Manage your subscription and billing</li>
-            <li>Improve the platform and user experience</li>
-            <li>
-              Meet legal obligations (e.g. record-keeping,
-              invoicing)
-            </li>
+            <li>To provide your virtual address service</li>
+            <li>To verify identity under AML rules</li>
+            <li>To notify you when mail arrives</li>
+            <li>To deliver scans to your dashboard</li>
+            <li>To forward mail when requested</li>
+            <li>To provide billing and invoicing</li>
+            <li>To prevent fraud and maintain security</li>
+            <li>To meet legal obligations</li>
           </ul>
         </section>
 
         {/* 4. Legal Grounds */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            4. Legal Grounds for Processing
+            4. Legal Grounds
           </h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              <span className="font-medium text-foreground">
-                Contract
-              </span>{" "}
-              – to deliver the service you've signed up for
-            </li>
-            <li>
-              <span className="font-medium text-foreground">
-                Legal obligation
-              </span>{" "}
-              – for ID checks and HMRC compliance
-            </li>
+            <li>Contract (Art 6(1)(b))</li>
+            <li>Legal obligation (AML/KYC, taxation)</li>
+            <li>Legitimate interest (fraud prevention, platform security)</li>
           </ul>
         </section>
 
-        {/* 5. Data Retention */}
+        {/* 5. Retention */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            5. Data Retention
+            5. Retention
           </h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              Scanned post is stored securely while your account
-              is active
-            </li>
-            <li>
-              You may request deletion of specific scans or your
-              full archive
-            </li>
-            <li>
-              After cancellation, scans are deleted after 30
-              days unless legally required to retain
-            </li>
+            <li>Scanned mail: deleted 30 days after cancellation</li>
+            <li>KYC/AML docs: stored 5 years (mandatory)</li>
+            <li>Billing records: 7 years</li>
+            <li>Support logs: reasonable period</li>
           </ul>
         </section>
 
         {/* 6. Cookies */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            6. 🍪 Cookie Policy
+            6. Cookies
           </h2>
           <p className="text-muted-foreground">
-            We only use essential cookies set by our website
-            platform. These are required to:
+            We only use strictly necessary cookies needed to keep you logged in, maintain secure sessions, and protect against fraud and abuse. We do not use analytics, advertising, or tracking cookies.
           </p>
-          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Keep you securely logged in</li>
-            <li>Maintain session activity</li>
-            <li>Prevent security threats (e.g. CSRF)</li>
-            <li>Load pages efficiently</li>
-          </ul>
           <p className="text-muted-foreground">
-            We do NOT use cookies for:
-          </p>
-          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Analytics</li>
-            <li>Marketing</li>
-            <li>Tracking</li>
-            <li>Advertising</li>
-            <li>Embedded ads or media</li>
-          </ul>
-          <p className="text-muted-foreground">
-            Because we only use strictly necessary cookies, no
-            cookie banner is required under PECR or UK GDPR. If
-            we ever introduce optional cookies, we will ask for
-            your consent first.
+            Because our cookies are strictly necessary for the service to function, a cookie banner is not required under the UK Privacy and Electronic Communications Regulations (PECR). You can control cookies at browser level, but disabling them may prevent you from using the dashboard securely.
           </p>
         </section>
 
@@ -213,133 +153,74 @@ export function PrivacyPolicyPage({
           <h2 className="text-xl font-semibold">
             7. Your Rights
           </h2>
-          <p className="text-muted-foreground">
-            Under UK GDPR, you have the right to:
-          </p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Access your personal data</li>
-            <li>Correct inaccurate information</li>
-            <li>Request deletion of your data</li>
-            <li>Restrict or object to how your data is used</li>
-            <li>Request data portability</li>
-            <li>Withdraw consent (where applicable)</li>
-            <li>Lodge a complaint with the ICO</li>
+            <li>Access</li>
+            <li>Rectification</li>
+            <li>Deletion (where legally allowed)</li>
+            <li>Restriction</li>
+            <li>Objection</li>
+            <li>Portability</li>
+            <li>ICO complaint</li>
           </ul>
         </section>
 
         {/* 8. Security */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            8. How We Keep Your Data Safe
+            8. Security
           </h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>All data is stored securely within the UK</li>
-            <li>
-              Scanned documents are delivered via secure
-              download links
-            </li>
-            <li>Files are encrypted and access-controlled</li>
-            <li>
-              Only trained, KYC-verified staff may access mail
-            </li>
-            <li>
-              All systems use enterprise-grade authentication
-              and infrastructure
-            </li>
+            <li>UK/EEA hosting</li>
+            <li>Encryption</li>
+            <li>MFA for staff</li>
+            <li>Access control</li>
+            <li>Secure file delivery</li>
+            <li>Regular compliance audits</li>
           </ul>
         </section>
 
-        {/* 9. Payment Information */}
+        {/* 9. Payments */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            9. Payment Information
+            9. Payments
           </h2>
-          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              We use a regulated third-party provider to process
-              Direct Debit payments
-            </li>
-            <li>We do NOT store your full bank details</li>
-            <li>
-              Payment information is encrypted and securely
-              handled
-            </li>
-            <li>
-              We retain metadata (e.g. payment status,
-              timestamps) for billing and audit purposes
-            </li>
-            <li>
-              You can view their privacy policy at any time via
-              their platform:&nbsp;
-              <a
-                href="https://gocardless.com/legal/privacy"
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary underline underline-offset-2"
-              >
-                GoCardless Privacy Policy
-              </a>
-            </li>
-          </ul>
+          <p className="text-muted-foreground">
+            Handled by GoCardless.
+          </p>
+          <p className="text-muted-foreground">
+            We never store your full bank details.
+          </p>
         </section>
 
         {/* 10. Sharing */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            10. Who We Share Your Data With
+            10. Sharing
           </h2>
           <p className="text-muted-foreground">
-            We only share your data with trusted service
-            providers where strictly necessary to deliver your
-            service or comply with UK law. This includes:
+            We share data only with regulated partners:
           </p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              Payment processing partners – for secure billing
-            </li>
-            <li>
-              Email service providers – for account
-              notifications
-            </li>
-            <li>
-              Cloud storage providers – to store your scanned
-              mail
-            </li>
-            <li>
-              Identity verification providers – to meet UK AML
-              obligations
-            </li>
-            <li>
-              Postal carriers – when you request a physical mail
-              item to be forwarded
-            </li>
+            <li>Sumsub (identity verification)</li>
+            <li>GoCardless (billing)</li>
+            <li>Postmark</li>
+            <li>OneDrive</li>
+            <li>Cloud hosting</li>
+            <li>Postal carriers</li>
           </ul>
           <p className="text-muted-foreground">
-            We do NOT share or sell your data to advertisers or
-            marketing companies. Your personal information is
-            handled with strict confidentiality and care.
+            We never sell personal data.
           </p>
         </section>
 
-        {/* 11. Transfers */}
+        {/* 11. International Transfers */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            11. International Data Transfers
+            11. International Transfers
           </h2>
           <p className="text-muted-foreground">
-            All data is currently hosted within the UK. If this
-            ever changes:
+            UK/EEA by default; SCCs/UK Addendum when required.
           </p>
-          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>
-              We will only transfer data to countries approved
-              by the UK government, or
-            </li>
-            <li>
-              Use appropriate safeguards such as standard
-              contractual clauses
-            </li>
-          </ul>
         </section>
 
         {/* 12. External Services */}
@@ -348,56 +229,27 @@ export function PrivacyPolicyPage({
             12. External Services
           </h2>
           <p className="text-muted-foreground">
-            Some dashboard features may link to third-party
-            providers (e.g. for ID verification or payment
-            setup). We recommend reviewing their privacy
-            policies before submitting any information via
-            external platforms.
+            Third parties have their own privacy policies.
           </p>
         </section>
 
         {/* 13. Contact */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            13. How to Contact Us
+            13. Contact
           </h2>
           <p className="text-muted-foreground">
-            To make a request or ask a question:
+            support@virtualaddresshub.co.uk
           </p>
-          <p className="text-muted-foreground">
-            📧 Email: support@virtualaddresshub.co.uk
-          </p>
-          <p className="text-muted-foreground">
-            💬 WhatsApp: Our dedicated WhatsApp Business line for secure support
-          </p>
-          <div className="space-y-2 pt-2">
-            <div>
-              <a
-                href="https://wa.me/YOURWHATSAPPNUMBER"
-                className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mr-4"
-              >
-                Message on WhatsApp
-              </a>
-              <Button
-                variant="outline"
-                onClick={() => go?.("contact")}
-              >
-                Go to Contact Form
-              </Button>
-            </div>
-          </div>
         </section>
 
         {/* 14. Updates */}
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">
-            14. Policy Updates
+            14. Updates
           </h2>
           <p className="text-muted-foreground">
-            We may update this policy from time to time. The
-            latest version will always be published on our
-            website. If we make any significant changes, we will
-            notify you directly.
+            We may update this policy at any time.
           </p>
         </section>
       </main>
