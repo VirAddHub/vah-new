@@ -14,10 +14,15 @@ import { API_BASE } from '@/lib/config';
 type Feedback = { type: 'success' | 'error'; message: string } | null;
 
 export function ChVerificationCard() {
-  const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher);
+  const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds to catch admin approvals
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [wasVerified, setWasVerified] = useState(false);
 
   const status = data?.data;
   const isLoading = !data && !error;
@@ -40,11 +45,23 @@ export function ChVerificationCard() {
   const isPendingReview = statusCode === 'submitted';
   const isRejected = statusCode === 'rejected';
 
+  // Track when verification status changes to approved and trigger profile refresh
   useEffect(() => {
-    if (statusCode === 'approved') {
+    if ((isVerified || statusCode === 'approved') && !wasVerified) {
+      setWasVerified(true);
       setFeedback(null);
+      // Dispatch custom event to trigger user profile refresh
+      window.dispatchEvent(new CustomEvent('ch-verification-approved'));
+      // Also trigger a page refresh of user data
+      if (typeof window !== 'undefined' && window.location) {
+        // Trigger a soft refresh of user profile data
+        const event = new Event('refresh-user-profile');
+        window.dispatchEvent(event);
+      }
+    } else if (!isVerified && statusCode !== 'approved') {
+      setWasVerified(false);
     }
-  }, [statusCode]);
+  }, [isVerified, statusCode, wasVerified]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];

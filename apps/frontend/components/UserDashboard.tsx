@@ -143,51 +143,73 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   const totalItems = mailData?.total || 0;
 
+  // Load user profile function
+  const loadUserProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Try to get user data from localStorage first (from login) for immediate display
+      const storedUser = localStorage.getItem('vah_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserProfile(user);
+      }
+
+      // Fetch fresh user profile from API
+      const token = getToken();
+      if (token) {
+        const response = await fetch(`${API_BASE}/api/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.data) {
+            setUserProfile(data.data);
+            // Update localStorage with fresh data
+            localStorage.setItem('vah_user', JSON.stringify(data.data));
+          }
+        } else {
+          console.warn('Failed to fetch user profile, using stored data');
+        }
+      }
+
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      // Continue with stored data if API fails
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Load user profile on mount
   useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        setLoading(true);
+    loadUserProfile();
+  }, [loadUserProfile]);
 
-        // Try to get user data from localStorage first (from login) for immediate display
-        const storedUser = localStorage.getItem('vah_user');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setUserProfile(user);
-        }
-
-        // Fetch fresh user profile from API
-        const token = getToken();
-        if (token) {
-          const response = await fetch(`${API_BASE}/api/profile`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.ok && data.data) {
-              setUserProfile(data.data);
-              // Update localStorage with fresh data
-              localStorage.setItem('vah_user', JSON.stringify(data.data));
-            }
-          } else {
-            console.warn('Failed to fetch user profile, using stored data');
-          }
-        }
-
-      } catch (error) {
-        console.error('Error loading user profile:', error);
-        // Continue with stored data if API fails
-      } finally {
-        setLoading(false);
-      }
+  // Listen for CH verification approval to refresh profile
+  useEffect(() => {
+    const handleChVerificationApproved = () => {
+      console.log('CH verification approved - refreshing user profile');
+      loadUserProfile();
     };
 
-    loadUserProfile();
-  }, []);
+    const handleRefreshUserProfile = () => {
+      console.log('Refresh user profile event received');
+      loadUserProfile();
+    };
+
+    window.addEventListener('ch-verification-approved', handleChVerificationApproved);
+    window.addEventListener('refresh-user-profile', handleRefreshUserProfile);
+
+    return () => {
+      window.removeEventListener('ch-verification-approved', handleChVerificationApproved);
+      window.removeEventListener('refresh-user-profile', handleRefreshUserProfile);
+    };
+  }, [loadUserProfile]);
 
   // Select/Deselect functions
   const toggleSelectMail = (id: string) => {
