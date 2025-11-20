@@ -240,11 +240,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="relative">
                         {/* Most Popular badge - only show for monthly */}
                         {!isAnnual && (
-                            <div className="pointer-events-none absolute -top-4 right-8 z-10">
-                                <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
-                                    Most Popular
-                                </span>
-                            </div>
+                        <div className="pointer-events-none absolute -top-4 right-8 z-10">
+                            <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
+                                Most Popular
+                            </span>
+                        </div>
                         )}
 
                         <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
