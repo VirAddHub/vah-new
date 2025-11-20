@@ -1,256 +1,202 @@
 'use client';
 
-import { Button } from "./ui/button";
-
 interface PrivacyPolicyPageProps {
   onNavigate?: (page: string) => void;
 }
 
-export function PrivacyPolicyPage({
-  onNavigate,
-}: PrivacyPolicyPageProps) {
-  const go = (page: string) => onNavigate?.(page);
-
+export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold tracking-tight text-primary">
-            Privacy Policy
-          </h1>
-          <p className="text-muted-foreground">
-            Your privacy matters to us
-          </p>
-        </header>
+        <h1 className="text-3xl font-bold tracking-tight text-primary">Privacy Policy</h1>
+        <p className="text-sm text-muted-foreground italic">Last updated: [INSERT DATE]</p>
 
-        <section className="space-y-3">
+        <p className="text-muted-foreground">
+          At VirtualAddressHub, your privacy matters. We only collect the information required to provide your service securely, legally, and efficiently. This policy explains how we handle your data under the UK GDPR, the Data Protection Act 2018, and HMRC Anti-Money Laundering (AML) regulations.
+        </p>
+
+        <section className="space-y-2">
+          <h2 className="text-xl font-semibold">1. Who We Are</h2>
           <p className="text-muted-foreground">
-            At VirtualAddressHub, your privacy matters. We only collect the information required to deliver your service securely, legally, and efficiently. This policy explains how we handle your data in accordance with the UK GDPR, the Data Protection Act 2018, and HMRC AML regulations.
+            <strong>Business name:</strong> VirtualAddressHub Ltd
+            <br />
+            <strong>Company number:</strong> [INSERT COMPANY NUMBER]
+            <br />
+            <strong>ICO registration number:</strong> [INSERT ICO NUMBER]
+            <br />
+            <strong>HMRC AML supervision number:</strong> [INSERT HMRC AML NUMBER]
+            <br />
+            <strong>Contact:</strong> support@virtualaddresshub.co.uk
           </p>
         </section>
 
-        {/* 1. Who We Are */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            1. Who We Are
-          </h2>
-          <div className="text-muted-foreground space-y-1">
-            <p>
-              <span className="font-medium text-foreground">
-                Business name:
-              </span>{" "}
-              VirtualAddressHub Ltd
-            </p>
-            <p>
-              <span className="font-medium text-foreground">
-                Company number:
-              </span>{" "}
-              [INSERT COMPANY NUMBER]
-            </p>
-            <p>
-              <span className="font-medium text-foreground">
-                ICO registration number:
-              </span>{" "}
-              [INSERT ICO NUMBER]
-            </p>
-            <p>
-              <span className="font-medium text-foreground">
-                HMRC AML supervision number:
-              </span>{" "}
-              [INSERT HMRC AML NUMBER]
-            </p>
-            <p>
-              <span className="font-medium text-foreground">
-                Contact:
-              </span>{" "}
-              support@virtualaddresshub.co.uk
-            </p>
-          </div>
-        </section>
-
-        {/* 2. What We Collect */}
-        <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            2. What We Collect
-          </h2>
-          <p className="text-muted-foreground">
-            We may collect the following depending on your usage:
-          </p>
+          <h2 className="text-xl font-semibold">2. What We Collect</h2>
+          <p className="text-muted-foreground">We only collect the information needed to run your service:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Name</li>
-            <li>Email and phone</li>
+            <li>Email address and phone number</li>
             <li>Billing and forwarding address</li>
-            <li>Scanned mail data</li>
-            <li>Identity documents</li>
+            <li>
+              <strong>Identity documents (collected securely by our verification partner, Sumsub; we only store the verification result and required AML data)</strong>
+            </li>
+            <li>Scanned mail and mail-handling information</li>
             <li>Login and security logs</li>
-            <li>Payment/subscription data (from GoCardless)</li>
-            <li>Essential cookie information</li>
-            <li>Support interactions</li>
-            <li>Operational logs</li>
+            <li>Payment/subscription information (via GoCardless)</li>
+            <li>Support queries or messages</li>
           </ul>
           <p className="text-muted-foreground">
-            Scanned mail is stored securely on Microsoft OneDrive for Business.
+            Scanned mail is stored securely and never shared unless legally required or with your permission.
           </p>
         </section>
 
-        {/* 3. Why We Use Your Data */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            3. Why We Use Your Data
-          </h2>
+          <h2 className="text-xl font-semibold">3. Why We Use Your Data</h2>
+          <p className="text-muted-foreground">We use your information to:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>To provide your virtual address service</li>
-            <li>To verify identity under AML rules</li>
-            <li>To notify you when mail arrives</li>
-            <li>To deliver scans to your dashboard</li>
-            <li>To forward mail when requested</li>
-            <li>To provide billing and invoicing</li>
-            <li>To prevent fraud and maintain security</li>
-            <li>To meet legal obligations</li>
+            <li>Provide your virtual address and mail-handling service</li>
+            <li>Verify your identity for AML compliance</li>
+            <li>Notify you when mail arrives</li>
+            <li>Deliver scans or forward mail when you request it</li>
+            <li>Manage subscriptions, billing, and invoicing</li>
+            <li>Maintain security and prevent fraud</li>
+            <li>Meet legal and regulatory obligations</li>
           </ul>
         </section>
 
-        {/* 4. Legal Grounds */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            4. Legal Grounds
-          </h2>
+          <h2 className="text-xl font-semibold">4. Legal Basis</h2>
+          <p className="text-muted-foreground">We process data under:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Contract (Art 6(1)(b))</li>
-            <li>Legal obligation (AML/KYC, taxation)</li>
-            <li>Legitimate interest (fraud prevention, platform security)</li>
+            <li>
+              <strong>Contract</strong> – to deliver your service
+            </li>
+            <li>
+              <strong>Legal obligation</strong> – AML/KYC, record-keeping, taxation
+            </li>
+            <li>
+              <strong>Legitimate interest</strong> – fraud prevention, platform security, service reliability
+            </li>
           </ul>
         </section>
 
-        {/* 5. Retention */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            5. Retention
-          </h2>
+          <h2 className="text-xl font-semibold">5. Retention</h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Scanned mail: deleted 30 days after cancellation</li>
-            <li>KYC/AML docs: stored 5 years (mandatory)</li>
-            <li>Billing records: 7 years</li>
-            <li>Support logs: reasonable period</li>
+            <li>
+              <strong>Scanned mail:</strong> deleted <strong>30 days after cancellation</strong>
+            </li>
+            <li>
+              <strong>KYC/AML verification data:</strong> stored <strong>5 years</strong> (required by law)
+            </li>
+            <li>
+              <strong>Billing and tax records:</strong> <strong>7 years</strong>
+            </li>
+            <li>
+              <strong>Support queries and logs:</strong> kept for an appropriate operational period
+            </li>
           </ul>
         </section>
 
-        {/* 6. Cookies */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            6. Cookies
-          </h2>
+          <h2 className="text-xl font-semibold">6. Cookies</h2>
+          <p className="text-muted-foreground">We use <strong>strictly necessary cookies only</strong>, to:</p>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1">
+            <li>Keep you securely logged in</li>
+            <li>Maintain session integrity</li>
+            <li>Protect against fraud and abuse</li>
+          </ul>
           <p className="text-muted-foreground">
-            We only use strictly necessary cookies needed to keep you logged in, maintain secure sessions, and protect against fraud and abuse. We do not use analytics, advertising, or tracking cookies.
+            We <strong>do not use analytics, advertising, marketing, tracking, or profiling cookies</strong>.
           </p>
           <p className="text-muted-foreground">
-            Because our cookies are strictly necessary for the service to function, a cookie banner is not required under the UK Privacy and Electronic Communications Regulations (PECR). You can control cookies at browser level, but disabling them may prevent you from using the dashboard securely.
+            Because our cookies are essential for the service to function, a cookie banner is <strong>not required</strong> under PECR.
           </p>
         </section>
 
-        {/* 7. Your Rights */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            7. Your Rights
-          </h2>
+          <h2 className="text-xl font-semibold">7. Your Rights</h2>
+          <p className="text-muted-foreground">You can request:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Access</li>
-            <li>Rectification</li>
+            <li>Access to your data</li>
+            <li>Correction of inaccurate data</li>
             <li>Deletion (where legally allowed)</li>
-            <li>Restriction</li>
-            <li>Objection</li>
-            <li>Portability</li>
-            <li>ICO complaint</li>
+            <li>Restriction of processing</li>
+            <li>Objection to processing</li>
+            <li>Data portability</li>
           </ul>
+          <p className="text-muted-foreground">
+            You may also complain to the ICO if you believe your rights have been breached:{" "}
+            <a href="https://ico.org.uk/" className="text-primary underline">
+              https://ico.org.uk/
+            </a>
+          </p>
         </section>
 
-        {/* 8. Security */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            8. Security
-          </h2>
+          <h2 className="text-xl font-semibold">8. Security</h2>
+          <p className="text-muted-foreground">We use strong administrative, technical, and physical measures to protect your data, including:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>UK/EEA hosting</li>
+            <li>Secure UK/EEA data storage locations</li>
             <li>Encryption</li>
-            <li>MFA for staff</li>
-            <li>Access control</li>
-            <li>Secure file delivery</li>
-            <li>Regular compliance audits</li>
+            <li>Strict staff access controls</li>
+            <li>Multi-factor authentication for internal systems</li>
+            <li>Regular compliance checks</li>
           </ul>
+          <p className="text-muted-foreground">We never store your full bank details.</p>
         </section>
 
-        {/* 9. Payments */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            9. Payments
-          </h2>
+          <h2 className="text-xl font-semibold">9. Payments</h2>
           <p className="text-muted-foreground">
-            Handled by GoCardless.
-          </p>
-          <p className="text-muted-foreground">
-            We never store your full bank details.
+            Payments are handled by <strong>GoCardless</strong>, a regulated UK payment provider. We only receive confirmation of payment status — never your full banking information.
           </p>
         </section>
 
-        {/* 10. Sharing */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            10. Sharing
-          </h2>
-          <p className="text-muted-foreground">
-            We share data only with regulated partners:
-          </p>
+          <h2 className="text-xl font-semibold">10. Sharing Your Data</h2>
+          <p className="text-muted-foreground">We only share your information with essential service providers who help us deliver your service:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
-            <li>Sumsub (identity verification)</li>
-            <li>GoCardless (billing)</li>
-            <li>Postmark</li>
-            <li>OneDrive</li>
-            <li>Cloud hosting</li>
-            <li>Postal carriers</li>
+            <li>
+              <strong>Sumsub</strong> – identity verification
+            </li>
+            <li>
+              <strong>GoCardless</strong> – payments
+            </li>
+            <li>
+              <strong>Postmark</strong> – email delivery
+            </li>
+            <li>Postal and courier providers – for forwarding mail when you request it</li>
           </ul>
           <p className="text-muted-foreground">
-            We never sell personal data.
+            We <strong>never sell</strong>, trade, or rent personal data.
           </p>
         </section>
 
-        {/* 11. International Transfers */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            11. International Transfers
-          </h2>
+          <h2 className="text-xl font-semibold">11. International Transfers</h2>
           <p className="text-muted-foreground">
-            UK/EEA by default; SCCs/UK Addendum when required.
+            We aim to store data in the UK or EEA. If personal data is transferred outside the UK/EEA, we use legally required safeguards such as <strong>Standard Contractual Clauses (SCCs)</strong> or the <strong>UK Addendum</strong>.
           </p>
         </section>
 
-        {/* 12. External Services */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            12. External Services
-          </h2>
+          <h2 className="text-xl font-semibold">12. External Services</h2>
           <p className="text-muted-foreground">
-            Third parties have their own privacy policies.
+            If you interact with third-party services through our platform (e.g., identity verification, payment links), their own privacy policies apply.
           </p>
         </section>
 
-        {/* 13. Contact */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            13. Contact
-          </h2>
+          <h2 className="text-xl font-semibold">13. Contact Us</h2>
           <p className="text-muted-foreground">
-            support@virtualaddresshub.co.uk
+            If you have any questions about this policy: <strong>support@virtualaddresshub.co.uk</strong>
           </p>
         </section>
 
-        {/* 14. Updates */}
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            14. Updates
-          </h2>
-          <p className="text-muted-foreground">
-            We may update this policy at any time.
-          </p>
+          <h2 className="text-xl font-semibold">14. Updates</h2>
+          <p className="text-muted-foreground">We may update this privacy policy from time to time. The latest version will always be published on our website.</p>
         </section>
       </main>
     </div>
