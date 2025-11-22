@@ -35,6 +35,10 @@ if (!WEBHOOK_SECRET) {
   throw new Error('MAIL_IMPORT_WEBHOOK_SECRET environment variable is required');
 }
 
+// TypeScript: ensure these are strings (not undefined) after validation
+const WEBHOOK_URL_STRING: string = WEBHOOK_URL;
+const WEBHOOK_SECRET_STRING: string = WEBHOOK_SECRET;
+
 /**
  * Process a single file: parse, call webhook, move if successful
  */
@@ -62,11 +66,11 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   let responseData: any;
 
   try {
-    response = await fetch(WEBHOOK_URL, {
+    response = await fetch(WEBHOOK_URL_STRING, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-mail-import-secret': WEBHOOK_SECRET,
+        'x-mail-import-secret': WEBHOOK_SECRET_STRING,
       },
       body: JSON.stringify(payload),
     });
