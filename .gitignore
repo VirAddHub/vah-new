@@ -133,6 +133,8 @@ apps/frontend/out/
 # Documentation files - keep local but don't push
 COMPLETE_FLOW_DOCUMENTATION.md
 MISSING_IMPLEMENTATIONS.md
+ONEDRIVE_MAIL_INGESTION_GUIDE.md
+RENDER_ONEDRIVE_SETUP.md
 
 # Local template file
 quiz-day0-template.html
