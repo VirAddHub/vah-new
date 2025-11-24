@@ -131,10 +131,10 @@ apps/frontend/out/
 .history/replace-map.txt
 
 # Documentation files - keep local but don't push
-COMPLETE_FLOW_DOCUMENTATION.md
-MISSING_IMPLEMENTATIONS.md
-ONEDRIVE_MAIL_INGESTION_GUIDE.md
-RENDER_ONEDRIVE_SETUP.md
+# Ignore all .md files except README.md files
+*.md
+!README.md
+!**/README.md
 
 # Local template file
 quiz-day0-template.html
