@@ -84,6 +84,7 @@ import contactRouter from "./server/routes/contact";
 import addressRouterImport from "./server/routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 import { quizRouter } from "./server/routes/quiz";
+import internalMailImportRouter from "./server/routes/internalMailImport";
 
 // handle CJS/ESM default interop safely
 const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
@@ -381,9 +382,9 @@ async function start() {
         }
     });
 
-    // Internal routes removed - admin-driven system doesn't need cron/outbox
-    // app.use('/api/internal', internalRouter);
-    // logger.info('[mount] /api/internal mounted');
+    // Internal routes - mail import from OneDrive worker
+    app.use('/api/internal', internalMailImportRouter);
+    logger.info('[mount] /api/internal (mail import) mounted');
 
     // JWT authentication middleware - extracts and verifies JWT tokens
     const { authenticateJWT } = require('./middleware/auth');

@@ -83,7 +83,8 @@
     "test:ch-email": "ts-node --project tsconfig.server.json scripts/test-ch-verification-email.ts",
     "postmark:pull": "ts-node --project tsconfig.server.json scripts/postmark-pull.ts",
     "test:variables": "ts-node --project tsconfig.server.json scripts/test-template-variables.ts",
-    "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js"
+    "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js",
+    "ingest-onedrive-mail": "ts-node --project tsconfig.server.json src/workers/onedriveMailIngest.ts"
   },
   "keywords": [
     "backend",

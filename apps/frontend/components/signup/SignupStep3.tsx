@@ -60,19 +60,19 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
     const nextSteps = [
         {
             step: 1,
-            title: "Your London address is activated immediately."
+            title: "We&apos;ll send your welcome email with a link to access your dashboard."
         },
         {
             step: 2,
-            title: "We&apos;ll send your welcome pack with clear next steps."
+            title: "Log in to your dashboard and complete identity verification (KYC) with Sumsub — required for compliance."
         },
         {
             step: 3,
-            title: "You&apos;ll complete identity verification with Sumsub before your first login (required for compliance)."
+            title: "We&apos;ll review your verification and approve your account (usually within 24 hours)."
         },
         {
             step: 4,
-            title: "Access your secure dashboard to manage mail and settings."
+            title: "Your London address is activated once verification is approved, and you can start using it."
         }
     ];
 
@@ -109,7 +109,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                         <h1 className="mb-2">Complete Your Payment</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner GoCardless. Your subscription begins immediately after payment; you'll then complete identity verification with Sumsub before first login.
+                            Secure your London address with our trusted payment partner GoCardless. After payment, you'll receive login details and can complete identity verification (KYC) in your dashboard. Your address will be activated once verification is approved.
                         </p>
                     </div>
 
