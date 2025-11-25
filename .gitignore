@@ -136,5 +136,8 @@ apps/frontend/out/
 !README.md
 !**/README.md
 
+# Test scripts - keep local
+*.sh
+
 # Local template file
 quiz-day0-template.html
