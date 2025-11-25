@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
 import { notifyOpsMailCreated } from '../../services/postmarkNotifications';
+import { sendMailScanned } from '../../lib/mailer';
 
 const router = Router();
 
@@ -189,6 +190,20 @@ router.post('/from-onedrive', async (req, res) => {
       tag: mailItem.tag,
       fileName: payload.fileName,
     });
+
+    // Send email notification to user about new mail (like old Zapier webhook)
+    try {
+      await sendMailScanned({
+        email: user.email,
+        name: user.first_name,
+        subject: `New mail received - ${subject}`,
+        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
+      });
+      console.log('[internalMailImport] Email notification sent to user:', user.email);
+    } catch (emailError) {
+      console.error('[internalMailImport] Failed to send email notification to user:', emailError);
+      // Don't fail the webhook if email fails
+    }
 
     // Send ops notification AFTER successful DB insert
     await notifyOpsMailCreated({
