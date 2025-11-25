@@ -84,7 +84,8 @@
     "postmark:pull": "ts-node --project tsconfig.server.json scripts/postmark-pull.ts",
     "test:variables": "ts-node --project tsconfig.server.json scripts/test-template-variables.ts",
     "start:test": "PORT=3001 NODE_ENV=test node dist/server/index.js",
-    "ingest-onedrive-mail": "ts-node --project tsconfig.server.json src/workers/onedriveMailIngest.ts"
+    "ingest-onedrive-mail": "ts-node --project tsconfig.server.json src/workers/onedriveMailIngest.ts",
+    "test:onedrive-parser": "ts-node --project tsconfig.server.json src/workers/test-onedrive-ingest.ts"
   },
   "keywords": [
     "backend",
