@@ -185,10 +185,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, []);
 
-  // Load user profile on mount
+  // Load user profile on mount (only once)
   useEffect(() => {
     loadUserProfile();
-  }, [loadUserProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Listen for CH verification approval to refresh profile (debounced)
   useEffect(() => {
