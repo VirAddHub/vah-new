@@ -76,6 +76,9 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
 
   const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$filter=file/mimeType eq 'application/pdf'&$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl`;
 
+  console.log(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
+  console.log(`[onedriveClient] Using base URL: ${baseUrl}`);
+
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -85,6 +88,14 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
+    console.error(`[onedriveClient] Failed to list OneDrive files: ${response.status}`);
+    console.error(`[onedriveClient] URL attempted: ${url}`);
+    console.error(`[onedriveClient] Error details: ${errorText}`);
+    
+    if (response.status === 404) {
+      throw new Error(`OneDrive folder not found (404). Check ONEDRIVE_MAIL_INBOX_FOLDER_ID="${inboxFolderId}". The folder ID may be incorrect or the folder doesn't exist. Use Microsoft Graph Explorer to find the correct folder ID.`);
+    }
+    
     throw new Error(`Failed to list OneDrive files: ${response.status} ${errorText}`);
   }
 
