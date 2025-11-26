@@ -611,14 +611,27 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Card className="border-neutral-200 shadow-sm">
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-neutral-800">
-                      Mail Inbox
-                    </h2>
-                    <p className="text-sm text-neutral-500 mt-1">
-                      {totalItems} {totalItems === 1 ? 'item' : 'items'}
-                      {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
-                    </p>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-semibold text-neutral-800">
+                        Mail Inbox
+                      </h2>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                        {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
+                      </p>
+                    </div>
+                    {/* Manual refresh button - NO automatic polling */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refreshMail()}
+                      disabled={mailLoading}
+                      className="shrink-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${mailLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
                   </div>
                   <p className="text-sm text-neutral-500">
                     Click on any mail item to view full details and scans
