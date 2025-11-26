@@ -107,6 +107,14 @@ router.post('/from-onedrive', async (req, res) => {
 
     const pool = getPool();
 
+    // Log the incoming payload for audit trail
+    console.log('[internalMailImport] Processing mail import:', {
+      fileName: payload.fileName,
+      parsedUserId: payload.userId,
+      sourceSlug: payload.sourceSlug,
+      oneDriveFileId: payload.oneDriveFileId,
+    });
+
     // Verify user exists
     const { rows: userRows } = await pool.query(
       'SELECT id, email, first_name, last_name FROM "user" WHERE id = $1',
@@ -114,14 +122,27 @@ router.post('/from-onedrive', async (req, res) => {
     );
 
     if (userRows.length === 0) {
+      console.error('[internalMailImport] ❌ User not found:', {
+        fileName: payload.fileName,
+        requestedUserId: payload.userId,
+      });
       return res.status(404).json({
         ok: false,
         error: 'user_not_found',
         message: `User ${payload.userId} does not exist`,
+        fileName: payload.fileName,
       });
     }
 
     const user = userRows[0];
+    
+    // Log user details for verification
+    console.log('[internalMailImport] User verified:', {
+      userId: user.id,
+      email: user.email,
+      name: `${user.first_name} ${user.last_name}`,
+      fileName: payload.fileName,
+    });
     const now = nowMs();
 
     // Parse created date from payload or use current time
@@ -207,40 +228,127 @@ router.post('/from-onedrive', async (req, res) => {
     }
 
     const verifiedMailItem = verifyResult.rows[0];
-    console.log('[internalMailImport] Verified mail item exists in DB:', {
+    
+    // CRITICAL VERIFICATION: Ensure the userId in the database matches what we intended
+    if (verifiedMailItem.user_id !== payload.userId) {
+      console.error('[internalMailImport] ❌ CRITICAL: userId mismatch!', {
+        fileName: payload.fileName,
+        intendedUserId: payload.userId,
+        actualUserIdInDB: verifiedMailItem.user_id,
+        mailId: verifiedMailItem.id,
+      });
+      return res.status(500).json({
+        ok: false,
+        error: 'user_id_mismatch',
+        message: `Mail item was created for wrong user. Intended: ${payload.userId}, Actual: ${verifiedMailItem.user_id}`,
+        fileName: payload.fileName,
+        intendedUserId: payload.userId,
+        actualUserId: verifiedMailItem.user_id,
+      });
+    }
+    
+    // CRITICAL VERIFICATION: Re-fetch user to ensure we have the latest data
+    const { rows: userVerifyRows } = await pool.query(
+      'SELECT id, email, first_name, last_name FROM "user" WHERE id = $1',
+      [verifiedMailItem.user_id]
+    );
+    
+    if (userVerifyRows.length === 0) {
+      console.error('[internalMailImport] ❌ CRITICAL: User not found for email!', {
+        fileName: payload.fileName,
+        mailId: verifiedMailItem.id,
+        userId: verifiedMailItem.user_id,
+      });
+      return res.status(500).json({
+        ok: false,
+        error: 'user_not_found_for_email',
+        message: `User ${verifiedMailItem.user_id} not found when preparing email`,
+        fileName: payload.fileName,
+      });
+    }
+    
+    const userForEmail = userVerifyRows[0];
+    
+    if (userForEmail.email !== user.email) {
+      console.error('[internalMailImport] ❌ CRITICAL: Email mismatch!', {
+        fileName: payload.fileName,
+        mailId: verifiedMailItem.id,
+        userId: verifiedMailItem.user_id,
+        expectedEmail: user.email,
+        actualEmail: userForEmail.email,
+      });
+      return res.status(500).json({
+        ok: false,
+        error: 'email_mismatch',
+        message: `Email address mismatch. Expected: ${user.email}, Found: ${userForEmail.email}`,
+        fileName: payload.fileName,
+      });
+    }
+    
+    console.log('[internalMailImport] ✅ Verified mail item exists in DB with correct user:', {
       mailId: verifiedMailItem.id,
       userId: verifiedMailItem.user_id,
+      userEmail: userForEmail.email,
       subject: verifiedMailItem.subject,
       tag: verifiedMailItem.tag,
+      fileName: payload.fileName,
     });
 
     // Send email notification to user about new mail (like old Zapier webhook)
-    // Email is ONLY sent if mail item is confirmed in database
+    // Email is ONLY sent if:
+    // 1. Mail item is confirmed in database
+    // 2. userId in database matches intended userId
+    // 3. Email address matches the user in database
+    // This ensures 100% confidence that email = correct user = correct dashboard
     try {
       await sendMailScanned({
-        email: user.email,
-        name: user.first_name,
+        email: userForEmail.email, // Use verified email from database
+        name: userForEmail.first_name,
         subject: `New mail received - ${subject}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
-      console.log('[internalMailImport] ✅ Email notification sent to user:', user.email, 'for mailId:', verifiedMailItem.id);
+      console.log('[internalMailImport] ✅ Email notification sent to user:', {
+        email: userForEmail.email,
+        userId: verifiedMailItem.user_id,
+        mailId: verifiedMailItem.id,
+        fileName: payload.fileName,
+        confirmation: 'Mail item is confirmed in database for this user',
+      });
     } catch (emailError) {
-      console.error('[internalMailImport] ❌ Failed to send email notification to user:', user.email, 'Error:', emailError);
-      // Don't fail the webhook if email fails
+      console.error('[internalMailImport] ❌ Failed to send email notification to user:', {
+        email: userForEmail.email,
+        userId: verifiedMailItem.user_id,
+        mailId: verifiedMailItem.id,
+        fileName: payload.fileName,
+        error: emailError,
+      });
+      // Don't fail the webhook if email fails, but log it clearly
     }
 
     // Send ops notification AFTER successful DB insert and verification
     // This email is sent to ops@virtualaddresshub.co.uk (not the user)
+    // Includes filename and userId for audit trail
     try {
       await notifyOpsMailCreated({
         mailId: verifiedMailItem.id,
-        userId: payload.userId,
+        userId: verifiedMailItem.user_id, // Use verified userId from database
         subject: verifiedMailItem.subject,
         tag: verifiedMailItem.tag,
+        fileName: payload.fileName, // Include filename for ops to verify
+        userEmail: userForEmail.email, // Include user email for ops verification
       });
-      console.log('[internalMailImport] ✅ Ops notification sent for mailId:', verifiedMailItem.id);
+      console.log('[internalMailImport] ✅ Ops notification sent:', {
+        mailId: verifiedMailItem.id,
+        userId: verifiedMailItem.user_id,
+        userEmail: userForEmail.email,
+        fileName: payload.fileName,
+      });
     } catch (opsEmailError) {
-      console.error('[internalMailImport] ❌ Failed to send ops notification:', opsEmailError);
+      console.error('[internalMailImport] ❌ Failed to send ops notification:', {
+        mailId: verifiedMailItem.id,
+        userId: verifiedMailItem.user_id,
+        error: opsEmailError,
+      });
       // Don't fail the webhook if ops email fails
     }
 
