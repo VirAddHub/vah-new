@@ -7,7 +7,6 @@ import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { AddressFinder } from '../ui/AddressFinder';
-import { useSimpleDebouncedSearch } from '../../hooks/useDebouncedSearch';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -39,6 +38,14 @@ export interface SignupStep2Data {
     forward_country: string;
 }
 
+type CompanySearchResult = {
+    title: string;
+    regNumber: string;
+    identifier: string;
+    status?: string;
+    addressSnippet?: string;
+};
+
 export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [formData, setFormData] = useState<SignupStep2Data>({
         first_name: initialData?.first_name || '',
@@ -64,13 +71,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Companies House search state
-    const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
-    const [companySearchLoading, setCompanySearchLoading] = useState(false);
-    const [companySearchError, setCompanySearchError] = useState<string | null>(null);
+    const [companySearchResults, setCompanySearchResults] = useState<CompanySearchResult[]>([]);
     const [showResults, setShowResults] = useState(false);
-
-    const { debouncedQuery: debouncedCompanySearch, setQuery: setCompanySearchTerm } = useSimpleDebouncedSearch(500, 2);
-    const [isSearching, setIsSearching] = useState(false);
+    const [isSearchingName, setIsSearchingName] = useState(false);
+    const [isVerifyingNumber, setIsVerifyingNumber] = useState(false);
 
     const businessTypes = [
         { value: 'limited_company', label: 'Private Limited Company' },
@@ -141,51 +145,83 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
     };
 
-    // Debounced search for Companies House
+    // Debounced Companies House search via new BFF endpoint
     useEffect(() => {
-        if (debouncedCompanySearch.length < 2 || isManualEntry) {
+        if (isManualEntry) {
             setCompanySearchResults([]);
             setShowResults(false);
             return;
         }
 
+        const query = formData.company_name.trim();
+        if (query.length < 2) {
+            setCompanySearchResults([]);
+            setShowResults(false);
+            return;
+        }
+
+        setIsSearchingName(true);
         const timer = setTimeout(async () => {
             try {
-                setCompanySearchLoading(true);
-                const response = await fetch(
-                    `/api/bff/companies/search?q=${encodeURIComponent(debouncedCompanySearch)}`
-                );
+                const res = await fetch(`/api/bff/company-search?query=${encodeURIComponent(query)}`);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    setCompanySearchResults(result.data || []);
-                    setShowResults(true);
-                } else {
-                    console.error('Companies House API error:', response.status);
+                if (!res.ok) {
+                    console.error('Companies House search error:', res.status);
                     setCompanySearchResults([]);
+                    setShowResults(false);
+                    return;
                 }
-            } catch (error) {
-                console.error('Companies House search failed:', error);
+
+                const json = await res.json();
+                if (!json?.ok || !Array.isArray(json.businesses)) {
+                    setCompanySearchResults([]);
+                    setShowResults(false);
+                    return;
+                }
+
+                const mapped: CompanySearchResult[] = json.businesses.map((b: any) => ({
+                    title: b.title,
+                    regNumber: b.regNumber,
+                    identifier: b.identifier,
+                    status: b.status,
+                    addressSnippet: b.addressSnippet,
+                }));
+
+                setCompanySearchResults(mapped);
+                setShowResults(mapped.length > 0);
+            } catch (err) {
+                console.error('Companies House search failed:', err);
                 setCompanySearchResults([]);
+                setShowResults(false);
             } finally {
-                setCompanySearchLoading(false);
+                setIsSearchingName(false);
             }
-        }, 500);
+        }, 350);
 
         return () => clearTimeout(timer);
-    }, [debouncedCompanySearch, isManualEntry]);
+    }, [formData.company_name, isManualEntry]);
 
-    const handleSelectCompany = (company: any) => {
-        updateFormData('company_number', company.company_number);
+    const handleSelectCompany = async (company: CompanySearchResult) => {
+        updateFormData('company_number', company.regNumber);
         updateFormData('company_name', company.title);
         setShowResults(false);
         setCompanySearchResults([]);
 
-        // Auto-fill business type based on company type
-        if (company.company_type === 'ltd') {
-            updateFormData('business_type', 'limited_company');
-        } else if (company.company_type === 'llp') {
-            updateFormData('business_type', 'llp');
+        try {
+            const res = await fetch(`/api/bff/company-details?identifier=${encodeURIComponent(company.identifier)}`);
+            if (!res.ok) return;
+
+            const json = await res.json();
+            if (!json?.ok) return;
+
+            const type = json.type as string | undefined;
+            if (type === 'ltd') {
+                updateFormData('business_type', 'limited_company');
+            } else if (type === 'llp') {
+                updateFormData('business_type', 'llp');
+            }
+        } catch (err) {
+            console.error('Company details lookup failed:', err);
         }
     };
 
@@ -193,33 +229,37 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         if (!formData.company_number.trim()) return;
 
         try {
-            setIsSearching(true);
-            const response = await fetch(
-                `/api/bff/companies/${formData.company_number}`
+            setIsVerifyingNumber(true);
+            const res = await fetch(
+                `/api/bff/company-details?identifier=${encodeURIComponent(formData.company_number.trim())}`
             );
 
-            if (response.ok) {
-                const result = await response.json();
-                const company = result.data;
-                updateFormData('company_name', company.company_name);
-
-                // Auto-fill business type
-                if (company.company_type === 'ltd') {
-                    updateFormData('business_type', 'limited_company');
-                } else if (company.company_type === 'llp') {
-                    updateFormData('business_type', 'llp');
-                }
-
-                // Clear any previous errors
-                setErrors(prev => ({ ...prev, company_number: '' }));
-            } else {
+            if (!res.ok) {
                 setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
+                return;
             }
+
+            const json = await res.json();
+            if (!json?.ok) {
+                setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
+                return;
+            }
+
+            updateFormData('company_name', json.name ?? '');
+
+            const type = json.type as string | undefined;
+            if (type === 'ltd') {
+                updateFormData('business_type', 'limited_company');
+            } else if (type === 'llp') {
+                updateFormData('business_type', 'llp');
+            }
+
+            setErrors(prev => ({ ...prev, company_number: '' }));
         } catch (error) {
             console.error('Companies House lookup failed:', error);
             setErrors(prev => ({ ...prev, company_number: 'Failed to lookup company' }));
         } finally {
-            setIsSearching(false);
+            setIsVerifyingNumber(false);
         }
     };
 
@@ -449,7 +489,6 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         type="button"
                                         onClick={() => {
                                             setIsManualEntry(false);
-                                            setCompanySearchTerm('');
                                             setShowResults(false);
                                         }}
                                         variant={!isManualEntry ? "primary" : "ghost"}
@@ -483,10 +522,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                 value={formData.company_number}
                                                 onChange={(e) => updateFormData('company_number', e.target.value)}
                                                 placeholder="12345678"
-                                                className={`flex-1 ${errors.company_number ? 'border-destructive' : ''} ${isManualEntry && isSearching ? 'pr-10' : ''}`}
+                                                className={`flex-1 ${errors.company_number ? 'border-destructive' : ''} ${isManualEntry && isVerifyingNumber ? 'pr-10' : ''}`}
                                                 readOnly={!isManualEntry}
                                             />
-                                            {isManualEntry && isSearching && (
+                                            {isManualEntry && isVerifyingNumber && (
                                                 <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                                             )}
                                         </div>
@@ -509,42 +548,43 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             <Input
                                                 id="company_name"
                                                 value={formData.company_name}
-                                                onChange={(e) => {
-                                                    updateFormData('company_name', e.target.value);
-                                                    if (!isManualEntry) {
-                                                        setCompanySearchTerm(e.target.value);
-                                                    }
-                                                }}
+                                                onChange={(e) => updateFormData('company_name', e.target.value)}
                                                 placeholder="Type company name to search..."
                                                 className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
                                             />
-                                            {isSearching && (
+                                            {isSearchingName && (
                                                 <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                                             )}
                                         </div>
 
                                         {/* Search Results Dropdown */}
                                         {!isManualEntry && showResults && companySearchResults.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                                {companySearchResults.map((company, index) => (
-                                                    <button
-                                                        key={index}
-                                                        type="button"
-                                                        onClick={() => handleSelectCompany(company)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
-                                                    >
-                                                        <div className="font-medium text-sm">{company.title}</div>
-                                                        <div className="text-xs text-muted-foreground mt-1">
-                                                            {company.company_number} • {company.company_status}
-                                                            {company.address_snippet && ` • ${company.address_snippet}`}
-                                                        </div>
-                                                    </button>
-                                                ))}
+                                            <div className="relative">
+                                                <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                                    {companySearchResults.map((company, index) => (
+                                                        <button
+                                                            key={company.identifier ?? index}
+                                                            type="button"
+                                                            onMouseDown={(e) => e.preventDefault()}
+                                                            onClick={() => handleSelectCompany(company)}
+                                                            className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                        >
+                                                            <div className="font-medium text-sm">{company.title}</div>
+                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                                {company.regNumber}
+                                                                {company.status && ` • ${company.status}`}
+                                                                {company.addressSnippet && ` • ${company.addressSnippet}`}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
 
-                                        {!isManualEntry && showResults && companySearchResults.length === 0 && !companySearchLoading && debouncedCompanySearch.length >= 2 && (
-                                            <p className="text-sm text-muted-foreground">No companies found. Try a different search term.</p>
+                                        {!isManualEntry && !isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
+                                            <p className="text-sm text-muted-foreground">
+                                                No companies found. Try a different search term.
+                                            </p>
                                         )}
                                         <p className="text-xs text-muted-foreground">
                                             {!isManualEntry ? 'Start typing to search Companies House. You can edit if needed.' : 'If the name appears incorrect, you can still edit it later.'}
