@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,12 @@ import { API_BASE } from '@/lib/config';
 type Feedback = { type: 'success' | 'error'; message: string } | null;
 
 export function ChVerificationCard() {
+  // We avoid refreshInterval/polling here. Status is revalidated via explicit mutate()
+  // after important actions (e.g. CH upload) to keep the dashboard stable.
   const { data, error, mutate } = useSWR('/api/bff/ch-verification', swrFetcher, {
-    // Only refresh if status is 'submitted' (waiting for approval), otherwise stop polling
-    refreshInterval: (latestData) => {
-      const status = latestData?.data;
-      const statusCode = status?.ch_verification_status || (status?.companies_house_verified ? 'approved' : 'not_submitted');
-      // Only poll if waiting for review, stop once approved/rejected
-      return statusCode === 'submitted' ? 60000 : 0; // 60 seconds if pending, 0 if done
-    },
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
   });
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -52,21 +48,15 @@ export function ChVerificationCard() {
   const isPendingReview = statusCode === 'submitted';
   const isRejected = statusCode === 'rejected';
 
-  // Track when verification status changes to approved and trigger profile refresh (only once)
+  // Track when verification status changes to approved (for UI feedback only)
   useEffect(() => {
-    if ((isVerified || statusCode === 'approved') && !wasVerified && !hasTriggeredRefresh) {
+    if ((isVerified || statusCode === 'approved') && !wasVerified) {
       setWasVerified(true);
-      setHasTriggeredRefresh(true);
       setFeedback(null);
-      // Dispatch custom event to trigger user profile refresh (debounced)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('ch-verification-approved'));
-      }, 500);
     } else if (!isVerified && statusCode !== 'approved') {
       setWasVerified(false);
-      setHasTriggeredRefresh(false);
     }
-  }, [isVerified, statusCode, wasVerified, hasTriggeredRefresh]);
+  }, [isVerified, statusCode, wasVerified]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -131,8 +121,11 @@ export function ChVerificationCard() {
         message: 'Proof uploaded successfully. We’ll review it shortly.',
       });
 
-      // Refetch status
+      // Refetch CH verification status
       mutate();
+      // Also refresh user profile since it contains CH status
+      // This ensures the dashboard shows updated CH approval status immediately
+      await globalMutate('/api/profile');
       setFile(null);
       // Reset file input
       const fileInput = document.getElementById('ch-verification-file') as HTMLInputElement;
