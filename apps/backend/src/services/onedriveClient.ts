@@ -74,7 +74,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     throw new Error('Either ONEDRIVE_DRIVE_ID (not "me") or ONEDRIVE_USER_UPN must be set for app-only authentication');
   }
 
-  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$filter=file/mimeType eq 'application/pdf'&$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl`;
+  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl`;
 
   console.log(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
   console.log(`[onedriveClient] Using base URL: ${baseUrl}`);
