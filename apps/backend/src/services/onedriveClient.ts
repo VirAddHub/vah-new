@@ -103,16 +103,18 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
   const files: OneDriveFile[] = [];
 
   for (const item of data.value || []) {
-    // Only include PDF files
-    if (item.file && item.file.mimeType === 'application/pdf') {
-      files.push({
-        id: item.id,
-        name: item.name,
-        createdDateTime: item.createdDateTime,
-        downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
-        size: item.size,
-      });
-    }
+    if (!item.file) continue;
+
+    const name = (item.name || '').toLowerCase();
+    if (!name.endsWith('.pdf')) continue;
+
+    files.push({
+      id: item.id,
+      name: item.name,
+      createdDateTime: item.createdDateTime,
+      downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
+      size: item.size,
+    });
   }
 
   return files;
