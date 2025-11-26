@@ -36,6 +36,7 @@ export async function notifyOpsMailCreated(payload: {
       payload.subject ? `Subject: ${payload.subject}` : '',
       payload.tag ? `Tag: ${payload.tag}` : '',
       '',
+      '✅ This mail item is confirmed to be in the database and visible on the user dashboard.',
       'You can log in to VirtualAddressHub to review this item.',
     ]
       .filter(Boolean)
@@ -49,9 +50,9 @@ export async function notifyOpsMailCreated(payload: {
       replyTo: 'support@virtualaddresshub.co.uk',
     });
 
-    console.log(`[postmarkNotifications] Sent mail-created notification to ${OPS_EMAIL} for mailId=${payload.mailId}`);
+    console.log(`[postmarkNotifications] ✅ Sent mail-created notification to ${OPS_EMAIL} for mailId=${payload.mailId} (user ${payload.userId})`);
   } catch (err) {
-    console.error('[postmarkNotifications] Failed to send mail-created notification:', err);
+    console.error('[postmarkNotifications] ❌ Failed to send mail-created notification:', err);
     // Do not throw; mail creation should not be rolled back because of email failure
   }
 }

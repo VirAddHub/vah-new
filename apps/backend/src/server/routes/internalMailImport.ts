@@ -191,7 +191,31 @@ router.post('/from-onedrive', async (req, res) => {
       fileName: payload.fileName,
     });
 
+    // VERIFY mail item exists in database before sending emails
+    const verifyResult = await pool.query(
+      'SELECT id, user_id, subject, tag, status FROM mail_item WHERE id = $1',
+      [mailItem.id]
+    );
+
+    if (verifyResult.rows.length === 0) {
+      console.error('[internalMailImport] CRITICAL: Mail item not found in DB after insert! MailId:', mailItem.id);
+      return res.status(500).json({
+        ok: false,
+        error: 'verification_failed',
+        message: 'Mail item was not found in database after creation',
+      });
+    }
+
+    const verifiedMailItem = verifyResult.rows[0];
+    console.log('[internalMailImport] Verified mail item exists in DB:', {
+      mailId: verifiedMailItem.id,
+      userId: verifiedMailItem.user_id,
+      subject: verifiedMailItem.subject,
+      tag: verifiedMailItem.tag,
+    });
+
     // Send email notification to user about new mail (like old Zapier webhook)
+    // Email is ONLY sent if mail item is confirmed in database
     try {
       await sendMailScanned({
         email: user.email,
@@ -199,19 +223,26 @@ router.post('/from-onedrive', async (req, res) => {
         subject: `New mail received - ${subject}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
-      console.log('[internalMailImport] Email notification sent to user:', user.email);
+      console.log('[internalMailImport] ✅ Email notification sent to user:', user.email, 'for mailId:', verifiedMailItem.id);
     } catch (emailError) {
-      console.error('[internalMailImport] Failed to send email notification to user:', emailError);
+      console.error('[internalMailImport] ❌ Failed to send email notification to user:', user.email, 'Error:', emailError);
       // Don't fail the webhook if email fails
     }
 
-    // Send ops notification AFTER successful DB insert
-    await notifyOpsMailCreated({
-      mailId: mailItem.id,
-      userId: payload.userId,
-      subject: mailItem.subject,
-      tag: mailItem.tag,
-    });
+    // Send ops notification AFTER successful DB insert and verification
+    // This email is sent to ops@virtualaddresshub.co.uk (not the user)
+    try {
+      await notifyOpsMailCreated({
+        mailId: verifiedMailItem.id,
+        userId: payload.userId,
+        subject: verifiedMailItem.subject,
+        tag: verifiedMailItem.tag,
+      });
+      console.log('[internalMailImport] ✅ Ops notification sent for mailId:', verifiedMailItem.id);
+    } catch (opsEmailError) {
+      console.error('[internalMailImport] ❌ Failed to send ops notification:', opsEmailError);
+      // Don't fail the webhook if ops email fails
+    }
 
     // Return success response
     return res.status(200).json({

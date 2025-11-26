@@ -244,7 +244,11 @@ export async function sendSupportRequestClosed({ email, name, ticket_id, cta_url
 
 // Mail events
 export async function sendMailScanned({ email, name, subject, cta_url }: { email: string; name?: string; subject?: string; cta_url?: string }): Promise<void> {
-    if (!emailGuard(ENV.EMAIL_MAIL)) return;
+    if (!emailGuard(ENV.EMAIL_MAIL)) {
+        console.warn('[mailer] sendMailScanned skipped: EMAIL_MAIL guard is disabled');
+        return;
+    }
+    console.log('[mailer] Sending mail-scanned email to:', email, 'subject:', subject);
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.MailScanned,
@@ -254,6 +258,7 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
             ctaUrl: cta_url || buildAppUrl('/mail'),
         },
     });
+    console.log('[mailer] ✅ Mail-scanned email sent successfully to:', email);
 }
 
 export async function sendMailForwarded({ email, name, forwarding_address, forwarded_date }: { email: string; name?: string; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
