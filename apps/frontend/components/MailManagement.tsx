@@ -319,6 +319,7 @@ export function MailManagement({
                         date={formattedDate}
                         tag={getTagLabel(item.tag)}
                         isArchived={item.deleted}
+                        isRead={item.is_read ?? true}
                         onTag={() => {
                             setSelectedItem(item);
                             setShowTagDialog(true);

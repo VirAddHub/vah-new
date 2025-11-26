@@ -9,6 +9,7 @@ interface MailItemCardProps {
   date?: string;
   tag?: string | null;
   isArchived?: boolean;
+  isRead?: boolean;
   onTag: () => void;
   onArchive: () => void;
   onForward: () => void;
@@ -23,6 +24,7 @@ export function MailItemCard({
   date,
   tag,
   isArchived = false,
+  isRead = true,
   onTag,
   onArchive,
   onForward,
@@ -37,9 +39,16 @@ export function MailItemCard({
       <div className="flex items-start justify-between gap-4 mb-3">
         {/* Left: Title and Date */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-800 truncate">
-            {title}
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-800 truncate">
+              {title}
+            </h4>
+            {!isRead && (
+              <Badge className="bg-green-500 text-white text-xs px-1.5 py-0.5 shrink-0">
+                New
+              </Badge>
+            )}
+          </div>
           {date && (
             <p className="text-xs sm:text-sm text-neutral-500 mt-1">
               {date}
@@ -51,7 +60,7 @@ export function MailItemCard({
         <Badge
           className={`shrink-0 ${
             tag && tag !== "Untagged"
-              ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-50"
+              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-50"
               : "bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-50"
           }`}
           variant="outline"
