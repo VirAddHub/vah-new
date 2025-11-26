@@ -74,10 +74,11 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     throw new Error('Either ONEDRIVE_DRIVE_ID (not "me") or ONEDRIVE_USER_UPN must be set for app-only authentication');
   }
 
-  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl`;
+  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
 
   console.log(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
   console.log(`[onedriveClient] Using base URL: ${baseUrl}`);
+  console.log(`[onedriveClient] Fetching inbox children via URL: ${url}`);
 
   const response = await fetch(url, {
     headers: {
@@ -100,13 +101,30 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
   }
 
   const data = await response.json();
-  const files: OneDriveFile[] = [];
 
-  for (const item of data.value || []) {
-    if (!item.file) continue;
+  if (!Array.isArray(data.value)) {
+    console.error('[onedriveClient] Unexpected Graph response format:', data);
+    return [];
+  }
+
+  const files: OneDriveFile[] = [];
+  const pdfCandidates = data.value.filter((item: any) => {
+    if (!item) return false;
 
     const name = (item.name || '').toLowerCase();
-    if (!name.endsWith('.pdf')) continue;
+    const extMatch = name.endsWith('.pdf');
+    const mimeMatch =
+      item.file &&
+      typeof item.file.mimeType === 'string' &&
+      item.file.mimeType.toLowerCase() === 'application/pdf';
+
+    return extMatch || mimeMatch;
+  });
+
+  console.log(`[onedriveClient] Received ${data.value.length} items, ${pdfCandidates.length} PDF(s) after filtering`);
+
+  for (const item of pdfCandidates) {
+    if (!item.file) continue;
 
     files.push({
       id: item.id,
