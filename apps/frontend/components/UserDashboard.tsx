@@ -111,15 +111,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     });
   };
 
-  // SWR hook for mail items with reduced polling to prevent 429 errors
+  // SWR hook for mail items - no automatic polling to prevent 429 errors
   // Include archived items by default so the frontend can filter them
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
     '/api/mail-items?includeArchived=true',
     fetcher,
     {
-      refreshInterval: 120000, // Poll every 2 minutes to prevent 429 errors
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
       errorRetryCount: 2, // Reduced retry count
       errorRetryInterval: 10000, // Increased retry interval
       onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
@@ -143,74 +143,46 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
   const totalItems = mailData?.total || 0;
 
-  // Load user profile function
-  const loadUserProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // Try to get user data from localStorage first (from login) for immediate display
-      const storedUser = localStorage.getItem('vah_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserProfile(user);
-      }
-
-      // Fetch fresh user profile from API
-      const token = getToken();
-      if (token) {
-        const response = await fetch(`${API_BASE}/api/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok && data.data) {
-            setUserProfile(data.data);
-            // Update localStorage with fresh data
-            localStorage.setItem('vah_user', JSON.stringify(data.data));
-          }
-        } else {
-          console.warn('Failed to fetch user profile, using stored data');
+  // SWR hook for user profile - we avoid refreshInterval/polling here.
+  // Profile is revalidated via explicit mutate() after important actions
+  // (e.g. CH upload) to keep the dashboard stable.
+  // IMPORTANT: No refreshInterval, no router.refresh() loops, no setInterval polling.
+  const { data: profileData, error: profileError, isLoading: profileLoading, mutate: refreshProfile } = useSWR(
+    '/api/profile',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
+      // No refreshInterval - prevents constant API calls
+      onSuccess: (data) => {
+        // Update localStorage with fresh data when profile loads
+        if (data?.ok && data?.data) {
+          localStorage.setItem('vah_user', JSON.stringify(data.data));
+          setUserProfile(data.data);
         }
       }
-
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      // Continue with stored data if API fails
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  );
 
-  // Load user profile on mount (only once)
+  // Initialize user profile from SWR data or localStorage
   useEffect(() => {
-    loadUserProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // Listen for CH verification approval to refresh profile (debounced)
-  useEffect(() => {
-    let refreshTimeout: NodeJS.Timeout | null = null;
-
-    const handleChVerificationApproved = () => {
-      // Debounce to prevent multiple rapid refreshes
-      if (refreshTimeout) clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => {
-        console.log('CH verification approved - refreshing user profile');
-        loadUserProfile();
-      }, 1000);
-    };
-
-    window.addEventListener('ch-verification-approved', handleChVerificationApproved);
-
-    return () => {
-      if (refreshTimeout) clearTimeout(refreshTimeout);
-      window.removeEventListener('ch-verification-approved', handleChVerificationApproved);
-    };
-  }, [loadUserProfile]);
+    if (profileData?.ok && profileData?.data) {
+      setUserProfile(profileData.data);
+    } else {
+      // Fallback to localStorage for immediate display
+      const storedUser = localStorage.getItem('vah_user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          setUserProfile(user);
+        } catch (e) {
+          console.error('Failed to parse stored user:', e);
+        }
+      }
+    }
+    setLoading(profileLoading);
+  }, [profileData, profileLoading]);
 
   // Select/Deselect functions
   const toggleSelectMail = (id: string) => {
@@ -467,10 +439,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   // Check if user can use the address (KYC approved + CH verified)
+  // Registered office address is shown when both conditions are met
   const kycApproved = userProfile?.kyc_status === "approved";
-  const chVerified = userProfile?.companies_house_verified === true;
-  const chVerificationStatus = userProfile?.ch_verification_status || (chVerified ? 'approved' : 'not_submitted');
-  const canUseAddress = kycApproved && chVerified;
+  const isChApproved = 
+    userProfile?.ch_verification_status === 'approved' ||
+    userProfile?.companies_house_status === 'approved' ||
+    userProfile?.companies_house_verified === true;
+  const chVerificationStatus = userProfile?.ch_verification_status || (isChApproved ? 'approved' : 'not_submitted');
+  const canUseAddress = kycApproved && isChApproved;
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
