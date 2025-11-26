@@ -438,15 +438,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
-  // Check if user can use the address (KYC approved + CH verified)
-  // Registered office address is shown when both conditions are met
+  // Check if user can use the address (CH verified is sufficient)
+  // Registered office address is shown when CH verification is approved
   const kycApproved = userProfile?.kyc_status === "approved";
   const isChApproved = 
     userProfile?.ch_verification_status === 'approved' ||
     userProfile?.companies_house_status === 'approved' ||
     userProfile?.companies_house_verified === true;
   const chVerificationStatus = userProfile?.ch_verification_status || (isChApproved ? 'approved' : 'not_submitted');
-  const canUseAddress = kycApproved && isChApproved;
+  // Show address when CH is approved (KYC not required for address display)
+  const canUseAddress = isChApproved;
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
@@ -778,12 +779,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 {/* Address Display */}
                 {canUseAddress ? (
                   <>
-                    <div className="bg-muted/50 rounded-lg p-2.5 space-y-0.5">
-                      <p className="text-xs font-medium">{virtualAddress.line1}</p>
-                      <p className="text-xs font-medium">{virtualAddress.line2}</p>
-                      <p className="text-xs font-medium">{virtualAddress.city}</p>
-                      <p className="text-xs font-medium">{virtualAddress.postcode}</p>
-                      <p className="text-xs font-medium">{virtualAddress.country}</p>
+                    <p className="text-sm text-muted-foreground">
+                      You can now use your official VirtualAddressHub London address for Companies House, HMRC, banking, and all business correspondence.
+                    </p>
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                      <p className="text-sm font-medium text-neutral-800">VirtualAddressHub</p>
+                      <p className="text-sm text-neutral-700">{virtualAddress.line1}</p>
+                      <p className="text-sm text-neutral-700">{virtualAddress.line2}</p>
+                      <p className="text-sm text-neutral-700">{virtualAddress.city}</p>
+                      <p className="text-sm text-neutral-700">{virtualAddress.postcode}</p>
+                      <p className="text-sm text-neutral-700">{virtualAddress.country}</p>
                     </div>
 
                     {/* Generate Certificate Button */}

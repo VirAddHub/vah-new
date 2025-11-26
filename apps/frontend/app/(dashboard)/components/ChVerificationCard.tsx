@@ -181,18 +181,6 @@ export function ChVerificationCard() {
           <p className="text-sm text-muted-foreground">
             You can now safely use your VirtualAddressHub address for your Registered Office and Director's Service Address.
           </p>
-          {proxyProofUrl && (
-            <div className="pt-2">
-              <a
-                href={proxyProofUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                View submitted proof →
-              </a>
-            </div>
-          )}
         </CardContent>
       </Card>
     );
