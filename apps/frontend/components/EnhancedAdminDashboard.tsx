@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -140,6 +140,7 @@ interface AdminDashboardProps {
 type AdminSection = "overview" | "users" | "ch-verification" | "mail" | "forwarding" | "billing" | "plans" | "analytics" | "web-vitals" | "bundle-analysis" | "service-monitoring" | "settings" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
+    const router = useRouter();
     const [activeSection, setActiveSection] = useState<AdminSection>("overview");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -600,13 +601,14 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 <span className="text-sm">{item.label}</span>
                             </Button>
                         ))}
-                        <Button asChild variant="ghost" size="sm" className="gap-1.5 h-8 px-3">
-                            <Link href="/admin/filename-generator">
-                                <span className="flex items-center gap-1.5">
-                                    <Clipboard className="h-4 w-4" />
-                                    <span className="text-sm">Filename Generator</span>
-                                </span>
-                            </Link>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 h-8 px-3"
+                            onClick={() => router.push('/admin/filename-generator')}
+                        >
+                            <Clipboard className="h-4 w-4" />
+                            <span className="text-sm">Filename Generator</span>
                         </Button>
                         <MonitoringDropdown
                             activeSection={activeSection}
@@ -666,20 +668,16 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 </Button>
                             ))}
                             <Button
-                                asChild
                                 variant="ghost"
                                 size="sm"
                                 className="justify-start gap-2 h-8 text-xs col-span-2"
+                                onClick={() => {
+                                    router.push('/admin/filename-generator');
+                                    setMobileMenuOpen(false);
+                                }}
                             >
-                                <Link
-                                    href="/admin/filename-generator"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <Clipboard className="h-4 w-4" />
-                                        <span className="truncate">Filename Generator</span>
-                                    </span>
-                                </Link>
+                                <Clipboard className="h-4 w-4" />
+                                <span className="truncate">Filename Generator</span>
                             </Button>
                             <div className="col-span-2">
                                 <MonitoringDropdown
