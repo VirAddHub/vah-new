@@ -104,10 +104,14 @@ router.get("/blog/posts", (req, res) => {
                 };
             });
 
-        res.json({ ok: true, data: posts });
+        return res.json({ ok: true, data: posts });
     } catch (error) {
-        console.error("Error fetching blog posts:", error);
-        res.status(500).json({ ok: false, error: "Failed to fetch posts" });
+        console.error("[blog] Error fetching posts:", error);
+        return res.status(500).json({
+            ok: false,
+            error: "server_error",
+            message: "Failed to fetch blog posts"
+        });
     }
 });
 

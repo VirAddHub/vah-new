@@ -16,37 +16,50 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-async function getPosts() {
+async function fetchBlogPosts() {
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") ||
+    "";
+
+  const res = await fetch(`${base}/api/bff/blog/list`, {
+    cache: "no-store",
+  });
+
+  let json: any = null;
   try {
-    const base = process.env.NEXT_PUBLIC_APP_URL || 
-                 process.env.NEXT_PUBLIC_BASE_URL || 
-                 'http://localhost:3000';
-    const res = await fetch(`${base}/api/bff/blog/list`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      console.error("[blog/page] BFF returned non-ok status:", res.status);
-      return [];
-    }
-
-    const json = await res.json();
-
-    if (!json.ok) {
-      console.error("[blog/page] BFF returned error:", json.error);
-      return [];
-    }
-
-    // Backend returns { ok: true, data: [...] } where data is an array
-    return json.data ?? [];
-  } catch (error) {
-    console.error("[blog/page] Error fetching blog posts:", error);
-    return [];
+    json = await res.json();
+  } catch (err) {
+    console.error("[blog/page] Failed to parse JSON from BFF:", err);
+    return { ok: false, posts: [] as any[] };
   }
+
+  if (!json?.ok) {
+    console.error("[blog/page] BFF returned not ok:", json);
+    return { ok: false, posts: [] as any[] };
+  }
+
+  // Backend returns { ok: true, data: [...] } where data is an array
+  return { ok: true, posts: json.data ?? [] };
 }
 
 export default async function BlogPage() {
-  const posts = await getPosts();
+  const { ok, posts } = await fetchBlogPosts();
+
+  if (!ok) {
+    return (
+      <div className="min-h-screen flex flex-col relative">
+        <HeaderWithNav />
+        <main className="flex-1 relative z-0 w-full max-w-5xl mx-auto px-4 py-12">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-primary">Blog</h1>
+          <p className="text-sm text-muted-foreground">
+            We're having trouble loading the blog right now. Please try again in a few minutes.
+          </p>
+        </main>
+        <FooterWithNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative">
