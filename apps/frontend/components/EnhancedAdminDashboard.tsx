@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { Button } from "./ui/button";
 import {
     Card,
@@ -85,6 +86,7 @@ import {
     Users2,
     CreditCard,
     Building2,
+    Clipboard,
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -598,6 +600,12 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 <span className="text-sm">{item.label}</span>
                             </Button>
                         ))}
+                        <Button asChild variant="ghost" size="sm" className="gap-1.5 h-8 px-3">
+                            <Link href="/admin/filename-generator" className="flex items-center gap-1.5">
+                                <Clipboard className="h-4 w-4" />
+                                <span className="text-sm">Filename Generator</span>
+                            </Link>
+                        </Button>
                         <MonitoringDropdown
                             activeSection={activeSection}
                             onSectionChange={(section) => setActiveSection(section as AdminSection)}
@@ -655,6 +663,18 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                     <span className="truncate">{item.label}</span>
                                 </Button>
                             ))}
+                            <Button
+                                asChild
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start gap-2 h-8 text-xs col-span-2"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                <Link href="/admin/filename-generator" className="flex items-center gap-2">
+                                    <Clipboard className="h-4 w-4" />
+                                    <span className="truncate">Filename Generator</span>
+                                </Link>
+                            </Button>
                             <div className="col-span-2">
                                 <MonitoringDropdown
                                     activeSection={activeSection}
