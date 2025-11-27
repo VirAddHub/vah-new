@@ -94,8 +94,10 @@ export default async function BlogPage() {
                         <Image
                           src={imageUrl}
                           alt={p.title}
-                          fill
-                          className="object-cover transition duration-300 group-hover:scale-105"
+                          width={800}
+                          height={400}
+                          className="object-cover transition duration-300 group-hover:scale-105 w-full h-full"
+                          style={{ objectFit: 'cover' }}
                         />
                       </div>
                     )}

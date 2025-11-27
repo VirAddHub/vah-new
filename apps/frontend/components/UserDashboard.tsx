@@ -283,7 +283,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        // Safely remove the element if it's still a child
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a);
+        }
 
         toast({
           title: "Certificate Generated",

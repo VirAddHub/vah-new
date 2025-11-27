@@ -132,10 +132,18 @@ export default async function BlogPostPage({
             <article
               className="prose prose-neutral max-w-none mt-8"
               dangerouslySetInnerHTML={{ __html: post.html as string }}
+              suppressHydrationWarning
             />
           ) : (
             <article className="prose prose-neutral max-w-none mt-8">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  img: ({ node, ...props }) => (
+                    <img {...props} style={{ maxWidth: '100%', height: 'auto' }} />
+                  ),
+                }}
+              >
                 {post.content ?? ""}
               </ReactMarkdown>
             </article>
