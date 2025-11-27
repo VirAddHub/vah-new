@@ -1,16 +1,12 @@
 // apps/frontend/app/(marketing)/blog/page.tsx
 
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
-import { FooterWithNav } from '@/components/layout/FooterWithNav';
-
-export const metadata: Metadata = {
-  title: "Blog | VirtualAddressHub",
-  description:
-    "Guides, compliance updates, and practical advice on running a UK company with a virtual address.",
-};
+import { useEffect, useState } from "react";
+import { HeaderWithNav } from "@/components/layout/HeaderWithNav";
+import { FooterWithNav } from "@/components/layout/FooterWithNav";
 
 type BlogPost = {
   id: number | string;
@@ -28,48 +24,88 @@ type BlogPost = {
   cover?: string | null;
 };
 
-async function loadPosts(): Promise<{ ok: boolean; posts: BlogPost[] }> {
-  const backendBase =
-    process.env.BACKEND_API_ORIGIN?.replace(/\/$/, "") ||
-    "https://vah-api-staging.onrender.com/api";
+type ListResponse =
+  | {
+      ok: true;
+      data:
+        | {
+            posts: BlogPost[];
+          }
+        | BlogPost[];
+    }
+  | {
+      ok: false;
+      error?: string;
+      message?: string;
+    };
 
-  try {
-    const res = await fetch(`${backendBase}/blog/posts`, {
-      // Cache for a bit; adjust as you like
-      next: { revalidate: 300 },
-    });
+export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-    const contentType = res.headers.get("content-type") || "";
+  useEffect(() => {
+    let cancelled = false;
 
-    if (!contentType.toLowerCase().includes("application/json")) {
-      const text = await res.text().catch(() => "");
-      console.error(
-        "[blog/page] Upstream did not return JSON",
-        res.status,
-        contentType,
-        text.slice(0, 200)
-      );
-      return { ok: false, posts: [] };
+    async function load() {
+      try {
+        setLoading(true);
+        setLoadError(null);
+
+        // Use the local BFF route so we stay inside the frontend domain
+        const res = await fetch("/api/bff/blog/list", {
+          method: "GET",
+        });
+
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          const text = await res.text().catch(() => "");
+          if (cancelled) return;
+          console.error(
+            "[blog/page] Non-JSON from BFF",
+            res.status,
+            contentType,
+            text.slice(0, 200)
+          );
+          setLoadError("We couldn't load the blog right now.");
+          setPosts([]);
+          return;
+        }
+
+        const json = (await res.json()) as ListResponse;
+
+        if (!json.ok) {
+          if (cancelled) return;
+          console.error("[blog/page] BFF returned not ok:", json);
+          setLoadError(json.message || "We couldn't load the blog right now.");
+          setPosts([]);
+          return;
+        }
+
+        // Accept either { data: { posts: [...] } } or { data: [...] }
+        const raw =
+          Array.isArray((json as any).data)
+            ? ((json as any).data as BlogPost[])
+            : ((json as any).data?.posts as BlogPost[] | undefined) ?? [];
+
+        if (cancelled) return;
+        setPosts(raw ?? []);
+      } catch (err) {
+        console.error("[blog/page] Error loading posts:", err);
+        if (cancelled) return;
+        setLoadError("We couldn't load the blog right now.");
+        setPosts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
-    const json = await res.json();
+    load();
 
-    if (!json?.ok) {
-      console.error("[blog/page] Upstream JSON not ok:", json);
-      return { ok: false, posts: [] };
-    }
-
-    // Backend returns { ok: true, data: [...] } where data is an array
-    const posts: BlogPost[] = json.data?.posts ?? json.data ?? [];
-    return { ok: true, posts };
-  } catch (err) {
-    console.error("[blog/page] Error loading posts:", err);
-    return { ok: false, posts: [] };
-  }
-}
-
-export default async function BlogPage() {
-  const { ok, posts } = await loadPosts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -79,20 +115,30 @@ export default async function BlogPage() {
           Blog
         </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          Practical guides, compliance updates, and mailroom tips for UK businesses using a virtual address.
+          Practical guides, compliance updates, and mailroom tips for UK
+          businesses using a virtual address.
         </p>
 
-        {!ok && (
+        {loading && (
+          <p className="text-sm text-muted-foreground mb-6">
+            Loading latest posts…
+          </p>
+        )}
+
+        {loadError && !loading && (
           <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            We're having trouble loading the latest posts right now. Please try again in a few minutes.
+            {loadError} Please try again in a few minutes.
           </div>
         )}
 
-        {posts.length === 0 ? (
+        {!loading && posts.length === 0 && !loadError && (
           <p className="text-sm text-muted-foreground">
-            No blog posts are available yet. Check back soon — new articles are being added.
+            No blog posts are available yet. Check back soon — new articles are
+            being added.
           </p>
-        ) : (
+        )}
+
+        {!loading && posts.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-6">
             {posts.map((post) => {
               const imageUrl = post.imageUrl ?? post.cover ?? null;
@@ -111,7 +157,7 @@ export default async function BlogPage() {
                           width={800}
                           height={400}
                           className="object-cover transition duration-300 group-hover:scale-105 w-full h-full"
-                          style={{ objectFit: 'cover' }}
+                          style={{ objectFit: "cover" }}
                         />
                       </div>
                     )}
