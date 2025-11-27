@@ -7,36 +7,22 @@
  * 3. Calls the backend webhook to create mail items
  * 4. Files remain in inbox (not moved) for manual review
  * 
- * Render Deployment Options:
+ * Render Deployment:
  * 
- * OPTION 1: Cron Job (RECOMMENDED)
- *   - Create a Cron Job service on Render
+ * Create a Background Worker service on Render:
  *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
- *   - Schedule: e.g., every 5 minutes (cron: 0,5,10,15,20,25,30,35,40,45,50,55 * * * *)
- *   - Mode: "once" (default) - exits cleanly after completion
- *   - No false "failed" messages
- *   - Resource-efficient (only runs when scheduled)
- * 
- * OPTION 2: Background Worker (Always-on)
- *   - Create a Background Worker service on Render
- *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
- *   - Set env: ONEDRIVE_MAIL_WATCH_MODE=interval
- *   - Set env: ONEDRIVE_MAIL_POLL_INTERVAL_MS=300000 (5 minutes)
- *   - WARNING: Uses resources continuously
- *   - WARNING: Must stay running or Render marks as "failed"
- * 
- * Local Usage:
- *   Run once:
- *     npm run ingest-onedrive-mail
- * 
- *   Run in interval mode:
- *     ONEDRIVE_MAIL_WATCH_MODE=interval ONEDRIVE_MAIL_POLL_INTERVAL_MS=60000 npm run ingest-onedrive-mail
+ *   - The worker runs as a daemon (never exits) to prevent false "Instance failed" messages
+ *   - Runs immediately on startup, then every 5 minutes (configurable)
+ *   - Prevents overlapping runs automatically
  * 
  * Environment variables:
  * - MAIL_IMPORT_WEBHOOK_URL (required) - URL of the internal backend endpoint
  * - MAIL_IMPORT_WEBHOOK_SECRET (required) - Shared secret for authentication
- * - ONEDRIVE_MAIL_WATCH_MODE (optional) - "once" or "interval" (default: "once")
- * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 60000)
+ * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 300000 = 5 minutes)
+ * 
+ * To change the interval:
+ *   - Set ONEDRIVE_MAIL_POLL_INTERVAL_MS environment variable
+ *   - Examples: 120000 (2 min), 300000 (5 min), 600000 (10 min)
  */
 
 import { listInboxFiles } from '../services/onedriveClient';
@@ -155,39 +141,46 @@ async function runOnce(): Promise<void> {
   }
 }
 
-/**
- * Main entry point
- */
-async function main() {
-  const mode = process.env.ONEDRIVE_MAIL_WATCH_MODE ?? 'once';
-  const intervalMs = Number(process.env.ONEDRIVE_MAIL_POLL_INTERVAL_MS ?? '60000');
+// ---------------------------------------------
+// Simple sleep helper
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-  if (mode === 'interval') {
-    console.log(`[onedriveMailIngest] Starting OneDrive mail ingest in interval mode (polling every ${intervalMs}ms)...`);
-    
-    // Run once immediately
-    await runOnce().catch(err => {
-      console.error('[onedriveMailIngest] Initial runOnce error:', err);
-    });
+// Track if ingest is already running
+let isRunning = false;
 
-    // Then set up interval
-    setInterval(() => {
-      runOnce().catch(err => {
-        console.error('[onedriveMailIngest] runOnce error:', err);
-      });
-    }, intervalMs);
-  } else {
-    console.log('[onedriveMailIngest] Running OneDrive mail ingest once...');
-    try {
-      await runOnce();
-      console.log('[onedriveMailIngest] Worker completed successfully, exiting...');
-      // Small delay to ensure all async operations complete
-      await new Promise(resolve => setTimeout(resolve, 200));
-      process.exit(0);
-    } catch (err: any) {
-      console.error('[onedriveMailIngest] Worker failed:', err);
-      process.exit(1);
-    }
+async function runOnceSafely(): Promise<void> {
+  if (isRunning) {
+    console.warn('[onedriveMailIngest] Previous run still in progress — skipping');
+    return;
+  }
+
+  isRunning = true;
+  try {
+    await runOnce();
+  } catch (err: any) {
+    console.error('[onedriveMailIngest] Error during runOnce:', err);
+    // Do NOT exit. Log error and continue.
+  } finally {
+    isRunning = false;
+  }
+}
+
+async function startDaemon(): Promise<void> {
+  // Get interval from env or default to 5 minutes
+  const intervalMs = Number(process.env.ONEDRIVE_MAIL_POLL_INTERVAL_MS ?? '300000');
+  const intervalMinutes = intervalMs / (60 * 1000);
+  
+  console.log(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
+
+  // Run immediately on boot
+  await runOnceSafely();
+
+  // Loop forever
+  while (true) {
+    await sleep(intervalMs);
+    await runOnceSafely();
   }
 }
 
@@ -196,11 +189,12 @@ if (require.main === module) {
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     console.error('[onedriveMailIngest] Unhandled promise rejection:', reason);
-    // Don't exit immediately - let main() handle it
+    // Don't exit - log and continue
   });
 
-  main().catch(err => {
+  startDaemon().catch(err => {
     console.error('[onedriveMailIngest] Fatal error:', err);
+    // Only exit on *real* fatal errors
     process.exit(1);
   });
 }
