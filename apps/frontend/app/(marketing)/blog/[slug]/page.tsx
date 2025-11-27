@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
@@ -117,8 +119,10 @@ export default async function BlogPostPage({
               dangerouslySetInnerHTML={{ __html: post.html as string }}
             />
           ) : (
-            <article className="prose prose-neutral max-w-none mt-8 whitespace-pre-wrap">
-              {post.content}
+            <article className="prose prose-neutral max-w-none mt-8">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {post.content ?? ""}
+              </ReactMarkdown>
             </article>
           )}
         </div>

@@ -71,6 +71,7 @@ export function BlogSection() {
     const [tagFilter, setTagFilter] = useState('all');
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [formData, setFormData] = useState({
         slug: '',
         title: '',
@@ -303,6 +304,43 @@ export function BlogSection() {
             .replace(/-+/g, '-')
             .trim();
     };
+
+    async function handleCoverFileChange(
+        e: React.ChangeEvent<HTMLInputElement>
+    ) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        setIsUploadingCover(true);
+        try {
+            const res = await fetch("/api/bff/admin/blog/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            const json = await res.json();
+
+            if (!res.ok || !json.ok || !json.data?.url) {
+                console.error("Upload failed", json);
+                alert(json.message || json.error || "Image upload failed");
+                return;
+            }
+
+            // Update formData.cover with returned URL
+            setFormData((prev) => ({
+                ...prev,
+                cover: json.data.url,
+            }));
+        } catch (err) {
+            console.error(err);
+            alert("Image upload failed");
+        } finally {
+            setIsUploadingCover(false);
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -619,14 +657,45 @@ export function BlogSection() {
                             </div>
                         </div>
 
-                        <div>
-                            <Label htmlFor="cover">Cover Image URL</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="cover">Cover Image</Label>
+                            
+                            {/* File input for upload */}
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleCoverFileChange}
+                                    disabled={isUploadingCover}
+                                    className="text-sm"
+                                />
+                                {isUploadingCover && (
+                                    <span className="text-xs text-muted-foreground">Uploading…</span>
+                                )}
+                            </div>
+
+                            {/* Manual URL input still available */}
                             <Input
                                 id="cover"
+                                type="text"
                                 value={formData.cover}
                                 onChange={(e) => setFormData(prev => ({ ...prev, cover: e.target.value }))}
-                                placeholder="https://example.com/image.jpg"
+                                placeholder="Or paste an image URL"
                             />
+
+                            {/* Preview */}
+                            {formData.cover && (
+                                <div className="mt-3">
+                                    <p className="mb-1 text-xs text-muted-foreground">Preview:</p>
+                                    <div className="relative h-40 w-full overflow-hidden rounded-lg border border-border">
+                                        <img
+                                            src={formData.cover}
+                                            alt="Cover preview"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-2">
