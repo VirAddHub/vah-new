@@ -79,7 +79,7 @@ export function BlogSection() {
         content: '',
         tags: [] as string[],
         cover: '',
-        status: 'draft' as 'draft' | 'published',
+        status: 'published' as 'draft' | 'published',
         ogTitle: '',
         ogDesc: '',
         noindex: false
@@ -263,7 +263,7 @@ export function BlogSection() {
             content: '',
             tags: [],
             cover: '',
-            status: 'draft',
+            status: 'published',
             ogTitle: '',
             ogDesc: '',
             noindex: false

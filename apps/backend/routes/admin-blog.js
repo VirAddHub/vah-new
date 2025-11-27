@@ -148,6 +148,9 @@ router.post("/blog/posts", (req, res) => {
             return res.status(409).json({ ok: false, error: "Post with this slug already exists" });
         }
 
+        // Normalize status - only 'draft' or 'published'
+        const normalizedStatus = (status === "draft" || status === "published") ? status : "published";
+
         const postData = {
             slug,
             title,
@@ -156,7 +159,7 @@ router.post("/blog/posts", (req, res) => {
             updated: new Date().toISOString(),
             tags: tags || [],
             cover: cover || "",
-            status: status || "draft",
+            status: normalizedStatus,
             ogTitle: ogTitle || "",
             ogDesc: ogDesc || "",
             noindex: noindex || false,
@@ -185,6 +188,11 @@ router.put("/blog/posts/:slug", (req, res) => {
             return res.status(404).json({ ok: false, error: "Post not found" });
         }
 
+        // Normalize status - only 'draft' or 'published', default to existing status if not provided
+        const normalizedStatus = status 
+            ? ((status === "draft" || status === "published") ? status : existingPost.status)
+            : existingPost.status;
+
         const postData = {
             slug,
             title: title || existingPost.title,
@@ -193,7 +201,7 @@ router.put("/blog/posts/:slug", (req, res) => {
             updated: new Date().toISOString(),
             tags: tags || existingPost.tags,
             cover: cover || existingPost.cover,
-            status: status || existingPost.status,
+            status: normalizedStatus,
             ogTitle: ogTitle || existingPost.ogTitle,
             ogDesc: ogDesc || existingPost.ogDesc,
             noindex: noindex !== undefined ? noindex : existingPost.noindex,
