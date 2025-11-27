@@ -58,6 +58,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.email,
                 u.first_name,
                 u.last_name,
+                u.company_name,
                 u.is_admin,
                 u.status,
                 u.plan_status,

@@ -7,6 +7,7 @@ import { Input } from "../ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { useToast } from "../ui/use-toast";
+import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
@@ -35,6 +36,7 @@ type AdminUser = {
   email: string;
   first_name?: string;
   last_name?: string;
+  company_name?: string;
   status?: string;
   plan_name?: string;
   plan_status?: string;
@@ -102,6 +104,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Plan status modal state
   const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string }>(null);
   const [planStatusValue, setPlanStatusValue] = useState<string>('pending_payment');
+  const [kycModal, setKycModal] = useState<null | { id: string | number; email: string; kyc_status?: string | null }>(null);
+  const [kycValue, setKycValue] = useState<string>('pending');
 
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
@@ -148,6 +152,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       setPlanStatusValue(planStatusModal.plan_status ?? 'pending_payment');
     }
   }, [planStatusModal]);
+
+  useEffect(() => {
+    if (kycModal) {
+      setKycValue(kycModal.kyc_status ?? 'pending');
+    }
+  }, [kycModal]);
 
   const loadDeletedUsers = async () => {
     setDeletedUsersLoading(true);
@@ -399,6 +409,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>ID</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Plan status</TableHead>
@@ -430,6 +441,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {u.company_name || <span className="text-sm text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
@@ -476,6 +490,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                               disabled={isMutating}
                             >
                               Plan status
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setKycModal({ id: u.id, email: u.email, kyc_status: u.kyc_status })}
+                              disabled={isMutating}
+                            >
+                              KYC
                             </Button>
                             <Button
                               variant="destructive"
@@ -697,6 +719,76 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 disabled={isMutating}
               >
                 {isMutating ? 'Saving…' : 'Save changes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KYC modal */}
+      {kycModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Update KYC status</h3>
+              <p className="text-sm text-muted-foreground">
+                Change KYC status for {kycModal.email}.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="kyc-status">KYC status</Label>
+              <select
+                id="kyc-status"
+                className="w-full border rounded-md px-3 py-2 bg-background"
+                value={kycValue}
+                onChange={(e) => setKycValue(e.target.value)}
+              >
+                <option value="approved">Approved</option>
+                <option value="verified">Verified (legacy)</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setKycModal(null)}
+                disabled={isMutating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!kycModal) return;
+                  setIsMutating(true);
+                  try {
+                    const res = await adminApi.updateUser(kycModal.id, {
+                      kyc_status: kycValue,
+                    });
+                    if (!res.ok) {
+                      throw new Error(res.error || "update_failed");
+                    }
+                    toast({
+                      title: "KYC status updated",
+                      description: `${kycModal.email} is now ${kycValue}.`,
+                    });
+                    setKycModal(null);
+                    if (onRefreshUsers) {
+                      await onRefreshUsers();
+                    }
+                  } catch (error: any) {
+                    toast({
+                      title: "Failed to update KYC",
+                      description: error?.message ?? "Unknown error",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsMutating(false);
+                  }
+                }}
+                disabled={isMutating}
+              >
+                {isMutating ? "Saving…" : "Save"}
               </Button>
             </div>
           </div>
