@@ -112,17 +112,25 @@ async function runOnce(): Promise<void> {
       return;
     }
 
-    // Process each file (errors are logged but don't stop other files)
+    // Process each file sequentially (errors are logged but don't stop other files)
+    let succeeded = 0;
+    let failed = 0;
+    
     for (const file of files) {
       try {
         await processFile(file);
+        succeeded++;
       } catch (err: any) {
         console.error(`[onedriveMailIngest] Error processing file "${file.name}":`, err.message);
+        failed++;
         // Continue with next file
       }
     }
 
-    console.log('[onedriveMailIngest] Mail ingestion completed');
+    console.log(`[onedriveMailIngest] Mail ingestion completed: ${succeeded} succeeded, ${failed} failed`);
+
+    // Give a small delay to ensure all async operations (like fetch) complete
+    await new Promise(resolve => setTimeout(resolve, 100));
   } catch (err: any) {
     console.error('[onedriveMailIngest] Fatal error during ingestion:', err.message);
     throw err;
@@ -152,13 +160,27 @@ async function main() {
     }, intervalMs);
   } else {
     console.log('[onedriveMailIngest] Running OneDrive mail ingest once...');
-    await runOnce();
-    process.exit(0);
+    try {
+      await runOnce();
+      console.log('[onedriveMailIngest] Worker completed successfully, exiting...');
+      // Small delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+      process.exit(0);
+    } catch (err: any) {
+      console.error('[onedriveMailIngest] Worker failed:', err);
+      process.exit(1);
+    }
   }
 }
 
 // Run if called directly
 if (require.main === module) {
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[onedriveMailIngest] Unhandled promise rejection:', reason);
+    // Don't exit immediately - let main() handle it
+  });
+
   main().catch(err => {
     console.error('[onedriveMailIngest] Fatal error:', err);
     process.exit(1);
