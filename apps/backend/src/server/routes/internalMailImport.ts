@@ -117,7 +117,7 @@ router.post('/from-onedrive', async (req, res) => {
 
     // Verify user exists
     const { rows: userRows } = await pool.query(
-      'SELECT id, email, first_name, last_name FROM "user" WHERE id = $1',
+      'SELECT id, email, first_name, last_name, plan_status, kyc_status, status FROM "user" WHERE id = $1',
       [payload.userId]
     );
 
@@ -135,6 +135,13 @@ router.post('/from-onedrive', async (req, res) => {
     }
 
     const user = userRows[0];
+    const userSnapshot = {
+      id: user.id,
+      email: user.email,
+      plan_status: user.plan_status,
+      kyc_status: user.kyc_status,
+      status: user.status,
+    };
     
     // Log user details for verification
     console.log('[internalMailImport] User verified:', {
@@ -142,7 +149,53 @@ router.post('/from-onedrive', async (req, res) => {
       email: user.email,
       name: `${user.first_name} ${user.last_name}`,
       fileName: payload.fileName,
+      planStatus: user.plan_status,
+      kycStatus: user.kyc_status,
+      userStatus: user.status,
     });
+
+    // Additional user validation checks with explicit errors
+    if (user.status && user.status !== 'active') {
+      console.warn('[internalMailImport] user_status_not_active', {
+        fileName: payload.fileName,
+        parsedUserId: payload.userId,
+        userSnapshot,
+      });
+      return res.status(400).json({
+        ok: false,
+        error: 'user_status_not_active',
+        message: `User ${user.id} status is ${user.status}`,
+        user: userSnapshot,
+      });
+    }
+
+    if (user.plan_status && user.plan_status !== 'active') {
+      console.warn('[internalMailImport] user_plan_inactive', {
+        fileName: payload.fileName,
+        parsedUserId: payload.userId,
+        userSnapshot,
+      });
+      return res.status(400).json({
+        ok: false,
+        error: 'user_plan_inactive',
+        message: `User ${user.id} plan_status is ${user.plan_status}`,
+        user: userSnapshot,
+      });
+    }
+
+    if (user.kyc_status && user.kyc_status !== 'approved') {
+      console.warn('[internalMailImport] user_kyc_not_approved', {
+        fileName: payload.fileName,
+        parsedUserId: payload.userId,
+        userSnapshot,
+      });
+      return res.status(400).json({
+        ok: false,
+        error: 'user_kyc_not_approved',
+        message: `User ${user.id} KYC status is ${user.kyc_status}`,
+        user: userSnapshot,
+      });
+    }
     const now = nowMs();
 
     // Parse created date from payload or use current time
