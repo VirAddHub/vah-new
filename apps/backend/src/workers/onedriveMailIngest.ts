@@ -12,18 +12,18 @@
  * OPTION 1: Cron Job (RECOMMENDED)
  *   - Create a Cron Job service on Render
  *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
- *   - Schedule: e.g., "*/5 * * * *" (every 5 minutes)
+ *   - Schedule: e.g., every 5 minutes (cron: 0,5,10,15,20,25,30,35,40,45,50,55 * * * *)
  *   - Mode: "once" (default) - exits cleanly after completion
- *   - ✅ No false "failed" messages
- *   - ✅ Resource-efficient (only runs when scheduled)
+ *   - No false "failed" messages
+ *   - Resource-efficient (only runs when scheduled)
  * 
  * OPTION 2: Background Worker (Always-on)
  *   - Create a Background Worker service on Render
  *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
  *   - Set env: ONEDRIVE_MAIL_WATCH_MODE=interval
  *   - Set env: ONEDRIVE_MAIL_POLL_INTERVAL_MS=300000 (5 minutes)
- *   - ⚠️ Uses resources continuously
- *   - ⚠️ Must stay running or Render marks as "failed"
+ *   - WARNING: Uses resources continuously
+ *   - WARNING: Must stay running or Render marks as "failed"
  * 
  * Local Usage:
  *   Run once:
