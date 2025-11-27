@@ -19,15 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres # pragma: allowlist secret
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s --health-timeout=5s --health-retries=20
+    # No local services needed - testing against Render
 
     steps:
       - name: Checkout code
@@ -47,55 +39,18 @@ jobs:
         run: npm run build
         working-directory: apps/backend
 
-      - name: Setup test database
-        env:
-          PGUSER: postgres
-          PGPASSWORD: postgres # pragma: allowlist secret
-          PGHOST: localhost
-          PGPORT: 5432
-          PGDATABASE: vah_test
-        run: |
-          # Create test user and database
-          psql -c "CREATE ROLE test WITH LOGIN PASSWORD 'test';" || true
-          psql -c "CREATE DATABASE test OWNER test;" || true
+      - name: Warm up Render service
+        run: curl -sS -m 5 --connect-timeout 3 https://vah-api-staging.onrender.com/ || true
 
-      - name: Start API server
+      - name: Wait for Render health
         env:
-          PGUSER: postgres
-          PGPASSWORD: postgres # pragma: allowlist secret
-          PGHOST: localhost
-          PGPORT: 5432
-          PGDATABASE: vah_test
-          DATABASE_URL: postgres://${{ env.PGUSER }}:${{ env.PGPASSWORD }}@${{ env.PGHOST }}:${{ env.PGPORT }}/${{ env.PGDATABASE }}?sslmode=disable # pragma: allowlist secret
-          PORT: 3001
-          HOST: 0.0.0.0
-          NODE_ENV: test
-          APP_BASE_URL: http://localhost:3000
-          EMAIL_FROM: hello@virtualaddresshub.co.uk
-          EMAIL_FROM_NAME: VirtualAddressHub
-          EMAIL_REPLY_TO: support@virtualaddresshub.co.uk
-          POSTMARK_TOKEN: dummy
-          POSTMARK_WEBHOOK_SECRET: test-secret # pragma: allowlist secret
-          DISABLE_RATE_LIMIT_FOR_HEALTHZ: 1
-        run: |
-          node dist/server/index.js &
-          echo $! > server.pid
-        working-directory: apps/backend
-
-      - name: Wait for health
-        env:
-          SMOKE_BASE_URL: http://localhost:3001
-          SMOKE_INITIAL_DELAY_SECONDS: 10
+          SMOKE_BASE_URL: https://vah-api-staging.onrender.com
+          SMOKE_INITIAL_DELAY_SECONDS: 30
           SMOKE_MAX_WAIT_SECONDS: 600
         run: bash apps/backend/scripts/smoke.sh
 
-      - name: Run E2E tests
+      - name: Run E2E tests against Render
         env:
-          E2E_BASE_URL: http://localhost:3001
+          E2E_BASE_URL: https://vah-api-staging.onrender.com
         run: npm run test:e2e
         working-directory: apps/backend
-
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
