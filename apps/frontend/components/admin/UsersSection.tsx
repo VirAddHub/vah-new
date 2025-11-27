@@ -10,13 +10,36 @@ import { useToast } from "../ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
+const PLAN_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active', description: 'User is fully billable and can receive scans.' },
+  { value: 'pending_payment', label: 'Pending payment', description: 'User cannot receive new mail until payment is completed.' },
+  { value: 'cancelled', label: 'Cancelled', description: 'Account cancelled. Mail ingest should be blocked.' },
+  { value: 'trialing', label: 'Trial', description: 'Limited trial access.' },
+] as const;
+
+const PLAN_STATUS_STYLES: Record<string, string> = {
+  active: 'bg-emerald-50 text-emerald-700',
+  pending_payment: 'bg-amber-50 text-amber-800',
+  cancelled: 'bg-rose-50 text-rose-700',
+  trialing: 'bg-sky-50 text-sky-700',
+};
+
+const formatPlanStatus = (value?: string) => {
+  if (!value) return 'pending payment';
+  const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === value);
+  return option ? option.label : value.replace(/_/g, ' ');
+};
+
 type AdminUser = {
   id: string;
   email: string;
   first_name?: string;
   last_name?: string;
   status?: string;
-  plan?: string;
+  plan_name?: string;
+  plan_status?: string;
+  plan_price?: number;
+  plan_interval?: string;
   kyc_status?: string;
   deleted_at?: string;
 };
@@ -76,10 +99,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     reactivate: true
   });
 
-  // Change plan modal state
-  const [planModal, setPlanModal] = useState<null | { id: string | number; email: string; currentPlan?: string }>(null);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  // Plan status modal state
+  const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string }>(null);
+  const [planStatusValue, setPlanStatusValue] = useState<string>('pending_payment');
 
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
@@ -120,72 +142,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     }
   }, [showDeleted]);
 
-  // Load available plans when plan modal opens
+  // Reset plan status value whenever modal opens
   useEffect(() => {
-    if (planModal) {
-      loadPlans();
+    if (planStatusModal) {
+      setPlanStatusValue(planStatusModal.plan_status ?? 'pending_payment');
     }
-  }, [planModal]);
-
-  const loadPlans = async () => {
-    try {
-      const res = await adminApi.getPlans();
-      if (res.ok && res.data && res.data.length > 0) {
-        setAvailablePlans(res.data);
-        if (planModal?.currentPlan) {
-          setSelectedPlan(planModal.currentPlan);
-        }
-      } else {
-        // Fallback to default plans if admin API fails or returns empty
-        console.warn('Admin plans API returned empty data, using fallback plans');
-        const fallbackPlans = [
-          {
-            id: 1,
-            name: 'Virtual Mailbox - Monthly',
-            slug: 'virtual-mailbox-monthly',
-            price_pence: 999,
-            interval: 'month',
-            active: true,
-            retired_at: null
-          },
-          {
-            id: 2,
-            name: 'Virtual Mailbox - Annual',
-            slug: 'virtual-mailbox-annual',
-            price_pence: 8999,
-            interval: 'year',
-            active: true,
-            retired_at: null
-          }
-        ];
-        setAvailablePlans(fallbackPlans);
-      }
-    } catch (error) {
-      console.error('Failed to load plans:', error);
-      // Use fallback plans on error
-      const fallbackPlans = [
-        {
-          id: 1,
-          name: 'Virtual Mailbox - Monthly',
-          slug: 'virtual-mailbox-monthly',
-          price_pence: 999,
-          interval: 'month',
-          active: true,
-          retired_at: null
-        },
-        {
-          id: 2,
-          name: 'Virtual Mailbox - Annual',
-          slug: 'virtual-mailbox-annual',
-          price_pence: 8999,
-          interval: 'year',
-          active: true,
-          retired_at: null
-        }
-      ];
-      setAvailablePlans(fallbackPlans);
-    }
-  };
+  }, [planStatusModal]);
 
   const loadDeletedUsers = async () => {
     setDeletedUsersLoading(true);
@@ -439,6 +401,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Plan status</TableHead>
                 <TableHead>KYC</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -451,7 +414,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   </TableCell>
                 </TableRow>
               ) : (
-                displayUsers.map((u) => (
+                displayUsers.map((u) => {
+                  const planStatusValue = u.plan_status ?? 'pending_payment';
+                  const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-neutral-100 text-neutral-700';
+                  return (
                   <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-red-50" : ""}>
                     <TableCell className="font-mono text-sm">
                       {u.id}
@@ -483,6 +449,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       )}
                     </TableCell>
                     <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${planStatusClass}`}>
+                        {formatPlanStatus(planStatusValue)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
                     </TableCell>
                     <TableCell>
@@ -501,10 +472,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setPlanModal({ id: u.id, email: u.email, currentPlan: u.plan_status })}
+                              onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status })}
                               disabled={isMutating}
                             >
-                              Plan
+                              Plan status
                             </Button>
                             <Button
                               variant="destructive"
@@ -519,7 +490,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                )})
               )}
             </TableBody>
           </Table>
@@ -645,123 +616,87 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
       )}
 
-      {/* Change Plan Modal */}
-      {planModal && (
+      {/* Plan status modal */}
+      {planStatusModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-semibold text-lg mb-2">Change User Plan</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Change plan for {planModal.email}
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Select Plan</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2 bg-background"
-                  value={selectedPlan}
-                  onChange={(e) => setSelectedPlan(e.target.value)}
-                >
-                  <option value="">-- Select a plan --</option>
-                  {availablePlans
-                    .filter(p => p.active && !p.retired_at)
-                    .map(plan => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name} - £{(plan.price_pence / 100).toFixed(2)}/{plan.interval}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {selectedPlan && (
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  <h4 className="font-medium mb-2">Plan Change Details:</h4>
-                  {(() => {
-                    const plan = availablePlans.find(p => p.id.toString() === selectedPlan);
-                    if (!plan) return null;
-
-                    return (
-                      <div className="space-y-1">
-                        <p><strong>New Plan:</strong> {plan.name}</p>
-                        <p><strong>Price:</strong> £{(plan.price_pence / 100).toFixed(2)}/{plan.interval}</p>
-                        <p><strong>Billing:</strong> {plan.interval === 'month' ? 'Monthly' : 'Annual'} billing cycle</p>
-                        <p className="text-muted-foreground text-xs mt-2">
-                          The user's billing will be updated on their next billing cycle.
-                          They will receive an email notification about the plan change.
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Update plan status</h3>
+              <p className="text-sm text-muted-foreground">
+                Adjust billing/state enforcement for {planStatusModal.email}.
+              </p>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Plan status</label>
+              <select
+                className="w-full border rounded-md px-3 py-2 bg-background"
+                value={planStatusValue}
+                onChange={(e) => setPlanStatusValue(e.target.value)}
+              >
+                {PLAN_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === planStatusValue);
+                return option ? (
+                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+              <p>
+                This value is what the mail ingest worker checks before accepting PDFs.
+              </p>
+              <p>
+                Set to <strong>pending payment</strong> to block scans until billing is fixed.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setPlanModal(null);
-                  setSelectedPlan('');
-                }}
+                onClick={() => setPlanStatusModal(null)}
                 disabled={isMutating}
               >
                 Cancel
               </Button>
               <Button
                 onClick={async () => {
-                  if (!selectedPlan) {
-                    toast({ title: "Error", description: "Please select a plan", variant: "destructive" });
-                    return;
-                  }
-
+                  if (!planStatusModal) return;
                   setIsMutating(true);
                   try {
-                    const selectedPlanData = availablePlans.find(p => p.id.toString() === selectedPlan);
-                    const planName = selectedPlanData?.name || 'Unknown Plan';
-                    const planPrice = selectedPlanData ? `£${(selectedPlanData.price_pence / 100).toFixed(2)}/${selectedPlanData.interval}` : 'Unknown Price';
-
-                    // Update user's plan_id to change their plan
-                    const res = await adminApi.updateUser(planModal.id, {
-                      plan_id: parseInt(selectedPlan)
+                    const res = await adminApi.updateUser(planStatusModal.id, {
+                      plan_status: planStatusValue,
                     });
-
-                    if (res.ok) {
-                      toast({
-                        title: "Plan Updated Successfully",
-                        description: `${planModal.email} has been moved to ${planName} (${planPrice}). Billing will be updated on the next cycle.`
-                      });
-                      setPlanModal(null);
-                      setSelectedPlan('');
-
-                      // Refresh the users list to show updated plan
-                      if (onFiltersChange) {
-                        onFiltersChange({
-                          search: debouncedQ,
-                          status: statusFilter,
-                          plan_id: planFilter,
-                          kyc_status: kycFilter,
-                        });
-                      }
-                    } else {
-                      const errorMsg = res.error || 'Unknown error occurred';
-                      toast({
-                        title: "Failed to Update Plan",
-                        description: `Could not change plan for ${planModal.email}: ${errorMsg}`,
-                        variant: "destructive"
-                      });
+                    if (!res.ok) {
+                      throw new Error(res.error || 'update_failed');
                     }
-                  } catch (error) {
-                    console.error('Plan update error:', error);
                     toast({
-                      title: "Error",
-                      description: `Failed to update plan for ${planModal.email}. Please try again.`,
-                      variant: "destructive"
+                      title: 'Plan status updated',
+                      description: `${planStatusModal.email} is now ${formatPlanStatus(planStatusValue)}.`,
+                    });
+                    setPlanStatusModal(null);
+                    if (onRefreshUsers) {
+                      await onRefreshUsers();
+                    }
+                  } catch (error: any) {
+                    toast({
+                      title: 'Failed to update plan status',
+                      description: error?.message ?? 'Unknown error',
+                      variant: 'destructive',
                     });
                   } finally {
                     setIsMutating(false);
                   }
                 }}
-                disabled={isMutating || !selectedPlan}
+                disabled={isMutating}
               >
-                {isMutating ? 'Updating...' : 'Update Plan'}
+                {isMutating ? 'Saving…' : 'Save changes'}
               </Button>
             </div>
           </div>
