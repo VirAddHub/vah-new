@@ -26,18 +26,18 @@ type BlogPost = {
 
 type ListResponse =
   | {
-      ok: true;
-      data:
-        | {
-            posts: BlogPost[];
-          }
-        | BlogPost[];
+    ok: true;
+    data:
+    | {
+      posts: BlogPost[];
     }
+    | BlogPost[];
+  }
   | {
-      ok: false;
-      error?: string;
-      message?: string;
-    };
+    ok: false;
+    error?: string;
+    message?: string;
+  };
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -52,9 +52,16 @@ export default function BlogPage() {
         setLoading(true);
         setLoadError(null);
 
-        // Use the local BFF route so we stay inside the frontend domain
-        const res = await fetch("/api/bff/blog/list", {
+        // Fetch directly from backend to avoid BFF hydration issues
+        const backendBase =
+          process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN?.replace(/\/$/, "") ||
+          "https://vah-api-staging.onrender.com/api";
+        
+        const res = await fetch(`${backendBase}/blog/posts`, {
           method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
         });
 
         const contentType = res.headers.get("content-type") || "";
@@ -62,7 +69,7 @@ export default function BlogPage() {
           const text = await res.text().catch(() => "");
           if (cancelled) return;
           console.error(
-            "[blog/page] Non-JSON from BFF",
+            "[blog/page] Non-JSON from backend",
             res.status,
             contentType,
             text.slice(0, 200)
@@ -76,17 +83,16 @@ export default function BlogPage() {
 
         if (!json.ok) {
           if (cancelled) return;
-          console.error("[blog/page] BFF returned not ok:", json);
+          console.error("[blog/page] Backend returned not ok:", json);
           setLoadError(json.message || "We couldn't load the blog right now.");
           setPosts([]);
           return;
         }
 
-        // Accept either { data: { posts: [...] } } or { data: [...] }
-        const raw =
-          Array.isArray((json as any).data)
-            ? ((json as any).data as BlogPost[])
-            : ((json as any).data?.posts as BlogPost[] | undefined) ?? [];
+        // Backend returns { ok: true, data: [...] } where data is an array
+        const raw = Array.isArray((json as any).data)
+          ? ((json as any).data as BlogPost[])
+          : [];
 
         if (cancelled) return;
         setPosts(raw ?? []);
