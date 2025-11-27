@@ -60,6 +60,8 @@ jobs:
         run: bash apps/backend/scripts/smoke.sh
 
       - name: Run E2E tests against Render
+        env:
+          E2E_BASE_URL: https://vah-api-staging.onrender.com
         run: npm run test:e2e
         working-directory: apps/backend
         continue-on-error: false

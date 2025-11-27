@@ -34,7 +34,7 @@
     "db:rollback": "node scripts/migrate-pg.cjs rollback",
     "typecheck": "tsc -p tsconfig.server.json --noEmit",
     "test": "jest --config jest.backend.config.cjs --runInBand",
-    "test:e2e": "cross-env NODE_ENV=test TS_NODE_TRANSPILE_ONLY=1 jest --runInBand --config ./jest.e2e.config.js",
+    "test:e2e": "cross-env NODE_ENV=test TS_NODE_TRANSPILE_ONLY=1 E2E_BASE_URL=$E2E_BASE_URL jest --runInBand --config ./jest.e2e.config.js",
     "test:e2e:ci": "BASE_URL=$BASE_URL npm -w apps/backend run test:e2e",
     "postmark:upsert": "node scripts/postmark-upsert-webhook.mjs",
     "test:smoke": "jest -c jest.backend.config.cjs --passWithNoTests --runTestsByPath tests/smoke.spec.ts tests/auth.smoke.spec.ts",
