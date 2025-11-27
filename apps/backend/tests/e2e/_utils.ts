@@ -37,12 +37,15 @@ export async function fetchWithRetry(
 }
 
 // API client that uses environment variable for base URL
-// E2E_BASE_URL must be set (e.g., https://vah-api-staging.onrender.com)
+// Defaults to localhost:3001 for local development, but CI should set E2E_BASE_URL to Render staging
 export function api() {
-  const base = process.env.E2E_BASE_URL;
-  if (!base) {
-    throw new Error('E2E_BASE_URL environment variable is required. Set it to your Render staging API URL.');
+  const base = process.env.E2E_BASE_URL || 'http://localhost:3001';
+  
+  if (process.env.NODE_ENV === 'test' && !process.env.E2E_BASE_URL) {
+    console.warn('⚠️  E2E_BASE_URL not set, defaulting to http://localhost:3001');
+    console.warn('   For CI/Render testing, set E2E_BASE_URL=https://vah-api-staging.onrender.com');
   }
+  
   return supertest(base);
 }
 
