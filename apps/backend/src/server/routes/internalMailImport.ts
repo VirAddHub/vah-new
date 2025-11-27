@@ -183,7 +183,11 @@ router.post('/from-onedrive', async (req, res) => {
       });
     }
 
-    if (user.kyc_status && user.kyc_status !== 'approved') {
+    const isKycApproved =
+      user.kyc_status === 'approved' ||
+      user.kyc_status === 'verified'; // legacy status label
+
+    if (!isKycApproved) {
       console.warn('[internalMailImport] user_kyc_not_approved', {
         fileName: payload.fileName,
         parsedUserId: payload.userId,
@@ -192,7 +196,7 @@ router.post('/from-onedrive', async (req, res) => {
       return res.status(400).json({
         ok: false,
         error: 'user_kyc_not_approved',
-        message: `User ${user.id} KYC status is ${user.kyc_status}`,
+        message: `User ${user.id} KYC status is ${user.kyc_status || 'unknown'}`,
         user: userSnapshot,
       });
     }

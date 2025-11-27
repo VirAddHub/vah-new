@@ -212,6 +212,55 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
 });
 
 /**
+ * GET /api/admin/users/search
+ * Quick search for users (admin only)
+ */
+router.get('/users/search', adminUsersLimiter, requireAdmin, async (req: Request, res: Response) => {
+    const pool = getPool();
+    const q = String(req.query.q ?? '').trim();
+
+    if (!q) {
+        return res.json({ ok: true, data: [] });
+    }
+
+    try {
+        const like = `%${q}%`;
+        const result = await pool.query(
+            `
+            SELECT
+                id,
+                email,
+                first_name,
+                last_name,
+                company_name,
+                plan_status,
+                kyc_status,
+                status
+            FROM "user"
+            WHERE deleted_at IS NULL
+              AND (
+                email ILIKE $1
+                OR CONCAT_WS(' ', COALESCE(first_name, ''), COALESCE(last_name, '')) ILIKE $1
+                OR company_name ILIKE $1
+              )
+            ORDER BY id ASC
+            LIMIT 20
+            `,
+            [like]
+        );
+
+        return res.json({ ok: true, data: result.rows });
+    } catch (error: any) {
+        console.error('[GET /api/admin/users/search] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: 'database_error',
+            message: error.message,
+        });
+    }
+});
+
+/**
  * GET /api/admin/users/stats
  * Get user statistics (admin only)
  * IMPORTANT: This route MUST come before /users/:id to avoid being caught by the :id parameter
