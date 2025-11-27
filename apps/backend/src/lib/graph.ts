@@ -1,8 +1,6 @@
-import { Client } from "@microsoft/microsoft-graph-client";
 import "isomorphic-fetch";
 
 let cached: { token: string; exp: number } | null = null;
-let client: Client | null = null;
 
 async function fetchAppToken(): Promise<string> {
     const tenant = process.env.GRAPH_TENANT_ID!;
@@ -29,11 +27,4 @@ export async function graphBearer(): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
     if (cached && cached.exp - 60 > now) return cached.token;
     return fetchAppToken();
-}
-
-export async function graphClient(): Promise<Client> {
-    if (client) return client;
-    const token = await graphBearer();
-    client = Client.init({ authProvider: (done) => done(null, token) });
-    return client;
 }

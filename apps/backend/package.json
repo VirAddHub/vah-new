@@ -101,7 +101,6 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@types/multer": "^1.4.13",
     "@types/pg": "8.15.5",
     "@vah/shared": "file:../../packages/shared",
