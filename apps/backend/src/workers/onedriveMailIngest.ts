@@ -5,11 +5,29 @@
  * 1. Lists all PDFs in the OneDrive mail inbox folder
  * 2. Parses filenames to extract userId and sourceSlug
  * 3. Calls the backend webhook to create mail items
- * 4. Moves processed files to the archive folder
+ * 4. Files remain in inbox (not moved) for manual review
  * 
- * Usage:
+ * Render Deployment Options:
+ * 
+ * OPTION 1: Cron Job (RECOMMENDED)
+ *   - Create a Cron Job service on Render
+ *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
+ *   - Schedule: e.g., "*/5 * * * *" (every 5 minutes)
+ *   - Mode: "once" (default) - exits cleanly after completion
+ *   - ✅ No false "failed" messages
+ *   - ✅ Resource-efficient (only runs when scheduled)
+ * 
+ * OPTION 2: Background Worker (Always-on)
+ *   - Create a Background Worker service on Render
+ *   - Command: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
+ *   - Set env: ONEDRIVE_MAIL_WATCH_MODE=interval
+ *   - Set env: ONEDRIVE_MAIL_POLL_INTERVAL_MS=300000 (5 minutes)
+ *   - ⚠️ Uses resources continuously
+ *   - ⚠️ Must stay running or Render marks as "failed"
+ * 
+ * Local Usage:
  *   Run once:
- *     ONEDRIVE_MAIL_WATCH_MODE=once npm run ingest-onedrive-mail
+ *     npm run ingest-onedrive-mail
  * 
  *   Run in interval mode:
  *     ONEDRIVE_MAIL_WATCH_MODE=interval ONEDRIVE_MAIL_POLL_INTERVAL_MS=60000 npm run ingest-onedrive-mail
