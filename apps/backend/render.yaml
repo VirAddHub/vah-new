@@ -82,17 +82,12 @@ services:
         sync: false
       - key: ONEDRIVE_USER_UPN
         sync: false
-      - key: MS_TENANT_ID
+      - key: GRAPH_TENANT_ID
         sync: false
-      - key: MS_CLIENT_ID
+      - key: GRAPH_CLIENT_ID
         sync: false
-      - key: MS_CLIENT_SECRET
+      - key: GRAPH_CLIENT_SECRET
         sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: POSTMARK_API_KEY
-        sync: false
-      - key: OPS_ALERT_EMAIL
-        sync: false
-      - key: APP_BASE_URL
-        sync: false
+      # Note: DATABASE_URL, POSTMARK_API_KEY, APP_BASE_URL, OPS_ALERT_EMAIL
+      # are needed by the BACKEND SERVICE (not the worker). The worker only
+      # calls the webhook - it doesn't access the database or send emails directly.
