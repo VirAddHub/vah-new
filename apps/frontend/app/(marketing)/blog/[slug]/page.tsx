@@ -48,7 +48,22 @@ async function getPost(slug: string): Promise<BlogPost | null> {
       return null;
     }
 
-    const json = await res.json().catch(() => null);
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      const text = await res.text().catch(() => "");
+      console.error('[BlogPostPage] Non-JSON response:', res.status, contentType, text.slice(0, 200));
+      return null;
+    }
+
+    let json: any;
+    try {
+      json = await res.json();
+    } catch (err) {
+      const text = await res.text().catch(() => "");
+      console.error('[BlogPostPage] JSON parse error:', res.status, text.slice(0, 200));
+      return null;
+    }
+
     if (!json?.ok || !json?.data) return null;
     return json.data as BlogPost;
   } catch (error) {

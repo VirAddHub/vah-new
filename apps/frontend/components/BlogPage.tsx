@@ -40,7 +40,26 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
                 const response = await fetch(`${apiUrl}/api/blog/posts`);
-                const data = await response.json();
+
+                const contentType = response.headers.get("content-type") || "";
+                if (!contentType.toLowerCase().includes("application/json")) {
+                    const text = await response.text().catch(() => "");
+                    console.error('[BlogPage] Non-JSON response:', response.status, contentType, text.slice(0, 200));
+                    setError('Failed to load blog posts');
+                    setLoading(false);
+                    return;
+                }
+
+                let data: any;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    const text = await response.text().catch(() => "");
+                    console.error('[BlogPage] JSON parse error:', response.status, text.slice(0, 200));
+                    setError('Failed to load blog posts');
+                    setLoading(false);
+                    return;
+                }
 
                 if (data.ok) {
                     setBlogPosts(data.data);
