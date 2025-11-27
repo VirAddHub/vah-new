@@ -37,8 +37,12 @@ export async function fetchWithRetry(
 }
 
 // API client that uses environment variable for base URL
+// E2E_BASE_URL must be set (e.g., https://vah-api-staging.onrender.com)
 export function api() {
-  const base = process.env.E2E_BASE_URL || 'http://localhost:3001';
+  const base = process.env.E2E_BASE_URL;
+  if (!base) {
+    throw new Error('E2E_BASE_URL environment variable is required. Set it to your Render staging API URL.');
+  }
   return supertest(base);
 }
 

@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'apps/backend/**'
+  workflow_dispatch: # Allow manual trigger
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
-    # No local services needed - testing against Render
+    # Testing against Render staging API only - no local services needed
+    # All database and environment setup is handled by Render
+
+    env:
+      E2E_BASE_URL: https://vah-api-staging.onrender.com
+      SMOKE_BASE_URL: https://vah-api-staging.onrender.com
+      NODE_ENV: test
 
     steps:
       - name: Checkout code
@@ -40,11 +47,14 @@ jobs:
         working-directory: apps/backend
 
       - name: Warm up Render service
-        run: curl -sS -m 5 --connect-timeout 3 https://vah-api-staging.onrender.com/ || true
+        run: |
+          echo "Warming up Render staging API..."
+          curl -sS -m 10 --connect-timeout 5 https://vah-api-staging.onrender.com/api/healthz || echo "Service may be spinning up..."
 
-      - name: Wait for Render health
+      - name: Wait for Render health check
         env:
           SMOKE_BASE_URL: https://vah-api-staging.onrender.com
+          SMOKE_HEALTH_PATH: /api/healthz
           SMOKE_INITIAL_DELAY_SECONDS: 30
           SMOKE_MAX_WAIT_SECONDS: 600
         run: bash apps/backend/scripts/smoke.sh
@@ -54,3 +64,4 @@ jobs:
           E2E_BASE_URL: https://vah-api-staging.onrender.com
         run: npm run test:e2e
         working-directory: apps/backend
+        continue-on-error: false
