@@ -40,11 +40,15 @@ export async function GET(req: NextRequest) {
 
   const contentType = backendRes.headers.get("content-type") || "";
 
-  if (!contentType.includes("application/json")) {
+  if (!contentType.toLowerCase().includes("application/json")) {
     const text = await backendRes.text().catch(() => "");
     console.error(
-      "[bff/blog/detail] Expected JSON but got:",
-      text.slice(0, 200),
+      "[bff/blog/detail] Upstream did not return JSON. Status:",
+      backendRes.status,
+      "Content-Type:",
+      contentType,
+      "Body snippet:",
+      text.slice(0, 200)
     );
 
     return NextResponse.json(
@@ -52,6 +56,7 @@ export async function GET(req: NextRequest) {
         ok: false,
         error: "invalid_backend_response",
         message: "Blog service returned unexpected data.",
+        status: backendRes.status,
       },
       { status: 502 },
     );
@@ -61,12 +66,20 @@ export async function GET(req: NextRequest) {
   try {
     json = await backendRes.json();
   } catch (err) {
-    console.error("[bff/blog/detail] JSON parse error:", err);
+    const text = await backendRes.text().catch(() => "");
+    const snippet = text.slice(0, 200);
+    console.error(
+      "[bff/blog/detail] JSON parse error. Status:",
+      backendRes.status,
+      "Body snippet:",
+      snippet
+    );
     return NextResponse.json(
       {
         ok: false,
         error: "invalid_json",
         message: "Blog service returned invalid JSON.",
+        status: backendRes.status,
       },
       { status: 502 },
     );
