@@ -285,9 +285,10 @@ router.post('/from-onedrive', async (req, res) => {
     }
 
     const verifiedMailItem = verifyResult.rows[0];
+    const verifiedUserId = Number(verifiedMailItem.user_id);
     
     // CRITICAL VERIFICATION: Ensure the userId in the database matches what we intended
-    if (verifiedMailItem.user_id !== payload.userId) {
+    if (Number.isNaN(verifiedUserId) || verifiedUserId !== payload.userId) {
       console.error('[internalMailImport] ❌ CRITICAL: userId mismatch!', {
         fileName: payload.fileName,
         intendedUserId: payload.userId,
@@ -307,14 +308,14 @@ router.post('/from-onedrive', async (req, res) => {
     // CRITICAL VERIFICATION: Re-fetch user to ensure we have the latest data
     const { rows: userVerifyRows } = await pool.query(
       'SELECT id, email, first_name, last_name FROM "user" WHERE id = $1',
-      [verifiedMailItem.user_id]
+      [verifiedUserId]
     );
     
     if (userVerifyRows.length === 0) {
       console.error('[internalMailImport] ❌ CRITICAL: User not found for email!', {
         fileName: payload.fileName,
         mailId: verifiedMailItem.id,
-        userId: verifiedMailItem.user_id,
+        userId: verifiedUserId,
       });
       return res.status(500).json({
         ok: false,
@@ -330,7 +331,7 @@ router.post('/from-onedrive', async (req, res) => {
       console.error('[internalMailImport] ❌ CRITICAL: Email mismatch!', {
         fileName: payload.fileName,
         mailId: verifiedMailItem.id,
-        userId: verifiedMailItem.user_id,
+        userId: verifiedUserId,
         expectedEmail: user.email,
         actualEmail: userForEmail.email,
       });
@@ -344,7 +345,7 @@ router.post('/from-onedrive', async (req, res) => {
     
     console.log('[internalMailImport] ✅ Verified mail item exists in DB with correct user:', {
       mailId: verifiedMailItem.id,
-      userId: verifiedMailItem.user_id,
+      userId: verifiedUserId,
       userEmail: userForEmail.email,
       subject: verifiedMailItem.subject,
       tag: verifiedMailItem.tag,
