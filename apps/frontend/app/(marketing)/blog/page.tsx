@@ -26,11 +26,19 @@ async function fetchBlogPosts() {
     cache: "no-store",
   });
 
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    const text = await res.text().catch(() => "");
+    console.error("[blog/page] BFF did not return JSON. Status:", res.status, "Content-Type:", contentType, "Body snippet:", text.slice(0, 200));
+    return { ok: false, posts: [] as any[] };
+  }
+
   let json: any = null;
   try {
     json = await res.json();
   } catch (err) {
-    console.error("[blog/page] Failed to parse JSON from BFF:", err);
+    const text = await res.text().catch(() => "");
+    console.error("[blog/page] Failed to parse JSON from BFF. Status:", res.status, "Body snippet:", text.slice(0, 200), "Error:", err);
     return { ok: false, posts: [] as any[] };
   }
 
@@ -40,7 +48,9 @@ async function fetchBlogPosts() {
   }
 
   // Backend returns { ok: true, data: [...] } where data is an array
-  return { ok: true, posts: json.data ?? [] };
+  // But BFF might wrap it as { ok: true, data: { posts: [...] } }
+  const posts = json.data?.posts ?? json.data ?? [];
+  return { ok: true, posts };
 }
 
 export default async function BlogPage() {
