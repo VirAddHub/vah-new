@@ -601,9 +601,11 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                             </Button>
                         ))}
                         <Button asChild variant="ghost" size="sm" className="gap-1.5 h-8 px-3">
-                            <Link href="/admin/filename-generator" className="flex items-center gap-1.5">
-                                <Clipboard className="h-4 w-4" />
-                                <span className="text-sm">Filename Generator</span>
+                            <Link href="/admin/filename-generator">
+                                <span className="flex items-center gap-1.5">
+                                    <Clipboard className="h-4 w-4" />
+                                    <span className="text-sm">Filename Generator</span>
+                                </span>
                             </Link>
                         </Button>
                         <MonitoringDropdown
@@ -668,11 +670,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 variant="ghost"
                                 size="sm"
                                 className="justify-start gap-2 h-8 text-xs col-span-2"
-                                onClick={() => setMobileMenuOpen(false)}
                             >
-                                <Link href="/admin/filename-generator" className="flex items-center gap-2">
-                                    <Clipboard className="h-4 w-4" />
-                                    <span className="truncate">Filename Generator</span>
+                                <Link
+                                    href="/admin/filename-generator"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Clipboard className="h-4 w-4" />
+                                        <span className="truncate">Filename Generator</span>
+                                    </span>
                                 </Link>
                             </Button>
                             <div className="col-span-2">
