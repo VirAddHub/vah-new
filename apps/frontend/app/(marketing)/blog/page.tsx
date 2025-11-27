@@ -17,12 +17,32 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 async function getPosts() {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-  const r = await fetch(`${base}/api/blog/posts`, { next: { revalidate: 300 } })
-    .catch(() => null);
-  if (!r || !r.ok) return [];
-  const j = await r.json();
-  return j?.data ?? [];
+  try {
+    const base = process.env.NEXT_PUBLIC_APP_URL || 
+                 process.env.NEXT_PUBLIC_BASE_URL || 
+                 'http://localhost:3000';
+    const res = await fetch(`${base}/api/bff/blog/list`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("[blog/page] BFF returned non-ok status:", res.status);
+      return [];
+    }
+
+    const json = await res.json();
+
+    if (!json.ok) {
+      console.error("[blog/page] BFF returned error:", json.error);
+      return [];
+    }
+
+    // Backend returns { ok: true, data: [...] } where data is an array
+    return json.data ?? [];
+  } catch (error) {
+    console.error("[blog/page] Error fetching blog posts:", error);
+    return [];
+  }
 }
 
 export default async function BlogPage() {
