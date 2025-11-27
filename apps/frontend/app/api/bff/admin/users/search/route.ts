@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const backendOrigin = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
-  if (!backendOrigin) {
+  const rawOrigin = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
+  if (!rawOrigin) {
     return NextResponse.json(
       { ok: false, error: "backend_origin_missing" },
       { status: 500 }
     );
   }
+
+  const trimmed = rawOrigin.replace(/\/+$/, "");
+  const backendOrigin = trimmed.endsWith("/api")
+    ? trimmed.slice(0, -4)
+    : trimmed;
 
   try {
     const { searchParams } = new URL(req.url);
@@ -18,8 +23,7 @@ export async function GET(req: NextRequest) {
     }
 
     const url =
-      `${backendOrigin.replace(/\/$/, "")}/api/admin/users/search?q=` +
-      encodeURIComponent(q);
+      `${backendOrigin}/api/admin/users/search?q=` + encodeURIComponent(q);
 
     const upstream = await fetch(url, {
       method: "GET",
