@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const todayString = () => {
 };
 
 export default function FilenameGeneratorPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,9 +131,33 @@ export default function FilenameGeneratorPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">Mail filename generator</h1>
+    <div className="min-h-screen bg-background">
+      {/* Admin Navbar */}
+      <header className="bg-card border-b border-border">
+        <div className="flex items-center justify-between h-14 px-4">
+          <button
+            onClick={() => router.push('/admin/dashboard')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <span className="text-lg font-semibold text-foreground">VirtualAddress<span className="text-primary">Hub</span></span>
+          </button>
+          <nav className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/admin/dashboard')}
+              className="gap-1.5 h-8 px-3"
+            >
+              <span className="text-sm">Back to Dashboard</span>
+            </Button>
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold">Mail filename generator</h1>
         <p className="text-sm text-muted-foreground">
           Generate the exact filename format we require before uploading scans.
         </p>
@@ -315,6 +341,7 @@ export default function FilenameGeneratorPage() {
           </div>
         </section>
       )}
+      </main>
     </div>
   );
 }

@@ -383,8 +383,8 @@ router.post('/from-onedrive', async (req, res) => {
       // Don't fail the webhook if email fails, but log it clearly
     }
 
-    // Send ops notification AFTER successful DB insert and verification
-    // This email is sent to ops@virtualaddresshub.co.uk (not the user)
+           // Send ops notification AFTER successful DB insert and verification
+           // This email is sent to support@virtualaddresshub.co.uk (not the user)
     // Includes filename and userId for audit trail
     try {
       await notifyOpsMailCreated({

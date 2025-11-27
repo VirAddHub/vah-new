@@ -646,29 +646,29 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               <h3 className="font-semibold text-lg mb-1">Update plan status</h3>
               <p className="text-sm text-muted-foreground">
                 Adjust billing/state enforcement for {planStatusModal.email}.
-              </p>
+            </p>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Plan status</label>
-              <select
-                className="w-full border rounded-md px-3 py-2 bg-background"
+                <select
+                  className="w-full border rounded-md px-3 py-2 bg-background"
                 value={planStatusValue}
                 onChange={(e) => setPlanStatusValue(e.target.value)}
-              >
+                >
                 {PLAN_STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
-                  </option>
-                ))}
-              </select>
-              {(() => {
+                      </option>
+                    ))}
+                </select>
+                  {(() => {
                 const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === planStatusValue);
                 return option ? (
                   <p className="text-xs text-muted-foreground">{option.description}</p>
                 ) : null;
-              })()}
-            </div>
+                  })()}
+                </div>
 
             <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs text-muted-foreground">
               <p>
@@ -767,11 +767,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     });
                     if (!res.ok) {
                       throw new Error(res.error || "update_failed");
-                    }
-                    toast({
+                      }
+                      toast({
                       title: "KYC status updated",
                       description: `${kycModal.email} is now ${kycValue}.`,
-                    });
+                      });
                     setKycModal(null);
                     if (onRefreshUsers) {
                       await onRefreshUsers();

@@ -40,9 +40,9 @@ export function MailItemCard({
         {/* Left: Title and Date */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-800 truncate">
-              {title}
-            </h4>
+          <h4 className="text-[15px] sm:text-[16px] font-medium text-neutral-800 truncate">
+            {title}
+          </h4>
             {!isRead && (
               <Badge className="bg-green-500 text-white text-xs px-1.5 py-0.5 shrink-0">
                 New

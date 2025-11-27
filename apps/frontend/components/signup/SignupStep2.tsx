@@ -216,9 +216,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
             const type = json.type as string | undefined;
             if (type === 'ltd') {
-                updateFormData('business_type', 'limited_company');
+            updateFormData('business_type', 'limited_company');
             } else if (type === 'llp') {
-                updateFormData('business_type', 'llp');
+            updateFormData('business_type', 'llp');
             }
         } catch (err) {
             console.error('Company details lookup failed:', err);
@@ -237,7 +237,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
             if (!res.ok) {
                 setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
                 return;
-            }
+                }
 
             const json = await res.json();
             if (!json?.ok) {
@@ -560,23 +560,23 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         {/* Search Results Dropdown */}
                                         {!isManualEntry && showResults && companySearchResults.length > 0 && (
                                             <div className="relative">
-                                                <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                                    {companySearchResults.map((company, index) => (
-                                                        <button
+                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                                {companySearchResults.map((company, index) => (
+                                                    <button
                                                             key={company.identifier ?? index}
-                                                            type="button"
+                                                        type="button"
                                                             onMouseDown={(e) => e.preventDefault()}
-                                                            onClick={() => handleSelectCompany(company)}
-                                                            className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
-                                                        >
-                                                            <div className="font-medium text-sm">{company.title}</div>
-                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                        onClick={() => handleSelectCompany(company)}
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                    >
+                                                        <div className="font-medium text-sm">{company.title}</div>
+                                                        <div className="text-xs text-muted-foreground mt-1">
                                                                 {company.regNumber}
                                                                 {company.status && ` • ${company.status}`}
                                                                 {company.addressSnippet && ` • ${company.addressSnippet}`}
-                                                            </div>
-                                                        </button>
-                                                    ))}
+                                                        </div>
+                                                    </button>
+                                                ))}
                                                 </div>
                                             </div>
                                         )}

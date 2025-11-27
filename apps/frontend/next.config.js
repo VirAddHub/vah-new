@@ -4,7 +4,7 @@ try {
   if (process.env.ANALYZE === 'true') {
     withBundleAnalyzer = require('@next/bundle-analyzer')({
       enabled: true,
-    });
+});
   }
 } catch (err) {
   console.warn('[next.config] @next/bundle-analyzer not available, skipping bundle analysis');

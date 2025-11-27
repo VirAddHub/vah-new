@@ -174,8 +174,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const storedUser = localStorage.getItem('vah_user');
       if (storedUser) {
         try {
-          const user = JSON.parse(storedUser);
-          setUserProfile(user);
+        const user = JSON.parse(storedUser);
+        setUserProfile(user);
         } catch (e) {
           console.error('Failed to parse stored user:', e);
         }
@@ -612,14 +612,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-2xl font-semibold text-neutral-800">
-                        Mail Inbox
-                      </h2>
-                      <p className="text-sm text-neutral-500 mt-1">
-                        {totalItems} {totalItems === 1 ? 'item' : 'items'}
-                        {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
-                      </p>
+                  <div>
+                    <h2 className="text-2xl font-semibold text-neutral-800">
+                      Mail Inbox
+                    </h2>
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                      {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
+                    </p>
                     </div>
                     {/* Manual refresh button - NO automatic polling */}
                     <Button

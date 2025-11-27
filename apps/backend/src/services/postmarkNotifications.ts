@@ -5,12 +5,12 @@
  * 
  * Environment variables:
  * - POSTMARK_TOKEN (required)
- * - OPS_ALERT_EMAIL (optional, defaults to ops@virtualaddresshub.co.uk)
+ * - OPS_ALERT_EMAIL (optional, defaults to support@virtualaddresshub.co.uk)
  */
 
 import { sendSimpleEmail } from './mailer';
 
-const OPS_EMAIL = process.env.OPS_ALERT_EMAIL || 'ops@virtualaddresshub.co.uk';
+const OPS_EMAIL = process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
 
 /**
  * Notify ops team that a new mail item has been created
