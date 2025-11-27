@@ -204,9 +204,32 @@ export default function FilenameGeneratorPage() {
         <section className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-medium">Selected user</h2>
-            <p className="text-sm text-muted-foreground">
-              user#{selectedUser.id} — {selectedUser.email}
+            <p className="text-sm text-muted-foreground font-mono">
+              user#{selectedUser.id}
             </p>
+          </div>
+
+          <div className="grid gap-3 text-sm md:grid-cols-2">
+            <div className="space-y-1">
+              <p className="font-medium text-muted-foreground">Name</p>
+              <p>
+                {[selectedUser.first_name, selectedUser.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "—"}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-muted-foreground">Email</p>
+              <p className="font-mono text-xs">{selectedUser.email}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-muted-foreground">Company</p>
+              <p>{selectedUser.company_name || "—"}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-muted-foreground">Account status</p>
+              <p>{selectedUser.status || "unknown"}</p>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs">
