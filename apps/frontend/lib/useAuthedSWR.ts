@@ -45,11 +45,47 @@ function makeFetcher(token?: string | null) {
       headers: { Authorization: `Bearer ${token}` },
       credentials: 'include', // Include cookies for session
     });
+
+    const contentType = res.headers.get("content-type") || "";
+
+    // If not JSON, read as text and throw a clearer error
+    if (!contentType.toLowerCase().includes("application/json")) {
+      const text = await res.text().catch(() => "");
+      const snippet = text.slice(0, 200);
+      console.error('[useAuthedSWR] Non-JSON response:', res.status, contentType, snippet);
+      const error = new Error(
+        `Upstream did not return JSON (status ${res.status}). Snippet: ${snippet}`
+      );
+      // @ts-ignore
+      error.response = res;
+      throw error;
+    }
+
+    let rawData: any;
+    try {
+      rawData = await res.json();
+    } catch (err) {
+      const text = await res.text().catch(() => "");
+      const snippet = text.slice(0, 200);
+      console.error('[useAuthedSWR] JSON parse error:', res.status, snippet);
+      const error = new Error(
+        `Failed to parse JSON (status ${res.status}). Snippet: ${snippet}`
+      );
+      // @ts-ignore
+      error.response = res;
+      throw error;
+    }
+
     if (!res.ok) {
       console.error('[useAuthedSWR] Error:', res.status, res.statusText);
-      throw new Error(`${res.status} ${res.statusText}`);
+      const error = new Error(rawData?.error ?? rawData?.message ?? `${res.status} ${res.statusText}`);
+      // @ts-ignore
+      error.response = res;
+      // @ts-ignore
+      error.data = rawData;
+      throw error;
     }
-    const rawData = await res.json();
+
     console.log('[useAuthedSWR] Raw response:', rawData);
 
     // Handle wrapped response format: { ok, items, total } or { ok, data }

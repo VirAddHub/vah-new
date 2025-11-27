@@ -16,6 +16,7 @@ export class ApiError extends Error {
 /**
  * JSON fetcher for SWR
  * Automatically includes credentials and handles errors
+ * Checks content-type before parsing to avoid "Unexpected token" errors
  */
 export async function jsonFetcher<T>(url: string, init?: RequestInit): Promise<T> {
     const res = await fetch(url, {
@@ -27,19 +28,41 @@ export async function jsonFetcher<T>(url: string, init?: RequestInit): Promise<T
         credentials: 'include',
     });
 
-    if (!res.ok) {
-        let info: any = null;
-        try {
-            info = await res.json();
-        } catch {
-            // Response body might not be JSON
-        }
+    const contentType = res.headers.get("content-type") || "";
 
-        const message = info?.error ?? info?.message ?? res.statusText;
-        throw new ApiError(message, res.status, info);
+    // If not JSON, read as text and throw a clearer error
+    if (!contentType.toLowerCase().includes("application/json")) {
+        const text = await res.text().catch(() => "");
+        const snippet = text.slice(0, 200);
+
+        const error = new ApiError(
+            `Upstream did not return JSON (status ${res.status}). Snippet: ${snippet}`,
+            res.status,
+            { contentType, bodySnippet: snippet }
+        );
+        throw error;
     }
 
-    return res.json() as Promise<T>;
+    let data: any;
+    try {
+        data = await res.json();
+    } catch (err) {
+        const text = await res.text().catch(() => "");
+        const snippet = text.slice(0, 200);
+        const error = new ApiError(
+            `Failed to parse JSON (status ${res.status}). Snippet: ${snippet}`,
+            res.status,
+            { contentType, bodySnippet: snippet, parseError: err }
+        );
+        throw error;
+    }
+
+    if (!res.ok) {
+        const message = data?.error ?? data?.message ?? res.statusText;
+        throw new ApiError(message, res.status, data);
+    }
+
+    return data as T;
 }
 
 /**

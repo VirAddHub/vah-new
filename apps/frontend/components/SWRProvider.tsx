@@ -4,6 +4,7 @@ import { SWRConfig } from 'swr';
 import { cachedFetch } from '@/lib/cachedFetch';
 
 // Simple fetcher function defined inline to avoid serialization issues
+// Checks content-type before parsing to avoid "Unexpected token" errors
 async function fetcher(url: string) {
     const res = await cachedFetch(url, {
         headers: {
@@ -12,16 +13,48 @@ async function fetcher(url: string) {
         credentials: 'include',
     });
 
-    if (!res.ok) {
-        const error = new Error('An error occurred while fetching the data.');
+    const contentType = res.headers.get("content-type") || "";
+
+    // If not JSON, read as text and throw a clearer error
+    if (!contentType.toLowerCase().includes("application/json")) {
+        const text = await res.text().catch(() => "");
+        const snippet = text.slice(0, 200);
+        const error = new Error(
+            `Upstream did not return JSON (status ${res.status}). Snippet: ${snippet}`
+        );
         // @ts-ignore
-        error.info = await res.json().catch(() => ({}));
+        error.response = res;
         // @ts-ignore
         error.status = res.status;
         throw error;
     }
 
-    return res.json();
+    let data: any;
+    try {
+        data = await res.json();
+    } catch (err) {
+        const text = await res.text().catch(() => "");
+        const snippet = text.slice(0, 200);
+        const error = new Error(
+            `Failed to parse JSON (status ${res.status}). Snippet: ${snippet}`
+        );
+        // @ts-ignore
+        error.response = res;
+        // @ts-ignore
+        error.status = res.status;
+        throw error;
+    }
+
+    if (!res.ok) {
+        const error = new Error(data?.error ?? data?.message ?? 'An error occurred while fetching the data.');
+        // @ts-ignore
+        error.info = data;
+        // @ts-ignore
+        error.status = res.status;
+        throw error;
+    }
+
+    return data;
 }
 
 export function SWRProvider({ children }: { children: React.ReactNode }) {
