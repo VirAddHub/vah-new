@@ -58,3 +58,41 @@ services:
         value: https://www.virtualaddresshub.co.uk
       - key: BACKEND_API_ORIGIN
         value: https://api.virtualaddresshub.co.uk/api
+
+  - type: cron
+    name: onedrive-mail-ingest
+    rootDir: .
+    env: node
+    schedule: "*/5 * * * *"
+    buildCommand: |
+      npm ci
+      npm run build
+    runCommand: cd apps/backend && node dist/src/workers/onedriveMailIngest.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20.19.0"
+      - key: NODE_ENV
+        value: production
+      # Set these in Render Dashboard (leave unsynced here if you prefer):
+      - key: MAIL_IMPORT_WEBHOOK_URL
+        sync: false
+      - key: MAIL_IMPORT_WEBHOOK_SECRET
+        sync: false
+      - key: ONEDRIVE_MAIL_INBOX_FOLDER_ID
+        sync: false
+      - key: ONEDRIVE_USER_UPN
+        sync: false
+      - key: MS_TENANT_ID
+        sync: false
+      - key: MS_CLIENT_ID
+        sync: false
+      - key: MS_CLIENT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: POSTMARK_API_KEY
+        sync: false
+      - key: OPS_ALERT_EMAIL
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
