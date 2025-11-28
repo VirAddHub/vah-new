@@ -37,6 +37,12 @@ export function useToast(): {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Required<ToastOptions>[]>([]);
+  const [mounted, setMounted] = React.useState(false);
+
+  // Only render ToastViewport on client to prevent hydration issues
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const dismiss = React.useCallback((id?: string) => {
     if (!id) {
@@ -90,7 +96,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           </RToast>
         ))}
 
-        <ToastViewport />
+        {/* Only render ToastViewport on client to prevent hydration errors */}
+        {mounted && <ToastViewport />}
       </ToastContext.Provider>
     </RadixToastProvider>
   );
