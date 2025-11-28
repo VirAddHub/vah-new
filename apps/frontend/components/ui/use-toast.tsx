@@ -80,24 +80,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <ToastContext.Provider value={{ toast, dismiss }}>
         {children}
 
-        {/* Render active toasts */}
-        {toasts.map((t) => (
-          <RToast
-            key={t.id}
-            data-variant={t.variant}
-            onOpenChange={(open) => {
-              if (!open) dismiss(t.id);
-            }}
-          >
-            {t.title ? <ToastTitle>{t.title}</ToastTitle> : null}
-            {t.description ? <ToastDescription>{t.description}</ToastDescription> : null}
-            {t.action}
-            <ToastClose />
-          </RToast>
-        ))}
+        {/* Only render toasts and viewport on client to prevent hydration errors */}
+        {mounted && (
+          <>
+            {/* Render active toasts */}
+            {toasts.map((t) => (
+              <RToast
+                key={t.id}
+                data-variant={t.variant}
+                onOpenChange={(open) => {
+                  if (!open) dismiss(t.id);
+                }}
+              >
+                {t.title ? <ToastTitle>{t.title}</ToastTitle> : null}
+                {t.description ? <ToastDescription>{t.description}</ToastDescription> : null}
+                {t.action}
+                <ToastClose />
+              </RToast>
+            ))}
 
-        {/* Only render ToastViewport on client to prevent hydration errors */}
-        {mounted && <ToastViewport />}
+            <ToastViewport />
+          </>
+        )}
       </ToastContext.Provider>
     </RadixToastProvider>
   );
