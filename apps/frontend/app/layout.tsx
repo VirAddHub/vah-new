@@ -2,7 +2,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { ToastProvider } from '@/components/ui/use-toast';
+import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
 import { WebVitalsProvider } from '@/components/WebVitalsProvider';
@@ -163,7 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <WebVitalsProvider>
                     <SWRProvider>
                         <Providers>
-                            <ToastProvider>{children}</ToastProvider>
+                            <ToastRoot>{children}</ToastRoot>
                         </Providers>
                     </SWRProvider>
                 </WebVitalsProvider>
