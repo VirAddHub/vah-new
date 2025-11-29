@@ -211,6 +211,53 @@ router.post('/from-onedrive', async (req, res) => {
       receivedAtMs = now;
     }
 
+    // IDEMPOTENCY CHECK: Check if this file has already been imported for this user
+    // We check by userId + fileName (via notes pattern) or userId + scan_file_url
+    let existingMailItem: any = null;
+    
+    if (payload.oneDriveDownloadUrl) {
+      // Check by scan_file_url (most reliable, unique per file)
+      const urlCheck = await pool.query(
+        'SELECT id, subject, tag, status FROM mail_item WHERE user_id = $1 AND scan_file_url = $2 LIMIT 1',
+        [payload.userId, payload.oneDriveDownloadUrl]
+      );
+      if (urlCheck.rows.length > 0) {
+        existingMailItem = urlCheck.rows[0];
+      }
+    }
+    
+    // If not found by URL, check by fileName in notes (fallback)
+    if (!existingMailItem) {
+      const notesPattern = `OneDrive import: ${payload.fileName}`;
+      const notesCheck = await pool.query(
+        'SELECT id, subject, tag, status FROM mail_item WHERE user_id = $1 AND notes = $2 LIMIT 1',
+        [payload.userId, notesPattern]
+      );
+      if (notesCheck.rows.length > 0) {
+        existingMailItem = notesCheck.rows[0];
+      }
+    }
+
+    // If duplicate found, skip creation and emails
+    if (existingMailItem) {
+      console.log('[internalMailImport] Duplicate detected, no-op', {
+        userId: payload.userId,
+        fileName: payload.fileName,
+        existingMailId: existingMailItem.id,
+        oneDriveFileId: payload.oneDriveFileId,
+        scanFileUrl: payload.oneDriveDownloadUrl,
+      });
+      
+      return res.status(200).json({
+        ok: true,
+        skipped: true,
+        data: {
+          mailId: existingMailItem.id,
+          reason: 'duplicate_file_for_user',
+        },
+      });
+    }
+
     // Generate idempotency key from OneDrive file ID or filename
     const idempotencyKey = payload.oneDriveFileId
       ? `onedrive_import_${payload.oneDriveFileId}`
@@ -219,7 +266,7 @@ router.post('/from-onedrive', async (req, res) => {
     // Generate subject from tag
     const subject = tagToTitle(payload.sourceSlug);
 
-    // Insert mail item
+    // Insert mail item (only reached if no duplicate was found)
     const result = await pool.query(
       `INSERT INTO mail_item (
         idempotency_key, user_id, subject, sender_name, received_date,
@@ -261,12 +308,13 @@ router.post('/from-onedrive', async (req, res) => {
 
     const mailItem = result.rows[0];
 
-    console.log('[internalMailImport] Successfully created mail item:', {
+    console.log('[internalMailImport] Successfully created NEW mail item:', {
       mailId: mailItem.id,
       userId: payload.userId,
       subject: mailItem.subject,
       tag: mailItem.tag,
       fileName: payload.fileName,
+      oneDriveFileId: payload.oneDriveFileId,
     });
 
     // VERIFY mail item exists in database before sending emails
