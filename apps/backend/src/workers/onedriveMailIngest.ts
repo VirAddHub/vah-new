@@ -5,7 +5,7 @@
  * 1. Lists all PDFs in the OneDrive mail inbox folder
  * 2. Parses filenames to extract userId and sourceSlug
  * 3. Calls the backend webhook to create mail items
- * 4. Files remain in inbox (not moved) for manual review
+ * 4. For newly created imports (not duplicates), moves files to processed folder (if configured)
  * 
  * Render Deployment:
  * 
@@ -19,13 +19,16 @@
  * - MAIL_IMPORT_WEBHOOK_URL (required) - URL of the internal backend endpoint
  * - MAIL_IMPORT_WEBHOOK_SECRET (required) - Shared secret for authentication
  * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 300000 = 5 minutes)
+ * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID (optional) - OneDrive folder ID for processed/archive folder
+ *   - If set, files are moved here after successful import (new imports only, not duplicates)
+ *   - If not set, files remain in inbox for manual review
  * 
  * To change the interval:
  *   - Set ONEDRIVE_MAIL_POLL_INTERVAL_MS environment variable
  *   - Examples: 120000 (2 min), 300000 (5 min), 600000 (10 min)
  */
 
-import { listInboxFiles } from '../services/onedriveClient';
+import { listInboxFiles, moveFileToProcessed } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
 
 const WEBHOOK_URL = process.env.MAIL_IMPORT_WEBHOOK_URL;
@@ -123,6 +126,26 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
     mailId: mailId,
     tag: parsed.sourceSlug,
   });
+
+  // Move file to processed folder (only for newly created imports, not duplicates)
+  // This is optional - if ONEDRIVE_MAIL_PROCESSED_FOLDER_ID is not set, files remain in inbox
+  const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
+  if (processedFolderId) {
+    try {
+      await moveFileToProcessed(file.id);
+      console.log(`[onedriveMailIngest] Moved file to processed folder`, {
+        fileName: file.name,
+        fileId: file.id,
+      });
+    } catch (moveError: any) {
+      // Don't fail the import if move fails - log it and continue
+      console.error(`[onedriveMailIngest] Failed to move file to processed folder (import still succeeded)`, {
+        fileName: file.name,
+        fileId: file.id,
+        error: moveError.message,
+      });
+    }
+  }
   
   return 'created';
 }

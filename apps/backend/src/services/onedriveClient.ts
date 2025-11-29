@@ -10,8 +10,8 @@
  * - MS_CLIENT_SECRET or GRAPH_CLIENT_SECRET
  * - ONEDRIVE_DRIVE_ID (optional, specific drive ID - cannot be "me" for app-only auth)
  * - ONEDRIVE_USER_UPN (optional, user principal name like "ops@virtualaddresshub.co.uk" - used if drive ID not set)
- * - ONEDRIVE_MAIL_INBOX_FOLDER_ID (OneDrive folder ID for inbox - files remain here after processing)
- * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID (optional, OneDrive folder ID for archive - not currently used)
+ * - ONEDRIVE_MAIL_INBOX_FOLDER_ID (OneDrive folder ID for inbox)
+ * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID (optional, OneDrive folder ID for processed/archive folder - files are moved here after successful import)
  */
 
 import { getGraphToken } from '../lib/msGraph';
@@ -148,12 +148,13 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
  */
 export async function moveFileToProcessed(fileId: string): Promise<void> {
   const token = await getGraphAccessToken();
-  const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID;
+  // Support both naming conventions
+  const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
   const driveId = process.env.ONEDRIVE_DRIVE_ID;
   const userUpn = process.env.ONEDRIVE_USER_UPN || process.env.MS_SHAREPOINT_USER_UPN || process.env.GRAPH_USER_UPN;
 
   if (!processedFolderId) {
-    throw new Error('ONEDRIVE_MAIL_PROCESSED_FOLDER_ID environment variable is required');
+    throw new Error('ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID environment variable is required');
   }
 
   // Build the Graph API URL (same logic as listInboxFiles)
