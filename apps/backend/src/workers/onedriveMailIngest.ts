@@ -44,15 +44,16 @@ const WEBHOOK_URL_STRING: string = WEBHOOK_URL;
 const WEBHOOK_SECRET_STRING: string = WEBHOOK_SECRET;
 
 /**
- * Process a single file: parse, call webhook, move if successful
+ * Process a single file: parse, call webhook
+ * Returns: 'created' | 'skipped' | 'failed'
  */
-async function processFile(file: { id: string; name: string; createdDateTime: string; downloadUrl?: string }): Promise<void> {
+async function processFile(file: { id: string; name: string; createdDateTime: string; downloadUrl?: string }): Promise<'created' | 'skipped' | 'failed'> {
   // Parse filename
   const parsed = parseMailFilename(file.name);
   
   if (!parsed) {
     console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (filename pattern did not match)`);
-    return;
+    return 'failed';
   }
 
   // Build payload
@@ -67,7 +68,7 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
 
   // Call webhook
   let response: Response;
-  let responseData: any;
+  let responseData: any = null;
 
   try {
     response = await fetch(WEBHOOK_URL_STRING, {
@@ -79,25 +80,51 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
       body: JSON.stringify(payload),
     });
 
-    responseData = await response.json().catch(() => ({}));
+    // Parse JSON safely
+    try {
+      responseData = await response.json();
+    } catch {
+      responseData = null;
+    }
   } catch (err: any) {
     console.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}":`, err.message);
-    return; // Don't move file if webhook call failed
+    return 'failed';
   }
 
   // Check response
-  if (!response.ok || !responseData.ok) {
-    const errorMsg = responseData.error || `HTTP ${response.status}`;
-    console.error(`[onedriveMailIngest] Failed to import file "${file.name}" (status ${response.status} or ok=false: ${errorMsg})`);
-    return; // Don't move file if webhook returned error
+  if (!response.ok || !responseData?.ok) {
+    const errorMsg = responseData?.error || `HTTP ${response.status}`;
+    console.error(`[onedriveMailIngest] Failed to import file "${file.name}"`, {
+      status: response.status,
+      error: errorMsg,
+      body: responseData,
+    });
+    return 'failed';
   }
 
-  // Webhook succeeded - file stays in inbox (not moved to archive)
-  const mailId = responseData.data?.mailId || 'unknown';
-  console.log(`[onedriveMailIngest] Imported file ${file.name} → mailId=${mailId}, userId=${parsed.userId}, tag=${parsed.sourceSlug}`);
+  // Extract mailId from response (could be in data.mailId or mailId directly)
+  const mailId = responseData.data?.mailId || responseData.mailId || 'unknown';
+
+  // Check if this was a duplicate (skipped)
+  if (responseData.skipped) {
+    console.log(`[onedriveMailIngest] Skipped duplicate file`, {
+      fileName: file.name,
+      userId: parsed.userId,
+      mailId: mailId,
+      reason: responseData.reason || 'duplicate_file_for_user',
+    });
+    return 'skipped';
+  }
+
+  // New file was created
+  console.log(`[onedriveMailIngest] Imported new file`, {
+    fileName: file.name,
+    userId: parsed.userId,
+    mailId: mailId,
+    tag: parsed.sourceSlug,
+  });
   
-  // Note: Files are NOT moved to an archive folder - they remain in the inbox.
-  // This allows manual review and prevents accidental data loss.
+  return 'created';
 }
 
 /**
@@ -117,21 +144,32 @@ async function runOnce(): Promise<void> {
     }
 
     // Process each file sequentially (errors are logged but don't stop other files)
-    let succeeded = 0;
-    let failed = 0;
+    let createdCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
     
     for (const file of files) {
       try {
-        await processFile(file);
-        succeeded++;
+        const result = await processFile(file);
+        if (result === 'created') {
+          createdCount++;
+        } else if (result === 'skipped') {
+          skippedCount++;
+        } else {
+          failedCount++;
+        }
       } catch (err: any) {
         console.error(`[onedriveMailIngest] Error processing file "${file.name}":`, err.message);
-        failed++;
+        failedCount++;
         // Continue with next file
       }
     }
 
-    console.log(`[onedriveMailIngest] Mail ingestion completed: ${succeeded} succeeded, ${failed} failed`);
+    console.log(`[onedriveMailIngest] Mail ingestion completed:`, {
+      created: createdCount,
+      skipped: skippedCount,
+      failed: failedCount,
+    });
 
     // Give a small delay to ensure all async operations (like fetch) complete
     await new Promise(resolve => setTimeout(resolve, 100));
