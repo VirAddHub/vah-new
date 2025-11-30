@@ -130,7 +130,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
       id: item.id,
       name: item.name,
       createdDateTime: item.createdDateTime,
-      downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
+      downloadUrl: item.webUrl || item['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
       size: item.size,
     });
   }
@@ -164,8 +164,8 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
   }
 
   // Move file using PATCH with parentReference
-  // Request the download URL in the response
-  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
+  // Request webUrl (stable SharePoint URL) and downloadUrl in the response
+  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -192,7 +192,7 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     id: movedItem.id,
     name: movedItem.name,
     createdDateTime: movedItem.createdDateTime,
-    downloadUrl: movedItem['@microsoft.graph.downloadUrl'] || movedItem.webUrl,
+    downloadUrl: movedItem.webUrl || movedItem['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
     size: movedItem.size,
   };
 }
