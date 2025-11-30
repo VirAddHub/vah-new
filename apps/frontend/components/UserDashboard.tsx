@@ -783,8 +783,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Card className="border-neutral-200 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-green-50 rounded-lg">
-                    <Building2 className="h-4 w-4 text-green-700" />
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Building2 className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-sm font-medium text-neutral-800 truncate">Your Virtual Business Address</CardTitle>
@@ -809,7 +809,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                     {/* Generate Certificate Button */}
                     <div className="space-y-1.5">
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
+                      <Button className="w-full bg-primary hover:bg-primary-600 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
                         {certLoading ? (
                           <>
                             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -848,7 +848,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                     {/* Disabled Generate Certificate Button */}
                     <div className="space-y-1.5">
-                      <Button className="w-full bg-green-600/50 hover:bg-green-600/50 text-white cursor-not-allowed" size="sm" disabled>
+                      <Button className="w-full bg-primary/50 hover:bg-primary/50 text-white cursor-not-allowed" size="sm" disabled>
                         <FileCheck className="h-3.5 w-3.5 mr-1.5" />
                         Generate Certificate
                       </Button>
