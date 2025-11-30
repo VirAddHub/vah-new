@@ -185,15 +185,38 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     throw new Error(`Failed to move file to processed folder: ${response.status} ${errorText}`);
   }
 
-  // Parse the moved file's metadata
+  // Parse the moved file's metadata from PATCH response
   const movedItem = await response.json();
 
+  // Fetch the item again to ensure we get the updated webUrl (SharePoint URLs may not update immediately in PATCH response)
+  const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
+  const getResponse = await fetch(getUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  let finalItem = movedItem;
+  if (getResponse.ok) {
+    finalItem = await getResponse.json();
+    console.log(`[onedriveClient] Fetched moved file to verify URL`, {
+      fileId: finalItem.id,
+      hasWebUrl: !!finalItem.webUrl,
+      webUrlContainsProcessed: finalItem.webUrl ? finalItem.webUrl.toLowerCase().includes('processed_mail') : false,
+    });
+  } else {
+    console.warn(`[onedriveClient] Failed to fetch moved file for URL verification, using PATCH response`, {
+      status: getResponse.status,
+    });
+  }
+
   return {
-    id: movedItem.id,
-    name: movedItem.name,
-    createdDateTime: movedItem.createdDateTime,
-    downloadUrl: movedItem.webUrl || movedItem['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
-    size: movedItem.size,
+    id: finalItem.id,
+    name: finalItem.name,
+    createdDateTime: finalItem.createdDateTime,
+    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
+    size: finalItem.size,
   };
 }
 
