@@ -130,13 +130,68 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   // Move file to processed folder (only for newly created imports, not duplicates)
   // This is optional - if ONEDRIVE_MAIL_PROCESSED_FOLDER_ID is not set, files remain in inbox
   const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
+  let finalScanUrl: string | null = null;
+
   if (processedFolderId) {
     try {
-      await moveFileToProcessed(file.id);
+      // Move file and get the moved file's metadata (including new download URL)
+      const movedFile = await moveFileToProcessed(file.id);
+      finalScanUrl = movedFile.downloadUrl || null;
+
       console.log(`[onedriveMailIngest] Moved file to processed folder`, {
         fileName: file.name,
         fileId: file.id,
+        processedFolderId,
+        newFileId: movedFile.id,
+        hasDownloadUrl: !!finalScanUrl,
       });
+
+      // Update the mail item's scan_file_url with the final location
+      if (finalScanUrl) {
+        try {
+          // Construct update URL: remove trailing /from-onedrive and add /from-onedrive/:mailId/scan-url
+          const baseUrl = WEBHOOK_URL_STRING.replace(/\/from-onedrive\/?$/, '');
+          const updateUrl = `${baseUrl}/from-onedrive/${mailId}/scan-url`;
+          const updateResponse = await fetch(updateUrl, {
+            method: 'PATCH',
+            headers: {
+              'content-type': 'application/json',
+              'x-mail-import-secret': WEBHOOK_SECRET_STRING,
+            },
+            body: JSON.stringify({
+              scanFileUrl: finalScanUrl,
+            }),
+          });
+
+          if (!updateResponse.ok) {
+            const updateError = await updateResponse.json().catch(() => ({}));
+            console.error(`[onedriveMailIngest] Failed to update scan_file_url (file was moved but URL not updated)`, {
+              fileName: file.name,
+              mailId,
+              status: updateResponse.status,
+              error: updateError,
+            });
+          } else {
+            console.log(`[onedriveMailIngest] Updated scan_file_url for mail item`, {
+              fileName: file.name,
+              mailId,
+              scanFileUrl: finalScanUrl,
+            });
+          }
+        } catch (updateError: any) {
+          console.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
+            fileName: file.name,
+            mailId,
+            error: updateError.message,
+          });
+        }
+      } else {
+        console.warn(`[onedriveMailIngest] Moved file but no download URL in response`, {
+          fileName: file.name,
+          fileId: file.id,
+          movedFileId: movedFile.id,
+        });
+      }
     } catch (moveError: any) {
       // Don't fail the import if move fails - log it and continue
       console.error(`[onedriveMailIngest] Failed to move file to processed folder (import still succeeded)`, {
@@ -144,6 +199,40 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
         fileId: file.id,
         error: moveError.message,
       });
+    }
+  } else {
+    // No processed folder configured - use original URL
+    // Update mail item with original download URL
+    if (file.downloadUrl) {
+      try {
+        // Construct update URL: remove trailing /from-onedrive and add /from-onedrive/:mailId/scan-url
+        const baseUrl = WEBHOOK_URL_STRING.replace(/\/from-onedrive\/?$/, '');
+        const updateUrl = `${baseUrl}/from-onedrive/${mailId}/scan-url`;
+        const updateResponse = await fetch(updateUrl, {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            'x-mail-import-secret': WEBHOOK_SECRET_STRING,
+          },
+          body: JSON.stringify({
+            scanFileUrl: file.downloadUrl,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          console.error(`[onedriveMailIngest] Failed to update scan_file_url with original URL`, {
+            fileName: file.name,
+            mailId,
+            status: updateResponse.status,
+          });
+        }
+      } catch (updateError: any) {
+        console.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
+          fileName: file.name,
+          mailId,
+          error: updateError.message,
+        });
+      }
     }
   }
   

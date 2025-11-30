@@ -266,7 +266,8 @@ router.post('/from-onedrive', async (req, res) => {
     // Generate subject from tag
     const subject = tagToTitle(payload.sourceSlug);
 
-    // Insert mail item (only reached if no duplicate was found)
+    // Insert mail item with scan_file_url initially null
+    // The worker will move the file to processed folder and update this URL with the final location
     const result = await pool.query(
       `INSERT INTO mail_item (
         idempotency_key, user_id, subject, sender_name, received_date,
@@ -294,7 +295,7 @@ router.post('/from-onedrive', async (req, res) => {
         subject,                            // $3: subject
         'OneDrive Scan',                    // $4: sender_name
         new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
-        payload.oneDriveDownloadUrl || null, // $6: scan_file_url
+        null,                               // $6: scan_file_url - set to null initially, will be updated after file move
         0,                                  // $7: file_size (not provided in payload)
         true,                               // $8: scanned (true for OneDrive files)
         'received',                         // $9: status
@@ -467,6 +468,90 @@ router.post('/from-onedrive', async (req, res) => {
     });
   } catch (error: any) {
     console.error('[internalMailImport] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      error: 'internal_error',
+      message: error.message || 'An unexpected error occurred',
+    });
+  }
+});
+
+/**
+ * Update scan_file_url for a mail item after file has been moved
+ * Route: PATCH /api/internal/mail/from-onedrive/:mailId/scan-url
+ */
+router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
+  try {
+    // Check secret header
+    const secret = req.headers['x-mail-import-secret'];
+    const expectedSecret = process.env.MAIL_IMPORT_WEBHOOK_SECRET;
+
+    if (!expectedSecret) {
+      console.error('[internalMailImport] MAIL_IMPORT_WEBHOOK_SECRET not configured');
+      return res.status(500).json({
+        ok: false,
+        error: 'server_configuration_error',
+        message: 'Mail import webhook secret not configured',
+      });
+    }
+
+    if (!secret || secret !== expectedSecret) {
+      console.warn('[internalMailImport] Invalid or missing secret header');
+      return res.status(401).json({
+        ok: false,
+        error: 'unauthorized',
+        message: 'Invalid or missing x-mail-import-secret header',
+      });
+    }
+
+    const mailId = parseInt(req.params.mailId, 10);
+    if (isNaN(mailId)) {
+      return res.status(400).json({
+        ok: false,
+        error: 'invalid_mail_id',
+        message: 'Invalid mail ID',
+      });
+    }
+
+    const { scanFileUrl } = req.body;
+    if (!scanFileUrl || typeof scanFileUrl !== 'string') {
+      return res.status(400).json({
+        ok: false,
+        error: 'validation_error',
+        message: 'scanFileUrl is required and must be a string',
+      });
+    }
+
+    const pool = getPool();
+
+    // Update the mail item's scan_file_url
+    const updateResult = await pool.query(
+      'UPDATE mail_item SET scan_file_url = $1, updated_at = $2 WHERE id = $3 RETURNING id, scan_file_url',
+      [scanFileUrl, nowMs(), mailId]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: 'mail_item_not_found',
+        message: `Mail item ${mailId} not found`,
+      });
+    }
+
+    console.log('[internalMailImport] Updated scan_file_url for mail item', {
+      mailId,
+      scanFileUrl,
+    });
+
+    return res.status(200).json({
+      ok: true,
+      data: {
+        mailId: updateResult.rows[0].id,
+        scanFileUrl: updateResult.rows[0].scan_file_url,
+      },
+    });
+  } catch (error: any) {
+    console.error('[internalMailImport] Error updating scan_file_url:', error);
     return res.status(500).json({
       ok: false,
       error: 'internal_error',

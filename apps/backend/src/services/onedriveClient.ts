@@ -140,13 +140,9 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
 
 /**
  * Move a file from the inbox folder to the processed/archive folder
- * 
- * NOTE: This function is available but not currently used by the worker.
- * Files remain in the inbox after processing to allow manual review.
- * 
- * To enable archiving, uncomment the moveFileToProcessed call in onedriveMailIngest.ts
+ * Returns the moved file's metadata including the new download URL
  */
-export async function moveFileToProcessed(fileId: string): Promise<void> {
+export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile> {
   const token = await getGraphAccessToken();
   // Support both naming conventions
   const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
@@ -168,7 +164,8 @@ export async function moveFileToProcessed(fileId: string): Promise<void> {
   }
 
   // Move file using PATCH with parentReference
-  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}`;
+  // Request the download URL in the response
+  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -187,5 +184,16 @@ export async function moveFileToProcessed(fileId: string): Promise<void> {
     const errorText = await response.text().catch(() => 'Unknown error');
     throw new Error(`Failed to move file to processed folder: ${response.status} ${errorText}`);
   }
+
+  // Parse the moved file's metadata
+  const movedItem = await response.json();
+
+  return {
+    id: movedItem.id,
+    name: movedItem.name,
+    createdDateTime: movedItem.createdDateTime,
+    downloadUrl: movedItem['@microsoft.graph.downloadUrl'] || movedItem.webUrl,
+    size: movedItem.size,
+  };
 }
 
