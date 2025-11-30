@@ -64,6 +64,33 @@ export async function fetchGraphFileByUserPath(
 
     console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
 
+    // If 404 and path is in Scanned_Mail, try Processed_Mail as fallback
+    // This handles cases where file was moved but URL wasn't updated in DB
+    if (r.status === 404 && /^Scanned_Mail\//i.test(docPath)) {
+        const fileName = docPath.replace(/^Scanned_Mail\//i, '');
+        const processedPath = `Processed_Mail/${fileName}`;
+        const processedSafePath = processedPath
+            .split('/')
+            .map((seg) => encodeURIComponent(seg))
+            .join('/');
+        const processedUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root:/${processedSafePath}:/content`;
+
+        console.log(`[msGraph] File not found in Scanned_Mail, trying Processed_Mail: ${processedPath}`);
+        const processedR = await fetch(processedUrl, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+            redirect: 'follow',
+            cache: 'no-store',
+        });
+
+        if (processedR.ok) {
+            console.log(`[msGraph] Found file in Processed_Mail (fallback succeeded)`);
+            return processedR;
+        } else {
+            console.log(`[msGraph] File also not found in Processed_Mail: ${processedR.status}`);
+        }
+    }
+
     // If still 404, try to list the drive root to see what's available
     if (r.status === 404) {
         console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
