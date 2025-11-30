@@ -74,23 +74,56 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   let responseData: any = null;
 
   try {
-    response = await fetch(WEBHOOK_URL_STRING, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-mail-import-secret': WEBHOOK_SECRET_STRING,
-      },
-      body: JSON.stringify(payload),
+    console.log(`[onedriveMailIngest] Calling webhook for file "${file.name}"`, {
+      webhookUrl: WEBHOOK_URL_STRING,
+      userId: parsed.userId,
     });
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+      response = await fetch(WEBHOOK_URL_STRING, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-mail-import-secret': WEBHOOK_SECRET_STRING,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     // Parse JSON safely
     try {
       responseData = await response.json();
-    } catch {
+    } catch (parseError) {
+      // If JSON parse fails, try to get text for debugging
+      const text = await response.text().catch(() => 'Unable to read response');
+      console.error(`[onedriveMailIngest] Failed to parse JSON response for "${file.name}"`, {
+        status: response.status,
+        statusText: response.statusText,
+        responseText: text.substring(0, 500),
+      });
       responseData = null;
     }
   } catch (err: any) {
-    console.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}":`, err.message);
+    // Handle fetch errors (network, timeout, etc.)
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      console.error(`[onedriveMailIngest] Webhook call timed out for file "${file.name}"`, {
+        webhookUrl: WEBHOOK_URL_STRING,
+        error: err.message,
+      });
+    } else {
+      console.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}"`, {
+        webhookUrl: WEBHOOK_URL_STRING,
+        error: err.message,
+        errorName: err.name,
+      });
+    }
     return 'failed';
   }
 
