@@ -177,7 +177,9 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
         processedFolderId,
         newFileId: movedFile.id,
         hasDownloadUrl: !!finalScanUrl,
-        finalScanUrl: finalScanUrl ? finalScanUrl.substring(0, 100) + '...' : null, // Log first 100 chars for debugging
+        finalScanUrl: finalScanUrl ? finalScanUrl.substring(0, 200) : null, // Log first 200 chars for debugging
+        // Check if URL contains Processed_Mail to verify it's the new location
+        containsProcessedMail: finalScanUrl ? finalScanUrl.toLowerCase().includes('processed_mail') : false,
       });
 
       // Update the mail item's scan_file_url with the final location

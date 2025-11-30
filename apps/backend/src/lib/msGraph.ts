@@ -102,9 +102,9 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
 
         path = decodeURIComponent(path).replace(/^\/+/, '');
 
-        // 🔧 tenant quirk: Scanned_Mail sits at root; drop leading "Documents/"
-        if (/^documents\/scanned_mail\//i.test(path)) {
-            path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…"
+        // 🔧 tenant quirk: Scanned_Mail and Processed_Mail sit at root; drop leading "Documents/"
+        if (/^documents\/(scanned_mail|processed_mail)\//i.test(path)) {
+            path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…" or "Processed_Mail/…"
         }
 
         console.log(`[msGraph] Extracted and normalized path: ${path}`);
