@@ -44,7 +44,7 @@ export function MailItemCard({
             {title}
           </h4>
             {!isRead && (
-              <Badge className="bg-green-500 text-white text-xs px-1.5 py-0.5 shrink-0">
+              <Badge className="bg-primary text-white text-xs px-1.5 py-0.5 shrink-0">
                 New
               </Badge>
             )}
@@ -60,7 +60,7 @@ export function MailItemCard({
         <Badge
           className={`shrink-0 ${
             tag && tag !== "Untagged"
-              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-50"
+              ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/10"
               : "bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-50"
           }`}
           variant="outline"

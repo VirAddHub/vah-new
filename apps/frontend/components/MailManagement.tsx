@@ -417,7 +417,7 @@ export function MailManagement({
                     placeholder="Search mail by sender, subject, tag, or date..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-amber-500 focus:ring-amber-500/20"
+                    className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
                 />
             </div>
 
@@ -426,21 +426,21 @@ export function MailManagement({
                 <TabsList className="h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
                     <TabsTrigger 
                         value="inbox" 
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Mail className="h-4 w-4" />
                         Inbox ({mailItems.filter(item => !item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger 
                         value="archived" 
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Archive className="h-4 w-4" />
                         Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger 
                         value="tags" 
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-amber-700 data-[state=active]:text-amber-700 text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Tag className="h-4 w-4" />
                         Tags ({availableTags.length})
@@ -492,9 +492,9 @@ export function MailManagement({
                             {availableTags.map(tag => (
                                 <div key={tag}>
                                     <h3 className="text-base font-semibold text-neutral-800 mb-4 flex items-center gap-2">
-                                        <Tag className="h-4 w-4 text-amber-600" />
+                                        <Tag className="h-4 w-4 text-primary" />
                                         {getTagLabel(tag)}
-                                        <Badge variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700">
+                                        <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
                                             {mailItems.filter(item => item.tag === tag && !item.deleted).length}
                                         </Badge>
                                     </h3>
