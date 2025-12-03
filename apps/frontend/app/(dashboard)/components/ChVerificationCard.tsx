@@ -29,8 +29,23 @@ export function ChVerificationCard() {
 
   const status = data?.data;
   const isLoading = !data && !error;
-  const isVerified = status?.companies_house_verified === true;
-  const statusCode = status?.ch_verification_status || (isVerified ? 'approved' : 'not_submitted');
+  
+  // Debug: Log the verification status once to console (helps diagnose API response issues)
+  useEffect(() => {
+    if (status && !hasTriggeredRefresh) {
+      console.log('[ChVerificationCard] Verification status from API:', {
+        companies_house_verified: status?.companies_house_verified,
+        ch_verification_status: status?.ch_verification_status,
+        fullStatus: status,
+      });
+      setHasTriggeredRefresh(true);
+    }
+  }, [status, hasTriggeredRefresh]);
+  
+  // Robust verification check: approved if EITHER flag is true/approved
+  // This handles cases where one field might be missing but the other is set
+  const isVerified = status?.companies_house_verified === true || status?.ch_verification_status === 'approved';
+  const statusCode = status?.ch_verification_status || (status?.companies_house_verified === true ? 'approved' : 'not_submitted');
   const submittedAt = formatDate(status?.ch_verification_submitted_at);
   const reviewedAt = formatDate(status?.ch_verification_reviewed_at);
   const adminNotes = status?.ch_verification_notes || null;
@@ -162,28 +177,9 @@ export function ChVerificationCard() {
     );
   }
 
+  // Hide the card completely if user is already verified
   if (isVerified || statusCode === 'approved') {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Companies House identity verification</span>
-            <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Verified
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Your Companies House identity verification has been confirmed.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            You can now safely use your VirtualAddressHub address for your Registered Office and Director's Service Address.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (
