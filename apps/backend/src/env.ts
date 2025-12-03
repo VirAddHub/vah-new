@@ -6,6 +6,7 @@ export const ENV = {
     EMAIL_FROM: process.env.POSTMARK_FROM ?? "hello@virtualaddresshub.co.uk",
     EMAIL_FROM_NAME: process.env.POSTMARK_FROM_NAME ?? "VirtualAddressHub",
     EMAIL_REPLY_TO: process.env.POSTMARK_REPLY_TO ?? "support@virtualaddresshub.co.uk",
+    MAILROOM_EMAIL: process.env.MAILROOM_EMAIL ?? "mailroom@virtualaddresshub.co.uk",
     POSTMARK_STREAM: process.env.POSTMARK_STREAM ?? "outbound",
 
     // Dev routes (staging/local only)

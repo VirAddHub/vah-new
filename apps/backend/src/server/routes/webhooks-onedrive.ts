@@ -94,7 +94,7 @@ const parseDateTolerant = (s?: string): string | null => {
 //           user4_10_10_2024_barclays.pdf (underscores)
 type FilenameData = {
   userId: number;
-  dateIso: string;
+  dateIso: string | null;  // null if no date found in filename (no "today" fallback)
   tag: string;
 } | null;
 
@@ -137,7 +137,7 @@ const extractFromFilename = (name: string): FilenameData => {
 
   return {
     userId,
-    dateIso: dateIso || new Date().toISOString().split('T')[0],
+    dateIso: dateIso || null,  // No "today" fallback - let webhook use ingest time instead
     tag
   };
 };
@@ -288,7 +288,7 @@ router.post('/', async (req: any, res) => {
     const mimeType = pick(body.mimeType);
     const size = toNum(body.size) ?? 0;
     const webUrl = pick(body.webUrl);
-    const lastModifiedDateTime = pick(body.lastModifiedDateTime);
+    const lastModifiedDateTime = pick(body.lastModifiedDateTime); // Note: Not used for received_at_ms (uses ingest time instead)
     const event = pick(body.event) ?? 'created';
 
     // Tag: Use provided tag, or auto-detect from filename/sender/subject
@@ -364,7 +364,8 @@ router.post('/', async (req: any, res) => {
           if (userRows.length > 0) {
             const user = userRows[0];
             const now = nowMs();
-            const receivedAtMs = isoToMs(lastModifiedDateTime) ?? now;
+            // Use ingest time (not lastModifiedDateTime) to avoid dependency on OneDrive file operations
+            const receivedAtMs = now;
 
             // Create a generic filename since we don't have the real one
             const genericName = `onedrive_file_${Date.now()}.pdf`;
@@ -496,10 +497,12 @@ router.post('/', async (req: any, res) => {
     const user = userRows[0];
     const now = nowMs();
 
-    // Use extracted date from filename if available, otherwise use lastModifiedDateTime
+    // Priority:
+    // 1) Filename date (physical mail date, if provided)
+    // 2) Ingest time (nowMs()), as a stable fallback (not lastModifiedDateTime)
     const receivedAtMs = receivedDate
       ? new Date(receivedDate).getTime()
-      : isoToMs(lastModifiedDateTime) ?? now;
+      : now;
 
     // Create idempotency key from OneDrive itemId
     const idempotencyKey = `onedrive_${cleanItemId}`;

@@ -98,6 +98,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 COALESCE(f.size, m.file_size) as file_size,
                 COALESCE(f.web_url, m.scan_file_url) as file_url,
                 CASE 
+                    -- GDPR forwarding window: 30 days (see apps/backend/src/config/gdpr.ts - GDPR_FORWARDING_WINDOW_DAYS)
                     WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
                     WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
                     ELSE false
@@ -140,6 +141,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
                 f.web_url as file_url,
                 f.mime as file_mime,
                 CASE 
+                    -- GDPR forwarding window: 30 days (see apps/backend/src/config/gdpr.ts - GDPR_FORWARDING_WINDOW_DAYS)
                     WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
                     WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
                     ELSE false

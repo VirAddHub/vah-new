@@ -692,7 +692,7 @@ export function BlogSection() {
                                             src={formData.cover}
                                             alt="Cover preview"
                                             className="h-full w-full object-cover"
-                                        />
+                            />
                                     </div>
                                 </div>
                             )}

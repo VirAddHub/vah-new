@@ -1,29 +1,26 @@
 /**
- * Postmark Notifications for Support
+ * Postmark Notifications for Mailroom
  * 
- * Sends operational notifications to support team via Postmark.
+ * Sends operational notifications to mailroom team via Postmark.
  * 
  * Note: ops@virtualaddresshub.co.uk is for private admin logins (banking, HMRC, etc.)
- * and should NOT receive automated emails. All system notifications go to support@.
+ * and should NOT receive automated emails.
  * 
  * Environment variables:
  * - POSTMARK_TOKEN (required)
- * - SUPPORT_EMAIL (optional, defaults to support@virtualaddresshub.co.uk)
- *   Legacy: OPS_ALERT_EMAIL is also supported for backward compatibility
+ * - MAILROOM_EMAIL (optional, defaults to mailroom@virtualaddresshub.co.uk)
  */
 
 import { sendSimpleEmail } from './mailer';
 import { ENV } from '../env';
 
-// Support email for all internal notifications and alerts
-// Note: ops@ is NOT used for email - it's only for admin logins
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
-
 /**
- * Notify ops team that a new mail item has been created
+ * Notify mailroom that a new mail item has been created
  * 
  * This is called AFTER the mail item has been successfully inserted into the database.
  * If the email fails, it's logged but doesn't affect the mail creation.
+ * 
+ * Email goes to mailroom@virtualaddresshub.co.uk (via MAILROOM_EMAIL env var).
  * 
  * @param payload - Mail creation details
  */
@@ -59,19 +56,19 @@ export async function notifyOpsMailCreated(payload: {
       .filter(Boolean)
       .join('\n');
 
-    // Reply-To should be the user's email so ops can hit "Reply" in Outlook
+    // Reply-To should be the user's email so mailroom can hit "Reply" in Outlook
     // Fallback to ENV.EMAIL_REPLY_TO if user email is not available
     const replyTo = payload.userEmail || ENV.EMAIL_REPLY_TO;
 
     await sendSimpleEmail({
-      to: SUPPORT_EMAIL,
+      to: ENV.MAILROOM_EMAIL,
       subject,
       textBody,
       from: ENV.EMAIL_FROM,
       replyTo,
     });
 
-    console.log(`[postmarkNotifications] ✅ Sent mail-created notification to ${SUPPORT_EMAIL} for mailId=${payload.mailId} (user ${payload.userId})`);
+    console.log(`[postmarkNotifications] ✅ Sent mail-created notification to ${ENV.MAILROOM_EMAIL} for mailId=${payload.mailId} (user ${payload.userId})`);
   } catch (err) {
     console.error('[postmarkNotifications] ❌ Failed to send mail-created notification:', err);
     // Do not throw; mail creation should not be rolled back because of email failure

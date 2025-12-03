@@ -2,6 +2,7 @@
 import express, { Request, Response } from 'express';
 import { getPool } from '../db';
 import fetch from 'node-fetch';
+import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
 
 const router = express.Router();
 
@@ -57,7 +58,6 @@ router.post('/forward', async (req: Request, res: Response) => {
 
         // Check GDPR 30-day rule from received date
         const now = Date.now();
-        const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
         let receivedAtMs = m.received_at_ms;
         if (!receivedAtMs && m.received_date) {
@@ -65,7 +65,7 @@ router.post('/forward', async (req: Request, res: Response) => {
             receivedAtMs = new Date(m.received_date).getTime();
         }
 
-        const gdprExpired = receivedAtMs && (now - receivedAtMs) > thirtyDaysInMs;
+        const gdprExpired = receivedAtMs && (now - receivedAtMs) > GDPR_FORWARDING_WINDOW_MS;
 
         // Check storage expiry (legacy)
         const storageExpired = m.expires_at && Date.now() > new Date(m.expires_at).getTime();

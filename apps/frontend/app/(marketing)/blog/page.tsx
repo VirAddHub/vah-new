@@ -9,7 +9,7 @@ export default function BlogPage() {
           If you can see this without an error, the problem is in the real blog
           UI (header/footer/posts), not the route or backend.
         </p>
-      </div>
-    </main>
+          </div>
+      </main>
   );
 }

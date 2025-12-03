@@ -157,7 +157,7 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || process.env.OPS_ALERT_EMAIL |
 - Changed variable name from `postmarkTo` to `supportEmail` for clarity
 
 **Code:**
-```typescript
+   ```typescript
 // Get support email for contact form destination
 // Note: ops@virtualaddresshub.co.uk is NOT used for email - it's only for admin logins
 const supportEmail = process.env.SUPPORT_EMAIL || process.env.POSTMARK_TO || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
@@ -174,7 +174,7 @@ const supportEmail = process.env.SUPPORT_EMAIL || process.env.POSTMARK_TO || pro
 // If implemented, it should use SUPPORT_EMAIL, not ops@
 // ops@virtualaddresshub.co.uk is for private admin logins, not email notifications
 const supportEmail = process.env.SUPPORT_EMAIL || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
-```
+   ```
 
 ### Impact
 ✅ **No Postmark calls send to `ops@virtualaddresshub.co.uk`**  

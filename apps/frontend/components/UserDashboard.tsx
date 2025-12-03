@@ -80,6 +80,7 @@ interface MailItem {
   scanned_at?: string;
   file_url?: string;
   deleted?: boolean; // Backend uses 'deleted' field for archived status
+  gdpr_expired?: boolean; // GDPR 30-day expiration flag (from backend API)
 }
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
@@ -355,7 +356,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   }, [userProfile?.forwarding_address]);
 
   // Check if mail item is GDPR expired (30+ days old)
+  // Uses gdpr_expired flag from backend API (single source of truth)
+  // Falls back to date calculation only if flag is not available (for backwards compatibility)
   const isGDPRExpired = useCallback((item: MailItem) => {
+    // Prefer backend-calculated flag (single source of truth)
+    if (typeof item.gdpr_expired === 'boolean') {
+      return item.gdpr_expired;
+    }
+    
+    // Fallback: calculate locally if flag not available (shouldn't happen in production)
     if (!item.received_date) return false;
     const receivedDate = new Date(item.received_date);
     const now = new Date();

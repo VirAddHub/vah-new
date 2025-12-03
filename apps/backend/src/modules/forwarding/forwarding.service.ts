@@ -2,6 +2,7 @@
 import crypto from 'node:crypto';
 import { getPool } from '../../server/db';
 import { LegalTransitions } from './state';
+import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
 
 // Free forwarding tags (lowercase slugs)
 const FREE_FORWARD_TAGS = new Set(['hmrc', 'companies_house']);
@@ -49,7 +50,6 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
 
             // Check GDPR 30-day rule
             const now = Date.now();
-            const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
             let receivedAtMs = mailData.received_at_ms;
             if (!receivedAtMs && mailData.received_date) {
@@ -57,7 +57,7 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                 receivedAtMs = new Date(mailData.received_date).getTime();
             }
 
-            const gdprExpired = receivedAtMs && (now - receivedAtMs) > thirtyDaysInMs;
+            const gdprExpired = receivedAtMs && (now - receivedAtMs) > GDPR_FORWARDING_WINDOW_MS;
             if (gdprExpired) {
                 throw new Error('Mail item is older than 30 days and cannot be forwarded due to GDPR compliance');
             }

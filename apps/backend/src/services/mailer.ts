@@ -1,4 +1,5 @@
 const postmark = require("postmark");
+import { ENV } from "../env";
 
 const PM_TOKEN = process.env.POSTMARK_TOKEN || "";
 const DEV_EMAIL_OVERRIDE = process.env.DEV_EMAIL_OVERRIDE || ""; // optional
@@ -173,6 +174,67 @@ export async function sendSimpleEmail({
         ReplyTo: replyTo,
         TrackOpens: true,
         TrackLinks: "HtmlAndText",
+    });
+}
+
+// Mailroom expiry reminder email
+export interface MailroomExpiryMailItem {
+    id: number;
+    user_id: number;
+    user_name: string | null;
+    user_email: string | null;
+    company_name: string | null;
+    received_at_ms: number;
+    tag: string | null;
+    sender_name: string | null;
+    subject: string | null;
+    file_name: string | null;
+}
+
+export async function sendMailroomExpiryReminder(
+    item: MailroomExpiryMailItem
+): Promise<void> {
+    const receivedDate = new Date(item.received_at_ms).toISOString().slice(0, 10);
+
+    // Format company name: use "N/A" if empty (option D from user request)
+    const companyName = item.company_name?.trim() || "N/A";
+
+    // Build email body using exact template provided
+    const textBody = [
+        "A mail item has now reached the end of its 30-day secure retention period",
+        "and must be removed from physical storage.",
+        "",
+        `Mail ID: ${item.id}`,
+        `User ID: ${item.user_id}`,
+        `User Name: ${item.user_name ?? "Unknown"}`,
+        `Company Name: ${companyName}`,
+        `User Email: ${item.user_email ?? "Unknown"}`,
+        "",
+        `Filename: ${item.file_name ?? item.subject ?? "N/A"}`,
+        `Subject: ${item.subject ?? "N/A"}`,
+        `Tag: ${item.tag ?? "N/A"}`,
+        `Received Date: ${receivedDate}`,
+        "",
+        "⚠️ ACTION REQUIRED – SECURE DESTRUCTION",
+        " - Locate this physical mail item in storage for the above user/company",
+        " - Confirm the user has the scanned digital copy (uploaded to dashboard)",
+        " - Destroy the envelope securely using cross-cut shredder (SOP)",
+        " - Log destruction in admin system (if applicable)",
+        "",
+        "🛡️ COMPLIANCE NOTES:",
+        " - 30-day GDPR retention limit reached",
+        " - Mail no longer eligible for forwarding",
+        " - Digital scan remains accessible to the user in their dashboard",
+        "",
+        "This message is generated automatically by the mail expiry system.",
+    ].join("\n");
+
+    await sendSimpleEmail({
+        to: ENV.MAILROOM_EMAIL,
+        from: ENV.EMAIL_FROM,
+        replyTo: ENV.EMAIL_REPLY_TO,
+        subject: `⚠️ Mail Expiry – Secure Destruction Required (Mail ID ${item.id})`,
+        textBody,
     });
 }
 

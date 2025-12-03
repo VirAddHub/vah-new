@@ -70,15 +70,15 @@ router.post('/', contactLimiter, async (req: Request, res: Response) => {
         // Build email content
         const emailSubject = `Contact Form: ${subject}`;
         const htmlBody = `
-            <h2>New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
-            <p><strong>Message:</strong></p>
-            <p>${message.replace(/\n/g, '<br>')}</p>
-            <hr>
-            <p><em>This message was sent via the VirtualAddressHub contact form.</em></p>
+                    <h2>New Contact Form Submission</h2>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Subject:</strong> ${subject}</p>
+                    <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
+                    <p><strong>Message:</strong></p>
+                    <p>${message.replace(/\n/g, '<br>')}</p>
+                    <hr>
+                    <p><em>This message was sent via the VirtualAddressHub contact form.</em></p>
         `;
         const textBody = `
 New Contact Form Submission
