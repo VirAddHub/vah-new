@@ -19,24 +19,28 @@ export async function postSlack(text: string): Promise<void> {
 }
 
 export async function sendOpsEmail({ subject, text }: { subject: string; text: string }): Promise<void> {
-    if (!process.env.OPS_EMAIL) {
-        console.log('[notify] Ops email not configured, skipping:', subject);
+    // Note: This function is currently not implemented (just logs)
+    // If implemented, it should use SUPPORT_EMAIL, not ops@
+    // ops@virtualaddresshub.co.uk is for private admin logins, not email notifications
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
+    
+    if (!supportEmail) {
+        console.log('[notify] Support email not configured, skipping:', subject);
         return;
     }
 
-    // TODO: Hook into your nodemailer or email provider
+    // TODO: Hook into your Postmark mailer (use sendSimpleEmail from services/mailer)
     // For now, just log the email that would be sent
-    console.log('[notify] Ops email would be sent:', { subject, text });
+    console.log('[notify] Support email would be sent:', { to: supportEmail, subject, text });
 
-    // Example implementation with nodemailer:
-    // const nodemailer = require('nodemailer');
-    // const transporter = nodemailer.createTransporter({
-    //     // your email config
-    // });
-    // await transporter.sendMail({
-    //     to: process.env.OPS_EMAIL,
+    // Example implementation with Postmark mailer:
+    // import { sendSimpleEmail } from '../services/mailer';
+    // await sendSimpleEmail({
+    //     to: supportEmail,
     //     subject,
-    //     text
+    //     textBody: text,
+    //     from: ENV.EMAIL_FROM,
+    //     replyTo: ENV.EMAIL_REPLY_TO,
     // });
 }
 

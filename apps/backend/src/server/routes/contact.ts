@@ -3,6 +3,8 @@
 
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import { sendSimpleEmail } from '../../services/mailer';
+import { ENV } from '../../env';
 
 const router = Router();
 
@@ -61,45 +63,24 @@ router.post('/', contactLimiter, async (req: Request, res: Response) => {
             });
         }
 
-        // Get Postmark configuration
-        const postmarkToken = process.env.POSTMARK_TOKEN || process.env.POSTMARK_SERVER_TOKEN;
-        const postmarkFrom = process.env.POSTMARK_FROM || 'support@virtualaddresshub.co.uk';
-        const postmarkTo = process.env.POSTMARK_TO || 'support@virtualaddresshub.co.uk';
-        const postmarkFromName = process.env.POSTMARK_FROM_NAME || 'VirtualAddressHub Support';
+        // Get support email for contact form destination
+        // Note: ops@virtualaddresshub.co.uk is NOT used for email - it's only for admin logins
+        const supportEmail = process.env.SUPPORT_EMAIL || process.env.POSTMARK_TO || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
 
-        if (!postmarkToken) {
-            console.warn('[POST /api/contact] No Postmark token configured');
-            return res.status(500).json({ 
-                ok: false, 
-                error: 'Email service not configured' 
-            });
-        }
-
-        // Send email via Postmark
-        const postmarkResponse = await fetch('https://api.postmarkapp.com/email', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-Postmark-Server-Token': postmarkToken,
-            },
-            body: JSON.stringify({
-                From: `"${postmarkFromName}" <${postmarkFrom}>`,
-                To: postmarkTo,
-                ReplyTo: email,
-                Subject: `Contact Form: ${subject}`,
-                HtmlBody: `
-                    <h2>New Contact Form Submission</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Subject:</strong> ${subject}</p>
-                    <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
-                    <p><strong>Message:</strong></p>
-                    <p>${message.replace(/\n/g, '<br>')}</p>
-                    <hr>
-                    <p><em>This message was sent via the VirtualAddressHub contact form.</em></p>
-                `,
-                TextBody: `
+        // Build email content
+        const emailSubject = `Contact Form: ${subject}`;
+        const htmlBody = `
+            <h2>New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+            <hr>
+            <p><em>This message was sent via the VirtualAddressHub contact form.</em></p>
+        `;
+        const textBody = `
 New Contact Form Submission
 
 Name: ${name}
@@ -112,28 +93,31 @@ ${message}
 
 ---
 This message was sent via the VirtualAddressHub contact form.
-                `,
-                // Anti-loop headers
-                Headers: [
-                    { Name: 'Auto-Submitted', Value: 'auto-replied' },
-                    { Name: 'X-Auto-Response-Suppress', Value: 'All' }
-                ]
-            })
-        });
+        `;
 
-        if (!postmarkResponse.ok) {
-            const errorData = await postmarkResponse.json();
-            console.error('[POST /api/contact] Postmark error:', errorData);
+        // Send email via centralized mailer
+        // To: support email (support@virtualaddresshub.co.uk)
+        // From: verified domain sender (ENV.EMAIL_FROM)
+        // Reply-To: user's email (so support can reply directly)
+        try {
+            await sendSimpleEmail({
+                to: supportEmail,
+                subject: emailSubject,
+                htmlBody: htmlBody.trim(),
+                textBody: textBody.trim(),
+                from: ENV.EMAIL_FROM,
+                replyTo: email, // User's email so support can reply directly
+            });
+
+            console.log('[POST /api/contact] Email sent successfully via centralized mailer');
+            return res.json({ ok: true, data: { message: 'Contact form submitted successfully' } });
+        } catch (emailError: any) {
+            console.error('[POST /api/contact] Failed to send email:', emailError);
             return res.status(500).json({ 
                 ok: false, 
                 error: 'Failed to send email' 
             });
         }
-
-        const result = await postmarkResponse.json();
-        console.log('[POST /api/contact] Email sent successfully:', result.MessageID);
-
-        return res.json({ ok: true, data: { messageId: result.MessageID } });
 
     } catch (error: any) {
         console.error('[POST /api/contact] error:', error);
