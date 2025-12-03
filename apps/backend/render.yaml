@@ -63,7 +63,9 @@ services:
     name: onedrive-mail-ingest
     rootDir: .
     env: node
-    schedule: "*/5 * * * *"
+    # Runs every 1 minute: "* * * * *" (minute hour day month weekday)
+    # To change interval: "*/2 * * * *" = every 2 min, "*/5 * * * *" = every 5 min, "*/10 * * * *" = every 10 min
+    schedule: "* * * * *"
     buildCommand: |
       npm ci
       npm run build
