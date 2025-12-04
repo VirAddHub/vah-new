@@ -310,6 +310,17 @@ export const apiClient = {
                 price
             }),
         });
+
+        // Backend returns: { ok: true, data: { user_id, email, name } }
+        // Convert to frontend format: { ok: true, data: { user: { id, email, ... } } }
+        if (resp.ok && resp.data && resp.data.data) {
+            const userData = resp.data.data;
+            const user = normalizeUserPayload(userData);
+            if (user) {
+                return { ok: true, data: { user } };
+            }
+        }
+
         return coerceUserResponse(resp);
     },
 
