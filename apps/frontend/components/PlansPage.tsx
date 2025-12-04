@@ -18,6 +18,24 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
     // Use the plans hook for consistent data fetching
     const { plans, loading, error, refetch } = usePlans();
 
+    // Get dynamic pricing from plans data
+    const getPlanPrice = (interval: 'monthly' | 'annual') => {
+        const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
+        if (plan) {
+            return (plan.price_pence / 100).toFixed(2);
+        }
+        // Return null if plans not loaded (don't show fallback price)
+        return null;
+    };
+
+    const getMonthlyEquivalent = () => {
+        const plan = plans?.find(p => p.interval === 'year');
+        if (plan) {
+            return ((plan.price_pence / 100) / 12).toFixed(2);
+        }
+        return null;
+    };
+
     // Handle plan selection and payment flow
     const handleSelectPlan = async (planId?: string) => {
         try {
@@ -154,21 +172,15 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     <div className="mt-4 inline-flex flex-col gap-1 rounded-2xl border border-border/60 bg-background/60 px-4 py-3 shadow-sm">
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-4xl md:text-5xl font-semibold leading-none text-foreground">
-                                                £{(() => {
-                                                    const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
-                                                    return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.98');
-                                                })()}
+                                                {getPlanPrice(isAnnual ? 'annual' : 'monthly') ? `£${getPlanPrice(isAnnual ? 'annual' : 'monthly')}` : 'Loading...'}
                                             </span>
                                             <span className="text-base md:text-lg text-muted-foreground ml-1">
                                                 {isAnnual ? '/year' : '/month'}
                                             </span>
                                         </div>
-                                        {isAnnual && (
+                                        {isAnnual && getMonthlyEquivalent() && (
                                             <p className="text-sm text-muted-foreground mt-1">
-                                                ≈ £{(() => {
-                                                    const plan = plans.find(p => p.interval === 'year');
-                                                    return plan ? ((plan.price_pence / 100) / 12).toFixed(2) : '7.50';
-                                                })()}/month • 2 months free
+                                                ≈ £{getMonthlyEquivalent()}/month • 2 months free
                                             </p>
                                         )}
                                         <p className="text-sm md:text-base text-muted-foreground mt-1">Cancel anytime. No hidden fees.</p>
@@ -243,10 +255,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                             ) : (
                                                 <>
                                                     <CreditCard className="h-4 w-4 mr-2" />
-                                                    Choose Plan — £{(() => {
-                                                        const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
-                                                        return plan ? (plan.price_pence / 100).toFixed(2) : (isAnnual ? '89.99' : '9.99');
-                                                    })()}{isAnnual ? '/yr' : '/mo'}
+                                                    Choose Plan{getPlanPrice(isAnnual ? 'annual' : 'monthly') ? ` — £${getPlanPrice(isAnnual ? 'annual' : 'monthly')}${isAnnual ? '/yr' : '/mo'}` : ''}
                                                 </>
                                             )}
                                         </Button>

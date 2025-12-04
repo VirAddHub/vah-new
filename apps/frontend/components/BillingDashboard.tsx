@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -37,6 +38,11 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  
+  // Get dynamic pricing from plans API
+  const { getMonthlyPlan } = usePlans();
+  const monthlyPlan = getMonthlyPlan();
+  const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : null;
 
   // Load billing data
   useEffect(() => {
@@ -206,7 +212,9 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Current Plan</h3>
-                <p className="text-2xl font-bold text-primary">£9.99/month</p>
+                <p className="text-2xl font-bold text-primary">
+                  {monthlyPrice ? `£${monthlyPrice}/month` : 'Loading...'}
+                </p>
                 <p className="text-sm text-muted-foreground">Virtual Address Service</p>
               </div>
               <div>
@@ -289,7 +297,9 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">£9.99</div>
+              <div className="text-2xl font-bold">
+                {monthlyPrice ? `£${monthlyPrice}` : 'Loading...'}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
               </p>

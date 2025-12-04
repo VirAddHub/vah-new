@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { User, CreditCard, FileText, MapPin, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChVerificationCard } from '../components/ChVerificationCard';
+import { usePlans } from '@/hooks/usePlans';
 
 const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
 const formatDateUK = (v?: number | string | null) => {
@@ -31,6 +32,13 @@ export default function AccountPage() {
     const { data: overview, error: overviewError } = useSWR('/api/billing/overview', swrFetcher);
     const { data: invoices, error: invoicesError } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
     const { data: userData, error: userDataError } = useSWR('/api/auth/whoami', swrFetcher);
+    
+    // Get dynamic pricing from plans API
+    const { getMonthlyPlan, getAnnualPlan } = usePlans();
+    const monthlyPlan = getMonthlyPlan();
+    const annualPlan = getAnnualPlan();
+    const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : null;
+    const annualPrice = annualPlan ? (annualPlan.price_pence / 100).toFixed(2) : null;
 
     const [busy, setBusy] = useState<string | null>(null);
     const [profileForm, setProfileForm] = useState({
@@ -390,7 +398,9 @@ export default function AccountPage() {
                                                 )}
                                             </div>
                                             <div className="text-3xl font-bold mb-2 text-foreground">
-                                                {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || 995) / 100}` : '£9.95'}
+                                                {o?.cadence === 'monthly' 
+                                                    ? `£${(o?.current_price_pence || (monthlyPlan?.price_pence || 995)) / 100}` 
+                                                    : monthlyPrice ? `£${monthlyPrice}` : 'Loading...'}
                                             </div>
                                             <div className="text-sm text-muted-foreground mb-4">per month</div>
                                             <ul className="text-sm text-muted-foreground space-y-2 mb-6">
@@ -421,7 +431,9 @@ export default function AccountPage() {
                                                 )}
                                             </div>
                                             <div className="text-3xl font-bold mb-2 text-foreground">
-                                                {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || 8999) / 100}` : '£89.99'}
+                                                {o?.cadence === 'yearly' 
+                                                    ? `£${(o?.current_price_pence || (annualPlan?.price_pence || 8999)) / 100}` 
+                                                    : annualPrice ? `£${annualPrice}` : 'Loading...'}
                                             </div>
                                             <div className="text-sm text-muted-foreground mb-2">per year</div>
                                             <div className="text-sm text-green-600 dark:text-green-400 font-semibold mb-4">

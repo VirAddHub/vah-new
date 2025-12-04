@@ -1,5 +1,8 @@
+"use client";
+
 import { Mail, ScanLine, Clock, Shield } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { usePlans } from "@/hooks/usePlans";
 
 interface MailboxPreviewCardProps {
     showPriceBadge?: boolean;
@@ -8,8 +11,13 @@ interface MailboxPreviewCardProps {
 
 export function MailboxPreviewCard({
     showPriceBadge = true,
-    price = "£9.99/mo"
+    price: priceProp
 }: MailboxPreviewCardProps) {
+    // Get dynamic pricing from plans API
+    const { getMonthlyPlan } = usePlans();
+    const monthlyPlan = getMonthlyPlan();
+    const dynamicPrice = monthlyPlan ? `£${(monthlyPlan.price_pence / 100).toFixed(2)}/mo` : null;
+    const price = priceProp || dynamicPrice || "Loading...";
     return (
         <div className="relative">
             <div className="shadow-neutral-900/10 bg-card border-border border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative shadow-2xl backdrop-blur-xl">

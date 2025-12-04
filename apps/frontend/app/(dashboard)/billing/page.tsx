@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { getToken } from '@/lib/token-manager';
+import { usePlans } from '@/hooks/usePlans';
 
 // API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
@@ -23,6 +24,13 @@ export default function BillingPage() {
   const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
   const { data: invoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
   const [busy, setBusy] = useState<string | null>(null);
+  
+  // Get dynamic pricing from plans API
+  const { getMonthlyPlan, getAnnualPlan } = usePlans();
+  const monthlyPlan = getMonthlyPlan();
+  const annualPlan = getAnnualPlan();
+  const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : null;
+  const annualPrice = annualPlan ? (annualPlan.price_pence / 100).toFixed(2) : null;
 
   const o = overview?.data;
   const items = invoices?.data?.items ?? [];
@@ -184,7 +192,9 @@ export default function BillingPage() {
                   {o?.cadence === 'monthly' && <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-2 py-1 rounded font-medium">Current</span>}
                 </div>
                 <div className="text-3xl font-bold mb-2 text-foreground">
-                  {o?.cadence === 'monthly' ? `£${(o?.current_price_pence || 995) / 100}` : '£9.95'}
+                  {o?.cadence === 'monthly' 
+                    ? `£${(o?.current_price_pence || (monthlyPlan?.price_pence || 995)) / 100}` 
+                    : monthlyPrice ? `£${monthlyPrice}` : 'Loading...'}
                 </div>
                 <div className="text-sm text-muted-foreground mb-4">per month</div>
                 <ul className="text-sm text-muted-foreground space-y-2 mb-6">
@@ -211,7 +221,9 @@ export default function BillingPage() {
                   {o?.cadence === 'yearly' && <span className="text-xs bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 px-2 py-1 rounded font-medium">Current</span>}
                 </div>
                 <div className="text-3xl font-bold mb-2 text-foreground">
-                  {o?.cadence === 'yearly' ? `£${(o?.current_price_pence || 8999) / 100}` : '£89.99'}
+                  {o?.cadence === 'yearly' 
+                    ? `£${(o?.current_price_pence || (annualPlan?.price_pence || 8999)) / 100}` 
+                    : annualPrice ? `£${annualPrice}` : 'Loading...'}
                 </div>
                 <div className="text-sm text-muted-foreground mb-2">per year</div>
                 <div className="text-sm text-green-600 dark:text-green-400 font-semibold mb-4">

@@ -1,4 +1,13 @@
+"use client";
+
+import { usePlans } from "@/hooks/usePlans";
+
 export default function Preview({ onNavigate }: { onNavigate?: (page: string) => void }) {
+    // Get dynamic pricing from plans API
+    const { getMonthlyPlan } = usePlans();
+    const monthlyPlan = getMonthlyPlan();
+    const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : null;
+    
     return (
         <main className="w-full bg-muted/30 py-16">
             <section className="mx-auto max-w-4xl px-6 text-center">
@@ -27,7 +36,9 @@ export default function Preview({ onNavigate }: { onNavigate?: (page: string) =>
                     <a href="#" className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-2.5 transition hover:bg-primary/90">
                         Get started — Secure my London address
                     </a>
-                    <p className="mt-2 text-xs text-muted-foreground">£9.99/month · cancel anytime</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                        {monthlyPrice ? `£${monthlyPrice}/month` : 'Loading...'} · cancel anytime
+                    </p>
                 </div>
             </section>
 
