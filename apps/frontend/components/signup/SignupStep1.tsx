@@ -220,7 +220,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             onClick={handleContinue}
                             className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-md px-6"
                         >
-                            Create Account - £{billing === 'monthly' ? '9.99/mo' : '89.99/year'}
+                            Create Account - £{getPlanPrice(billing)}{billing === 'monthly' ? '/mo' : '/year'}
                         </ScrollToTopButton>
                         <p className="text-sm text-muted-foreground mt-4">
                             No payment required yet. Complete your information first.
