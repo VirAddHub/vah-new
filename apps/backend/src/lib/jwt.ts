@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { SESSION_IDLE_TIMEOUT_SECONDS } from '../config/auth';
 
 // Helper function to initialize keys safely
 function getJwtKeys(): { signKey: string | Buffer; verifyKey: string | Buffer } {
@@ -35,8 +36,6 @@ try {
 
 // Define JWT constants
 const ALG = (process.env.JWT_ALG || 'HS256') as 'HS256' | 'RS256';
-// FIX: Changed default expiration to a number of seconds to match the project's type definitions.
-const JWT_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 const baseOpts = {
   issuer: 'virtualaddresshub',
@@ -53,12 +52,21 @@ export interface JWTPayload {
 }
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  
+  const tokenPayload = {
+    ...payload,
+    iat: nowSeconds,
+    exp: nowSeconds + SESSION_IDLE_TIMEOUT_SECONDS, // 60 minutes from now
+  };
+  
   const options = {
     ...baseOpts,
     algorithm: ALG,
-    expiresIn: JWT_EXPIRES_IN_SECONDS, // Use the numeric value
+    // No expiresIn - we set exp explicitly in payload
   };
-  return jwt.sign(payload, signKey, options);
+  
+  return jwt.sign(tokenPayload, signKey, options);
 }
 
 export function verifyToken(token: string): JWTPayload | null {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, extractTokenFromHeader } from '../lib/jwt';
+import { verifyToken, extractTokenFromHeader, generateToken } from '../lib/jwt';
 import { getPool } from '../server/db';
+import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from '../config/auth';
 
 /**
  * Optional JWT authentication middleware
@@ -24,19 +25,65 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     const payload = verifyToken(token);
 
     if (!payload) {
-        // Invalid or expired token - continue without setting req.user
+        // Invalid or expired token - clear cookie and continue without setting req.user
         console.warn('[JWT] Token verification failed for path:', req.path);
+        res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
+        return next();
+    }
+
+    // Check token expiration
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const exp = typeof payload.exp === 'number' ? payload.exp : 0;
+    const secondsLeft = exp - nowSeconds;
+
+    // If token is expired, clear cookie and continue as unauthenticated
+    if (secondsLeft <= 0) {
+        console.warn('[JWT] Token expired for path:', req.path);
+        res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
         return next();
     }
 
     // Valid token - attach user data to request
     // Convert id to number if it's a string
+    const userId = typeof payload.id === 'string' ? parseInt(payload.id) : payload.id;
     req.user = {
-        id: typeof payload.id === 'string' ? parseInt(payload.id) : payload.id,
-        email: payload.email,
+        id: userId,
+        email: payload.email || '',
         is_admin: payload.is_admin
     };
     console.log('[JWT] Authenticated user:', req.user.id, req.user.email, 'is_admin:', req.user.is_admin);
+
+    // Rolling session refresh: if token has less than REFRESH_THRESHOLD_SECONDS remaining, issue a new token
+    if (secondsLeft > 0 && secondsLeft < SESSION_REFRESH_THRESHOLD_SECONDS) {
+        // Fetch user data to create new token
+        getPool().query(
+            'SELECT id, email, is_admin, role FROM "user" WHERE id = $1',
+            [userId]
+        ).then((result) => {
+            if (result.rows.length > 0) {
+                const user = result.rows[0];
+                const newToken = generateToken({
+                    id: user.id,
+                    email: user.email,
+                    is_admin: user.is_admin,
+                    role: user.role || (user.is_admin ? 'admin' : 'user')
+                });
+
+                // Set new cookie with refreshed token
+                res.cookie('vah_session', newToken, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'none',
+                    path: '/',
+                    maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // 60 minutes
+                });
+                console.log('[JWT] Token refreshed for user:', userId);
+            }
+        }).catch((err) => {
+            console.error('[JWT] Failed to refresh token:', err);
+            // Don't fail the request if refresh fails
+        });
+    }
 
     // Update last_active_at asynchronously (don't wait for it)
     updateUserActivity(req.user.id).catch(err => {

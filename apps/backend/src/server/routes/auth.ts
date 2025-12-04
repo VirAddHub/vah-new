@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
+import { SESSION_IDLE_TIMEOUT_SECONDS } from "../config/auth";
 
 const router = Router();
 
@@ -400,7 +401,7 @@ router.post("/login", async (req, res) => {
             secure: true,
             sameSite: 'none',
             path: '/',
-            maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000 // 60 minutes
         });
 
         // REVISED: The user object in the response should match the payload for consistency
