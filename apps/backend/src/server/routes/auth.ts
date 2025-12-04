@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
-import { sendWelcomeEmail } from "../../lib/mailer";
+import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
 
 const router = Router();
@@ -309,18 +309,24 @@ router.post("/signup", async (req, res) => {
         const rs = await pool.query(insertQuery, args);
         const row = rs.rows[0];
 
-        // Send welcome email after successful signup
+        // Manual test:
+        // 1) Go to /signup on the frontend and create a brand new user with a fresh email.
+        // 2) Confirm the API returns 201 and the user is logged in.
+        // 3) Check Postmark Activity: a "welcome + KYC" email should be sent to that email,
+        //    using the template with variables {{first_name}} and {{cta_url}}.
+        // 4) Click the link in the email and confirm it lands on the dashboard (with ?next=/dashboard if relevant).
+
+        // Send welcome + KYC email after successful signup
         try {
             const displayName = row.first_name?.trim() || row.last_name?.trim() || (row.email ? row.email.split("@")[0] : "") || "there";
-            await sendWelcomeEmail({
+            await sendWelcomeKycEmail({
                 email: row.email,
                 firstName: displayName,
-                cta_url: `${ENV.APP_BASE_URL}/dashboard`
             });
-            console.log(`[auth/signup] ✅ Welcome email sent to ${row.email}`);
+            console.log(`[auth/signup] ✅ Welcome + KYC email sent to ${row.email}`);
         } catch (emailError) {
             // Don't fail signup if email fails - log and continue
-            console.error(`[auth/signup] ⚠️ Failed to send welcome email to ${row.email}:`, emailError);
+            console.error(`[auth/signup] ⚠️ Failed to send welcome + KYC email to ${row.email}:`, emailError);
         }
 
         return res.status(201).json({

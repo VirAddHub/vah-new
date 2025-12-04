@@ -105,6 +105,14 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
       dashboard_link: a.dashboardUrl ?? a.ctaUrl,
     };
   },
+  [Templates.WelcomeKyc]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      cta_url: a.ctaUrl ?? a.cta_url,
+    };
+  },
 
   // BILLING
   [Templates.PlanCancelled]: (a) => {

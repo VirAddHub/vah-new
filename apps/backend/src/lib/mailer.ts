@@ -158,6 +158,29 @@ export async function sendWelcomeEmail({ email, firstName, name, cta_url }: { em
     });
 }
 
+/**
+ * Send welcome email with KYC reminder
+ * Uses Postmark template alias: welcome-kyc-reminder
+ * Template expects: {{first_name}} and {{cta_url}}
+ * 
+ * Environment variable: POSTMARK_WELCOME_KYC_TEMPLATE_ID is not used (we use template alias instead).
+ * The template alias "welcome-kyc-reminder" should be configured in Postmark.
+ */
+export async function sendWelcomeKycEmail({ email, firstName }: { email: string; firstName: string }): Promise<void> {
+    if (!emailGuard(ENV.EMAIL_ONBOARDING)) return;
+    
+    const ctaUrl = buildAppUrl('/dashboard');
+    
+    await sendTemplateEmail({
+        to: email,
+        templateAlias: Templates.WelcomeKyc,
+        model: {
+            firstName,
+            ctaUrl,
+        },
+    });
+}
+
 // Billing & invoices
 export async function sendPlanCancelled({ email, firstName, name, end_date, cta_url }: { email: string; firstName?: string | null; name?: string | null; end_date?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_BILLING)) return;

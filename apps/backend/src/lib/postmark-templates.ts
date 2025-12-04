@@ -6,6 +6,7 @@ export const Templates = {
 
     // Welcome & onboarding
     Welcome: "welcome-email", // pragma: allowlist secret
+    WelcomeKyc: "welcome-kyc-reminder", // pragma: allowlist secret - Welcome email with KYC reminder
 
     // Billing & invoices
     PlanCancelled: "plan-cancelled", // pragma: allowlist secret
