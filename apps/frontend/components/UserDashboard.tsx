@@ -34,8 +34,7 @@ import Link from "next/link";
 import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
-import { ChVerificationCard } from "@/app/(dashboard)/components/ChVerificationCard";
-import { KycBanner } from "@/components/kyc/KycBanner";
+import { IdentityComplianceCard, Compliance } from "@/components/dashboard/IdentityComplianceCard";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -176,8 +175,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const storedUser = localStorage.getItem('vah_user');
       if (storedUser) {
         try {
-        const user = JSON.parse(storedUser);
-        setUserProfile(user);
+          const user = JSON.parse(storedUser);
+          setUserProfile(user);
         } catch (e) {
           console.error('Failed to parse stored user:', e);
         }
@@ -364,7 +363,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (typeof item.gdpr_expired === 'boolean') {
       return item.gdpr_expired;
     }
-    
+
     // Fallback: calculate locally if flag not available (shouldn't happen in production)
     if (!item.received_date) return false;
     const receivedDate = new Date(item.received_date);
@@ -451,16 +450,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     country: "United Kingdom"
   };
 
-  // Check if user can use the address (CH verified is sufficient)
-  // Registered office address is shown when CH verification is approved
-  const kycApproved = userProfile?.kyc_status === "approved";
-  const isChApproved = 
-    userProfile?.ch_verification_status === 'approved' ||
-    userProfile?.companies_house_status === 'approved' ||
-    userProfile?.companies_house_verified === true;
-  const chVerificationStatus = userProfile?.ch_verification_status || (isChApproved ? 'approved' : 'not_submitted');
-  // Show address when CH is approved (KYC not required for address display)
-  const canUseAddress = isChApproved;
+  // Get compliance status from profile (computed by backend)
+  const compliance: Compliance = userProfile?.compliance || {
+    isKycApproved: false,
+    isChVerified: false,
+    canUseRegisteredOfficeAddress: false,
+  };
+
+  // Address is gated by compliance.canUseRegisteredOfficeAddress (requires both KYC and CH)
+  const canUseAddress = compliance.canUseRegisteredOfficeAddress;
 
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
@@ -617,25 +615,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           {/* Left Column - Main Content */}
           <div className="space-y-6">
 
-            {/* KYC Verification Banner */}
-            <KycBanner kycStatus={userProfile?.kyc_status || null} />
-
-            {/* Companies House Verification */}
-            <ChVerificationCard />
+            {/* Identity Compliance Card (unified KYC + Companies House) */}
+            <IdentityComplianceCard
+              compliance={compliance}
+              kycStatus={userProfile?.kyc_status || null}
+              chVerificationStatus={userProfile?.ch_verification_status || null}
+            />
 
             {/* Mail Inbox Section */}
             <Card className="border-neutral-200 shadow-sm">
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-neutral-800">
-                      Mail Inbox
-                    </h2>
-                    <p className="text-sm text-neutral-500 mt-1">
-                      {totalItems} {totalItems === 1 ? 'item' : 'items'}
-                      {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
-                    </p>
+                    <div>
+                      <h2 className="text-2xl font-semibold text-neutral-800">
+                        Mail Inbox
+                      </h2>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                        {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
+                      </p>
                     </div>
                     {/* Manual refresh button - NO automatic polling */}
                     <Button
@@ -851,11 +850,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         Please complete identity verification via GOV.UK / Companies House and upload proof using the Companies House verification card in your dashboard.
                       </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        {chVerificationStatus === 'submitted'
-                          ? "Thanks! We've received your Companies House proof and will review it shortly."
-                          : chVerificationStatus === 'rejected'
-                            ? "Your last upload needs attention. Please re-upload a clearer screenshot using the verification card."
-                            : "Once you've finished the GOV.UK verification, upload a quick confirmation so we can enable your address."}
+                        Complete the identity checks above to unlock your registered office address.
                       </p>
                     </div>
 

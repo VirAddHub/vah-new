@@ -3,6 +3,12 @@
 
 import { api } from '../api';
 
+export interface Compliance {
+    isKycApproved: boolean;
+    isChVerified: boolean;
+    canUseRegisteredOfficeAddress: boolean;
+}
+
 export interface UserProfile {
     id: number;
     email: string;
@@ -12,6 +18,9 @@ export interface UserProfile {
     company_name?: string;
     forwarding_address?: string;
     kyc_status?: string;
+    ch_verification_status?: string;
+    companies_house_verified?: boolean;
+    compliance?: Compliance;
     created_at: string;
     updated_at: string;
 }

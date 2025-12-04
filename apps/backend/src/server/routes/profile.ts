@@ -100,7 +100,19 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
 
-        return res.json({ ok: true, data: result.rows[0] });
+        const user = result.rows[0];
+
+        // Compute identity compliance status
+        const { computeIdentityCompliance } = await import('../services/compliance');
+        const compliance = computeIdentityCompliance(user);
+
+        return res.json({
+            ok: true,
+            data: {
+                ...user,
+                compliance,
+            }
+        });
     } catch (error: any) {
         console.error('[GET /api/profile] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
@@ -339,6 +351,60 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('[PATCH /api/profile/me] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/profile/registered-office-address
+ * Get the registered office address (gated by compliance)
+ */
+router.get("/registered-office-address", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+
+    try {
+        // Get user profile data including compliance status
+        const result = await pool.query(`
+            SELECT
+                kyc_status,
+                ch_verification_status,
+                companies_house_verified
+            FROM "user"
+            WHERE id = $1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const user = result.rows[0];
+
+        // Compute identity compliance status
+        const { computeIdentityCompliance } = await import('../services/compliance');
+        const compliance = computeIdentityCompliance(user);
+
+        // Gate the address - only return if both KYC and CH are approved
+        if (!compliance.canUseRegisteredOfficeAddress) {
+            return res.status(403).json({
+                ok: false,
+                error: 'IDENTITY_COMPLIANCE_REQUIRED',
+                message: 'You need to complete identity checks before you can view and use your registered office address.',
+                compliance,
+            });
+        }
+
+        // Return the registered office address
+        const { REGISTERED_OFFICE_ADDRESS } = await import('../../config/address');
+        return res.json({
+            ok: true,
+            data: {
+                address: REGISTERED_OFFICE_ADDRESS,
+                compliance,
+            },
+        });
+    } catch (error: any) {
+        console.error('[GET /api/profile/registered-office-address] error:', error);
+        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
     }
 });
 
