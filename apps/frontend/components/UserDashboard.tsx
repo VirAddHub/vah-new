@@ -30,7 +30,6 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { ForwardingConfirmationModal } from "./ForwardingConfirmationModal";
-import Link from "next/link";
 import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
@@ -550,13 +549,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <CreditCard className="h-4 w-4" />
                 Billing
               </button>
-              <Link
-                href="/account"
+              <button
+                onClick={() => onNavigate('account')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <User className="h-4 w-4" />
                 Account
-              </Link>
+              </button>
               <button
                 onClick={() => onNavigate('settings')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -579,13 +578,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <p className="font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
               </div>
-              <Link
-                href="/account"
+              <button
+                onClick={() => onNavigate('account')}
                 className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
               >
                 <User className="h-4 w-4" />
                 Account
-              </Link>
+              </button>
               <Button
                 variant="outline"
                 size="sm"

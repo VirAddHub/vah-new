@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, AlertCircle, Loader2, Upload, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
+import snsWebSdk from '@sumsub/websdk';
 
 export interface Compliance {
     isKycApproved: boolean;
@@ -27,16 +28,11 @@ interface IdentityComplianceCardProps {
     chVerificationStatus?: string | null;
 }
 
-declare global {
-    interface Window {
-        SNSWebSdk?: any;
-    }
-}
 
-export function IdentityComplianceCard({ 
-    compliance, 
+export function IdentityComplianceCard({
+    compliance,
     kycStatus,
-    chVerificationStatus 
+    chVerificationStatus
 }: IdentityComplianceCardProps) {
     const { toast } = useToast();
     const router = useRouter();
@@ -45,6 +41,7 @@ export function IdentityComplianceCard({
     const [kycOpen, setKycOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Fetch CH verification status if not provided
     const { data: chData, mutate: refreshCh } = useSWR('/api/bff/ch-verification', swrFetcher, {
@@ -73,8 +70,9 @@ export function IdentityComplianceCard({
     }
 
     // Start KYC flow
-    const startKyc = async () => {
+    const startKyc = useCallback(async () => {
         setStartingKyc(true);
+        setError(null);
         try {
             const response = await fetch("/api/bff/kyc/start", {
                 method: "POST",
@@ -84,29 +82,33 @@ export function IdentityComplianceCard({
                 },
             });
 
+            if (!response.ok) {
+                throw new Error('Failed to start verification');
+            }
+
             const data = await response.json();
 
-            if (data.ok && data.token) {
-                setKycToken(data.token);
-                setKycOpen(true);
-            } else {
-                toast({
-                    title: "Error",
-                    description: data.message || "Failed to start verification. Please try again.",
-                    variant: "destructive",
-                });
+            // Support both { token } and { accessToken } shapes
+            const token = data.token || data.accessToken;
+            if (!token || typeof token !== 'string') {
+                throw new Error('Invalid token from KYC start endpoint');
             }
-        } catch (error) {
+
+            setKycToken(token);
+            setKycOpen(true);
+        } catch (error: any) {
             console.error("[IdentityComplianceCard] Error starting KYC:", error);
+            const errorMessage = error.message || "Failed to start verification. Please try again.";
+            setError(errorMessage);
             toast({
                 title: "Error",
-                description: "Failed to start verification. Please try again.",
+                description: errorMessage,
                 variant: "destructive",
             });
         } finally {
             setStartingKyc(false);
         }
-    };
+    }, [toast]);
 
     // Handle CH file upload
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,77 +185,85 @@ export function IdentityComplianceCard({
         }
     };
 
-    // Load Sumsub WebSDK for KYC
+    // Initialize and launch Sumsub WebSDK when modal is open and we have a token
     useEffect(() => {
         if (!kycOpen || !kycToken) return;
 
-        const loadSumsubSDK = () => {
-            if (window.SNSWebSdk) {
-                initializeSumsub();
-                return;
-            }
+        let sdkInstance: any | null = null;
 
-            const script = document.createElement("script");
-            script.src = "https://static.sumsub.com/idensic/static/sns-websdk-builder.js";
-            script.async = true;
-            script.onload = () => {
-                if (window.SNSWebSdk) {
-                    initializeSumsub();
-                }
-            };
-            script.onerror = () => {
-                console.error("[IdentityComplianceCard] Failed to load Sumsub SDK");
-                toast({
-                    title: "Error",
-                    description: "Failed to load verification interface. Please refresh and try again.",
-                    variant: "destructive",
-                });
-            };
-            document.body.appendChild(script);
-
-            return () => {
-                const existingScript = document.querySelector(
-                    'script[src="https://static.sumsub.com/idensic/static/sns-websdk-builder.js"]'
-                );
-                if (existingScript) {
-                    document.body.removeChild(existingScript);
-                }
-            };
-        };
-
-        const initializeSumsub = () => {
+        const initSdk = () => {
             try {
-                const snsWebSdk = window.SNSWebSdk.init(kycToken, {
-                    lang: "en",
-                })
-                    .withConf({ lang: "en" })
-                    .on("onError", (e: any) => {
-                        console.error("[IdentityComplianceCard] Sumsub error:", e);
+                sdkInstance = snsWebSdk
+                    .init(
+                        kycToken,
+                        // Token update callback – for sandbox we can just return the same token for now
+                        () => Promise.resolve(kycToken)
+                    )
+                    .withConf({
+                        lang: 'en',
+                    })
+                    .on('onError', (error: unknown) => {
+                        console.error('[IdentityComplianceCard] Sumsub onError', error);
                         toast({
                             title: "Verification Error",
-                            description: e.message || "An error occurred during verification.",
+                            description: (error as any)?.message || "An error occurred during verification.",
                             variant: "destructive",
                         });
                     })
-                    .on("onReady", () => {
-                        console.log("[IdentityComplianceCard] Sumsub ready");
+                    .on('onReady', () => {
+                        console.log('[IdentityComplianceCard] Sumsub ready');
                     })
-                    .on("onApplicantSubmitted", () => {
-                        console.log("[IdentityComplianceCard] Applicant submitted");
-                        setKycOpen(false);
-                        toast({
-                            title: "Verification Submitted",
-                            description: "Your identity verification has been submitted. We'll review it shortly.",
-                        });
-                        setTimeout(() => {
-                            router.refresh();
-                        }, 2000);
+                    .onMessage((type: string, payload: any) => {
+                        console.log('[IdentityComplianceCard] Sumsub onMessage', type, payload);
+
+                        // When review is completed/approved, trigger a profile refresh
+                        if (type === 'idCheck.applicantStatus') {
+                            const reviewStatus = payload?.reviewStatus;
+                            const reviewResult = payload?.reviewResult;
+
+                            if (reviewStatus === 'completed') {
+                                setKycOpen(false);
+                                toast({
+                                    title: "Verification Submitted",
+                                    description: "Your identity verification has been submitted. We'll review it shortly.",
+                                });
+                                // Refresh profile to get updated KYC status
+                                setTimeout(() => {
+                                    globalMutate('/api/profile');
+                                    router.refresh();
+                                }, 2000);
+                            } else if (reviewStatus === 'approved' || reviewResult === 'green') {
+                                setKycOpen(false);
+                                toast({
+                                    title: "Verification Approved",
+                                    description: "Your identity verification has been approved!",
+                                });
+                                // Refresh profile to get updated KYC status
+                                setTimeout(() => {
+                                    globalMutate('/api/profile');
+                                    router.refresh();
+                                }, 1000);
+                            }
+                        }
+
+                        // Legacy event handler for backward compatibility
+                        if (type === 'onApplicantSubmitted') {
+                            setKycOpen(false);
+                            toast({
+                                title: "Verification Submitted",
+                                description: "Your identity verification has been submitted. We'll review it shortly.",
+                            });
+                            setTimeout(() => {
+                                globalMutate('/api/profile');
+                                router.refresh();
+                            }, 2000);
+                        }
                     })
                     .build();
 
-                snsWebSdk.launch("#sumsub-root");
+                sdkInstance.launch('#sumsub-websdk-container');
             } catch (error) {
-                console.error("[IdentityComplianceCard] Failed to initialize Sumsub:", error);
+                console.error('[IdentityComplianceCard] Failed to initialize Sumsub:', error);
                 toast({
                     title: "Error",
                     description: "Failed to initialize verification interface. Please try again.",
@@ -262,15 +272,25 @@ export function IdentityComplianceCard({
             }
         };
 
-        loadSumsubSDK();
+        initSdk();
+
+        return () => {
+            if (sdkInstance && typeof sdkInstance.destroy === 'function') {
+                try {
+                    sdkInstance.destroy();
+                } catch (err) {
+                    console.warn('[IdentityComplianceCard] Error destroying SDK instance:', err);
+                }
+            }
+        };
     }, [kycOpen, kycToken, toast, router]);
 
     const kycButtonText =
         kycStatus === "pending"
             ? "Continue verification"
             : kycStatus === "rejected"
-            ? "Retry verification"
-            : "Start verification";
+                ? "Retry verification"
+                : "Start verification";
 
     const chStatus = chVerificationStatus || chData?.data?.ch_verification_status || 'not_submitted';
     const isChSubmitted = chStatus === 'submitted';
@@ -312,6 +332,11 @@ export function IdentityComplianceCard({
                                     <p className="text-sm text-muted-foreground mb-2">
                                         Complete identity verification with Sumsub. This is required for UK AML compliance.
                                     </p>
+                                    {error && (
+                                        <p className="mt-1 mb-2 text-xs text-red-600 dark:text-red-400">
+                                            {error}
+                                        </p>
+                                    )}
                                     <Button
                                         onClick={startKyc}
                                         disabled={startingKyc}
@@ -410,11 +435,14 @@ export function IdentityComplianceCard({
 
             {/* KYC Dialog */}
             <Dialog open={kycOpen} onOpenChange={setKycOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+                <DialogContent className="max-w-2xl w-full h-[70vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Identity Verification</DialogTitle>
                     </DialogHeader>
-                    <div id="sumsub-root" className="min-h-[600px] w-full" />
+                    <div className="flex-1 min-h-0">
+                        {/* Sumsub will inject its UI into this container */}
+                        <div id="sumsub-websdk-container" className="w-full h-full" />
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

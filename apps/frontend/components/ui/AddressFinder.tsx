@@ -47,13 +47,9 @@ export function AddressFinder({
 
                 if (!inputRef.current) return;
 
-                // Fetch API key from our backend
-                const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-                const keyResponse = await fetch(`${API_BASE}/api/ideal-postcodes-key`, {
-                    credentials: 'include',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('vah_jwt')}`
-                    }
+                // Fetch API key from BFF route (works for both authenticated and unauthenticated users)
+                const keyResponse = await fetch('/api/ideal-postcodes-key', {
+                    credentials: 'include'
                 });
                 const keyData = await keyResponse.json();
 

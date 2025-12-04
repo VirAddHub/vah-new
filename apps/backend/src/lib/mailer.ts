@@ -168,9 +168,9 @@ export async function sendWelcomeEmail({ email, firstName, name, cta_url }: { em
  */
 export async function sendWelcomeKycEmail({ email, firstName }: { email: string; firstName: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_ONBOARDING)) return;
-    
+
     const ctaUrl = buildAppUrl('/dashboard');
-    
+
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.WelcomeKyc,
