@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
-import { SESSION_IDLE_TIMEOUT_SECONDS } from "../config/auth";
+import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 
 const router = Router();
 
