@@ -5,7 +5,7 @@ import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeEmail } from "../../lib/mailer";
-import { ENV } from "../../config/env";
+import { ENV } from "../../env";
 
 const router = Router();
 
