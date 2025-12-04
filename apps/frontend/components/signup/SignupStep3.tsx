@@ -231,36 +231,22 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     </div>
 
                     {/* What Happens Next Card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mt-8">
-                        <div className="px-6 pt-6">
-                            <h4 className="leading-none">What happens next?</h4>
-                        </div>
-                        <div className="px-6 pb-6">
-                            <div className="space-y-3 text-sm">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
-                                        1
+                    <div className="bg-card border rounded-xl shadow-sm p-6 mt-10 space-y-5">
+                        <h3 className="text-lg font-semibold">What happens next</h3>
+
+                        <div className="space-y-4">
+                            {[
+                                "We'll email you a secure link to your dashboard.",
+                                "Sign in and complete identity verification (KYC). This is required for UK AML rules before we can activate your address or forward any mail.",
+                                "Once approved, your London address, mail dashboard, and proof of address certificate will be fully active."
+                            ].map((text, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                                        {i + 1}
                                     </div>
-                                    <p>We'll send your welcome email with a secure link to your dashboard.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
-                                        2
-                                    </div>
-                                    <p>
-                                        Log in and complete identity verification (KYC). This is required by UK AML rules before we can activate your
-                                        address or forward any mail.
-                                    </p>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
-                                        3
-                                    </div>
-                                    <p>
-                                        Once approved, your London address, mail dashboard, and proof of address certificate will be fully active.
-                                    </p>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
