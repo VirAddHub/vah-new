@@ -45,15 +45,38 @@ router.post('/forward', async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Get mail item with received date for GDPR check
+        // Get user's KYC status
+        const userResult = await pool.query(
+            `SELECT kyc_status FROM "user" WHERE id = $1`,
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const userKycStatus = userResult.rows[0].kyc_status;
+
+        // Get mail item with received date for GDPR check and tag for KYC check
         const result = await pool.query(
-            `SELECT id, user_id, expires_at, received_at_ms, received_date FROM mail_item WHERE id = $1`,
+            `SELECT id, user_id, expires_at, received_at_ms, received_date, tag FROM mail_item WHERE id = $1`,
             [Number(mail_item_id || 0)]
         );
 
         const m = result.rows[0];
         if (!m || m.user_id !== userId) {
             return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        // Check KYC requirement for forwarding (HMRC/Companies House always allowed)
+        const { canForwardMail } = await import('../services/kyc-guards');
+        if (!canForwardMail(userKycStatus, m.tag)) {
+            await auditForward(userId, m.id, 'blocked', 'kyc_required');
+            return res.status(403).json({
+                ok: false,
+                error: 'KYC_REQUIRED',
+                message: 'You must complete identity verification (KYC) before we can forward this mail.',
+            });
         }
 
         // Check GDPR 30-day rule from received date

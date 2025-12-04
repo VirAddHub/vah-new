@@ -379,7 +379,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
                         await sendMailForwarded({
                             email: userData.email,
-                            name: userData.first_name || userData.email,
+                            firstName: userData.first_name || "there",
                             forwarding_address: forwarding_address,
                             forwarded_date: new Date().toLocaleDateString('en-GB')
                         });

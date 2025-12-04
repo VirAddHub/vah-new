@@ -67,7 +67,7 @@ describe('template sends (guarded)', () => {
 
         const { sendPlanCancelled } = await import('../../src/lib/mailer');
 
-        await sendPlanCancelled({ email: 'u@example.com', name: 'User' });
+        await sendPlanCancelled({ email: 'u@example.com', firstName: 'User' });
 
         expect(mockSendEmail).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -94,7 +94,7 @@ describe('template sends (guarded)', () => {
         const { sendPasswordResetEmail } = await import('../../src/lib/mailer');
         await sendPasswordResetEmail({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             cta_url: 'https://app.example.com/reset?token=abc123'
         });
 
@@ -106,7 +106,27 @@ describe('template sends (guarded)', () => {
                 TemplateModel: expect.objectContaining({
                     reset_link: 'https://app.example.com/reset?token=abc123',
                     first_name: 'User',
-                    expiry_minutes: '60',
+                    name: 'User', // backward compatibility
+                    expiry_minutes: '30',
+                }),
+            }),
+        );
+    });
+
+    test('password reset falls back to "there" when firstName is missing', async () => {
+        const postmark = (await import('postmark')).default as any;
+        const { sendPasswordResetEmail } = await import('../../src/lib/mailer');
+        await sendPasswordResetEmail({
+            email: 'u@example.com',
+            cta_url: 'https://app.example.com/reset?token=abc123'
+        });
+
+        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                TemplateModel: expect.objectContaining({
+                    first_name: 'there',
+                    name: 'there',
                 }),
             }),
         );
@@ -115,7 +135,7 @@ describe('template sends (guarded)', () => {
     test('password changed confirmation uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
         const { sendPasswordChangedConfirmation } = await import('../../src/lib/mailer');
-        await sendPasswordChangedConfirmation({ email: 'u@example.com', name: 'User' });
+        await sendPasswordChangedConfirmation({ email: 'u@example.com', firstName: 'User' });
 
         const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
@@ -124,6 +144,7 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -135,7 +156,7 @@ describe('template sends (guarded)', () => {
         const { sendWelcomeEmail } = await import('../../src/lib/mailer');
         await sendWelcomeEmail({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             cta_url: 'https://app.example.com/dashboard'
         });
 
@@ -147,6 +168,7 @@ describe('template sends (guarded)', () => {
                 TemplateModel: expect.objectContaining({
                     dashboard_link: 'https://app.example.com/dashboard',
                     first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -158,7 +180,7 @@ describe('template sends (guarded)', () => {
         const { sendPlanCancelled } = await import('../../src/lib/mailer');
         await sendPlanCancelled({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             end_date: '2024-12-31'
         });
 
@@ -169,7 +191,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     end_date: '2024-12-31',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -180,7 +203,7 @@ describe('template sends (guarded)', () => {
         const { sendInvoiceSent } = await import('../../src/lib/mailer');
         await sendInvoiceSent({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             invoice_number: 'INV-123',
             amount: '£29.99'
         });
@@ -193,7 +216,8 @@ describe('template sends (guarded)', () => {
                 TemplateModel: expect.objectContaining({
                     invoice_number: 'INV-123',
                     amount: '£29.99',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -204,7 +228,7 @@ describe('template sends (guarded)', () => {
         const { sendPaymentFailed } = await import('../../src/lib/mailer');
         await sendPaymentFailed({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             cta_url: 'https://app.example.com/billing#payment'
         });
 
@@ -215,7 +239,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     cta_url: 'https://app.example.com/billing#payment',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -225,7 +250,7 @@ describe('template sends (guarded)', () => {
     test('kyc submitted uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
         const { sendKycSubmitted } = await import('../../src/lib/mailer');
-        await sendKycSubmitted({ email: 'u@example.com', name: 'User' });
+        await sendKycSubmitted({ email: 'u@example.com', firstName: 'User' });
 
         const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
@@ -233,7 +258,8 @@ describe('template sends (guarded)', () => {
                 TemplateAlias: 'kyc-submitted',
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -242,7 +268,7 @@ describe('template sends (guarded)', () => {
     test('kyc approved uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
         const { sendKycApproved } = await import('../../src/lib/mailer');
-        await sendKycApproved({ email: 'u@example.com', name: 'User' });
+        await sendKycApproved({ email: 'u@example.com', firstName: 'User' });
 
         const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
@@ -261,7 +287,7 @@ describe('template sends (guarded)', () => {
         const { sendKycRejected } = await import('../../src/lib/mailer');
         await sendKycRejected({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             reason: 'Document quality insufficient'
         });
 
@@ -272,7 +298,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     reason: 'Document quality insufficient',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -284,7 +311,7 @@ describe('template sends (guarded)', () => {
         const { sendSupportRequestReceived } = await import('../../src/lib/mailer');
         await sendSupportRequestReceived({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             ticket_id: 'TICKET-456'
         });
 
@@ -295,7 +322,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     ticket_id: 'TICKET-456',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -306,7 +334,7 @@ describe('template sends (guarded)', () => {
         const { sendSupportRequestClosed } = await import('../../src/lib/mailer');
         await sendSupportRequestClosed({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             ticket_id: 'TICKET-456'
         });
 
@@ -317,7 +345,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     ticket_id: 'TICKET-456',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );
@@ -329,7 +358,7 @@ describe('template sends (guarded)', () => {
         const { sendMailScanned } = await import('../../src/lib/mailer');
         await sendMailScanned({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             subject: 'Bank statement received'
         });
 
@@ -340,7 +369,27 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     subject: 'Bank statement received',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
+                }),
+            }),
+        );
+    });
+
+    test('mail scanned falls back to "there" when firstName is missing', async () => {
+        const postmark = (await import('postmark')).default as any;
+        const { sendMailScanned } = await import('../../src/lib/mailer');
+        await sendMailScanned({
+            email: 'u@example.com',
+            subject: 'Bank statement received'
+        });
+
+        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                TemplateModel: expect.objectContaining({
+                    first_name: 'there',
+                    name: 'there',
                 }),
             }),
         );
@@ -351,7 +400,7 @@ describe('template sends (guarded)', () => {
         const { sendMailForwarded } = await import('../../src/lib/mailer');
         await sendMailForwarded({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             forwarding_address: '123 Test Street, London, SW1A 1AA, United Kingdom',
             forwarded_date: '09/10/2025'
         });
@@ -375,7 +424,7 @@ describe('template sends (guarded)', () => {
         const { sendMailReceivedAfterCancellation } = await import('../../src/lib/mailer');
         await sendMailReceivedAfterCancellation({
             email: 'u@example.com',
-            name: 'User',
+            firstName: 'User',
             subject: 'Important document received'
         });
 
@@ -386,7 +435,8 @@ describe('template sends (guarded)', () => {
                 To: 'u@example.com',
                 TemplateModel: expect.objectContaining({
                     subject: 'Important document received',
-                    name: 'User',
+                    first_name: 'User',
+                    name: 'User', // backward compatibility
                 }),
             }),
         );

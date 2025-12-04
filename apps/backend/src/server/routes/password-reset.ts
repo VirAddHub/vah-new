@@ -15,9 +15,9 @@ router.post('/reset-password-request', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Valid email address required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Valid email address required'
       });
     }
 
@@ -25,9 +25,9 @@ router.post('/reset-password-request', [
     const pool = getPool();
 
     // Always return success to prevent email enumeration
-    const publicResp = { 
-      success: true, 
-      message: 'If an account exists, a reset link has been sent.' 
+    const publicResp = {
+      success: true,
+      message: 'If an account exists, a reset link has been sent.'
     };
 
     // Check if user exists
@@ -55,12 +55,11 @@ router.post('/reset-password-request', [
 
     // Send reset email
     const resetUrl = `${ENV.APP_BASE_URL}/reset-password/confirm?token=${token}`;
-    const name = user.first_name || user.name || 'there';
 
     try {
       await sendPasswordResetEmail({
         email: user.email,
-        name: name,
+        firstName: user.first_name || "there",
         cta_url: resetUrl
       });
     } catch (emailError) {
@@ -72,9 +71,9 @@ router.post('/reset-password-request', [
 
   } catch (error) {
     console.error('Password reset request error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 });
@@ -91,9 +90,9 @@ router.post('/reset-password', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: errors.array()[0].msg 
+      return res.status(400).json({
+        success: false,
+        message: errors.array()[0].msg
       });
     }
 
@@ -108,10 +107,10 @@ router.post('/reset-password', [
     `, [token]);
 
     if (userResult.rows.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        code: 'invalid_token', 
-        message: 'Invalid or expired token' 
+      return res.status(400).json({
+        success: false,
+        code: 'invalid_token',
+        message: 'Invalid or expired token'
       });
     }
 
@@ -119,19 +118,19 @@ router.post('/reset-password', [
 
     // Check if token has been used
     if (user.password_reset_used_at) {
-      return res.status(400).json({ 
-        success: false, 
-        code: 'used', 
-        message: 'This link has already been used' 
+      return res.status(400).json({
+        success: false,
+        code: 'used',
+        message: 'This link has already been used'
       });
     }
 
     // Check if token has expired
     if (!user.password_reset_expires || Date.now() > Number(user.password_reset_expires)) {
-      return res.status(400).json({ 
-        success: false, 
-        code: 'expired', 
-        message: 'Token expired' 
+      return res.status(400).json({
+        success: false,
+        code: 'expired',
+        message: 'Token expired'
       });
     }
 
@@ -146,16 +145,16 @@ router.post('/reset-password', [
       WHERE id = $3
     `, [hashedPassword, now, user.id]);
 
-    res.json({ 
-      success: true, 
-      message: 'Password updated successfully. You can now log in.' 
+    res.json({
+      success: true,
+      message: 'Password updated successfully. You can now log in.'
     });
 
   } catch (error) {
     console.error('Password reset error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 });

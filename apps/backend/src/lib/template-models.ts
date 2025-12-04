@@ -7,10 +7,30 @@ const snake = (s: string) =>
 
 type AnyDict = Record<string, any>;
 
+/**
+ * Resolves the first name to use in email templates.
+ * Single source of truth for name fallback logic.
+ * 
+ * Priority:
+ * 1. firstName (trimmed)
+ * 2. name (trimmed)
+ * 3. "there" (fallback)
+ */
+function resolveFirstName(params: {
+  firstName?: string | null;
+  name?: string | null;
+}): string {
+  const raw =
+    (params.firstName ?? '').trim() ||
+    (params.name ?? '').trim();
+
+  return raw || 'there';
+}
+
 export type BuildArgs = {
   // always useful to have
-  name?: string;          // "John Doe"
-  firstName?: string;     // "John"
+  firstName?: string | null;     // "John" - preferred field
+  name?: string | null;           // Legacy field, used as fallback
   email?: string;
   ctaUrl?: string;        // generic CTA
   dashboardUrl?: string;
@@ -59,109 +79,181 @@ type ModelBuilder = (a: BuildArgs) => AnyDict;
 
 export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], ModelBuilder> = {
   // SECURITY
-  [Templates.PasswordReset]: (a) => ({
-    name: a.firstName ?? a.name,
-    reset_link: a.resetLink ?? a.ctaUrl,
-    expiry_minutes: String(a.expiryMinutes ?? 60),
-  }),
-  [Templates.PasswordChanged]: (a) => ({
-    name: a.firstName ?? a.name,
-  }),
+  [Templates.PasswordReset]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      reset_link: a.resetLink ?? a.ctaUrl,
+      expiry_minutes: String(a.expiryMinutes ?? 60),
+    };
+  },
+  [Templates.PasswordChanged]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+    };
+  },
 
   // ONBOARDING
-  [Templates.Welcome]: (a) => ({
-    name: a.firstName ?? a.name,
-    dashboard_link: a.dashboardUrl ?? a.ctaUrl,
-  }),
+  [Templates.Welcome]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      dashboard_link: a.dashboardUrl ?? a.ctaUrl,
+    };
+  },
 
   // BILLING
-  [Templates.PlanCancelled]: (a) => ({
-    name: a.name,
-    end_date: a.endDate,            // optional
-    cta_url: a.billingUrl ?? a.ctaUrl,
-  }),
-  [Templates.PlanPriceChange]: (a) => ({
-    first_name: a.firstName ?? a.name,
-    plan_name: a.planName,
-    old_price: a.oldPrice,
-    new_price: a.newPrice,
-    interval: a.interval,
-    effective_date: a.effectiveDate,
-  }),
-  [Templates.InvoiceSent]: (a) => ({
-    name: a.name,
-    invoice_number: a.invoiceNumber,
-    amount: a.amount,
-    cta_url: a.billingUrl ?? a.ctaUrl,
-  }),
-  [Templates.PaymentFailed]: (a) => ({
-    name: a.name,
-    cta_url: a.billingUrl ?? a.ctaUrl,
-  }),
+  [Templates.PlanCancelled]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      end_date: a.endDate,            // optional
+      cta_url: a.billingUrl ?? a.ctaUrl,
+    };
+  },
+  [Templates.PlanPriceChange]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      plan_name: a.planName,
+      old_price: a.oldPrice,
+      new_price: a.newPrice,
+      interval: a.interval,
+      effective_date: a.effectiveDate,
+    };
+  },
+  [Templates.InvoiceSent]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      invoice_number: a.invoiceNumber,
+      amount: a.amount,
+      cta_url: a.billingUrl ?? a.ctaUrl,
+    };
+  },
+  [Templates.PaymentFailed]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      cta_url: a.billingUrl ?? a.ctaUrl,
+    };
+  },
 
   // KYC
-  [Templates.KycSubmitted]: (a) => ({
-    name: a.name,
-    cta_url: a.profileUrl ?? a.ctaUrl,
-  }),
-  [Templates.KycApproved]: (a) => ({
-    name: a.firstName ?? a.name,
-    virtual_address_line_1: a.virtualAddressLine1,
-    virtual_address_line_2: a.virtualAddressLine2,
-    postcode: a.postcode,
-    dashboard_link: a.dashboardUrl ?? a.ctaUrl,
-  }),
-  [Templates.KycRejected]: (a) => ({
-    name: a.name,
-    reason: a.reason ?? "Verification was not approved",
-    cta_url: a.profileUrl ?? a.ctaUrl,
-  }),
+  [Templates.KycSubmitted]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      cta_url: a.profileUrl ?? a.ctaUrl,
+    };
+  },
+  [Templates.KycApproved]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      virtual_address_line_1: a.virtualAddressLine1,
+      virtual_address_line_2: a.virtualAddressLine2,
+      postcode: a.postcode,
+      dashboard_link: a.dashboardUrl ?? a.ctaUrl,
+    };
+  },
+  [Templates.KycRejected]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      reason: a.reason ?? "Verification was not approved",
+      cta_url: a.profileUrl ?? a.ctaUrl,
+    };
+  },
 
   // SUPPORT
-  [Templates.SupportRequestReceived]: (a) => ({
-    name: a.name,
-    ticket_id: a.ticketId,
-    cta_url: a.ctaUrl,
-  }),
-  [Templates.SupportRequestClosed]: (a) => ({
-    name: a.name,
-    ticket_id: a.ticketId,
-    cta_url: a.ctaUrl,
-  }),
+  [Templates.SupportRequestReceived]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      ticket_id: a.ticketId,
+      cta_url: a.ctaUrl,
+    };
+  },
+  [Templates.SupportRequestClosed]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      ticket_id: a.ticketId,
+      cta_url: a.ctaUrl,
+    };
+  },
 
   // MAIL
-  [Templates.MailScanned]: (a) => ({
-    first_name: a.name,
-    subject: a.subjectLine,
-    dashboard_link: a.ctaUrl,
-  }),
-  [Templates.MailForwarded]: (a) => ({
-    first_name: a.name,
-    forwarding_address: a.forwardingAddress || a.forwarding_address,
-    forwarded_date: a.forwardedDate || a.forwarded_date,
-  }),
-  [Templates.MailAfterCancellation]: (a) => ({
-    name: a.name,
-    subject: a.subjectLine,
-    cta_url: a.ctaUrl,
-  }),
+  [Templates.MailScanned]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      subject: a.subjectLine,
+      dashboard_link: a.ctaUrl,
+    };
+  },
+  [Templates.MailForwarded]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      forwarding_address: a.forwardingAddress || a.forwarding_address,
+      forwarded_date: a.forwardedDate || a.forwarded_date,
+    };
+  },
+  [Templates.MailAfterCancellation]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      subject: a.subjectLine,
+      cta_url: a.ctaUrl,
+    };
+  },
 
   // COMPANIES HOUSE VERIFICATION
-  [Templates.ChVerificationNudge]: (a) => ({
-    first_name: a.firstName ?? a.name ?? "there",
-    cta_url: a.ctaUrl ?? a.cta_url,
-  }),
-  [Templates.ChVerificationReminder]: (a) => ({
-    first_name: a.firstName ?? a.name ?? "there",
-    cta_url: a.ctaUrl ?? a.cta_url,
-  }),
+  [Templates.ChVerificationNudge]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      cta_url: a.ctaUrl ?? a.cta_url,
+    };
+  },
+  [Templates.ChVerificationReminder]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      cta_url: a.ctaUrl ?? a.cta_url,
+    };
+  },
 
   // QUIZ / MARKETING
-  [Templates.QuizDay0]: (a) => ({
-    name: a.name || a.firstName || "there",
-    score: String(a.score ?? 0),
-    segment: a.segment || "low",
-    cta_url: a.ctaUrl || a.cta_url,
-    booking_url: a.bookingUrl || a.booking_url,
-  }),
+  [Templates.QuizDay0]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      score: String(a.score ?? 0),
+      segment: a.segment || "low",
+      cta_url: a.ctaUrl || a.cta_url,
+      booking_url: a.bookingUrl || a.booking_url,
+    };
+  },
 };

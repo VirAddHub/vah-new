@@ -15,6 +15,16 @@ export interface KYCStatus {
 
 export const kycService = {
     /**
+     * Start KYC verification process
+     */
+    async startKyc(): Promise<{ ok: boolean; token?: string; applicant_id?: string; status?: string; message?: string }> {
+        const { data } = await api('/api/bff/kyc/start', {
+            method: 'POST',
+        });
+        return data;
+    },
+
+    /**
      * Upload KYC documents
      */
     async uploadDocuments(formData: FormData): Promise<{ ok: boolean; data: { sdk_token: string } }> {

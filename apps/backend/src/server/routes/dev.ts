@@ -110,7 +110,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "welcome":
                 await sendWelcomeEmail({
                     email,
-                    name,
+                    firstName: name,
                     cta_url: `${ENV.APP_BASE_URL}/dashboard`
                 });
                 break;
@@ -118,19 +118,19 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "password-reset":
                 await sendPasswordResetEmail({
                     email,
-                    name,
+                    firstName: name,
                     cta_url: `${ENV.APP_BASE_URL}/reset?token=${payload.token || "dev-token-123"}`,
                 });
                 break;
 
             case "password-changed":
-                await sendPasswordChangedConfirmation({ email, name });
+                await sendPasswordChangedConfirmation({ email, firstName: name });
                 break;
 
             case "plan-cancelled":
                 await sendPlanCancelled({
                     email,
-                    name,
+                    firstName: name,
                     end_date: payload.endDate,
                     cta_url: `${ENV.APP_BASE_URL}/billing`
                 });
@@ -139,7 +139,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "invoice-sent":
                 await sendInvoiceSent({
                     email,
-                    name,
+                    firstName: name,
                     invoice_number: payload.invoiceNumber || "INV-DEV-1001",
                     amount: payload.amount || "£29.99",
                     cta_url: `${ENV.APP_BASE_URL}/billing`
@@ -149,7 +149,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "payment-failed":
                 await sendPaymentFailed({
                     email,
-                    name,
+                    firstName: name,
                     cta_url: `${ENV.APP_BASE_URL}/billing#payment`
                 });
                 break;
@@ -157,7 +157,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "kyc-submitted":
                 await sendKycSubmitted({
                     email,
-                    name,
+                    firstName: name,
                     cta_url: `${ENV.APP_BASE_URL}/profile`
                 });
                 break;
@@ -165,7 +165,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "kyc-approved":
                 await sendKycApproved({
                     email,
-                    name,
+                    firstName: name,
                     cta_url: `${ENV.APP_BASE_URL}/profile`,
                     virtualAddressLine1: payload.address1 || "123 Business Street",
                     virtualAddressLine2: payload.address2 || "Suite 100",
@@ -176,7 +176,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "kyc-rejected":
                 await sendKycRejected({
                     email,
-                    name,
+                    firstName: name,
                     reason: payload.reason || "Document quality issue",
                     cta_url: `${ENV.APP_BASE_URL}/profile`
                 });
@@ -185,7 +185,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "support-request-received":
                 await sendSupportRequestReceived({
                     email,
-                    name,
+                    firstName: name,
                     ticket_id: String(payload.ticketId || "T-100"),
                     cta_url: `${ENV.APP_BASE_URL}/support`
                 });
@@ -194,7 +194,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "support-request-closed":
                 await sendSupportRequestClosed({
                     email,
-                    name,
+                    firstName: name,
                     ticket_id: String(payload.ticketId || "T-100"),
                     cta_url: `${ENV.APP_BASE_URL}/support`
                 });
@@ -203,7 +203,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "mail-scanned":
                 await sendMailScanned({
                     email,
-                    name,
+                    firstName: name,
                     subject: payload.subject || "Scanned: HMRC Letter",
                     cta_url: `${ENV.APP_BASE_URL}/mail`
                 });
@@ -212,7 +212,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "mail-forwarded":
                 await sendMailForwarded({
                     email,
-                    name,
+                    firstName: name,
                     forwarding_address: payload.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
                     forwarded_date: payload.forwarded_date || new Date().toLocaleDateString('en-GB')
                 });
@@ -221,7 +221,7 @@ router.post("/api/dev/trigger", ensureAllowed, async (req, res) => {
             case "mail-after-cancellation":
                 await sendMailReceivedAfterCancellation({
                     email,
-                    name,
+                    firstName: name,
                     subject: payload.subject || "Mail received",
                     cta_url: `${ENV.APP_BASE_URL}/mail`
                 });

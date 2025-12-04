@@ -142,7 +142,7 @@ router.post('/from-onedrive', async (req, res) => {
       kyc_status: user.kyc_status,
       status: user.status,
     };
-    
+
     // Log user details for verification
     console.log('[internalMailImport] User verified:', {
       userId: user.id,
@@ -214,7 +214,7 @@ router.post('/from-onedrive', async (req, res) => {
     // IDEMPOTENCY CHECK: Check if this file has already been imported for this user
     // We check by userId + fileName (via notes pattern) or userId + scan_file_url
     let existingMailItem: any = null;
-    
+
     if (payload.oneDriveDownloadUrl) {
       // Check by scan_file_url (most reliable, unique per file)
       const urlCheck = await pool.query(
@@ -225,7 +225,7 @@ router.post('/from-onedrive', async (req, res) => {
         existingMailItem = urlCheck.rows[0];
       }
     }
-    
+
     // If not found by URL, check by fileName in notes (fallback)
     if (!existingMailItem) {
       const notesPattern = `OneDrive import: ${payload.fileName}`;
@@ -247,7 +247,7 @@ router.post('/from-onedrive', async (req, res) => {
         oneDriveFileId: payload.oneDriveFileId,
         scanFileUrl: payload.oneDriveDownloadUrl,
       });
-      
+
       return res.status(200).json({
         ok: true,
         skipped: true,
@@ -335,7 +335,7 @@ router.post('/from-onedrive', async (req, res) => {
 
     const verifiedMailItem = verifyResult.rows[0];
     const verifiedUserId = Number(verifiedMailItem.user_id);
-    
+
     // CRITICAL VERIFICATION: Ensure the userId in the database matches what we intended
     if (Number.isNaN(verifiedUserId) || verifiedUserId !== payload.userId) {
       console.error('[internalMailImport] ❌ CRITICAL: userId mismatch!', {
@@ -353,13 +353,13 @@ router.post('/from-onedrive', async (req, res) => {
         actualUserId: verifiedMailItem.user_id,
       });
     }
-    
+
     // CRITICAL VERIFICATION: Re-fetch user to ensure we have the latest data
     const { rows: userVerifyRows } = await pool.query(
       'SELECT id, email, first_name, last_name FROM "user" WHERE id = $1',
       [verifiedUserId]
     );
-    
+
     if (userVerifyRows.length === 0) {
       console.error('[internalMailImport] ❌ CRITICAL: User not found for email!', {
         fileName: payload.fileName,
@@ -373,9 +373,9 @@ router.post('/from-onedrive', async (req, res) => {
         fileName: payload.fileName,
       });
     }
-    
+
     const userForEmail = userVerifyRows[0];
-    
+
     if (userForEmail.email !== user.email) {
       console.error('[internalMailImport] ❌ CRITICAL: Email mismatch!', {
         fileName: payload.fileName,
@@ -391,7 +391,7 @@ router.post('/from-onedrive', async (req, res) => {
         fileName: payload.fileName,
       });
     }
-    
+
     console.log('[internalMailImport] ✅ Verified mail item exists in DB with correct user:', {
       mailId: verifiedMailItem.id,
       userId: verifiedUserId,
@@ -410,7 +410,7 @@ router.post('/from-onedrive', async (req, res) => {
     try {
       await sendMailScanned({
         email: userForEmail.email, // Use verified email from database
-        name: userForEmail.first_name,
+        firstName: userForEmail.first_name || "there",
         subject: `New mail received - ${subject}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
@@ -432,8 +432,8 @@ router.post('/from-onedrive', async (req, res) => {
       // Don't fail the webhook if email fails, but log it clearly
     }
 
-           // Send ops notification AFTER successful DB insert and verification
-           // This email is sent to support@virtualaddresshub.co.uk (not the user)
+    // Send ops notification AFTER successful DB insert and verification
+    // This email is sent to support@virtualaddresshub.co.uk (not the user)
     // Includes filename and userId for audit trail
     try {
       await notifyOpsMailCreated({

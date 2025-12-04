@@ -68,7 +68,7 @@ router.post('/debug-email', async (req, res) => {
             case 'password-reset':
                 await sendPasswordResetEmail({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/reset?token=test123`
                 });
                 result = {
@@ -93,7 +93,7 @@ router.post('/debug-email', async (req, res) => {
             case 'welcome':
                 await sendWelcomeEmail({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/dashboard`
                 });
                 result = {
@@ -107,7 +107,7 @@ router.post('/debug-email', async (req, res) => {
             case 'plan-cancelled':
                 await sendPlanCancelled({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     end_date: req.body.end_date,
                     cta_url: req.body.cta_url
                 });
@@ -121,7 +121,7 @@ router.post('/debug-email', async (req, res) => {
             case 'invoice-sent':
                 await sendInvoiceSent({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     invoice_number: req.body.invoice_number,
                     amount: req.body.amount,
                     cta_url: req.body.cta_url
@@ -136,7 +136,7 @@ router.post('/debug-email', async (req, res) => {
             case 'payment-failed':
                 await sendPaymentFailed({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     cta_url: req.body.cta_url || `${ENV.APP_BASE_URL}/billing#payment`
                 });
                 result = {
@@ -150,7 +150,7 @@ router.post('/debug-email', async (req, res) => {
             case 'kyc-submitted':
                 await sendKycSubmitted({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     cta_url: req.body.cta_url
                 });
                 result = {
@@ -163,7 +163,7 @@ router.post('/debug-email', async (req, res) => {
             case 'kyc-approved':
                 await sendKycApproved({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     cta_url: req.body.cta_url
                 });
                 result = {
@@ -176,7 +176,7 @@ router.post('/debug-email', async (req, res) => {
             case 'kyc-rejected':
                 await sendKycRejected({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     reason: req.body.reason,
                     cta_url: req.body.cta_url
                 });
@@ -191,7 +191,7 @@ router.post('/debug-email', async (req, res) => {
             case 'support-received':
                 await sendSupportRequestReceived({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     ticket_id: req.body.ticket_id,
                     cta_url: req.body.cta_url
                 });
@@ -205,7 +205,7 @@ router.post('/debug-email', async (req, res) => {
             case 'support-closed':
                 await sendSupportRequestClosed({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     ticket_id: req.body.ticket_id,
                     cta_url: req.body.cta_url
                 });
@@ -220,7 +220,7 @@ router.post('/debug-email', async (req, res) => {
             case 'mail-scanned':
                 await sendMailScanned({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     subject: req.body.subject,
                     cta_url: req.body.cta_url
                 });
@@ -234,7 +234,7 @@ router.post('/debug-email', async (req, res) => {
             case 'mail-forwarded':
                 await sendMailForwarded({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     forwarding_address: req.body.forwarding_address || "123 Test Street, London, SW1A 1AA, United Kingdom",
                     forwarded_date: req.body.forwarded_date || new Date().toLocaleDateString('en-GB')
                 });
@@ -249,7 +249,7 @@ router.post('/debug-email', async (req, res) => {
             case 'mail-after-cancellation':
                 await sendMailReceivedAfterCancellation({
                     email,
-                    name: name || 'Test User',
+                    firstName: name || 'Test User',
                     subject: req.body.subject,
                     cta_url: req.body.cta_url
                 });

@@ -420,7 +420,7 @@ router.post('/', async (req: any, res) => {
             try {
               await sendMailScanned({
                 email: user.email,
-                name: user.first_name,
+                firstName: user.first_name || "there",
                 subject: `New mail received - ${tagToTitle(defaultTagSlug)}`,
                 cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
               });
@@ -579,7 +579,7 @@ router.post('/', async (req: any, res) => {
     try {
       await sendMailScanned({
         email: user.email,
-        name: user.first_name,
+        firstName: user.first_name || "there",
         subject: `New mail received - ${tagToTitle(tagSlug)}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });

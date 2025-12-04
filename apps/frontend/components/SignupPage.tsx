@@ -47,7 +47,8 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                         </div>
                         <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">Welcome to VirtualAddressHub!</h1>
                         <p className="text-lg text-muted-foreground mb-8">
-                            Your account has been created successfully. You'll receive an email with next steps shortly.
+                            Your account has been created successfully. We've emailed you a secure link to your dashboard, where you'll complete
+                            identity verification (KYC) and start using your London address.
                         </p>
                     </div>
 

@@ -269,7 +269,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
 
             await sendMailForwarded({
                 email: user.email,
-                name: user.first_name || user.email,
+                firstName: user.first_name || "there",
                 forwarding_address: forwarding_address,
                 forwarded_date: new Date().toLocaleDateString('en-GB')
             });
@@ -348,7 +348,7 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
 
                     await sendMailForwarded({
                         email: user.email,
-                        name: user.first_name || user.email,
+                        firstName: user.first_name || "there",
                         forwarding_address: `${request.address1}, ${request.city} ${request.postal} ${request.country}`.trim(),
                         forwarded_date: new Date().toLocaleDateString('en-GB')
                     });

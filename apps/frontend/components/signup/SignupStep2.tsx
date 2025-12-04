@@ -312,7 +312,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
                     <h1 className="mb-2">Company & Contact Information</h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Tell us about yourself and your company. All fields marked with <span className="text-destructive">*</span> are required.
+                        Tell us about yourself and your company. We use these details to set up your account and to meet our UK
+                        anti-money laundering (AML) and Companies House compliance obligations. All fields marked with{" "}
+                        <span className="text-destructive">*</span> are required.
                     </p>
                 </div>
 

@@ -7,6 +7,26 @@ import { modelBuilders, BuildArgs } from './template-models';
 const postmark = require('postmark');
 
 /**
+ * Resolves the first name to use in email templates.
+ * Single source of truth for name fallback logic.
+ * 
+ * Priority:
+ * 1. firstName (trimmed)
+ * 2. name (trimmed)
+ * 3. "there" (fallback)
+ */
+function resolveFirstName(params: {
+    firstName?: string | null;
+    name?: string | null;
+}): string {
+    const raw =
+        (params.firstName ?? '').trim() ||
+        (params.name ?? '').trim();
+
+    return raw || 'there';
+}
+
+/**
  * Builds a full URL from APP_BASE_URL and a path.
  * Throws an error if APP_BASE_URL is not set (ensures production always has it configured).
  */
@@ -83,11 +103,13 @@ export async function sendTemplateEmail(opts: {
         console.error(`Template model sent:`, JSON.stringify(TemplateModel, null, 2));
         console.error(`Postmark error details:`, error?.response?.body || error?.message || error);
         // Graceful fallback - send simple email
+        // TemplateModel already has first_name resolved by model builder
+        const first_name = TemplateModel.first_name || TemplateModel.name || 'there';
         await client.sendEmail({
             From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
             To: opts.to,
             Subject: 'Notification',
-            HtmlBody: `<p>Hi ${opts.model.name || 'there'},</p><p>You have a new notification.</p>`,
+            HtmlBody: `<p>Hi ${first_name},</p><p>You have a new notification.</p>`,
             MessageStream: ENV.POSTMARK_STREAM,
             ReplyTo: ENV.EMAIL_REPLY_TO,
         });
@@ -96,50 +118,54 @@ export async function sendTemplateEmail(opts: {
 
 
 // Auth / Security
-export async function sendPasswordResetEmail({ email, name, cta_url }: { email: string; name?: string; cta_url: string }): Promise<void> {
+export async function sendPasswordResetEmail({ email, firstName, name, cta_url }: { email: string; firstName?: string | null; name?: string | null; cta_url: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_SECURITY)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.PasswordReset,
         model: {
-            firstName: name,
+            firstName,
+            name,
             resetLink: cta_url,
             expiryMinutes: 30,
         },
     });
 }
 
-export async function sendPasswordChangedConfirmation({ email, name }: { email: string; name?: string }): Promise<void> {
+export async function sendPasswordChangedConfirmation({ email, firstName, name }: { email: string; firstName?: string | null; name?: string | null }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_SECURITY)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.PasswordChanged,
         model: {
-            firstName: name,
+            firstName,
+            name,
         },
     });
 }
 
 // Welcome & onboarding
-export async function sendWelcomeEmail({ email, name, cta_url }: { email: string; name?: string; cta_url: string }): Promise<void> {
+export async function sendWelcomeEmail({ email, firstName, name, cta_url }: { email: string; firstName?: string | null; name?: string | null; cta_url: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_ONBOARDING)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.Welcome,
         model: {
-            firstName: name,
+            firstName,
+            name,
             dashboardUrl: cta_url,
         },
     });
 }
 
 // Billing & invoices
-export async function sendPlanCancelled({ email, name, end_date, cta_url }: { email: string; name?: string; end_date?: string; cta_url?: string }): Promise<void> {
+export async function sendPlanCancelled({ email, firstName, name, end_date, cta_url }: { email: string; firstName?: string | null; name?: string | null; end_date?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_BILLING)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.PlanCancelled,
         model: {
+            firstName,
             name,
             endDate: end_date,
             billingUrl: cta_url || buildAppUrl('/billing'),
@@ -147,12 +173,13 @@ export async function sendPlanCancelled({ email, name, end_date, cta_url }: { em
     });
 }
 
-export async function sendInvoiceSent({ email, name, invoice_number, amount, cta_url }: { email: string; name?: string; invoice_number?: string; amount?: string; cta_url?: string }): Promise<void> {
+export async function sendInvoiceSent({ email, firstName, name, invoice_number, amount, cta_url }: { email: string; firstName?: string | null; name?: string | null; invoice_number?: string; amount?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_BILLING)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.InvoiceSent,
         model: {
+            firstName,
             name,
             invoiceNumber: invoice_number,
             amount,
@@ -161,12 +188,13 @@ export async function sendInvoiceSent({ email, name, invoice_number, amount, cta
     });
 }
 
-export async function sendPaymentFailed({ email, name, cta_url }: { email: string; name?: string; cta_url: string }): Promise<void> {
+export async function sendPaymentFailed({ email, firstName, name, cta_url }: { email: string; firstName?: string | null; name?: string | null; cta_url: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_BILLING)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.PaymentFailed,
         model: {
+            firstName,
             name,
             billingUrl: cta_url,
         },
@@ -174,26 +202,27 @@ export async function sendPaymentFailed({ email, name, cta_url }: { email: strin
 }
 
 // KYC
-export async function sendKycSubmitted({ email, name, cta_url }: { email: string; name?: string; cta_url?: string }): Promise<void> {
+export async function sendKycSubmitted({ email, firstName, name, cta_url }: { email: string; firstName?: string | null; name?: string | null; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_KYC)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.KycSubmitted,
         model: {
+            firstName,
             name,
             profileUrl: cta_url || buildAppUrl('/profile'),
         },
     });
 }
 
-export async function sendKycApproved({ email, name, cta_url, virtualAddressLine1, virtualAddressLine2, postcode }: { email: string; name?: string; cta_url?: string; virtualAddressLine1?: string; virtualAddressLine2?: string; postcode?: string }): Promise<void> {
+export async function sendKycApproved({ email, firstName, name, cta_url, virtualAddressLine1, virtualAddressLine2, postcode }: { email: string; firstName?: string | null; name?: string | null; cta_url?: string; virtualAddressLine1?: string; virtualAddressLine2?: string; postcode?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_KYC)) return;
-    // Note: template model builder maps firstName -> name, dashboardUrl -> dashboard_link
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.KycApproved,
         model: {
-            firstName: name,
+            firstName,
+            name,
             dashboardUrl: cta_url || buildAppUrl('/account'),
             virtualAddressLine1,
             virtualAddressLine2,
@@ -202,12 +231,13 @@ export async function sendKycApproved({ email, name, cta_url, virtualAddressLine
     });
 }
 
-export async function sendKycRejected({ email, name, reason, cta_url }: { email: string; name?: string; reason?: string; cta_url?: string }): Promise<void> {
+export async function sendKycRejected({ email, firstName, name, reason, cta_url }: { email: string; firstName?: string | null; name?: string | null; reason?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_KYC)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.KycRejected,
         model: {
+            firstName,
             name,
             reason,
             profileUrl: cta_url || buildAppUrl('/profile'),
@@ -216,12 +246,13 @@ export async function sendKycRejected({ email, name, reason, cta_url }: { email:
 }
 
 // Support
-export async function sendSupportRequestReceived({ email, name, ticket_id, cta_url }: { email: string; name?: string; ticket_id?: string; cta_url?: string }): Promise<void> {
+export async function sendSupportRequestReceived({ email, firstName, name, ticket_id, cta_url }: { email: string; firstName?: string | null; name?: string | null; ticket_id?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_SUPPORT)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.SupportRequestReceived,
         model: {
+            firstName,
             name,
             ticketId: ticket_id,
             ctaUrl: cta_url || buildAppUrl('/support'),
@@ -229,12 +260,13 @@ export async function sendSupportRequestReceived({ email, name, ticket_id, cta_u
     });
 }
 
-export async function sendSupportRequestClosed({ email, name, ticket_id, cta_url }: { email: string; name?: string; ticket_id?: string; cta_url?: string }): Promise<void> {
+export async function sendSupportRequestClosed({ email, firstName, name, ticket_id, cta_url }: { email: string; firstName?: string | null; name?: string | null; ticket_id?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_SUPPORT)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.SupportRequestClosed,
         model: {
+            firstName,
             name,
             ticketId: ticket_id,
             ctaUrl: cta_url || buildAppUrl('/support'),
@@ -243,7 +275,7 @@ export async function sendSupportRequestClosed({ email, name, ticket_id, cta_url
 }
 
 // Mail events
-export async function sendMailScanned({ email, name, subject, cta_url }: { email: string; name?: string; subject?: string; cta_url?: string }): Promise<void> {
+export async function sendMailScanned({ email, firstName, name, subject, cta_url }: { email: string; firstName?: string | null; name?: string | null; subject?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) {
         console.warn('[mailer] sendMailScanned skipped: EMAIL_MAIL guard is disabled');
         return;
@@ -253,6 +285,7 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
         to: email,
         templateAlias: Templates.MailScanned,
         model: {
+            firstName,
             name,
             subjectLine: subject || 'Mail scanned and ready',
             ctaUrl: cta_url || buildAppUrl('/mail'),
@@ -261,11 +294,13 @@ export async function sendMailScanned({ email, name, subject, cta_url }: { email
     console.log('[mailer] ✅ Mail-scanned email sent successfully to:', email);
 }
 
-export async function sendMailForwarded({ email, name, forwarding_address, forwarded_date }: { email: string; name?: string; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
+export async function sendMailForwarded({ email, firstName, name, forwarding_address, forwarded_date }: { email: string; firstName?: string | null; name?: string | null; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
 
     const client = getClient();
     if (!client) return;
+
+    const first_name = resolveFirstName({ firstName, name });
 
     try {
         // Try the template first
@@ -273,7 +308,8 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
             to: email,
             templateAlias: Templates.MailForwarded,
             model: {
-                name: name,
+                firstName,
+                name,
                 forwarding_address: forwarding_address || 'Your forwarding address',
                 forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
             },
@@ -287,7 +323,7 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
             To: email,
             Subject: 'Mail Forwarded Successfully',
             HtmlBody: `
-                <p>Hi ${name || 'there'},</p>
+                <p>Hi ${first_name},</p>
                 <p>Your mail has been successfully forwarded!</p>
                 <p><strong>Forwarding Address:</strong> ${forwarding_address || 'Your forwarding address'}</p>
                 <p><strong>Forwarded Date:</strong> ${forwarded_date || new Date().toLocaleDateString('en-GB')}</p>
@@ -299,12 +335,13 @@ export async function sendMailForwarded({ email, name, forwarding_address, forwa
     }
 }
 
-export async function sendMailReceivedAfterCancellation({ email, name, subject, cta_url }: { email: string; name?: string; subject?: string; cta_url?: string }): Promise<void> {
+export async function sendMailReceivedAfterCancellation({ email, firstName, name, subject, cta_url }: { email: string; firstName?: string | null; name?: string | null; subject?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) return;
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.MailAfterCancellation,
         model: {
+            firstName,
             name,
             subjectLine: subject || 'Mail received after cancellation',
             ctaUrl: cta_url || buildAppUrl('/mail'),
@@ -314,7 +351,7 @@ export async function sendMailReceivedAfterCancellation({ email, name, subject, 
 
 // Companies House Verification
 // Uses Postmark template alias: ch-verification-nudge (update in postmark-templates.ts if different)
-export async function sendChVerificationNudge(user: { email: string; first_name?: string }): Promise<void> {
+export async function sendChVerificationNudge(user: { email: string; first_name?: string | null; name?: string | null }): Promise<void> {
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
 
@@ -324,14 +361,15 @@ export async function sendChVerificationNudge(user: { email: string; first_name?
         to: user.email,
         templateAlias: Templates.ChVerificationNudge,
         model: {
-            firstName: user.first_name || 'there',
+            firstName: user.first_name,
+            name: user.name,
             ctaUrl,
         },
     });
 }
 
 // Uses Postmark template alias: ch-verification-reminder
-export async function sendChVerificationReminder(user: { email: string; first_name?: string }): Promise<void> {
+export async function sendChVerificationReminder(user: { email: string; first_name?: string | null; name?: string | null }): Promise<void> {
     if (!user.email) return;
     if (!emailGuard(ENV.EMAIL_KYC)) return;
 
@@ -341,7 +379,8 @@ export async function sendChVerificationReminder(user: { email: string; first_na
         to: user.email,
         templateAlias: Templates.ChVerificationReminder,
         model: {
-            firstName: user.first_name || 'there',
+            firstName: user.first_name,
+            name: user.name,
             ctaUrl,
         },
     });

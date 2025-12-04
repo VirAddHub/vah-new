@@ -39,7 +39,7 @@ export async function adminUpdateForwardingOptimized(req: Request, res: Response
 
     try {
         const pool = getPool();
-        
+
         // Start transaction for atomic operations
         await pool.query('BEGIN');
 
@@ -62,7 +62,7 @@ export async function adminUpdateForwardingOptimized(req: Request, res: Response
             }
 
             const current = currentResult.rows[0];
-            
+
             if (!canMove(current.status, nextStatus)) {
                 await pool.query('ROLLBACK');
                 return res.status(400).json({
@@ -183,14 +183,14 @@ export async function adminUpdateForwardingOptimized(req: Request, res: Response
                             current.postal,
                             current.country
                         ].filter(Boolean);
-                        
-                        const forwarding_address = addressParts.length > 0 
-                            ? addressParts.join(', ') 
+
+                        const forwarding_address = addressParts.length > 0
+                            ? addressParts.join(', ')
                             : 'Your forwarding address';
 
                         await sendMailForwarded({
                             email: current.email,
-                            name: current.first_name || current.email,
+                            firstName: current.first_name || "there",
                             forwarding_address: forwarding_address,
                             forwarded_date: new Date().toLocaleDateString('en-GB')
                         });

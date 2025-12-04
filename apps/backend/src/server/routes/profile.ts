@@ -351,14 +351,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Get user profile data
+        // Get user profile data including KYC status
         const result = await pool.query(`
             SELECT
                 first_name,
                 last_name,
                 company_name,
                 email,
-                created_at
+                created_at,
+                kyc_status
             FROM "user"
             WHERE id = $1
         `, [userId]);
@@ -368,6 +369,16 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         }
 
         const user = result.rows[0];
+
+        // Check KYC status - certificate requires approved KYC
+        const { isKycApproved } = await import('../services/kyc-guards');
+        if (!isKycApproved(user.kyc_status)) {
+            return res.status(403).json({
+                ok: false,
+                error: 'KYC_REQUIRED',
+                message: 'You must complete identity verification (KYC) before accessing your proof of address certificate.',
+            });
+        }
         const currentDate = new Date().toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'long',

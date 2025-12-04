@@ -118,13 +118,9 @@ router.post('/', async (req, res) => {
   if (becameApproved) {
     // Fire-and-forget email send
     import('../src/lib/mailer').then(({ sendKycApproved }) => {
-      const userName = userRow.first_name 
-        ? `${userRow.first_name}${userRow.last_name ? ' ' + userRow.last_name : ''}`
-        : userRow.email?.split('@')[0] || 'there';
-      
       sendKycApproved({
         email: userRow.email,
-        name: userName,
+        firstName: userRow.first_name || "there",
       }).catch((err) => {
         console.error('[SumsubWebhook] Failed to send KYC approved email:', err);
       });

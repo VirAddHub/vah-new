@@ -35,6 +35,7 @@ import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 import { ChVerificationCard } from "@/app/(dashboard)/components/ChVerificationCard";
+import { KycBanner } from "@/components/kyc/KycBanner";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -615,6 +616,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
           {/* Left Column - Main Content */}
           <div className="space-y-6">
+
+            {/* KYC Verification Banner */}
+            <KycBanner kycStatus={userProfile?.kyc_status || null} />
 
             {/* Companies House Verification */}
             <ChVerificationCard />

@@ -597,13 +597,9 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             if (updatedUser && updatedUser.email) {
                 // Fire-and-forget email send
                 import('../../lib/mailer').then(({ sendKycApproved }) => {
-                    const userName = updatedUser.first_name 
-                        ? `${updatedUser.first_name}${updatedUser.last_name ? ' ' + updatedUser.last_name : ''}`
-                        : updatedUser.email?.split('@')[0] || 'there';
-                    
                     sendKycApproved({
                         email: updatedUser.email,
-                        name: userName,
+                        firstName: updatedUser.first_name || "there",
                     }).catch((err) => {
                         console.error('[Admin] Failed to send KYC approved email:', err);
                     });

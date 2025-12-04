@@ -57,25 +57,6 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
         onComplete();
     };
 
-    const nextSteps = [
-        {
-            step: 1,
-            title: "We&apos;ll send your welcome email with a link to access your dashboard."
-        },
-        {
-            step: 2,
-            title: "Log in to your dashboard and complete identity verification (KYC) with Sumsub — required for compliance."
-        },
-        {
-            step: 3,
-            title: "We&apos;ll review your verification and approve your account (usually within 24 hours)."
-        },
-        {
-            step: 4,
-            title: "Your London address is activated once verification is approved, and you can start using it."
-        }
-    ];
-
     return (
         <main className="flex-1">
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -109,7 +90,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                         <h1 className="mb-2">Complete Your Payment</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner GoCardless. After payment, you'll receive login details and can complete identity verification (KYC) in your dashboard. Your address will be activated once verification is approved.
+                            Secure your London address with our trusted payment partner GoCardless. After payment, you'll receive login details
+                            and complete identity verification (KYC) in your dashboard to activate your address.
                         </p>
                     </div>
 
@@ -255,14 +237,29 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         </div>
                         <div className="px-6 pb-6">
                             <div className="space-y-3 text-sm">
-                                {nextSteps.map((item) => (
-                                    <div key={item.step} className="flex items-start gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
-                                            {item.step}
-                                        </div>
-                                        <p>{item.title}</p>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
+                                        1
                                     </div>
-                                ))}
+                                    <p>We'll send your welcome email with a secure link to your dashboard.</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
+                                        2
+                                    </div>
+                                    <p>
+                                        Log in and complete identity verification (KYC). This is required by UK AML rules before we can activate your
+                                        address or forward any mail.
+                                    </p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium mt-0.5">
+                                        3
+                                    </div>
+                                    <p>
+                                        Once approved, your London address, mail dashboard, and proof of address certificate will be fully active.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -143,9 +143,9 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
     const mail_item_id = mailItemIds[0];
 
     try {
-        // Get user's forwarding address
+        // Get user's forwarding address and KYC status
         const userResult = await pool.query(`
-            SELECT forwarding_address, first_name, last_name
+            SELECT forwarding_address, first_name, last_name, kyc_status
             FROM "user" 
             WHERE id = $1
         `, [userId]);
@@ -205,6 +205,30 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             finalPostal
         });
 
+        // Check KYC requirement before creating forwarding request
+        // Get mail item to check tag
+        const mailResult = await pool.query(`
+            SELECT tag FROM mail_item WHERE id = $1 AND user_id = $2
+        `, [mail_item_id, userId]);
+
+        if (mailResult.rows.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                error: 'mail_item_not_found',
+                message: 'Mail item not found'
+            });
+        }
+
+        const mailTag = mailResult.rows[0].tag;
+        const { canForwardMail } = await import('../services/kyc-guards');
+        if (!canForwardMail(user.kyc_status, mailTag)) {
+            return res.status(403).json({
+                ok: false,
+                error: 'KYC_REQUIRED',
+                message: 'You must complete identity verification (KYC) before we can forward this mail.',
+            });
+        }
+
         const result = await createForwardingRequest({
             userId,
             mailItemId: mail_item_id,
@@ -258,13 +282,25 @@ router.post('/requests/bulk', requireAuth, async (req: Request, res: Response) =
     }
 
     try {
+        // Get user's KYC status
+        const userResult = await pool.query(`
+            SELECT kyc_status FROM "user" WHERE id = $1
+        `, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const userKycStatus = userResult.rows[0].kyc_status;
+        const { canForwardMail } = await import('../services/kyc-guards');
+
         const forwarded: number[] = [];
         const errors: any[] = [];
 
         for (const id of ids) {
             try {
                 const mailResult = await pool.query(`
-                    SELECT id, user_id
+                    SELECT id, user_id, tag
                     FROM mail_item
                     WHERE id = $1 AND user_id = $2 AND deleted = false
                 `, [id, userId]);
@@ -275,6 +311,12 @@ router.post('/requests/bulk', requireAuth, async (req: Request, res: Response) =
                 }
 
                 const mailItem = mailResult.rows[0];
+
+                // Check KYC requirement for forwarding (HMRC/Companies House always allowed)
+                if (!canForwardMail(userKycStatus, mailItem.tag)) {
+                    errors.push({ id, error: 'KYC_REQUIRED', message: 'KYC verification required' });
+                    continue;
+                }
 
                 // Update mail item to mark as forwarding requested
                 await pool.query(`
