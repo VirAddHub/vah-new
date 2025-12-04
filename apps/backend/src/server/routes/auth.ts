@@ -4,6 +4,8 @@ import { z } from "zod";
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
+import { sendWelcomeEmail } from "../../lib/mailer";
+import { ENV } from "../../config/env";
 
 const router = Router();
 
@@ -307,6 +309,20 @@ router.post("/signup", async (req, res) => {
         const rs = await pool.query(insertQuery, args);
         const row = rs.rows[0];
 
+        // Send welcome email after successful signup
+        try {
+            const displayName = row.first_name?.trim() || row.last_name?.trim() || (row.email ? row.email.split("@")[0] : "") || "there";
+            await sendWelcomeEmail({
+                email: row.email,
+                firstName: displayName,
+                cta_url: `${ENV.APP_BASE_URL}/dashboard`
+            });
+            console.log(`[auth/signup] ✅ Welcome email sent to ${row.email}`);
+        } catch (emailError) {
+            // Don't fail signup if email fails - log and continue
+            console.error(`[auth/signup] ⚠️ Failed to send welcome email to ${row.email}:`, emailError);
+        }
+
         return res.status(201).json({
             ok: true,
             data: {
@@ -368,17 +384,8 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Check KYC verification status (except for admins)
-        // Accept both 'verified' (legacy) and 'approved' (current) as valid KYC statuses
-        const isKycApproved = userData.kyc_status === 'verified' || userData.kyc_status === 'approved';
-        if (!userData.is_admin && !isKycApproved) {
-            return res.status(403).json({
-                ok: false,
-                error: "kyc_verification_required",
-                message: "Account verification required. Please complete KYC verification to access your account.",
-                kyc_status: userData.kyc_status || 'pending'
-            });
-        }
+        // Note: KYC verification is done in the dashboard after login
+        // Users can log in regardless of KYC status - KYC is enforced at the feature level (mail forwarding, certificates, etc.)
 
         // Update last_login_at timestamp
         const now = Date.now();
