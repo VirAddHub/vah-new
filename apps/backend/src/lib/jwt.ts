@@ -53,19 +53,19 @@ export interface JWTPayload {
 
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
   const nowSeconds = Math.floor(Date.now() / 1000);
-  
+
   const tokenPayload = {
     ...payload,
     iat: nowSeconds,
     exp: nowSeconds + SESSION_IDLE_TIMEOUT_SECONDS, // 60 minutes from now
   };
-  
+
   const options = {
     ...baseOpts,
     algorithm: ALG,
     // No expiresIn - we set exp explicitly in payload
   };
-  
+
   return jwt.sign(tokenPayload, signKey, options);
 }
 
@@ -86,11 +86,11 @@ export function verifyToken(token: string): JWTPayload | null {
 
 export function extractTokenFromHeader(authHeader?: string): string | null {
   if (!authHeader) return null;
-  
+
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return null;
   }
-  
+
   return parts[1];
 }
