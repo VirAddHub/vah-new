@@ -100,7 +100,8 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
                 }
             }
             const errorMsg = (data && (data.message || data.error)) || res.statusText;
-            return { ok: false, error: errorMsg, code: res.status };
+            const errorCode = (data && data.code) || undefined;
+            return { ok: false, error: errorMsg, code: res.status, errorCode };
         }
 
         return { ok: true, data };

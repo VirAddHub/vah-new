@@ -251,6 +251,14 @@ const SignupSchema = z.object({
 });
 
 router.post("/signup", async (req, res) => {
+    // Debug logging: log incoming signup request
+    console.log('[SignupDebug] Incoming signup request', {
+        email: req.body?.email,
+        first_name: req.body?.first_name,
+        last_name: req.body?.last_name,
+        rawBody: JSON.stringify(req.body),
+    });
+
     const parsed = SignupSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ ok: false, error: "validation_error", details: parsed.error.flatten() });
@@ -260,6 +268,12 @@ router.post("/signup", async (req, res) => {
     // Normalize
     const email = i.email.toLowerCase();
 
+    // Debug logging: log normalized email
+    console.log('[SignupDebug] Normalized email', {
+        original: i.email,
+        normalized: email,
+    });
+
     try {
         // Enforce unique email at app layer (still rely on DB unique index if you have it)
         const pool = getPool();
@@ -267,8 +281,23 @@ router.post("/signup", async (req, res) => {
             `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1`,
             [email]
         );
-        if (Number(exists.rows[0]?.count ?? 0) > 0) {
-            return res.status(409).json({ ok: false, error: "email_exists" });
+        const count = Number(exists.rows[0]?.count ?? 0);
+        
+        if (count > 0) {
+            // Debug logging: log duplicate email detection
+            console.warn('[SignupDebug] Duplicate email detected', {
+                email: email,
+                normalizedEmail: email,
+                count: count,
+                existingUserQuery: `SELECT id, email, first_name, last_name FROM "user" WHERE email = $1`,
+            });
+            
+            return res.status(409).json({ 
+                ok: false, 
+                code: 'EMAIL_EXISTS',
+                error: "email_exists",
+                message: 'An account already exists with this email address.',
+            });
         }
 
         const hash = await bcrypt.hash(i.password, 12);
@@ -340,7 +369,18 @@ router.post("/signup", async (req, res) => {
     } catch (err: any) {
         const m = String(err?.message || "");
         if (m.includes("duplicate key value") && m.toLowerCase().includes("email")) {
-            return res.status(409).json({ ok: false, error: "email_exists" });
+            // Debug logging: log DB constraint violation
+            console.warn('[SignupDebug] Duplicate email detected via DB constraint', {
+                email: email,
+                error: m,
+            });
+            
+            return res.status(409).json({ 
+                ok: false, 
+                code: 'EMAIL_EXISTS',
+                error: "email_exists",
+                message: 'An account already exists with this email address.',
+            });
         }
         console.error("[auth/signup] error:", err);
         return res.status(500).json({ ok: false, error: "server_error" });

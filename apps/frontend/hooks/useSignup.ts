@@ -102,6 +102,10 @@ export function useSignup() {
             );
 
             if (!signupResponse.ok) {
+                // Handle EMAIL_EXISTS with friendly message
+                if (signupResponse.errorCode === 'EMAIL_EXISTS' || signupResponse.error === 'email_exists') {
+                    throw new Error('An account already exists with this email. Please log in or reset your password.');
+                }
                 throw new Error(signupResponse.error || 'Signup failed');
             }
 
