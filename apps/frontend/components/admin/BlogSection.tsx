@@ -124,7 +124,26 @@ export function BlogSection() {
                 credentials: 'include',
                 body: JSON.stringify(formData)
             });
-            const json = await response.json().catch(() => ({}));
+
+            // Check content-type before parsing JSON
+            const contentType = response.headers.get("content-type") || "";
+            let json: any = {};
+            
+            if (contentType.toLowerCase().includes("application/json")) {
+                try {
+                    json = await response.json();
+                } catch (err) {
+                    const text = await response.text().catch(() => "");
+                    console.error('[create-post] JSON parse error:', response.status, text.slice(0, 200));
+                    alert(`Failed to create post: Invalid response from server`);
+                    return;
+                }
+            } else {
+                const text = await response.text().catch(() => "");
+                console.error('[create-post] Non-JSON response:', response.status, contentType, text.slice(0, 200));
+                alert(`Failed to create post: ${text || `HTTP ${response.status}`}`);
+                return;
+            }
 
             if (!json?.ok) {
                 console.error('[create-post] failed', { status: response.status, json });
@@ -173,7 +192,26 @@ export function BlogSection() {
                 credentials: 'include',
                 body: JSON.stringify(formData)
             });
-            const json = await response.json().catch(() => ({}));
+
+            // Check content-type before parsing JSON
+            const contentType = response.headers.get("content-type") || "";
+            let json: any = {};
+            
+            if (contentType.toLowerCase().includes("application/json")) {
+                try {
+                    json = await response.json();
+                } catch (err) {
+                    const text = await response.text().catch(() => "");
+                    console.error('[update-post] JSON parse error:', response.status, text.slice(0, 200));
+                    alert(`Failed to update post: Invalid response from server`);
+                    return;
+                }
+            } else {
+                const text = await response.text().catch(() => "");
+                console.error('[update-post] Non-JSON response:', response.status, contentType, text.slice(0, 200));
+                alert(`Failed to update post: ${text || `HTTP ${response.status}`}`);
+                return;
+            }
 
             if (!json?.ok) {
                 console.error('[update-post] failed', { status: response.status, json });
@@ -222,7 +260,26 @@ export function BlogSection() {
                 headers,
                 credentials: 'include'
             });
-            const json = await response.json().catch(() => ({}));
+
+            // Check content-type before parsing JSON
+            const contentType = response.headers.get("content-type") || "";
+            let json: any = {};
+            
+            if (contentType.toLowerCase().includes("application/json")) {
+                try {
+                    json = await response.json();
+                } catch (err) {
+                    const text = await response.text().catch(() => "");
+                    console.error('[delete-post] JSON parse error:', response.status, text.slice(0, 200));
+                    alert(`Failed to delete post: Invalid response from server`);
+                    return;
+                }
+            } else {
+                const text = await response.text().catch(() => "");
+                console.error('[delete-post] Non-JSON response:', response.status, contentType, text.slice(0, 200));
+                alert(`Failed to delete post: ${text || `HTTP ${response.status}`}`);
+                return;
+            }
 
             if (!json?.ok) {
                 console.error('[delete-post] failed', { status: response.status, json });
