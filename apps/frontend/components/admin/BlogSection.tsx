@@ -92,6 +92,7 @@ export function BlogSection() {
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
     const [isUploadingCover, setIsUploadingCover] = useState(false);
+    const [tagsInput, setTagsInput] = useState(''); // Comma-separated tags input
     const [formData, setFormData] = useState({
         slug: '',
         title: '',
@@ -134,6 +135,12 @@ export function BlogSection() {
 
     const handleCreatePost = async () => {
         try {
+            // Convert comma-separated tags to array
+            const tagsArray = tagsInput
+                .split(',')
+                .map(t => t.trim())
+                .filter(Boolean);
+
             const token = getToken();
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
@@ -142,7 +149,10 @@ export function BlogSection() {
                 method: 'POST',
                 headers,
                 credentials: 'include',
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    tags: tagsArray
+                })
             });
 
             let data: any;
@@ -191,6 +201,12 @@ export function BlogSection() {
         if (!editingPost) return;
 
         try {
+            // Convert comma-separated tags to array
+            const tagsArray = tagsInput
+                .split(',')
+                .map(t => t.trim())
+                .filter(Boolean);
+
             const token = getToken();
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
@@ -199,7 +215,10 @@ export function BlogSection() {
                 method: 'PUT',
                 headers,
                 credentials: 'include',
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    tags: tagsArray
+                })
             });
 
             let data: any;
@@ -312,6 +331,7 @@ export function BlogSection() {
             ogDesc: '',
             noindex: false
         });
+        setTagsInput('');
     };
 
     const startEdit = (post: BlogPost) => {
@@ -328,6 +348,8 @@ export function BlogSection() {
             ogDesc: post.ogDesc || '',
             noindex: post.noindex
         });
+        // Convert tags array to comma-separated string for input
+        setTagsInput(post.tags?.join(', ') || '');
     };
 
     const formatDate = (dateString: string) => {
@@ -684,11 +706,8 @@ export function BlogSection() {
                                 <Label htmlFor="tags">Tags (comma-separated)</Label>
                                 <Input
                                     id="tags"
-                                    value={formData.tags.join(', ')}
-                                    onChange={(e) => setFormData(prev => ({
-                                        ...prev,
-                                        tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
-                                    }))}
+                                    value={tagsInput}
+                                    onChange={(e) => setTagsInput(e.target.value)}
                                     placeholder="tag1, tag2, tag3"
                                 />
                             </div>

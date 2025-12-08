@@ -4,7 +4,7 @@ try {
   if (process.env.ANALYZE === 'true') {
     withBundleAnalyzer = require('@next/bundle-analyzer')({
       enabled: true,
-});
+    });
   }
 } catch (err) {
   console.warn('[next.config] @next/bundle-analyzer not available, skipping bundle analysis');
@@ -16,7 +16,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
-  
+
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -32,7 +32,7 @@ const nextConfig = {
       { protocol: "https", hostname: "i.ibb.co" },
     ],
   },
-  
+
   // Experimental features for performance
   experimental: {
     optimizeCss: true,
@@ -46,7 +46,7 @@ const nextConfig = {
       },
     },
   },
-  
+
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
@@ -69,15 +69,15 @@ const nextConfig = {
           },
         },
       };
-      
+
       // Tree shaking optimizations
       config.optimization.usedExports = true;
       config.optimization.sideEffects = false;
     }
-    
+
     return config;
   },
-  
+
   // ESLint and TypeScript configs
   eslint: {
     ignoreDuringBuilds: true

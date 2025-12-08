@@ -145,9 +145,6 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         <h1 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] tracking-tight mb-6 text-foreground leading-tight">
                             {post.title}
                         </h1>
-                        <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-3xl mx-auto">
-                            {post.description}
-                        </p>
                         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
@@ -189,8 +186,25 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     </Card>
                 </div>
 
+                {/* Author Signature Block */}
+                <div className="max-w-4xl mx-auto mt-10 pt-6 border-t border-border">
+                    <footer className="flex items-center gap-4">
+                        <img
+                            src="/images/authors/liban.jpg"
+                            alt="Liban Adan"
+                            className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <div>
+                            <p className="font-semibold">Liban Adan</p>
+                            <p className="text-sm text-muted-foreground">
+                                Founder, VirtualAddressHub
+                            </p>
+                        </div>
+                    </footer>
+                </div>
+
                 {/* Article Footer */}
-                <div className="max-w-4xl mx-auto mt-16 pt-8 border-t border-border">
+                <div className="max-w-4xl mx-auto mt-8 pt-8 border-t border-border">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Button variant="outline" onClick={onBack}>

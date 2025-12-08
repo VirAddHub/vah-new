@@ -115,11 +115,6 @@ export default async function BlogPostPage({
           <h1 className="mt-2 text-3xl font-semibold text-foreground">
             {post.title}
           </h1>
-          {post.description && (
-            <p className="mt-3 text-lg text-muted-foreground">
-              {post.description}
-            </p>
-          )}
 
           {hasHtml ? (
             <article
@@ -141,6 +136,21 @@ export default async function BlogPostPage({
               </ReactMarkdown>
             </article>
           )}
+
+          {/* Author Signature Block */}
+          <footer className="mt-10 border-t pt-6 flex items-center gap-4">
+            <img
+              src="/images/authors/liban.jpg"
+              alt="Liban Adan"
+              className="h-12 w-12 rounded-full object-cover"
+            />
+            <div>
+              <p className="font-semibold">Liban Adan</p>
+              <p className="text-sm text-muted-foreground">
+                Founder, VirtualAddressHub
+              </p>
+            </div>
+          </footer>
         </div>
       </main>
       <FooterWithNav />
