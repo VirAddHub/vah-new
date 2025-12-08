@@ -46,6 +46,11 @@ if (!WEBHOOK_SECRET) {
 const WEBHOOK_URL_STRING: string = WEBHOOK_URL;
 const WEBHOOK_SECRET_STRING: string = WEBHOOK_SECRET;
 
+// In-memory dedupe: track processed OneDrive file IDs to avoid re-sending same files
+// This prevents the worker from repeatedly POSTing files that were already processed
+// in this worker process lifetime (backend dedupe is still the safety net)
+const processedOneDriveFileIds = new Set<string>();
+
 /**
  * Process a single file: parse, call webhook
  * Returns: 'created' | 'skipped' | 'failed'
@@ -299,8 +304,32 @@ async function runOnce(): Promise<void> {
     let failedCount = 0;
     
     for (const file of files) {
+      const oneDriveFileId = file.id;
+      
+      if (!oneDriveFileId) {
+        console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (no file ID)`);
+        failedCount++;
+        continue;
+      }
+      
+      // Skip if we've already processed this file in this worker process
+      if (processedOneDriveFileIds.has(oneDriveFileId)) {
+        console.log('[onedriveMailIngest] Skipping already-processed file', {
+          oneDriveFileId,
+          name: file.name,
+        });
+        skippedCount++;
+        continue;
+      }
+      
       try {
         const result = await processFile(file);
+        
+        // Only mark as processed after a successful call (created or skipped by backend)
+        if (result === 'created' || result === 'skipped') {
+          processedOneDriveFileIds.add(oneDriveFileId);
+        }
+        
         if (result === 'created') {
           createdCount++;
         } else if (result === 'skipped') {
