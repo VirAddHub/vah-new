@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { mdxComponents } from "../app/blog/_components/mdx-components";
+import { parseJsonSafe } from "@/lib/http";
 
 interface BlogPostPageProps {
     slug: string;
@@ -27,34 +28,26 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
                 const response = await fetch(`${apiUrl}/api/blog/posts/${slug}`);
 
-                const contentType = response.headers.get("content-type") || "";
-                if (!contentType.toLowerCase().includes("application/json")) {
-                    const text = await response.text().catch(() => "");
-                    console.error('[BlogPostPage] Non-JSON response:', response.status, contentType, text.slice(0, 200));
-                    setError('Failed to load blog post');
-                    setLoading(false);
-                    return;
-                }
-
                 let data: any;
                 try {
-                    data = await response.json();
-                } catch (err) {
-                    const text = await response.text().catch(() => "");
-                    console.error('[BlogPostPage] JSON parse error:', response.status, text.slice(0, 200));
-                    setError('Failed to load blog post');
+                    data = await parseJsonSafe(response);
+                } catch (err: any) {
+                    console.error('[BlogPostPage] Blog request failed with non-JSON response:', err);
+                    setError(`Failed to load blog post: ${err.message || 'Invalid response from server'}`);
                     setLoading(false);
                     return;
                 }
 
-                if (data.ok) {
-                    setPost(data.data);
-                } else {
-                    setError('Post not found');
+                if (!response.ok || !data?.ok) {
+                    setError(data?.error || 'Post not found');
+                    setLoading(false);
+                    return;
                 }
-            } catch (err) {
+
+                setPost(data.data);
+            } catch (err: any) {
                 console.error('Error fetching blog post:', err);
-                setError('Failed to load blog post');
+                setError(err.message || 'Failed to load blog post');
             } finally {
                 setLoading(false);
             }

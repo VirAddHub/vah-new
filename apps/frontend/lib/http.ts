@@ -71,4 +71,27 @@ export async function safeJson(res: Response): Promise<any> {
     }
 }
 
+/**
+ * Parse JSON from a Response, checking content-type first
+ * Throws a clear error if response is not JSON or parsing fails
+ * Use this when you expect JSON and want to fail fast with a clear error
+ */
+export async function parseJsonSafe(res: Response): Promise<any> {
+    const contentType = res.headers.get('content-type') || '';
+    
+    if (!contentType.toLowerCase().includes('application/json')) {
+        const text = await res.text().catch(() => 'Unable to read response');
+        console.error('[parseJsonSafe] Expected JSON response, got text instead:', text.slice(0, 200));
+        throw new Error(`Expected JSON, got: ${text.slice(0, 200)}`);
+    }
+    
+    try {
+        return await res.json();
+    } catch (err) {
+        const text = await res.text().catch(() => 'Unable to read response');
+        console.error('[parseJsonSafe] Failed to parse JSON response:', text.slice(0, 200));
+        throw new Error(`Failed to parse JSON: ${text.slice(0, 200)}`);
+    }
+}
+
 export default api;

@@ -15,6 +15,19 @@ const router = Router();
  */
 async function healthCheck(req: Request, res: Response) {
     try {
+        // Add CORS headers for frontend access
+        const origin = req.headers.origin as string;
+        const allowedOrigins = [
+            'https://vah-new-frontend-75d6.vercel.app',
+            'https://vah-frontend-final.vercel.app',
+            'http://localhost:3000'
+        ];
+        if (origin && allowedOrigins.includes(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+        }
+
         const startTime = Date.now();
 
         // Basic service info

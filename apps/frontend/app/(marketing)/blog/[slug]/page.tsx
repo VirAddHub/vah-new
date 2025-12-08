@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
+import { parseJsonSafe } from '@/lib/http';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -48,19 +49,11 @@ async function getPost(slug: string): Promise<BlogPost | null> {
       return null;
     }
 
-    const contentType = res.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().includes("application/json")) {
-      const text = await res.text().catch(() => "");
-      console.error('[BlogPostPage] Non-JSON response:', res.status, contentType, text.slice(0, 200));
-      return null;
-    }
-
     let json: any;
     try {
-      json = await res.json();
-    } catch (err) {
-      const text = await res.text().catch(() => "");
-      console.error('[BlogPostPage] JSON parse error:', res.status, text.slice(0, 200));
+      json = await parseJsonSafe(res);
+    } catch (err: any) {
+      console.error('[BlogPostPage] Blog request failed with non-JSON response:', err);
       return null;
     }
 

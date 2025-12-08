@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { parseNavigationHash } from '@/lib/hash-parser';
 
 interface NavigationContextType {
   currentPage: string;
@@ -67,14 +68,14 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      const hash = window.location.hash.slice(1);
-      if (hash) {
-        const [page, dataString] = hash.split('-');
-        const data = dataString ? JSON.parse(dataString) : undefined;
-        setCurrentPage(page);
+      const hash = window.location.hash;
+      const parsed = parseNavigationHash(hash);
+      
+      if (parsed) {
+        setCurrentPage(parsed.page);
         
         // Update history index
-        const pageIndex = history.findIndex(h => h === page);
+        const pageIndex = history.findIndex(h => h === parsed.page);
         if (pageIndex !== -1) {
           setHistoryIndex(pageIndex);
         }
@@ -87,10 +88,10 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     window.addEventListener('popstate', handlePopState);
     
     // Initialize from URL hash
-    const hash = window.location.hash.slice(1);
-    if (hash) {
-      const [page] = hash.split('-');
-      setCurrentPage(page);
+    const hash = window.location.hash;
+    const parsed = parseNavigationHash(hash);
+    if (parsed) {
+      setCurrentPage(parsed.page);
     }
 
     return () => {

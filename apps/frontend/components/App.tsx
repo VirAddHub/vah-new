@@ -21,6 +21,7 @@ import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
 import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
+import { parseBlogHash } from "@/lib/hash-parser";
 
 export function App() {
   const { currentPage, navigate, goBack } = useNavigation();
@@ -53,12 +54,11 @@ export function App() {
         return <BlogPage onNavigate={navigate} />;
       case 'blog-post':
         // Extract slug from URL hash if available
-        const hash = window.location.hash.slice(1);
-        const [, dataString] = hash.split('-');
-        const data = dataString ? JSON.parse(dataString) : {};
+        const hash = window.location.hash;
+        const blogHashData = parseBlogHash(hash);
         return (
           <BlogPostPage
-            slug={data.slug || 'default-slug'}
+            slug={blogHashData?.slug || 'default-slug'}
             onNavigate={navigate}
             onBack={goBack}
           />
