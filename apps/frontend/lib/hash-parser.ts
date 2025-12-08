@@ -41,7 +41,7 @@ export function parseBlogHash(hash: string): { slug: string } | null {
 
 /**
  * Safely parse any navigation hash with data
- * Handles format: #page-{"key":"value"} or #blog-post-{"slug":"test"}
+ * Handles format: #post-{"slug":"test-post"} or #blog-post-{"slug":"test"}
  * Returns { page, data } or null if invalid
  */
 export function parseNavigationHash(hash: string): { page: string; data?: any } | null {
@@ -54,13 +54,38 @@ export function parseNavigationHash(hash: string): { page: string; data?: any } 
     return null;
   }
   
-  // Check for blog-post first (special case with hyphen in page name)
+  // Handle blog-post format: #blog-post-{"slug":"test"}
   if (hash.startsWith('#blog-post-')) {
     const blogData = parseBlogHash(hash);
     if (blogData) {
       return { page: 'blog-post', data: blogData };
     }
-    // If blog hash parsing fails, fall through to general parsing
+  }
+  
+  // Handle post format: #post-{"slug":"test-post"}
+  // This is the format actually being used in navigation
+  const postPrefix = 'post-';
+  if (withoutHash.startsWith(postPrefix)) {
+    const jsonPart = withoutHash.slice(postPrefix.length);
+    if (!jsonPart) {
+      return { page: 'post' };
+    }
+    
+    try {
+      const decoded = decodeURIComponent(jsonPart);
+      const parsed = JSON.parse(decoded) as any;
+      // Return as blog-post for consistency with the rest of the app
+      return { page: 'blog-post', data: parsed };
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[parseNavigationHash] Failed to parse post hash JSON, ignoring:',
+          jsonPart,
+          err
+        );
+      }
+      return { page: 'post' };
+    }
   }
   
   // Find where JSON data starts (look for '{' or '[')
@@ -97,7 +122,9 @@ export function parseNavigationHash(hash: string): { page: string; data?: any } 
   try {
     decoded = decodeURIComponent(dataString);
   } catch (err) {
-    console.error('[parseNavigationHash] Failed to decode hash data, ignoring:', dataString, err);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[parseNavigationHash] Failed to decode hash data, ignoring:', dataString, err);
+    }
     return { page };
   }
   
@@ -105,7 +132,9 @@ export function parseNavigationHash(hash: string): { page: string; data?: any } 
   try {
     data = JSON.parse(decoded);
   } catch (err) {
-    console.error('[parseNavigationHash] Failed to parse hash JSON, ignoring:', decoded, err);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[parseNavigationHash] Failed to parse hash JSON, ignoring:', decoded, err);
+    }
     return { page };
   }
   
