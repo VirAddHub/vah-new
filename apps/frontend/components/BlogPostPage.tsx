@@ -9,6 +9,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { mdxComponents } from "../app/blog/_components/mdx-components";
 import { parseJsonSafe } from "@/lib/http";
+import { formatBlogDate } from "@/lib/blog-date-formatter";
 
 interface BlogPostPageProps {
     slug: string;
@@ -136,24 +137,44 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
 
                 {/* Article Header */}
                 <div className="max-w-4xl mx-auto mb-12">
-                    <div className="text-center mb-8">
-                        {post.tags && post.tags.length > 0 && (
-                            <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs">
-                                {post.tags[0]}
-                            </Badge>
-                        )}
+                    <div className="mb-8">
                         <h1 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] tracking-tight mb-6 text-foreground leading-tight">
                             {post.title}
                         </h1>
-                        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {post.dateLong}
+
+                        {/* Post Meta Information */}
+                        <div className="text-sm text-muted-foreground space-y-1 mb-4">
+                            {post.updated && post.updated !== post.date && (
+                                <div>
+                                    <span className="font-medium">Updated On:</span>{' '}
+                                    {formatBlogDate(post.updated)}
+                                </div>
+                            )}
+                            <div>
+                                <span className="font-medium">Published:</span>{' '}
+                                {formatBlogDate(post.date)}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {post.readTime}
+                            <div>
+                                <span className="font-medium">by</span>{' '}
+                                <span>Liban Adan</span>
+                                {post.tags && post.tags.length > 0 && (
+                                    <>
+                                        {' '}
+                                        <span className="font-medium">in</span>{' '}
+                                        <span>{post.tags[0]}</span>
+                                    </>
+                                )}
                             </div>
+                        </div>
+
+                        {/* Read time and share */}
+                        <div className="flex items-center gap-6 text-sm text-muted-foreground mt-4">
+                            {post.readTime && (
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    {post.readTime}
+                                </div>
+                            )}
                             <Button variant="ghost" size="sm" className="gap-2">
                                 <Share2 className="h-4 w-4" />
                                 Share

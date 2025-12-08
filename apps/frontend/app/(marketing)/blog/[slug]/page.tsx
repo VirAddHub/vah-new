@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 import { parseJsonSafe } from '@/lib/http';
+import { formatBlogDate } from '@/lib/blog-date-formatter';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,8 @@ type BlogPost = {
   excerpt?: string;
   date?: string;
   dateLong?: string;
+  updated?: string;
+  tags?: string[];
   readTime?: string;
   content?: string;
   html?: string;
@@ -111,10 +114,34 @@ export default async function BlogPostPage({
       <HeaderWithNav />
       <main className="flex-1 relative z-0 w-full">
         <div className="max-w-3xl mx-auto px-4 py-12">
-          <p className="text-sm text-muted-foreground">{details}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground">
+          <h1 className="text-3xl font-semibold text-foreground mb-6">
             {post.title}
           </h1>
+
+          {/* Post Meta Information */}
+          <div className="text-sm text-muted-foreground space-y-1 mb-8">
+            {post.updated && post.updated !== post.date && (
+              <div>
+                <span className="font-medium">Updated On:</span>{' '}
+                {formatBlogDate(post.updated)}
+              </div>
+            )}
+            <div>
+              <span className="font-medium">Published:</span>{' '}
+              {formatBlogDate(post.date)}
+            </div>
+            <div>
+              <span className="font-medium">by</span>{' '}
+              <span>Liban Adan</span>
+              {post.tags && post.tags.length > 0 && (
+                <>
+                  {' '}
+                  <span className="font-medium">in</span>{' '}
+                  <span>{post.tags[0]}</span>
+                </>
+              )}
+            </div>
+          </div>
 
           {hasHtml ? (
             <article
