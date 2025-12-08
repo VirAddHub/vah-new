@@ -58,7 +58,7 @@ const processedOneDriveFileIds = new Set<string>();
 async function processFile(file: { id: string; name: string; createdDateTime: string; downloadUrl?: string }): Promise<'created' | 'skipped' | 'failed'> {
   // Parse filename
   const parsed = parseMailFilename(file.name);
-  
+
   if (!parsed) {
     console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (filename pattern did not match)`);
     return 'failed';
@@ -278,7 +278,7 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
       }
     }
   }
-  
+
   return 'created';
 }
 
@@ -291,7 +291,8 @@ async function runOnce(): Promise<void> {
   try {
     // List all PDF files in inbox
     const files = await listInboxFiles();
-    console.log(`[onedriveMailIngest] Found ${files.length} PDF file(s) in inbox`);
+    console.log(`[onedriveMailIngest] 📦 Found ${files.length} PDF file(s) in inbox`);
+    console.log(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedOneDriveFileIds.size} file(s) already processed`);
 
     if (files.length === 0) {
       console.log('[onedriveMailIngest] No files to process');
@@ -302,34 +303,42 @@ async function runOnce(): Promise<void> {
     let createdCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
-    
+
     for (const file of files) {
       const oneDriveFileId = file.id;
-      
+
       if (!oneDriveFileId) {
         console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (no file ID)`);
         failedCount++;
         continue;
       }
-      
+
       // Skip if we've already processed this file in this worker process
       if (processedOneDriveFileIds.has(oneDriveFileId)) {
-        console.log('[onedriveMailIngest] Skipping already-processed file', {
+        console.log('[onedriveMailIngest] ⏭️  SKIPPING already-processed file (in-memory dedupe)', {
           oneDriveFileId,
-          name: file.name,
+          fileName: file.name,
+          reason: 'File already processed in this worker process',
+          processedCount: processedOneDriveFileIds.size,
         });
         skippedCount++;
         continue;
       }
-      
+
       try {
         const result = await processFile(file);
         
         // Only mark as processed after a successful call (created or skipped by backend)
         if (result === 'created' || result === 'skipped') {
           processedOneDriveFileIds.add(oneDriveFileId);
+          console.log('[onedriveMailIngest] ✅ Marked file as processed (in-memory)', {
+            oneDriveFileId,
+            fileName: file.name,
+            result,
+            totalProcessed: processedOneDriveFileIds.size,
+          });
         }
-        
+
         if (result === 'created') {
           createdCount++;
         } else if (result === 'skipped') {
@@ -344,10 +353,12 @@ async function runOnce(): Promise<void> {
       }
     }
 
-    console.log(`[onedriveMailIngest] Mail ingestion completed:`, {
+    console.log(`[onedriveMailIngest] ✅ Mail ingestion completed:`, {
       created: createdCount,
       skipped: skippedCount,
       failed: failedCount,
+      totalInCache: processedOneDriveFileIds.size,
+      summary: `${createdCount} new, ${skippedCount} skipped (${skippedCount > 0 ? 'in-memory dedupe' : 'none'}), ${failedCount} failed`,
     });
 
     // Give a small delay to ensure all async operations (like fetch) complete
@@ -388,7 +399,7 @@ async function startDaemon(): Promise<void> {
   // Get interval from env or default to 5 minutes
   const intervalMs = Number(process.env.ONEDRIVE_MAIL_POLL_INTERVAL_MS ?? '300000');
   const intervalMinutes = intervalMs / (60 * 1000);
-  
+
   console.log(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
 
   // Run immediately on boot
