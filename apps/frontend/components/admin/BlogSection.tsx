@@ -42,12 +42,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onr
  */
 async function parseJsonSafe(res: Response): Promise<any> {
     const contentType = res.headers.get('content-type') || '';
-    
+
     if (!contentType.toLowerCase().includes('application/json')) {
         const text = await res.text().catch(() => 'Unable to read response');
         throw new Error(`Expected JSON response, got: ${text.slice(0, 200)}`);
     }
-    
+
     try {
         return await res.json();
     } catch (err) {
@@ -710,7 +710,7 @@ export function BlogSection() {
 
                         <div className="space-y-2">
                             <Label htmlFor="cover">Cover Image</Label>
-                            
+
                             {/* File input for upload */}
                             <div className="flex items-center gap-3">
                                 <Input
@@ -743,7 +743,7 @@ export function BlogSection() {
                                             src={formData.cover}
                                             alt="Cover preview"
                                             className="h-full w-full object-cover"
-                            />
+                                        />
                                     </div>
                                 </div>
                             )}

@@ -327,7 +327,7 @@ async function runOnce(): Promise<void> {
 
       try {
         const result = await processFile(file);
-        
+
         // Only mark as processed after a successful call (created or skipped by backend)
         if (result === 'created' || result === 'skipped') {
           processedOneDriveFileIds.add(oneDriveFileId);
