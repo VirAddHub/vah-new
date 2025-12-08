@@ -1,112 +1,79 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const matter = require("gray-matter");
+const { getPool } = require("../src/server/db");
 
 const router = express.Router();
 
-// Blog posts directory - points to root-level /content/blog
-// __dirname is apps/backend/routes, so go up 3 levels to repo root, then into content/blog
-const POSTS_DIR = path.resolve(__dirname, '..', '..', '..', 'content', 'blog');
-console.log('BLOG_DIR ->', POSTS_DIR);
+// Helper function to get post by slug from database
+async function getPostBySlug(slug) {
+    try {
+        const pool = getPool();
+        const result = await pool.query(
+            `SELECT 
+                slug, title, description, content, excerpt, date, updated, tags, cover, 
+                status, og_title, og_desc, noindex
+            FROM blog_posts 
+            WHERE slug = $1`,
+            [slug]
+        );
 
-// Ensure posts directory exists
-if (!fs.existsSync(POSTS_DIR)) {
-    fs.mkdirSync(POSTS_DIR, { recursive: true });
-}
+        if (result.rows.length === 0) return null;
 
-// Helper function to get all post slugs
-function getAllPostSlugs() {
-    if (!fs.existsSync(POSTS_DIR)) return [];
-    return fs.readdirSync(POSTS_DIR)
-        .filter(f => f.endsWith(".mdx"))
-        .map(f => f.replace(/\.mdx$/, ""));
-}
-
-// Helper function to get post by slug
-function getPostBySlug(slug) {
-    const filePath = path.join(POSTS_DIR, `${slug}.mdx`);
-    if (!fs.existsSync(filePath)) return null;
-
-    const raw = fs.readFileSync(filePath, "utf8");
-    const { data, content } = matter(raw);
-
-    return {
-        slug,
-        title: data.title || "",
-        description: data.description || "",
-        date: data.date || new Date().toISOString(),
-        updated: data.updated || null,
-        tags: data.tags || [],
-        cover: data.cover || "",
-        status: data.status || "draft",
-        ogTitle: data.ogTitle || "",
-        ogDesc: data.ogDesc || "",
-        noindex: data.noindex || false,
-        content,
-        excerpt: content.substring(0, 200) + "..."
-    };
-}
-
-// Helper function to save post
-function savePost(slug, postData) {
-    const filePath = path.join(POSTS_DIR, `${slug}.mdx`);
-
-    const frontMatter = {
-        title: postData.title,
-        description: postData.description,
-        date: postData.date,
-        updated: postData.updated || new Date().toISOString(),
-        tags: postData.tags || [],
-        cover: postData.cover || "",
-        status: postData.status || "draft",
-        ogTitle: postData.ogTitle || "",
-        ogDesc: postData.ogDesc || "",
-        noindex: postData.noindex || false
-    };
-
-    // Generate front matter manually to avoid gray-matter issues
-    const frontMatterString = Object.entries(frontMatter)
-        .map(([key, value]) => {
-            if (Array.isArray(value)) {
-                return `${key}: [${value.map(v => `"${v}"`).join(', ')}]`;
-            } else if (typeof value === 'string') {
-                return `${key}: "${value}"`;
-            } else if (typeof value === 'boolean') {
-                return `${key}: ${value}`;
-            } else {
-                return `${key}: "${value}"`;
-            }
-        })
-        .join('\n');
-    
-    const content = `---\n${frontMatterString}\n---\n\n${postData.content}`;
-
-    fs.writeFileSync(filePath, content, "utf8");
-    return true;
-}
-
-// Helper function to delete post
-function deletePost(slug) {
-    const filePath = path.join(POSTS_DIR, `${slug}.mdx`);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        return true;
+        const post = result.rows[0];
+        return {
+            slug: post.slug,
+            title: post.title,
+            description: post.description || "",
+            date: post.date,
+            updated: post.updated,
+            tags: post.tags || [],
+            cover: post.cover || "",
+            status: post.status || "draft",
+            ogTitle: post.og_title || "",
+            ogDesc: post.og_desc || "",
+            noindex: post.noindex || false,
+            content: post.content,
+            excerpt: post.excerpt || (post.content ? post.content.substring(0, 200) + "..." : "")
+        };
+    } catch (error) {
+        console.error(`[getPostBySlug] Error reading post "${slug}":`, error);
+        return null;
     }
-    return false;
 }
 
 // GET /api/admin/blog/posts - List all blog posts
-router.get("/blog/posts", (req, res) => {
+router.get("/blog/posts", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const includeDrafts = req.query.includeDrafts === "true";
-        const slugs = getAllPostSlugs();
-        const posts = slugs
-            .map(slug => getPostBySlug(slug))
-            .filter(post => post !== null)
-            .filter(post => includeDrafts || post.status !== "draft")
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const pool = getPool();
+        
+        let query = `SELECT 
+            slug, title, description, content, excerpt, date, updated, tags, cover, 
+            status, og_title, og_desc, noindex
+        FROM blog_posts`;
+        
+        if (!includeDrafts) {
+            query += ` WHERE status != 'draft'`;
+        }
+        
+        query += ` ORDER BY date DESC`;
+
+        const result = await pool.query(query);
+        const posts = result.rows.map(post => ({
+            slug: post.slug,
+            title: post.title,
+            description: post.description || "",
+            date: post.date,
+            updated: post.updated,
+            tags: post.tags || [],
+            cover: post.cover || "",
+            status: post.status || "draft",
+            ogTitle: post.og_title || "",
+            ogDesc: post.og_desc || "",
+            noindex: post.noindex || false,
+            content: post.content,
+            excerpt: post.excerpt || (post.content ? post.content.substring(0, 200) + "..." : "")
+        }));
 
         res.json({ ok: true, data: posts });
     } catch (error) {
@@ -116,11 +83,11 @@ router.get("/blog/posts", (req, res) => {
 });
 
 // GET /api/admin/blog/posts/:slug - Get specific blog post
-router.get("/blog/posts/:slug", (req, res) => {
+router.get("/blog/posts/:slug", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
-        const post = getPostBySlug(slug);
+        const post = await getPostBySlug(slug);
 
         if (!post) {
             return res.status(404).json({ ok: false, error: "Post not found" });
@@ -134,7 +101,7 @@ router.get("/blog/posts/:slug", (req, res) => {
 });
 
 // POST /api/admin/blog/posts - Create new blog post
-router.post("/blog/posts", (req, res) => {
+router.post("/blog/posts", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug, title, description, content, tags, cover, status, ogTitle, ogDesc, noindex } = req.body;
@@ -144,29 +111,56 @@ router.post("/blog/posts", (req, res) => {
         }
 
         // Check if post already exists
-        if (getPostBySlug(slug)) {
+        const existing = await getPostBySlug(slug);
+        if (existing) {
             return res.status(409).json({ ok: false, error: "Post with this slug already exists" });
         }
 
         // Normalize status - only 'draft' or 'published'
         const normalizedStatus = (status === "draft" || status === "published") ? status : "published";
+        const now = new Date().toISOString();
+        const excerpt = content ? content.substring(0, 200) + "..." : "";
+
+        const pool = getPool();
+        await pool.query(
+            `INSERT INTO blog_posts (
+                slug, title, description, content, excerpt, date, updated, tags, cover, 
+                status, og_title, og_desc, noindex, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [
+                slug,
+                title,
+                description || "",
+                content,
+                excerpt,
+                now,
+                now,
+                tags || [],
+                cover || "",
+                normalizedStatus,
+                ogTitle || "",
+                ogDesc || "",
+                noindex || false,
+                now,
+                now
+            ]
+        );
 
         const postData = {
             slug,
             title,
             description: description || "",
-            date: new Date().toISOString(),
-            updated: new Date().toISOString(),
+            date: now,
+            updated: now,
             tags: tags || [],
             cover: cover || "",
             status: normalizedStatus,
             ogTitle: ogTitle || "",
             ogDesc: ogDesc || "",
             noindex: noindex || false,
-            content
+            content,
+            excerpt
         };
-
-        savePost(slug, postData);
 
         res.json({ ok: true, data: postData });
     } catch (error) {
@@ -176,14 +170,14 @@ router.post("/blog/posts", (req, res) => {
 });
 
 // PUT /api/admin/blog/posts/:slug - Update blog post
-router.put("/blog/posts/:slug", (req, res) => {
+router.put("/blog/posts/:slug", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
         const { title, description, content, tags, cover, status, ogTitle, ogDesc, noindex } = req.body;
 
         // Check if post exists
-        const existingPost = getPostBySlug(slug);
+        const existingPost = await getPostBySlug(slug);
         if (!existingPost) {
             return res.status(404).json({ ok: false, error: "Post not found" });
         }
@@ -193,22 +187,57 @@ router.put("/blog/posts/:slug", (req, res) => {
             ? ((status === "draft" || status === "published") ? status : existingPost.status)
             : existingPost.status;
 
+        const now = new Date().toISOString();
+        const excerpt = content ? content.substring(0, 200) + "..." : existingPost.excerpt;
+
+        const pool = getPool();
+        await pool.query(
+            `UPDATE blog_posts SET
+                title = $1,
+                description = $2,
+                content = $3,
+                excerpt = $4,
+                updated = $5,
+                tags = $6,
+                cover = $7,
+                status = $8,
+                og_title = $9,
+                og_desc = $10,
+                noindex = $11,
+                updated_at = $12
+            WHERE slug = $13`,
+            [
+                title || existingPost.title,
+                description !== undefined ? description : existingPost.description,
+                content || existingPost.content,
+                excerpt,
+                now,
+                tags !== undefined ? tags : existingPost.tags,
+                cover !== undefined ? cover : existingPost.cover,
+                normalizedStatus,
+                ogTitle !== undefined ? ogTitle : existingPost.ogTitle,
+                ogDesc !== undefined ? ogDesc : existingPost.ogDesc,
+                noindex !== undefined ? noindex : existingPost.noindex,
+                now,
+                slug
+            ]
+        );
+
         const postData = {
             slug,
             title: title || existingPost.title,
-            description: description || existingPost.description,
+            description: description !== undefined ? description : existingPost.description,
             date: existingPost.date, // Keep original date
-            updated: new Date().toISOString(),
-            tags: tags || existingPost.tags,
-            cover: cover || existingPost.cover,
+            updated: now,
+            tags: tags !== undefined ? tags : existingPost.tags,
+            cover: cover !== undefined ? cover : existingPost.cover,
             status: normalizedStatus,
-            ogTitle: ogTitle || existingPost.ogTitle,
-            ogDesc: ogDesc || existingPost.ogDesc,
+            ogTitle: ogTitle !== undefined ? ogTitle : existingPost.ogTitle,
+            ogDesc: ogDesc !== undefined ? ogDesc : existingPost.ogDesc,
             noindex: noindex !== undefined ? noindex : existingPost.noindex,
-            content: content || existingPost.content
+            content: content || existingPost.content,
+            excerpt
         };
-
-        savePost(slug, postData);
 
         res.json({ ok: true, data: postData });
     } catch (error) {
@@ -218,19 +247,24 @@ router.put("/blog/posts/:slug", (req, res) => {
 });
 
 // DELETE /api/admin/blog/posts/:slug - Delete blog post
-router.delete("/blog/posts/:slug", (req, res) => {
+router.delete("/blog/posts/:slug", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const { slug } = req.params;
 
         // Check if post exists
-        if (!getPostBySlug(slug)) {
+        const existing = await getPostBySlug(slug);
+        if (!existing) {
             return res.status(404).json({ ok: false, error: "Post not found" });
         }
 
-        const deleted = deletePost(slug);
+        const pool = getPool();
+        const result = await pool.query(
+            `DELETE FROM blog_posts WHERE slug = $1`,
+            [slug]
+        );
 
-        if (deleted) {
+        if (result.rowCount > 0) {
             res.json({ ok: true, message: "Post deleted successfully" });
         } else {
             res.status(500).json({ ok: false, error: "Failed to delete post" });
@@ -242,20 +276,18 @@ router.delete("/blog/posts/:slug", (req, res) => {
 });
 
 // GET /api/admin/blog/categories - Get all categories/tags
-router.get("/blog/categories", (req, res) => {
+router.get("/blog/categories", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
-        const slugs = getAllPostSlugs();
-        const allTags = new Set();
+        const pool = getPool();
+        const result = await pool.query(
+            `SELECT DISTINCT unnest(tags) AS tag FROM blog_posts WHERE tags IS NOT NULL AND array_length(tags, 1) > 0`
+        );
 
-        slugs.forEach(slug => {
-            const post = getPostBySlug(slug);
-            if (post && post.tags) {
-                post.tags.forEach(tag => allTags.add(tag));
-            }
-        });
+        const allTags = result.rows.map(row => row.tag).filter(Boolean);
+        const uniqueTags = [...new Set(allTags)].sort();
 
-        res.json({ ok: true, data: Array.from(allTags).sort() });
+        res.json({ ok: true, data: uniqueTags });
     } catch (error) {
         console.error("Error fetching categories:", error);
         res.status(500).json({ ok: false, error: "Failed to fetch categories" });
