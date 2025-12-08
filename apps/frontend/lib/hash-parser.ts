@@ -41,7 +41,7 @@ export function parseBlogHash(hash: string): { slug: string } | null {
 
 /**
  * Safely parse any navigation hash with data
- * Handles format: #page-{"key":"value"}
+ * Handles format: #page-{"key":"value"} or #blog-post-{"slug":"test"}
  * Returns { page, data } or null if invalid
  */
 export function parseNavigationHash(hash: string): { page: string; data?: any } | null {
@@ -54,15 +54,40 @@ export function parseNavigationHash(hash: string): { page: string; data?: any } 
     return null;
   }
   
-  // Find the first '-' that separates page from data
-  const dashIndex = withoutHash.indexOf('-');
-  if (dashIndex === -1) {
-    // No data, just page name
+  // Check for blog-post first (special case with hyphen in page name)
+  if (hash.startsWith('#blog-post-')) {
+    const blogData = parseBlogHash(hash);
+    if (blogData) {
+      return { page: 'blog-post', data: blogData };
+    }
+    // If blog hash parsing fails, fall through to general parsing
+  }
+  
+  // Find where JSON data starts (look for '{' or '[')
+  // The data part starts with JSON, so we need to find the last '-' before the JSON
+  // But since page names can have hyphens, we look for the JSON start instead
+  let jsonStartIndex = -1;
+  for (let i = 0; i < withoutHash.length; i++) {
+    if (withoutHash[i] === '{' || withoutHash[i] === '[') {
+      jsonStartIndex = i;
+      break;
+    }
+  }
+  
+  if (jsonStartIndex === -1) {
+    // No JSON data, just page name
     return { page: withoutHash };
   }
   
-  const page = withoutHash.slice(0, dashIndex);
-  const dataString = withoutHash.slice(dashIndex + 1);
+  // Find the last '-' before the JSON start
+  const pageEndIndex = withoutHash.lastIndexOf('-', jsonStartIndex - 1);
+  if (pageEndIndex === -1) {
+    // No dash before JSON, treat entire string as page
+    return { page: withoutHash };
+  }
+  
+  const page = withoutHash.slice(0, pageEndIndex);
+  const dataString = withoutHash.slice(pageEndIndex + 1);
   
   if (!dataString) {
     return { page };
