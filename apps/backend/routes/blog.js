@@ -1,5 +1,11 @@
 const express = require("express");
-const { getPool } = require("../src/server/db");
+// Use dist path for production, fallback to src for development
+let getPool;
+try {
+    getPool = require("../dist/src/server/db").getPool;
+} catch {
+    getPool = require("../src/server/db").getPool;
+}
 
 const router = express.Router();
 
