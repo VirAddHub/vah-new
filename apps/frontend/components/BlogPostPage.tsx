@@ -156,7 +156,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                             </div>
                             <div>
                                 <span className="font-medium">by</span>{' '}
-                                <span>Liban Adan</span>
+                                <span>{post.authorName || "Liban Adan"}</span>
                                 {post.tags && post.tags.length > 0 && (
                                     <>
                                         {' '}
@@ -211,14 +211,14 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 <div className="max-w-4xl mx-auto mt-10 pt-6 border-t border-border">
                     <footer className="flex items-center gap-4">
                         <img
-                            src="/images/authors/liban.jpg"
-                            alt="Liban Adan"
+                            src={post.authorImage || "/images/authors/liban.jpg"}
+                            alt={post.authorName || "Liban Adan"}
                             className="h-12 w-12 rounded-full object-cover"
                         />
                         <div>
-                            <p className="font-semibold">Liban Adan</p>
+                            <p className="font-semibold">{post.authorName || "Liban Adan"}</p>
                             <p className="text-sm text-muted-foreground">
-                                Founder, VirtualAddressHub
+                                {post.authorTitle || "Founder, VirtualAddressHub"}
                             </p>
                         </div>
                     </footer>

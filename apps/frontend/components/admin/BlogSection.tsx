@@ -103,7 +103,10 @@ export function BlogSection() {
         status: 'published' as 'draft' | 'published',
         ogTitle: '',
         ogDesc: '',
-        noindex: false
+        noindex: false,
+        authorName: 'Liban Adan',
+        authorTitle: 'Founder, VirtualAddressHub',
+        authorImage: '/images/authors/liban.jpg'
     });
 
     // Fetch blog posts
@@ -329,7 +332,10 @@ export function BlogSection() {
             status: 'published',
             ogTitle: '',
             ogDesc: '',
-            noindex: false
+            noindex: false,
+            authorName: 'Liban Adan',
+            authorTitle: 'Founder, VirtualAddressHub',
+            authorImage: '/images/authors/liban.jpg'
         });
         setTagsInput('');
     };
@@ -346,7 +352,10 @@ export function BlogSection() {
             status: post.status,
             ogTitle: post.ogTitle || '',
             ogDesc: post.ogDesc || '',
-            noindex: post.noindex
+            noindex: post.noindex,
+            authorName: (post as any).authorName || 'Liban Adan',
+            authorTitle: (post as any).authorTitle || 'Founder, VirtualAddressHub',
+            authorImage: (post as any).authorImage || '/images/authors/liban.jpg'
         });
         // Convert tags array to comma-separated string for input
         setTagsInput(post.tags?.join(', ') || '');
@@ -766,6 +775,41 @@ export function BlogSection() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Author Information */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-sm font-semibold">Author Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="authorName">Author Name</Label>
+                                    <Input
+                                        id="authorName"
+                                        value={formData.authorName}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, authorName: e.target.value }))}
+                                        placeholder="Liban Adan"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="authorTitle">Author Title</Label>
+                                    <Input
+                                        id="authorTitle"
+                                        value={formData.authorTitle}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, authorTitle: e.target.value }))}
+                                        placeholder="Founder, VirtualAddressHub"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <Label htmlFor="authorImage">Author Image URL</Label>
+                                <Input
+                                    id="authorImage"
+                                    type="text"
+                                    value={formData.authorImage}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, authorImage: e.target.value }))}
+                                    placeholder="/images/authors/liban.jpg"
+                                />
+                            </div>
                         </div>
 
                         <div className="flex justify-end gap-2">

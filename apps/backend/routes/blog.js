@@ -86,7 +86,7 @@ router.get("/blog/posts/:slug", async (req, res) => {
         const result = await pool.query(
             `SELECT 
                 slug, title, description, content, excerpt, date, updated, tags, cover, 
-                status, og_title, og_desc, noindex
+                status, og_title, og_desc, noindex, author_name, author_title, author_image
             FROM blog_posts 
             WHERE slug = $1 AND status = 'published'`,
             [slug]
@@ -117,7 +117,10 @@ router.get("/blog/posts/:slug", async (req, res) => {
             noindex: post.noindex,
             content: post.content,
             excerpt: post.excerpt || (post.content ? post.content.substring(0, 200) + "..." : ""),
-            readTime: estimateReadTime(post.content || "")
+            readTime: estimateReadTime(post.content || ""),
+            authorName: post.author_name || "Liban Adan",
+            authorTitle: post.author_title || "Founder, VirtualAddressHub",
+            authorImage: post.author_image || "/images/authors/liban.jpg"
         };
 
         return res.json({ ok: true, data: responseData });
