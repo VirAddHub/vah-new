@@ -52,7 +52,7 @@ router.get("/blog/posts", async (req, res) => {
 
         let query = `SELECT 
             slug, title, description, content, excerpt, date, updated, tags, cover, 
-            status, og_title, og_desc, noindex
+            status, og_title, og_desc, noindex, author_name, author_title, author_image
         FROM blog_posts`;
 
         if (!includeDrafts) {
