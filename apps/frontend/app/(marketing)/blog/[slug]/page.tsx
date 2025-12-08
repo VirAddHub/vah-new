@@ -129,7 +129,7 @@ export default async function BlogPostPage({
             />
           ) : (
             <article className="prose prose-neutral max-w-none mt-8">
-              <ReactMarkdown 
+              <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   img: ({ node, ...props }) => (

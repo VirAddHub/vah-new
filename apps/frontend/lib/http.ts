@@ -56,15 +56,15 @@ export async function safeJson(res: Response): Promise<any> {
     try {
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
-        
+
         if (!text || !text.trim()) {
             return null;
         }
-        
+
         if (!contentType.includes("application/json")) {
             return text;
         }
-        
+
         return JSON.parse(text);
     } catch (error) {
         return null;
@@ -78,13 +78,13 @@ export async function safeJson(res: Response): Promise<any> {
  */
 export async function parseJsonSafe(res: Response): Promise<any> {
     const contentType = res.headers.get('content-type') || '';
-    
+
     if (!contentType.toLowerCase().includes('application/json')) {
         const text = await res.text().catch(() => 'Unable to read response');
         console.error('[parseJsonSafe] Expected JSON response, got text instead:', text.slice(0, 200));
         throw new Error(`Expected JSON, got: ${text.slice(0, 200)}`);
     }
-    
+
     try {
         return await res.json();
     } catch (err) {

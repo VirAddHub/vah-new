@@ -33,16 +33,16 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     // Update URL hash
     const hash = data ? `#${page}-${JSON.stringify(data)}` : `#${page}`;
     window.history.pushState({ page, data }, '', hash);
-    
+
     // Update state
     setCurrentPage(page);
-    
+
     // Update history
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(page);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    
+
     // Scroll to top
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   };
@@ -53,11 +53,11 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
       const previousPage = history[newIndex];
       setHistoryIndex(newIndex);
       setCurrentPage(previousPage);
-      
+
       // Update URL
       const hash = `#${previousPage}`;
       window.history.pushState({ page: previousPage }, '', hash);
-      
+
       // Scroll to top
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
@@ -70,10 +70,10 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     const handlePopState = (event: PopStateEvent) => {
       const hash = window.location.hash;
       const parsed = parseNavigationHash(hash);
-      
+
       if (parsed) {
         setCurrentPage(parsed.page);
-        
+
         // Update history index
         const pageIndex = history.findIndex(h => h === parsed.page);
         if (pageIndex !== -1) {
@@ -86,7 +86,7 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     };
 
     window.addEventListener('popstate', handlePopState);
-    
+
     // Initialize from URL hash
     const hash = window.location.hash;
     const parsed = parseNavigationHash(hash);

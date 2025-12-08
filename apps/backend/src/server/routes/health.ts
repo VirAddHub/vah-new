@@ -96,18 +96,18 @@ async function healthCheck(req: Request, res: Response) {
 async function statusGuardHealthCheck(req: Request, res: Response) {
     try {
         const gitSha = process.env.GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown';
-        
+
         const health = {
             status: 'healthy',
             timestamp: new Date().toISOString(),
-            
+
             // Feature flags
             flags: {
                 STRICT_STATUS_GUARD: process.env.STRICT_STATUS_GUARD || '0',
                 BFF_READS_ONLY: process.env.BFF_READS_ONLY || '0',
                 PERF_OPTIMIZATIONS: process.env.PERF_OPTIMIZATIONS || '0'
             },
-            
+
             // System info
             system: {
                 gitSha,
@@ -116,7 +116,7 @@ async function statusGuardHealthCheck(req: Request, res: Response) {
                 memoryUsage: process.memoryUsage(),
                 hostname: os.hostname()
             },
-            
+
             // Status guard configuration
             statusGuard: {
                 enabled: process.env.STRICT_STATUS_GUARD === '1',
@@ -125,14 +125,14 @@ async function statusGuardHealthCheck(req: Request, res: Response) {
                     Object.entries(ALLOWED).map(([from, to]) => [from, to])
                 )
             },
-            
+
             // BFF guard configuration
             bffGuard: {
                 enabled: process.env.BFF_READS_ONLY === '1',
                 blocksNonGet: process.env.BFF_READS_ONLY === '1'
             }
         };
-        
+
         res.json(health);
     } catch (error: any) {
         console.error('[HEALTH] Status guard health check failed:', error);
@@ -152,22 +152,22 @@ async function metricsHealthCheck(req: Request, res: Response) {
     try {
         const { metrics } = require('../../lib/metrics');
         const summary = metrics.getSummary();
-        
+
         const health = {
             status: 'healthy',
             timestamp: new Date().toISOString(),
-            
+
             metrics: {
                 totalStatusTransitions: (Object.values(summary.statusTransitions) as number[]).reduce((a, b) => a + b, 0),
                 totalIllegalAttempts: (Object.values(summary.illegalTransitions) as number[]).reduce((a, b) => a + b, 0),
                 totalApiErrors: (Object.values(summary.apiErrors) as number[]).reduce((a, b) => a + b, 0),
-                
+
                 // Breakdown by type
                 statusTransitions: summary.statusTransitions,
                 illegalTransitions: summary.illegalTransitions,
                 apiErrors: summary.apiErrors
             },
-            
+
             // Health indicators
             indicators: {
                 hasRecentActivity: (Object.values(summary.statusTransitions) as number[]).some(count => count > 0),
@@ -175,7 +175,7 @@ async function metricsHealthCheck(req: Request, res: Response) {
                 hasApiErrors: (Object.values(summary.apiErrors) as number[]).some(count => count > 0)
             }
         };
-        
+
         res.json(health);
     } catch (error: any) {
         console.error('[HEALTH] Metrics health check failed:', error);
