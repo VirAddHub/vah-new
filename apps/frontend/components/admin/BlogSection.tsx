@@ -110,17 +110,19 @@ export function BlogSection() {
     });
 
     // Fetch blog posts
-    const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<{ ok: boolean; data: BlogPost[] }>(
+    // useAuthedSWR already unwraps { ok: true, data: [...] } to just return the data array
+    const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<BlogPost[]>(
         '/api/admin/blog/posts?includeDrafts=true'
     );
 
     // Fetch categories/tags
-    const { data: categoriesData } = useAuthedSWR<{ ok: boolean; data: string[] }>(
+    const { data: categoriesData } = useAuthedSWR<string[]>(
         '/api/admin/blog/categories'
     );
 
-    const posts = postsData?.data || [];
-    const categories = categoriesData?.data || [];
+    // useAuthedSWR already unwraps the response, so postsData is already the array
+    const posts = postsData || [];
+    const categories = categoriesData || [];
 
     // Filter posts
     const filteredPosts = useMemo(() => {
