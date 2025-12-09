@@ -93,6 +93,8 @@ export function BlogSection() {
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
     const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [tagsInput, setTagsInput] = useState(''); // Comma-separated tags input
+    const [page, setPage] = useState(1);
+    const pageSize = 20; // Posts per page
     const [formData, setFormData] = useState({
         slug: '',
         title: '',
@@ -109,10 +111,10 @@ export function BlogSection() {
         authorImage: '/images/authors/liban.jpg'
     });
 
-    // Fetch blog posts
-    // useAuthedSWR already unwraps { ok: true, data: [...] } to just return the data array
-    const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<BlogPost[]>(
-        '/api/admin/blog/posts?includeDrafts=true'
+    // Fetch blog posts with pagination
+    // useAuthedSWR handles { ok: true, items: [...], total, page, pageSize } format
+    const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<{ items: BlogPost[]; total: number; page: number; pageSize: number }>(
+        ['/api/admin/blog/posts', { includeDrafts: 'true', page: String(page), pageSize: String(pageSize) }]
     );
 
     // Fetch categories/tags
@@ -120,23 +122,31 @@ export function BlogSection() {
         '/api/admin/blog/categories'
     );
 
-    // useAuthedSWR already unwraps the response, so postsData is already the array
-    const posts = postsData || [];
+    // Extract posts and pagination info
+    const posts = postsData?.items || [];
+    const totalPosts = postsData?.total || 0;
+    const totalPages = Math.ceil(totalPosts / pageSize);
     const categories = categoriesData || [];
 
-    // Filter posts
+    // Client-side filtering (for search, status, tags)
     const filteredPosts = useMemo(() => {
         return posts.filter(post => {
-            const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                post.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                post.content.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = !searchTerm || 
+                post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                post.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                post.content?.toLowerCase().includes(searchTerm.toLowerCase());
 
             const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
-            const matchesTag = tagFilter === 'all' || post.tags.includes(tagFilter);
+            const matchesTag = tagFilter === 'all' || (post.tags && post.tags.includes(tagFilter));
 
             return matchesSearch && matchesStatus && matchesTag;
         });
     }, [posts, searchTerm, statusFilter, tagFilter]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, statusFilter, tagFilter]);
 
     const handleCreatePost = async () => {
         try {
@@ -559,7 +569,7 @@ export function BlogSection() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5" />
-                        Blog Posts ({filteredPosts.length})
+                        Blog Posts ({totalPosts > 0 ? `${filteredPosts.length} of ${totalPosts}` : filteredPosts.length})
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -677,6 +687,60 @@ export function BlogSection() {
                         </TableBody>
                     </Table>
                 </CardContent>
+                
+                {/* Pagination */}
+                {totalPosts > pageSize && (
+                    <div className="border-t px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalPosts)} of {totalPosts} posts
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum: number;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (page <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (page >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = page - 2 + i;
+                                        }
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={page === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setPage(pageNum)}
+                                                className="min-w-[2.5rem]"
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page >= totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </Card>
 
             {/* Create/Edit Form Modal */}

@@ -49,25 +49,37 @@ async function getPostBySlug(slug) {
     }
 }
 
-// GET /api/admin/blog/posts - List all blog posts
+// GET /api/admin/blog/posts - List all blog posts with pagination
 router.get("/blog/posts", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const includeDrafts = req.query.includeDrafts === "true";
+        const page = parseInt(req.query.page as string) || 1;
+        const pageSize = parseInt(req.query.pageSize as string) || 20;
+        const offset = (page - 1) * pageSize;
+        
         const pool = getPool();
-
+        
+        // Build WHERE clause
+        let whereClause = '';
+        if (!includeDrafts) {
+            whereClause = ` WHERE status != 'draft'`;
+        }
+        
+        // Get total count
+        const countQuery = `SELECT COUNT(*) as total FROM blog_posts${whereClause}`;
+        const countResult = await pool.query(countQuery);
+        const total = parseInt(countResult.rows[0].total);
+        
+        // Get paginated posts
         let query = `SELECT 
             slug, title, description, content, excerpt, date, updated, tags, cover, 
             status, og_title, og_desc, noindex, author_name, author_title, author_image
-        FROM blog_posts`;
+        FROM blog_posts${whereClause}
+        ORDER BY date DESC
+        LIMIT $1 OFFSET $2`;
 
-        if (!includeDrafts) {
-            query += ` WHERE status != 'draft'`;
-        }
-
-        query += ` ORDER BY date DESC`;
-
-        const result = await pool.query(query);
+        const result = await pool.query(query, [pageSize, offset]);
         const posts = result.rows.map(post => ({
             slug: post.slug,
             title: post.title,
@@ -87,7 +99,13 @@ router.get("/blog/posts", async (req, res) => {
             authorImage: post.author_image || "/images/authors/liban.jpg"
         }));
 
-        res.json({ ok: true, data: posts });
+        res.json({ 
+            ok: true, 
+            items: posts,
+            total: total,
+            page: page,
+            pageSize: pageSize
+        });
     } catch (error) {
         console.error("Error fetching blog posts:", error);
         res.status(500).json({ ok: false, error: "Failed to fetch posts" });
