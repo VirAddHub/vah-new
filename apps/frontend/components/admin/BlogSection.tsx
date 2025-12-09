@@ -572,73 +572,106 @@ export function BlogSection() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredPosts.map((post) => (
-                                <TableRow key={post.slug}>
-                                    <TableCell>
-                                        <div>
-                                            <div className="font-medium">{post.title}</div>
-                                            <div className="text-sm text-muted-foreground">{post.slug}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
-                                            {post.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {post.tags.slice(0, 2).map(tag => (
-                                                <Badge key={tag} variant="outline" className="text-xs">
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                            {post.tags.length > 2 && (
-                                                <Badge variant="outline" className="text-xs">
-                                                    +{post.tags.length - 2}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="text-sm">
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" />
-                                                {formatDate(post.date)}
-                                            </div>
-                                            {post.updated && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    Updated: {formatDate(post.updated)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => startEdit(post)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDeletePost(post.slug, post.title)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                            {postsError ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-destructive">
+                                        Error loading posts: {postsError.message || 'Unknown error'}
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ) : filteredPosts.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                        {posts.length === 0 ? (
+                                            <div>
+                                                <p className="text-lg font-medium mb-2">No blog posts yet</p>
+                                                <p className="text-sm">Click "New Post" to create your first blog post</p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <p className="text-lg font-medium mb-2">No posts match your filters</p>
+                                                <p className="text-sm">Try adjusting your search or filter criteria</p>
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredPosts.map((post) => (
+                                    <TableRow key={post.slug}>
+                                        <TableCell>
+                                            <div>
+                                                <div className="font-medium">{post.title}</div>
+                                                <div className="text-sm text-muted-foreground">{post.slug}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                                                {post.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-wrap gap-1">
+                                                {post.tags && post.tags.length > 0 ? (
+                                                    <>
+                                                        {post.tags.slice(0, 2).map(tag => (
+                                                            <Badge key={tag} variant="outline" className="text-xs">
+                                                                {tag}
+                                                            </Badge>
+                                                        ))}
+                                                        {post.tags.length > 2 && (
+                                                            <Badge variant="outline" className="text-xs">
+                                                                +{post.tags.length - 2}
+                                                            </Badge>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">No tags</span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {formatDate(post.date)}
+                                                </div>
+                                                {post.updated && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Updated: {formatDate(post.updated)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                                                    title="View post"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => startEdit(post)}
+                                                    title="Edit post"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleDeletePost(post.slug, post.title)}
+                                                    title="Delete post"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

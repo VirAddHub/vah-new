@@ -81,7 +81,10 @@ router.get("/blog/posts", async (req, res) => {
             ogDesc: post.og_desc || "",
             noindex: post.noindex || false,
             content: post.content,
-            excerpt: post.excerpt || (post.content ? post.content.substring(0, 200) + "..." : "")
+            excerpt: post.excerpt || (post.content ? post.content.substring(0, 200) + "..." : ""),
+            authorName: post.author_name || "Liban Adan",
+            authorTitle: post.author_title || "Founder, VirtualAddressHub",
+            authorImage: post.author_image || "/images/authors/liban.jpg"
         }));
 
         res.json({ ok: true, data: posts });
