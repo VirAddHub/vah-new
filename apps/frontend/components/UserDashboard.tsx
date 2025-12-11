@@ -45,6 +45,15 @@ interface UserDashboardProps {
 // API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
+function formatUkDate(d: Date | string | number) {
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 // Token helper is imported from @/lib/token-manager
 
 // SWR fetcher function
@@ -822,34 +831,133 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <p className="text-sm text-muted-foreground">
                       You can now use your official VirtualAddressHub London address for Companies House, HMRC, banking, and all business correspondence.
                     </p>
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-1">
-                      <p className="text-sm font-medium text-neutral-800">VirtualAddressHub</p>
-                      <p className="text-sm text-neutral-700">{virtualAddress.line1}</p>
-                      <p className="text-sm text-neutral-700">{virtualAddress.line2}</p>
-                      <p className="text-sm text-neutral-700">{virtualAddress.city}</p>
-                      <p className="text-sm text-neutral-700">{virtualAddress.postcode}</p>
-                      <p className="text-sm text-neutral-700">{virtualAddress.country}</p>
-                    </div>
 
-                    {/* Generate Certificate Button */}
-                    <div className="space-y-1.5">
-                      <Button className="w-full bg-primary hover:bg-primary-600 text-white" size="sm" onClick={onGenerateCertificate} disabled={certLoading}>
-                        {certLoading ? (
-                          <>
-                            <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                            Generating…
-                          </>
-                        ) : (
-                          <>
-                            <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                            Generate Certificate
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center leading-tight">
-                        Official proof of address
-                      </p>
-                    </div>
+                    {/* Certificate preview (UI-only; download logic unchanged) */}
+                    {(() => {
+                      const registeredBusinessAddress = [
+                        virtualAddress.line1,
+                        virtualAddress.line2,
+                        virtualAddress.city,
+                        virtualAddress.postcode,
+                        virtualAddress.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+
+                      const accountHolder =
+                        (userProfile as any)?.company_name ||
+                        `${(userProfile as any)?.first_name || ""} ${(userProfile as any)?.last_name || ""}`.trim() ||
+                        "Business Entity";
+
+                      const contactName = "Support Team";
+                      const supportEmail = "support@virtualaddresshub.co.uk";
+                      const website = "www.virtualaddresshub.co.uk";
+                      const registeredLine = "Registered in England";
+
+                      return (
+                        <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+                          {/* Header */}
+                          <div className="bg-white border-b border-gray-200 px-6 py-4">
+                            <img src="/images/logo.svg" alt="VirtualAddressHub" className="h-6 w-auto" />
+                          </div>
+
+                          {/* Main Content */}
+                          <div className="px-6 py-6">
+                            {/* Title */}
+                            <div className="mb-6">
+                              <h2 className="text-gray-900 text-lg font-semibold mb-2">Letter of Certification</h2>
+                              <p className="text-gray-600 text-sm">Date: {formatUkDate(new Date())}</p>
+                            </div>
+
+                            {/* Salutation */}
+                            <div className="mb-5">
+                              <p className="text-gray-900 text-sm">To Whom It May Concern,</p>
+                            </div>
+
+                            {/* Body */}
+                            <div className="space-y-4 mb-6">
+                              <p className="text-gray-800 text-sm">
+                                This letter confirms that the following company is registered at:
+                              </p>
+
+                              {/* Information Section */}
+                              <div className="pl-4 border-l-2 border-gray-300 space-y-4">
+                                <div>
+                                  <p className="text-gray-900 text-sm font-medium mb-1">Registered Business Address:</p>
+                                  <p className="text-gray-700 text-sm">{registeredBusinessAddress}</p>
+                                </div>
+
+                                <div>
+                                  <p className="text-gray-900 text-sm font-medium mb-1">Account Holder:</p>
+                                  <p className="text-gray-700 text-sm">{accountHolder}</p>
+                                </div>
+
+                                <div>
+                                  <p className="text-gray-900 text-sm font-medium mb-1">Contact Name:</p>
+                                  <p className="text-gray-700 text-sm">{contactName}</p>
+                                </div>
+                              </div>
+
+                              <p className="text-gray-800 text-sm leading-relaxed">
+                                Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd,
+                                the account holder is authorised to use the above address as their official Registered
+                                Office Address and for receiving statutory communications from Companies House and HMRC.
+                              </p>
+
+                              <p className="text-gray-800 text-sm leading-relaxed">
+                                Subject to continued compliance with our Terms of Service and UK AML/GDPR requirements,
+                                this address may also be used as the company&apos;s Trading or Correspondence Address. This
+                                certification does not grant any rights of physical occupation or tenancy.
+                              </p>
+                            </div>
+
+                            {/* Actions (same handler) */}
+                            <div className="flex items-center gap-3">
+                              <Button
+                                type="button"
+                                onClick={onGenerateCertificate}
+                                disabled={certLoading}
+                                className="bg-gray-900 hover:bg-gray-800 text-white"
+                              >
+                                {certLoading ? (
+                                  <>
+                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                    Preparing download…
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileCheck className="h-4 w-4 mr-2" />
+                                    Download PDF
+                                  </>
+                                )}
+                              </Button>
+
+                              {certLoading && <p className="text-sm text-gray-600">Please wait…</p>}
+                            </div>
+
+                            {/* Signature */}
+                            <div className="mt-8">
+                              <p className="text-gray-800 text-sm mb-1">Sincerely,</p>
+                              <p className="text-gray-900 text-sm font-medium mt-3">VirtualAddressHub Customer Support</p>
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+                            <div className="text-center space-y-1">
+                              <p className="text-gray-700 text-xs font-medium">VirtualAddressHub Ltd</p>
+                              <p className="text-gray-600 text-xs">
+                                2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom
+                              </p>
+                              <p className="text-gray-600 text-xs">
+                                {supportEmail} · {website}
+                              </p>
+                              <p className="text-gray-500 text-xs">{registeredLine}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </>
                 ) : (
                   <>
