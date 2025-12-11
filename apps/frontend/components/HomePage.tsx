@@ -14,7 +14,6 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
 import HowItWorks from "./HowItWorks";
 import Preview from "./Preview";
-import ComplianceBanner from "./ComplianceBanner";
 import FooterComplianceCTA from "./FooterComplianceCTA";
 
 interface HomePageProps {
@@ -374,9 +373,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                 </div>
             </section>
-
-            {/* COMPLIANCE BANNER */}
-            <ComplianceBanner />
 
             {/* HOW IT WORKS */}
             <HowItWorks />
