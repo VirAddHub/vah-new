@@ -91,16 +91,19 @@ async function handlePaymentConfirmed(pool: any, links: any) {
     try {
         const paymentId = links.payment;
         if (!paymentId) {
-            console.error('[GoCardless] No payment ID in links');
+            console.error('[Webhook] ❌ No payment ID in links');
             return;
         }
+
+        console.log(`[Webhook] 💳 Processing payment confirmed: ${paymentId}`);
 
         // Fetch payment details from GoCardless API
         let paymentDetails;
         try {
             paymentDetails = await gcGetPayment(paymentId);
+            console.log(`[Webhook] ✅ Fetched payment details: ${paymentDetails.amount}p ${paymentDetails.currency}`);
         } catch (apiError) {
-            console.error(`[GoCardless] Failed to fetch payment ${paymentId}:`, apiError);
+            console.error(`[Webhook] ⚠️  Failed to fetch payment ${paymentId} from API:`, apiError);
             // Continue with webhook data if API call fails
             paymentDetails = null;
         }
@@ -109,9 +112,11 @@ async function handlePaymentConfirmed(pool: any, links: any) {
         const userId = await findUserIdForPayment(pool, paymentId, links);
 
         if (!userId) {
-            console.error(`[GoCardless] Could not find user for payment ${paymentId}`);
+            console.error(`[Webhook] ❌ Could not find user for payment ${paymentId}`);
             return;
         }
+
+        console.log(`[Webhook] 👤 Found user ${userId} for payment ${paymentId}`);
 
         // Update subscription status
         await pool.query(`
@@ -122,6 +127,7 @@ async function handlePaymentConfirmed(pool: any, links: any) {
 
         // Get billing period
         const { periodStart, periodEnd } = await getBillingPeriodForUser(userId);
+        console.log(`[Webhook] 📅 Billing period: ${periodStart.toISOString()} to ${periodEnd.toISOString()}`);
 
         // Get payment amount (from API or webhook)
         const amountPence = paymentDetails?.amount ?? links.amount ?? 997; // Fallback to £9.97
@@ -138,9 +144,10 @@ async function handlePaymentConfirmed(pool: any, links: any) {
                 periodEnd,
             });
 
-            console.log(`[GoCardless] Created invoice ${invoice.id} for payment ${paymentId} (user ${userId})`);
+            console.log(`[Webhook] ✅ Invoice created: ${invoice.invoice_number} (ID: ${invoice.id}) for user ${userId}`);
+            console.log(`[Webhook] 📄 PDF path: ${invoice.pdf_path || 'pending generation'}`);
         } catch (invoiceError) {
-            console.error(`[GoCardless] Failed to create invoice for payment ${paymentId}:`, invoiceError);
+            console.error(`[Webhook] ❌ Failed to create invoice for payment ${paymentId}:`, invoiceError);
             // Don't throw - payment is still confirmed
         }
 
@@ -155,7 +162,7 @@ async function handlePaymentConfirmed(pool: any, links: any) {
             WHERE id = $2
         `, [Date.now(), userId]);
 
-        console.log(`[GoCardless] Payment ${paymentId} confirmed for user ${userId}`);
+        console.log(`[Webhook] ✅ Payment ${paymentId} confirmed and processed for user ${userId}`);
     } catch (error) {
         console.error('[GoCardless] Error handling payment.confirmed:', error);
     }
