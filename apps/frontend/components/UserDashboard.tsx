@@ -294,13 +294,30 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           durationMs: 3000,
         });
       } else {
-        throw new Error('Failed to generate certificate');
+        // Try to get error message from response
+        let errorMessage = 'Failed to generate certificate. Please try again.';
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error === 'KYC_REQUIRED') {
+            errorMessage = 'You must complete identity verification (KYC) before generating your proof of address certificate.';
+          }
+        } catch (e) {
+          // If response is not JSON, use status-based message
+          if (response.status === 403) {
+            errorMessage = 'You must complete identity verification (KYC) before generating your proof of address certificate.';
+          } else if (response.status === 404) {
+            errorMessage = 'User profile not found. Please try logging in again.';
+          }
+        }
+        throw new Error(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating certificate:', error);
       toast({
         title: "Certificate Error",
-        description: "Failed to generate certificate. Please try again.",
+        description: error.message || "Failed to generate certificate. Please try again.",
         variant: "destructive",
         durationMs: 5000,
       });
