@@ -16,13 +16,21 @@ const router = Router();
 router.post('/gocardless', async (req: Request, res: Response) => {
     try {
         // Get raw body for signature verification
-        const rawBody = (req as any).rawBody || req.body?.toString?.() || '';
+        const rawBody = (req as any).rawBody || req.body?.toString?.() || JSON.stringify(req.body);
         const signature = req.headers['webhook-signature'] as string;
 
-        // Verify webhook signature
-        if (!gcVerifyWebhookSignature(rawBody, signature)) {
+        // In development/local, allow bypassing signature verification for testing
+        const isLocalDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+        const bypassSignature = isLocalDev && process.env.GC_BYPASS_SIGNATURE === '1';
+
+        // Verify webhook signature (unless bypassed for local testing)
+        if (!bypassSignature && !gcVerifyWebhookSignature(rawBody, signature)) {
             console.error('[GoCardless webhook] Invalid signature');
             return res.status(401).json({ error: 'Invalid signature' });
+        }
+
+        if (bypassSignature) {
+            console.log('[GoCardless webhook] ⚠️  Signature verification bypassed (local dev mode)');
         }
 
         const webhook = JSON.parse(rawBody);
