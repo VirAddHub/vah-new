@@ -15,6 +15,7 @@ export interface InvoiceRow {
   currency: string;
   status: string;
   pdf_path: string | null;
+  invoice_number: string | null;
   created_at: string | number;
 }
 
