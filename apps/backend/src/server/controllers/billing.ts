@@ -97,8 +97,7 @@ export async function listInvoices(req: Request, res: Response) {
       amount_pence, 
       currency,
       status, 
-      pdf_path,
-      pdf_token
+      pdf_path
     FROM invoices 
     WHERE user_id=$1
     ORDER BY created_at DESC LIMIT $2 OFFSET $3
@@ -115,7 +114,7 @@ export async function listInvoices(req: Request, res: Response) {
     amount_pence: r.amount_pence,
     currency: r.currency || 'GBP',
     status: r.status,
-    pdf_url: r.pdf_path || (r.pdf_token ? `/api/invoices/${r.pdf_token}` : null),
+    pdf_url: r.pdf_path || null,
   }));
 
   res.json({ ok: true, data: { items, page, page_size: pageSize } });
