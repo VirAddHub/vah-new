@@ -486,15 +486,23 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             bold: 'Helvetica-Bold',
         } as const;
 
-        const TYPE = {
+        const BASE_TYPE = {
             title: 20,
             body: 11.5,
             label: 11.5,
             small: 9.5,
         } as const;
 
-        const leading = 1.55;
-        const paragraphGap = 14; // consistent space between paragraphs/blocks
+        const BASE = {
+            lineGap: 3,
+            paragraphGap: 14,
+            titleToDateGap: 26,
+            afterDateGap: 34,
+            afterSalutationGap: 24,
+            infoIndent: 18,
+            infoLabelGap: 14,
+            signatureGap: 22,
+        } as const;
 
         // Header block (logo + divider)
         const headerTop = 50;
@@ -586,71 +594,166 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .lineTo(contentX + contentW, headerBottom)
             .stroke();
 
-        // Helper: paragraph writer with consistent leading + spacing
+        // ===== SINGLE-PAGE FIT: measure content and auto-tighten if needed =====
+        const footerHeight = 110;
+        const footerTop = pageHeight - footerHeight;
+        const contentTop = headerBottom + 30;
+        const contentBottom = footerTop - 24;
+        const availableH = contentBottom - contentTop;
+
+        // Business name - use company_name as primary, fallback to individual name
+        const businessName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
+        const contactName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team';
+
+        const registeredBusinessAddress = '54–58 Tanner Street, London SE1 3PH, United Kingdom';
+
+        const terms1 =
+            'Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.';
+        const terms2 =
+            "Subject to continued compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company's Trading or Correspondence Address. This certification does not grant any rights of physical occupation or tenancy.";
+
+        const measure = (scale: number) => {
+            const TYPE = {
+                title: BASE_TYPE.title * scale,
+                body: BASE_TYPE.body * scale,
+                label: BASE_TYPE.label * scale,
+                small: BASE_TYPE.small * scale,
+            };
+            const lineGap = BASE.lineGap * scale;
+            const paragraphGap = BASE.paragraphGap * scale;
+            const titleToDateGap = BASE.titleToDateGap * scale;
+            const afterDateGap = BASE.afterDateGap * scale;
+            const afterSalutationGap = BASE.afterSalutationGap * scale;
+            const infoIndent = BASE.infoIndent * scale;
+            const infoLabelGap = BASE.infoLabelGap * scale;
+            const signatureGap = BASE.signatureGap * scale;
+
+            const infoWidth = (contentW - infoIndent);
+
+            const h = (text: string, font: string, fontSize: number, width: number) => {
+                doc.font(font as any).fontSize(fontSize);
+                return doc.heightOfString(text, { width, lineGap });
+            };
+
+            // Title + date + salutation + intro
+            let total = 0;
+            total += h('Letter of Certification', FONT.bold, TYPE.title, contentW);
+            total += titleToDateGap;
+            total += h(`Date: ${currentDate}`, FONT.regular, TYPE.body, contentW);
+            total += afterDateGap;
+
+            total += h('To Whom It May Concern,', FONT.regular, TYPE.body, contentW);
+            total += afterSalutationGap;
+
+            total += h('This letter confirms that the following company is registered at:', FONT.regular, TYPE.body, contentW);
+            total += (16 * scale);
+
+            // Info block: 3 label/value pairs + gaps
+            total += h('Registered Business Address:', FONT.bold, TYPE.label, infoWidth) + infoLabelGap;
+            total += h(registeredBusinessAddress, FONT.regular, TYPE.body, infoWidth) + paragraphGap;
+
+            total += h('Account Holder:', FONT.bold, TYPE.label, infoWidth) + infoLabelGap;
+            total += h(businessName, FONT.regular, TYPE.body, infoWidth) + paragraphGap;
+
+            total += h('Contact Name:', FONT.bold, TYPE.label, infoWidth) + infoLabelGap;
+            total += h(contactName, FONT.regular, TYPE.body, infoWidth) + paragraphGap;
+
+            // Terms
+            total += h(terms1, FONT.regular, TYPE.body, contentW) + paragraphGap;
+            total += h(terms2, FONT.regular, TYPE.body, contentW) + (26 * scale);
+
+            // Signature (2 lines)
+            total += h('Sincerely,', FONT.regular, TYPE.body, contentW) + signatureGap;
+            total += h('VirtualAddressHub Customer Support', FONT.bold, TYPE.body, contentW);
+
+            return {
+                total,
+                TYPE,
+                lineGap,
+                paragraphGap,
+                titleToDateGap,
+                afterDateGap,
+                afterSalutationGap,
+                infoIndent,
+                infoLabelGap,
+                signatureGap,
+            };
+        };
+
+        let chosen = measure(1.0);
+        for (const s of [0.97, 0.94, 0.91, 0.88, 0.85, 0.82]) {
+            if (chosen.total <= availableH) break;
+            chosen = measure(s);
+        }
+
+        if (chosen.total > availableH) {
+            console.warn('[Certificate] Content still exceeds single-page target; clamping spacing aggressively.');
+            chosen = measure(0.80);
+        }
+
+        const TYPE = chosen.TYPE;
+
+        // Helper: paragraph writer with consistent spacing
         const writeParagraph = (text: string, opts?: { color?: string; size?: number; font?: string; gapAfter?: number }) => {
             doc.fillColor(opts?.color ?? COLORS.body)
                 .fontSize(opts?.size ?? TYPE.body)
                 .font((opts?.font as any) ?? FONT.regular)
                 .text(text, contentX, doc.y, {
                     width: contentW,
-                    lineGap: 3,
+                    lineGap: chosen.lineGap,
                 });
-            doc.y += opts?.gapAfter ?? paragraphGap;
+            doc.y += opts?.gapAfter ?? chosen.paragraphGap;
         };
 
         const writeLabelValue = (label: string, value: string, x: number, width: number) => {
             doc.fillColor(COLORS.text)
                 .fontSize(TYPE.label)
                 .font(FONT.bold)
-                .text(label, x, doc.y, { width });
-            doc.y += 14;
+                .text(label, x, doc.y, { width, lineGap: chosen.lineGap });
+            doc.y += chosen.infoLabelGap;
             doc.fillColor(COLORS.muted)
                 .fontSize(TYPE.body)
                 .font(FONT.regular)
-                .text(value, x, doc.y, { width, lineGap: 3 });
-            doc.y += paragraphGap;
+                .text(value, x, doc.y, { width, lineGap: chosen.lineGap });
+            doc.y += chosen.paragraphGap;
         };
 
-        // Start main content (matches reference spacing under header)
-        doc.y = headerBottom + 30;
+        // Start main content (fits in one page above footer)
+        doc.y = contentTop;
 
         // Title block
         doc.fillColor(COLORS.text)
             .fontSize(TYPE.title)
             .font(FONT.bold)
             .text('Letter of Certification', contentX, doc.y, { width: contentW });
-        doc.y += 26;
+        doc.y += chosen.titleToDateGap;
         doc.fillColor(COLORS.muted)
             .fontSize(TYPE.body)
             .font(FONT.regular)
             .text(`Date: ${currentDate}`, contentX, doc.y, { width: contentW });
-        doc.y += 34;
+        doc.y += chosen.afterDateGap;
 
         // Salutation
         doc.fillColor(COLORS.text)
             .fontSize(TYPE.body)
             .font(FONT.regular)
             .text('To Whom It May Concern,', contentX, doc.y, { width: contentW });
-        doc.y += 24;
+        doc.y += chosen.afterSalutationGap;
 
         // Body intro
         writeParagraph('This letter confirms that the following company is registered at:', {
             color: COLORS.body,
-            gapAfter: 16,
+            gapAfter: 16 * (TYPE.body / BASE_TYPE.body),
         });
 
         // Information section (left border + indent, like the web template)
         const infoBorderX = contentX;
-        const infoIndent = 18;
+        const infoIndent = chosen.infoIndent;
         const infoTextX = contentX + infoIndent;
         const infoWidth = contentW - infoIndent;
         const infoTopY = doc.y;
 
-        // Business name - use company_name as primary, fallback to individual name
-        const businessName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
-        const contactName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team';
-
-        writeLabelValue('Registered Business Address:', '54–58 Tanner Street, London SE1 3PH, United Kingdom', infoTextX, infoWidth);
+        writeLabelValue('Registered Business Address:', registeredBusinessAddress, infoTextX, infoWidth);
         writeLabelValue('Account Holder:', businessName, infoTextX, infoWidth);
         writeLabelValue('Contact Name:', contactName, infoTextX, infoWidth);
 
@@ -663,13 +766,13 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         // Terms paragraphs
         writeParagraph(
-            'Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.',
+            terms1,
             { color: COLORS.body }
         );
 
         writeParagraph(
-            "Subject to continued compliance with our Terms of Service and UK AML/GDPR requirements, this address may also be used as the company's Trading or Correspondence Address. This certification does not grant any rights of physical occupation or tenancy.",
-            { color: COLORS.body, gapAfter: 26 }
+            terms2,
+            { color: COLORS.body, gapAfter: 26 * (TYPE.body / BASE_TYPE.body) }
         );
 
         // Signature
@@ -677,19 +780,16 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .fontSize(TYPE.body)
             .font(FONT.regular)
             .text('Sincerely,', contentX, doc.y, { width: contentW });
-        doc.y += 22;
+        doc.y += chosen.signatureGap;
         doc.fillColor(COLORS.text)
             .fontSize(TYPE.body)
             .font(FONT.bold)
             .text('VirtualAddressHub Customer Support', contentX, doc.y, { width: contentW });
 
         // ===== FOOTER (light gray background + centered lines) =====
-        const footerHeight = 110;
-        const footerTop = pageHeight - footerHeight;
-
         // If content runs too low, clamp it (single-page certificate)
-        if (doc.y > footerTop - 24) {
-            doc.y = footerTop - 24;
+        if (doc.y > footerTop - 18) {
+            doc.y = footerTop - 18;
         }
 
         // Footer background
