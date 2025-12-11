@@ -947,7 +947,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                             <div className="text-center space-y-1">
                               <p className="text-gray-700 text-xs font-medium">VirtualAddressHub Ltd</p>
                               <p className="text-gray-600 text-xs">
-                                2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom
+                                2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom
                               </p>
                               <p className="text-gray-600 text-xs">
                                 {supportEmail} · {website}

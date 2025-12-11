@@ -818,7 +818,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor(COLORS.muted)
             .fontSize(TYPE.small)
             .font(FONT.regular)
-            .text('2nd Floor, 54–58 Tanner Street, London SE1 3PH, United Kingdom', footerTextX, fy, { width: footerTextW, align: 'center' });
+            .text('2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom', footerTextX, fy, { width: footerTextW, align: 'center' });
         fy += 14;
 
         doc.text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', footerTextX, fy, { width: footerTextW, align: 'center' });
