@@ -54,8 +54,8 @@ router.get("/blog/posts", async (req, res) => {
     if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
     try {
         const includeDrafts = req.query.includeDrafts === "true";
-        const page = parseInt(req.query.page as string) || 1;
-        const pageSize = parseInt(req.query.pageSize as string) || 20;
+        const page = parseInt(String(req.query.page || '1')) || 1;
+        const pageSize = parseInt(String(req.query.pageSize || '20')) || 20;
         const offset = (page - 1) * pageSize;
         
         const pool = getPool();
