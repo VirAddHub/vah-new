@@ -506,11 +506,11 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         // Header block (logo + divider)
         const headerTop = 50;
-        const headerHeight = 80;
+        const headerHeight = 70;
         const headerBottom = headerTop + headerHeight;
         const logoX = contentX;
-        const logoY = headerTop + 22;
-        const logoWidth = 140;
+        const logoY = headerTop + 18;
+        const logoWidth = 110;
 
         // ===== LOGO/BRAND (Top-left, 40px margin-bottom) =====
         // PDFKit doesn't support SVG well, so we use PNG for PDFs

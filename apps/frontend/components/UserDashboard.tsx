@@ -858,7 +858,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
                           {/* Header */}
                           <div className="bg-white border-b border-gray-200 px-6 py-4">
-                            <img src="/images/logo-horizontal.svg" alt="VirtualAddressHub" className="h-7 w-auto" />
+                            <img src="/images/logo.svg" alt="VirtualAddressHub" className="h-6 w-auto" />
                           </div>
 
                           {/* Main Content */}
