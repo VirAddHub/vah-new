@@ -164,7 +164,7 @@ async function handlePaymentConfirmed(pool: any, links: any) {
 async function handlePaymentFailed(pool: any, links: any) {
     try {
         const paymentId = links.payment;
-        const userId = await getUserIdFromPayment(pool, paymentId);
+        const userId = await findUserIdForPayment(pool, paymentId, links);
 
         if (userId) {
             await pool.query(`

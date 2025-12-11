@@ -1,3 +1,5 @@
+"use client";
+
 import { InvoicesTable } from '@/components/dashboard/InvoicesTable';
 import { usePlans } from '@/hooks/usePlans';
 
