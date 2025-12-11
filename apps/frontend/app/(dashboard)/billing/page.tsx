@@ -1,39 +1,11 @@
-'use client';
-
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
-import { useState } from 'react';
-import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
-import { getToken } from '@/lib/token-manager';
+import { InvoicesTable } from '@/components/dashboard/InvoicesTable';
 import { usePlans } from '@/hooks/usePlans';
 
-// API configuration
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-
-const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
-const formatDateUK = (v?: number | string | null) => {
-  if (v == null) return '—';
-  const n = typeof v === 'string' ? Number(v) : v;
-  const d = !Number.isNaN(n) && n > 10_000_000_000 ? new Date(n) : new Date(v as any);
-  return Number.isNaN(d.getTime()) ? '—' :
-    new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/London' }).format(d);
-};
-
 export default function BillingPage() {
-  const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
-  const { data: invoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
-  const [busy, setBusy] = useState<string | null>(null);
-  
   // Get dynamic pricing from plans API
-  const { getMonthlyPlan, getAnnualPlan } = usePlans();
+  const { getMonthlyPlan } = usePlans();
   const monthlyPlan = getMonthlyPlan();
-  const annualPlan = getAnnualPlan();
-  const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : null;
-  const annualPrice = annualPlan ? (annualPlan.price_pence / 100).toFixed(2) : null;
-
-  const o = overview?.data;
-  const items = invoices?.data?.items ?? [];
+  const monthlyPrice = monthlyPlan ? (monthlyPlan.price_pence / 100).toFixed(2) : '9.97';
 
   const act = async (path: string) => {
     setBusy(path);
