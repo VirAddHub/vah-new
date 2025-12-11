@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
-import { getPool } from '../server/db';
+import { getPool } from '../lib/db';
 
 const INVOICE_BASE_DIR = path.join(process.cwd(), 'data', 'invoices');
 

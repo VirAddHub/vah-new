@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getPool } from '../db';
+import { getPool } from '../../lib/db';
 import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment } from '../../lib/gocardless';
 import { 
   createInvoiceForPayment, 
