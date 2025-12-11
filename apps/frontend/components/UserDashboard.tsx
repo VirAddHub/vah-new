@@ -34,6 +34,7 @@ import { useToast } from "./ui/use-toast";
 import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 import { IdentityComplianceCard, Compliance } from "@/components/dashboard/IdentityComplianceCard";
+import { VAHLogo } from "./VAHLogo";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -549,12 +550,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="flex h-16 items-center justify-between">
             {/* Brand Name */}
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => onNavigate('home')}
-                className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
-              >
-                VirtualAddress<span className="text-primary">Hub</span>
-              </button>
+              <VAHLogo onNavigate={onNavigate} size="md" />
             </div>
 
             {/* Navigation Links */}

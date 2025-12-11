@@ -44,6 +44,7 @@ import RecentActivityCard from "./admin/RecentActivityCard";
 import ForwardingCard from "./admin/ForwardingCard";
 import SystemHealthCard from "./admin/SystemHealthCard";
 import SystemSummaryCard from "./admin/SystemSummaryCard";
+import { VAHLogo } from "./VAHLogo";
 import {
     Mail,
     Users,
@@ -580,12 +581,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             <header className="bg-card border-b border-border">
                 <div className="flex items-center justify-between h-14 px-4">
                     {/* Logo and Branding */}
-                    <button
-                        onClick={() => onNavigate?.('home')}
-                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                    >
-                        <span className="text-lg font-semibold text-foreground">VirtualAddress<span className="text-primary">Hub</span></span>
-                    </button>
+                    <VAHLogo onNavigate={onNavigate} size="md" />
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center gap-1">
