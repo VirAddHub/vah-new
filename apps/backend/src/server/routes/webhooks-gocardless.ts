@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../../lib/db';
 import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment } from '../../lib/gocardless';
-import { 
-  createInvoiceForPayment, 
-  getBillingPeriodForUser, 
-  findUserIdForPayment 
+import {
+    createInvoiceForPayment,
+    getBillingPeriodForUser,
+    findUserIdForPayment
 } from '../../services/invoices';
 
 const router = Router();
@@ -19,18 +19,10 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         const rawBody = (req as any).rawBody || req.body?.toString?.() || JSON.stringify(req.body);
         const signature = req.headers['webhook-signature'] as string;
 
-        // In development/local, allow bypassing signature verification for testing
-        const isLocalDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
-        const bypassSignature = isLocalDev && process.env.GC_BYPASS_SIGNATURE === '1';
-
-        // Verify webhook signature (unless bypassed for local testing)
-        if (!bypassSignature && !gcVerifyWebhookSignature(rawBody, signature)) {
+        // Verify webhook signature (always required in production)
+        if (!gcVerifyWebhookSignature(rawBody, signature)) {
             console.error('[GoCardless webhook] Invalid signature');
             return res.status(401).json({ error: 'Invalid signature' });
-        }
-
-        if (bypassSignature) {
-            console.log('[GoCardless webhook] ⚠️  Signature verification bypassed (local dev mode)');
         }
 
         const webhook = JSON.parse(rawBody);
