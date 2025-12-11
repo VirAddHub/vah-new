@@ -467,28 +467,66 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         // ===== LOGO/BRAND (Top-left, 40px margin-bottom) =====
         // PDFKit doesn't support SVG well, so we use PNG for PDFs
-        const configuredLogoPath = process.env.VAH_LOGO_PATH;
+        const configuredLogoPath = process.env.VAH_LOGO_PATH?.trim();
+        const configuredLogoUrl = process.env.VAH_LOGO_URL?.trim();
+
+        // NOTE: In production the backend may be deployed without the frontend filesystem.
+        // Prefer a URL fetch fallback so the certificate always shows the logo.
+        const appBaseUrl = (process.env.APP_BASE_URL ?? "https://virtualaddresshub.co.uk").replace(/\/+$/, "");
+        const defaultRemoteLogoUrl = `${appBaseUrl}/images/logo.png`;
+
         const defaultLogoPath = path.resolve(__dirname, '../../../../frontend/public/images/logo.png');
         const alternativeLogoPath = path.resolve(__dirname, '../../../../frontend/public/icons/icon-512.png');
-        const logoPath = configuredLogoPath || defaultLogoPath;
+
+        const imgWidth = 120;
         let drewImage = false;
 
-        console.log('[Certificate] Attempting to load logo from:', logoPath);
-        console.log('[Certificate] Logo file exists:', fs.existsSync(logoPath));
+        const fetchLogoBuffer = async (url: string): Promise<Buffer> => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 4000);
+            try {
+                const resp = await fetch(url, { signal: controller.signal });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const ab = await resp.arrayBuffer();
+                return Buffer.from(ab);
+            } finally {
+                clearTimeout(timeout);
+            }
+        };
 
         try {
-            if (fs.existsSync(logoPath)) {
-                // Draw logo at top-left (50px from left margin, 70px from top of page), width 120px
-                const imgWidth = 120;
-                doc.image(logoPath, 50, 70, { width: imgWidth });
+            if (configuredLogoPath && fs.existsSync(configuredLogoPath)) {
+                console.log('[Certificate] Loading logo from VAH_LOGO_PATH:', configuredLogoPath);
+                doc.image(configuredLogoPath, 50, 70, { width: imgWidth });
                 drewImage = true;
-                console.log('[Certificate] Successfully drew logo image at top-left');
-            } else if (fs.existsSync(alternativeLogoPath)) {
-                console.log('[Certificate] Trying alternative logo path:', alternativeLogoPath);
-                const imgWidth = 120;
-                doc.image(alternativeLogoPath, 50, 70, { width: imgWidth });
-                drewImage = true;
-                console.log('[Certificate] Successfully drew alternative logo image at top-left');
+            } else {
+                const logoUrlToTry = configuredLogoUrl || defaultRemoteLogoUrl;
+                console.log('[Certificate] Fetching logo from URL:', logoUrlToTry);
+                try {
+                    const logoBuf = await fetchLogoBuffer(logoUrlToTry);
+                    doc.image(logoBuf, 50, 70, { width: imgWidth });
+                    drewImage = true;
+                    console.log('[Certificate] Successfully drew logo from URL');
+                } catch (error) {
+                    console.warn('[Certificate] Failed to fetch logo from URL, falling back to local paths:', error);
+                }
+
+                if (!drewImage) {
+                    const logoPath = configuredLogoPath || defaultLogoPath;
+                    console.log('[Certificate] Attempting local logo path:', logoPath);
+                    if (fs.existsSync(logoPath)) {
+                        doc.image(logoPath, 50, 70, { width: imgWidth });
+                        drewImage = true;
+                        console.log('[Certificate] Successfully drew logo from local path');
+                    } else if (fs.existsSync(alternativeLogoPath)) {
+                        console.log('[Certificate] Trying alternative local logo path:', alternativeLogoPath);
+                        doc.image(alternativeLogoPath, 50, 70, { width: imgWidth });
+                        drewImage = true;
+                        console.log('[Certificate] Successfully drew alternative logo from local path');
+                    } else {
+                        console.log('[Certificate] No local logo file found (this is expected on backend-only deploys).');
+                    }
+                }
             }
         } catch (error) {
             console.error('[Certificate] Error loading logo image:', error);
