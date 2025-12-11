@@ -1,0 +1,343 @@
+import fs from 'fs';
+import path from 'path';
+import PDFDocument from 'pdfkit';
+import { getPool } from '../db';
+
+const INVOICE_BASE_DIR = path.join(process.cwd(), 'data', 'invoices');
+
+export interface InvoiceRow {
+  id: number;
+  user_id: number;
+  gocardless_payment_id: string | null;
+  period_start: string | Date;
+  period_end: string | Date;
+  amount_pence: number;
+  currency: string;
+  status: string;
+  pdf_path: string | null;
+  created_at: string | number;
+}
+
+export interface CreateInvoiceOptions {
+  userId: number;
+  gocardlessPaymentId: string;
+  amountPence: number;
+  currency: string;
+  periodStart: Date;
+  periodEnd: Date;
+}
+
+/**
+ * Create an invoice record and generate PDF
+ */
+export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promise<InvoiceRow> {
+  const pool = getPool();
+
+  // Check if invoice already exists for this payment
+  const existing = await pool.query<InvoiceRow>(
+    `SELECT * FROM invoices WHERE gocardless_payment_id = $1`,
+    [opts.gocardlessPaymentId]
+  );
+
+  if (existing.rows.length > 0) {
+    console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}`);
+    return existing.rows[0];
+  }
+
+  // Get invoice number sequence
+  const year = new Date(opts.periodEnd).getFullYear();
+  const seqResult = await pool.query(
+    `INSERT INTO invoices_seq (year, sequence, created_at, updated_at)
+     VALUES ($1, 1, $2, $2)
+     ON CONFLICT (year) 
+     DO UPDATE SET sequence = invoices_seq.sequence + 1, updated_at = $2
+     RETURNING sequence`,
+    [year, Date.now()]
+  );
+  const invoiceNumber = seqResult.rows[0].sequence;
+
+  const invoiceNumberFormatted = `VAH-${year}-${String(invoiceNumber).padStart(6, '0')}`;
+
+  // Insert invoice record
+  const result = await pool.query<InvoiceRow>(
+    `
+    INSERT INTO invoices (
+      user_id,
+      gocardless_payment_id,
+      period_start,
+      period_end,
+      amount_pence,
+      currency,
+      status,
+      invoice_number,
+      created_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, 'paid', $7, $8)
+    RETURNING *
+    `,
+    [
+      opts.userId,
+      opts.gocardlessPaymentId,
+      periodStartStr,
+      periodEndStr,
+      opts.amountPence,
+      opts.currency,
+      invoiceNumberFormatted,
+      Date.now(),
+    ],
+  );
+
+  const invoice = result.rows[0];
+
+  // Generate PDF and update pdf_path
+  try {
+    const pdfPath = await generateInvoicePdf({
+      invoiceId: invoice.id,
+      invoiceNumber: invoiceNumberFormatted,
+      userId: invoice.user_id,
+      amountPence: invoice.amount_pence,
+      currency: invoice.currency,
+      periodStart: invoice.period_start,
+      periodEnd: invoice.period_end,
+    });
+
+    const updated = await pool.query<InvoiceRow>(
+      `
+      UPDATE invoices
+      SET pdf_path = $1
+      WHERE id = $2
+      RETURNING *
+      `,
+      [pdfPath, invoice.id],
+    );
+
+    return updated.rows[0];
+  } catch (pdfError) {
+    console.error(`[invoices] Failed to generate PDF for invoice ${invoice.id}:`, pdfError);
+    // Return invoice even if PDF generation failed
+    return invoice;
+  }
+}
+
+/**
+ * Generate PDF invoice
+ */
+async function generateInvoicePdf(opts: {
+  invoiceId: number;
+  invoiceNumber: string;
+  userId: number;
+  amountPence: number;
+  currency: string;
+  periodStart: string | Date;
+  periodEnd: string | Date;
+}): Promise<string> {
+  const pool = getPool();
+
+  // Get user details
+  const userResult = await pool.query(
+    `SELECT email, first_name, last_name, business_name, trading_name FROM "user" WHERE id = $1`,
+    [opts.userId]
+  );
+  const user = userResult.rows[0];
+
+  if (!user) {
+    throw new Error(`User ${opts.userId} not found`);
+  }
+
+  // Ensure directory exists: data/invoices/YYYY/user_id
+  const year = new Date(opts.periodEnd).getFullYear();
+  const dir = path.join(INVOICE_BASE_DIR, String(year), String(opts.userId));
+
+  await fs.promises.mkdir(dir, { recursive: true });
+
+  const filename = `invoice-${opts.invoiceId}.pdf`;
+  const fullPath = path.join(dir, filename);
+
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const writeStream = fs.createWriteStream(fullPath);
+  doc.pipe(writeStream);
+
+  // Header
+  doc.fontSize(20).text('VirtualAddressHub Ltd', { align: 'right' });
+  doc.moveDown();
+
+  // Invoice details
+  doc.fontSize(12);
+  doc.text(`Invoice: ${opts.invoiceNumber}`);
+  doc.text(`Invoice date: ${new Date().toISOString().slice(0, 10)}`);
+  
+  const periodStartStr = typeof opts.periodStart === 'string' 
+    ? opts.periodStart 
+    : opts.periodStart.toISOString().slice(0, 10);
+  const periodEndStr = typeof opts.periodEnd === 'string' 
+    ? opts.periodEnd 
+    : opts.periodEnd.toISOString().slice(0, 10);
+  
+  doc.text(`Billing period: ${periodStartStr} – ${periodEndStr}`);
+  doc.moveDown();
+
+  // Customer details
+  doc.text('Bill to:');
+  if (user.business_name) {
+    doc.text(user.business_name);
+  }
+  if (user.trading_name) {
+    doc.text(`Trading as: ${user.trading_name}`);
+  }
+  const customerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Customer';
+  doc.text(customerName);
+  doc.text(user.email);
+  doc.moveDown();
+
+  // Description
+  doc.text('Description: Digital Mailbox Plan – Monthly subscription');
+  doc.moveDown();
+
+  // Amount
+  const amount = (opts.amountPence / 100).toFixed(2);
+  doc.fontSize(14).text(`Total: ${opts.currency} ${amount}`, { align: 'right' });
+  doc.moveDown(2);
+
+  // Footer
+  doc.fontSize(9).fillColor('#666').text('Thank you for your business.');
+
+  doc.end();
+
+  await new Promise<void>((resolve, reject) => {
+    writeStream.on('finish', () => resolve());
+    writeStream.on('error', (err) => reject(err));
+  });
+
+  // Return relative path (can be used to construct a URL)
+  // Example: "/invoices/2025/123/invoice-456.pdf"
+  const relativePath = `/invoices/${year}/${opts.userId}/${filename}`;
+  return relativePath;
+}
+
+/**
+ * List all invoices for a user
+ */
+export async function listInvoicesForUser(userId: number): Promise<InvoiceRow[]> {
+  const pool = getPool();
+  const result = await pool.query<InvoiceRow>(
+    `
+    SELECT id,
+           user_id,
+           gocardless_payment_id,
+           period_start,
+           period_end,
+           amount_pence,
+           currency,
+           status,
+           pdf_path,
+           invoice_number,
+           created_at
+    FROM invoices
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    `,
+    [userId],
+  );
+  return result.rows;
+}
+
+/**
+ * Get billing period for next invoice
+ */
+export async function getBillingPeriodForUser(userId: number): Promise<{ periodStart: Date; periodEnd: Date }> {
+  const pool = getPool();
+  const result = await pool.query(
+    `SELECT period_end FROM invoices WHERE user_id = $1 ORDER BY period_end DESC LIMIT 1`,
+    [userId],
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (result.rows.length === 0) {
+    // First invoice: use subscription start date or today
+    const userRes = await pool.query(
+      `SELECT plan_start_date FROM "user" WHERE id = $1`,
+      [userId],
+    );
+    const planStart = userRes.rows[0]?.plan_start_date;
+    
+    if (planStart) {
+      const start = new Date(Number(planStart));
+      start.setHours(0, 0, 0, 0);
+      return {
+        periodStart: start,
+        periodEnd: today,
+      };
+    }
+    
+    // Default: last 30 days
+    const start = new Date(today);
+    start.setDate(start.getDate() - 30);
+    return {
+      periodStart: start,
+      periodEnd: today,
+    };
+  }
+
+  const lastEnd = new Date(result.rows[0].period_end);
+  lastEnd.setHours(0, 0, 0, 0);
+  const nextStart = new Date(lastEnd);
+  nextStart.setDate(nextStart.getDate() + 1);
+
+  return {
+    periodStart: nextStart,
+    periodEnd: today,
+  };
+}
+
+/**
+ * Find user ID from GoCardless payment ID
+ */
+export async function findUserIdForPayment(
+  pool: any,
+  gocardlessPaymentId: string,
+  paymentLinks?: any
+): Promise<number | null> {
+  try {
+    // Option 1: Check if we already have an invoice for this payment
+    const invoiceResult = await pool.query(
+      `SELECT user_id FROM invoices WHERE gocardless_payment_id = $1 LIMIT 1`,
+      [gocardlessPaymentId]
+    );
+    
+    if (invoiceResult.rows.length > 0) {
+      return invoiceResult.rows[0].user_id;
+    }
+
+    // Option 2: Look up via subscription table using mandate/customer from payment
+    if (paymentLinks?.mandate) {
+      const mandateResult = await pool.query(
+        `SELECT user_id FROM subscription WHERE mandate_id = $1 LIMIT 1`,
+        [paymentLinks.mandate]
+      );
+      
+      if (mandateResult.rows.length > 0) {
+        return mandateResult.rows[0].user_id;
+      }
+    }
+
+    // Option 3: Look up via customer ID
+    if (paymentLinks?.customer) {
+      const customerResult = await pool.query(
+        `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+        [paymentLinks.customer]
+      );
+      
+      if (customerResult.rows.length > 0) {
+        return customerResult.rows[0].id;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[invoices] Error finding user for payment:', error);
+    return null;
+  }
+}
+

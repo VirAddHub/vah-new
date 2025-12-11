@@ -1,6 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
-import { gcVerifyWebhookSignature, gcCompleteFlow } from '../../lib/gocardless';
+import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment } from '../../lib/gocardless';
+import { 
+  createInvoiceForPayment, 
+  getBillingPeriodForUser, 
+  findUserIdForPayment 
+} from '../../services/invoices';
 
 const router = Router();
 
@@ -85,24 +90,72 @@ async function handleMandateActive(pool: any, links: any) {
 async function handlePaymentConfirmed(pool: any, links: any) {
     try {
         const paymentId = links.payment;
-        const userId = await getUserIdFromPayment(pool, paymentId);
-
-        if (userId) {
-            // Update subscription status
-            await pool.query(`
-        UPDATE subscription 
-        SET status = 'active', updated_at = $1
-        WHERE user_id = $2
-      `, [Date.now(), userId]);
-
-            // Create invoice record
-            await pool.query(`
-        INSERT INTO invoices (user_id, amount_pence, status, created_at)
-        VALUES ($1, $2, 'paid', $3)
-      `, [userId, 995, Date.now()]); // Default amount, should be from payment data
-
-            console.log(`[GoCardless] Payment ${paymentId} confirmed for user ${userId}`);
+        if (!paymentId) {
+            console.error('[GoCardless] No payment ID in links');
+            return;
         }
+
+        // Fetch payment details from GoCardless API
+        let paymentDetails;
+        try {
+            paymentDetails = await gcGetPayment(paymentId);
+        } catch (apiError) {
+            console.error(`[GoCardless] Failed to fetch payment ${paymentId}:`, apiError);
+            // Continue with webhook data if API call fails
+            paymentDetails = null;
+        }
+
+        // Find user ID from payment
+        const userId = await findUserIdForPayment(pool, paymentId, links);
+
+        if (!userId) {
+            console.error(`[GoCardless] Could not find user for payment ${paymentId}`);
+            return;
+        }
+
+        // Update subscription status
+        await pool.query(`
+            UPDATE subscription 
+            SET status = 'active', updated_at = $1
+            WHERE user_id = $2
+        `, [Date.now(), userId]);
+
+        // Get billing period
+        const { periodStart, periodEnd } = await getBillingPeriodForUser(userId);
+
+        // Get payment amount (from API or webhook)
+        const amountPence = paymentDetails?.amount ?? links.amount ?? 997; // Fallback to £9.97
+        const currency = paymentDetails?.currency ?? 'GBP';
+
+        // Create invoice with PDF
+        try {
+            const invoice = await createInvoiceForPayment({
+                userId,
+                gocardlessPaymentId: paymentId,
+                amountPence,
+                currency,
+                periodStart,
+                periodEnd,
+            });
+
+            console.log(`[GoCardless] Created invoice ${invoice.id} for payment ${paymentId} (user ${userId})`);
+        } catch (invoiceError) {
+            console.error(`[GoCardless] Failed to create invoice for payment ${paymentId}:`, invoiceError);
+            // Don't throw - payment is still confirmed
+        }
+
+        // Clear payment failure state
+        await pool.query(`
+            UPDATE "user" 
+            SET payment_failed_at = NULL,
+                payment_retry_count = 0,
+                payment_grace_until = NULL,
+                account_suspended_at = NULL,
+                updated_at = $1
+            WHERE id = $2
+        `, [Date.now(), userId]);
+
+        console.log(`[GoCardless] Payment ${paymentId} confirmed for user ${userId}`);
     } catch (error) {
         console.error('[GoCardless] Error handling payment.confirmed:', error);
     }
@@ -150,15 +203,6 @@ async function getUserIdFromMandate(pool: any, mandateId: string): Promise<numbe
     }
 }
 
-async function getUserIdFromPayment(pool: any, paymentId: string): Promise<number | null> {
-    try {
-        // This would need to be implemented based on how payments are linked to users
-        // For now, return null as we don't have payment tracking yet
-        return null;
-    } catch (error) {
-        console.error('[GoCardless] Error getting user from payment:', error);
-        return null;
-    }
-}
+// getUserIdFromPayment is now handled by findUserIdForPayment from invoices service
 
 export default router;

@@ -88,8 +88,20 @@ export async function listInvoices(req: Request, res: Response) {
   const pool = getPool();
 
   const rowsResult = await pool.query(`
-    SELECT id, created_at as date, amount_pence, status, invoice_url, pdf_token
-    FROM invoices WHERE user_id=$1
+    SELECT 
+      id, 
+      invoice_number,
+      created_at as date, 
+      period_start,
+      period_end,
+      amount_pence, 
+      currency,
+      status, 
+      pdf_path,
+      invoice_url, 
+      pdf_token
+    FROM invoices 
+    WHERE user_id=$1
     ORDER BY created_at DESC LIMIT $2 OFFSET $3
   `, [userId, pageSize, off]);
 
@@ -97,10 +109,14 @@ export async function listInvoices(req: Request, res: Response) {
 
   const items = rows.map((r: any) => ({
     id: r.id,
+    invoice_number: r.invoice_number,
     date: r.date,
+    period_start: r.period_start,
+    period_end: r.period_end,
     amount_pence: r.amount_pence,
+    currency: r.currency || 'GBP',
     status: r.status,
-    pdf_url: r.invoice_url || (r.pdf_token ? `/api/invoices/${r.pdf_token}` : null),
+    pdf_url: r.invoice_url || r.pdf_path || (r.pdf_token ? `/api/invoices/${r.pdf_token}` : null),
   }));
 
   res.json({ ok: true, data: { items, page, page_size: pageSize } });

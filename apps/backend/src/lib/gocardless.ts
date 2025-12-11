@@ -104,3 +104,21 @@ export function gcVerifyWebhookSignature(rawBody: string, signatureHeader: strin
 
   return signatureHeader.includes(mac);
 }
+
+/**
+ * Fetch payment details from GoCardless API
+ */
+export async function gcGetPayment(paymentId: string): Promise<{
+  id: string;
+  amount: number;
+  currency: string;
+  charge_date: string;
+  links: {
+    mandate?: string;
+    subscription?: string;
+    customer?: string;
+  };
+}> {
+  const payment = await gcRequest(`/payments/${paymentId}`);
+  return payment.payments;
+}
