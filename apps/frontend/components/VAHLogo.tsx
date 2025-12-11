@@ -88,10 +88,11 @@ export function VAHLogo({
 
     // Dynamic logo sizing based on `size` prop
     const logoDimensions = {
-        sm: { width: 120, height: 30 },
-        md: { width: 160, height: 40 },
-        lg: { width: 200, height: 50 },
-        xl: { width: 240, height: 60 },
+        // Use the horizontal logo asset; make it a bit larger by default
+        sm: { width: 140, height: 38 },
+        md: { width: 190, height: 52 },
+        lg: { width: 240, height: 66 },
+        xl: { width: 290, height: 80 },
     }[size || "md"];
 
     return (
@@ -99,7 +100,7 @@ export function VAHLogo({
             <div className="flex items-center">
                 {/* Use img tag for SVG since Next.js Image doesn't optimize SVGs well */}
                 <img
-                    src="/images/logo.svg"
+                    src="/images/logo-horizontal.svg"
                     alt={fullName}
                     width={logoDimensions.width}
                     height={logoDimensions.height}
