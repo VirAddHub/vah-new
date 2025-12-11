@@ -49,7 +49,12 @@ export function InvoicesTable() {
     return `£${(pence / 100).toFixed(2)}`;
   };
 
-  const invoices = data?.ok ? (data.data?.items || []) : [];
+  // Handle both response formats: { ok: true, data: { items: [...] } } or { ok: true, data: [...] }
+  const invoices = data?.ok 
+    ? (Array.isArray(data.data) 
+        ? data.data 
+        : (data.data?.items || []))
+    : [];
 
   return (
     <div className="overflow-x-auto">
