@@ -7,10 +7,10 @@ const steps = [
         k: 'verify',
         title: 'Verify your account',
         points: [
-            'Create your account and upload ID & proof of address (KYC/AML).',
-            'We review your details and approve your account.',
-            'Companies House now requires identity verification for all directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.',
-            'Your Central London address appears in your dashboard once everything is complete.'
+            'Create your account and upload your ID and proof of address (KYC/AML).',
+            'We review your details and approve your account in line with HMRC and Companies House requirements.',
+            'Companies House now requires identity verification for directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.',
+            'Once approved, your Central London address appears in your dashboard, ready to use.'
         ]
     },
     {
@@ -18,18 +18,18 @@ const steps = [
         title: 'Use your address everywhere',
         points: [
             'Update Companies House (Registered Office & Director\'s Service Address).',
-            'Use with HMRC, banks, suppliers and clients.',
-            'A real central London address — never a P.O. Box.'
+            'Use the same address with HMRC, banks, payment providers, clients and other professional contacts.',
+            'It\'s a real Central London address — never a P.O. Box.'
         ]
     },
     {
         k: 'handle',
         title: 'We handle your mail',
         points: [
-            'Same-day letter scanning on business days to your dashboard.',
-            'Free UK forwarding for HMRC & Companies House letters (on request).',
-            'Other UK letters forwarded for £2 per item, which covers postage and admin.',
-            'Letters only — no parcels.'
+            'Incoming letters are logged and scanned on the same business day to your dashboard.',
+            'HMRC & Companies House letters can be forwarded across the UK for free on request.',
+            'Other UK letters are forwarded for £2 per item, which covers postage and admin.',
+            'Letters only — no parcels. Everything handled in line with UK data protection and AML rules.'
         ]
     }
 ];
@@ -75,10 +75,6 @@ export default function HowItWorks() {
                     ))}
                 </div>
 
-                {/* soft footer note */}
-                <p className="mt-8 text-xs text-muted-foreground">
-                    Transparent pricing: one plan at £9.99/month. HMRC & Companies House forwarding free on request.
-                </p>
             </div>
         </section>
     );

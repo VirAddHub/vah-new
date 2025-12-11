@@ -86,19 +86,53 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl text-primary">
-                            Your London Business Address
-                            <span className="block text-foreground">
-                                Compliant. Private. Seamless.
-                            </span>
+                            Your Official London Business Address
                         </h1>
                         <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
-                            Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
+                            Protect your privacy. Meet the new rules. Look professional everywhere.
                         </p>
                         <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                            One London address for every official use.
-                            Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
+                            Secure a trusted Central London address for:
                         </p>
-
+                        <ul className="mt-2 space-y-1 text-base text-muted-foreground">
+                            <li>• Companies House (Registered Office & Director's Service Address)</li>
+                            <li>• HMRC and banking</li>
+                            <li>• Everyday business correspondence</li>
+                        </ul>
+                        <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+                            <div className="flex items-start gap-2">
+                                <span className="text-primary">✔</span>
+                                <span>Keep your home address off public records</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-primary">✔</span>
+                                <span>Fully HMRC AML supervised & ICO registered</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-primary">✔</span>
+                                <span>Unlimited same-day mail scanning included</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-primary">✔</span>
+                                <span>Free forwarding for HMRC & Companies House letters</span>
+                            </div>
+                        </div>
+                        <p className="mt-4 text-lg font-semibold text-foreground">
+                            Just £9.97/month — all-inclusive
+                        </p>
+                        <div className="mt-6">
+                            <Button
+                                onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
+                                size="lg"
+                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
+                            >
+                                Secure My London Address
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                            <p className="mt-2 text-xs text-muted-foreground text-center">
+                                Instant signup · Cancel anytime · Letters only (no parcels)
+                            </p>
+                        </div>
                         <div className="mt-6 flex flex-wrap gap-2">
                             <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700">
                                 ICO — Registered
@@ -110,47 +144,60 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 GDPR — Aligned
                             </span>
                         </div>
-
-                        <div className="mt-6">
-                            <Button
-                                onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                                size="lg"
-                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
-                            >
-                                Secure My London Address — Start Today
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </div>
                     </div>
 
                     {/* Desktop: Horizontal Layout - Text First */}
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl text-primary">
-                                Your London Business Address
-                                <span className="block text-foreground">
-                                    Compliant. Private. Seamless.
-                                </span>
+                                Your Official London Business Address
                             </h1>
                             <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
-                                Helping small businesses build a trusted Central London presence — powered by our professional office near Tower Bridge.
+                                Protect your privacy. Meet the new rules. Look professional everywhere.
                             </p>
-                            <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                                One London address for every official use.
-                                Use it for your Registered Office, Director's Service, and Business Correspondence — all included in one simple plan.
+                            <p className="mt-4 text-base text-muted-foreground max-w-2xl leading-relaxed">
+                                Secure a trusted Central London address for:
                             </p>
-
-                            <div className="mt-10">
+                            <ul className="mt-2 space-y-1 text-base text-muted-foreground">
+                                <li>• Companies House (Registered Office & Director's Service Address)</li>
+                                <li>• HMRC and banking</li>
+                                <li>• Everyday business correspondence</li>
+                            </ul>
+                            <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+                                <div className="flex items-start gap-2">
+                                    <span className="text-primary">✔</span>
+                                    <span>Keep your home address off public records</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-primary">✔</span>
+                                    <span>Fully HMRC AML supervised & ICO registered</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-primary">✔</span>
+                                    <span>Unlimited same-day mail scanning included</span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <span className="text-primary">✔</span>
+                                    <span>Free forwarding for HMRC & Companies House letters</span>
+                                </div>
+                            </div>
+                            <p className="mt-4 text-xl font-semibold text-foreground">
+                                Just £9.97/month — all-inclusive
+                            </p>
+                            <div className="mt-6">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
                                     className="tt-min px-8 rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
                                 >
-                                    Secure My London Address — Start Today
+                                    Secure My London Address
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Instant signup · Cancel anytime · Letters only (no parcels)
+                                </p>
                             </div>
-                            <div className="mt-8 flex flex-wrap gap-2">
+                            <div className="mt-6 flex flex-wrap gap-2">
                                 <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
                                     ICO — Registered
                                 </span>
@@ -181,10 +228,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto max-w-4xl">
                     <div className="text-center mb-8">
                         <h2 className="mt-4 text-2xl font-semibold sm:text-3xl tracking-tight">
-                            Simple, All-Inclusive Pricing
+                            Simple, all-inclusive pricing
                         </h2>
                         <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base leading-snug">
-                            No hidden fees. Cancel anytime.
+                            One clear plan. Everything included.
                         </p>
                     </div>
 
@@ -228,7 +275,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     {/* Save badge */}
                                     <div className="absolute -top-2 -right-2 z-20">
                                         <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1 whitespace-nowrap shadow-md">
-                                            Save {monthlySavingsPct}%
+                                            Save ~25%
                                         </Badge>
                                     </div>
                                 </div>
@@ -265,20 +312,22 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <p className="text-sm text-foreground mb-1 leading-snug">
                                         {subCopy}
                                     </p>
-                                    <p className="text-sm text-foreground font-medium leading-snug">
-                                        {fineCopy}
-                                    </p>
+                                    {!isAnnual && (
+                                        <p className="text-sm text-muted-foreground leading-snug">
+                                            Prefer to pay annually? £89.99/year (≈ £7.50/month)
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Features List - Compact */}
                                 <div className="space-y-2 mb-6 text-left">
                                     {[
-                                        "Registered Office, Director & Business Address",
-                                        "Unlimited Same-Day Mail Scanning",
-                                        "Free Forwarding for Official Mail",
-                                        "Secure Digital Dashboard",
-                                        "UK-Based Support",
-                                        "Cancel Anytime"
+                                        "Registered Office, Director's Service & Business Address — all in one",
+                                        "Unlimited same-day mail scanning on business days",
+                                        "Free UK forwarding for HMRC & Companies House letters (on request)",
+                                        "Secure digital dashboard to view, download and organise mail",
+                                        "UK-based human support during business hours",
+                                        "No setup fees, no minimum term, cancel any time"
                                     ].map((feature, index) => (
                                         <div key={index} className="flex items-start gap-2">
                                             <div className="flex-shrink-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center mt-0.5">
@@ -304,13 +353,22 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     size="lg"
                                     className="w-full tracking-tight text-base font-semibold rounded-lg !h-14"
                                 >
-                                    {isAnnual ? `Choose Annual — ${priceLabel}${priceSuffix}` : `Secure My London Address Now`}
+                                    {isAnnual ? `Get My London Address – £${annualPrice}/year` : `Get My London Address – £9.97/month`}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
 
-                                <p className="mt-4 text-xs text-muted-foreground">
-                                    HMRC & Companies House mail forwarding is free in the UK. Other letters can be forwarded for £2 per item (covering postage & handling).
+                                <p className="mt-4 text-xs text-muted-foreground text-center">
+                                    Instant signup · No hidden fees · Fully compliant
                                 </p>
+
+                                <div className="mt-6 pt-4 border-t border-border">
+                                    <p className="text-xs font-semibold text-foreground mb-2">How forwarding works:</p>
+                                    <div className="space-y-1 text-xs text-muted-foreground">
+                                        <p>• HMRC & Companies House mail — forwarding is free within the UK</p>
+                                        <p>• Other UK letters — £2 per item, covering postage and handling</p>
+                                        <p>• Letters only — we don't accept parcels</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -113,7 +113,7 @@ export function usePricing() {
     const annualPlan = getAnnualPlan();
     
     // Fallback prices if API fails
-    const fallbackMonthlyPrice = 9.99;
+    const fallbackMonthlyPrice = 9.97;
     const fallbackAnnualPrice = 89.99;
     
     const monthlyPrice = monthlyPlan?.price ?? fallbackMonthlyPrice;

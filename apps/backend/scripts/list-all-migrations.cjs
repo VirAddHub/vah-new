@@ -122,3 +122,4 @@ console.log('   1. Set DATABASE_URL environment variable');
 console.log('   2. Run: node scripts/check-unmigrated.cjs');
 console.log('\n   Or manually query: SELECT name FROM migrations ORDER BY applied_at;\n');
 
+
