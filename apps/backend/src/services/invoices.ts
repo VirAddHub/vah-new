@@ -58,6 +58,10 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
   const invoiceNumberFormatted = `VAH-${year}-${String(invoiceNumber).padStart(6, '0')}`;
 
+  // Convert dates to ISO string format for TEXT columns
+  const periodStartStr = opts.periodStart.toISOString().slice(0, 10);
+  const periodEndStr = opts.periodEnd.toISOString().slice(0, 10);
+
   // Insert invoice record
   const result = await pool.query<InvoiceRow>(
     `
