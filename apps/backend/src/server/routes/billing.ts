@@ -6,11 +6,12 @@ import {
 } from '../controllers/billing';
 
 const router = Router();
-router.get('/api/billing/overview', requireAuth, getBillingOverview);
-router.get('/api/billing/invoices', requireAuth, listInvoices);
-router.post('/api/billing/update-bank', requireAuth, postUpdateBank);
-router.post('/api/billing/reauthorise', requireAuth, postReauthorise);
-router.post('/api/billing/retry-payment', requireAuth, postRetryPayment);
-router.post('/api/billing/change-plan', requireAuth, postChangePlan);
-router.post('/api/billing/cancel', requireAuth, postCancelAtPeriodEnd);
+// Routes are mounted at /api/billing in server.ts, so use relative paths here
+router.get('/overview', requireAuth, getBillingOverview);
+router.get('/invoices', requireAuth, listInvoices);
+router.post('/update-bank', requireAuth, postUpdateBank);
+router.post('/reauthorise', requireAuth, postReauthorise);
+router.post('/retry-payment', requireAuth, postRetryPayment);
+router.post('/change-plan', requireAuth, postChangePlan);
+router.post('/cancel', requireAuth, postCancelAtPeriodEnd);
 export default router;
