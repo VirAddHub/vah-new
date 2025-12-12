@@ -760,7 +760,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                         return (
                           <div className="mt-5 flex items-start gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-neutral-100 flex items-center justify-center">
+                            <div className="pt-1">
                               <Icon className="h-7 w-7 text-neutral-900" />
                             </div>
 
@@ -788,65 +788,68 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                     <div className="border-t border-neutral-200" />
 
-                    {/* Actions row */}
-                    <div className="px-4 sm:px-6 py-8">
-                      <div className="flex items-center justify-between sm:justify-start sm:gap-24 max-w-2xl">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            console.log("[MailDetail] View", selectedMailDetail.id);
-                            setSelectedMailForPDF(selectedMailDetail);
-                            setShowPDFModal(true);
-                          }}
-                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          <Eye className="h-6 w-6" />
-                          <span className="text-sm font-medium">View</span>
-                        </button>
+                    {/* Actions + preview + details (match screenshot layout) */}
+                    <div className="px-4 sm:px-6 py-10">
+                      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
+                        {/* Left column: actions then preview */}
+                        <div>
+                          <div className="flex items-center justify-between sm:justify-start sm:gap-24 max-w-2xl">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("[MailDetail] View", selectedMailDetail.id);
+                                setSelectedMailForPDF(selectedMailDetail);
+                                setShowPDFModal(true);
+                              }}
+                              className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                            >
+                              <Eye className="h-6 w-6" />
+                              <span className="text-sm font-medium">View</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            console.log("[MailDetail] Download", selectedMailDetail.id);
-                            onDownload(selectedMailDetail);
-                          }}
-                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          <Download className="h-6 w-6" />
-                          <span className="text-sm font-medium">Download</span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("[MailDetail] Download", selectedMailDetail.id);
+                                onDownload(selectedMailDetail);
+                              }}
+                              className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                            >
+                              <Download className="h-6 w-6" />
+                              <span className="text-sm font-medium">Download</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            console.log("[MailDetail] Forward", selectedMailDetail.id);
-                            handleRequestForwarding(selectedMailDetail);
-                          }}
-                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          <Truck className="h-6 w-6" />
-                          <span className="text-sm font-medium">Forward</span>
-                        </button>
-                      </div>
-
-                      {/* Main content */}
-                      <div className="mt-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            console.log("[MailDetail] Preview click -> View", selectedMailDetail.id);
-                            setSelectedMailForPDF(selectedMailDetail);
-                            setShowPDFModal(true);
-                          }}
-                          className="rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center"
-                        >
-                          <div className="text-center px-6">
-                            <FileText className="h-10 w-10 mx-auto text-neutral-500" />
-                            <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
-                            <div className="mt-2 text-sm text-neutral-500">Tap “View” to open full document</div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("[MailDetail] Forward", selectedMailDetail.id);
+                                handleRequestForwarding(selectedMailDetail);
+                              }}
+                              className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                            >
+                              <Truck className="h-6 w-6" />
+                              <span className="text-sm font-medium">Forward</span>
+                            </button>
                           </div>
-                        </button>
 
+                          <button
+                            type="button"
+                            onClick={() => {
+                              console.log("[MailDetail] Preview click -> View", selectedMailDetail.id);
+                              setSelectedMailForPDF(selectedMailDetail);
+                              setShowPDFModal(true);
+                            }}
+                            className="mt-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center w-full"
+                          >
+                            <div className="text-center px-6">
+                              <FileText className="h-10 w-10 mx-auto text-neutral-500" />
+                              <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
+                              <div className="mt-2 text-sm text-neutral-500">Tap “View” to open full document</div>
+                            </div>
+                          </button>
+                        </div>
+
+                        {/* Right column: details */}
                         <div>
                           <div className="text-base font-medium text-neutral-900">Details</div>
                           <div className="mt-4 space-y-4">
