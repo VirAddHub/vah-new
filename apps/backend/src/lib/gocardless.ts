@@ -103,6 +103,7 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
 // Verify webhook signature
 export function gcVerifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   if (!signatureHeader) return false;
+  if (!WEBHOOK_SECRET) return false;
 
   const mac = crypto.createHmac('sha256', WEBHOOK_SECRET)
     .update(rawBody, 'utf8')

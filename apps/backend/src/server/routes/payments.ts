@@ -158,7 +158,8 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
         // Create Billing Request Flow and redirect user to GoCardless (Sandbox/Live based on GC_ENVIRONMENT)
         // GoCardless will redirect back to `${APP_URL}/billing?billing_request_flow_id=BRFxxx`
-        const redirectUri = `${String(appUrl).replace(/\\/+$/, '')}/billing`;
+        // Trim trailing slashes from APP_URL/APP_BASE_URL
+        const redirectUri = `${String(appUrl).replace(/\/+$/, '')}/billing`;
         const link = await gcCreateBrfUrl(Number(userId), redirectUri);
 
         return res.json({
