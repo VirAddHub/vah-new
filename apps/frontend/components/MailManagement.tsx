@@ -292,17 +292,59 @@ export function MailManagement({
     }, [onRefresh, toast]);
 
     const renderMailItem = (item: MailItem) => {
-        // Determine title: use subject, sender name, or fallback (NOT tag)
-        const title = item.subject || item.sender_name || 'Inbox item';
-        
-        // Format date
-        const formattedDate = item.received_date
-            ? new Date(item.received_date).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            })
-            : undefined;
+        const sender = item.sender_name || getTagLabel(item.tag) || 'Mail';
+        const subject = item.subject || '';
+
+        const rawDate = item.received_date || item.created_at;
+        const dateObj = rawDate ? new Date(rawDate) : null;
+
+        const timeLabel = (() => {
+            if (!dateObj || Number.isNaN(dateObj.getTime())) return '';
+            const now = new Date();
+            const sameDay =
+                dateObj.getFullYear() === now.getFullYear() &&
+                dateObj.getMonth() === now.getMonth() &&
+                dateObj.getDate() === now.getDate();
+
+            if (sameDay) {
+                return dateObj.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+            }
+
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday =
+                dateObj.getFullYear() === yesterday.getFullYear() &&
+                dateObj.getMonth() === yesterday.getMonth() &&
+                dateObj.getDate() === yesterday.getDate();
+            if (isYesterday) return 'Yesterday';
+
+            return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        })();
+
+        const statusVariant: "new" | "scanned" | "forwarded" | "neutral" = (() => {
+            const raw = (item.status || "").toLowerCase();
+            if (raw.includes("forward")) return "forwarded";
+            if (item.scanned_at || item.file_url || raw.includes("scan")) return "scanned";
+            if (!(item.is_read ?? true)) return "new";
+            return "neutral";
+        })();
+
+        const statusLabel: "New" | "Scanned" | "Forwarded" | "Received" =
+            statusVariant === "new"
+                ? "New"
+                : statusVariant === "scanned"
+                    ? "Scanned"
+                    : statusVariant === "forwarded"
+                        ? "Forwarded"
+                        : "Received";
+
+        const mailType: "gov" | "bank" | "file" = (() => {
+            const tag = (item.tag || "").toLowerCase();
+            const s = `${tag} ${(item.sender_name || "").toLowerCase()} ${(item.subject || "").toLowerCase()}`;
+            if (s.includes("bank") || s.includes("barclays") || s.includes("hsbc") || s.includes("lloyds")) return "bank";
+            if (s.includes("hmrc") || s.includes("companies house") || s.includes("gov")) return "gov";
+            return "file";
+        })();
 
         return (
             <div key={item.id} className="mb-3">
@@ -315,27 +357,14 @@ export function MailManagement({
                     }
                 }}>
                     <MailItemCard
-                        title={title}
-                        date={formattedDate}
-                        tag={getTagLabel(item.tag)}
-                        isArchived={item.deleted}
+                        sender={sender}
+                        subject={subject}
+                        timeLabel={timeLabel}
+                        statusLabel={statusLabel}
+                        statusVariant={statusVariant}
+                        mailType={mailType}
                         isRead={item.is_read ?? true}
-                        onTag={() => {
-                            setSelectedItem(item);
-                            setShowTagDialog(true);
-                        }}
-                        onArchive={() => handleArchiveItem(item)}
-                        onForward={() => {
-                            if (onForward) {
-                                onForward(item);
-                            } else {
-                                handleForwardItem(item);
-                            }
-                        }}
                         onOpen={() => onOpen(item)}
-                        onDownload={() => onDownload(item)}
-                        onRestore={item.deleted ? () => handleRestoreItem(item) : undefined}
-                        disabled={loading}
                     />
                     <DialogContent>
                         <DialogHeader>

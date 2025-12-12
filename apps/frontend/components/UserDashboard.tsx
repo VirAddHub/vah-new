@@ -292,15 +292,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const isNew = !item.is_read && !isForwarded;
 
     if (isForwarded) {
-      return { label: "Forwarded", badgeClass: "bg-emerald-500/15 text-emerald-200 border-emerald-400/30" };
+      return { label: "Forwarded", badgeClass: "bg-emerald-600 text-white border-transparent" };
     }
     if (isScanned) {
-      return { label: "Scanned", badgeClass: "bg-white/10 text-white/80 border-white/15" };
+      return { label: "Scanned", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
     }
     if (isNew) {
-      return { label: "New", badgeClass: "bg-sky-500/15 text-sky-200 border-sky-400/30" };
+      return { label: "New", badgeClass: "bg-blue-600 text-white border-transparent" };
     }
-    return { label: "Received", badgeClass: "bg-white/10 text-white/80 border-white/15" };
+    return { label: "Received", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
   };
 
   const mailTypeIcon = (item: MailItem) => {
@@ -735,18 +735,17 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {/* Mail detail view (dark theme) */}
+                {/* Mail detail view (match screenshot - light) */}
                 {selectedMailDetail ? (
-                  <div className="p-4 sm:p-6 bg-neutral-950 text-white">
-                    {/* Header */}
-                    <div className="flex flex-col gap-4">
+                  <div className="bg-white">
+                    <div className="px-4 sm:px-6 pt-4 pb-6">
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedMailDetail(null);
                           onGoBack?.();
                         }}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                        className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Back to inbox
@@ -760,28 +759,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         const time = formatTime(selectedMailDetail.received_date || selectedMailDetail.created_at);
 
                         return (
-                          <div className="flex items-start gap-4">
-                            <div className="h-14 w-14 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 flex items-center justify-center shadow-[0_0_0_1px_rgba(16,185,129,0.08)]">
-                              <Icon className="h-7 w-7 text-emerald-300" />
+                          <div className="mt-5 flex items-start gap-4">
+                            <div className="h-14 w-14 rounded-2xl bg-neutral-100 flex items-center justify-center">
+                              <Icon className="h-7 w-7 text-neutral-900" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0">
-                                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
-                                    {title}
-                                  </h3>
-                                  <p className="mt-1 text-sm sm:text-base text-white/60 truncate">
-                                    {subtitle}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span
-                                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${status.badgeClass}`}
-                                  >
-                                    {status.label}
-                                  </span>
-                                  <span className="text-xs text-white/60">{time}</span>
-                                </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-900 truncate">
+                                  {title}
+                                </h2>
+                                {!selectedMailDetail.is_read && (
+                                  <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />
+                                )}
+                              </div>
+                              <p className="mt-2 text-lg text-neutral-500 truncate">{subtitle}</p>
+                              <div className="mt-3 flex items-center gap-4">
+                                <Badge className={`rounded-full px-4 py-1 text-base font-medium ${status.badgeClass}`}>
+                                  {status.label}
+                                </Badge>
+                                <span className="text-base text-neutral-500">{time}</span>
                               </div>
                             </div>
                           </div>
@@ -789,115 +786,98 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       })()}
                     </div>
 
-                    {/* Action buttons row */}
-                    <div className="mt-6 grid grid-cols-3 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log("[MailDetail] View", selectedMailDetail.id);
-                          setSelectedMailForPDF(selectedMailDetail);
-                          setShowPDFModal(true);
-                        }}
-                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
-                      >
-                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
-                          <Eye className="h-5 w-5 text-emerald-300" />
-                        </div>
-                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">View</div>
-                      </button>
+                    <div className="border-t border-neutral-200" />
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log("[MailDetail] Download", selectedMailDetail.id);
-                          onDownload(selectedMailDetail);
-                        }}
-                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
-                      >
-                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
-                          <Download className="h-5 w-5 text-emerald-300" />
-                        </div>
-                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">Download</div>
-                      </button>
+                    {/* Actions row */}
+                    <div className="px-4 sm:px-6 py-8">
+                      <div className="flex items-center justify-between sm:justify-start sm:gap-24 max-w-2xl">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log("[MailDetail] View", selectedMailDetail.id);
+                            setSelectedMailForPDF(selectedMailDetail);
+                            setShowPDFModal(true);
+                          }}
+                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                        >
+                          <Eye className="h-6 w-6" />
+                          <span className="text-sm font-medium">View</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log("[MailDetail] Forward", selectedMailDetail.id);
-                          handleRequestForwarding(selectedMailDetail);
-                        }}
-                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
-                      >
-                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
-                          <Truck className="h-5 w-5 text-emerald-300" />
-                        </div>
-                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">Forward</div>
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log("[MailDetail] Download", selectedMailDetail.id);
+                            onDownload(selectedMailDetail);
+                          }}
+                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                        >
+                          <Download className="h-6 w-6" />
+                          <span className="text-sm font-medium">Download</span>
+                        </button>
 
-                    {/* Main content area */}
-                    <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-                      {/* Preview */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log("[MailDetail] Preview click -> View", selectedMailDetail.id);
-                          setSelectedMailForPDF(selectedMailDetail);
-                          setShowPDFModal(true);
-                        }}
-                        className="group relative overflow-hidden rounded-2xl border border-emerald-400/15 bg-white/5 hover:bg-white/8 transition-colors min-h-[260px] sm:min-h-[340px] lg:min-h-[420px]"
-                      >
-                        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
-                        </div>
-                        <div className="h-full w-full flex flex-col items-center justify-center text-center px-6">
-                          <div className="h-14 w-14 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center">
-                            <Eye className="h-6 w-6 text-emerald-300" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log("[MailDetail] Forward", selectedMailDetail.id);
+                            handleRequestForwarding(selectedMailDetail);
+                          }}
+                          className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                        >
+                          <Truck className="h-6 w-6" />
+                          <span className="text-sm font-medium">Forward</span>
+                        </button>
+                      </div>
+
+                      {/* Main content */}
+                      <div className="mt-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log("[MailDetail] Preview click -> View", selectedMailDetail.id);
+                            setSelectedMailForPDF(selectedMailDetail);
+                            setShowPDFModal(true);
+                          }}
+                          className="rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center"
+                        >
+                          <div className="text-center px-6">
+                            <FileText className="h-10 w-10 mx-auto text-neutral-500" />
+                            <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
+                            <div className="mt-2 text-sm text-neutral-500">Tap “View” to open full document</div>
                           </div>
-                          <div className="mt-4 text-base sm:text-lg font-semibold text-white">
-                            Document preview
-                          </div>
-                          <div className="mt-1 text-xs sm:text-sm text-white/60">
-                            Click “View” to open full document
-                          </div>
-                        </div>
-                      </button>
+                        </button>
 
-                      {/* Details sidebar */}
-                      <div className="rounded-2xl border border-emerald-400/15 bg-white/5 p-4 sm:p-5">
-                        <div className="text-sm font-semibold text-white mb-4">Details</div>
-                        {(() => {
-                          const status = mailStatusMeta(selectedMailDetail);
-                          const received = formatTime(selectedMailDetail.received_date || selectedMailDetail.created_at);
-                          const rows: Array<{ label: string; value: React.ReactNode }> = [
-                            { label: "From", value: selectedMailDetail.sender_name || "—" },
-                            { label: "Subject", value: selectedMailDetail.subject || "—" },
-                            { label: "Received", value: received },
-                            {
-                              label: "Status",
-                              value: (
-                                <span
-                                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${status.badgeClass}`}
-                                >
-                                  {status.label}
-                                </span>
-                              ),
-                            },
-                          ];
+                        <div>
+                          <div className="text-base font-medium text-neutral-900">Details</div>
+                          <div className="mt-4 space-y-4">
+                            {(() => {
+                              const status = mailStatusMeta(selectedMailDetail);
+                              const received = formatTime(selectedMailDetail.received_date || selectedMailDetail.created_at);
+                              const rows: Array<{ label: string; value: React.ReactNode }> = [
+                                { label: "From", value: selectedMailDetail.sender_name || "—" },
+                                { label: "Subject", value: selectedMailDetail.subject || "—" },
+                                { label: "Received", value: received },
+                                {
+                                  label: "Status",
+                                  value: (
+                                    <Badge className={`rounded-full px-4 py-1 text-sm font-medium ${status.badgeClass}`}>
+                                      {status.label}
+                                    </Badge>
+                                  ),
+                                },
+                              ];
 
-                          return (
-                            <div className="space-y-3">
-                              {rows.map((r) => (
-                                <div key={r.label} className="flex items-start justify-between gap-4">
-                                  <div className="text-xs text-white/60">{r.label}:</div>
-                                  <div className="text-xs font-semibold text-white text-right break-words max-w-[70%]">
+                              return rows.map((r) => (
+                                <div key={r.label} className="flex items-start justify-between gap-6">
+                                  <div className="text-base text-neutral-500">{r.label}:</div>
+                                  <div className="text-base font-medium text-neutral-900 text-right break-words max-w-[70%]">
                                     {r.value}
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
+                              ));
+                            })()}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
