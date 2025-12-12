@@ -17,6 +17,7 @@ import {
   Eye,
   Calendar,
   ArrowLeft,
+  X,
   RefreshCw,
   LogOut,
   Settings,
@@ -105,6 +106,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [miniViewerUrl, setMiniViewerUrl] = useState<string | null>(null);
   const [miniViewerLoading, setMiniViewerLoading] = useState(false);
   const [miniViewerError, setMiniViewerError] = useState<string | null>(null);
+  const [forwardInlineNotice, setForwardInlineNotice] = useState<string | null>(null);
   const [certLoading, setCertLoading] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
@@ -388,6 +390,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMailDetail?.id]);
 
+  // Forwarding notice: keep it near the Forward button, and auto-hide
+  useEffect(() => {
+    if (!forwardInlineNotice) return;
+    const t = window.setTimeout(() => setForwardInlineNotice(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [forwardInlineNotice]);
+
+  // Clear any inline notice when switching items
+  useEffect(() => {
+    setForwardInlineNotice(null);
+  }, [selectedMailDetail?.id]);
+
   // Generate certificate handler
   const onGenerateCertificate = useCallback(async () => {
     try {
@@ -611,17 +625,25 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       console.log('[UI] Processing specific mail item:', mailItem.id);
       if (!canForward(mailItem)) {
         console.log('[UI] Cannot forward mail item:', mailItem.id, 'GDPR expired:', isGDPRExpired(mailItem));
-        toast({
-          title: "Cannot Forward Mail",
-          description: isGDPRExpired(mailItem)
-            ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
-            : "This mail item cannot be forwarded at this time.",
-          variant: "destructive",
-          durationMs: 5000,
-        });
+        const msg = isGDPRExpired(mailItem)
+          ? "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it."
+          : "This mail item cannot be forwarded at this time.";
+
+        // If the user is in the mail detail view, show it anchored near the Forward button
+        if (selectedMailDetail && String(selectedMailDetail.id) === String(mailItem.id)) {
+          setForwardInlineNotice(msg);
+        } else {
+          toast({
+            title: "Cannot Forward Mail",
+            description: msg,
+            variant: "destructive",
+            durationMs: 5000,
+          });
+        }
         return;
       }
       console.log('[UI] Setting selected mail for forwarding and showing modal');
+      setForwardInlineNotice(null);
       setSelectedMailForForwarding(mailItem);
       setShowForwardingConfirmation(true);
       return;
@@ -817,6 +839,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         type="button"
                         onClick={() => {
                           setSelectedMailDetail(null);
+                          setForwardInlineNotice(null);
                           onGoBack?.();
                         }}
                         className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
@@ -893,17 +916,42 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               <span className="text-sm font-medium">Download</span>
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                console.log("[MailDetail] Forward", selectedMailDetail.id);
-                                handleRequestForwarding(selectedMailDetail);
-                              }}
-                              className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
-                            >
-                              <Truck className="h-6 w-6" />
-                              <span className="text-sm font-medium">Forward</span>
-                            </button>
+                            <div className="relative flex flex-col items-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  console.log("[MailDetail] Forward", selectedMailDetail.id);
+                                  handleRequestForwarding(selectedMailDetail);
+                                }}
+                                className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                              >
+                                <Truck className="h-6 w-6" />
+                                <span className="text-sm font-medium">Forward</span>
+                              </button>
+
+                              {forwardInlineNotice && (
+                                <div
+                                  role="alert"
+                                  className="absolute top-full mt-3 z-20 w-[min(420px,90vw)] rounded-xl border border-neutral-200 bg-white shadow-lg p-4"
+                                  style={{ left: "50%", transform: "translateX(-50%)" }}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="text-sm font-semibold text-neutral-900">Cannot Forward Mail</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setForwardInlineNotice(null)}
+                                      className="shrink-0 rounded-md p-1 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors"
+                                      aria-label="Dismiss"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                  <div className="mt-2 text-sm text-neutral-600 leading-relaxed">
+                                    {forwardInlineNotice}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <button
