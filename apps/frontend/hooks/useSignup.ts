@@ -113,27 +113,23 @@ export function useSignup() {
 
             // Step 2: Set up payment
             try {
-                const paymentResponse = await fetch('/api/payments/redirect-flows', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include'
-                });
+                // IMPORTANT: Call the backend API (not a same-origin Next.js route)
+                // This requires that signup stored a token/cookie.
+                const paymentResp = await apiClient.post<any>('/api/payments/redirect-flows', {});
 
-                const paymentData = await paymentResponse.json();
+                const redirectUrl = (paymentResp as any)?.redirect_url || (paymentResp as any)?.data?.redirect_url;
 
-                if (paymentResponse.ok && paymentData.redirect_url) {
-                    console.log('✅ Payment setup initiated, redirecting to:', paymentData.redirect_url);
+                if (paymentResp.ok && redirectUrl) {
+                    console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
                     // Redirect to GoCardless for payment setup
-                    window.location.href = paymentData.redirect_url;
+                    window.location.href = redirectUrl;
                     return; // Don't set complete yet, wait for redirect
-                } else if (paymentResponse.ok && paymentData.data?.skip_payment) {
+                } else if (paymentResp.ok && (paymentResp as any).data?.skip_payment) {
                     console.log('✅ Payment setup skipped, user account created successfully');
                     // Payment setup was skipped (GoCardless not configured)
                     // User account is created and ready to use
                 } else {
-                    console.warn('⚠️ Payment setup failed, but user account created:', paymentData);
+                    console.warn('⚠️ Payment setup failed, but user account created:', paymentResp);
                     // User account created but payment setup failed
                     // Still mark as complete so they can try payment later
                 }

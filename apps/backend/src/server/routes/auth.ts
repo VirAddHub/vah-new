@@ -358,12 +358,35 @@ router.post("/signup", async (req, res) => {
             console.error(`[auth/signup] ⚠️ Failed to send welcome + KYC email to ${row.email}:`, emailError);
         }
 
+        // Auto-login after signup (so the user can immediately set up GoCardless mandate)
+        const token = generateToken({
+            id: row.id,
+            email: row.email,
+            is_admin: false,
+            role: 'user'
+        });
+
+        // Set HttpOnly cookie for cross-site auth (frontend on different domain)
+        res.cookie('vah_session', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000 // 60 minutes
+        });
+
         return res.status(201).json({
             ok: true,
             data: {
-                user_id: row.id,
-                email: row.email,
-                name: `${row.first_name} ${row.last_name}`,
+                user: {
+                    user_id: row.id,
+                    email: row.email,
+                    first_name: row.first_name,
+                    last_name: row.last_name,
+                    is_admin: false,
+                    role: 'user',
+                },
+                token
             },
         });
     } catch (err: any) {

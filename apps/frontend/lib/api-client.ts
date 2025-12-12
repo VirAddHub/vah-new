@@ -193,16 +193,18 @@ export const apiClient = {
 
         // If login successful, store the JWT token
         // Backend returns: { ok: true, data: { user: {...}, token: "..." } }
-        if (resp.ok && resp.data && 'token' in resp.data) {
-            const token = resp.data.token as string;
+        const token = (resp.ok ? (resp.data as any)?.data?.token : null) as string | null;
+        const userObj = (resp.ok ? (resp.data as any)?.data?.user : null) as any;
+
+        if (resp.ok && token) {
             console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
 
             // Also store user data if present
-            if (resp.data.user) {
-                setStoredUser(resp.data.user);
-                console.log('✅ User data stored:', resp.data.user);
+            if (userObj) {
+                setStoredUser(userObj);
+                console.log('✅ User data stored:', userObj);
             }
 
             // Verify token was stored
@@ -229,8 +231,8 @@ export const apiClient = {
 
         // Backend returns { ok: true, data: { user: {...}, token: "..." } }
         // We need to return { ok: true, data: { user: {...} } } for the frontend
-        if (resp.ok && resp.data && resp.data.user) {
-            return { ok: true, data: { user: resp.data.user } };
+        if (resp.ok && userObj) {
+            return { ok: true, data: { user: normalizeUserPayload({ user: userObj }) as User } };
         }
 
         return coerceUserResponse(resp);
@@ -312,14 +314,17 @@ export const apiClient = {
             }),
         });
 
-        // Backend returns: { ok: true, data: { user_id, email, name } }
-        // Convert to frontend format: { ok: true, data: { user: { id, email, ... } } }
-        if (resp.ok && resp.data && resp.data.data) {
-            const userData = resp.data.data;
-            const user = normalizeUserPayload(userData);
-            if (user) {
-                return { ok: true, data: { user } };
-            }
+        // Backend returns: { ok: true, data: { user: {...}, token: "..." } }
+        // Store token on signup so we can immediately call authenticated endpoints (e.g. payment setup)
+        if (resp.ok) {
+            const token = (resp.data as any)?.data?.token as string | undefined;
+            const userData = (resp.data as any)?.data?.user;
+
+            if (token) setToken(token);
+            if (userData) setStoredUser(userData);
+
+            const user = normalizeUserPayload({ user: userData });
+            if (user) return { ok: true, data: { user } };
         }
 
         return coerceUserResponse(resp);
