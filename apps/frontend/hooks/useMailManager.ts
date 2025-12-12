@@ -12,12 +12,9 @@ const triggerBrowserDownload = (blob: Blob, filename: string) => {
   window.URL.revokeObjectURL(url);
   // Safely remove the element if it's still a child
   if (a.parentNode === document.body) {
-  document.body.removeChild(a);
+    document.body.removeChild(a);
   }
 };
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-run_terminal_cmd
-
 type SetMailItems = React.Dispatch<React.SetStateAction<MailItem[]>>;
 
 export const useMailManager = (setMailItems: SetMailItems) => {

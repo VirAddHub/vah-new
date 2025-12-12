@@ -5,6 +5,8 @@ import useSWR from 'swr';
 import { getToken } from '@/lib/token-manager';
 import {
   Building2,
+  FileText,
+  Landmark,
   FileCheck,
   Download,
   Truck,
@@ -97,6 +99,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
+  const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
   const [certLoading, setCertLoading] = useState(false);
@@ -249,8 +252,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Open handler - opens PDF modal and marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
+      // Route into the detail view (PDF opens from the "View" action)
+      setSelectedMailDetail(item);
       setSelectedMailForPDF(item);
-      setShowPDFModal(true);
+      setShowPDFModal(false);
 
       // Auto-mark as read when opened (if not already read)
       if (!item.is_read) {
@@ -270,6 +275,44 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       alert('Unable to download file. Please try again.');
     }
   }, []);
+
+  const formatTime = (d?: string | number) => {
+    if (!d) return "—";
+    const date = typeof d === "number" ? new Date(d) : new Date(d);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date
+      .toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", hour12: true })
+      .toUpperCase();
+  };
+
+  const mailStatusMeta = (item: MailItem) => {
+    const raw = (item.status || "").toLowerCase();
+    const isForwarded = raw.includes("forward");
+    const isScanned = Boolean(item.scanned_at || item.file_url) || raw.includes("scan");
+    const isNew = !item.is_read && !isForwarded;
+
+    if (isForwarded) {
+      return { label: "Forwarded", badgeClass: "bg-emerald-500/15 text-emerald-200 border-emerald-400/30" };
+    }
+    if (isScanned) {
+      return { label: "Scanned", badgeClass: "bg-white/10 text-white/80 border-white/15" };
+    }
+    if (isNew) {
+      return { label: "New", badgeClass: "bg-sky-500/15 text-sky-200 border-sky-400/30" };
+    }
+    return { label: "Received", badgeClass: "bg-white/10 text-white/80 border-white/15" };
+  };
+
+  const mailTypeIcon = (item: MailItem) => {
+    const tag = (item.tag || "").toLowerCase();
+    const sender = (item.sender_name || "").toLowerCase();
+    const subj = (item.subject || "").toLowerCase();
+    const s = `${tag} ${sender} ${subj}`;
+
+    if (s.includes("bank") || s.includes("barclays") || s.includes("hsbc") || s.includes("lloyds")) return Landmark;
+    if (s.includes("hmrc") || s.includes("companies house") || s.includes("gov")) return Building2;
+    return FileText;
+  };
 
   // Generate certificate handler
   const onGenerateCertificate = useCallback(async () => {
@@ -692,77 +735,247 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 </div>
               </CardHeader>
               <CardContent className="p-0">
+                {/* Mail detail view (dark theme) */}
+                {selectedMailDetail ? (
+                  <div className="p-4 sm:p-6 bg-neutral-950 text-white">
+                    {/* Header */}
+                    <div className="flex flex-col gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMailDetail(null);
+                          onGoBack?.();
+                        }}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to inbox
+                      </button>
 
-                {/* Select All - Desktop */}
-                <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                    disabled={mailItems.length === 0}
-                  >
-                    {isAllSelected ? (
-                      <CheckSquare className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                    {isAllSelected ? "Deselect All" : "Select All"}
-                  </button>
-                </div>
+                      {(() => {
+                        const Icon = mailTypeIcon(selectedMailDetail);
+                        const title = selectedMailDetail.sender_name || selectedMailDetail.tag || "Mail";
+                        const subtitle = selectedMailDetail.subject || "Mail item";
+                        const status = mailStatusMeta(selectedMailDetail);
+                        const time = formatTime(selectedMailDetail.received_date || selectedMailDetail.created_at);
 
-                {/* Select All - Mobile */}
-                <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleSelectAll}
-                    className="w-full"
-                    disabled={mailItems.length === 0}
-                  >
-                    {isAllSelected ? (
-                      <>
-                        <CheckSquare className="h-4 w-4 mr-2 text-primary" />
-                        Deselect All ({mailItems.length})
-                      </>
-                    ) : (
-                      <>
-                        <Square className="h-4 w-4 mr-2" />
-                        Select All ({mailItems.length})
-                      </>
-                    )}
-                  </Button>
-                </div>
+                        return (
+                          <div className="flex items-start gap-4">
+                            <div className="h-14 w-14 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 flex items-center justify-center shadow-[0_0_0_1px_rgba(16,185,129,0.08)]">
+                              <Icon className="h-7 w-7 text-emerald-300" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
+                                    {title}
+                                  </h3>
+                                  <p className="mt-1 text-sm sm:text-base text-white/60 truncate">
+                                    {subtitle}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span
+                                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${status.badgeClass}`}
+                                  >
+                                    {status.label}
+                                  </span>
+                                  <span className="text-xs text-white/60">{time}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
 
-                {/* Error State */}
-                {mailError ? (
-                  <div className="px-6 py-12 text-center">
-                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
-                    <h3 className="font-medium mb-2">Failed to load mail</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {mailError.message}
-                    </p>
-                    <Button onClick={() => refreshMail()}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Try Again
-                    </Button>
-                  </div>
-                ) : mailItems.length === 0 ? (
-                  /* Empty State */
-                  <div className="px-6 py-12 text-center">
-                    <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="font-medium mb-2">No mail yet</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your mail will appear here when it arrives at your virtual address
-                    </p>
+                    {/* Action buttons row */}
+                    <div className="mt-6 grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log("[MailDetail] View", selectedMailDetail.id);
+                          setSelectedMailForPDF(selectedMailDetail);
+                          setShowPDFModal(true);
+                        }}
+                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
+                      >
+                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
+                          <Eye className="h-5 w-5 text-emerald-300" />
+                        </div>
+                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">View</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log("[MailDetail] Download", selectedMailDetail.id);
+                          onDownload(selectedMailDetail);
+                        }}
+                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
+                      >
+                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
+                          <Download className="h-5 w-5 text-emerald-300" />
+                        </div>
+                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">Download</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log("[MailDetail] Forward", selectedMailDetail.id);
+                          handleRequestForwarding(selectedMailDetail);
+                        }}
+                        className="group rounded-2xl border border-emerald-400/20 bg-white/5 hover:bg-white/8 transition-colors p-3 sm:p-4 text-center"
+                      >
+                        <div className="mx-auto h-11 w-11 rounded-xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center group-hover:border-emerald-400/35 transition-colors">
+                          <Truck className="h-5 w-5 text-emerald-300" />
+                        </div>
+                        <div className="mt-2 text-xs sm:text-sm font-semibold text-white">Forward</div>
+                      </button>
+                    </div>
+
+                    {/* Main content area */}
+                    <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                      {/* Preview */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log("[MailDetail] Preview click -> View", selectedMailDetail.id);
+                          setSelectedMailForPDF(selectedMailDetail);
+                          setShowPDFModal(true);
+                        }}
+                        className="group relative overflow-hidden rounded-2xl border border-emerald-400/15 bg-white/5 hover:bg-white/8 transition-colors min-h-[260px] sm:min-h-[340px] lg:min-h-[420px]"
+                      >
+                        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
+                        </div>
+                        <div className="h-full w-full flex flex-col items-center justify-center text-center px-6">
+                          <div className="h-14 w-14 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 flex items-center justify-center">
+                            <Eye className="h-6 w-6 text-emerald-300" />
+                          </div>
+                          <div className="mt-4 text-base sm:text-lg font-semibold text-white">
+                            Document preview
+                          </div>
+                          <div className="mt-1 text-xs sm:text-sm text-white/60">
+                            Click “View” to open full document
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Details sidebar */}
+                      <div className="rounded-2xl border border-emerald-400/15 bg-white/5 p-4 sm:p-5">
+                        <div className="text-sm font-semibold text-white mb-4">Details</div>
+                        {(() => {
+                          const status = mailStatusMeta(selectedMailDetail);
+                          const received = formatTime(selectedMailDetail.received_date || selectedMailDetail.created_at);
+                          const rows: Array<{ label: string; value: React.ReactNode }> = [
+                            { label: "From", value: selectedMailDetail.sender_name || "—" },
+                            { label: "Subject", value: selectedMailDetail.subject || "—" },
+                            { label: "Received", value: received },
+                            {
+                              label: "Status",
+                              value: (
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${status.badgeClass}`}
+                                >
+                                  {status.label}
+                                </span>
+                              ),
+                            },
+                          ];
+
+                          return (
+                            <div className="space-y-3">
+                              {rows.map((r) => (
+                                <div key={r.label} className="flex items-start justify-between gap-4">
+                                  <div className="text-xs text-white/60">{r.label}:</div>
+                                  <div className="text-xs font-semibold text-white text-right break-words max-w-[70%]">
+                                    {r.value}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <MailManagement
-                    mailItems={mailItems}
-                    onRefresh={refreshMail}
-                    onOpen={onOpen}
-                    onDownload={onDownload}
-                    onForward={handleRequestForwarding}
-                    formatScannedDate={formatScannedDate}
-                  />
+                  <>
+
+                    {/* Select All - Desktop */}
+                    <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                        disabled={mailItems.length === 0}
+                      >
+                        {isAllSelected ? (
+                          <CheckSquare className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                        {isAllSelected ? "Deselect All" : "Select All"}
+                      </button>
+                    </div>
+
+                    {/* Select All - Mobile */}
+                    <div className="sm:hidden px-4 py-3 border-b bg-muted/30">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleSelectAll}
+                        className="w-full"
+                        disabled={mailItems.length === 0}
+                      >
+                        {isAllSelected ? (
+                          <>
+                            <CheckSquare className="h-4 w-4 mr-2 text-primary" />
+                            Deselect All ({mailItems.length})
+                          </>
+                        ) : (
+                          <>
+                            <Square className="h-4 w-4 mr-2" />
+                            Select All ({mailItems.length})
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Error State */}
+                    {mailError ? (
+                      <div className="px-6 py-12 text-center">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                        <h3 className="font-medium mb-2">Failed to load mail</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {mailError.message}
+                        </p>
+                        <Button onClick={() => refreshMail()}>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Try Again
+                        </Button>
+                      </div>
+                    ) : mailItems.length === 0 ? (
+                      /* Empty State */
+                      <div className="px-6 py-12 text-center">
+                        <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <h3 className="font-medium mb-2">No mail yet</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Your mail will appear here when it arrives at your virtual address
+                        </p>
+                      </div>
+                    ) : (
+                      <MailManagement
+                        mailItems={mailItems}
+                        onRefresh={refreshMail}
+                        onOpen={onOpen}
+                        onDownload={onDownload}
+                        onForward={handleRequestForwarding}
+                        formatScannedDate={formatScannedDate}
+                      />
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
