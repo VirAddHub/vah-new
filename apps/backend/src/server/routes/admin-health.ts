@@ -68,7 +68,7 @@ router.get('/summary', requireAdmin, async (_req: Request, res: Response) => {
             }),
             checkService('payments_gocardless', async () => {
                 // TODO: Replace with actual GoCardless health check
-                return !!process.env.GOCARDLESS_ACCESS_TOKEN;
+                return !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN);
             }),
             checkService('kyc_sumsub', async () => {
                 // TODO: Replace with actual Sumsub health check
@@ -110,7 +110,7 @@ router.get('/dependencies', requireAdmin, async (_req: Request, res: Response) =
 
         const deps = await Promise.all([
             checkService('email_postmark', async () => !!process.env.POSTMARK_TOKEN),
-            checkService('payments_gocardless', async () => !!process.env.GOCARDLESS_ACCESS_TOKEN),
+            checkService('payments_gocardless', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
             checkService('kyc_sumsub', async () => !!process.env.SUMSUB_API_KEY),
             checkService('storage_onedrive', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
             checkService('queue_jobs', async () => dbStatus.severity !== 'down'),

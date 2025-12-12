@@ -1,9 +1,15 @@
 import crypto from 'crypto';
 
-const ACCESS_TOKEN = process.env.GC_ACCESS_TOKEN!;
-const ENV = (process.env.GC_ENVIRONMENT ?? 'sandbox') as 'sandbox' | 'live';
-const WEBHOOK_SECRET = process.env.GC_WEBHOOK_SECRET!;
-const APP_URL = process.env.APP_URL!;
+// Prefer the official GoCardless env var names (GC_*), but support legacy names (GOCARDLESS_*)
+// so existing deployments don't break.
+const ACCESS_TOKEN = (process.env.GC_ACCESS_TOKEN ?? process.env.GOCARDLESS_ACCESS_TOKEN)?.trim();
+const ENV = ((process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? 'sandbox').trim()) as 'sandbox' | 'live';
+const WEBHOOK_SECRET = (process.env.GC_WEBHOOK_SECRET ?? process.env.GOCARDLESS_WEBHOOK_SECRET)?.trim();
+const APP_URL = (process.env.APP_URL ?? process.env.APP_BASE_URL)?.trim();
+
+if (!ACCESS_TOKEN) throw new Error('GoCardless access token missing (set GC_ACCESS_TOKEN).');
+if (!WEBHOOK_SECRET) throw new Error('GoCardless webhook secret missing (set GC_WEBHOOK_SECRET).');
+if (!APP_URL) throw new Error('APP_URL/APP_BASE_URL missing (needed for GoCardless redirect URIs).');
 
 const API_BASE = ENV === 'sandbox'
   ? 'https://api-sandbox.gocardless.com'
