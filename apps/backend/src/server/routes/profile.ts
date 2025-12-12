@@ -499,9 +499,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             titleToDateGap: 26,
             afterDateGap: 34,
             afterSalutationGap: 24,
+            introGap: 16,
             infoIndent: 18,
             infoLabelGap: 14,
             signatureGap: 22,
+            afterTermsGap: 26,
+            footerLineStep: 14,
         } as const;
 
         // Header block (logo + divider)
@@ -624,9 +627,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const titleToDateGap = BASE.titleToDateGap * scale;
             const afterDateGap = BASE.afterDateGap * scale;
             const afterSalutationGap = BASE.afterSalutationGap * scale;
+            const introGap = BASE.introGap * scale;
             const infoIndent = BASE.infoIndent * scale;
             const infoLabelGap = BASE.infoLabelGap * scale;
             const signatureGap = BASE.signatureGap * scale;
+            const afterTermsGap = BASE.afterTermsGap * scale;
+            const footerLineStep = BASE.footerLineStep * scale;
 
             const infoWidth = (contentW - infoIndent);
 
@@ -646,7 +652,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             total += afterSalutationGap;
 
             total += h('This letter confirms that the following company is registered at:', FONT.regular, TYPE.body, contentW);
-            total += (16 * scale);
+            total += introGap;
 
             // Info block: 3 label/value pairs + gaps
             total += h('Registered Business Address:', FONT.bold, TYPE.label, infoWidth) + infoLabelGap;
@@ -660,7 +666,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
             // Terms
             total += h(terms1, FONT.regular, TYPE.body, contentW) + paragraphGap;
-            total += h(terms2, FONT.regular, TYPE.body, contentW) + (26 * scale);
+            total += h(terms2, FONT.regular, TYPE.body, contentW) + afterTermsGap;
 
             // Signature (2 lines)
             total += h('Sincerely,', FONT.regular, TYPE.body, contentW) + signatureGap;
@@ -674,9 +680,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 titleToDateGap,
                 afterDateGap,
                 afterSalutationGap,
+                introGap,
                 infoIndent,
                 infoLabelGap,
                 signatureGap,
+                afterTermsGap,
+                footerLineStep,
             };
         };
 
@@ -743,7 +752,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // Body intro
         writeParagraph('This letter confirms that the following company is registered at:', {
             color: COLORS.body,
-            gapAfter: 16 * (TYPE.body / BASE_TYPE.body),
+            gapAfter: chosen.introGap,
         });
 
         // Information section (left border + indent, like the web template)
@@ -772,7 +781,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         writeParagraph(
             terms2,
-            { color: COLORS.body, gapAfter: 26 * (TYPE.body / BASE_TYPE.body) }
+            { color: COLORS.body, gapAfter: chosen.afterTermsGap }
         );
 
         // Signature
@@ -813,16 +822,16 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .fontSize(TYPE.small)
             .font(FONT.bold)
             .text('VirtualAddressHub Ltd', footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += 14;
+        fy += chosen.footerLineStep;
 
         doc.fillColor(COLORS.muted)
             .fontSize(TYPE.small)
             .font(FONT.regular)
             .text('2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom', footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += 14;
+        fy += chosen.footerLineStep;
 
         doc.text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += 14;
+        fy += chosen.footerLineStep;
 
         doc.fillColor('#9CA3AF') // gray-400
             .text('Registered in England', footerTextX, fy, { width: footerTextW, align: 'center' });
