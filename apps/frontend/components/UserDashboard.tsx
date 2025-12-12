@@ -102,6 +102,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
+  const [miniViewerUrl, setMiniViewerUrl] = useState<string | null>(null);
+  const [miniViewerLoading, setMiniViewerLoading] = useState(false);
+  const [miniViewerError, setMiniViewerError] = useState<string | null>(null);
   const [certLoading, setCertLoading] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
@@ -313,6 +316,77 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (s.includes("hmrc") || s.includes("companies house") || s.includes("gov")) return Building2;
     return FileText;
   };
+
+  // Mini PDF viewer: render a real preview in the detail view (before user clicks View)
+  useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+
+    const revoke = (url: string | null) => {
+      try {
+        if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
+      } catch { }
+    };
+
+    async function loadMini() {
+      setMiniViewerError(null);
+      setMiniViewerLoading(false);
+
+      // cleanup if leaving detail view
+      if (!selectedMailDetail?.id) {
+        revoke(miniViewerUrl);
+        setMiniViewerUrl(null);
+        return;
+      }
+
+      setMiniViewerLoading(true);
+      revoke(miniViewerUrl);
+      setMiniViewerUrl(null);
+
+      try {
+        const mailItemId = selectedMailDetail.id;
+
+        // Same URL-building strategy as PDFViewerModal
+        const apiBaseRaw =
+          process.env.NEXT_PUBLIC_API_BASE ||
+          process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ||
+          '';
+        const apiBase = apiBaseRaw.replace(/\/+$/, '');
+        const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+        const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(mailItemId))}&disposition=inline`;
+
+        const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
+        const res = await fetch(url, {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: ctrl.signal,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          throw new Error(txt || `Failed to load preview (${res.status})`);
+        }
+
+        const ab = await res.arrayBuffer();
+        const blob = new Blob([ab], { type: 'application/pdf' });
+        const bUrl = URL.createObjectURL(blob);
+        if (!cancelled) setMiniViewerUrl(bUrl);
+      } catch (e: any) {
+        if (!cancelled) setMiniViewerError(e?.message || 'Preview unavailable');
+      } finally {
+        if (!cancelled) setMiniViewerLoading(false);
+      }
+    }
+
+    loadMini();
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+      revoke(miniViewerUrl);
+    };
+    // We intentionally refetch when the selected mail changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMailDetail?.id]);
 
   // Generate certificate handler
   const onGenerateCertificate = useCallback(async () => {
@@ -839,13 +913,44 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               setSelectedMailForPDF(selectedMailDetail);
                               setShowPDFModal(true);
                             }}
-                            className="mt-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center w-full"
+                            className="mt-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center w-full overflow-hidden relative"
                           >
-                            <div className="text-center px-6">
-                              <FileText className="h-10 w-10 mx-auto text-neutral-500" />
-                              <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
-                              <div className="mt-2 text-sm text-neutral-500">Tap “View” to open full document</div>
-                            </div>
+                            {/* Mini viewer (real PDF preview) */}
+                            {miniViewerLoading ? (
+                              <div className="text-center px-6">
+                                <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
+                                <div className="mt-4 text-base font-medium text-neutral-800">Loading preview…</div>
+                                <div className="mt-2 text-sm text-neutral-500">Fetching your scanned document</div>
+                              </div>
+                            ) : miniViewerUrl ? (
+                              <>
+                                <object
+                                  data={miniViewerUrl}
+                                  type="application/pdf"
+                                  className="absolute inset-0 w-full h-full pointer-events-none"
+                                >
+                                  <iframe
+                                    title="Mini PDF preview"
+                                    src={miniViewerUrl}
+                                    className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                                  />
+                                </object>
+                                {/* soft overlay so it still looks like a preview tile */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/0 to-white/25 pointer-events-none" />
+                                <div className="absolute bottom-6 left-0 right-0 text-center px-6 pointer-events-none">
+                                  <div className="text-base font-medium text-neutral-800">Document preview</div>
+                                  <div className="mt-1 text-sm text-neutral-500">Tap “View” to open full document</div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-center px-6">
+                                <FileText className="h-10 w-10 mx-auto text-neutral-500" />
+                                <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
+                                <div className="mt-2 text-sm text-neutral-500">
+                                  {miniViewerError ? "Preview unavailable — tap “View” to open full document" : "Tap “View” to open full document"}
+                                </div>
+                              </div>
+                            )}
                           </button>
                         </div>
 
