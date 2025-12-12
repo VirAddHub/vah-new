@@ -18,6 +18,7 @@ import {
   Calendar,
   ArrowLeft,
   X,
+  SlidersHorizontal,
   RefreshCw,
   LogOut,
   Settings,
@@ -763,8 +764,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       {/* Main Content */}
       <main className="safe-pad mx-auto max-w-screen-xl py-8">
 
-        {/* Welcome Message */}
-        <div className="mb-8">
+        {/* Welcome Message (desktop only) */}
+        <div className="hidden md:block mb-8">
           <h1 className="mb-2">Welcome back, {getUserName()}</h1>
           <p className="text-muted-foreground">Manage your mail and business address</p>
         </div>
@@ -773,42 +774,68 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
 
           {/* Left Column - Main Content */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
 
-            {/* Identity Compliance Card (unified KYC + Companies House) */}
-            <IdentityComplianceCard
-              compliance={compliance}
-              kycStatus={userProfile?.kyc_status || null}
-              chVerificationStatus={userProfile?.ch_verification_status || null}
-            />
+            {/* Identity Compliance Card (desktop) */}
+            <div className="hidden md:block order-2 md:order-1">
+              <IdentityComplianceCard
+                compliance={compliance}
+                kycStatus={userProfile?.kyc_status || null}
+                chVerificationStatus={userProfile?.ch_verification_status || null}
+              />
+            </div>
+
+            {/* Mobile: compact identity status strip */}
+            <div className="md:hidden order-2 rounded-xl border border-border bg-background p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-foreground">
+                  {compliance?.isKycApproved && compliance?.isChVerified ? "✔ Identity Verified" : "⏳ Identity check required"}
+                </div>
+              </div>
+            </div>
 
             {/* Mail Inbox Section */}
-            <Card className="border-neutral-200 shadow-sm">
+            <Card className="border-neutral-200 shadow-sm order-1 md:order-2">
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-2xl font-semibold text-neutral-800">
-                        Mail Inbox
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="text-lg md:text-2xl font-semibold text-neutral-800 truncate">
+                        Inbox
                       </h2>
-                      <p className="text-sm text-neutral-500 mt-1">
+                      <p className="text-xs md:text-sm text-neutral-500 mt-1">
                         {totalItems} {totalItems === 1 ? 'item' : 'items'}
                         {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
                       </p>
                     </div>
-                    {/* Manual refresh button - NO automatic polling */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => refreshMail()}
-                      disabled={mailLoading}
-                      className="shrink-0"
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${mailLoading ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Mobile: Filter opens modal in MailManagement */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="md:hidden"
+                        onClick={() => {
+                          document.getElementById('mail-filters-open')?.click();
+                        }}
+                      >
+                        <SlidersHorizontal className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+
+                      {/* Manual refresh button - NO automatic polling */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refreshMail()}
+                        disabled={mailLoading}
+                        className="shrink-0"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${mailLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-neutral-500">
+                  <p className="hidden md:block text-sm text-neutral-500">
                     Click on any mail item to view full details and scans
                   </p>
 
@@ -1116,6 +1143,37 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </CardContent>
             </Card>
 
+            {/* Mobile: Certificate CTA (replaces sidebar content) */}
+            <Card className="md:hidden order-3 border-border shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-neutral-900">Letter of Certification</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-3">
+                <div className="text-sm text-neutral-600">
+                  {canUseAddress ? "Verified • Ready to download" : "Available when identity is verified"}
+                </div>
+                <Button
+                  type="button"
+                  onClick={onGenerateCertificate}
+                  disabled={!canUseAddress || certLoading}
+                  className="w-full"
+                  variant="primary"
+                >
+                  {certLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Preparing…
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Free Forwarding Notice */}
             <Alert className="border-primary/30 bg-primary/5">
               <AlertCircle className="h-4 w-4 text-primary" />
@@ -1160,8 +1218,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             </div>
           </div>
 
-          {/* Right Column - Virtual Address Sidebar */}
-          <aside className="lg:sticky lg:top-20 lg:self-start">
+          {/* Right Column - Virtual Address Sidebar (desktop only) */}
+          <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start">
             <Card className="border-neutral-200 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">

@@ -53,7 +53,25 @@ export function MailItemCard({
       onClick={onOpen}
       className="w-full text-left bg-white hover:bg-neutral-50 transition-colors"
     >
-      <div className="flex items-center gap-4 px-4 sm:px-6 py-5">
+      {/* Mobile: dense row (no badges) */}
+      <div className="md:hidden flex items-center gap-3 px-4 py-3">
+        <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${iconBg}`}>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-sm font-semibold text-neutral-900 truncate">{sender}</div>
+            {!isRead && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+          </div>
+          <div className="mt-0.5 text-xs text-neutral-500 truncate">
+            {(timeLabel ? timeLabel : "—")} • {statusLabel}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: current row (kept as-is) */}
+      <div className="hidden md:flex items-center gap-4 px-4 sm:px-6 py-5">
         {/* icon */}
         <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${iconBg}`}>
           <Icon className={`h-7 w-7 ${iconColor}`} />

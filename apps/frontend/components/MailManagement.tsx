@@ -66,6 +66,7 @@ export function MailManagement({
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedItem, setSelectedItem] = useState<MailItem | null>(null);
     const [showTagDialog, setShowTagDialog] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [newTag, setNewTag] = useState("");
     const [loading, setLoading] = useState(false);
     // Remove temporary visual-feedback click handling; use direct handlers instead
@@ -439,20 +440,104 @@ export function MailManagement({
 
     return (
         <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                <Input
-                    placeholder="Search mail by sender, subject, tag, or date..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
-                />
+            {/* Desktop: Search + inline tabs */}
+            <div className="hidden md:block">
+                {/* Search Bar */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <Input
+                        placeholder="Search mail by sender, subject, tag, or date..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
+                    />
+                </div>
             </div>
 
-            {/* Tabs */}
+            {/* Mobile: filter modal is opened by an external button (Dashboard header) */}
+            <button
+                id="mail-filters-open"
+                type="button"
+                className="hidden"
+                onClick={() => setShowFilters(true)}
+                aria-hidden="true"
+                tabIndex={-1}
+            />
+
+            <Dialog open={showFilters} onOpenChange={setShowFilters}>
+                <DialogContent className="w-[95vw] max-w-md rounded-2xl p-0 overflow-hidden">
+                    <DialogHeader className="px-4 py-4 border-b">
+                        <DialogTitle>Filters</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4 space-y-4">
+                        {/* Search inside filter modal */}
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                            <Input
+                                placeholder="Search mail…"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
+                            />
+                        </div>
+
+                        {/* Tab picker */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <Button
+                                type="button"
+                                variant={activeTab === "inbox" ? "primary" : "outline"}
+                                size="sm"
+                                onClick={() => setActiveTab("inbox")}
+                            >
+                                Inbox
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={activeTab === "archived" ? "primary" : "outline"}
+                                size="sm"
+                                onClick={() => setActiveTab("archived")}
+                            >
+                                Archived
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={activeTab.startsWith("tag:") || activeTab === "tags" ? "primary" : "outline"}
+                                size="sm"
+                                onClick={() => setActiveTab("tags")}
+                            >
+                                Tags
+                            </Button>
+                        </div>
+
+                        {/* Tag list (re-uses existing tag state) */}
+                        {availableTags.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="text-xs font-semibold text-neutral-600">Tags</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {availableTags.map((tag) => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => setActiveTab(`tag:${tag}`)}
+                                            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                                                activeTab === `tag:${tag}`
+                                                    ? "bg-primary text-white border-primary"
+                                                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                                            }`}
+                                        >
+                                            {getTagLabel(tag)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Tabs (content always renders; controls differ mobile/desktop) */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
+                <TabsList className="hidden md:flex h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
                     <TabsTrigger 
                         value="inbox" 
                         className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
