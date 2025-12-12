@@ -81,24 +81,24 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 aria-label="Hero"
             >
                 <div className="absolute right-[-8rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-primary/20 to-primary/40 blur-3xl opacity-40" />
-                <div className="safe-pad mx-auto max-w-screen-xl pt-20 pb-12">
+                <div className="safe-pad mx-auto max-w-screen-xl pt-12 sm:pt-16 pb-10">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
-                        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl text-primary">
+                        <h1 className="mt-3 text-[clamp(2.25rem,9vw,3.25rem)] leading-[1.05] font-bold tracking-tight text-primary">
                             Your Official London Business Address
                         </h1>
-                        <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
+                        <p className="mt-3 max-w-[42ch] text-pretty text-sm text-muted-foreground sm:text-base leading-relaxed">
                             Protect your privacy. Meet the new rules. Look professional everywhere.
                         </p>
-                        <p className="mt-4 text-base text-muted-foreground leading-relaxed">
+                        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                             Secure a trusted Central London address for:
                         </p>
-                        <ul className="mt-2 space-y-1 text-base text-muted-foreground">
-                            <li>• Companies House (Registered Office & Director's Service Address)</li>
-                            <li>• HMRC and banking</li>
-                            <li>• Everyday business correspondence</li>
+                        <ul className="mt-2 space-y-1 pl-5 list-disc text-sm text-muted-foreground leading-relaxed">
+                            <li>Companies House (Registered Office & Director&apos;s Service Address)</li>
+                            <li>HMRC and banking</li>
+                            <li>Everyday business correspondence</li>
                         </ul>
-                        <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+                        <div className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
                             <div className="flex items-start gap-2">
                                 <span className="text-primary">✔</span>
                                 <span>Keep your home address off public records</span>
@@ -116,14 +116,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <span>Free forwarding for HMRC & Companies House letters</span>
                             </div>
                         </div>
-                        <p className="mt-4 text-lg font-semibold text-foreground">
+                        <p className="mt-5 text-base font-semibold text-foreground">
                             Just £9.97/month — all-inclusive
                         </p>
-                        <div className="mt-6">
+                        <div className="mt-5">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                 size="lg"
-                                className="tt-min w-full rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-14"
+                                className="tt-min w-full rounded-xl btn-primary text-primary-foreground tracking-tight !h-12 text-base"
                             >
                                 Secure My London Address
                                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -132,14 +132,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Instant signup · Cancel anytime · Letters only (no parcels)
                             </p>
                         </div>
-                        <div className="mt-6 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700">
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
                                 ICO — Registered
                             </span>
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700">
+                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
                                 HMRC — AML Supervised
                             </span>
-                            <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700">
+                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
                                 GDPR — Aligned
                             </span>
                         </div>
