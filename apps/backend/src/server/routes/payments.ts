@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
+import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 
 const router = Router();
 
@@ -110,7 +111,7 @@ router.post('/subscriptions', requireAuth, async (req: Request, res: Response) =
 
 /**
  * POST /api/payments/redirect-flows
- * Create GoCardless redirect flow for payment setup
+ * Create GoCardless Billing Request Flow (BRF) authorisation URL for mandate setup
  */
 router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
@@ -131,9 +132,10 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         const user = userResult.rows[0];
 
         // Check if GoCardless is properly configured
-        const gocardlessToken = process.env.GOCARDLESS_ACCESS_TOKEN;
+        const gocardlessToken = process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN;
+        const appUrl = process.env.APP_URL || process.env.APP_BASE_URL;
         
-        if (!gocardlessToken) {
+        if (!gocardlessToken || !appUrl) {
             // GoCardless not configured - skip payment setup for now
             console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
             
@@ -154,41 +156,18 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             });
         }
 
-        // TODO: Call GoCardless API to create redirect flow
-        // For now, return a mock response
-
-        const mockRedirectFlowId = `RF${Date.now()}`;
-        const mockRedirectUrl = process.env.GOCARDLESS_REDIRECT_URL ||
-            `https://pay-sandbox.gocardless.com/flow/${mockRedirectFlowId}`;
-
-        // Store redirect flow ID for later completion
-        await pool.query(`
-            UPDATE "user"
-            SET gocardless_redirect_flow_id = $1, updated_at = $2
-            WHERE id = $3
-        `, [mockRedirectFlowId, Date.now(), userId]);
-
-        // In production, you would do:
-        // const gocardlessClient = require('gocardless-nodejs');
-        // const client = gocardlessClient(process.env.GOCARDLESS_ACCESS_TOKEN);
-        // const redirectFlow = await client.redirectFlows.create({
-        //     description: "VirtualAddressHub Subscription",
-        //     session_token: userId.toString(),
-        //     success_redirect_url: `${process.env.APP_BASE_URL}/payment/success`,
-        //     prefilled_customer: {
-        //         email: user.email,
-        //         given_name: user.first_name,
-        //         family_name: user.last_name
-        //     }
-        // });
+        // Create Billing Request Flow and redirect user to GoCardless (Sandbox/Live based on GC_ENVIRONMENT)
+        // GoCardless will redirect back to `${APP_URL}/billing?billing_request_flow_id=BRFxxx`
+        const redirectUri = `${String(appUrl).replace(/\\/+$/, '')}/billing`;
+        const link = await gcCreateBrfUrl(Number(userId), redirectUri);
 
         return res.json({
             ok: true,
             data: {
-                redirect_flow_id: mockRedirectFlowId,
-                redirect_url: mockRedirectUrl
+                redirect_url: link.redirect_url,
+                email: user.email
             },
-            redirect_url: mockRedirectUrl
+            redirect_url: link.redirect_url
         });
     } catch (error: any) {
         console.error('[POST /api/payments/redirect-flows] error:', error);
@@ -198,7 +177,7 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
 /**
  * POST /api/payments/redirect-flows/:flowId/complete
- * Complete GoCardless redirect flow after user returns
+ * Complete GoCardless Billing Request Flow after user returns (billing_request_flow_id)
  */
 router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
@@ -206,32 +185,30 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
     const pool = getPool();
 
     try {
-        // TODO: Complete the redirect flow with GoCardless API
-        // const gocardlessClient = require('gocardless-nodejs');
-        // const client = gocardlessClient(process.env.GOCARDLESS_ACCESS_TOKEN);
-        // const completedFlow = await client.redirectFlows.complete(flowId, {
-        //     session_token: userId.toString()
-        // });
+        // Complete Billing Request Flow with GoCardless API and retrieve mandate id
+        const completed = await gcCompleteFlow(flowId);
+        const mandateId = completed.mandate_id;
 
-        // Mock completion for now
-        const mockCustomerId = `CU${Date.now()}`;
-        const mockMandateId = `MD${Date.now()}`;
-
-        // Update user with GoCardless IDs
+        // Update user + subscription with GoCardless mandate
         await pool.query(`
             UPDATE "user"
             SET
-                gocardless_customer_id = $1,
-                gocardless_mandate_id = $2,
+                gocardless_mandate_id = $1,
                 plan_status = 'active',
-                updated_at = $3
-            WHERE id = $4
-        `, [mockCustomerId, mockMandateId, Date.now(), userId]);
+                updated_at = $2
+            WHERE id = $3
+        `, [mandateId, Date.now(), userId]);
+
+        // Ensure subscription record has mandate_id too (if present)
+        await pool.query(`
+            UPDATE subscription
+            SET mandate_id = $1, status = 'active', updated_at = $2
+            WHERE user_id = $3
+        `, [mandateId, Date.now(), userId]);
 
         return res.json({
             ok: true,
-            customer_id: mockCustomerId,
-            mandate_id: mockMandateId,
+            mandate_id: mandateId,
             status: 'active'
         });
     } catch (error: any) {
