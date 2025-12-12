@@ -80,7 +80,7 @@ export function MailItemCard({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
