@@ -519,11 +519,10 @@ export function MailManagement({
                                             key={tag}
                                             type="button"
                                             onClick={() => setActiveTab(`tag:${tag}`)}
-                                            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
-                                                activeTab === `tag:${tag}`
+                                            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${activeTab === `tag:${tag}`
                                                     ? "bg-primary text-white border-primary"
                                                     : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
-                                            }`}
+                                                }`}
                                         >
                                             {getTagLabel(tag)}
                                         </button>
@@ -538,22 +537,22 @@ export function MailManagement({
             {/* Tabs (content always renders; controls differ mobile/desktop) */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="hidden md:flex h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
-                    <TabsTrigger 
-                        value="inbox" 
+                    <TabsTrigger
+                        value="inbox"
                         className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Mail className="h-4 w-4" />
                         Inbox ({mailItems.filter(item => !item.deleted).length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="archived" 
+                    <TabsTrigger
+                        value="archived"
                         className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Archive className="h-4 w-4" />
                         Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="tags" 
+                    <TabsTrigger
+                        value="tags"
                         className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
                     >
                         <Tag className="h-4 w-4" />

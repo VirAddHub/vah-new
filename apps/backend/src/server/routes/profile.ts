@@ -598,8 +598,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .stroke();
 
         // ===== SINGLE-PAGE FIT: measure content and auto-tighten if needed =====
+        // IMPORTANT: PDFKit enforces a bottom margin for text flow (page.height - margins.bottom).
+        // If we place footer text at/after that y, PDFKit will push it onto a new page.
+        // So the footer must live inside the content box (above the bottom margin).
         const footerHeight = 110;
-        const footerTop = pageHeight - footerHeight;
+        const pageInnerBottom = pageHeight - ((doc as any).page.margins?.bottom ?? 50);
+        const footerTop = pageInnerBottom - footerHeight;
         const contentTop = headerBottom + 30;
         const contentBottom = footerTop - 24;
         const availableH = contentBottom - contentTop;
@@ -608,7 +612,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const businessName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
         const contactName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Support Team';
 
-        const registeredBusinessAddress = '54–58 Tanner Street, London SE1 3PH, United Kingdom';
+        const registeredBusinessAddress = '2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom';
 
         const terms1 =
             'Under the terms of a verified Digital Mailbox subscription with VirtualAddressHub Ltd, the account holder is authorised to use the above address as their official Registered Office Address and for receiving statutory communications from Companies House and HMRC.';
