@@ -1146,7 +1146,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Mobile: Certificate CTA (replaces sidebar content) */}
             <Card className="md:hidden order-3 border-border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold text-neutral-900">Letter of Certification</CardTitle>
+                <CardTitle className="text-base font-semibold text-neutral-900">Business Address Confirmation</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-3">
                 <div className="text-sm text-neutral-600">
@@ -1227,7 +1227,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <Building2 className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-medium text-neutral-800 truncate">Your Virtual Business Address</CardTitle>
+                    <CardTitle className="text-sm font-medium text-neutral-800 truncate">Business Address Confirmation</CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -1235,48 +1235,117 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 {/* Address Display */}
                 {canUseAddress ? (
                   <>
-                    <p className="text-sm text-muted-foreground">
-                      You can now use your official VirtualAddressHub London address for Companies House, HMRC, banking, and all business correspondence.
-                    </p>
+                    {(() => {
+                      const issuedDate = formatUkDate(new Date());
+                      const accountHolder =
+                        (userProfile as any)?.company_name ||
+                        `${(userProfile as any)?.first_name || ""} ${(userProfile as any)?.last_name || ""}`.trim() ||
+                        "Business Entity";
+                      const contact = "VirtualAddressHub Customer Support";
+                      const contactEmail = "support@virtualaddresshub.co.uk";
+                      const registeredBusinessAddress = `2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom`;
 
-                    {/* Address (as before) */}
-                    <div className="rounded-lg border border-border bg-background p-4 space-y-2">
-                      <div className="text-xs font-semibold text-muted-foreground">Registered Business Address</div>
-                      <div className="text-sm font-medium text-foreground leading-relaxed">
-                        <div>{virtualAddress.line2}</div>
-                        <div>{virtualAddress.line1}</div>
-                        <div>
-                          {virtualAddress.city}, {virtualAddress.postcode}
+                      return (
+                        <div className="rounded-xl bg-gray-100 p-3">
+                          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                            {/* Header */}
+                            <div className="px-5 pt-5">
+                              <img src="/images/logo.svg" alt="VirtualAddressHub" className="h-5 w-auto" />
+                              <div className="mt-4 h-px w-full bg-gray-200" />
+                            </div>
+
+                            {/* Body */}
+                            <div className="px-5 py-5 space-y-4">
+                              <div>
+                                <div className="text-lg font-semibold text-gray-900">Business Address Confirmation</div>
+                                <div className="mt-1 text-sm text-gray-500">Date issued: {issuedDate}</div>
+                              </div>
+
+                              {/* Verified details */}
+                              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                                <div className="text-xs font-semibold text-gray-600">Verified details</div>
+                                <div className="mt-3 space-y-3 text-sm">
+                                  <div>
+                                    <div className="text-xs text-gray-500">Registered Business Address</div>
+                                    <div className="font-medium text-gray-900 leading-relaxed">{registeredBusinessAddress}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs text-gray-500">Account Holder</div>
+                                    <div className="font-medium text-gray-900">{accountHolder}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs text-gray-500">Contact</div>
+                                    <div className="font-medium text-gray-900">{contact}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs text-gray-500">Date issued</div>
+                                    <div className="font-medium text-gray-900">{issuedDate}</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Statements */}
+                              <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
+                                <p>
+                                  This confirms the account holder is authorised to use the address above as their <span className="font-medium text-gray-900">Registered Office Address</span>.
+                                </p>
+                                <p>
+                                  Statutory communications from <span className="font-medium text-gray-900">Companies House</span> and <span className="font-medium text-gray-900">HMRC</span> are accepted at this address.
+                                </p>
+                              </div>
+
+                              {/* Notes */}
+                              <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+                                <div className="text-xs font-semibold text-gray-600">Notes</div>
+                                <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2">
+                                  <p>This confirmation does not grant any rights of physical occupation or tenancy.</p>
+                                  <p>Valid subject to an active subscription and ongoing UK AML/GDPR compliance.</p>
+                                </div>
+                              </div>
+
+                              {/* Signature */}
+                              <div className="pt-2">
+                                <div className="text-sm font-medium text-gray-900">VirtualAddressHub Customer Support</div>
+                                <div className="mt-1 text-xs text-gray-500">{contactEmail}</div>
+                              </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="bg-gray-50 border-t border-gray-200 px-5 py-4 text-center">
+                              <div className="text-xs font-semibold text-gray-700">VirtualAddressHub Ltd</div>
+                              <div className="mt-1 text-xs text-gray-600">
+                                2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom
+                              </div>
+                              <div className="mt-1 text-xs text-gray-600">
+                                support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk
+                              </div>
+                              <div className="mt-1 text-[11px] text-gray-500">Registered in England</div>
+                            </div>
+                          </div>
                         </div>
-                        <div>{virtualAddress.country}</div>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
-                    {/* Generate Certificate (downloads immediately) */}
-                    <div className="space-y-1.5">
-                      <Button
-                        type="button"
-                        onClick={onGenerateCertificate}
-                        disabled={certLoading}
-                        className="w-full"
-                        variant="primary"
-                      >
-                        {certLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Generating…
-                          </>
-                        ) : (
-                          <>
-                            <FileCheck className="h-4 w-4 mr-2" />
-                            Generate Certificate
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center leading-tight">
-                        Clicking “Generate” will download your PDF certificate
-                      </p>
-                    </div>
+                    {/* Download PDF (existing handler) */}
+                    <Button
+                      type="button"
+                      onClick={onGenerateCertificate}
+                      disabled={certLoading}
+                      className="w-full"
+                      variant="primary"
+                    >
+                      {certLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Preparing…
+                        </>
+                      ) : (
+                        <>
+                          <FileCheck className="h-4 w-4 mr-2" />
+                          Download PDF
+                        </>
+                      )}
+                    </Button>
                   </>
                 ) : (
                   <>
@@ -1297,7 +1366,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="space-y-1.5">
                       <Button className="w-full bg-primary/50 hover:bg-primary/50 text-white cursor-not-allowed" size="sm" disabled>
                         <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                        Generate Certificate
+                        Download PDF
                       </Button>
                       <p className="text-xs text-muted-foreground text-center leading-tight">
                         Address will be available once verification is complete
