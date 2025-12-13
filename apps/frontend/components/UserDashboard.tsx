@@ -421,7 +421,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'proof-of-address.pdf';
+        a.download = 'business-address-confirmation.pdf';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -432,7 +432,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         toast({
           title: "Certificate Generated",
-          description: "Your proof of address certificate has been downloaded.",
+          description: "Your Business Address Confirmation has been downloaded.",
           durationMs: 3000,
         });
       } else {
@@ -443,12 +443,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           if (errorData.message) {
             errorMessage = errorData.message;
           } else if (errorData.error === 'KYC_REQUIRED') {
-            errorMessage = 'You must complete identity verification (KYC) before generating your proof of address certificate.';
+            errorMessage = 'You must complete identity verification (KYC) before downloading your Business Address Confirmation.';
           }
         } catch (e) {
           // If response is not JSON, use status-based message
           if (response.status === 403) {
-            errorMessage = 'You must complete identity verification (KYC) before generating your proof of address certificate.';
+            errorMessage = 'You must complete identity verification (KYC) before downloading your Business Address Confirmation.';
           } else if (response.status === 404) {
             errorMessage = 'User profile not found. Please try logging in again.';
           }
@@ -1237,13 +1237,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <>
                     {(() => {
                       const issuedDate = formatUkDate(new Date());
-                      const accountHolder =
-                        (userProfile as any)?.company_name ||
-                        `${(userProfile as any)?.first_name || ""} ${(userProfile as any)?.last_name || ""}`.trim() ||
-                        "Business Entity";
-                      const contact = "Customer Support";
-                      const contactEmail = "support@virtualaddresshub.co.uk";
+                      const authorisedCompany = (userProfile as any)?.company_name || "—";
+                      const issuedBy = "VirtualAddressHub Ltd";
                       const registeredBusinessAddress = `2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom`;
+                      const addressLines = [
+                        "2nd Floor Left",
+                        "54–58 Tanner Street",
+                        "London SE1 3PH",
+                        "United Kingdom",
+                      ];
 
                       return (
                         <div className="rounded-xl bg-gray-100 p-3">
@@ -1258,7 +1260,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                             <div className="px-5 py-5 space-y-4">
                               <div>
                                 <div className="text-lg font-semibold text-gray-900">Business Address Confirmation</div>
-                                <div className="mt-1 text-sm text-gray-500">Date issued: {issuedDate}</div>
                               </div>
 
                               {/* Verified details */}
@@ -1267,15 +1268,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <div className="mt-3 space-y-3 text-sm">
                                   <div>
                                     <div className="text-xs text-gray-500">Registered Business Address</div>
-                                    <div className="font-medium text-gray-900 leading-relaxed">{registeredBusinessAddress}</div>
+                                    <div className="font-medium text-gray-900 leading-relaxed">
+                                      {addressLines.map((l) => (
+                                        <div key={l}>{l}</div>
+                                      ))}
+                                    </div>
                                   </div>
                                   <div>
-                                    <div className="text-xs text-gray-500">Account Holder</div>
-                                    <div className="font-medium text-gray-900">{accountHolder}</div>
+                                    <div className="text-xs text-gray-500">Authorised Company</div>
+                                    <div className="font-medium text-gray-900">{authorisedCompany}</div>
                                   </div>
                                   <div>
-                                    <div className="text-xs text-gray-500">Contact</div>
-                                    <div className="font-medium text-gray-900">{contact}</div>
+                                    <div className="text-xs text-gray-500">Issued by</div>
+                                    <div className="font-medium text-gray-900">{issuedBy}</div>
                                   </div>
                                   <div>
                                     <div className="text-xs text-gray-500">Date issued</div>
@@ -1287,26 +1292,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               {/* Statements */}
                               <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
                                 <p>
-                                  This confirms the account holder is authorised to use the address above as their <span className="font-medium text-gray-900">Registered Office Address</span>.
+                                  Authorised to use as a <span className="font-medium text-gray-900">Registered Office Address</span>.
                                 </p>
                                 <p>
-                                  Statutory communications from <span className="font-medium text-gray-900">Companies House</span> and <span className="font-medium text-gray-900">HMRC</span> are accepted at this address.
+                                  <span className="font-medium text-gray-900">HMRC</span> and <span className="font-medium text-gray-900">Companies House</span> communications are accepted at this address.
                                 </p>
                               </div>
 
                               {/* Notes */}
                               <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
-                                <div className="text-xs font-semibold text-gray-600">Notes</div>
+                                <div className="text-xs font-semibold text-gray-600">Important notes</div>
                                 <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2">
-                                  <p>This confirmation does not grant any rights of physical occupation or tenancy.</p>
-                                  <p>Valid subject to an active subscription and ongoing UK AML/GDPR compliance.</p>
+                                  <p>No tenancy or occupation rights are granted.</p>
+                                  <p>Valid subject to an active subscription and UK AML/GDPR compliance.</p>
                                 </div>
                               </div>
 
                               {/* Signature (simple, not letter-style) */}
                               <div className="pt-2">
                                 <div className="text-sm font-medium text-gray-900">VirtualAddressHub Ltd</div>
-                                <div className="mt-1 text-xs text-gray-500">{contact}</div>
+                                <div className="mt-1 text-xs text-gray-500">Customer Support</div>
                               </div>
                             </div>
 

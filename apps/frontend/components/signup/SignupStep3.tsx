@@ -238,7 +238,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                             {[
                                 "We'll email you a secure link to your dashboard.",
                                 "Sign in and complete identity verification (KYC). This is required for UK AML rules before we can activate your address or forward any mail.",
-                                "Once approved, your London address, mail dashboard, and proof of address certificate will be fully active."
+                                "Once approved, your London address, mail dashboard, and Business Address Confirmation will be fully active."
                             ].map((text, i) => (
                                 <div key={i} className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">

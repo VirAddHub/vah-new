@@ -460,7 +460,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         // Set response headers
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="proof-of-address-${new Date().toISOString().split('T')[0]}.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename="business-address-confirmation-${new Date().toISOString().split('T')[0]}.pdf"`);
 
         // Pipe PDF to response
         doc.pipe(res);
@@ -606,20 +606,18 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const contentBottom = footerTop - 24;
         const availableH = contentBottom - contentTop;
 
-        // Business name - use company_name as primary, fallback to individual name
-        const businessName = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Business Entity';
+        // Canonical: authorised company should be the user's company name
+        const businessName = user.company_name || '—';
         const contactName = 'Customer Support';
         const signatureCompany = 'VirtualAddressHub Ltd';
         const supportEmail = 'support@virtualaddresshub.co.uk';
 
         const registeredBusinessAddress = '2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom';
 
-        const statement1 =
-            'This confirms the account holder is authorised to use the address above as their Registered Office Address.';
-        const statement2 =
-            'Statutory communications from Companies House and HMRC are accepted at this address.';
-        const note1 = 'This confirmation does not grant any rights of physical occupation or tenancy.';
-        const note2 = 'Valid subject to an active subscription and ongoing UK AML/GDPR compliance.';
+        const statement1 = 'Authorised to use as a Registered Office Address.';
+        const statement2 = 'HMRC and Companies House communications are accepted at this address.';
+        const note1 = 'No tenancy or occupation rights are granted.';
+        const note2 = 'Valid subject to an active subscription and UK AML/GDPR compliance.';
 
         const measure = (scale: number) => {
             const TYPE = {
@@ -661,25 +659,24 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 h('Verified details', FONT.bold, TYPE.small, innerW) +
                 (10 * scale) +
                 hField('Registered Business Address', registeredBusinessAddress) +
-                hField('Account Holder', businessName) +
-                hField('Contact', contactName) +
+                hField('Authorised Company', businessName) +
+                hField('Issued by', signatureCompany) +
                 hField('Date issued', currentDate) +
                 (cardPadding - fieldGap);
 
             const notesCardH =
                 cardPadding +
-                h('Notes', FONT.bold, TYPE.small, innerW) +
+                h('Important notes', FONT.bold, TYPE.small, innerW) +
                 (8 * scale) +
                 h(`• ${note1}`, FONT.regular, TYPE.small, innerW) +
                 (6 * scale) +
                 h(`• ${note2}`, FONT.regular, TYPE.small, innerW) +
                 cardPadding;
 
-            // Title + date issued + cards + statements + signature
+            // Title + cards + statements + signature (date issued appears once in Verified details)
             let total = 0;
             total += h('Business Address Confirmation', FONT.bold, TYPE.title, contentW);
             total += titleToDateGap;
-            total += h(`Date issued: ${currentDate}`, FONT.regular, TYPE.body, contentW);
             total += afterDateGap;
 
             total += verifiedCardH;
@@ -757,10 +754,6 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .font(FONT.bold)
             .text('Business Address Confirmation', contentX, doc.y, { width: contentW });
         doc.y += chosen.titleToDateGap;
-        doc.fillColor(COLORS.muted)
-            .fontSize(TYPE.body)
-            .font(FONT.regular)
-            .text(`Date issued: ${currentDate}`, contentX, doc.y, { width: contentW });
         doc.y += chosen.afterDateGap;
 
         // Verified details card
@@ -779,7 +772,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const fieldGap = 10;
             const hf = (label: string, value: string) =>
                 h(label, FONT.regular, TYPE.small, innerW) + 2 + h(value, FONT.bold, TYPE.body, innerW) + fieldGap;
-            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 10 + hf('Registered Business Address', registeredBusinessAddress) + hf('Account Holder', businessName) + hf('Contact', contactName) + hf('Date issued', currentDate) + (pad - fieldGap);
+            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 10 + hf('Registered Business Address', registeredBusinessAddress) + hf('Authorised Company', businessName) + hf('Issued by', signatureCompany) + hf('Date issued', currentDate) + (pad - fieldGap);
         };
 
         const cardH = calcVerifiedCardHeight();
@@ -791,8 +784,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Verified details', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y += 10;
         writeField('Registered Business Address', registeredBusinessAddress, innerX, innerW);
-        writeField('Account Holder', businessName, innerX, innerW);
-        writeField('Contact', contactName, innerX, innerW);
+        writeField('Authorised Company', businessName, innerX, innerW);
+        writeField('Issued by', signatureCompany, innerX, innerW);
         writeField('Date issued', currentDate, innerX, innerW);
         doc.y = cardY + cardH + chosen.cardGap;
 
@@ -814,7 +807,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.roundedRect(cardX, notesY, cardW, notesH, 8).fill(COLORS.footerBg).stroke(COLORS.border);
         doc.restore();
         doc.y = notesY + pad;
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Notes', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
+        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Important notes', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y += 8;
         doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(`• ${note1}`, innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y += 6 + doc.heightOfString(`• ${note1}`, { width: innerW, lineGap: chosen.lineGap });
