@@ -1241,7 +1241,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         (userProfile as any)?.company_name ||
                         `${(userProfile as any)?.first_name || ""} ${(userProfile as any)?.last_name || ""}`.trim() ||
                         "Business Entity";
-                      const contact = "VirtualAddressHub Customer Support";
+                      const contact = "Customer Support";
                       const contactEmail = "support@virtualaddresshub.co.uk";
                       const registeredBusinessAddress = `2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom`;
 
@@ -1303,23 +1303,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 </div>
                               </div>
 
-                              {/* Signature */}
+                              {/* Signature (simple, not letter-style) */}
                               <div className="pt-2">
-                                <div className="text-sm font-medium text-gray-900">VirtualAddressHub Customer Support</div>
-                                <div className="mt-1 text-xs text-gray-500">{contactEmail}</div>
+                                <div className="text-sm font-medium text-gray-900">VirtualAddressHub Ltd</div>
+                                <div className="mt-1 text-xs text-gray-500">{contact}</div>
                               </div>
                             </div>
 
                             {/* Footer */}
-                            <div className="bg-gray-50 border-t border-gray-200 px-5 py-4 text-center">
-                              <div className="text-xs font-semibold text-gray-700">VirtualAddressHub Ltd</div>
-                              <div className="mt-1 text-xs text-gray-600">
+                            <div className="bg-gray-50/60 border-t border-gray-200 px-5 py-4 text-center">
+                              <div className="text-[11px] font-medium text-gray-600">VirtualAddressHub Ltd</div>
+                              <div className="mt-1 text-[11px] text-gray-500">
                                 2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom
                               </div>
-                              <div className="mt-1 text-xs text-gray-600">
+                              <div className="mt-1 text-[11px] text-gray-500">
                                 support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk
                               </div>
-                              <div className="mt-1 text-[11px] text-gray-500">Registered in England</div>
+                              <div className="mt-1 text-[11px] text-gray-400">Registered in England</div>
                             </div>
                           </div>
                         </div>
