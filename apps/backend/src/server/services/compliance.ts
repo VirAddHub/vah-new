@@ -18,8 +18,8 @@ export interface IdentityCompliance {
  * 
  * Rules:
  * - KYC is approved if kyc_status is 'approved' or 'verified'
- * - CH is verified if ch_verification_status is 'approved' or companies_house_verified is true
- * - Address can be used only when BOTH KYC and CH are approved
+ * - CH is verified if ch_verification_status is 'approved' or companies_house_verified is true (informational only)
+ * - Address can be used when KYC is approved
  */
 export function computeIdentityCompliance(user: UserRow): IdentityCompliance {
     // KYC check: treat 'approved' or 'verified' as approved
@@ -33,8 +33,8 @@ export function computeIdentityCompliance(user: UserRow): IdentityCompliance {
         user.ch_verification_status === 'verified' ||
         user.companies_house_verified === true;
 
-    // Address can only be used when both are complete
-    const canUseRegisteredOfficeAddress = isKycApproved && isChVerified;
+    // Address can be used when KYC is complete (CH is not a gate)
+    const canUseRegisteredOfficeAddress = isKycApproved;
 
     return {
         isKycApproved,

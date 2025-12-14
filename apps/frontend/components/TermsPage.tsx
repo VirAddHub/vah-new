@@ -55,10 +55,6 @@ export function TermsPage({ onNavigate }: TermsPageProps) {
             <li>Keep your details up to date</li>
             <li>Use the service lawfully</li>
           </ul>
-          <h3 className="font-semibold text-foreground">Companies House Identity Verification (ECCTA 2023)</h3>
-          <p>
-            All directors and PSCs must complete identity verification with Companies House before using our address. Registered Office or Director Service Address cannot be activated until CH verification is complete. Failure to verify may result in suspension or termination.
-          </p>
           <h3 className="font-semibold text-foreground">Jurisdiction Eligibility</h3>
           <p>
             <strong>We only accept customers from low-risk jurisdictions. Applications from high-risk or restricted countries may be declined.</strong>

@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, CreditCard, FileText, MapPin, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { ChVerificationCard } from '../components/ChVerificationCard';
 import { usePlans } from '@/hooks/usePlans';
 
 const money = (p?: number) => typeof p === 'number' ? `£${(p / 100).toFixed(2)}` : '—';
@@ -322,9 +321,6 @@ export default function AccountPage() {
 
                         {/* Profile Tab */}
                         <TabsContent value="profile" className="space-y-6">
-                            {/* Companies House Verification Card */}
-                            <ChVerificationCard />
-
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">

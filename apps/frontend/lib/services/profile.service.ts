@@ -18,8 +18,6 @@ export interface UserProfile {
     company_name?: string;
     forwarding_address?: string;
     kyc_status?: string;
-    ch_verification_status?: string;
-    companies_house_verified?: boolean;
     compliance?: Compliance;
     created_at: string;
     updated_at: string;

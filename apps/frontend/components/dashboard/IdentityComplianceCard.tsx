@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle, AlertCircle, Loader2, Upload, Lock } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-import useSWR, { mutate as globalMutate } from 'swr';
-import { swrFetcher } from '@/services/http';
+import { mutate as globalMutate } from 'swr';
 import snsWebSdk from '@sumsub/websdk';
 
 export interface Compliance {
@@ -25,30 +24,19 @@ export interface Compliance {
 interface IdentityComplianceCardProps {
     compliance: Compliance;
     kycStatus?: string | null;
-    chVerificationStatus?: string | null;
 }
 
 
 export function IdentityComplianceCard({
     compliance,
     kycStatus,
-    chVerificationStatus
 }: IdentityComplianceCardProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [startingKyc, setStartingKyc] = useState(false);
     const [kycToken, setKycToken] = useState<string | null>(null);
     const [kycOpen, setKycOpen] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    // Fetch CH verification status if not provided
-    const { data: chData, mutate: refreshCh } = useSWR('/api/bff/ch-verification', swrFetcher, {
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        dedupingInterval: 60000,
-    });
 
     // If fully compliant, show success card
     if (compliance.canUseRegisteredOfficeAddress) {
@@ -62,7 +50,7 @@ export function IdentityComplianceCard({
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-green-800 dark:text-green-200">
-                        You can now use your VirtualAddressHub registered office address with Companies House and HMRC.
+                        You can now use your VirtualAddressHub registered office address.
                     </p>
                 </CardContent>
             </Card>
@@ -109,81 +97,6 @@ export function IdentityComplianceCard({
             setStartingKyc(false);
         }
     }, [toast]);
-
-    // Handle CH file upload
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'application/pdf'];
-            if (!validTypes.includes(selectedFile.type)) {
-                toast({
-                    title: 'Invalid file type',
-                    description: 'Please upload an image (JPG, PNG, GIF, WEBP) or PDF file.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-            if (selectedFile.size > 10 * 1024 * 1024) {
-                toast({
-                    title: 'File too large',
-                    description: 'Please upload a file smaller than 10MB.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-            setFile(selectedFile);
-        }
-    };
-
-    const handleChUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!file) {
-            toast({
-                title: 'No file selected',
-                description: 'Please select a file to upload.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        setUploading(true);
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const res = await fetch('/api/bff/ch-verification', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include',
-            });
-
-            const json = await res.json();
-
-            if (!res.ok || !json.ok) {
-                throw new Error(json.message || json.error || 'Upload failed');
-            }
-
-            toast({
-                title: 'Verification proof uploaded',
-                description: 'Thanks! Our team will review your submission shortly.',
-            });
-
-            // Refresh CH verification status and profile
-            await refreshCh();
-            await globalMutate('/api/profile');
-            setFile(null);
-            const fileInput = document.getElementById('ch-verification-file') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
-        } catch (err: any) {
-            toast({
-                title: 'Upload failed',
-                description: err.message || 'Failed to upload verification proof. Please try again.',
-                variant: 'destructive',
-            });
-        } finally {
-            setUploading(false);
-        }
-    };
 
     // Initialize and launch Sumsub WebSDK when modal is open and we have a token
     useEffect(() => {
@@ -292,10 +205,6 @@ export function IdentityComplianceCard({
                 ? "Retry verification"
                 : "Start verification";
 
-    const chStatus = chVerificationStatus || chData?.data?.ch_verification_status || 'not_submitted';
-    const isChSubmitted = chStatus === 'submitted';
-    const isChRejected = chStatus === 'rejected';
-
     return (
         <>
             <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-400">
@@ -307,10 +216,10 @@ export function IdentityComplianceCard({
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-amber-800 dark:text-amber-200">
-                        To use your registered office address with Companies House and HMRC, you need to complete both steps below.
+                        To use your registered office address, you need to complete identity verification (KYC).
                     </p>
 
-                    {/* Step 1: KYC */}
+                    {/* KYC */}
                     <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-700">
                         <div className="flex-shrink-0 mt-0.5">
                             {compliance.isKycApproved ? (
@@ -323,7 +232,7 @@ export function IdentityComplianceCard({
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm text-foreground mb-1">
-                                Step 1: Identity Check (KYC)
+                                Identity Check (KYC)
                             </div>
                             {compliance.isKycApproved ? (
                                 <p className="text-sm text-green-700 dark:text-green-300">✓ Completed</p>
@@ -352,80 +261,6 @@ export function IdentityComplianceCard({
                                             kycButtonText
                                         )}
                                     </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Step 2: Companies House */}
-                    <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-700">
-                        <div className="flex-shrink-0 mt-0.5">
-                            {compliance.isChVerified ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                            ) : (
-                                <div className="h-5 w-5 rounded-full border-2 border-amber-600 flex items-center justify-center">
-                                    <span className="text-xs font-semibold text-amber-600">2</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-foreground mb-1">
-                                Step 2: Companies House Verification
-                            </div>
-                            {compliance.isChVerified ? (
-                                <p className="text-sm text-green-700 dark:text-green-300">✓ Verified by our team</p>
-                            ) : (
-                                <>
-                                    <p className="text-sm text-muted-foreground mb-2">
-                                        Verify your identity for Companies House using GOV.UK One Login, then upload the confirmation screenshot.
-                                    </p>
-                                    {isChSubmitted && (
-                                        <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
-                                            ✓ Proof received — we're reviewing it now
-                                        </p>
-                                    )}
-                                    {isChRejected && (
-                                        <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                                            ⚠ Your previous upload needs attention. Please upload a clearer screenshot.
-                                        </p>
-                                    )}
-                                    <form onSubmit={handleChUpload} className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <label
-                                                htmlFor="ch-verification-file"
-                                                className="flex items-center gap-2 px-3 py-1.5 text-sm border border-amber-300 rounded-md cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                                            >
-                                                <Upload className="h-4 w-4" />
-                                                {file ? file.name : "Choose file"}
-                                            </label>
-                                            <input
-                                                id="ch-verification-file"
-                                                type="file"
-                                                accept="image/*,.pdf"
-                                                onChange={handleFileChange}
-                                                className="hidden"
-                                                disabled={uploading}
-                                            />
-                                            <Button
-                                                type="submit"
-                                                size="sm"
-                                                disabled={!file || uploading}
-                                                className="bg-amber-600 hover:bg-amber-700 text-white"
-                                            >
-                                                {uploading ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                        Uploading...
-                                                    </>
-                                                ) : (
-                                                    "Upload"
-                                                )}
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Upload a screenshot or PDF of your Companies House verification confirmation (max 10MB)
-                                        </p>
-                                    </form>
                                 </>
                             )}
                         </div>

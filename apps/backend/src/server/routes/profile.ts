@@ -383,12 +383,13 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
         const { computeIdentityCompliance } = await import('../services/compliance');
         const compliance = computeIdentityCompliance(user);
 
-        // Gate the address - only return if both KYC and CH are approved
-        if (!compliance.canUseRegisteredOfficeAddress) {
+        // Gate the address - only return if KYC is approved
+        const { isKycApproved } = await import('../services/kyc-guards');
+        if (!isKycApproved(user.kyc_status)) {
             return res.status(403).json({
                 ok: false,
-                error: 'IDENTITY_COMPLIANCE_REQUIRED',
-                message: 'You need to complete identity checks before you can view and use your registered office address.',
+                error: 'KYC_REQUIRED',
+                message: 'You need to complete identity verification (KYC) before you can view and use your registered office address.',
                 compliance,
             });
         }

@@ -811,7 +811,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <IdentityComplianceCard
                   compliance={compliance}
                   kycStatus={userProfile?.kyc_status || null}
-                  chVerificationStatus={userProfile?.ch_verification_status || null}
                 />
               </div>
             )}

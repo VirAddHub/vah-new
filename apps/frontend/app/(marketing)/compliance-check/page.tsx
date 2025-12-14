@@ -49,7 +49,7 @@ export default function ComplianceCheckPage() {
                     Is Your Business Address Fully HMRC-Compliant?
                 </h1>
                 <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
-                    Find out if your registered or trading address meets the latest UK Companies House and HMRC requirements.
+                    Find out if your registered or trading address meets the latest UK compliance and HMRC requirements.
                     Answer 15 quick questions to reveal hidden risks, protect your privacy, and get instant recommendations.
                 </p>
 
@@ -106,7 +106,7 @@ export default function ComplianceCheckPage() {
                 <div className="rounded-xl border border-border bg-card p-5">
                     <h3 className="text-base font-semibold text-foreground">Legal Compliance</h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Check alignment with the Economic Crime & Corporate Transparency Act (ECCTA), Companies House and HMRC.
+                        Check alignment with key UK compliance requirements and HMRC.
                     </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-5">
