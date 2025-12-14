@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,8 @@ const formatDateUK = (v?: number | string | null) => {
 };
 
 export default function AccountPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const { data: overview, error: overviewError } = useSWR('/api/billing/overview', swrFetcher);
     const { data: invoices, error: invoicesError } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
     const { data: userData, error: userDataError } = useSWR('/api/auth/whoami', swrFetcher);
@@ -41,6 +44,7 @@ export default function AccountPage() {
     const annualPrice = annualPlan ? (annualPlan.price_pence / 100).toFixed(2) : null;
 
     const [busy, setBusy] = useState<string | null>(null);
+    const [setupStatus, setSetupStatus] = useState<'idle' | 'completing' | 'done' | 'error'>('idle');
     const [profileForm, setProfileForm] = useState({
         name: '',
         email: '',
@@ -53,6 +57,7 @@ export default function AccountPage() {
     const o = overview?.data;
     const items = invoices?.data?.items ?? [];
     const user = userData?.data?.user;
+    const billingRequestFlowId = searchParams?.get('billing_request_flow_id');
 
     // Check for unauthenticated state (401 errors or unauthenticated error messages)
     // Axios errors have response.status, and SWR errors may have status directly
@@ -71,6 +76,59 @@ export default function AccountPage() {
             (invoicesError as any)?.status === 401
         )) ||
         (userData?.ok === false && userData?.error === 'unauthenticated');
+
+    // If GoCardless sends us back with a billing_request_flow_id, complete the redirect flow here.
+    // (Must be above any conditional return to avoid hook-order issues.)
+    useEffect(() => {
+        const run = async () => {
+            if (!billingRequestFlowId) return;
+            if (setupStatus !== 'idle') return;
+
+            setSetupStatus('completing');
+            try {
+                const r = await fetch(
+                    `/api/payments/redirect-flows/${encodeURIComponent(billingRequestFlowId)}/complete`,
+                    { method: 'POST', credentials: 'include' }
+                );
+                const j = await r.json().catch(() => null);
+                if (!r.ok || j?.ok === false) {
+                    throw new Error(j?.error || 'Failed to complete payment setup');
+                }
+
+                toast({
+                    title: 'Payment method connected',
+                    description: 'Your Direct Debit mandate is now set up.',
+                });
+                setSetupStatus('done');
+            } catch (e: any) {
+                toast({
+                    title: "Couldn't complete payment setup",
+                    description: e?.message || 'Please try again.',
+                    variant: 'destructive',
+                });
+                setSetupStatus('error');
+            } finally {
+                // Clean the URL (remove the query param) regardless of outcome
+                router.replace('/account');
+            }
+        };
+        run();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [billingRequestFlowId, router, setupStatus]);
+
+    // Initialize profile form when user data loads
+    // (Must be above any conditional return to avoid hook-order issues.)
+    useEffect(() => {
+        if (!user) return;
+        if (isUnauthenticated) return;
+        setProfileForm({
+            name: user.name || '',
+            email: user.email || '',
+            forwarding_address: user.forwarding_address || '',
+            marketingOptIn: !!user.marketingOptIn
+        });
+        setKycStatus(user.kyc_status || '');
+    }, [user, isUnauthenticated]);
 
     // Show login prompt if unauthenticated (even if middleware is bypassed)
     if (isUnauthenticated) {
@@ -95,19 +153,6 @@ export default function AccountPage() {
             </div>
         );
     }
-
-    // Initialize profile form when user data loads
-    useEffect(() => {
-        if (user) {
-            setProfileForm({
-                name: user.name || '',
-                email: user.email || '',
-                forwarding_address: user.forwarding_address || '',
-                marketingOptIn: !!user.marketingOptIn
-            });
-            setKycStatus(user.kyc_status || '');
-        }
-    }, [user]);
 
     const act = async (path: string) => {
         setBusy(path);
