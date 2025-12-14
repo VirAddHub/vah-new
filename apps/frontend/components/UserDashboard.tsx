@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import useSWR from 'swr';
 import { getToken } from '@/lib/token-manager';
+import Link from "next/link";
 import {
   Building2,
   FileText,
@@ -20,10 +21,8 @@ import {
   SlidersHorizontal,
   RefreshCw,
   LogOut,
-  Settings,
   User,
   Bell,
-  CreditCard,
   HelpCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -110,6 +109,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [isCertBusy, setIsCertBusy] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
+  const [showIdentitySuccessBanner, setShowIdentitySuccessBanner] = useState(true);
 
   // PDF preloader for hover optimization
   const { preloadPDF } = usePDFPreloader();
@@ -625,6 +625,52 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Address is gated by compliance.canUseRegisteredOfficeAddress (requires both KYC and CH)
   const canUseAddress = compliance.canUseRegisteredOfficeAddress;
 
+  // Show the "Identity Checks Complete" success banner only for first 3 dashboard sessions
+  // after verification. Tracked per-user in localStorage and counted once per tab session.
+  useEffect(() => {
+    try {
+      const userId = (userProfile as any)?.id;
+      if (!userId) return;
+
+      const isComplete = Boolean(compliance.canUseRegisteredOfficeAddress);
+      const stateKey = `vah_identity_complete_state_${userId}`;
+      const countKey = `vah_identity_complete_banner_seen_${userId}`;
+      const sessionKey = `vah_identity_complete_banner_counted_${userId}`;
+
+      const prevState = localStorage.getItem(stateKey);
+      if (isComplete && prevState !== "1") {
+        localStorage.setItem(stateKey, "1");
+        localStorage.setItem(countKey, "0");
+        sessionStorage.removeItem(sessionKey);
+      } else if (!isComplete && prevState !== "0") {
+        localStorage.setItem(stateKey, "0");
+        localStorage.setItem(countKey, "0");
+        sessionStorage.removeItem(sessionKey);
+        setShowIdentitySuccessBanner(true);
+        return;
+      }
+
+      if (!isComplete) {
+        setShowIdentitySuccessBanner(true);
+        return;
+      }
+
+      const current = Number(localStorage.getItem(countKey) || "0") || 0;
+      if (!sessionStorage.getItem(sessionKey)) {
+        const next = current + 1;
+        localStorage.setItem(countKey, String(next));
+        sessionStorage.setItem(sessionKey, "1");
+        setShowIdentitySuccessBanner(next <= 3);
+      } else {
+        // already counted this session
+        setShowIdentitySuccessBanner(current <= 3);
+      }
+    } catch {
+      // If storage is unavailable, default to showing it (safe UX)
+      setShowIdentitySuccessBanner(true);
+    }
+  }, [(userProfile as any)?.id, compliance.canUseRegisteredOfficeAddress]);
+
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
 
@@ -711,27 +757,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
             {/* Navigation Links */}
             <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => onNavigate('billing')}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <CreditCard className="h-4 w-4" />
-                Billing
-              </button>
-              <button
-                onClick={() => onNavigate('account')}
+              <Link
+                href="/account"
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <User className="h-4 w-4" />
                 Account
-              </button>
-              <button
-                onClick={() => onNavigate('settings')}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
+              </Link>
               <button
                 onClick={() => onNavigate('help')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -747,13 +779,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 <p className="font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
               </div>
-              <button
-                onClick={() => onNavigate('account')}
+              <Link
+                href="/account"
                 className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
               >
                 <User className="h-4 w-4" />
                 Account
-              </button>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"
@@ -778,22 +810,26 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <div className="flex flex-col gap-6">
 
             {/* Identity Compliance Card (desktop) */}
-            <div className="hidden md:block order-2 md:order-1">
-              <IdentityComplianceCard
-                compliance={compliance}
-                kycStatus={userProfile?.kyc_status || null}
-                chVerificationStatus={userProfile?.ch_verification_status || null}
-              />
-            </div>
+            {(!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
+              <div className="hidden md:block order-2 md:order-1">
+                <IdentityComplianceCard
+                  compliance={compliance}
+                  kycStatus={userProfile?.kyc_status || null}
+                  chVerificationStatus={userProfile?.ch_verification_status || null}
+                />
+              </div>
+            )}
 
             {/* Mobile: compact identity status strip */}
-            <div className="md:hidden order-2 rounded-xl border border-border bg-background p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-foreground">
-                  {compliance?.isKycApproved && compliance?.isChVerified ? "✔ Identity Verified" : "⏳ Identity check required"}
+            {(!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
+              <div className="md:hidden order-2 rounded-xl border border-border bg-background p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-foreground">
+                    {compliance?.isKycApproved && compliance?.isChVerified ? "✔ Identity Verified" : "⏳ Identity check required"}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Mail Inbox Section */}
             <Card className="border-neutral-200 shadow-sm order-1 md:order-2">
@@ -1230,12 +1266,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </Card>
             )}
 
-            {/* Help Text */}
-            <div className="text-center py-6 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Need help? Visit our <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button> or <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>
-              </p>
-            </div>
           </div>
 
           {/* Right Column - Virtual Address Sidebar (desktop only) */}
@@ -1289,6 +1319,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         </div>
       </main>
+
+      {/* Help Text (bottom of dashboard) */}
+      <div className="safe-pad mx-auto max-w-screen-xl pb-10">
+        <div className="text-center py-6 space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Need help? Visit our{" "}
+            <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button>
+            {" "}or{" "}
+            <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>.
+          </p>
+        </div>
+      </div>
 
       {/* PDF Viewer Modal */}
       <PDFViewerModal
