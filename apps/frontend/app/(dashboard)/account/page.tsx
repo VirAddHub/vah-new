@@ -35,7 +35,7 @@ export default function AccountPage() {
     const { data: overview, error: overviewError } = useSWR('/api/billing/overview', swrFetcher);
     const { data: invoices, error: invoicesError } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
     const { data: userData, error: userDataError } = useSWR('/api/auth/whoami', swrFetcher);
-    
+
     // Get dynamic pricing from plans API
     const { getMonthlyPlan, getAnnualPlan } = usePlans();
     const monthlyPlan = getMonthlyPlan();
@@ -61,18 +61,18 @@ export default function AccountPage() {
 
     // Check for unauthenticated state (401 errors or unauthenticated error messages)
     // Axios errors have response.status, and SWR errors may have status directly
-    const isUnauthenticated = 
+    const isUnauthenticated =
         (userDataError && (
-            (userDataError as any)?.response?.status === 401 || 
-            (userDataError as any)?.status === 401 || 
+            (userDataError as any)?.response?.status === 401 ||
+            (userDataError as any)?.status === 401 ||
             (userDataError as any)?.message?.includes('unauthenticated')
         )) ||
         (overviewError && (
-            (overviewError as any)?.response?.status === 401 || 
+            (overviewError as any)?.response?.status === 401 ||
             (overviewError as any)?.status === 401
         )) ||
         (invoicesError && (
-            (invoicesError as any)?.response?.status === 401 || 
+            (invoicesError as any)?.response?.status === 401 ||
             (invoicesError as any)?.status === 401
         )) ||
         (userData?.ok === false && userData?.error === 'unauthenticated');
@@ -443,8 +443,8 @@ export default function AccountPage() {
                                                 )}
                                             </div>
                                             <div className="text-3xl font-bold mb-2 text-foreground">
-                                                {o?.cadence === 'monthly' 
-                                                    ? `£${(o?.current_price_pence || (monthlyPlan?.price_pence || 995)) / 100}` 
+                                                {o?.cadence === 'monthly'
+                                                    ? `£${(o?.current_price_pence || (monthlyPlan?.price_pence || 995)) / 100}`
                                                     : monthlyPrice ? `£${monthlyPrice}` : 'Loading...'}
                                             </div>
                                             <div className="text-sm text-muted-foreground mb-4">per month</div>
@@ -476,8 +476,8 @@ export default function AccountPage() {
                                                 )}
                                             </div>
                                             <div className="text-3xl font-bold mb-2 text-foreground">
-                                                {o?.cadence === 'yearly' 
-                                                    ? `£${(o?.current_price_pence || (annualPlan?.price_pence || 8999)) / 100}` 
+                                                {o?.cadence === 'yearly'
+                                                    ? `£${(o?.current_price_pence || (annualPlan?.price_pence || 8999)) / 100}`
                                                     : annualPrice ? `£${annualPrice}` : 'Loading...'}
                                             </div>
                                             <div className="text-sm text-muted-foreground mb-2">per year</div>
