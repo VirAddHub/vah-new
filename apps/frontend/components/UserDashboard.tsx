@@ -1395,14 +1395,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </div>
                 )}
 
-                {/* Forwarding address (like screenshot) */}
-                <div className="pt-4 border-t border-border">
-                  <div className="text-xs font-semibold text-neutral-500">Forwarding address</div>
-                  <div className="mt-1 text-xs text-neutral-700 whitespace-pre-line">
-                    {userProfile?.forwarding_address || "Add your forwarding address in Account settings."}
-                  </div>
-                </div>
-
                 {/* Locked state message */}
                 {!canUseAddress && (
                   <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
