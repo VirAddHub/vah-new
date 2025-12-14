@@ -82,41 +82,26 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto max-w-screen-xl pt-12 sm:pt-16 pb-10">
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
+                        <div className="text-xs font-semibold text-muted-foreground tracking-wide">
+                            Fully compliant • Privacy-first • London-based
+                        </div>
                         <h1 className="mt-3 text-[clamp(2.25rem,9vw,3.25rem)] leading-[1.05] font-bold tracking-tight text-primary">
-                            Your Official London Business Address — Fully Compliant, Ready to Use
+                            An Affordable, All-Inclusive London Business Address
                         </h1>
                         <p className="mt-3 max-w-[42ch] text-pretty text-sm text-muted-foreground sm:text-base leading-relaxed">
-                            Protect your privacy. Meet the new Companies House rules. Look professional everywhere.
+                            Secure a fully compliant Central London business address for just £9.97/month.
                         </p>
                         <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                            Use one trusted Central London address for:
+                            Everything is included — from unlimited same-day mail scanning to free UK forwarding of HMRC and Companies House letters — helping you meet the latest Companies House requirements, protect your privacy, and present a professional image without overpaying.
                         </p>
-                        <ul className="mt-2 space-y-1 pl-5 list-disc text-sm text-muted-foreground leading-relaxed">
-                            <li>Companies House (Registered Office & Director&apos;s Service Address)</li>
-                            <li>HMRC, banks, and payment providers</li>
-                            <li>Everyday business correspondence</li>
+                        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                            For one simple monthly price, you get:
+                        </p>
+                        <ul className="mt-2 space-y-2 pl-5 list-disc text-sm text-muted-foreground leading-relaxed">
+                            <li>Full compliance — Registered Office & Director’s Service Address (Companies House & HMRC)</li>
+                            <li>Total privacy — keep your home address off the public record</li>
+                            <li>Reliable service — unlimited same-day mail scanning and free UK forwarding for HMRC and Companies House letters</li>
                         </ul>
-                        <div className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
-                            <div className="flex items-start gap-2">
-                                <span className="text-primary">✔</span>
-                                <span>Keep your home address off public records</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <span className="text-primary">✔</span>
-                                <span>Fully HMRC AML supervised & ICO registered</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <span className="text-primary">✔</span>
-                                <span>Unlimited same-day mail scanning</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <span className="text-primary">✔</span>
-                                <span>Free UK forwarding for HMRC & Companies House letters</span>
-                            </div>
-                        </div>
-                        <p className="mt-5 text-base font-semibold text-foreground">
-                            £9.97/month — everything included
-                        </p>
                         <div className="mt-5">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
@@ -130,57 +115,31 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Instant signup · Cancel anytime · Letters only (no parcels)
                             </p>
                         </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
-                                ICO Registered
-                            </span>
-                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
-                                HMRC AML Supervised
-                            </span>
-                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-foreground">
-                                GDPR Aligned
-                            </span>
-                        </div>
                     </div>
 
                     {/* Desktop: Horizontal Layout - Text First */}
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
+                            <div className="text-xs font-semibold text-muted-foreground tracking-wide">
+                                Fully compliant • Privacy-first • London-based
+                            </div>
                             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl text-primary">
-                                Your Official London Business Address — Fully Compliant, Ready to Use
+                                An Affordable, All-Inclusive London Business Address
                             </h1>
                             <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
-                                Protect your privacy. Meet the new Companies House rules. Look professional everywhere.
+                                Secure a fully compliant Central London business address for just £9.97/month.
                             </p>
                             <p className="mt-4 text-base text-muted-foreground max-w-2xl leading-relaxed">
-                                Use one trusted Central London address for:
+                                Everything is included — from unlimited same-day mail scanning to free UK forwarding of HMRC and Companies House letters — helping you meet the latest Companies House requirements, protect your privacy, and present a professional image without overpaying.
                             </p>
-                            <ul className="mt-2 space-y-1 text-base text-muted-foreground">
-                                <li>• Companies House (Registered Office & Director's Service Address)</li>
-                                <li>• HMRC, banks, and payment providers</li>
-                                <li>• Everyday business correspondence</li>
+                            <p className="mt-4 text-base text-muted-foreground max-w-2xl leading-relaxed">
+                                For one simple monthly price, you get:
+                            </p>
+                            <ul className="mt-2 space-y-2 text-base text-muted-foreground max-w-2xl">
+                                <li>• Full compliance — Registered Office & Director’s Service Address (Companies House & HMRC)</li>
+                                <li>• Total privacy — keep your home address off the public record</li>
+                                <li>• Reliable service — unlimited same-day mail scanning and free UK forwarding for HMRC and Companies House letters</li>
                             </ul>
-                            <div className="mt-4 space-y-1 text-sm text-muted-foreground">
-                                <div className="flex items-start gap-2">
-                                    <span className="text-primary">✔</span>
-                                    <span>Keep your home address off public records</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="text-primary">✔</span>
-                                    <span>Fully HMRC AML supervised & ICO registered</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="text-primary">✔</span>
-                                    <span>Unlimited same-day mail scanning</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <span className="text-primary">✔</span>
-                                    <span>Free UK forwarding for HMRC & Companies House letters</span>
-                                </div>
-                            </div>
-                            <p className="mt-4 text-xl font-semibold text-foreground">
-                                £9.97/month — everything included
-                            </p>
                             <div className="mt-6">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
@@ -193,17 +152,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <p className="mt-2 text-xs text-muted-foreground">
                                     Instant signup · Cancel anytime · Letters only (no parcels)
                                 </p>
-                            </div>
-                            <div className="mt-6 flex flex-wrap gap-2">
-                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                    ICO Registered
-                                </span>
-                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                    HMRC AML Supervised
-                                </span>
-                                <span className="inline-flex items-center rounded-md border border-accent-200 bg-accent-50 px-2.5 py-0.5 text-sm font-medium text-accent-700">
-                                    GDPR Aligned
-                                </span>
                             </div>
                         </div>
                         <div className="lg:col-span-5">
