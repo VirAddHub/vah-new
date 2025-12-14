@@ -133,7 +133,7 @@ app.use(helmet());
 
 // CORS first - apply to ALL responses including errors
 app.use(cors({
-    origin: (origin, cb) => {
+    origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
         const allowedOrigins = [
             'https://vah-new-frontend-75d6.vercel.app',
             'https://vah-frontend-final.vercel.app',
