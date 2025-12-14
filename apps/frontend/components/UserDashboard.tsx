@@ -37,6 +37,7 @@ import { MailManagement } from "./MailManagement";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 import { IdentityComplianceCard, Compliance } from "@/components/dashboard/IdentityComplianceCard";
 import { VAHLogo } from "./VAHLogo";
+import { VAH_ADDRESS_LINES } from "@/lib/address";
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -421,7 +422,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       revoke(miniViewerUrl);
     };
     // We intentionally refetch when the selected mail changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMailDetail?.id]);
 
   // Forwarding notice: keep it near the Forward button, and auto-hide
@@ -606,14 +606,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return "User"; // Final fallback
   };
 
-  // Mock virtual address (you can replace this with real data)
-  const virtualAddress = {
-    line1: "54–58 Tanner Street",
-    line2: "2nd Floor Left",
-    city: "London",
-    postcode: "SE1 3PH",
-    country: "United Kingdom"
-  };
+  const businessAddressLine1 = VAH_ADDRESS_LINES[0];
+  const businessAddressLine2 = VAH_ADDRESS_LINES[1];
+  const businessAddressLine3 = VAH_ADDRESS_LINES[2];
+  const businessAddressLine4 = VAH_ADDRESS_LINES[3];
 
   // Get compliance status from profile (computed by backend)
   const compliance: Compliance = userProfile?.compliance || {
@@ -1208,9 +1204,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     {(userProfile as any)?.company_name || "Your Company"}
                   </div>
                   <div className="text-sm font-semibold text-neutral-900">
-                    2nd Floor Left, 54–58 Tanner Street, London SE1 3PH
+                    {businessAddressLine1}
                   </div>
-                  <div className="text-xs text-neutral-500">United Kingdom</div>
+                  <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
+                  <div className="text-xs text-neutral-500">
+                    {businessAddressLine3}
+                  </div>
+                  <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
                 </div>
 
                 {/* Primary action */}
@@ -1286,9 +1286,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     {(userProfile as any)?.company_name || "Your Company"}
                   </div>
                   <div className="text-sm font-semibold text-neutral-900">
-                    2nd Floor Left, 54–58 Tanner Street, London SE1 3PH
+                    {businessAddressLine1}
                   </div>
-                  <div className="text-xs text-neutral-500">United Kingdom</div>
+                  <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
+                  <div className="text-xs text-neutral-500">
+                    {businessAddressLine3}
+                  </div>
+                  <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
                 </div>
 
                 {/* Primary action */}

@@ -103,7 +103,6 @@ export default function PDFViewerModal({
             cancelled = true;
             revokeUrl();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, mailItemId, useBlobFallback]);
 
 

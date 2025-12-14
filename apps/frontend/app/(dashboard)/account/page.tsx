@@ -113,7 +113,6 @@ export default function AccountPage() {
             }
         };
         run();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [billingRequestFlowId, router, setupStatus]);
 
     // Initialize profile form when user data loads

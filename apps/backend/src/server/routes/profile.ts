@@ -612,7 +612,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const signatureCompany = 'VirtualAddressHub Ltd';
         const supportEmail = 'support@virtualaddresshub.co.uk';
 
-        const registeredBusinessAddress = '2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom';
+        const { VAH_ADDRESS_INLINE } = await import('../../config/address');
+        const registeredBusinessAddress = VAH_ADDRESS_INLINE;
 
         const statement1 = 'Authorised to use as a Registered Office Address.';
         const statement2 = 'HMRC and Companies House communications are accepted at this address.';
@@ -859,7 +860,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor(COLORS.muted)
             .fontSize(TYPE.small)
             .font(FONT.regular)
-            .text('2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom', footerTextX, fy, { width: footerTextW, align: 'center' });
+            .text(registeredBusinessAddress, footerTextX, fy, { width: footerTextW, align: 'center' });
         fy += chosen.footerLineStep;
 
         doc.text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', footerTextX, fy, { width: footerTextW, align: 'center' });
