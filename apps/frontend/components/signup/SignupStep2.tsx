@@ -119,6 +119,12 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
             newErrors.password = 'Password is required';
         } else if (formData.password.length < 8) {
             newErrors.password = 'Password must be at least 8 characters';
+        } else if (!/[a-z]/.test(formData.password)) {
+            newErrors.password = 'Password must include a lowercase letter';
+        } else if (!/[A-Z]/.test(formData.password)) {
+            newErrors.password = 'Password must include an uppercase letter';
+        } else if (!/\d/.test(formData.password)) {
+            newErrors.password = 'Password must include a number';
         }
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
 

@@ -261,7 +261,12 @@ router.post("/signup", async (req, res) => {
 
     const parsed = SignupSchema.safeParse(req.body);
     if (!parsed.success) {
-        return res.status(400).json({ ok: false, error: "validation_error", details: parsed.error.flatten() });
+        return res.status(400).json({
+            ok: false,
+            error: "validation_error",
+            message: parsed.error.issues.map((e: any) => e.message).join(', '),
+            details: parsed.error.flatten(),
+        });
     }
     const i = parsed.data;
 
