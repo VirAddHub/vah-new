@@ -1174,14 +1174,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               </CardContent>
             </Card>
 
-            {/* Free Forwarding Notice */}
-            <Alert className="border-primary/30 bg-primary/5">
-              <AlertCircle className="h-4 w-4 text-primary" />
-              <AlertDescription>
-                <strong className="text-foreground">Free Forwarding:</strong> All mail from HMRC and Companies House is forwarded to you at no extra charge. Select these items and use "Request Forwarding" to process them.
-              </AlertDescription>
-            </Alert>
-
             {/* Bulk Actions Notice - Mobile */}
             {isSomeSelected && (
               <Card className="sm:hidden border-primary/30 bg-primary/5">
