@@ -24,6 +24,7 @@ export function MailItemCard({
   isRead = true,
   onOpen,
 }: MailItemCardProps) {
+  const isUnread = !isRead;
   const Icon = mailType === "bank" ? Landmark : mailType === "gov" ? Building2 : FileText;
   const iconBg =
     mailType === "gov"
@@ -51,7 +52,7 @@ export function MailItemCard({
     <button
       type="button"
       onClick={onOpen}
-      className="w-full text-left bg-white hover:bg-neutral-50 transition-colors"
+      className={`w-full text-left transition-colors ${isUnread ? "bg-blue-50/50 hover:bg-blue-50" : "bg-white hover:bg-neutral-50"}`}
     >
       {/* Mobile: dense row (no badges) */}
       <div className="md:hidden flex items-center gap-3 px-4 py-3">
@@ -61,8 +62,8 @@ export function MailItemCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="text-sm font-semibold text-neutral-900 truncate">{sender}</div>
-            {!isRead && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+            <div className={`text-sm truncate ${isUnread ? "font-bold text-neutral-900" : "font-semibold text-neutral-900"}`}>{sender}</div>
+            {isUnread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
           <div className="mt-0.5 text-xs text-neutral-500 truncate">
             {(timeLabel ? timeLabel : "—")} • {statusLabel}
@@ -80,8 +81,8 @@ export function MailItemCard({
         {/* title/subtitle */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="text-2xl font-semibold text-neutral-900 truncate">{sender}</div>
-            {!isRead && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+            <div className={`text-2xl text-neutral-900 truncate ${isUnread ? "font-bold" : "font-semibold"}`}>{sender}</div>
+            {isUnread && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
           {subject && (
             <div className="mt-1 text-xl text-neutral-500 truncate">{subject}</div>

@@ -109,6 +109,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [miniViewerError, setMiniViewerError] = useState<string | null>(null);
   const [forwardInlineNotice, setForwardInlineNotice] = useState<string | null>(null);
   const [certLoading, setCertLoading] = useState(false);
+  const [certStatus, setCertStatus] = useState<"idle" | "generating" | "ready" | "error">("idle");
+  const [certError, setCertError] = useState<string | null>(null);
+  const [certBlobUrl, setCertBlobUrl] = useState<string | null>(null);
+  const [showCertPreview, setShowCertPreview] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
 
@@ -161,6 +165,31 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   }, [mailData]);
 
   const totalItems = mailData?.total || 0;
+
+  // Dashboard summary counters (inbox-first)
+  const summary = useMemo(() => {
+    const active = mailItems.filter((m: MailItem) => !m.deleted);
+    const newCount = active.filter((m: MailItem) => !m.is_read).length;
+
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+
+    const scannedThisWeekCount = active.filter((m: MailItem) => {
+      const raw = m.scanned_at || m.created_at || m.received_date;
+      if (!raw) return false;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= weekAgo;
+    }).length;
+
+    const needsForwardingCount = active.filter((m: MailItem) => {
+      const raw = (m.status || "").toLowerCase();
+      return raw.includes("forward") && (raw.includes("pending") || raw.includes("requested"));
+    }).length;
+
+    return { newCount, scannedThisWeekCount, needsForwardingCount };
+  }, [mailItems]);
 
   // SWR hook for user profile - we avoid refreshInterval/polling here.
   // Profile is revalidated via explicit mutate() after important actions
@@ -391,6 +420,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMailDetail?.id]);
 
+  // Certificate blob URL cleanup (avoid leaking object URLs)
+  useEffect(() => {
+    return () => {
+      try {
+        if (certBlobUrl) URL.revokeObjectURL(certBlobUrl);
+      } catch { }
+    };
+  }, [certBlobUrl]);
+
   // Forwarding notice: keep it near the Forward button, and auto-hide
   useEffect(() => {
     if (!forwardInlineNotice) return;
@@ -403,70 +441,64 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     setForwardInlineNotice(null);
   }, [selectedMailDetail?.id]);
 
-  // Generate certificate handler
   const onGenerateCertificate = useCallback(async () => {
     try {
-      if (certLoading) return;
+      if (certStatus === "generating") return;
+      setCertError(null);
+      setCertStatus("generating");
       setCertLoading(true);
+
+      // Call backend to generate certificate (returns PDF blob)
       const token = getToken();
       const response = await fetch(`${API_BASE}/api/profile/certificate`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include'
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        credentials: "include",
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'business-address-confirmation.pdf';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        // Safely remove the element if it's still a child
-        if (a.parentNode === document.body) {
-          document.body.removeChild(a);
-        }
-
-        toast({
-          title: "Certificate Generated",
-          description: "Your Business Address Confirmation has been downloaded.",
-          durationMs: 3000,
-        });
-      } else {
-        // Try to get error message from response
-        let errorMessage = 'Failed to generate certificate. Please try again.';
-        try {
-          const errorData = await response.json();
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error === 'KYC_REQUIRED') {
-            errorMessage = 'You must complete identity verification (KYC) before downloading your Business Address Confirmation.';
-          }
-        } catch (e) {
-          // If response is not JSON, use status-based message
-          if (response.status === 403) {
-            errorMessage = 'You must complete identity verification (KYC) before downloading your Business Address Confirmation.';
-          } else if (response.status === 404) {
-            errorMessage = 'User profile not found. Please try logging in again.';
-          }
-        }
-        throw new Error(errorMessage);
+      if (!response.ok) {
+        let msg = "We couldn’t generate your letter. Please try again.";
+        if (response.status === 403) msg = "Complete identity verification before generating your letter.";
+        throw new Error(msg);
       }
-    } catch (error: any) {
-      console.error('Error generating certificate:', error);
+
+      const blob = await response.blob();
+
+      // Store blob URL locally (lets us preview + download on-demand)
+      const nextUrl = URL.createObjectURL(blob);
+
+      // Revoke old URL if present
+      if (certBlobUrl) URL.revokeObjectURL(certBlobUrl);
+
+      setCertBlobUrl(nextUrl);
+      setCertStatus("ready");
+      toast({
+        title: "Letter ready",
+        description: "Your Letter of Certification is ready to download.",
+        durationMs: 2500,
+      });
+    } catch (err: any) {
+      setCertStatus("error");
+      setCertError(err?.message || "We couldn’t generate your letter. Please try again.");
       toast({
         title: "Certificate Error",
-        description: error.message || "Failed to generate certificate. Please try again.",
+        description: err?.message || "We couldn’t generate your letter. Please try again.",
         variant: "destructive",
         durationMs: 5000,
       });
     } finally {
       setCertLoading(false);
     }
-  }, [certLoading, toast]);
+  }, [certStatus, certBlobUrl, toast]);
+
+  const onDownloadCertificate = useCallback(() => {
+    if (!certBlobUrl) return;
+    const a = document.createElement("a");
+    a.href = certBlobUrl;
+    a.download = "letter-of-certification.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [certBlobUrl]);
 
   // Forwarding handler
   const onForward = useCallback((item: MailItem) => {
@@ -764,12 +796,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       {/* Main Content */}
       <main className="safe-pad mx-auto max-w-screen-xl py-8">
 
-        {/* Welcome Message (desktop only) */}
-        <div className="hidden md:block mb-8">
-          <h1 className="mb-2">Welcome back, {getUserName()}</h1>
-          <p className="text-muted-foreground">Manage your mail and business address</p>
-        </div>
-
         {/* Two Column Layout: Main content + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
 
@@ -838,6 +864,22 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <p className="hidden md:block text-sm text-neutral-500">
                     Click on any mail item to view full details and scans
                   </p>
+
+                  {/* Summary row (inbox-first) */}
+                  <div className="grid grid-cols-3 gap-2 md:gap-3">
+                    <div className="rounded-xl border border-border bg-background px-3 py-2">
+                      <div className="text-[11px] font-semibold text-neutral-500">New</div>
+                      <div className="mt-1 text-base font-semibold text-neutral-900">{summary.newCount}</div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-background px-3 py-2">
+                      <div className="text-[11px] font-semibold text-neutral-500">Scanned (7 days)</div>
+                      <div className="mt-1 text-base font-semibold text-neutral-900">{summary.scannedThisWeekCount}</div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-background px-3 py-2">
+                      <div className="text-[11px] font-semibold text-neutral-500">Forwarding pending</div>
+                      <div className="mt-1 text-base font-semibold text-neutral-900">{summary.needsForwardingCount}</div>
+                    </div>
+                  </div>
 
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
@@ -1146,31 +1188,82 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Mobile: Certificate CTA (replaces sidebar content) */}
             <Card className="md:hidden order-3 border-border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold text-neutral-900">Business Address Confirmation</CardTitle>
+                <CardTitle className="text-base font-semibold text-neutral-900">Your Business Address</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <div className="text-sm text-neutral-600">
-                  {canUseAddress ? "Verified • Ready to download" : "Available when identity is verified"}
+              <CardContent className="pt-0 space-y-4">
+                {/* Company + address */}
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    {(userProfile as any)?.company_name || "Your Company"}
+                  </div>
+                  <div className="text-sm font-semibold text-neutral-900">
+                    2nd Floor Left, 54–58 Tanner Street, London SE1 3PH
+                  </div>
+                  <div className="text-xs text-neutral-500">United Kingdom</div>
                 </div>
-                <Button
-                  type="button"
-                  onClick={onGenerateCertificate}
-                  disabled={!canUseAddress || certLoading}
-                  className="w-full"
-                  variant="primary"
-                >
-                  {certLoading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Preparing…
-                    </>
-                  ) : (
-                    <>
-                      <FileCheck className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </>
+
+                {/* Primary action */}
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    onClick={onGenerateCertificate}
+                    disabled={!canUseAddress || certStatus === "generating"}
+                    className="w-full rounded-xl !h-11"
+                    variant="primary"
+                  >
+                    {certStatus === "generating" ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-4 w-4 mr-2" />
+                        Generate Letter of Certification
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    Use this letter for banks, payment providers, and professional contacts.
+                  </p>
+
+                  {certStatus === "error" && certError && (
+                    <div className="text-xs text-red-600 leading-relaxed">
+                      {certError}
+                    </div>
                   )}
-                </Button>
+                </div>
+
+                {/* After generation: show Download + optional Preview */}
+                {certStatus === "ready" && certBlobUrl && (
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      onClick={onDownloadCertificate}
+                      className="w-full rounded-xl !h-11"
+                      variant="outline"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Letter (PDF)
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setShowCertPreview(true)}
+                      className="w-full rounded-xl !h-11"
+                      variant="ghost"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                  </div>
+                )}
+
+                {/* Locked state message */}
+                {!canUseAddress && (
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+                    Available once identity verification and Companies House checks are complete.
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1214,162 +1307,98 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start">
             <Card className="border-neutral-200 shadow-sm">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <Building2 className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-medium text-neutral-800 truncate">Business Address Confirmation</CardTitle>
-                  </div>
+                <div className="text-[11px] font-semibold text-neutral-500 tracking-wider">
+                  ADDRESSES
                 </div>
+                <CardTitle className="text-xl font-semibold text-neutral-900">
+                  Your Business Address
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 pt-3">
-                {/* Address Display */}
-                {canUseAddress ? (
-                  <>
-                    {(() => {
-                      const issuedDate = formatUkDate(new Date());
-                      const authorisedCompany = (userProfile as any)?.company_name || "—";
-                      const issuedBy = "VirtualAddressHub Ltd";
-                      const registeredBusinessAddress = `2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom`;
-                      const addressLines = [
-                        "2nd Floor Left",
-                        "54–58 Tanner Street",
-                        "London SE1 3PH",
-                        "United Kingdom",
-                      ];
+              <CardContent className="space-y-4">
+                {/* Company + address */}
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold text-neutral-900">
+                    {(userProfile as any)?.company_name || "Your Company"}
+                  </div>
+                  <div className="text-sm font-semibold text-neutral-900">
+                    2nd Floor Left, 54–58 Tanner Street, London SE1 3PH
+                  </div>
+                  <div className="text-xs text-neutral-500">United Kingdom</div>
+                </div>
 
-                      return (
-                        <div className="rounded-xl bg-gray-100 p-3">
-                          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                            {/* Header */}
-                            <div className="px-5 pt-5">
-                              <img src="/images/logo.svg" alt="VirtualAddressHub" className="h-5 w-auto" />
-                              <div className="mt-4 h-px w-full bg-gray-200" />
-                            </div>
+                {/* Primary action */}
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    onClick={onGenerateCertificate}
+                    disabled={!canUseAddress || certStatus === "generating"}
+                    className="w-full rounded-xl !h-11"
+                    variant="primary"
+                  >
+                    {certStatus === "generating" ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-4 w-4 mr-2" />
+                        Generate Letter of Certification
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    Use this letter for banks, payment providers, and professional contacts.
+                  </p>
 
-                            {/* Body */}
-                            <div className="px-5 py-5 space-y-4">
-                              <div>
-                                <div className="text-lg font-semibold text-gray-900">Business Address Confirmation</div>
-                              </div>
+                  {/* Error message */}
+                  {certStatus === "error" && certError && (
+                    <div className="text-xs text-red-600 leading-relaxed">
+                      {certError}
+                    </div>
+                  )}
+                </div>
 
-                              {/* Verified details */}
-                              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                                <div className="text-xs font-semibold text-gray-600">Verified details</div>
-                                <div className="mt-3 space-y-3 text-sm">
-                                  <div>
-                                    <div className="text-xs text-gray-500">Registered Business Address</div>
-                                    <div className="font-medium text-gray-900 leading-relaxed">
-                                      {addressLines.map((l) => (
-                                        <div key={l}>{l}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs text-gray-500">Authorised Company</div>
-                                    <div className="font-medium text-gray-900">{authorisedCompany}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs text-gray-500">Issued by</div>
-                                    <div className="font-medium text-gray-900">{issuedBy}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs text-gray-500">Date issued</div>
-                                    <div className="font-medium text-gray-900">{issuedDate}</div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Statements */}
-                              <div className="space-y-2 text-sm text-gray-700 leading-relaxed">
-                                <p>
-                                  Authorised to use as a <span className="font-medium text-gray-900">Registered Office Address</span>.
-                                </p>
-                                <p>
-                                  <span className="font-medium text-gray-900">HMRC</span> and <span className="font-medium text-gray-900">Companies House</span> communications are accepted at this address.
-                                </p>
-                              </div>
-
-                              {/* Notes */}
-                              <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
-                                <div className="text-xs font-semibold text-gray-600">Important notes</div>
-                                <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2">
-                                  <p>No tenancy or occupation rights are granted.</p>
-                                  <p>Valid subject to an active subscription and UK AML/GDPR compliance.</p>
-                                </div>
-                              </div>
-
-                              {/* Signature (simple, not letter-style) */}
-                              <div className="pt-2">
-                                <div className="text-sm font-medium text-gray-900">VirtualAddressHub Ltd</div>
-                                <div className="mt-1 text-xs text-gray-500">Customer Support</div>
-                              </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="bg-gray-50/60 border-t border-gray-200 px-5 py-4 text-center">
-                              <div className="text-[11px] font-medium text-gray-600">VirtualAddressHub Ltd</div>
-                              <div className="mt-1 text-[11px] text-gray-500">
-                                2nd Floor Left, 54–58 Tanner Street, London SE1 3PH, United Kingdom
-                              </div>
-                              <div className="mt-1 text-[11px] text-gray-500">
-                                support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk
-                              </div>
-                              <div className="mt-1 text-[11px] text-gray-400">Registered in England</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Download PDF (existing handler) */}
+                {/* After generation: show Download + optional Preview */}
+                {certStatus === "ready" && certBlobUrl && (
+                  <div className="space-y-2">
                     <Button
                       type="button"
-                      onClick={onGenerateCertificate}
-                      disabled={certLoading}
-                      className="w-full"
-                      variant="primary"
+                      onClick={onDownloadCertificate}
+                      className="w-full rounded-xl !h-11"
+                      variant="outline"
                     >
-                      {certLoading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Preparing…
-                        </>
-                      ) : (
-                        <>
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Download PDF
-                        </>
-                      )}
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Letter (PDF)
                     </Button>
-                  </>
-                ) : (
-                  <>
-                    {/* Locked State */}
-                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        We'll show your full VirtualAddressHub address here once your ID checks are approved and your Companies House identity verification is complete for all directors and PSCs.
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Please complete identity verification via GOV.UK / Companies House and upload proof using the Companies House verification card in your dashboard.
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Complete the identity checks above to unlock your registered office address.
-                      </p>
-                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => setShowCertPreview(true)}
+                      className="w-full rounded-xl !h-11"
+                      variant="ghost"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                    <p className="text-xs text-neutral-500 text-center">
+                      Generated securely in your account.
+                    </p>
+                  </div>
+                )}
 
-                    {/* Disabled Generate Certificate Button */}
-                    <div className="space-y-1.5">
-                      <Button className="w-full bg-primary/50 hover:bg-primary/50 text-white cursor-not-allowed" size="sm" disabled>
-                        <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                        Download PDF
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center leading-tight">
-                        Address will be available once verification is complete
-                      </p>
-                    </div>
-                  </>
+                {/* Forwarding address (like screenshot) */}
+                <div className="pt-4 border-t border-border">
+                  <div className="text-xs font-semibold text-neutral-500">Forwarding address</div>
+                  <div className="mt-1 text-xs text-neutral-700 whitespace-pre-line">
+                    {userProfile?.forwarding_address || "Add your forwarding address in Account settings."}
+                  </div>
+                </div>
+
+                {/* Locked state message */}
+                {!canUseAddress && (
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+                    Available once identity verification and Companies House checks are complete.
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1399,6 +1428,34 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           userProfile={userProfile}
           onConfirm={handleForwardingConfirm}
         />
+      )}
+
+      {/* Certificate Preview Modal */}
+      {showCertPreview && certBlobUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="text-sm font-semibold">Letter of Certification</div>
+              <button
+                onClick={() => setShowCertPreview(false)}
+                className="rounded-md p-2 hover:bg-neutral-100"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="h-[70vh] bg-neutral-50">
+              <object data={certBlobUrl} type="application/pdf" className="w-full h-full" />
+            </div>
+            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t">
+              <Button variant="outline" onClick={() => setShowCertPreview(false)}>Close</Button>
+              <Button variant="primary" onClick={onDownloadCertificate}>
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
