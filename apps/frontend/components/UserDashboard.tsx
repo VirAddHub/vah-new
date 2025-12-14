@@ -7,7 +7,6 @@ import {
   Building2,
   FileText,
   Landmark,
-  FileCheck,
   Download,
   Truck,
   CheckSquare,
@@ -108,11 +107,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [miniViewerLoading, setMiniViewerLoading] = useState(false);
   const [miniViewerError, setMiniViewerError] = useState<string | null>(null);
   const [forwardInlineNotice, setForwardInlineNotice] = useState<string | null>(null);
-  const [certLoading, setCertLoading] = useState(false);
-  const [certStatus, setCertStatus] = useState<"idle" | "generating" | "ready" | "error">("idle");
-  const [certError, setCertError] = useState<string | null>(null);
-  const [certBlobUrl, setCertBlobUrl] = useState<string | null>(null);
-  const [showCertPreview, setShowCertPreview] = useState(false);
+  const [isCertBusy, setIsCertBusy] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
 
@@ -429,15 +424,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMailDetail?.id]);
 
-  // Certificate blob URL cleanup (avoid leaking object URLs)
-  useEffect(() => {
-    return () => {
-      try {
-        if (certBlobUrl) URL.revokeObjectURL(certBlobUrl);
-      } catch { }
-    };
-  }, [certBlobUrl]);
-
   // Forwarding notice: keep it near the Forward button, and auto-hide
   useEffect(() => {
     if (!forwardInlineNotice) return;
@@ -450,14 +436,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     setForwardInlineNotice(null);
   }, [selectedMailDetail?.id]);
 
-  const onGenerateCertificate = useCallback(async () => {
-    try {
-      if (certStatus === "generating") return;
-      setCertError(null);
-      setCertStatus("generating");
-      setCertLoading(true);
+  async function handleDownloadCertification() {
+    if (isCertBusy) return;
+    setIsCertBusy(true);
 
-      // Call backend to generate certificate (returns PDF blob)
+    try {
       const token = getToken();
       const response = await fetch(`${API_BASE}/api/profile/certificate`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -465,49 +448,32 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       });
 
       if (!response.ok) {
-        let msg = "We couldn’t generate your letter. Please try again.";
-        if (response.status === 403) msg = "Complete identity verification before generating your letter.";
-        throw new Error(msg);
+        throw new Error("Failed to prepare certificate");
       }
 
       const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
 
-      // Store blob URL locally (lets us preview + download on-demand)
-      const nextUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "letter-of-certification.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
 
-      // Revoke old URL if present
-      if (certBlobUrl) URL.revokeObjectURL(certBlobUrl);
-
-      setCertBlobUrl(nextUrl);
-      setCertStatus("ready");
-      toast({
-        title: "Letter ready",
-        description: "Your Letter of Certification is ready to download.",
-        durationMs: 2500,
-      });
-    } catch (err: any) {
-      setCertStatus("error");
-      setCertError(err?.message || "We couldn’t generate your letter. Please try again.");
-      toast({
-        title: "Certificate Error",
-        description: err?.message || "We couldn’t generate your letter. Please try again.",
-        variant: "destructive",
-        durationMs: 5000,
-      });
+      // Cleanup blob URL shortly after triggering download
+      window.setTimeout(() => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch { }
+      }, 5000);
+    } catch (err) {
+      console.error(err);
+      alert("Sorry — we couldn’t generate your letter. Please try again.");
     } finally {
-      setCertLoading(false);
+      setIsCertBusy(false);
     }
-  }, [certStatus, certBlobUrl, toast]);
-
-  const onDownloadCertificate = useCallback(() => {
-    if (!certBlobUrl) return;
-    const a = document.createElement("a");
-    a.href = certBlobUrl;
-    a.download = "letter-of-certification.pdf";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }, [certBlobUrl]);
+  }
 
   // Forwarding handler
   const onForward = useCallback((item: MailItem) => {
@@ -1213,59 +1179,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Primary action */}
                 <div className="space-y-2">
+                  {/* Letter of Certification: single action (generate if needed, then download) */}
                   <Button
                     type="button"
-                    onClick={onGenerateCertificate}
-                    disabled={!canUseAddress || certStatus === "generating"}
-                    className="w-full rounded-xl !h-11"
-                    variant="primary"
+                    className="w-full"
+                    onClick={handleDownloadCertification}
+                    disabled={!canUseAddress || isCertBusy}
                   >
-                    {certStatus === "generating" ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Generating…
-                      </>
-                    ) : (
-                      <>
-                        <FileCheck className="h-4 w-4 mr-2" />
-                        Generate Letter of Certification
-                      </>
-                    )}
+                    {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
                   </Button>
                   <p className="text-xs text-neutral-500 leading-relaxed">
                     Use this letter for banks, payment providers, and professional contacts.
                   </p>
-
-                  {certStatus === "error" && certError && (
-                    <div className="text-xs text-red-600 leading-relaxed">
-                      {certError}
-                    </div>
-                  )}
                 </div>
-
-                {/* After generation: show Download + optional Preview */}
-                {certStatus === "ready" && certBlobUrl && (
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      onClick={onDownloadCertificate}
-                      className="w-full rounded-xl !h-11"
-                      variant="outline"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Letter (PDF)
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setShowCertPreview(true)}
-                      className="w-full rounded-xl !h-11"
-                      variant="ghost"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview
-                    </Button>
-                  </div>
-                )}
 
                 {/* Locked state message */}
                 {!canUseAddress && (
@@ -1337,63 +1263,19 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                 {/* Primary action */}
                 <div className="space-y-2">
+                  {/* Letter of Certification: single action (generate if needed, then download) */}
                   <Button
                     type="button"
-                    onClick={onGenerateCertificate}
-                    disabled={!canUseAddress || certStatus === "generating"}
-                    className="w-full rounded-xl !h-11"
-                    variant="primary"
+                    className="w-full"
+                    onClick={handleDownloadCertification}
+                    disabled={!canUseAddress || isCertBusy}
                   >
-                    {certStatus === "generating" ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Generating…
-                      </>
-                    ) : (
-                      <>
-                        <FileCheck className="h-4 w-4 mr-2" />
-                        Generate Letter of Certification
-                      </>
-                    )}
+                    {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
                   </Button>
                   <p className="text-xs text-neutral-500 leading-relaxed">
                     Use this letter for banks, payment providers, and professional contacts.
                   </p>
-
-                  {/* Error message */}
-                  {certStatus === "error" && certError && (
-                    <div className="text-xs text-red-600 leading-relaxed">
-                      {certError}
-                    </div>
-                  )}
                 </div>
-
-                {/* After generation: show Download + optional Preview */}
-                {certStatus === "ready" && certBlobUrl && (
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      onClick={onDownloadCertificate}
-                      className="w-full rounded-xl !h-11"
-                      variant="outline"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Letter (PDF)
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setShowCertPreview(true)}
-                      className="w-full rounded-xl !h-11"
-                      variant="ghost"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview
-                    </Button>
-                    <p className="text-xs text-neutral-500 text-center">
-                      Generated securely in your account.
-                    </p>
-                  </div>
-                )}
 
                 {/* Locked state message */}
                 {!canUseAddress && (
@@ -1431,33 +1313,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         />
       )}
 
-      {/* Certificate Preview Modal */}
-      {showCertPreview && certBlobUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="text-sm font-semibold">Letter of Certification</div>
-              <button
-                onClick={() => setShowCertPreview(false)}
-                className="rounded-md p-2 hover:bg-neutral-100"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="h-[70vh] bg-neutral-50">
-              <object data={certBlobUrl} type="application/pdf" className="w-full h-full" />
-            </div>
-            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t">
-              <Button variant="outline" onClick={() => setShowCertPreview(false)}>Close</Button>
-              <Button variant="primary" onClick={onDownloadCertificate}>
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
