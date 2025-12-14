@@ -183,7 +183,16 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return d >= weekAgo;
     }).length;
 
+    const norm = (s: string) => s.toLowerCase().trim().replace(/[\s-]+/g, "_");
     const needsForwardingCount = active.filter((m: MailItem) => {
+      const fwd = (m as any)?.forwarding_status;
+      if (typeof fwd === "string" && fwd.trim()) {
+        const key = norm(fwd);
+        // Canonical statuses: requested | in_progress | dispatched | cancelled
+        return key === "requested" || key === "in_progress";
+      }
+
+      // Fallback for older payloads that only include free-form status
       const raw = (m.status || "").toLowerCase();
       return raw.includes("forward") && (raw.includes("pending") || raw.includes("requested"));
     }).length;
