@@ -287,7 +287,7 @@ router.post("/signup", async (req, res) => {
             [email]
         );
         const count = Number(exists.rows[0]?.count ?? 0);
-        
+
         if (count > 0) {
             // Debug logging: log duplicate email detection
             console.warn('[SignupDebug] Duplicate email detected', {
@@ -296,9 +296,9 @@ router.post("/signup", async (req, res) => {
                 count: count,
                 existingUserQuery: `SELECT id, email, first_name, last_name FROM "user" WHERE email = $1`,
             });
-            
-            return res.status(409).json({ 
-                ok: false, 
+
+            return res.status(409).json({
+                ok: false,
                 code: 'EMAIL_EXISTS',
                 error: "email_exists",
                 message: 'An account already exists with this email address.',
@@ -402,9 +402,9 @@ router.post("/signup", async (req, res) => {
                 email: email,
                 error: m,
             });
-            
-            return res.status(409).json({ 
-                ok: false, 
+
+            return res.status(409).json({
+                ok: false,
                 code: 'EMAIL_EXISTS',
                 error: "email_exists",
                 message: 'An account already exists with this email address.',

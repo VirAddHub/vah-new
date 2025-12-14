@@ -10,13 +10,11 @@ export const REGISTERED_OFFICE_ADDRESS = {
     country: "United Kingdom",
 };
 
-export const VAH_FLOOR_LINE = "Second Floor";
-
 export const VAH_ADDRESS_LINES = [
-    "Second Floor, Tanner Place",
-    "54–58 Tanner Street",
-    "London SE1 3PH",
-    "United Kingdom",
+    REGISTERED_OFFICE_ADDRESS.line1,
+    REGISTERED_OFFICE_ADDRESS.line2,
+    `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
+    REGISTERED_OFFICE_ADDRESS.country,
 ] as const;
 
 export const VAH_ADDRESS_INLINE = VAH_ADDRESS_LINES.join(", ");
