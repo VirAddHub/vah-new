@@ -35,6 +35,7 @@ import { selectOne, selectMany, execute, insertReturningId } from "./server/db-h
 import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { postmarkWebhook } from "./server/routes/webhooks-postmark";
 import onedriveWebhook from "./server/routes/webhooks-onedrive";
+import gocardlessWebhook from "./server/routes/webhooks-gocardless";
 import profileRouter from "./server/routes/profile";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
@@ -275,17 +276,7 @@ if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV =
     app.use('/api', limiter);
 }
 
-// Global parsers for the whole app (safe)
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// JSON parse error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    if (err instanceof SyntaxError && 'body' in err) {
-        return res.status(400).json({ ok: false, error: "Invalid JSON" });
-    }
-    next(err);
-});
+// NOTE: JSON/body parsers are mounted inside start() AFTER raw-body webhooks.
 
 // Database initialization
 async function initializeDatabase() {
@@ -361,25 +352,29 @@ async function start() {
     // Mount webhooks FIRST with raw parser (before other routes)
     app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
 
-    // GoCardless webhook with raw body for signature verification
-    app.post('/api/webhooks/gocardless', express.raw({ type: 'application/json' }), async (req: any, res: any, next: any) => {
-        // Store raw body for webhook handler
-        req.rawBody = req.body;
-        next();
-    }, async (req: any, res: any) => {
-        // Actual webhook handler
-        try {
-            const rawBody = req.rawBody || req.body?.toString?.() || '';
-            const signature = req.headers['webhook-signature'] as string;
+    // GoCardless webhook (raw body required for signature verification)
+    app.use(
+        '/api/webhooks',
+        express.raw({ type: 'application/json' }),
+        (req: any, _res: any, next: any) => {
+            if (req.path === '/gocardless') {
+                req.rawBody = req.body?.toString?.('utf8') ?? '';
+            }
+            next();
+        },
+        gocardlessWebhook
+    );
 
-            // For now, just log and return success (signature verification can be added later)
-            console.log('[GoCardless webhook] Received:', rawBody);
+    // Global parsers for the rest of the app (safe)
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-            res.json({ received: true });
-        } catch (error) {
-            console.error('[GoCardless webhook] error:', error);
-            res.status(500).json({ error: 'Webhook processing failed' });
+    // JSON parse error handler
+    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+        if (err instanceof SyntaxError && 'body' in err) {
+            return res.status(400).json({ ok: false, error: "Invalid JSON" });
         }
+        next(err);
     });
 
     // Internal routes - mail import from OneDrive worker
@@ -643,7 +638,7 @@ async function start() {
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
         console.log('[boot] GoCardless webhook route:', '/api/webhooks-gc/gocardless');
-        
+
         // Debug logging for APP_BASE_URL (non-production only)
         if (env !== 'production') {
             console.log('[boot] APP_BASE_URL:', process.env.APP_BASE_URL || '(not set - will use default)');

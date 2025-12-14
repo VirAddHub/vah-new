@@ -1,4 +1,6 @@
 import type { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
@@ -118,6 +120,49 @@ export async function listInvoices(req: Request, res: Response) {
   }));
 
   res.json({ ok: true, data: { items, page, page_size: pageSize } });
+}
+
+export async function downloadInvoicePdf(req: Request, res: Response) {
+  const userId = Number(req.user!.id);
+  const invoiceId = Number(req.params.id);
+  const pool = getPool();
+
+  if (!invoiceId || Number.isNaN(invoiceId)) {
+    return res.status(400).json({ ok: false, error: 'invalid_invoice_id' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, user_id, invoice_number, pdf_path FROM invoices WHERE id=$1 AND user_id=$2 LIMIT 1`,
+      [invoiceId, userId]
+    );
+    const inv = result.rows[0];
+    if (!inv) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (!inv.pdf_path) return res.status(404).json({ ok: false, error: 'pdf_not_available' });
+
+    const baseDir = process.env.INVOICES_DIR
+      ? path.resolve(process.env.INVOICES_DIR)
+      : path.join(process.cwd(), 'data', 'invoices');
+
+    const rel = String(inv.pdf_path).replace(/^\/+/, ''); // strip leading slash
+    // Expected: invoices/YYYY/userId/invoice-123.pdf
+    const fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
+
+    if (!fs.existsSync(fullPath)) {
+      return res.status(404).json({ ok: false, error: 'file_not_found' });
+    }
+
+    const filename = inv.invoice_number
+      ? `${inv.invoice_number}.pdf`
+      : `invoice-${invoiceId}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    fs.createReadStream(fullPath).pipe(res);
+  } catch (error: any) {
+    console.error('[downloadInvoicePdf] error:', error);
+    return res.status(500).json({ ok: false, error: 'download_failed' });
+  }
 }
 
 export async function postUpdateBank(req: Request, res: Response) {

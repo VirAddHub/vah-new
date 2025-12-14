@@ -3,7 +3,9 @@ import path from 'path';
 import PDFDocument from 'pdfkit';
 import { getPool } from '../lib/db';
 
-const INVOICE_BASE_DIR = path.join(process.cwd(), 'data', 'invoices');
+const INVOICE_BASE_DIR = process.env.INVOICES_DIR
+  ? path.resolve(process.env.INVOICES_DIR)
+  : path.join(process.cwd(), 'data', 'invoices');
 
 export interface InvoiceRow {
   id: number;

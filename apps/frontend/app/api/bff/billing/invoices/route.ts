@@ -15,6 +15,18 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // Normalise invoice PDF URL to a same-origin BFF download endpoint
+    // so the browser can download with the user's cookies.
+    if (data?.ok && data?.data?.items && Array.isArray(data.data.items)) {
+      data.data.items = data.data.items.map((inv: any) => {
+        const hasPdf = Boolean(inv?.pdf_url || inv?.pdf_path);
+        return {
+          ...inv,
+          pdf_url: hasPdf ? `/api/bff/billing/invoices/${inv.id}/download` : null,
+        };
+      });
+    }
+
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('[BFF billing invoices] error:', error);

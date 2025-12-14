@@ -6,6 +6,7 @@ import {
     getBillingPeriodForUser,
     findUserIdForPayment
 } from '../../services/invoices';
+import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
 
 const router = Router();
 
@@ -20,9 +21,13 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         const signature = req.headers['webhook-signature'] as string;
 
         // Verify webhook signature (always required in production)
+        const isProd = process.env.NODE_ENV === 'production';
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
-            console.error('[GoCardless webhook] Invalid signature');
-            return res.status(401).json({ error: 'Invalid signature' });
+            if (isProd) {
+                console.error('[GoCardless webhook] Invalid signature');
+                return res.status(401).json({ error: 'Invalid signature' });
+            }
+            console.warn('[GoCardless webhook] Signature verification skipped (non-production or secret not set)');
         }
 
         const webhook = JSON.parse(rawBody);
@@ -146,6 +151,28 @@ async function handlePaymentConfirmed(pool: any, links: any) {
 
             console.log(`[Webhook] ✅ Invoice created: ${invoice.invoice_number} (ID: ${invoice.id}) for user ${userId}`);
             console.log(`[Webhook] 📄 PDF path: ${invoice.pdf_path || 'pending generation'}`);
+
+            // Send invoice email (best-effort)
+            try {
+                const u = await pool.query(
+                    `SELECT email, first_name, last_name, company_name FROM "user" WHERE id=$1 LIMIT 1`,
+                    [userId]
+                );
+                const user = u.rows[0];
+                if (user?.email) {
+                    const amount = `£${(Number(amountPence) / 100).toFixed(2)}`;
+                    await sendInvoiceSent({
+                        email: user.email,
+                        firstName: user.first_name,
+                        name: user.company_name || [user.first_name, user.last_name].filter(Boolean).join(' '),
+                        invoice_number: invoice.invoice_number || undefined,
+                        amount,
+                        cta_url: undefined,
+                    });
+                }
+            } catch (emailErr) {
+                console.error(`[Webhook] ⚠️ Failed to send invoice email for ${paymentId}:`, emailErr);
+            }
         } catch (invoiceError) {
             console.error(`[Webhook] ❌ Failed to create invoice for payment ${paymentId}:`, invoiceError);
             // Don't throw - payment is still confirmed
@@ -181,6 +208,26 @@ async function handlePaymentFailed(pool: any, links: any) {
       `, [Date.now(), userId]);
 
             console.log(`[GoCardless] Payment ${paymentId} failed for user ${userId}`);
+
+            // Best-effort email
+            try {
+                const u = await pool.query(
+                    `SELECT email, first_name, last_name, company_name FROM "user" WHERE id=$1 LIMIT 1`,
+                    [userId]
+                );
+                const user = u.rows[0];
+                if (user?.email) {
+                    const appUrl = (process.env.APP_URL ?? process.env.APP_BASE_URL ?? 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
+                    await sendPaymentFailed({
+                        email: user.email,
+                        firstName: user.first_name,
+                        name: user.company_name || [user.first_name, user.last_name].filter(Boolean).join(' '),
+                        cta_url: `${appUrl}/billing`,
+                    });
+                }
+            } catch (emailErr) {
+                console.error(`[Webhook] ⚠️ Failed to send payment failed email for ${paymentId}:`, emailErr);
+            }
         }
     } catch (error) {
         console.error('[GoCardless] Error handling payment.failed:', error);

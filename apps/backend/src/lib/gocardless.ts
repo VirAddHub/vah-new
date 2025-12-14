@@ -1,30 +1,34 @@
 import crypto from 'crypto';
 
 // Prefer the official GoCardless env var names (GC_*), but support legacy names (GOCARDLESS_*)
-// so existing deployments don't break.
-const ACCESS_TOKEN = (process.env.GC_ACCESS_TOKEN ?? process.env.GOCARDLESS_ACCESS_TOKEN)?.trim();
-const ENV = ((process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? 'sandbox').trim()) as 'sandbox' | 'live';
-const WEBHOOK_SECRET = (process.env.GC_WEBHOOK_SECRET ?? process.env.GOCARDLESS_WEBHOOK_SECRET)?.trim();
-const APP_URL = (process.env.APP_URL ?? process.env.APP_BASE_URL)?.trim();
+// so existing deployments don't break. IMPORTANT: do not throw at import time; some environments
+// intentionally run without GoCardless configured.
+function getGcConfig() {
+  const accessToken = (process.env.GC_ACCESS_TOKEN ?? process.env.GOCARDLESS_ACCESS_TOKEN)?.trim();
+  const env = ((process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? 'sandbox').trim()) as 'sandbox' | 'live';
+  const webhookSecret = (process.env.GC_WEBHOOK_SECRET ?? process.env.GOCARDLESS_WEBHOOK_SECRET)?.trim();
+  const appUrl = (process.env.APP_URL ?? process.env.APP_BASE_URL)?.trim();
 
-if (!ACCESS_TOKEN) throw new Error('GoCardless access token missing (set GC_ACCESS_TOKEN).');
-if (!WEBHOOK_SECRET) throw new Error('GoCardless webhook secret missing (set GC_WEBHOOK_SECRET).');
-if (!APP_URL) throw new Error('APP_URL/APP_BASE_URL missing (needed for GoCardless redirect URIs).');
+  const apiBase = env === 'sandbox'
+    ? 'https://api-sandbox.gocardless.com'
+    : 'https://api.gocardless.com';
 
-const API_BASE = ENV === 'sandbox'
-  ? 'https://api-sandbox.gocardless.com'
-  : 'https://api.gocardless.com';
+  return { accessToken, env, webhookSecret, appUrl, apiBase };
+}
 
 export type GcLink = { redirect_url: string };
 
 // HTTP client for GoCardless API
 async function gcRequest(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any) {
-  const url = `${API_BASE}${endpoint}`;
+  const { accessToken, apiBase } = getGcConfig();
+  if (!accessToken) throw new Error('GoCardless access token missing (set GC_ACCESS_TOKEN).');
+
+  const url = `${apiBase}${endpoint}`;
 
   const response = await fetch(url, {
     method,
     headers: {
-      'Authorization': `Bearer ${ACCESS_TOKEN}`,
+      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'GoCardless-Version': '2015-07-06',
     },
@@ -73,12 +77,16 @@ export async function gcCreateBrfUrl(userId: number, redirectUri: string): Promi
 
 // Create re-authorization link (same as update bank for now)
 export async function gcCreateReauthoriseLink(userId: number): Promise<GcLink> {
-  return gcCreateBrfUrl(userId, `${APP_URL}/billing`);
+  const { appUrl } = getGcConfig();
+  if (!appUrl) throw new Error('APP_URL/APP_BASE_URL missing (needed for GoCardless redirect URIs).');
+  return gcCreateBrfUrl(userId, `${appUrl}/billing`);
 }
 
 // Create update bank link
 export async function gcCreateUpdateBankLink(userId: number): Promise<GcLink> {
-  return gcCreateBrfUrl(userId, `${APP_URL}/billing`);
+  const { appUrl } = getGcConfig();
+  if (!appUrl) throw new Error('APP_URL/APP_BASE_URL missing (needed for GoCardless redirect URIs).');
+  return gcCreateBrfUrl(userId, `${appUrl}/billing`);
 }
 
 // Complete flow (when user returns from GoCardless)
@@ -103,13 +111,15 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
 // Verify webhook signature
 export function gcVerifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   if (!signatureHeader) return false;
-  if (!WEBHOOK_SECRET) return false;
+  const { webhookSecret } = getGcConfig();
+  if (!webhookSecret) return false;
 
-  const mac = crypto.createHmac('sha256', WEBHOOK_SECRET)
+  const mac = crypto.createHmac('sha256', webhookSecret)
     .update(rawBody, 'utf8')
     .digest('hex');
 
-  return signatureHeader.includes(mac);
+  // GoCardless sends the signature as a hex digest. Accept exact match or a list.
+  return signatureHeader.split(',').map(s => s.trim()).includes(mac);
 }
 
 /**
