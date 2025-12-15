@@ -5,7 +5,6 @@ import { Building2, FileText, Landmark } from "lucide-react";
 
 interface MailItemCardProps {
   sender: string;
-  subject?: string;
   timeLabel?: string;
   statusLabel?: "New" | "Scanned" | "Forwarded" | "Received";
   statusVariant?: "new" | "scanned" | "forwarded" | "neutral";
@@ -16,7 +15,6 @@ interface MailItemCardProps {
 
 export function MailItemCard({
   sender,
-  subject,
   timeLabel,
   statusLabel = "Received",
   statusVariant = "neutral",
@@ -79,9 +77,6 @@ export function MailItemCard({
             <div className={`text-2xl text-neutral-900 truncate ${isUnread ? "font-bold" : "font-semibold"}`}>{sender}</div>
             {isUnread && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
-          {subject && (
-            <div className="mt-1 text-xl text-neutral-500 truncate">{subject}</div>
-          )}
         </div>
 
         {/* right meta */}

@@ -17,11 +17,7 @@ interface Props {
 export default function MailCard({
   item, isExpanded, isLoading, isDownloading, details, onToggle, onDownload, error
 }: Props) {
-  const title = String((item as any).user_title || item.subject || "").trim();
-  const subtitle = String(item.sender_name || "").trim();
-  const showSubtitle =
-    subtitle.length > 0 &&
-    subtitle.toLowerCase() !== title.toLowerCase();
+  const title = String((item as any).user_title || item.subject || "Mail item").trim();
 
   return (
     <Card className={`transition-all ${isExpanded ? 'ring-2 ring-primary/20 bg-muted/30' : ''}`}>
@@ -38,11 +34,6 @@ export default function MailCard({
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="font-medium truncate">{title || 'Mail item'}</div>
-              {showSubtitle ? (
-                <div className="text-sm text-muted-foreground truncate">
-                  {subtitle}
-                </div>
-              ) : null}
             </div>
             <div className="text-xs px-2 py-0.5 rounded-full border">
               {item.status}

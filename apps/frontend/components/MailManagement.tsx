@@ -293,14 +293,9 @@ export function MailManagement({
     }, [onRefresh, toast]);
 
     const renderMailItem = (item: MailItem) => {
-        const title = String((item as any).user_title || item.subject || "").trim();
-        const subtitle = String(item.sender_name || "").trim();
-        const showSubtitle =
-            subtitle.length > 0 &&
-            subtitle.toLowerCase() !== title.toLowerCase();
-
+        const title = String((item as any).user_title || item.subject || "Mail item").trim();
         const sender = title || "Mail item";
-        const subject = showSubtitle ? subtitle : "";
+        const subject = "";
 
         const rawDate = item.received_date || item.created_at;
         const dateObj = rawDate ? new Date(rawDate) : null;
