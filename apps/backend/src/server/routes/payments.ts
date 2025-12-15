@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
 import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
+import { ensureUserPlanLinked } from '../services/plan-linking';
 
 const router = Router();
 
@@ -190,12 +191,16 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         const completed = await gcCompleteFlow(flowId);
         const mandateId = completed.mandate_id;
 
+        // Persist plan_id linkage (fixes "Active" + "No plan")
+        await ensureUserPlanLinked({ pool, userId: Number(userId), cadence: "monthly" });
+
         // Update user + subscription with GoCardless mandate
         await pool.query(`
             UPDATE "user"
             SET
                 gocardless_mandate_id = $1,
                 plan_status = 'active',
+                plan_start_date = COALESCE(plan_start_date, $2),
                 updated_at = $2
             WHERE id = $3
         `, [mandateId, Date.now(), userId]);

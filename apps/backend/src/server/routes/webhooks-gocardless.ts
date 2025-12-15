@@ -7,6 +7,7 @@ import {
     findUserIdForPayment
 } from '../../services/invoices';
 import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
+import { ensureUserPlanLinked } from '../services/plan-linking';
 
 const router = Router();
 
@@ -76,14 +77,60 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 async function handleMandateActive(pool: any, links: any) {
     try {
         const mandateId = links.mandate;
-        const userId = await getUserIdFromMandate(pool, mandateId);
+        const customerId = links.customer;
+        let userId: number | null = null;
+
+        // Prefer direct lookup via customer id when present
+        if (customerId) {
+            const r = await pool.query(
+                `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+                [customerId]
+            );
+            userId = r.rows[0]?.id ?? null;
+        }
+
+        // Fallback to existing mandate lookup
+        if (!userId) {
+            userId = await getUserIdFromMandate(pool, mandateId);
+        }
 
         if (userId) {
-            await pool.query(`
-        UPDATE subscription 
-        SET mandate_id = $1, status = 'active', updated_at = $2
-        WHERE user_id = $3
-      `, [mandateId, Date.now(), userId]);
+            // Update user core payment fields
+            await pool.query(
+                `
+                UPDATE "user"
+                SET
+                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
+                    gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+                    plan_status = 'active',
+                    plan_start_date = COALESCE(plan_start_date, $3),
+                    updated_at = $3
+                WHERE id = $4
+                `,
+                [mandateId, customerId ?? null, Date.now(), userId]
+            );
+
+            // Ensure subscription row exists and is active
+            const upd = await pool.query(
+                `
+                UPDATE subscription
+                SET mandate_id = $1, status = 'active', updated_at = $2
+                WHERE user_id = $3
+                `,
+                [mandateId, Date.now(), userId]
+            );
+            if (!upd.rowCount) {
+                await pool.query(
+                    `
+                    INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                    VALUES ($1, $2, 'active', $3)
+                    `,
+                    [userId, mandateId, Date.now()]
+                );
+            }
+
+            // Persist plan_id linkage (fixes "Active" + "No plan")
+            await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
 
             console.log(`[GoCardless] Mandate ${mandateId} activated for user ${userId}`);
         }
@@ -129,6 +176,24 @@ async function handlePaymentConfirmed(pool: any, links: any) {
             SET status = 'active', updated_at = $1
             WHERE user_id = $2
         `, [Date.now(), userId]);
+
+        // Persist plan_id linkage (fixes "Active" + "No plan")
+        await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+
+        // Store GoCardless identifiers on user for future lookups (best-effort)
+        if (links?.customer || links?.mandate) {
+            await pool.query(
+                `
+                UPDATE "user"
+                SET
+                    gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
+                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
+                    updated_at = $3
+                WHERE id = $4
+                `,
+                [links.customer ?? null, links.mandate ?? null, Date.now(), userId]
+            );
+        }
 
         // Get billing period
         const { periodStart, periodEnd } = await getBillingPeriodForUser(userId);
