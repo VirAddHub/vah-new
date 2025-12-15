@@ -171,11 +171,24 @@ async function handlePaymentConfirmed(pool: any, links: any) {
         console.log(`[Webhook] 👤 Found user ${userId} for payment ${paymentId}`);
 
         // Update subscription status
-        await pool.query(`
-            UPDATE subscription 
+        const subUpd = await pool.query(
+            `
+            UPDATE subscription
             SET status = 'active', updated_at = $1
             WHERE user_id = $2
-        `, [Date.now(), userId]);
+            `,
+            [Date.now(), userId]
+        );
+        if (!subUpd.rowCount && (links?.mandate || links?.subscription)) {
+            // create a minimal subscription row for future lookups (mandate/customer mapping)
+            await pool.query(
+                `
+                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                VALUES ($1, $2, 'active', $3)
+                `,
+                [userId, links.mandate ?? null, Date.now()]
+            );
+        }
 
         // Persist plan_id linkage (fixes "Active" + "No plan")
         await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });

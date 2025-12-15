@@ -135,11 +135,11 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         // Check if GoCardless is properly configured
         const gocardlessToken = process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN;
         const appUrl = process.env.APP_URL || process.env.APP_BASE_URL;
-        
+
         if (!gocardlessToken || !appUrl) {
             // GoCardless not configured - skip payment setup for now
             console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
-            
+
             // Mark user as having payment setup pending
             await pool.query(`
                 UPDATE "user"
@@ -206,11 +206,20 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         `, [mandateId, Date.now(), userId]);
 
         // Ensure subscription record has mandate_id too (if present)
-        await pool.query(`
+        const subUpd = await pool.query(`
             UPDATE subscription
             SET mandate_id = $1, status = 'active', updated_at = $2
             WHERE user_id = $3
         `, [mandateId, Date.now(), userId]);
+        if (!subUpd.rowCount) {
+            await pool.query(
+                `
+                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                VALUES ($1, $2, 'active', $3)
+                `,
+                [userId, mandateId, Date.now()]
+            );
+        }
 
         return res.json({
             ok: true,
