@@ -95,7 +95,7 @@ export async function gcCreateUpdateBankLink(userId: number): Promise<GcLink> {
 }
 
 // Complete flow (when user returns from GoCardless)
-export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: string }> {
+export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: string; customer_id?: string }> {
   try {
     const flow = await gcRequest(`/billing_request_flows/${flowId}`);
 
@@ -106,7 +106,10 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
     // Get the billing request to find the mandate
     const billingRequest = await gcRequest(`/billing_requests/${flow.billing_request_flows.links.billing_request}`);
 
-    return { mandate_id: billingRequest.billing_requests.links.mandate };
+    return {
+      mandate_id: billingRequest.billing_requests.links.mandate,
+      customer_id: billingRequest.billing_requests.links.customer,
+    };
   } catch (error) {
     console.error('[GoCardless] Failed to complete flow:', error);
     throw new Error('Failed to complete authorization');

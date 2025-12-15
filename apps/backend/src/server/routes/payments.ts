@@ -246,9 +246,10 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
     const pool = getPool();
 
     try {
-        // Complete Billing Request Flow with GoCardless API and retrieve mandate id
+        // Complete Billing Request Flow with GoCardless API and retrieve mandate/customer ids
         const completed = await gcCompleteFlow(flowId);
         const mandateId = completed.mandate_id;
+        const customerId = completed.customer_id || null;
 
         // Persist plan_id linkage (fixes "Active" + "No plan")
         // In live, this will fail if no explicit plan was selected earlier.
@@ -259,11 +260,12 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
             UPDATE "user"
             SET
                 gocardless_mandate_id = $1,
+                gocardless_customer_id = COALESCE(gocardless_customer_id, $4),
                 plan_status = 'active',
                 plan_start_date = COALESCE(plan_start_date, $2),
                 updated_at = $2
             WHERE id = $3
-        `, [mandateId, Date.now(), userId]);
+        `, [mandateId, Date.now(), userId, customerId]);
 
         // Ensure subscription row exists and matches the chosen plan
         await upsertSubscriptionForUser({
@@ -271,6 +273,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
             userId: Number(userId),
             status: 'active',
             mandateId,
+            customerId,
         });
 
         return res.json({

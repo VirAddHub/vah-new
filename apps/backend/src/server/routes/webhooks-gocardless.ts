@@ -187,6 +187,7 @@ async function handleMandateActive(pool: any, links: any) {
                 userId,
                 status: 'active',
                 mandateId,
+                customerId,
             });
 
             // Persist plan_id linkage (fixes "Active" + "No plan")

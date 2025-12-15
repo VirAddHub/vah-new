@@ -21,6 +21,7 @@ export async function upsertSubscriptionForUser(opts: {
   userId: number;
   status?: "active" | "past_due" | "cancelled" | string;
   mandateId?: string | null;
+  customerId?: string | null;
 }): Promise<void> {
   const { pool, userId } = opts;
   const status = opts.status ?? "active";
@@ -47,20 +48,22 @@ export async function upsertSubscriptionForUser(opts: {
 
   const cadence = cadenceFromInterval(plan.interval);
   const mandateId = opts.mandateId ?? null;
+  const customerId = opts.customerId ?? null;
 
   const insertSql = `
-    INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     ON CONFLICT (user_id) DO UPDATE SET
       plan_name = EXCLUDED.plan_name,
       cadence = EXCLUDED.cadence,
       status = EXCLUDED.status,
       mandate_id = COALESCE(subscription.mandate_id, EXCLUDED.mandate_id),
+      customer_id = COALESCE(subscription.customer_id, EXCLUDED.customer_id),
       updated_at = EXCLUDED.updated_at
   `;
 
   try {
-    await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, updatedAt]);
+    await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, customerId, updatedAt]);
     return;
   } catch (e: any) {
     // If the unique constraint isn't there yet, Postgres errors with:
@@ -80,10 +83,11 @@ export async function upsertSubscriptionForUser(opts: {
       cadence = $2,
       status = $3,
       mandate_id = COALESCE(mandate_id, $4),
-      updated_at = $5
-    WHERE user_id = $6
+      customer_id = COALESCE(customer_id, $5),
+      updated_at = $6
+    WHERE user_id = $7
     `,
-    [plan.name, cadence, status, mandateId, updatedAt, userId]
+    [plan.name, cadence, status, mandateId, customerId, updatedAt, userId]
   );
 
   if (upd.rowCount) return;
@@ -91,10 +95,10 @@ export async function upsertSubscriptionForUser(opts: {
   try {
     await pool.query(
       `
-      INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
-      [userId, plan.name, cadence, status, mandateId, updatedAt]
+      [userId, plan.name, cadence, status, mandateId, customerId, updatedAt]
     );
   } catch (e: any) {
     // tolerate a race where another request inserted it
