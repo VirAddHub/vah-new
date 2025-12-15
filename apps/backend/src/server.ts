@@ -637,7 +637,7 @@ async function start() {
         console.log(`[server] listening on port ${PORT} (NODE_ENV=${env})`);
         console.log('[boot] health check:', '/api/healthz');
         console.log('[boot] NODE_ENV:', env);
-        console.log('[boot] GoCardless webhook route:', '/api/webhooks-gc/gocardless');
+        console.log('[boot] GoCardless webhook route:', '/api/webhooks/gocardless');
 
         // Debug logging for APP_BASE_URL (non-production only)
         if (env !== 'production') {

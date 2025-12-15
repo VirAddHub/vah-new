@@ -18,12 +18,77 @@ const router = Router();
  */
 router.post('/gocardless', async (req: Request, res: Response) => {
     try {
+        const now = Date.now();
+
         // Get raw body for signature verification
         const rawBody = (req as any).rawBody || req.body?.toString?.() || JSON.stringify(req.body);
         const signature = req.headers['webhook-signature'] as string;
 
+        console.log('[gocardless] webhook hit', {
+            method: req.method,
+            path: req.path,
+            hasSignature: Boolean(signature),
+            bodyLen: typeof rawBody === 'string' ? rawBody.length : undefined,
+        });
+
+        // Parse body (best-effort). We still store rawBody for debugging.
+        let webhook: any = null;
+        try {
+            webhook = JSON.parse(rawBody);
+        } catch (e) {
+            console.error('[gocardless] webhook JSON parse failed');
+        }
+
+        // Persist webhook receipt immediately (so we can confirm delivery even if signature fails)
+        try {
+            const pool = getPool();
+            const firstEvent = Array.isArray(webhook?.events) ? webhook.events[0] : null;
+            const eventType =
+                firstEvent?.resource_type && firstEvent?.action
+                    ? `${firstEvent.resource_type}.${firstEvent.action}`
+                    : 'unknown';
+
+            await pool.query(
+                `
+                INSERT INTO webhook_log (
+                    source,
+                    event_type,
+                    payload_json,
+                    created_at,
+                    provider,
+                    status,
+                    payload,
+                    received_at_ms
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
+                `,
+                [
+                    'gocardless',
+                    eventType,
+                    rawBody,
+                    now,
+                    'gocardless',
+                    'received',
+                    webhook ? JSON.stringify(webhook) : null,
+                    now,
+                ]
+            );
+        } catch (e) {
+            console.error('[gocardless] failed to insert webhook_log', e);
+        }
+
         // Verify webhook signature (always required in production)
         const isProd = process.env.NODE_ENV === 'production';
+        const secret =
+            process.env.GOCARDLESS_WEBHOOK_SECRET ||
+            process.env.GC_WEBHOOK_SECRET ||
+            '';
+
+        if (isProd && !secret) {
+            console.error('[GoCardless webhook] Missing webhook secret (set GOCARDLESS_WEBHOOK_SECRET)');
+            return res.status(500).json({ error: 'missing_webhook_secret' });
+        }
+
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
             if (isProd) {
                 console.error('[GoCardless webhook] Invalid signature');
@@ -32,7 +97,10 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             console.warn('[GoCardless webhook] Signature verification skipped (non-production or secret not set)');
         }
 
-        const webhook = JSON.parse(rawBody);
+        if (!webhook) {
+            return res.status(400).json({ error: 'Invalid JSON body' });
+        }
+
         const { events } = webhook;
 
         if (!events || !Array.isArray(events)) {
