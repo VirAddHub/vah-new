@@ -2,6 +2,13 @@ import { TimestampUtils } from "../../lib/timestamp-utils";
 
 type PlanRow = { id: number; name: string; slug: string; interval: string };
 
+function isSandboxEnv(): boolean {
+  const env = String(process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? "sandbox")
+    .trim()
+    .toLowerCase();
+  return env !== "live";
+}
+
 async function resolveDefaultPlan(
   pool: any,
   cadence: "monthly" | "annual" = "monthly"
@@ -53,6 +60,7 @@ async function resolveDefaultPlan(
 
 /**
  * Ensure a user with an active plan has a plan_id set (no UI inference).
+ * Prefers existing user.plan_id. Only defaults in sandbox.
  * - Sets plan_id (only if currently NULL)
  * - Ensures plan_status='active'
  * - Ensures plan_start_date is set (if NULL)
@@ -60,10 +68,56 @@ async function resolveDefaultPlan(
 export async function ensureUserPlanLinked(opts: {
   pool: any;
   userId: number;
+  planId?: number | null;
   cadence?: "monthly" | "annual";
 }): Promise<{ planId: number; planName: string }> {
   const { pool, userId } = opts;
   const cadence = opts.cadence ?? "monthly";
+
+  // If user already has a plan_id, keep it (do not override)
+  {
+    const r = await pool.query(`SELECT plan_id FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
+    const existing = r.rows?.[0]?.plan_id;
+    if (existing) {
+      const p = await pool.query(`SELECT id, name, slug, interval FROM plans WHERE id = $1 LIMIT 1`, [existing]);
+      const row = p.rows?.[0];
+      if (row?.id) {
+        return { planId: row.id, planName: row.name };
+      }
+      // If plan row missing, continue to relink below.
+    }
+  }
+
+  // If caller provided a planId, use it (must exist)
+  if (opts.planId && Number(opts.planId) > 0) {
+    const r = await pool.query(
+      `SELECT id, name, slug, interval FROM plans WHERE id = $1 LIMIT 1`,
+      [Number(opts.planId)]
+    );
+    if (r.rows?.length) {
+      const plan = r.rows[0] as PlanRow;
+      const now = Date.now();
+      const updatedAt = TimestampUtils.forTableField("user", "updated_at") ?? now;
+      await pool.query(
+        `
+        UPDATE "user"
+        SET
+          plan_id = COALESCE(plan_id, $1),
+          plan_status = 'active',
+          plan_start_date = COALESCE(plan_start_date, $2),
+          updated_at = $3
+        WHERE id = $4
+        `,
+        [plan.id, now, updatedAt, userId]
+      );
+      return { planId: plan.id, planName: plan.name };
+    }
+  }
+
+  // No explicit plan id. Default ONLY in sandbox.
+  if (!isSandboxEnv()) {
+    throw new Error("plan_required_live_environment");
+  }
 
   const plan = await resolveDefaultPlan(pool, cadence);
   const now = Date.now();

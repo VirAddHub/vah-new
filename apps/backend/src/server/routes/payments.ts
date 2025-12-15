@@ -132,6 +132,61 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
         const user = userResult.rows[0];
 
+        // Persist the selected plan before redirecting to GoCardless.
+        // This prevents "active + no plan" later and avoids UI inference.
+        // In LIVE, we must not silently default.
+        const env = String(process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? "sandbox")
+            .trim()
+            .toLowerCase();
+        const isSandbox = env !== "live";
+
+        const bodyPlanIdRaw = (req.body as any)?.plan_id ?? (req.body as any)?.planId;
+        const billingPeriodRaw = String((req.body as any)?.billing_period ?? (req.body as any)?.billingPeriod ?? "")
+            .trim()
+            .toLowerCase();
+        const cadence: "monthly" | "annual" =
+            billingPeriodRaw === "annual" || billingPeriodRaw === "year" ? "annual" : "monthly";
+
+        let chosenPlanId: number | null = null;
+        if (typeof bodyPlanIdRaw === "number" || (typeof bodyPlanIdRaw === "string" && bodyPlanIdRaw.trim() && bodyPlanIdRaw !== "default")) {
+            const n = Number(bodyPlanIdRaw);
+            if (!Number.isNaN(n) && n > 0) chosenPlanId = n;
+        }
+
+        if (!chosenPlanId && !isSandbox) {
+            return res.status(400).json({
+                ok: false,
+                error: "plan_required",
+                message: "A plan must be selected before starting payment setup.",
+            });
+        }
+
+        // If sandbox and no explicit plan id, default to monthly plan slug resolution later.
+        if (chosenPlanId) {
+            // Verify and set user.plan_id immediately
+            const p = await pool.query(`SELECT id FROM plans WHERE id = $1 AND active = true AND retired_at IS NULL LIMIT 1`, [chosenPlanId]);
+            if (p.rows.length === 0) {
+                return res.status(400).json({ ok: false, error: "invalid_plan_id" });
+            }
+            await pool.query(
+                `UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3`,
+                [chosenPlanId, Date.now(), userId]
+            );
+        } else if (isSandbox) {
+            // Default to monthly/annual plan by interval
+            const interval = cadence === "annual" ? "year" : "month";
+            const p = await pool.query(
+                `SELECT id FROM plans WHERE active = true AND retired_at IS NULL AND interval = $1 ORDER BY sort ASC, price_pence ASC LIMIT 1`,
+                [interval]
+            );
+            if (p.rows.length) {
+                await pool.query(
+                    `UPDATE "user" SET plan_id = COALESCE(plan_id, $1), updated_at = $2 WHERE id = $3`,
+                    [p.rows[0].id, Date.now(), userId]
+                );
+            }
+        }
+
         // Check if GoCardless is properly configured
         const gocardlessToken = process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN;
         const appUrl = process.env.APP_URL || process.env.APP_BASE_URL;
@@ -161,7 +216,10 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         // GoCardless will redirect back to `${APP_URL}/billing?billing_request_flow_id=BRFxxx`
         // Trim trailing slashes from APP_URL/APP_BASE_URL
         const redirectUri = `${String(appUrl).replace(/\/+$/, '')}/billing`;
-        const link = await gcCreateBrfUrl(Number(userId), redirectUri);
+        const link = await gcCreateBrfUrl(Number(userId), redirectUri, {
+            plan_id: String(chosenPlanId ?? ""),
+            billing_period: cadence
+        });
 
         return res.json({
             ok: true,
@@ -192,6 +250,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         const mandateId = completed.mandate_id;
 
         // Persist plan_id linkage (fixes "Active" + "No plan")
+        // In live, this will fail if no explicit plan was selected earlier.
         await ensureUserPlanLinked({ pool, userId: Number(userId), cadence: "monthly" });
 
         // Update user + subscription with GoCardless mandate

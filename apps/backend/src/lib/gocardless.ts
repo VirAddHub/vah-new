@@ -44,7 +44,11 @@ async function gcRequest(endpoint: string, method: 'GET' | 'POST' = 'GET', data?
 }
 
 // Create Billing Request Flow for both update bank and re-authorise
-export async function gcCreateBrfUrl(userId: number, redirectUri: string): Promise<GcLink> {
+export async function gcCreateBrfUrl(
+  userId: number,
+  redirectUri: string,
+  metadata?: Record<string, string>
+): Promise<GcLink> {
   try {
     // Step 1: Create billing request
     const billingRequest = await gcRequest('/billing_requests', 'POST', {
@@ -53,7 +57,8 @@ export async function gcCreateBrfUrl(userId: number, redirectUri: string): Promi
           scheme: 'bacs'
         },
         metadata: {
-          user_id: String(userId)
+          user_id: String(userId),
+          ...(metadata || {})
         }
       }
     });

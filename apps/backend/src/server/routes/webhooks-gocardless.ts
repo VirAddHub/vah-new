@@ -130,7 +130,11 @@ async function handleMandateActive(pool: any, links: any) {
             }
 
             // Persist plan_id linkage (fixes "Active" + "No plan")
-            await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+            try {
+                await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+            } catch (e) {
+                console.error('[GoCardless] Plan linkage missing in live environment for user', userId, e);
+            }
 
             console.log(`[GoCardless] Mandate ${mandateId} activated for user ${userId}`);
         }
@@ -191,7 +195,11 @@ async function handlePaymentConfirmed(pool: any, links: any) {
         }
 
         // Persist plan_id linkage (fixes "Active" + "No plan")
-        await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+        try {
+            await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+        } catch (e) {
+            console.error('[GoCardless] Plan linkage missing in live environment for user', userId, e);
+        }
 
         // Store GoCardless identifiers on user for future lookups (best-effort)
         if (links?.customer || links?.mandate) {
