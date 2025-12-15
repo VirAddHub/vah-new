@@ -110,7 +110,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [isCertBusy, setIsCertBusy] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
-  const [showIdentitySuccessBanner, setShowIdentitySuccessBanner] = useState(true);
+  // When identity is complete, we only show the success banner for the first 3 dashboard sessions.
+  // Default to hidden to avoid a flash before local/session storage gating runs.
+  const [showIdentitySuccessBanner, setShowIdentitySuccessBanner] = useState(false);
 
   // PDF preloader for hover optimization
   const { preloadPDF } = usePDFPreloader();
@@ -618,7 +620,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     canUseRegisteredOfficeAddress: false,
   };
 
-  // Address is gated by compliance.canUseRegisteredOfficeAddress (requires both KYC and CH)
+  // Address is gated by compliance.canUseRegisteredOfficeAddress (KYC-only)
   const canUseAddress = compliance.canUseRegisteredOfficeAddress;
 
   // Show the "Identity Checks Complete" success banner only for first 3 dashboard sessions
@@ -1231,7 +1233,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 {/* Locked state message */}
                 {!canUseAddress && (
                   <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
-                    Available once identity verification and Companies House checks are complete.
+                    Available once identity verification (KYC) is complete.
                   </div>
                 )}
               </CardContent>
@@ -1313,7 +1315,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 {/* Locked state message */}
                 {!canUseAddress && (
                   <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
-                    Available once identity verification and Companies House checks are complete.
+                    Available once identity verification (KYC) is complete.
                   </div>
                 )}
               </CardContent>
