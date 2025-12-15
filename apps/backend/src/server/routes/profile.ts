@@ -395,12 +395,16 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
         }
 
         // Return the registered office address
-        const { REGISTERED_OFFICE_ADDRESS } = await import('../../config/address');
+        const { REGISTERED_OFFICE_ADDRESS, VAH_ADDRESS_INLINE } = await import('../../config/address');
         return res.json({
             ok: true,
             data: {
-                address: REGISTERED_OFFICE_ADDRESS,
-                compliance,
+                line1: REGISTERED_OFFICE_ADDRESS.line1,
+                line2: REGISTERED_OFFICE_ADDRESS.line2,
+                city: REGISTERED_OFFICE_ADDRESS.city,
+                postcode: REGISTERED_OFFICE_ADDRESS.postcode,
+                country: REGISTERED_OFFICE_ADDRESS.country,
+                inline: VAH_ADDRESS_INLINE,
             },
         });
     } catch (error: any) {

@@ -58,6 +58,48 @@ const tagToTitle = (tagSlug: string): string => {
   return titleMap[tagSlug] || tagSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
+const formatUkDateShort = (d: Date): string => {
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const tryParseDateFromFilename = (fileName: string): Date | null => {
+  // common patterns:
+  // - user4_2-2-2025_HMRC.pdf
+  // - user4_02-02-2025_hmrc.pdf
+  // - 2025-02-02_xxx.pdf
+  const base = String(fileName || '').replace(/\.[^/.]+$/, '');
+
+  // dd-mm-yyyy (or dd_mm_yyyy)
+  {
+    const m = base.match(/\b(\d{1,2})[-_](\d{1,2})[-_](\d{2,4})\b/);
+    if (m) {
+      const dd = Number(m[1]);
+      const mm = Number(m[2]);
+      const yyyy = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
+      const d = new Date(Date.UTC(yyyy, mm - 1, dd));
+      if (!Number.isNaN(d.getTime()) && d.getUTCFullYear() === yyyy && d.getUTCMonth() === mm - 1 && d.getUTCDate() === dd) {
+        return d;
+      }
+    }
+  }
+
+  // yyyy-mm-dd
+  {
+    const m = base.match(/\b(\d{4})[-_](\d{1,2})[-_](\d{1,2})\b/);
+    if (m) {
+      const yyyy = Number(m[1]);
+      const mm = Number(m[2]);
+      const dd = Number(m[3]);
+      const d = new Date(Date.UTC(yyyy, mm - 1, dd));
+      if (!Number.isNaN(d.getTime()) && d.getUTCFullYear() === yyyy && d.getUTCMonth() === mm - 1 && d.getUTCDate() === dd) {
+        return d;
+      }
+    }
+  }
+
+  return null;
+};
+
 router.post('/from-onedrive', async (req, res) => {
   try {
     // Check secret header
@@ -263,8 +305,11 @@ router.post('/from-onedrive', async (req, res) => {
       ? `onedrive_import_${payload.oneDriveFileId}`
       : `onedrive_import_${payload.fileName}_${receivedAtMs}`;
 
-    // Generate subject from tag
-    const subject = tagToTitle(payload.sourceSlug);
+    const tagTitle = tagToTitle(payload.sourceSlug);
+    const dateFromName = tryParseDateFromFilename(payload.fileName);
+    const dateForSubject = dateFromName || new Date(receivedAtMs);
+    const subject = `${tagTitle} letter — ${formatUkDateShort(dateForSubject)}`;
+    const senderName = tagTitle;
 
     // Insert mail item with scan_file_url initially null
     // The worker will move the file to processed folder and update this URL with the final location
@@ -293,7 +338,7 @@ router.post('/from-onedrive', async (req, res) => {
         idempotencyKey,                    // $1: idempotency_key
         payload.userId,                     // $2: user_id
         subject,                            // $3: subject
-        'OneDrive Scan',                    // $4: sender_name
+        senderName,                         // $4: sender_name
         new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
         null,                               // $6: scan_file_url - set to null initially, will be updated after file move
         0,                                  // $7: file_size (not provided in payload)
@@ -411,7 +456,7 @@ router.post('/from-onedrive', async (req, res) => {
       await sendMailScanned({
         email: userForEmail.email, // Use verified email from database
         firstName: userForEmail.first_name || "there",
-        subject: `New mail received - ${subject}`,
+        subject: `New mail received - ${tagTitle}`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
       console.log('[internalMailImport] ✅ Email notification sent to user:', {
