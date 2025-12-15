@@ -129,7 +129,25 @@ app.set("trust proxy", 1);
 // ---- Health routes FIRST (before helmet/cors/anything else) ----
 app.use('/api', health);
 
-// security + CORS (must be before routes)
+// ---- Webhooks BEFORE CORS ----
+// Webhooks are server-to-server and should not be subject to browser CORS allowlists.
+// They are secured by provider signatures instead.
+app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
+
+// GoCardless webhook (raw body required for signature verification)
+app.use(
+    '/api/webhooks',
+    express.raw({ type: 'application/json' }),
+    (req: any, _res: any, next: any) => {
+        if (req.path === '/gocardless') {
+            req.rawBody = req.body?.toString?.('utf8') ?? '';
+        }
+        next();
+    },
+    gocardlessWebhook
+);
+
+// security + CORS (must be before browser-facing routes)
 app.use(helmet());
 
 // CORS first - apply to ALL responses including errors
@@ -348,22 +366,6 @@ async function start() {
             });
         }
     });
-
-    // Mount webhooks FIRST with raw parser (before other routes)
-    app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
-
-    // GoCardless webhook (raw body required for signature verification)
-    app.use(
-        '/api/webhooks',
-        express.raw({ type: 'application/json' }),
-        (req: any, _res: any, next: any) => {
-            if (req.path === '/gocardless') {
-                req.rawBody = req.body?.toString?.('utf8') ?? '';
-            }
-            next();
-        },
-        gocardlessWebhook
-    );
 
     // Global parsers for the rest of the app (safe)
     app.use(express.json({ limit: '10mb' }));
