@@ -16,6 +16,11 @@ const router = Router();
  * POST /api/webhooks/gocardless
  * Handle GoCardless webhooks with raw body for signature verification
  */
+router.get('/gocardless', (_req: Request, res: Response) => {
+    // Path sanity-check only (no secrets, no signature bypass).
+    return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+});
+
 router.post('/gocardless', async (req: Request, res: Response) => {
     try {
         const now = Date.now();
@@ -83,7 +88,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
         if (isProd && !secret) {
             console.error('[GoCardless webhook] Missing webhook secret (set GC_WEBHOOK_SECRET)');
-            return res.status(500).json({ error: 'missing_webhook_secret' });
+            return res.status(500).json({ ok: false, error: 'missing_gc_webhook_secret' });
         }
 
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
