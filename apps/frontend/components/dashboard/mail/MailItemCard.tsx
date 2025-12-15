@@ -26,18 +26,13 @@ export function MailItemCard({
 }: MailItemCardProps) {
   const isUnread = !isRead;
   const Icon = mailType === "bank" ? Landmark : mailType === "gov" ? Building2 : FileText;
-  const iconBg =
-    mailType === "gov"
-      ? "bg-red-50"
-      : mailType === "bank"
-        ? "bg-neutral-100"
-        : "bg-neutral-100";
-  const iconColor =
-    mailType === "gov"
-      ? "text-red-600"
-      : mailType === "bank"
-        ? "text-neutral-900"
-        : "text-neutral-900";
+  // Keep icon colour consistent across all categories (no tag-based red/black)
+  const iconBg = "bg-neutral-100";
+  const iconColor = "text-neutral-900";
+
+  const showStatusPill = statusVariant !== "scanned" && statusLabel !== "Scanned";
+  const displayStatusLabel: MailItemCardProps["statusLabel"] =
+    statusVariant === "scanned" || statusLabel === "Scanned" ? "Received" : statusLabel;
 
   const badgeClass =
     statusVariant === "new"
@@ -66,7 +61,7 @@ export function MailItemCard({
             {isUnread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
           <div className="mt-0.5 text-xs text-neutral-500 truncate">
-            {(timeLabel ? timeLabel : "—")} • {statusLabel}
+            {(timeLabel ? timeLabel : "—")} • {displayStatusLabel}
           </div>
         </div>
       </div>
@@ -92,11 +87,13 @@ export function MailItemCard({
         {/* right meta */}
         <div className="shrink-0 text-right">
           {timeLabel && <div className="text-lg text-neutral-500">{timeLabel}</div>}
-          <div className="mt-2">
-            <Badge className={`rounded-full px-4 py-1 text-base font-medium ${badgeClass}`}>
-              {statusLabel}
-            </Badge>
-          </div>
+          {showStatusPill && (
+            <div className="mt-2">
+              <Badge className={`rounded-full px-4 py-1 text-base font-medium ${badgeClass}`}>
+                {displayStatusLabel}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
     </button>
