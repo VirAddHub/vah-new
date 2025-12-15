@@ -8,6 +8,7 @@ import {
 } from '../../services/invoices';
 import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
 import { ensureUserPlanLinked } from '../services/plan-linking';
+import { upsertSubscriptionForUser } from '../services/subscription-linking';
 
 const router = Router();
 
@@ -111,23 +112,12 @@ async function handleMandateActive(pool: any, links: any) {
             );
 
             // Ensure subscription row exists and is active
-            const upd = await pool.query(
-                `
-                UPDATE subscription
-                SET mandate_id = $1, status = 'active', updated_at = $2
-                WHERE user_id = $3
-                `,
-                [mandateId, Date.now(), userId]
-            );
-            if (!upd.rowCount) {
-                await pool.query(
-                    `
-                    INSERT INTO subscription (user_id, mandate_id, status, updated_at)
-                    VALUES ($1, $2, 'active', $3)
-                    `,
-                    [userId, mandateId, Date.now()]
-                );
-            }
+            await upsertSubscriptionForUser({
+                pool,
+                userId,
+                status: 'active',
+                mandateId,
+            });
 
             // Persist plan_id linkage (fixes "Active" + "No plan")
             try {
@@ -175,24 +165,12 @@ async function handlePaymentConfirmed(pool: any, links: any) {
         console.log(`[Webhook] 👤 Found user ${userId} for payment ${paymentId}`);
 
         // Update subscription status
-        const subUpd = await pool.query(
-            `
-            UPDATE subscription
-            SET status = 'active', updated_at = $1
-            WHERE user_id = $2
-            `,
-            [Date.now(), userId]
-        );
-        if (!subUpd.rowCount && (links?.mandate || links?.subscription)) {
-            // create a minimal subscription row for future lookups (mandate/customer mapping)
-            await pool.query(
-                `
-                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
-                VALUES ($1, $2, 'active', $3)
-                `,
-                [userId, links.mandate ?? null, Date.now()]
-            );
-        }
+        await upsertSubscriptionForUser({
+            pool,
+            userId,
+            status: 'active',
+            mandateId: links?.mandate ?? null,
+        });
 
         // Persist plan_id linkage (fixes "Active" + "No plan")
         try {

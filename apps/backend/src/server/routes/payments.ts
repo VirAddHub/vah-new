@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
 import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 import { ensureUserPlanLinked } from '../services/plan-linking';
+import { upsertSubscriptionForUser } from '../services/subscription-linking';
 
 const router = Router();
 
@@ -264,21 +265,13 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
             WHERE id = $3
         `, [mandateId, Date.now(), userId]);
 
-        // Ensure subscription record has mandate_id too (if present)
-        const subUpd = await pool.query(`
-            UPDATE subscription
-            SET mandate_id = $1, status = 'active', updated_at = $2
-            WHERE user_id = $3
-        `, [mandateId, Date.now(), userId]);
-        if (!subUpd.rowCount) {
-            await pool.query(
-                `
-                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
-                VALUES ($1, $2, 'active', $3)
-                `,
-                [userId, mandateId, Date.now()]
-            );
-        }
+        // Ensure subscription row exists and matches the chosen plan
+        await upsertSubscriptionForUser({
+            pool,
+            userId: Number(userId),
+            status: 'active',
+            mandateId,
+        });
 
         return res.json({
             ok: true,
