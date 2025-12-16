@@ -391,16 +391,42 @@ async function handleSubscriptionUpdated(pool: any, links: any) {
 async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
     try {
         const flowId = links?.billing_request_flow ?? links?.billing_request_flow_id ?? null;
+        const billingRequestId = links?.billing_request ?? links?.billing_request_id ?? null;
         const customerId = links?.customer ?? null;
-        if (!flowId || !customerId) return;
+        if ((!flowId && !billingRequestId) || !customerId) return;
 
-        // Map flow -> user/plan using our durable gc_redirect_flow record
-        const r = await pool.query(
-            `SELECT user_id, plan_id FROM gc_redirect_flow WHERE flow_id = $1 ORDER BY id DESC LIMIT 1`,
-            [String(flowId)]
-        );
-        const row = r.rows?.[0];
-        if (!row?.user_id) return;
+        // Prefer mapping via gc_billing_request_flow (BRQ/BRF), fallback to gc_redirect_flow
+        let row: any = null;
+        try {
+            const r1 = flowId
+                ? await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_flow_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(flowId)]
+                  )
+                : { rows: [] };
+            const r2 = !r1.rows?.length && billingRequestId
+                ? await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(billingRequestId)]
+                  )
+                : { rows: [] };
+            row = r1.rows?.[0] ?? r2.rows?.[0] ?? null;
+        } catch {
+            row = null;
+        }
+
+        if (!row?.user_id && flowId) {
+            const r = await pool.query(
+                `SELECT user_id, plan_id FROM gc_redirect_flow WHERE flow_id = $1 ORDER BY id DESC LIMIT 1`,
+                [String(flowId)]
+            );
+            row = r.rows?.[0] ?? null;
+        }
+
+        if (!row?.user_id) {
+            console.log('[GoCardless] payer_details_confirmed: could not resolve user', { flowId, billingRequestId, customerId });
+            return;
+        }
 
         const userId = Number(row.user_id);
         const planId = row.plan_id ? Number(row.plan_id) : null;
@@ -427,11 +453,16 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
             customerId: String(customerId),
         });
 
-        // Mark flow record as confirmed (optional; status is a free-text field)
+        // Mark BRQ/BRF record as confirmed (best-effort)
         try {
             await pool.query(
-                `UPDATE gc_redirect_flow SET status = 'confirmed' WHERE flow_id = $1`,
-                [String(flowId)]
+                `
+                UPDATE gc_billing_request_flow
+                SET customer_id = $2, status = 'confirmed'
+                WHERE billing_request_flow_id = $1
+                   OR billing_request_id = $3
+                `,
+                [String(flowId ?? ''), String(customerId), String(billingRequestId ?? '')]
             );
         } catch {
             // ignore
@@ -513,6 +544,18 @@ async function findUserIdForGcIdentifiers(
             );
             const sid = s.rows?.[0]?.user_id ?? null;
             if (sid) return sid;
+
+            // 3) billing-request-flow mapping (best-effort)
+            try {
+                const brf = await pool.query(
+                    `SELECT user_id FROM gc_billing_request_flow WHERE customer_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [customerId]
+                );
+                const bid = brf.rows?.[0]?.user_id ?? null;
+                if (bid) return bid;
+            } catch {
+                // table may not exist yet
+            }
         }
 
         if (mandateId) {

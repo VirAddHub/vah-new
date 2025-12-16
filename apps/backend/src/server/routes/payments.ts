@@ -177,6 +177,35 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             [chosenPlanId, Date.now(), userId]
         );
 
+        // Ensure a subscription row exists BEFORE starting GoCardless.
+        // - Insert pending only if no row exists
+        // - Never downgrade existing status (especially active)
+        const planRow = await pool.query(
+            `SELECT name, interval FROM plans WHERE id = $1 LIMIT 1`,
+            [chosenPlanId]
+        );
+        const planName = planRow.rows?.[0]?.name;
+        const interval = String(planRow.rows?.[0]?.interval ?? '');
+        const cadenceForSub = interval === 'year' ? 'annual' : 'monthly';
+        if (planName) {
+            await pool.query(
+                `
+                INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
+                VALUES ($1, $2, $3, 'pending', $4)
+                ON CONFLICT (user_id) DO UPDATE SET
+                  plan_name = EXCLUDED.plan_name,
+                  cadence = EXCLUDED.cadence,
+                  updated_at = EXCLUDED.updated_at,
+                  status = CASE
+                    WHEN subscription.status = 'active' THEN subscription.status
+                    WHEN subscription.status = 'cancelled' THEN subscription.status
+                    ELSE subscription.status
+                  END
+                `,
+                [userId, planName, cadenceForSub, Date.now()]
+            );
+        }
+
         // Check if GoCardless is properly configured
         const gocardlessToken = process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN;
         const appUrl = process.env.APP_URL || process.env.APP_BASE_URL;
@@ -210,6 +239,27 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             plan_id: String(chosenPlanId ?? ""),
             billing_period: cadence
         });
+
+        // Insert/Upsert BRQ/BRF mapping (used to link webhooks to the correct user)
+        try {
+            await pool.query(
+                `
+                INSERT INTO gc_billing_request_flow (
+                  created_at_ms, user_id, plan_id, billing_request_id, billing_request_flow_id, status
+                )
+                VALUES ($1, $2, $3, $4, $5, 'created')
+                ON CONFLICT (billing_request_flow_id) DO UPDATE SET
+                  user_id = EXCLUDED.user_id,
+                  plan_id = EXCLUDED.plan_id,
+                  billing_request_id = EXCLUDED.billing_request_id,
+                  status = EXCLUDED.status
+                `,
+                [Date.now(), userId, chosenPlanId, link.billing_request_id, link.flow_id]
+            );
+        } catch (e) {
+            // Don't break checkout if table doesn't exist yet (migration not run).
+            console.warn('[POST /api/payments/redirect-flows] gc_billing_request_flow insert failed:', (e as any)?.message ?? e);
+        }
 
         // Persist durable mapping: flow_id -> user_id/plan_id
         const planIdRes = await pool.query(`SELECT plan_id FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
