@@ -249,6 +249,26 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             console.warn('[POST /api/payments/redirect-flows] gc_redirect_flow insert failed:', (e as any)?.message ?? e);
         }
 
+        // Ensure a subscription row exists immediately (prevents manual SQL later).
+        // Status is pending until mandate is confirmed.
+        await upsertSubscriptionForUser({
+            pool,
+            userId: Number(userId),
+            status: 'pending',
+        });
+
+        // Mark user as pending payment setup unless already active.
+        await pool.query(
+            `
+            UPDATE "user"
+            SET
+              plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
+              updated_at = $1
+            WHERE id = $2
+            `,
+            [Date.now(), userId]
+        );
+
         // Store last flow id on the user for debugging/traceability
         await pool.query(
             `UPDATE "user" SET gocardless_redirect_flow_id = $1, updated_at = $2 WHERE id = $3`,

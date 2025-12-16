@@ -117,6 +117,14 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             console.log(`[GoCardless webhook] Processing ${resource_type}.${action}`);
 
             switch (`${resource_type}.${action}`) {
+                case 'billing_requests.payer_details_confirmed':
+                    await handleBillingRequestPayerConfirmed(pool, links);
+                    break;
+
+                case 'mandates.submitted':
+                    await handleMandateSubmitted(pool, links);
+                    break;
+
                 case 'mandates.active':
                     await handleMandateActive(pool, links);
                     break;
@@ -377,6 +385,108 @@ async function handleSubscriptionUpdated(pool: any, links: any) {
         console.log(`[GoCardless] Subscription ${subscriptionId} updated`);
     } catch (error) {
         console.error('[GoCardless] Error handling subscription.updated:', error);
+    }
+}
+
+async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
+    try {
+        const flowId = links?.billing_request_flow ?? links?.billing_request_flow_id ?? null;
+        const customerId = links?.customer ?? null;
+        if (!flowId || !customerId) return;
+
+        // Map flow -> user/plan using our durable gc_redirect_flow record
+        const r = await pool.query(
+            `SELECT user_id, plan_id FROM gc_redirect_flow WHERE flow_id = $1 ORDER BY id DESC LIMIT 1`,
+            [String(flowId)]
+        );
+        const row = r.rows?.[0];
+        if (!row?.user_id) return;
+
+        const userId = Number(row.user_id);
+        const planId = row.plan_id ? Number(row.plan_id) : null;
+
+        // Store customer id on user and ensure plan_id exists (so subscription upsert can resolve plan_name/cadence)
+        await pool.query(
+            `
+            UPDATE "user"
+            SET
+              gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
+              plan_id = COALESCE(plan_id, $2),
+              plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
+              updated_at = $3
+            WHERE id = $4
+            `,
+            [String(customerId), planId, Date.now(), userId]
+        );
+
+        // Ensure subscription row exists and attach customer_id (still pending until mandate confirmed)
+        await upsertSubscriptionForUser({
+            pool,
+            userId,
+            status: 'pending',
+            customerId: String(customerId),
+        });
+
+        // Mark flow record as confirmed (optional; status is a free-text field)
+        try {
+            await pool.query(
+                `UPDATE gc_redirect_flow SET status = 'confirmed' WHERE flow_id = $1`,
+                [String(flowId)]
+            );
+        } catch {
+            // ignore
+        }
+    } catch (e) {
+        console.error('[GoCardless] Error handling billing_requests.payer_details_confirmed:', e);
+    }
+}
+
+async function handleMandateSubmitted(pool: any, links: any) {
+    try {
+        const mandateId = links?.mandate ?? null;
+        let customerId = links?.customer ?? null;
+
+        if (!mandateId) return;
+
+        // Hydrate missing customer via API (best-effort)
+        if (!customerId) {
+            try {
+                const m = await gcGetMandate(String(mandateId));
+                customerId = m.customer_id ?? null;
+            } catch (e) {
+                console.warn('[GoCardless] mandate.submitted hydrate customer failed:', (e as any)?.message ?? e);
+            }
+        }
+
+        const userId = await findUserIdForGcIdentifiers(pool, {
+            customerId,
+            mandateId,
+        });
+        if (!userId) return;
+
+        // Store ids (do NOT force active here; that happens on mandates.active / flow completion)
+        await pool.query(
+            `
+            UPDATE "user"
+            SET
+              gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
+              gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+              plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
+              updated_at = $3
+            WHERE id = $4
+            `,
+            [String(mandateId), customerId ?? null, Date.now(), userId]
+        );
+
+        await upsertSubscriptionForUser({
+            pool,
+            userId,
+            status: 'pending',
+            mandateId: String(mandateId),
+            customerId: customerId ?? null,
+        });
+    } catch (e) {
+        console.error('[GoCardless] Error handling mandates.submitted:', e);
     }
 }
 

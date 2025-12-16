@@ -50,13 +50,19 @@ export async function upsertSubscriptionForUser(opts: {
   const mandateId = opts.mandateId ?? null;
   const customerId = opts.customerId ?? null;
 
+  // Never downgrade an already-active/cancelled subscription when we upsert "pending" during checkout retries.
+  // Precedence: cancelled > active > anything else.
   const insertSql = `
     INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7)
     ON CONFLICT (user_id) DO UPDATE SET
       plan_name = EXCLUDED.plan_name,
       cadence = EXCLUDED.cadence,
-      status = EXCLUDED.status,
+      status = CASE
+        WHEN subscription.status = 'cancelled' THEN subscription.status
+        WHEN subscription.status = 'active' THEN subscription.status
+        ELSE EXCLUDED.status
+      END,
       mandate_id = COALESCE(subscription.mandate_id, EXCLUDED.mandate_id),
       customer_id = COALESCE(subscription.customer_id, EXCLUDED.customer_id),
       updated_at = EXCLUDED.updated_at
@@ -81,7 +87,11 @@ export async function upsertSubscriptionForUser(opts: {
     SET
       plan_name = $1,
       cadence = $2,
-      status = $3,
+      status = CASE
+        WHEN subscription.status = 'cancelled' THEN subscription.status
+        WHEN subscription.status = 'active' THEN subscription.status
+        ELSE $3
+      END,
       mandate_id = COALESCE(mandate_id, $4),
       customer_id = COALESCE(customer_id, $5),
       updated_at = $6
