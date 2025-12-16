@@ -124,6 +124,33 @@ export async function gcGetMandate(mandateId: string): Promise<{ customer_id?: s
   return { customer_id: m?.mandates?.links?.customer };
 }
 
+export async function gcCreatePayment(opts: {
+  amountPence: number;
+  currency?: string;
+  mandateId: string;
+  metadata?: Record<string, string>;
+}): Promise<{ payment_id: string }> {
+  const currency = (opts.currency ?? 'GBP').toUpperCase();
+  const amountPence = Number(opts.amountPence);
+  if (!Number.isFinite(amountPence) || amountPence <= 0) {
+    throw new Error('Invalid amountPence for payment');
+  }
+  if (!opts.mandateId) throw new Error('Missing mandateId for payment');
+
+  const payload = await gcRequest('/payments', 'POST', {
+    payments: {
+      amount: Math.round(amountPence),
+      currency,
+      links: { mandate: opts.mandateId },
+      metadata: opts.metadata || undefined,
+    },
+  });
+
+  const id = payload?.payments?.id;
+  if (!id) throw new Error('GoCardless payment creation returned no id');
+  return { payment_id: id };
+}
+
 // Verify webhook signature
 export function gcVerifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   if (!signatureHeader) return false;

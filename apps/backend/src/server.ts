@@ -70,6 +70,7 @@ import adminOverviewRouter from "./server/routes/admin-overview";
 import companiesHouseRouter from "./server/routes/companies-house";
 import opsSelfTestRouter from "./server/routes/ops-selftest";
 import idealPostcodesRouter from "./server/routes/ideal-postcodes";
+import internalBillingRouter from "./server/routes/internal-billing";
 
 // Import maintenance service
 import { systemMaintenance } from "./server/services/maintenance";
@@ -410,6 +411,10 @@ async function start() {
     logger.info('[mount] /api (mail routes) mounted');
     app.use('/api/billing', billingRouter);
     logger.info('[mount] /api/billing mounted');
+
+    // Internal billing runner (cron-triggered)
+    app.use('/api/internal', internalBillingRouter);
+    logger.info('[mount] /api/internal mounted');
     app.use('/api/payments', paymentsRouter);
     logger.info('[mount] /api/payments mounted');
 
