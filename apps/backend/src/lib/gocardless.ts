@@ -16,7 +16,7 @@ function getGcConfig() {
   return { accessToken, env, webhookSecret, appUrl, apiBase };
 }
 
-export type GcLink = { redirect_url: string };
+export type GcLink = { redirect_url: string; flow_id: string };
 
 // HTTP client for GoCardless API
 async function gcRequest(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any) {
@@ -73,7 +73,10 @@ export async function gcCreateBrfUrl(
       }
     });
 
-    return { redirect_url: brf.billing_request_flows.authorisation_url };
+    return {
+      redirect_url: brf.billing_request_flows.authorisation_url,
+      flow_id: brf.billing_request_flows.id,
+    };
   } catch (error) {
     console.error('[GoCardless] Failed to create BRF URL:', error);
     throw new Error('Failed to create authorization link');
@@ -114,6 +117,11 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
     console.error('[GoCardless] Failed to complete flow:', error);
     throw new Error('Failed to complete authorization');
   }
+}
+
+export async function gcGetMandate(mandateId: string): Promise<{ customer_id?: string }> {
+  const m = await gcRequest(`/mandates/${mandateId}`);
+  return { customer_id: m?.mandates?.links?.customer };
 }
 
 // Verify webhook signature

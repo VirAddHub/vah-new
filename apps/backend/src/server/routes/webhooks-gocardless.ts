@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../../lib/db';
-import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment } from '../../lib/gocardless';
+import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment, gcGetMandate } from '../../lib/gocardless';
 import {
     createInvoiceForPayment,
     getBillingPeriodForUser,
@@ -148,22 +148,23 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 async function handleMandateActive(pool: any, links: any) {
     try {
         const mandateId = links.mandate;
-        const customerId = links.customer;
-        let userId: number | null = null;
+        let customerId = links.customer ?? null;
 
-        // Prefer direct lookup via customer id when present
-        if (customerId) {
-            const r = await pool.query(
-                `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
-                [customerId]
-            );
-            userId = r.rows[0]?.id ?? null;
+        // If webhook didn't include customer, try to hydrate via API (best-effort)
+        if (!customerId && mandateId) {
+            try {
+                const m = await gcGetMandate(String(mandateId));
+                customerId = m.customer_id ?? null;
+            } catch (e) {
+                // Test webhooks / placeholders often can't be fetched; ignore.
+                console.warn('[GoCardless] mandate.active hydrate customer failed:', (e as any)?.message ?? e);
+            }
         }
 
-        // Fallback to existing mandate lookup
-        if (!userId) {
-            userId = await getUserIdFromMandate(pool, mandateId);
-        }
+        const userId = await findUserIdForGcIdentifiers(pool, {
+            customerId,
+            mandateId,
+        });
 
         if (userId) {
             // Update user core payment fields
@@ -379,15 +380,52 @@ async function handleSubscriptionUpdated(pool: any, links: any) {
     }
 }
 
-async function getUserIdFromMandate(pool: any, mandateId: string): Promise<number | null> {
+async function findUserIdForGcIdentifiers(
+    pool: any,
+    ids: { customerId: string | null; mandateId: string | null }
+): Promise<number | null> {
     try {
-        const result = await pool.query(`
-      SELECT user_id FROM subscription WHERE mandate_id = $1
-    `, [mandateId]);
+        const { customerId, mandateId } = ids;
 
-        return result.rows[0]?.user_id || null;
+        if (customerId) {
+            // 1) user by stored customer id
+            const u = await pool.query(
+                `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+                [customerId]
+            );
+            const uid = u.rows?.[0]?.id ?? null;
+            if (uid) return uid;
+
+            // 2) subscription by stored customer id
+            const s = await pool.query(
+                `SELECT user_id FROM subscription WHERE customer_id = $1 LIMIT 1`,
+                [customerId]
+            );
+            const sid = s.rows?.[0]?.user_id ?? null;
+            if (sid) return sid;
+        }
+
+        if (mandateId) {
+            // 3) user by stored mandate id
+            const u2 = await pool.query(
+                `SELECT id FROM "user" WHERE gocardless_mandate_id = $1 LIMIT 1`,
+                [mandateId]
+            );
+            const uid2 = u2.rows?.[0]?.id ?? null;
+            if (uid2) return uid2;
+
+            // 4) subscription by stored mandate id
+            const s2 = await pool.query(
+                `SELECT user_id FROM subscription WHERE mandate_id = $1 LIMIT 1`,
+                [mandateId]
+            );
+            const sid2 = s2.rows?.[0]?.user_id ?? null;
+            if (sid2) return sid2;
+        }
+
+        return null;
     } catch (error) {
-        console.error('[GoCardless] Error getting user from mandate:', error);
+        console.error('[GoCardless] Error resolving user from GC identifiers:', error);
         return null;
     }
 }

@@ -222,6 +222,33 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             billing_period: cadence
         });
 
+        // Persist durable mapping: flow_id -> user_id/plan_id
+        const planIdRes = await pool.query(`SELECT plan_id FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
+        const planId = planIdRes.rows?.[0]?.plan_id ?? null;
+        if (!planId) {
+            return res.status(400).json({ ok: false, error: "plan_required", message: "A plan must be selected before starting payment setup." });
+        }
+
+        try {
+            await pool.query(
+                `
+                INSERT INTO gc_redirect_flow (created_at_ms, user_id, plan_id, flow_id, status)
+                VALUES ($1, $2, $3, $4, 'created')
+                ON CONFLICT (flow_id) DO NOTHING
+                `,
+                [Date.now(), userId, planId, link.flow_id]
+            );
+        } catch (e) {
+            // Don't break checkout if table doesn't exist yet (migration not run).
+            console.warn('[POST /api/payments/redirect-flows] gc_redirect_flow insert failed:', (e as any)?.message ?? e);
+        }
+
+        // Store last flow id on the user for debugging/traceability
+        await pool.query(
+            `UPDATE "user" SET gocardless_redirect_flow_id = $1, updated_at = $2 WHERE id = $3`,
+            [link.flow_id, Date.now(), userId]
+        );
+
         return res.json({
             ok: true,
             data: {
@@ -275,6 +302,20 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
             mandateId,
             customerId,
         });
+
+        // Mark redirect flow record as completed (best-effort)
+        try {
+            await pool.query(
+                `
+                UPDATE gc_redirect_flow
+                SET status = 'completed', completed_at_ms = $1
+                WHERE flow_id = $2 AND user_id = $3
+                `,
+                [Date.now(), flowId, userId]
+            );
+        } catch (e) {
+            console.warn('[POST /api/payments/redirect-flows/:flowId/complete] gc_redirect_flow update failed:', (e as any)?.message ?? e);
+        }
 
         return res.json({
             ok: true,
