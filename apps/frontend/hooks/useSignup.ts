@@ -4,6 +4,7 @@ import { apiClient } from '../lib/apiClient';
 export interface SignupStep1Data {
     billing: 'monthly' | 'annual';
     price: string;
+    plan_id?: string;
 }
 
 export interface SignupStep2Data {
@@ -112,36 +113,34 @@ export function useSignup() {
             console.log('✅ User account created:', signupResponse.data);
 
             // Step 2: Set up payment
-            try {
-                // IMPORTANT: Call the backend API (not a same-origin Next.js route)
-                // This requires that signup stored a token/cookie.
-                const paymentResp = await apiClient.post<any>('/api/payments/redirect-flows', {});
+            // IMPORTANT: Call the backend API (not a same-origin Next.js route)
+            // This requires that signup stored a token/cookie.
+            const paymentBody: any = {
+                billing_period: step1Data?.billing ?? 'monthly',
+            };
+            if (step1Data?.plan_id) paymentBody.plan_id = step1Data.plan_id;
 
-                const redirectUrl = (paymentResp as any)?.redirect_url || (paymentResp as any)?.data?.redirect_url;
+            const paymentResp = await apiClient.post<any>('/api/payments/redirect-flows', paymentBody);
 
-                if (paymentResp.ok && redirectUrl) {
-                    console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
-                    // Redirect to GoCardless for payment setup
-                    window.location.href = redirectUrl;
-                    return; // Don't set complete yet, wait for redirect
-                } else if (paymentResp.ok && (paymentResp as any).data?.skip_payment) {
-                    console.log('✅ Payment setup skipped, user account created successfully');
-                    // Payment setup was skipped (GoCardless not configured)
-                    // User account is created and ready to use
-                } else {
-                    console.warn('⚠️ Payment setup failed, but user account created:', paymentResp);
-                    // User account created but payment setup failed
-                    // Still mark as complete so they can try payment later
-                }
-            } catch (paymentError) {
-                console.warn('⚠️ Payment setup error, but user account created:', paymentError);
-                // User account created but payment setup failed
-                // Still mark as complete so they can try payment later
+            const redirectUrl =
+                (paymentResp as any)?.redirect_url ||
+                (paymentResp as any)?.data?.redirect_url;
+
+            if (paymentResp.ok && redirectUrl) {
+                console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
+                window.location.href = redirectUrl;
+                return; // Don't set complete yet, wait for redirect
             }
 
-            // If we get here, user account was created successfully
-            setIsComplete(true);
-            console.log('✅ Signup completed successfully');
+            if (paymentResp.ok && (paymentResp as any).data?.skip_payment) {
+                // Payment setup was skipped (GoCardless not configured). Only in this case can we "complete" signup.
+                setIsComplete(true);
+                console.log('✅ Signup completed (payment skipped)');
+                return;
+            }
+
+            // If payment setup fails, do NOT mark signup complete (service is not live without a mandate).
+            throw new Error((paymentResp as any)?.message || (paymentResp as any)?.error || 'Payment setup failed. Please try again.');
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Signup failed';

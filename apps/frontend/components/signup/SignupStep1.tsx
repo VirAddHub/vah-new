@@ -4,7 +4,7 @@ import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
 
 interface SignupStep1Props {
-    onNext: (selectedPlan: { billing: 'monthly' | 'annual'; price: string }) => void;
+    onNext: (selectedPlan: { billing: 'monthly' | 'annual'; price: string; plan_id?: string }) => void;
     onBack: () => void;
     initialBilling?: 'monthly' | 'annual';
 }
@@ -64,9 +64,11 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
     ];
 
     const handleContinue = () => {
+        const plan = plans?.find(p => p.interval === (billing === 'annual' ? 'year' : 'month'));
         onNext({
             billing,
-            price: getPlanPrice(billing)
+            price: getPlanPrice(billing),
+            plan_id: plan?.id ? String(plan.id) : undefined,
         });
     };
 

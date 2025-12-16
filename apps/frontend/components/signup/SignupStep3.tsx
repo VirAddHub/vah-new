@@ -7,7 +7,7 @@ import { usePlans } from '@/hooks/usePlans';
 import { FEATURES } from '@/lib/config';
 
 interface SignupStep3Props {
-    onComplete: () => void;
+    onComplete: () => Promise<void>;
     onBack: () => void;
     billing: 'monthly' | 'annual';
     price: string;
@@ -52,9 +52,15 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
         : 'Recurring monthly payment';
 
     const handlePayment = async () => {
+        if (isProcessing || isLoading) return;
         setIsProcessing(true);
-        // Call the real signup completion (which calls the API)
-        onComplete();
+        try {
+            // Call the real signup completion (which calls the API + redirects to GoCardless)
+            await onComplete();
+        } finally {
+            // If onComplete redirects, this won't matter; if it errors, we must unblock the button.
+            setIsProcessing(false);
+        }
     };
 
     return (
