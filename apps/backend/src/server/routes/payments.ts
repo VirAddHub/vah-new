@@ -120,6 +120,12 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
     const pool = getPool();
 
     try {
+        console.log('[GC] redirect-flows input', {
+            user_id: userId ?? null,
+            plan_id: (req.body as any)?.plan_id ?? (req.body as any)?.planId ?? null,
+            billing_period: (req.body as any)?.billing_period ?? (req.body as any)?.billingPeriod ?? null,
+        });
+
         // Get user info
         const userResult = await pool.query(`
             SELECT id, email, first_name, last_name
@@ -257,9 +263,21 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             },
             redirect_url: link.redirect_url
         });
-    } catch (error: any) {
-        console.error('[POST /api/payments/redirect-flows] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    } catch (err: any) {
+        console.error('[GC] redirect-flows failed', {
+            message: err?.message,
+            name: err?.name,
+        });
+
+        // Fail cleanly so the frontend can show a friendly retry message.
+        // Use 400 (not 500) unless it's clearly a server/database error.
+        const msg = String(err?.message || '');
+        const isDb = msg.toLowerCase().includes('database') || msg.toLowerCase().includes('postgres');
+        return res.status(isDb ? 500 : 400).json({
+            ok: false,
+            error: isDb ? 'database_error' : 'gocardless_redirect_flow_failed',
+            message: isDb ? 'Database error' : 'Payment setup could not be started. Please try again.',
+        });
     }
 });
 

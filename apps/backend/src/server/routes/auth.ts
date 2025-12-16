@@ -223,7 +223,8 @@ const SignupSchema = z.object({
     // Contact
     first_name: z.string().min(1).max(50),
     last_name: z.string().min(1).max(50),
-    email: z.string().email(),
+    // Normalize to avoid "Invalid email address" due to whitespace/case
+    email: z.string().email().trim().toLowerCase(),
     password: z.string().min(8).max(100)
         .regex(/[a-z]/, "password must contain a lowercase letter")
         .regex(/[A-Z]/, "password must contain an uppercase letter")
@@ -536,15 +537,17 @@ router.post("/logout", (req, res) => {
 // --- WHOAMI ---
 router.get("/whoami", async (req, res) => {
     try {
-        // Extract token from Authorization header
+        // Extract token from Authorization header OR cookie.
+        // Note: Vercel rewrites /api/* to the backend, so the auth cookie is first-party on the Vercel domain
+        // and will be forwarded to the backend on rewritten requests.
         const authHeader = req.headers.authorization;
-        const token = extractTokenFromHeader(authHeader);
+        const token = extractTokenFromHeader(authHeader) || req.cookies?.vah_session;
 
         if (!token) {
             return res.status(401).json({
                 ok: false,
                 error: "not_authenticated",
-                message: "No token provided"
+                message: "No session token provided"
             });
         }
 
