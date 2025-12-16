@@ -36,6 +36,7 @@ export function AddressFinder({
 }: AddressFinderProps) {
     const [isLoaded, setIsLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const controllerRef = useRef<any>(null);
 
@@ -53,11 +54,22 @@ export function AddressFinder({
                 });
                 const keyData = await keyResponse.json();
 
-                if (!keyData.ok) {
-                    throw new Error(keyData.error || 'Failed to get API key');
+                if (!keyData?.ok) {
+                    throw new Error(keyData?.error || 'Failed to get API key');
                 }
 
-                const apiKey = keyData.apiKey;
+                const apiKey = keyData.key ?? null;
+
+                // If not configured, do not initialize the address finder.
+                // Parent forms should fall back to manual entry.
+                if (!apiKey) {
+                    setIsConfigured(false);
+                    setIsLoaded(false);
+                    setError(null);
+                    return;
+                }
+
+                setIsConfigured(true);
 
                 // Setup AddressFinder
                 const controller = AddressFinder.setup({
@@ -72,6 +84,7 @@ export function AddressFinder({
                 setIsLoaded(true);
             } catch (err) {
                 console.error('[AddressFinder] Failed to load:', err);
+                setIsConfigured(false);
                 setError("Address finder failed to load. Please enter your address manually.");
                 // Don't show error overlay - let user continue typing
             }
@@ -97,6 +110,9 @@ export function AddressFinder({
             }
         };
     }, [outputFields, onAddressSelect, isLoaded]);
+
+    // Hide the address search UI entirely when not configured.
+    if (isConfigured === false) return null;
 
     return (
         <div className={`space-y-2 ${className}`}>
