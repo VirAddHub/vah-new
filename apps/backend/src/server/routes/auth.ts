@@ -6,6 +6,7 @@ import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jw
 import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
+import { upsertSubscriptionForUser } from "../services/subscription-linking";
 
 const router = Router();
 
@@ -564,7 +565,7 @@ router.get("/whoami", async (req, res) => {
         // Verify user still exists and is not deleted
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, is_admin, role, kyc_status, name, first_name, last_name, forwarding_address FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            'SELECT id, email, is_admin, role, kyc_status, name, first_name, last_name, forwarding_address, plan_status, plan_id FROM "user" WHERE id = $1 AND deleted_at IS NULL',
             [payload.id]
         );
 
@@ -577,6 +578,24 @@ router.get("/whoami", async (req, res) => {
         }
 
         const userData = user.rows[0];
+
+        // Safety net: if an account is active but has no subscription row, recreate it automatically.
+        // This prevents "active user with no subscription row" from ever persisting again.
+        try {
+            if (userData?.plan_status === 'active' && userData?.plan_id) {
+                const s = await pool.query(`SELECT 1 FROM subscription WHERE user_id = $1 LIMIT 1`, [userData.id]);
+                if (!s.rows?.length) {
+                    await upsertSubscriptionForUser({
+                        pool,
+                        userId: Number(userData.id),
+                        status: 'active',
+                    });
+                }
+            }
+        } catch (e) {
+            // Never block whoami if this repair fails.
+            console.warn('[auth/whoami] subscription repair failed:', (e as any)?.message ?? e);
+        }
 
         // Return user data from database (not token)
         res.json({
@@ -591,7 +610,9 @@ router.get("/whoami", async (req, res) => {
                     name: userData.name,
                     first_name: userData.first_name,
                     last_name: userData.last_name,
-                    forwarding_address: userData.forwarding_address
+                    forwarding_address: userData.forwarding_address,
+                    plan_status: userData.plan_status,
+                    plan_id: userData.plan_id,
                 }
             }
         });
