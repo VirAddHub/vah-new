@@ -88,9 +88,10 @@ export const billingService = {
     /**
      * Create GoCardless redirect flow
      */
-    async createRedirectFlow(): Promise<{ ok: boolean; data: { redirect_flow_id: string; redirect_url: string } }> {
+    async createRedirectFlow(opts: { plan_id: string | number; billing_period: 'monthly' | 'annual' }): Promise<{ ok: boolean; data: { redirect_flow_id: string; redirect_url: string } }> {
         const { data } = await api('/api/payments/redirect-flows', {
             method: 'POST',
+            body: JSON.stringify({ plan_id: opts.plan_id, billing_period: opts.billing_period }),
         });
         return data;
     },
