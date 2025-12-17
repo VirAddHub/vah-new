@@ -93,9 +93,9 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
             if (isProd) {
-            console.error('[GoCardless webhook] Invalid signature');
-            return res.status(401).json({ error: 'Invalid signature' });
-        }
+                console.error('[GoCardless webhook] Invalid signature');
+                return res.status(401).json({ error: 'Invalid signature' });
+            }
             console.warn('[GoCardless webhook] Signature verification skipped (non-production or secret not set)');
         }
 
@@ -113,12 +113,28 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
         for (const event of events) {
             const { resource_type, action, links } = event;
+            // GoCardless events may include a full resource object (check common patterns)
+            const resource = (event as any).billing_requests || (event as any).mandates || (event as any).resource || null;
 
             console.log(`[GoCardless webhook] Processing ${resource_type}.${action}`);
+            console.log('[GoCardless webhook] event', {
+                action,
+                resourceType: resource_type,
+                resourceId: resource?.id ?? links?.billing_request ?? links?.mandate ?? null,
+                links,
+            });
 
             switch (`${resource_type}.${action}`) {
                 case 'billing_requests.payer_details_confirmed':
                     await handleBillingRequestPayerConfirmed(pool, links);
+                    break;
+
+                case 'billing_requests.fulfilled':
+                    await handleBillingRequestFulfilled(pool, links, resource);
+                    break;
+
+                case 'mandates.created':
+                    await handleMandateCreated(pool, links, resource);
                     break;
 
                 case 'mandates.submitted':
@@ -574,6 +590,152 @@ async function handleMandateSubmitted(pool: any, links: any) {
         });
     } catch (e) {
         console.error('[GoCardless] Error handling mandates.submitted:', e);
+    }
+}
+
+async function handleBillingRequestFulfilled(pool: any, links: any, resource: any) {
+    try {
+        // Billing flow completed. Treat as "subscription can be active".
+        const billingRequestId = resource?.id ?? links?.billing_request ?? null;
+        const customerId =
+            resource?.links?.customer ??
+            resource?.links?.payer ??
+            links?.customer ??
+            links?.payer ??
+            null;
+
+        if (!customerId && !billingRequestId) {
+            console.log('[GoCardless] fulfilled: missing customerId/billingRequestId', {
+                billingRequestId,
+                customerId,
+                links,
+            });
+            return;
+        }
+
+        // Find subscription by customerId (preferred) or billingRequestId
+        if (customerId) {
+            const result = await pool.query(
+                `
+                UPDATE subscription
+                SET
+                    status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                    updated_at = $1
+                WHERE customer_id = $2
+                RETURNING user_id
+                `,
+                [Date.now(), customerId]
+            );
+
+            if (result.rows?.length) {
+                console.log('[GoCardless] fulfilled: subscription marked active', {
+                    customerId,
+                    billingRequestId,
+                    userId: result.rows[0].user_id,
+                });
+                return;
+            }
+        }
+
+        // Fallback: try by billing_request_id if we have it stored in gc_billing_request_flow
+        if (billingRequestId) {
+            try {
+                const brfRow = await pool.query(
+                    `SELECT user_id FROM gc_billing_request_flow WHERE billing_request_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(billingRequestId)]
+                );
+                if (brfRow.rows?.length) {
+                    const userId = brfRow.rows[0].user_id;
+                    await pool.query(
+                        `
+                        UPDATE subscription
+                        SET
+                            status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                            updated_at = $1
+                        WHERE user_id = $2
+                        `,
+                        [Date.now(), userId]
+                    );
+                    console.log('[GoCardless] fulfilled: subscription marked active (via billing_request_id)', {
+                        billingRequestId,
+                        userId,
+                    });
+                }
+            } catch (e) {
+                console.warn('[GoCardless] fulfilled: failed to lookup by billing_request_id', (e as any)?.message ?? e);
+            }
+        }
+    } catch (error) {
+        console.error('[GoCardless] Error handling billing_requests.fulfilled:', error);
+    }
+}
+
+async function handleMandateCreated(pool: any, links: any, resource: any) {
+    try {
+        // Mandate is the "hard truth" for Direct Debit.
+        const mandateId = resource?.id ?? links?.mandate ?? null;
+        const customerId = resource?.links?.customer ?? links?.customer ?? null;
+
+        console.log('[GoCardless] mandates.created: processing', {
+            mandateId,
+            customerId,
+            hasResource: !!resource,
+            links,
+        });
+
+        if (!mandateId || !customerId) {
+            console.log('[GoCardless] mandates.created: missing mandateId/customerId', {
+                mandateId,
+                customerId,
+                links,
+            });
+            return;
+        }
+
+        // Idempotent update: find subscription by customerId and attach mandate + activate
+        const result = await pool.query(
+            `
+            UPDATE subscription
+            SET
+                mandate_id = COALESCE(mandate_id, $1),
+                status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                updated_at = $2
+            WHERE customer_id = $3
+            RETURNING user_id
+            `,
+            [mandateId, Date.now(), customerId]
+        );
+
+        if (result.rows?.length) {
+            const userId = result.rows[0].user_id;
+
+            // Also update user table (best-effort, never downgrade active status)
+            await pool.query(
+                `
+                UPDATE "user"
+                SET
+                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
+                    gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+                    plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                    updated_at = $3
+                WHERE id = $4
+                `,
+                [mandateId, customerId, Date.now(), userId]
+            );
+
+            console.log('[GoCardless] mandates.created: mandate attached + active', {
+                customerId,
+                mandateId,
+                userId,
+            });
+        } else {
+            console.warn('[GoCardless] mandates.created: no subscription found for customer_id', {
+                customerId,
+                mandateId,
+            });
+        }
+    } catch (error) {
+        console.error('[GoCardless] Error handling mandates.created:', error);
     }
 }
 
