@@ -71,6 +71,7 @@ import companiesHouseRouter from "./server/routes/companies-house";
 import opsSelfTestRouter from "./server/routes/ops-selftest";
 import idealPostcodesRouter from "./server/routes/ideal-postcodes";
 import internalBillingRouter from "./server/routes/internal-billing";
+import { errorHandler } from "./server/middleware/errorHandler";
 
 // Import maintenance service
 import { systemMaintenance } from "./server/services/maintenance";
@@ -548,6 +549,10 @@ async function start() {
     app.use('/api/kyc', kycStartRouter);
     logger.info('[mount] /api/kyc mounted');
 
+    // Global error handler (must be last, after all routes)
+    app.use(errorHandler);
+    logger.info('[mount] Error handler middleware mounted');
+
     app.use('/api/mail/forward', mailForwardRouter);
     logger.info('[mount] /api/mail/forward mounted');
 
@@ -589,21 +594,10 @@ async function start() {
         res.status(404).json({ ok: false, error: 'not_found' });
     });
 
-    // Error handler that still returns CORS
-    app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-        console.error('[unhandled]', err);
-        const origin = req.headers.origin as string;
-        const allowedOrigins = [
-            'https://vah-new-frontend-75d6.vercel.app',
-            'https://vah-frontend-final.vercel.app',
-            'http://localhost:3000'
-        ];
-        if (origin && allowedOrigins.includes(origin)) {
-            res.set('Access-Control-Allow-Origin', origin);
-            res.set('Access-Control-Allow-Credentials', 'true');
-        }
-        res.status(500).json({ ok: false, error: 'server_error', message: err.message });
-    });
+    // Global error handler (must be last, after all routes)
+    // Note: CORS is handled by corsMiddleware above, so errorHandler doesn't need to set CORS headers
+    app.use(errorHandler);
+    logger.info('[mount] Error handler middleware mounted');
 
     // ---- Global error handlers to prevent crashes ----
     process.on("unhandledRejection", (reason) => {

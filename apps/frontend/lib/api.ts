@@ -1,96 +1,92 @@
 /**
- * @deprecated This API client is deprecated. Use `import api from "@/lib/http"` instead.
- * 
- * Migration guide:
- * - Replace `import { api } from "@/lib/api"` with `import api from "@/lib/http"`
- * - The new client uses BFF endpoints and cookie-based auth automatically
- * 
- * This file will be removed after all usages are migrated.
+ * Typed API client helpers
+ * Thin wrappers around apiFetch for common endpoints
  */
-// apps/frontend/lib/api.ts
 
-// Dev-only deprecation warning
-if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-  const warnOnce = () => {
-    if (!(window as any).__apiDeprecationWarned) {
-      console.warn(
-        '[DEPRECATED] "@/lib/api" is deprecated. Use "@/lib/http" instead. ' +
-        'See migration guide in lib/api.ts'
-      );
-      (window as any).__apiDeprecationWarned = true;
-    }
-  };
-  setTimeout(warnOnce, 0);
+import { apiFetch, ApiError, PaginatedResponse } from './apiFetch';
+
+export interface User {
+    id: number;
+    email: string;
+    is_admin: boolean;
+    role: string;
+    kyc_status: string | null;
+    name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    forwarding_address: any;
+    plan_status: string | null;
+    plan_id: number | null;
 }
 
-import { API } from './api-base';
-import { getToken } from './token-manager';
-import { safeJson } from './http';
-
-export async function api(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers || {});
-  if (!headers.has('Content-Type') && !(init.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
-  }
-  const token = getToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-
-  // Check if path is already a full URL (starts with http)
-  const url = path.startsWith('http') ? path : API(path);
-  // temporary debug – remove after verification
-  if (typeof window !== 'undefined') {
-    // @ts-ignore
-    window.__VAH_LAST_REQ__ = { url, headers: Object.fromEntries(headers.entries()) };
-    // console.debug('🌐 API ->', url, Object.fromEntries(headers.entries()));
-  }
-
-  console.log('[api] Making request:', { url, method: init.method || 'GET', hasToken: !!token });
-  const res = await fetch(url, { ...init, headers, credentials: 'include' });
-
-  // Don't throw here; let callers read both json + status
-  const data = await safeJson(res);
-  console.log('[api] Response:', { url, status: res.status, ok: res.ok, data });
-  return { res, data };
+export interface Plan {
+    id: number | string;
+    name: string;
+    slug: string;
+    description: string | null;
+    price_pence: number;
+    price: number;
+    priceFormatted: string;
+    interval: 'month' | 'year';
+    currency: string;
+    features: string[];
+    trial_days: number | null;
+    active: boolean;
+    isAnnual: boolean;
+    isMonthly: boolean;
 }
 
-// Legacy compatibility exports
-export async function apiFetch(path: string, init: RequestInit = {}) {
-  const { res } = await api(path, init);
-  return res;
+export interface MailItem {
+    id: number;
+    user_id: number;
+    received_date: string;
+    sender_name: string | null;
+    subject: string | null;
+    user_title: string | null;
+    tag: string | null;
+    status: string;
+    // ... other fields
 }
 
-export async function apiJson<T = any>(
-  path: string,
-  options: {
-    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-    body?: any;
-    init?: RequestInit;
-    throwOnError?: boolean;
-  } = {}
-): Promise<T> {
-  const { method = options.body ? "POST" : "GET", body, init, throwOnError = true } = options;
-  const { res, data } = await api(path, {
-    method,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    ...init,
-  });
-  if (throwOnError && !res.ok) {
-    const errorMsg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-    throw new Error(`API ${method} ${path} -> ${res.status} ${res.statusText} ${errorMsg}`);
-  }
-  return data as T;
+export interface GetMailItemsParams {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    search?: string;
 }
 
-export async function postJson<T = any>(path: string, body: any): Promise<T> {
-  return apiJson<T>(path, { method: "POST", body });
+/**
+ * Get current authenticated user
+ */
+export async function getWhoAmI(): Promise<{ user: User }> {
+    return apiFetch<{ user: User }>('/auth/whoami');
 }
 
-export async function getMe() {
-  return apiJson("/api/profile/me");
+/**
+ * Get available plans
+ */
+export async function getPlans(): Promise<Plan[]> {
+    const response = await apiFetch<PaginatedResponse<Plan>>('/plans');
+    return response.items;
 }
 
-export async function patchMe(data: any) {
-  return apiJson("/api/profile/me", { method: "PATCH", body: data });
+/**
+ * Get mail items (paginated)
+ */
+export async function getMailItems(
+    params: GetMailItemsParams = {}
+): Promise<PaginatedResponse<MailItem>> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.page_size) query.set('page_size', String(params.page_size));
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+
+    const queryString = query.toString();
+    const path = `/mail${queryString ? `?${queryString}` : ''}`;
+
+    return apiFetch<PaginatedResponse<MailItem>>(path);
 }
 
-export default apiFetch;
+// Re-export ApiError for convenience
+export { ApiError } from './apiFetch';

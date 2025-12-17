@@ -7,6 +7,7 @@ import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
+import { ok, unauthorized, badRequest, serverError, conflict } from "../lib/apiResponse";
 
 const router = Router();
 
@@ -545,21 +546,13 @@ router.get("/whoami", async (req, res) => {
         const token = extractTokenFromHeader(authHeader) || req.cookies?.vah_session;
 
         if (!token) {
-            return res.status(401).json({
-                ok: false,
-                error: "not_authenticated",
-                message: "No session token provided"
-            });
+            return unauthorized(res, "No session token provided");
         }
 
         // Verify the token
         const payload = verifyToken(token);
         if (!payload) {
-            return res.status(401).json({
-                ok: false,
-                error: "invalid_token",
-                message: "Invalid or expired token"
-            });
+            return unauthorized(res, "Invalid or expired token");
         }
 
         // Verify user still exists and is not deleted
@@ -598,31 +591,24 @@ router.get("/whoami", async (req, res) => {
         }
 
         // Return user data from database (not token)
-        res.json({
-            ok: true,
-            data: {
-                user: {
-                    id: userData.id,
-                    email: userData.email,
-                    is_admin: userData.is_admin,
-                    role: userData.role,
-                    kyc_status: userData.kyc_status,
-                    name: userData.name,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    forwarding_address: userData.forwarding_address,
-                    plan_status: userData.plan_status,
-                    plan_id: userData.plan_id,
-                }
-            }
+        return ok(res, {
+            user: {
+                id: userData.id,
+                email: userData.email,
+                is_admin: userData.is_admin,
+                role: userData.role,
+                kyc_status: userData.kyc_status,
+                name: userData.name,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                forwarding_address: userData.forwarding_address,
+                plan_status: userData.plan_status,
+                plan_id: userData.plan_id,
+            },
         });
     } catch (error) {
         console.error('[auth/whoami] Error:', error);
-        res.status(401).json({
-            ok: false,
-            error: "invalid_token",
-            message: "Invalid or expired session"
-        });
+        return unauthorized(res, "Invalid or expired session");
     }
 });
 

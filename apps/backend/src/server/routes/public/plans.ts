@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { selectMany } from '../../db-helpers';
+import { ok, okList, serverError } from '../../lib/apiResponse';
 
 const router = Router();
 
@@ -29,14 +30,16 @@ router.get('/plans', async (_req, res) => {
             'Expires': '0'
         });
         
-        return res.status(200).json({ 
-            ok: true, 
-            data: formattedPlans, 
-            source: 'db',
-            timestamp: new Date().toISOString()
+        // Return as list format (even though it's a static list, use items for consistency)
+        return okList(res, {
+            items: formattedPlans,
+            page: 1,
+            page_size: formattedPlans.length,
+            total: formattedPlans.length,
         });
     } catch (e) {
         console.error('[Public Plans] Database error:', e);
+        return serverError(res, 'Failed to fetch plans');
         // Safe stub if DB not reachable
         const stubPlans = [
             { 
@@ -73,11 +76,12 @@ router.get('/plans', async (_req, res) => {
             'Expires': '0'
         });
         
-        return res.status(200).json({
-            ok: true,
-            data: stubPlans,
-            source: 'stub',
-            timestamp: new Date().toISOString()
+        // Return as list format
+        return okList(res, {
+            items: stubPlans,
+            page: 1,
+            page_size: stubPlans.length,
+            total: stubPlans.length,
         });
     }
 });
