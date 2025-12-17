@@ -90,3 +90,7 @@ export async function getMailItems(
 
 // Re-export ApiError for convenience
 export { ApiError } from './apiFetch';
+
+// Re-export api function from http.ts for backward compatibility with services
+// Services expect: const { data } = await api(path, options)
+export { api } from './http';
