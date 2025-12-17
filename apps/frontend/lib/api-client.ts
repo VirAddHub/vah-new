@@ -88,23 +88,20 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
             });
         }
 
-        const { res, data } = await api(path, init);
+        // api() now returns ApiResponse<T> directly (from http.ts wrapper)
+        const result = await api(path, init);
 
-        if (!res.ok) {
-            // Handle 401 errors by clearing token and redirecting to login
-            if (res.status === 401) {
-                clearToken();
-                // Redirect to login page if we're in the browser
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/login?expired=1';
-                }
+        // If it's an error response, handle 401
+        if (!result.ok && result.status === 401) {
+            clearToken();
+            // Redirect to login page if we're in the browser
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login?expired=1';
             }
-            const errorMsg = (data && (data.message || data.error)) || res.statusText;
-            const errorCode = (data && data.code) || undefined;
-            return { ok: false, error: errorMsg, code: res.status, errorCode };
         }
 
-        return { ok: true, data };
+        // Return the result as-is (it's already in ApiResponse format)
+        return result as ApiResponse<T>;
     } catch (error: any) {
         return { ok: false, error: error.message, code: 500 };
     }
