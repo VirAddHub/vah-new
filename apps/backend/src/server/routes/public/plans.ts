@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { selectMany } from '../../db-helpers';
-import { ok, okList, serverError } from '../../lib/apiResponse';
+import { ok } from '../../lib/apiResponse';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.get('/plans', async (_req, res) => {
              WHERE active = true AND retired_at IS NULL
              ORDER BY sort ASC, price_pence ASC`
         ) as any[];
-        
+
         // Format prices for frontend consumption
         const formattedPlans = rows.map(plan => ({
             ...plan,
@@ -22,30 +22,24 @@ router.get('/plans', async (_req, res) => {
             isAnnual: plan.interval === 'year',
             isMonthly: plan.interval === 'month'
         }));
-        
+
         // Disable caching for fresh pricing data
         res.set({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
         });
-        
-        // Return as list format (even though it's a static list, use items for consistency)
-        return okList(res, {
-            items: formattedPlans,
-            page: 1,
-            page_size: formattedPlans.length,
-            total: formattedPlans.length,
-        });
+
+        // Return as array (static list, no pagination needed)
+        return ok(res, formattedPlans);
     } catch (e) {
         console.error('[Public Plans] Database error:', e);
-        return serverError(res, 'Failed to fetch plans');
         // Safe stub if DB not reachable
         const stubPlans = [
-            { 
-                id: 'monthly', 
-                name: 'Virtual Mailbox - Monthly', 
-                price_pence: 995, 
+            {
+                id: 'monthly',
+                name: 'Virtual Mailbox - Monthly',
+                price_pence: 995,
                 price: 9.95,
                 priceFormatted: '£9.95',
                 interval: 'month',
@@ -55,10 +49,10 @@ router.get('/plans', async (_req, res) => {
                 isMonthly: true,
                 isAnnual: false
             },
-            { 
-                id: 'annual', 
-                name: 'Virtual Mailbox - Annual', 
-                price_pence: 8999, 
+            {
+                id: 'annual',
+                name: 'Virtual Mailbox - Annual',
+                price_pence: 8999,
                 price: 89.99,
                 priceFormatted: '£89.99',
                 interval: 'year',
@@ -69,20 +63,15 @@ router.get('/plans', async (_req, res) => {
                 isAnnual: true
             }
         ];
-        
+
         res.set({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
         });
-        
-        // Return as list format
-        return okList(res, {
-            items: stubPlans,
-            page: 1,
-            page_size: stubPlans.length,
-            total: stubPlans.length,
-        });
+
+        // Return as array (static list, no pagination needed)
+        return ok(res, stubPlans);
     }
 });
 
