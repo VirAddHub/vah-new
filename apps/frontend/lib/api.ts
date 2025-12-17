@@ -99,7 +99,7 @@ import { api as apiObject, type ApiResponse } from './http';
  * Services call: const { data } = await api(path, { method: 'GET', ... })
  * This wrapper extracts the method and calls the appropriate api method
  */
-export async function api(path: string, init: RequestInit = {}): Promise<{ data: any }> {
+export async function api<T = any>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
     const method = (init.method || 'GET').toUpperCase();
     const body = init.body;
 
@@ -108,39 +108,48 @@ export async function api(path: string, init: RequestInit = {}): Promise<{ data:
     try {
         switch (method) {
             case 'GET':
-                result = await apiObject.get(path, init);
+                result = await apiObject.get<T>(path, init);
                 break;
             case 'POST':
                 // Parse body if it's a string (JSON)
-                const postBody = body 
+                const postBody = body
                     ? (typeof body === 'string' ? JSON.parse(body) : body)
                     : undefined;
-                result = await apiObject.post(path, postBody, init);
+                result = await apiObject.post<T>(path, postBody, init);
                 break;
             case 'PUT':
-                const putBody = body 
+                const putBody = body
                     ? (typeof body === 'string' ? JSON.parse(body) : body)
                     : undefined;
-                result = await apiObject.put(path, putBody, init);
+                result = await apiObject.put<T>(path, putBody, init);
                 break;
             case 'DELETE':
-                result = await apiObject.del(path, init);
+                result = await apiObject.del<T>(path, init);
                 break;
             default:
                 throw new Error(`Unsupported HTTP method: ${method}`);
         }
 
+        // Ensure result is always defined and has the expected shape
+        if (!result || typeof result !== 'object') {
+            return {
+                ok: false,
+                status: 500,
+                code: 'invalid_response',
+                message: 'Invalid response from server',
+            } as ApiResponse<T>;
+        }
+
         // apiObject methods return { ok: true, data: T } or { ok: false, status, code, message }
-        // Services expect { data: ... }, so we return the result as-is
-        // (they can destructure { data } from it, and it will be undefined if ok: false)
-        return result;
+        return result as ApiResponse<T>;
     } catch (error) {
-        // If there's an error, return it in the expected format
+        // Always return a proper ApiResponse, never undefined
         return {
             ok: false,
-            data: null,
+            data: undefined,
             status: 500,
+            code: 'request_failed',
             message: error instanceof Error ? error.message : 'Request failed',
-        } as any;
+        } as ApiResponse<T>;
     }
 }

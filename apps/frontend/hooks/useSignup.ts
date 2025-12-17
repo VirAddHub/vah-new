@@ -122,6 +122,11 @@ export function useSignup() {
 
             const paymentResp = await apiClient.post<any>('/api/payments/redirect-flows', paymentBody);
 
+            // Ensure paymentResp exists and has the expected shape
+            if (!paymentResp) {
+                throw new Error('Payment setup failed: No response from server');
+            }
+
             const redirectUrl =
                 (paymentResp as any)?.redirect_url ||
                 (paymentResp as any)?.data?.redirect_url;
@@ -132,7 +137,7 @@ export function useSignup() {
                 return; // Don't set complete yet, wait for redirect
             }
 
-            if (paymentResp.ok && (paymentResp as any).data?.skip_payment) {
+            if (paymentResp.ok && (paymentResp as any)?.data?.skip_payment) {
                 // Payment setup was skipped (GoCardless not configured). Only in this case can we "complete" signup.
                 setIsComplete(true);
                 console.log('✅ Signup completed (payment skipped)');
@@ -140,7 +145,11 @@ export function useSignup() {
             }
 
             // If payment setup fails, do NOT mark signup complete (service is not live without a mandate).
-            throw new Error((paymentResp as any)?.message || (paymentResp as any)?.error || 'Payment setup failed. Please try again.');
+            const errorMsg = (paymentResp as any)?.error?.message || 
+                           (paymentResp as any)?.message || 
+                           (paymentResp as any)?.error || 
+                           'Payment setup failed. Please try again.';
+            throw new Error(errorMsg);
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Signup failed';
