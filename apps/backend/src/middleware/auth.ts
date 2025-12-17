@@ -60,6 +60,12 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
             'SELECT id, email, is_admin, role FROM "user" WHERE id = $1',
             [userId]
         ).then((result) => {
+            // Guard: don't set cookies if headers already sent
+            if (res.headersSent) {
+                console.warn('[JWT] Cannot refresh token: headers already sent');
+                return;
+            }
+
             if (result.rows.length > 0) {
                 const user = result.rows[0];
                 const newToken = generateToken({
@@ -69,15 +75,17 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
                     role: user.role || (user.is_admin ? 'admin' : 'user')
                 });
 
-                // Set new cookie with refreshed token
-                res.cookie('vah_session', newToken, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'none',
-                    path: '/',
-                    maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // 60 minutes
-                });
-                console.log('[JWT] Token refreshed for user:', userId);
+                // Set new cookie with refreshed token (only if headers not sent)
+                if (!res.headersSent) {
+                    res.cookie('vah_session', newToken, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'none',
+                        path: '/',
+                        maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // 60 minutes
+                    });
+                    console.log('[JWT] Token refreshed for user:', userId);
+                }
             }
         }).catch((err) => {
             console.error('[JWT] Failed to refresh token:', err);

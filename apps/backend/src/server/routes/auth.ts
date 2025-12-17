@@ -353,7 +353,7 @@ router.post("/signup", async (req, res) => {
         //    using the template with variables {{first_name}} and {{cta_url}}.
         // 4) Click the link in the email and confirm it lands on the dashboard (with ?next=/dashboard if relevant).
 
-        // Send welcome + KYC email after successful signup
+        // Send welcome + KYC email after successful signup (non-fatal)
         try {
             const displayName = row.first_name?.trim() || row.last_name?.trim() || (row.email ? row.email.split("@")[0] : "") || "there";
             await sendWelcomeKycEmail({
@@ -361,9 +361,13 @@ router.post("/signup", async (req, res) => {
                 firstName: displayName,
             });
             console.log(`[auth/signup] ✅ Welcome + KYC email sent to ${row.email}`);
-        } catch (emailError) {
+        } catch (emailError: any) {
             // Don't fail signup if email fails - log and continue
-            console.error(`[auth/signup] ⚠️ Failed to send welcome + KYC email to ${row.email}:`, emailError);
+            console.error(`[auth/signup] ⚠️ Failed to send welcome + KYC email to ${row.email} (non-fatal):`, emailError?.message || emailError);
+            // Log the full error for debugging template alias issues
+            if (emailError?.response?.body) {
+                console.error(`[auth/signup] Postmark error details:`, emailError.response.body);
+            }
         }
 
         // Auto-login after signup (so the user can immediately set up GoCardless mandate)
@@ -383,20 +387,18 @@ router.post("/signup", async (req, res) => {
             maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000 // 60 minutes
         });
 
-        return res.status(201).json({
-            ok: true,
-            data: {
-                user: {
-                    user_id: row.id,
-                    email: row.email,
-                    first_name: row.first_name,
-                    last_name: row.last_name,
-                    is_admin: false,
-                    role: 'user',
-                },
-                token
+        // Return standardized response format
+        return ok(res, {
+            user: {
+                user_id: row.id,
+                email: row.email,
+                first_name: row.first_name,
+                last_name: row.last_name,
+                is_admin: false,
+                role: 'user',
             },
-        });
+            token
+        }, 201);
     } catch (err: any) {
         const m = String(err?.message || "");
         if (m.includes("duplicate key value") && m.toLowerCase().includes("email")) {
@@ -414,7 +416,7 @@ router.post("/signup", async (req, res) => {
             });
         }
         console.error("[auth/signup] error:", err);
-        return res.status(500).json({ ok: false, error: "server_error" });
+        return serverError(res, "Server error during signup");
     }
 });
 
