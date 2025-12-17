@@ -155,61 +155,72 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
 async function handleMandateActive(pool: any, links: any) {
     try {
-        const mandateId = links.mandate;
-        let customerId = links.customer ?? null;
-
-        // If webhook didn't include customer, try to hydrate via API (best-effort)
-        if (!customerId && mandateId) {
-            try {
-                const m = await gcGetMandate(String(mandateId));
-                customerId = m.customer_id ?? null;
-            } catch (e) {
-                // Test webhooks / placeholders often can't be fetched; ignore.
-                console.warn('[GoCardless] mandate.active hydrate customer failed:', (e as any)?.message ?? e);
-            }
+        const mandateId = links?.mandate;
+        if (!mandateId) {
+            console.warn('[GoCardless] mandates.active: no mandate_id in links');
+            return;
         }
 
-        const userId = await findUserIdForGcIdentifiers(pool, {
-            customerId,
-            mandateId,
-        });
-
-        if (userId) {
-            // Update user core payment fields
-            await pool.query(
-                `
-                UPDATE "user"
-                SET
-                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
-                    gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
-                    plan_status = 'active',
-                    plan_start_date = COALESCE(plan_start_date, $3),
-                    updated_at = $3
-                WHERE id = $4
-                `,
-                [mandateId, customerId ?? null, Date.now(), userId]
-            );
-
-            // Ensure subscription row exists and is active
-            await upsertSubscriptionForUser({
-                pool,
-                userId,
-                status: 'active',
-                mandateId,
-                customerId,
-            });
-
-            // Persist plan_id linkage (fixes "Active" + "No plan")
-            try {
-                await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
-            } catch (e) {
-                console.error('[GoCardless] Plan linkage missing in live environment for user', userId, e);
-            }
-
-            console.log(`[GoCardless] Mandate ${mandateId} activated for user ${userId}`);
+        // 1) Look up mandate -> customer via GoCardless API
+        let customerId: string | null = null;
+        try {
+            const mandateRes = await gcGetMandate(String(mandateId));
+            customerId = mandateRes?.customer_id ?? null;
+        } catch (e) {
+            console.warn('[GoCardless] mandates.active: failed to fetch mandate from API:', (e as any)?.message ?? e);
+            // Fallback: try webhook links (though they're usually empty for mandates.active)
+            customerId = links?.customer ?? null;
         }
+
+        if (!customerId) {
+            console.warn('[GoCardless] mandates.active: no customer_id found for mandate', { mandateId });
+            return;
+        }
+
+        // 2) Attach mandate to subscription (by customer_id)
+        const subUpdate = await pool.query(
+            `
+            UPDATE subscription
+            SET mandate_id = $1,
+                status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                updated_at = $2
+            WHERE customer_id = $3
+            RETURNING user_id
+            `,
+            [mandateId, Date.now(), customerId]
+        );
+
+        const userId = subUpdate.rows?.[0]?.user_id ?? null;
+
+        if (!userId) {
+            console.warn('[GoCardless] mandates.active: no subscription found for customer_id', { customerId, mandateId });
+            return;
+        }
+
+        // 3) Also store mandate/customer on user (best-effort, never downgrade active status)
+        await pool.query(
+            `
+            UPDATE "user"
+            SET gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
+                gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
+                plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                plan_start_date = COALESCE(plan_start_date, $3),
+                updated_at = $3
+            WHERE id = $4
+            `,
+            [customerId, mandateId, Date.now(), userId]
+        );
+
+        // 4) Persist plan_id linkage (fixes "Active" + "No plan")
+        try {
+            await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
+        } catch (e) {
+            console.error('[GoCardless] mandates.active: plan linkage failed for user', userId, e);
+        }
+
+        console.log(`[GoCardless] mandates.active: attached mandate ${mandateId} to subscription for user ${userId} (customer ${customerId})`);
     } catch (error) {
-        console.error('[GoCardless] Error handling mandate.active:', error);
+        console.error('[GoCardless] Error handling mandates.active:', error);
     }
 }
 
