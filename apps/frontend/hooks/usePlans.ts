@@ -58,8 +58,32 @@ export function usePlans(): UsePlansReturn {
             console.log('[usePlans] Response:', response);
             
             if (response.ok && response.data) {
-                console.log('[usePlans] Plans loaded:', response.data);
-                setPlans(response.data);
+                // Handle new standardized format: backend returns { ok: true, data: [...] }
+                // apiClient preserves it, so response.data is { ok: true, data: [...] }
+                // We need to extract the array from response.data.data
+                let plansArray: Plan[];
+                if (Array.isArray(response.data)) {
+                    // Legacy format: response.data is array directly
+                    plansArray = response.data;
+                } else if (response.data.ok && response.data.data) {
+                    // New format: { ok: true, data: [...] }
+                    if (Array.isArray(response.data.data)) {
+                        plansArray = response.data.data;
+                    } else if (response.data.data.items && Array.isArray(response.data.data.items)) {
+                        // Paginated format: { ok: true, data: { items: [...] } }
+                        plansArray = response.data.data.items;
+                    } else {
+                        console.error('[usePlans] Unexpected nested format:', response.data);
+                        setError('Invalid response format from plans API');
+                        return;
+                    }
+                } else {
+                    console.error('[usePlans] Unexpected response format:', response.data);
+                    setError('Invalid response format from plans API');
+                    return;
+                }
+                console.log('[usePlans] Plans loaded:', plansArray);
+                setPlans(plansArray);
             } else {
                 console.error('[usePlans] Failed to load plans:', response);
                 setError('Failed to load pricing plans');
