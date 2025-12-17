@@ -408,12 +408,7 @@ router.post("/signup", async (req, res) => {
                 error: m,
             });
 
-            return res.status(409).json({
-                ok: false,
-                code: 'EMAIL_EXISTS',
-                error: "email_exists",
-                message: 'An account already exists with this email address.',
-            });
+            return conflict(res, 'email_exists', 'An account already exists with this email address.');
         }
         console.error("[auth/signup] error:", err);
         return serverError(res, "Server error during signup");
