@@ -91,6 +91,56 @@ export async function getMailItems(
 // Re-export ApiError for convenience
 export { ApiError } from './apiFetch';
 
-// Re-export api function from http.ts for backward compatibility with services
-// Services expect: const { data } = await api(path, options)
-export { api } from './http';
+// Import the api object from http.ts
+import { api as apiObject, type ApiResponse } from './http';
+
+/**
+ * Function wrapper for api object to match service expectations
+ * Services call: const { data } = await api(path, { method: 'GET', ... })
+ * This wrapper extracts the method and calls the appropriate api method
+ */
+export async function api(path: string, init: RequestInit = {}): Promise<{ data: any }> {
+    const method = (init.method || 'GET').toUpperCase();
+    const body = init.body;
+
+    let result: ApiResponse<any>;
+
+    try {
+        switch (method) {
+            case 'GET':
+                result = await apiObject.get(path, init);
+                break;
+            case 'POST':
+                // Parse body if it's a string (JSON)
+                const postBody = body 
+                    ? (typeof body === 'string' ? JSON.parse(body) : body)
+                    : undefined;
+                result = await apiObject.post(path, postBody, init);
+                break;
+            case 'PUT':
+                const putBody = body 
+                    ? (typeof body === 'string' ? JSON.parse(body) : body)
+                    : undefined;
+                result = await apiObject.put(path, putBody, init);
+                break;
+            case 'DELETE':
+                result = await apiObject.del(path, init);
+                break;
+            default:
+                throw new Error(`Unsupported HTTP method: ${method}`);
+        }
+
+        // apiObject methods return { ok: true, data: T } or { ok: false, status, code, message }
+        // Services expect { data: ... }, so we return the result as-is
+        // (they can destructure { data } from it, and it will be undefined if ok: false)
+        return result;
+    } catch (error) {
+        // If there's an error, return it in the expected format
+        return {
+            ok: false,
+            data: null,
+            status: 500,
+            message: error instanceof Error ? error.message : 'Request failed',
+        } as any;
+    }
+}
