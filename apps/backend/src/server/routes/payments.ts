@@ -7,6 +7,7 @@ import { pricingService } from '../services/pricing';
 import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
+import { upsertGcBillingRequestFlow } from '../db/gcBillingRequestFlow';
 
 const router = Router();
 
@@ -241,24 +242,25 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         });
 
         // Insert/Upsert BRQ/BRF mapping (used to link webhooks to the correct user)
+        // This is critical: webhooks need this mapping to resolve customer_id → user_id.
         try {
-            await pool.query(
-                `
-                INSERT INTO gc_billing_request_flow (
-                  created_at_ms, user_id, plan_id, billing_request_id, billing_request_flow_id, status
-                )
-                VALUES ($1, $2, $3, $4, $5, 'created')
-                ON CONFLICT (billing_request_flow_id) DO UPDATE SET
-                  user_id = EXCLUDED.user_id,
-                  plan_id = EXCLUDED.plan_id,
-                  billing_request_id = EXCLUDED.billing_request_id,
-                  status = EXCLUDED.status
-                `,
-                [Date.now(), userId, chosenPlanId, link.billing_request_id, link.flow_id]
-            );
-        } catch (e) {
+            await upsertGcBillingRequestFlow({
+                userId: Number(userId),
+                planId: chosenPlanId,
+                billingRequestId: link.billing_request_id,
+                billingRequestFlowId: link.flow_id,
+                customerId: null, // Will be filled by payer_details_confirmed webhook
+            });
+            console.log(`[GC] redirect-flows: saved gc_billing_request_flow mapping`, {
+                user_id: userId,
+                plan_id: chosenPlanId,
+                billing_request_id: link.billing_request_id,
+                billing_request_flow_id: link.flow_id,
+            });
+        } catch (e: any) {
             // Don't break checkout if table doesn't exist yet (migration not run).
-            console.warn('[POST /api/payments/redirect-flows] gc_billing_request_flow insert failed:', (e as any)?.message ?? e);
+            // But log it so we know to run migration 120.
+            console.warn('[POST /api/payments/redirect-flows] gc_billing_request_flow insert failed (non-fatal):', (e as any)?.message ?? e);
         }
 
         // Persist durable mapping: flow_id -> user_id/plan_id
