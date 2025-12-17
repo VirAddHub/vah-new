@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check, Info, Loader2, CreditCard } from 'lucide-react';
-import { apiClient } from '@/lib/apiClient';
 import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
 
@@ -12,8 +11,6 @@ interface PlansPageProps {
 
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
-    const [processingPayment, setProcessingPayment] = useState(false);
-    const [paymentError, setPaymentError] = useState<string | null>(null);
 
     // Use the plans hook for consistent data fetching
     const { plans, loading, error, refetch } = usePlans();
@@ -36,33 +33,11 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         return null;
     };
 
-    // Handle plan selection and payment flow
-    const handleSelectPlan = async (planId?: string) => {
-        try {
-            setProcessingPayment(true);
-            setPaymentError(null);
-
-            const response = await apiClient.post('/api/payments/redirect-flows', {
-                plan_id: planId || 'default',
-                billing_period: isAnnual ? 'annual' : 'monthly'
-            });
-
-            if (response.ok && response.data?.redirect_url) {
-                // Redirect to payment
-                window.location.href = response.data.redirect_url;
-            } else {
-                // Fallback: navigate to signup flow instead of payment
-                console.warn('Payment redirect URL not available, falling back to signup flow');
-                onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
-            }
-        } catch (err) {
-            console.error('Payment flow error:', err);
-            // Fallback: navigate to signup flow instead of payment
-            console.warn('Payment flow failed, falling back to signup flow');
-            onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
-        } finally {
-            setProcessingPayment(false);
-        }
+    // Handle plan selection - navigate to signup (payment setup happens after account creation)
+    const handleSelectPlan = () => {
+        // Simply navigate to signup with billing preference
+        // The signup flow will handle payment setup after the user account is created
+        onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
     };
 
     const includedFeatures = [
@@ -231,33 +206,21 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     </div>
 
                                     {/* Error Display */}
-                                    {(error || paymentError) && (
+                                    {error && (
                                         <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm">
-                                            {error || paymentError}
+                                            {error}
                                         </div>
                                     )}
 
                                     {/* Action buttons */}
                                     <div className="mt-6 flex flex-col gap-3">
                                         <Button
-                                            onClick={() => {
-                                                const plan = plans.find(p => p.interval === (isAnnual ? 'year' : 'month'));
-                                                handleSelectPlan(plan?.id);
-                                            }}
-                                            disabled={processingPayment || loading}
+                                            onClick={handleSelectPlan}
+                                            disabled={loading}
                                             className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 w-full sm:w-auto sm:min-w-48 font-medium"
                                         >
-                                            {processingPayment ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                    Processing...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <CreditCard className="h-4 w-4 mr-2" />
-                                                    Choose Plan{getPlanPrice(isAnnual ? 'annual' : 'monthly') ? ` — £${getPlanPrice(isAnnual ? 'annual' : 'monthly')}${isAnnual ? '/yr' : '/mo'}` : ''}
-                                                </>
-                                            )}
+                                            <CreditCard className="h-4 w-4 mr-2" />
+                                            Choose Plan{getPlanPrice(isAnnual ? 'annual' : 'monthly') ? ` — £${getPlanPrice(isAnnual ? 'annual' : 'monthly')}${isAnnual ? '/yr' : '/mo'}` : ''}
                                         </Button>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
