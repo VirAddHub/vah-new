@@ -93,9 +93,9 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
             if (isProd) {
-                console.error('[GoCardless webhook] Invalid signature');
-                return res.status(401).json({ error: 'Invalid signature' });
-            }
+            console.error('[GoCardless webhook] Invalid signature');
+            return res.status(401).json({ error: 'Invalid signature' });
+        }
             console.warn('[GoCardless webhook] Signature verification skipped (non-production or secret not set)');
         }
 
@@ -390,48 +390,91 @@ async function handleSubscriptionUpdated(pool: any, links: any) {
 
 async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
     try {
+        // Extract all possible identifiers from webhook payload
         const flowId = links?.billing_request_flow ?? links?.billing_request_flow_id ?? null;
         const billingRequestId = links?.billing_request ?? links?.billing_request_id ?? null;
         const customerId = links?.customer ?? null;
-        if ((!flowId && !billingRequestId) || !customerId) return;
 
-        // Prefer mapping via gc_billing_request_flow (BRQ/BRF), fallback to gc_redirect_flow
-        let row: any = null;
-        try {
-            const r1 = flowId
-                ? await pool.query(
-                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_flow_id = $1 ORDER BY id DESC LIMIT 1`,
-                    [String(flowId)]
-                  )
-                : { rows: [] };
-            const r2 = !r1.rows?.length && billingRequestId
-                ? await pool.query(
-                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_id = $1 ORDER BY id DESC LIMIT 1`,
-                    [String(billingRequestId)]
-                  )
-                : { rows: [] };
-            row = r1.rows?.[0] ?? r2.rows?.[0] ?? null;
-        } catch {
-            row = null;
+        if (!customerId) {
+            console.log('[GoCardless] payer_details_confirmed: missing customer_id', { flowId, billingRequestId });
+            return;
         }
 
+        // Resolve user via gc_billing_request_flow: try billing_request_flow_id, then billing_request_id, then customer_id
+        let row: any = null;
+        try {
+            // 1) Try by billing_request_flow_id
+            if (flowId) {
+                const r1 = await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_flow_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(flowId)]
+                );
+                if (r1.rows?.length) row = r1.rows[0];
+            }
+
+            // 2) Try by billing_request_id
+            if (!row?.user_id && billingRequestId) {
+                const r2 = await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(billingRequestId)]
+                );
+                if (r2.rows?.length) row = r2.rows[0];
+            }
+
+            // 3) Try by customer_id (if already stored from a previous event)
+            if (!row?.user_id && customerId) {
+                const r3 = await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE customer_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(customerId)]
+                );
+                if (r3.rows?.length) row = r3.rows[0];
+            }
+        } catch (e) {
+            console.warn('[GoCardless] payer_details_confirmed: gc_billing_request_flow lookup failed', (e as any)?.message ?? e);
+        }
+
+        // Fallback: try gc_redirect_flow if we have flowId
         if (!row?.user_id && flowId) {
-            const r = await pool.query(
-                `SELECT user_id, plan_id FROM gc_redirect_flow WHERE flow_id = $1 ORDER BY id DESC LIMIT 1`,
-                [String(flowId)]
-            );
-            row = r.rows?.[0] ?? null;
+            try {
+                const r = await pool.query(
+                    `SELECT user_id, plan_id FROM gc_redirect_flow WHERE flow_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(flowId)]
+                );
+                if (r.rows?.length) row = r.rows[0];
+            } catch {
+                // ignore
+            }
+        }
+
+        // Final fallback: resolve user directly by customer_id (if already stored)
+        if (!row?.user_id && customerId) {
+            try {
+                const u = await pool.query(
+                    `SELECT id, plan_id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+                    [String(customerId)]
+                );
+                if (u.rows?.length) {
+                    row = { user_id: u.rows[0].id, plan_id: u.rows[0].plan_id };
+                }
+            } catch {
+                // ignore
+            }
         }
 
         if (!row?.user_id) {
-            console.log('[GoCardless] payer_details_confirmed: could not resolve user', { flowId, billingRequestId, customerId });
+            console.log('[GoCardless] payer_details_confirmed: could not resolve user', {
+                flowId,
+                billingRequestId,
+                customerId,
+                tried: ['gc_billing_request_flow (flow_id)', 'gc_billing_request_flow (request_id)', 'gc_billing_request_flow (customer_id)', 'gc_redirect_flow', 'user.gocardless_customer_id'],
+            });
             return;
         }
 
         const userId = Number(row.user_id);
         const planId = row.plan_id ? Number(row.plan_id) : null;
 
-        // Store customer id on user and ensure plan_id exists (so subscription upsert can resolve plan_name/cadence)
+        // Store customer_id on user (never downgrade plan_status if already active)
         await pool.query(
             `
             UPDATE "user"
@@ -445,7 +488,7 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
             [String(customerId), planId, Date.now(), userId]
         );
 
-        // Ensure subscription row exists and attach customer_id (still pending until mandate confirmed)
+        // Ensure subscription row exists and attach customer_id (creates if missing, never downgrades active)
         await upsertSubscriptionForUser({
             pool,
             userId,
@@ -465,8 +508,10 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
                 [String(flowId ?? ''), String(customerId), String(billingRequestId ?? '')]
             );
         } catch {
-            // ignore
+            // ignore (table may not exist yet)
         }
+
+        console.log(`[GoCardless] payer_details_confirmed: linked customer ${customerId} to user ${userId}, subscription updated`);
     } catch (e) {
         console.error('[GoCardless] Error handling billing_requests.payer_details_confirmed:', e);
     }
