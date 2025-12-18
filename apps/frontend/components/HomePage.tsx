@@ -97,7 +97,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             For one simple monthly price, you get:
                         </p>
                         <ul className="mt-2 space-y-2 pl-5 list-disc text-sm text-muted-foreground leading-relaxed">
-                            <li>Full compliance — Registered Office & Director’s Service Address (Companies House & HMRC)</li>
+                            <li>Registered Office & Director’s Service Address (Companies House & HMRC)</li>
                             <li>Total privacy — keep your home address off the public record</li>
                             <li>Reliable service — unlimited same-day mail scanning and free UK forwarding for HMRC and Companies House letters</li>
                         </ul>
@@ -135,7 +135,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 For one simple monthly price, you get:
                             </p>
                             <ul className="mt-2 space-y-2 text-base text-muted-foreground max-w-2xl">
-                                <li>• Full compliance — Registered Office & Director’s Service Address (Companies House & HMRC)</li>
+                                <li>• Registered Office & Director’s Service Address (Companies House & HMRC)</li>
                                 <li>• Total privacy — keep your home address off the public record</li>
                                 <li>• Reliable service — unlimited same-day mail scanning and free UK forwarding for HMRC and Companies House letters</li>
                             </ul>
