@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { selectMany, getPool } from '../../db-helpers';
+import { selectMany } from '../../db-helpers';
+import { getPool } from '../../db';
 import { ok } from '../../lib/apiResponse';
 import { createHash } from 'crypto';
 
