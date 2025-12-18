@@ -15,8 +15,11 @@ import { SignupPage } from './SignupPage';
 import { BillingDashboard } from './BillingDashboard';
 import { KYCDashboard } from './KYCDashboard';
 import { ProfilePage } from './ProfilePage';
-import AccountPage from '../app/(dashboard)/account/page';
+import dynamic from 'next/dynamic';
 import { FontLoader } from './FontLoader';
+
+// Lazy load AccountPage to avoid circular dependencies
+const AccountPage = dynamic(() => import('../app/(dashboard)/account/page'), { ssr: false });
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
