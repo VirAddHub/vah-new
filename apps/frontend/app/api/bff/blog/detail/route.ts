@@ -1,24 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const DEFAULT_BACKEND = 'https://vah-api-staging.onrender.com/api';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const slug = searchParams.get("slug");
+  try {
+    const backend = getBackendOrigin();
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get("slug");
 
-  if (!slug) {
-    return NextResponse.json(
-      { ok: false, error: "missing_slug", message: "Slug is required" },
-      { status: 400 },
-    );
-  }
+    if (!slug) {
+      return NextResponse.json(
+        { ok: false, error: "missing_slug", message: "Slug is required" },
+        { status: 400 },
+      );
+    }
 
-  const backendBase =
-    process.env.BACKEND_API_ORIGIN ||
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')?.concat('/api') ||
-    DEFAULT_BACKEND;
-
-  const backendUrl = `${backendBase}/blog/posts/${encodeURIComponent(slug)}`;
+    const backendUrl = `${backend}/api/blog/posts/${encodeURIComponent(slug)}`;
 
   let backendRes: Response;
   try {
@@ -85,5 +82,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json(json, { status: backendRes.status });
+    return NextResponse.json(json, { status: backendRes.status });
+  } catch (error: any) {
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF blog/detail] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
+    throw error; // Re-throw network/parse errors to existing handlers
+  }
 }

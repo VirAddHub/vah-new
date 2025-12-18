@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(req: NextRequest) {
-    const backend = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
-    if (!backend) {
-        return NextResponse.json({ ok: false, error: "NEXT_PUBLIC_BACKEND_API_ORIGIN missing" }, { status: 500 });
-    }
-
-    const url = `${backend.replace(/\/$/, "")}/api/admin/overview`;
+    try {
+        const backend = getBackendOrigin();
+        const url = `${backend}/api/admin/overview`;
 
     try {
         const r = await fetch(url, {
@@ -37,7 +36,14 @@ export async function GET(req: NextRequest) {
                 "Cache-Control": "no-cache, no-store, must-revalidate"
             }
         });
-    } catch (error) {
+    } catch (error: any) {
+        if (isBackendOriginConfigError(error)) {
+            console.error('[BFF Admin Overview] Server misconfigured:', error.message);
+            return NextResponse.json(
+                { ok: false, error: 'Server misconfigured', details: error.message },
+                { status: 500 }
+            );
+        }
         console.error('[BFF Admin Overview] Error:', error);
         return NextResponse.json({
             ok: false,

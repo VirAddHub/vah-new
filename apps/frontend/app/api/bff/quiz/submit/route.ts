@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function POST(req: NextRequest) {
-    if (!API) {
-        return NextResponse.json(
-            { ok: false, error: "Missing BACKEND_API_ORIGIN" },
-            { status: 500 }
-        );
-    }
-
     try {
+        const backend = getBackendOrigin();
         // Pass through raw body to backend
         const body = await req.text();
         const contentType = req.headers.get('content-type') || 'application/json';
 
-        const backendUrl = `${API}/api/quiz/submit`;
+        const backendUrl = `${backend}/api/quiz/submit`;
 
         const res = await fetch(backendUrl, {
             method: "POST",
@@ -40,6 +34,13 @@ export async function POST(req: NextRequest) {
             },
         });
     } catch (error: any) {
+        if (isBackendOriginConfigError(error)) {
+            console.error('[BFF quiz/submit] Server misconfigured:', error.message);
+            return NextResponse.json(
+                { ok: false, error: 'Server misconfigured', details: error.message },
+                { status: 500 }
+            );
+        }
         console.error('[quiz-submit] Proxy error:', error);
         return NextResponse.json(
             { ok: false, error: "proxy_error", message: error.message },

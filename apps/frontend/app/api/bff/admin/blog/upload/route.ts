@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function POST(req: NextRequest) {
-  const backendBase =
-    process.env.BACKEND_API_ORIGIN ||
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")?.concat("/api");
+  try {
+    const backend = getBackendOrigin();
+    const formData = await req.formData();
 
-  if (!backendBase) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "config_error",
-        message: "BACKEND_API_ORIGIN is not configured",
-      },
-      { status: 500 }
-    );
-  }
-
-  const formData = await req.formData();
-
-  const res = await fetch(`${backendBase}/admin/blog/upload`, {
+    const res = await fetch(`${backend}/api/admin/blog/upload`, {
     method: "POST",
     headers: {
       cookie: req.headers.get("cookie") || "",
@@ -40,7 +29,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (error: any) {
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF admin/blog/upload] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
+    console.error('[BFF admin/blog/upload] error:', error);
+    return NextResponse.json(
+      { ok: false, error: 'Failed to upload blog post' },
+      { status: 500 }
+    );
+  }
 }
 

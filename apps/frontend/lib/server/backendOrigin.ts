@@ -30,12 +30,13 @@ function normalise(origin: string): string {
  * Validates that the origin is in the Render allowlist.
  * 
  * @param origin The origin URL to validate
+ * @param envVarName The name of the environment variable being validated (for error messages)
  * @throws Error if origin is not in allowlist
  */
-function validateRenderOrigin(origin: string): void {
+function validateRenderOrigin(origin: string, envVarName: string): void {
   if (!ALLOWED.has(origin)) {
     throw new Error(
-      `Invalid BACKEND_API_ORIGIN: must be Render origin. ` +
+      `Invalid ${envVarName}: must be Render origin. ` +
       `Got: ${origin}. ` +
       `Allowed: ${Array.from(ALLOWED).join(', ')}`
     );
@@ -46,27 +47,28 @@ function validateRenderOrigin(origin: string): void {
  * Gets the backend API origin URL for BFF routes.
  * 
  * Production (NODE_ENV === 'production'):
- * - Requires BACKEND_API_ORIGIN (ignores NEXT_PUBLIC_API_URL)
+ * - Requires NEXT_PUBLIC_BACKEND_API_ORIGIN
  * - Must be Render origin (allowlisted)
  * - Throws error if missing or invalid
+ * - No fallbacks
  * 
  * Non-production:
- * - Prefers BACKEND_API_ORIGIN (must be allowlisted)
- * - Falls back to NEXT_PUBLIC_API_URL (warns, must be allowlisted)
+ * - Prefers NEXT_PUBLIC_BACKEND_API_ORIGIN (must be allowlisted)
+ * - Falls back to NEXT_PUBLIC_API_URL (legacy, warns, must be allowlisted)
  * - Falls back to staging Render origin (warns)
  * 
  * @returns The backend origin URL (without trailing slash)
  * @throws Error if:
- *   - Production: BACKEND_API_ORIGIN is not set
+ *   - Production: NEXT_PUBLIC_BACKEND_API_ORIGIN is not set
  *   - Origin is not in Render allowlist
  */
 export function getBackendOrigin(): string {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Production: Require BACKEND_API_ORIGIN (ignore NEXT_PUBLIC_API_URL)
+  // Production: Require NEXT_PUBLIC_BACKEND_API_ORIGIN (no fallbacks)
   if (isProduction) {
-    if (!process.env.BACKEND_API_ORIGIN) {
-      const error = new Error('BACKEND_API_ORIGIN is not set');
+    if (!process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
+      const error = new Error('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set');
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
         didLog = true;
@@ -74,23 +76,23 @@ export function getBackendOrigin(): string {
       throw error;
     }
 
-    const origin = normalise(process.env.BACKEND_API_ORIGIN);
-    validateRenderOrigin(origin);
+    const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
 
     if (!didLog) {
-      console.log(`[backendOrigin] Using BACKEND_API_ORIGIN: ${origin}`);
+      console.log(`[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: ${origin}`);
       didLog = true;
     }
     return origin;
   }
 
-  // Non-production: Prefer BACKEND_API_ORIGIN
-  if (process.env.BACKEND_API_ORIGIN) {
-    const origin = normalise(process.env.BACKEND_API_ORIGIN);
-    validateRenderOrigin(origin);
+  // Non-production: Prefer NEXT_PUBLIC_BACKEND_API_ORIGIN
+  if (process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
+    const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
 
     if (!didLog) {
-      console.log(`[backendOrigin] Using BACKEND_API_ORIGIN: ${origin}`);
+      console.log(`[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: ${origin}`);
       didLog = true;
     }
     return origin;
@@ -99,12 +101,12 @@ export function getBackendOrigin(): string {
   // Non-production: Fallback to NEXT_PUBLIC_API_URL (legacy, warn)
   if (process.env.NEXT_PUBLIC_API_URL) {
     const origin = normalise(process.env.NEXT_PUBLIC_API_URL);
-    validateRenderOrigin(origin);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_API_URL');
 
     if (!didLog) {
       console.warn(
         `[backendOrigin] Using NEXT_PUBLIC_API_URL (legacy). ` +
-        `Consider using BACKEND_API_ORIGIN instead: ${origin}`
+        `Consider using NEXT_PUBLIC_BACKEND_API_ORIGIN instead: ${origin}`
       );
       didLog = true;
     }
@@ -115,7 +117,7 @@ export function getBackendOrigin(): string {
   const fallback = 'https://vah-api-staging.onrender.com';
   if (!didLog) {
     console.warn(
-      `[backendOrigin] No BACKEND_API_ORIGIN set. Using staging fallback: ${fallback}`
+      `[backendOrigin] No NEXT_PUBLIC_BACKEND_API_ORIGIN set. Using staging fallback: ${fallback}`
     );
     didLog = true;
   }

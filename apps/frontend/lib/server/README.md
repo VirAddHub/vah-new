@@ -16,16 +16,16 @@ Centralized backend API origin resolution for BFF routes.
 
 **Environment Variables:**
 
-- **`BACKEND_API_ORIGIN`** (primary, required in production)
-  - Server-side environment variable
+- **`NEXT_PUBLIC_BACKEND_API_ORIGIN`** (primary, required in production)
+  - Public environment variable (accessible in both client and server)
   - Must be a Render origin (allowlisted)
-  - Example: `BACKEND_API_ORIGIN=https://vah-api.onrender.com` (production)
-  - Example: `BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com` (staging)
+  - Example: `NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api.onrender.com` (production)
+  - Example: `NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com` (staging)
   - **Set these in the Render service that runs the Next.js frontend (Environment tab).**
 
 - **`NEXT_PUBLIC_API_URL`** (legacy, backwards compatibility)
   - Deprecated for BFF routes
-  - Only used as fallback in non-production if `BACKEND_API_ORIGIN` is not set
+  - Only used as fallback in non-production if `NEXT_PUBLIC_BACKEND_API_ORIGIN` is not set
   - Must be a Render origin (allowlisted)
   - Will log a warning if used
   - **Ignored in production**
@@ -60,36 +60,36 @@ export async function GET(request: NextRequest) {
 **Behavior:**
 
 - **Production (`NODE_ENV=production`):**
-  - ✅ Requires `BACKEND_API_ORIGIN` to be set
+  - ✅ Requires `NEXT_PUBLIC_BACKEND_API_ORIGIN` to be set
   - ❌ Ignores `NEXT_PUBLIC_API_URL` entirely
   - ✅ Must be Render origin (allowlisted)
   - ❌ Throws error if missing or invalid
   - ❌ No fallbacks (fails loudly)
   - **Throws exactly:**
-    - `Error("BACKEND_API_ORIGIN is not set")` when missing
-    - `Error("Invalid BACKEND_API_ORIGIN: must be Render origin")` when not allowlisted
+    - `Error("NEXT_PUBLIC_BACKEND_API_ORIGIN is not set")` when missing
+    - `Error("Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: must be Render origin. Got: ...")` when not allowlisted
 
 - **Non-production:**
   - Non-production means `NODE_ENV !== 'production'`
-  - ✅ Prefers `BACKEND_API_ORIGIN` (must be allowlisted)
-  - ✅ Falls back to `NEXT_PUBLIC_API_URL` if `BACKEND_API_ORIGIN` missing (warns, must be allowlisted)
+  - ✅ Prefers `NEXT_PUBLIC_BACKEND_API_ORIGIN` (must be allowlisted)
+  - ✅ Falls back to `NEXT_PUBLIC_API_URL` if `NEXT_PUBLIC_BACKEND_API_ORIGIN` missing (warns, must be allowlisted)
   - ✅ Falls back to staging Render origin if both missing (warns)
   - ✅ All origins must be Render allowlisted (no localhost)
   - **Can throw exactly:**
-    - `Error("Invalid BACKEND_API_ORIGIN: must be Render origin")`
-    - `Error("Invalid NEXT_PUBLIC_API_URL: must be Render origin")`
+    - `Error("Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: must be Render origin. Got: ...")`
+    - `Error("Invalid NEXT_PUBLIC_API_URL: must be Render origin. Got: ...")`
 
 **Render Environment Sanity Check:**
 
 In the frontend Render service (Environment tab), ensure:
-- `BACKEND_API_ORIGIN=https://vah-api.onrender.com` (production)
+- `NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api.onrender.com` (production)
 - `NODE_ENV=production` (production)
 
 **Important Notes:**
 
-- ✅ Use `BACKEND_API_ORIGIN` for all BFF routes
-- ❌ Do NOT rely on `NEXT_PUBLIC_API_URL` for server-side code
+- ✅ Use `NEXT_PUBLIC_BACKEND_API_ORIGIN` for all BFF routes
+- ❌ Do NOT rely on `NEXT_PUBLIC_API_URL` for server-side code (legacy fallback only)
 - ✅ Always handle configuration errors gracefully
 - ✅ Never log cookies or tokens in error messages
 - ✅ Only Render origins are allowed (no localhost)
-- ✅ Production requires `BACKEND_API_ORIGIN` (no fallbacks)
+- ✅ Production requires `NEXT_PUBLIC_BACKEND_API_ORIGIN` (no fallbacks)

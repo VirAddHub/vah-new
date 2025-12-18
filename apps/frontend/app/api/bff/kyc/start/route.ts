@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const DEFAULT_BACKEND = 'https://vah-api-staging.onrender.com/api';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function POST(req: NextRequest) {
-  const backendBase =
-    process.env.BACKEND_API_ORIGIN ||
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')?.concat('/api') ||
-    DEFAULT_BACKEND;
-
-  const backendUrl = `${backendBase}/kyc/start`;
+  try {
+    const backend = getBackendOrigin();
+    const backendUrl = `${backend}/api/kyc/start`;
 
   try {
     // Forward cookies for authentication
@@ -59,7 +56,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(json, { status: backendRes.status });
-  } catch (error) {
+  } catch (error: any) {
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF kyc/start] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
     console.error("[bff/kyc/start] Network error:", error);
     return NextResponse.json(
       {

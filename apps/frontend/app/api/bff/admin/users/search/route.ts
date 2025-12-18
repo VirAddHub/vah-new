@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(req: NextRequest) {
-  const rawOrigin = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
-  if (!rawOrigin) {
-    return NextResponse.json(
-      { ok: false, error: "backend_origin_missing" },
-      { status: 500 }
-    );
-  }
-
-  const trimmed = rawOrigin.replace(/\/+$/, "");
-  const backendOrigin = trimmed.endsWith("/api")
-    ? trimmed.slice(0, -4)
-    : trimmed;
-
   try {
+    const backend = getBackendOrigin();
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get("q") || "").trim();
 
@@ -22,8 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, data: [] }, { status: 200 });
     }
 
-    const url =
-      `${backendOrigin}/api/admin/users/search?q=` + encodeURIComponent(q);
+    const url = `${backend}/api/admin/users/search?q=` + encodeURIComponent(q);
 
     const upstream = await fetch(url, {
       method: "GET",
@@ -47,7 +36,14 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(payload, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF admin user search] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
     console.error("[BFF admin user search] error", error);
     return NextResponse.json(
       { ok: false, error: "server_error" },

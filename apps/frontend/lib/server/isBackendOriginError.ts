@@ -15,8 +15,8 @@ export function isBackendOriginConfigError(err: unknown): boolean {
   return (
     err instanceof Error &&
     (
-      err.message.includes('BACKEND_API_ORIGIN is not set') ||
-      err.message.includes('Invalid BACKEND_API_ORIGIN') ||
+      err.message.includes('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set') ||
+      err.message.includes('Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN') ||
       err.message.includes('Invalid NEXT_PUBLIC_API_URL')
     )
   );

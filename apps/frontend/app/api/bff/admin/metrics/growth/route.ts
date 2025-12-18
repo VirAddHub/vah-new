@@ -1,37 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(req: NextRequest) {
-  console.log('[BFF Growth Metrics] Handler started...');
-  
   try {
-    // For Render deployment, the backend URL should be something like:
-    // https://your-backend-service.onrender.com
-    const ORIGIN = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
-    console.log('[BFF Growth Metrics] Backend origin:', ORIGIN);
-    
-    if (!ORIGIN) {
-      console.error('[BFF Growth Metrics] NEXT_PUBLIC_BACKEND_API_ORIGIN is not set');
-      // Return mock data for testing when backend is not configured
-      return NextResponse.json({
-        ok: true,
-        data: {
-          window_days: 60,
-          kpis: {
-            active_paying: 0,
-            scan_sla_24h_pct: 0,
-            stale_mail_over_14d: 0,
-          },
-          series: {
-            daily_signups: [],
-            daily_mail_received: [],
-            daily_forwarding_requests: [],
-          }
-        }
-      });
-    }
-
+    const backend = getBackendOrigin();
     const { search } = new URL(req.url);
-    const backendUrl = `${ORIGIN}/api/admin/metrics/growth${search}`;
+    const backendUrl = `${backend}/api/admin/metrics/growth${search}`;
     console.log('[BFF Growth Metrics] Fetching from:', backendUrl);
     
     const res = await fetch(backendUrl, {
@@ -61,7 +36,14 @@ export async function GET(req: NextRequest) {
     console.log('[BFF Growth Metrics] Backend response data:', json);
     
     return NextResponse.json(json, { status: res.status });
-  } catch (error) {
+  } catch (error: any) {
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF Growth Metrics] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
     console.error('[BFF Growth Metrics] Error:', error);
     return NextResponse.json({ 
       ok: false, 

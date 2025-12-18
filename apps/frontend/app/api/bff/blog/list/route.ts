@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-
-const backendBase =
-  process.env.BACKEND_API_ORIGIN?.replace(/\/$/, "") ||
-  "https://vah-api-staging.onrender.com/api";
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET() {
   try {
-    const upstreamUrl = `${backendBase}/blog/posts`;
+    const backend = getBackendOrigin();
+    const upstreamUrl = `${backend}/api/blog/posts`;
 
     const upstream = await fetch(upstreamUrl, {
       method: "GET",
@@ -57,7 +56,14 @@ export async function GET() {
 
     // Pass through exactly what backend sends: { ok, data: [...] }
     return NextResponse.json(json, { status: upstream.status });
-  } catch (err) {
+  } catch (err: any) {
+    if (isBackendOriginConfigError(err)) {
+      console.error('[BFF blog/list] Server misconfigured:', err.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', details: err.message },
+        { status: 500 }
+      );
+    }
     console.error("[bff/blog/list] Error fetching posts:", err);
     return NextResponse.json(
       {
