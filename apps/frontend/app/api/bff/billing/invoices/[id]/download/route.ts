@@ -4,7 +4,7 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(request: NextRequest, ctx: { params: { id: string } }) {
   try {
-    const cookieHeader = request.headers.get("cookie");
+    const cookie = request.headers.get("cookie") || "";
     const id = ctx.params.id;
     const backend = getBackendOrigin();
 
@@ -13,22 +13,30 @@ export async function GET(request: NextRequest, ctx: { params: { id: string } })
       {
         method: "GET",
         headers: {
-          Cookie: cookieHeader || "",
+          Cookie: cookie,
         },
       }
     );
 
-    const headers = new Headers(resp.headers);
-    // Ensure the browser treats it as a download if backend didn't set it
-    if (!headers.get("content-type")) headers.set("content-type", "application/pdf");
-
-    return new NextResponse(resp.body, { status: resp.status, headers });
+    if (resp.ok) {
+      const headers = new Headers(resp.headers);
+      // Ensure the browser treats it as a download if backend didn't set it
+      if (!headers.get("content-type")) headers.set("content-type", "application/pdf");
+      return new NextResponse(resp.body, { status: resp.status, headers });
+    } else {
+      // For non-2xx responses, try to parse JSON error
+      const errorData = await resp.json().catch(() => ({ error: 'Failed to download invoice' }));
+      return NextResponse.json(
+        { ok: false, error: errorData.error || 'Failed to download invoice', details: errorData },
+        { status: resp.status }
+      );
+    }
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
       console.error("[BFF billing invoice download] Server misconfigured:", error.message);
       return NextResponse.json(
-        { ok: false, error: 'Server misconfigured: backend origin not configured' },
+        { ok: false, error: 'Server misconfigured: BACKEND_API_ORIGIN is not set or invalid' },
         { status: 500 }
       );
     }

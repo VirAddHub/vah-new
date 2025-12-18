@@ -1,16 +1,6 @@
 /**
  * Backend Origin Resolution for BFF Routes
  * 
- * This module provides a centralized way to resolve the backend API origin
- * for Next.js API route handlers (BFF - Backend For Frontend).
- * 
- * IMPORTANT: Use SERVER environment variables (BACKEND_API_ORIGIN) in route handlers.
- * Do NOT rely on NEXT_PUBLIC_* variables inside server-side code.
- * 
- * Environment Variables:
- * - BACKEND_API_ORIGIN (primary, server-side only, required in production)
- * - NEXT_PUBLIC_API_URL (legacy/backwards compatibility, deprecated for BFF routes)
- * 
  * Render-Only: Only Render origins are allowed (no localhost).
  * Allowed origins:
  * - https://vah-api.onrender.com (production)
@@ -18,13 +8,23 @@
  */
 
 // Render-only allowlist
-const ALLOWED_ORIGINS = [
+const ALLOWED = new Set([
   'https://vah-api.onrender.com',
   'https://vah-api-staging.onrender.com',
-];
+]);
 
 // Log once per server process
 let didLog = false;
+
+/**
+ * Normalises an origin URL by trimming whitespace and removing trailing slashes.
+ * 
+ * @param origin The origin URL to normalise
+ * @returns The normalised origin URL
+ */
+function normalise(origin: string): string {
+  return origin.trim().replace(/\/+$/, '');
+}
 
 /**
  * Validates that the origin is in the Render allowlist.
@@ -33,11 +33,11 @@ let didLog = false;
  * @throws Error if origin is not in allowlist
  */
 function validateRenderOrigin(origin: string): void {
-  if (!ALLOWED_ORIGINS.includes(origin)) {
+  if (!ALLOWED.has(origin)) {
     throw new Error(
       `Invalid BACKEND_API_ORIGIN: must be Render origin. ` +
       `Got: ${origin}. ` +
-      `Allowed: ${ALLOWED_ORIGINS.join(', ')}`
+      `Allowed: ${Array.from(ALLOWED).join(', ')}`
     );
   }
 }
@@ -74,7 +74,7 @@ export function getBackendOrigin(): string {
       throw error;
     }
 
-    const origin = process.env.BACKEND_API_ORIGIN.trim().replace(/\/+$/, '');
+    const origin = normalise(process.env.BACKEND_API_ORIGIN);
     validateRenderOrigin(origin);
 
     if (!didLog) {
@@ -86,7 +86,7 @@ export function getBackendOrigin(): string {
 
   // Non-production: Prefer BACKEND_API_ORIGIN
   if (process.env.BACKEND_API_ORIGIN) {
-    const origin = process.env.BACKEND_API_ORIGIN.trim().replace(/\/+$/, '');
+    const origin = normalise(process.env.BACKEND_API_ORIGIN);
     validateRenderOrigin(origin);
 
     if (!didLog) {
@@ -98,7 +98,7 @@ export function getBackendOrigin(): string {
 
   // Non-production: Fallback to NEXT_PUBLIC_API_URL (legacy, warn)
   if (process.env.NEXT_PUBLIC_API_URL) {
-    const origin = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, '');
+    const origin = normalise(process.env.NEXT_PUBLIC_API_URL);
     validateRenderOrigin(origin);
 
     if (!didLog) {
@@ -124,7 +124,6 @@ export function getBackendOrigin(): string {
 
 /**
  * Asserts that backend origin is configured.
- * Throws with a detailed error message listing which env vars were checked.
  * 
  * @returns The backend origin URL (same as getBackendOrigin)
  * @throws Error if backend origin cannot be resolved or is invalid

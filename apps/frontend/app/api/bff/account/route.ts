@@ -8,22 +8,22 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
  */
 export async function GET(request: NextRequest) {
   try {
-    const cookieHeader = request.headers.get('cookie');
+    const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
 
     // Fetch data from multiple endpoints in parallel
     const [overviewRes, invoicesRes, userRes, profileRes] = await Promise.all([
       fetch(`${backend}/api/billing/overview`, {
-        headers: { 'Cookie': cookieHeader || '', 'Content-Type': 'application/json' },
+        headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
       }).catch(() => null),
       fetch(`${backend}/api/billing/invoices?page=1&page_size=12`, {
-        headers: { 'Cookie': cookieHeader || '', 'Content-Type': 'application/json' },
+        headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
       }).catch(() => null),
       fetch(`${backend}/api/auth/whoami`, {
-        headers: { 'Cookie': cookieHeader || '', 'Content-Type': 'application/json' },
+        headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
       }).catch(() => null),
       fetch(`${backend}/api/profile`, {
-        headers: { 'Cookie': cookieHeader || '', 'Content-Type': 'application/json' },
+        headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
       }).catch(() => null),
     ]);
 
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     if (isBackendOriginConfigError(error)) {
       console.error('[BFF account] Server misconfigured:', error.message);
       return NextResponse.json(
-        { ok: false, error: 'Server misconfigured: backend origin not configured' },
+        { ok: false, error: 'Server misconfigured: BACKEND_API_ORIGIN is not set or invalid' },
         { status: 500 }
       );
     }

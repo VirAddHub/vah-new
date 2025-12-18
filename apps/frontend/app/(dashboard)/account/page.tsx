@@ -30,14 +30,20 @@ export default function AccountPage() {
     const o = overview?.data;
     const invoicesRaw = invoicesData?.data?.items || [];
 
+    // Check for errors and loading states
+    const accountError = accountData && accountData.ok === false;
+    const profileError = profileData && profileData.ok === false;
+    const hasError = accountError || profileError;
+    const isLoading = !accountData && !profileData && !userData && !overview;
+
     // Build account data from existing APIs
-    const data = useMemo<AccountPageData>(() => {
+    const data = useMemo<AccountPageData | null>(() => {
         // If we have account data from dedicated endpoint, use it
         if (accountData?.ok) {
             return accountData.data;
         }
 
-        // Otherwise, build from existing APIs
+        // Build from individual API responses (fallback)
         const subscription: SubscriptionSummary = {
             plan_name: o?.plan || 'Digital Mailbox Plan',
             price_label: o?.current_price_pence ? `£${(o.current_price_pence / 100).toFixed(2)}` : '£9.99',
@@ -108,12 +114,15 @@ export default function AccountPage() {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to save contact information');
+            const result = await response.json();
+
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Failed to save contact information');
             }
 
-            // Refresh profile data
+            // Refresh all relevant data after successful PATCH
             await mutateProfile();
+            await mutateAccount();
             await mutateUser();
             await mutateOverview();
         } catch (error) {
@@ -132,12 +141,15 @@ export default function AccountPage() {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to save forwarding address');
+            const result = await response.json();
+
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Failed to save forwarding address');
             }
 
-            // Refresh profile data
+            // Refresh all relevant data after successful PATCH
             await mutateProfile();
+            await mutateAccount();
             await mutateUser();
         } catch (error) {
             throw error;
@@ -180,7 +192,62 @@ export default function AccountPage() {
         });
     };
 
-    // Use invoices from useMemo (already transformed)
+    // Show error state if critical data failed to load
+    if (hasError && !isLoading) {
+        return (
+            <div className="min-h-screen flex flex-col bg-background">
+                <Navigation onNavigate={() => { }} />
+                <main className="flex-1">
+                    <div className="max-w-6xl mx-auto p-6 space-y-8">
+                        <div className="flex items-center gap-3">
+                            <User className="h-8 w-8 text-primary" />
+                            <h1 className="text-3xl font-bold text-foreground">Account</h1>
+                        </div>
+                        <div className="bg-destructive/10 border border-destructive rounded-lg p-6">
+                            <h2 className="text-lg font-semibold text-destructive mb-2">Unable to load account details</h2>
+                            <p className="text-muted-foreground mb-4">
+                                We couldn't load your account details. Please refresh or contact support.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    mutateAccount();
+                                    mutateProfile();
+                                    mutateOverview();
+                                    mutateUser();
+                                }}
+                                className="text-primary hover:underline"
+                            >
+                                Refresh page
+                            </button>
+                        </div>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    // Show loading state
+    if (isLoading || !data) {
+        return (
+            <div className="min-h-screen flex flex-col bg-background">
+                <Navigation onNavigate={() => { }} />
+                <main className="flex-1">
+                    <div className="max-w-6xl mx-auto p-6 space-y-8">
+                        <div className="flex items-center gap-3">
+                            <User className="h-8 w-8 text-primary" />
+                            <h1 className="text-3xl font-bold text-foreground">Account</h1>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="h-32 bg-muted animate-pulse rounded-lg" />
+                            <div className="h-32 bg-muted animate-pulse rounded-lg" />
+                        </div>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col bg-background">

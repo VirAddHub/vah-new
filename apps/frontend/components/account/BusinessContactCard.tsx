@@ -114,11 +114,11 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
               id="email"
               type="email"
               value={contact.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="john.smith@example.com"
+              disabled
+              placeholder="your.email@example.com"
             />
             <p className="text-xs text-muted-foreground">
-              This is your account email address.
+              This is your account email address and cannot be changed here.
             </p>
           </div>
         </div>

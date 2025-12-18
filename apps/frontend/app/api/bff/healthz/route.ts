@@ -4,13 +4,13 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieHeader = request.headers.get('cookie');
+    const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
 
     const response = await fetch(`${backend}/api/healthz`, {
       method: 'GET',
       headers: {
-        'Cookie': cookieHeader || '',
+        'Cookie': cookie,
         'Content-Type': 'application/json',
       },
     });
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: true, data }, { status: 200 });
     } else {
       return NextResponse.json(
-        { ok: false, error: data.error || 'Health check failed', status: response.status },
+        { ok: false, error: data.error || 'Health check failed', details: data, status: response.status },
         { status: response.status }
       );
     }
@@ -30,13 +30,13 @@ export async function GET(request: NextRequest) {
     if (isBackendOriginConfigError(error)) {
       console.error('[BFF healthz] Server misconfigured:', error.message);
       return NextResponse.json(
-        { ok: false, error: 'Server misconfigured: backend origin not configured' },
+        { ok: false, error: 'Server misconfigured: BACKEND_API_ORIGIN is not set or invalid' },
         { status: 500 }
       );
     }
     console.error('[BFF healthz] error:', error);
     return NextResponse.json(
-      { ok: false, error: 'Failed to check backend health', status: 500 },
+      { ok: false, error: 'Failed to check backend health' },
       { status: 500 }
     );
   }
