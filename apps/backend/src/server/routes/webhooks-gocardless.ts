@@ -930,7 +930,7 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
                         billingRequestId,
                         mandateId,
                         userId,
-                        customerId: subCustomerId,
+                        customerId: finalCustomerId,
                     });
                     return;
                 } else {
