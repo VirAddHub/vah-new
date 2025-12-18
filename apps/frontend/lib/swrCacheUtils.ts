@@ -12,7 +12,7 @@ import { mutate } from 'swr';
 export const invalidateUsersCache = () => {
   // Invalidate the main users list
   mutate(key => typeof key === 'string' && key.includes('/api/admin/users'));
-  
+
   // Also invalidate user stats
   mutate(key => typeof key === 'string' && key.includes('/api/admin/users/stats'));
 };
@@ -23,10 +23,10 @@ export const invalidateUsersCache = () => {
 export const invalidateMailCache = () => {
   // Invalidate user mail items
   mutate('/api/mail-items');
-  
+
   // Invalidate admin mail items
   mutate(key => typeof key === 'string' && key.includes('/api/admin/mail-items'));
-  
+
   // Invalidate mail stats
   mutate(key => typeof key === 'string' && key.includes('/api/admin/mail-items/stats'));
 };
@@ -77,7 +77,7 @@ export const optimisticUpdate = <T>(
 ) => {
   // Apply optimistic update
   mutate(cacheKey, updateFn, false);
-  
+
   // Return rollback function
   return () => {
     if (rollbackFn) {
@@ -101,14 +101,14 @@ export const createMutationHandler = <T>(
   return async () => {
     try {
       const result = await mutationFn();
-      
+
       // Invalidate cache after successful mutation
       mutate(cacheKeys);
-      
+
       if (onSuccess) {
         onSuccess(result);
       }
-      
+
       return result;
     } catch (error) {
       if (onError) {

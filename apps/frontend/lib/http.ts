@@ -19,7 +19,7 @@ async function request<T>(
     opts: RequestInit & { base?: string } = {}
 ): Promise<ApiOk<T> | ApiError> {
     const base = opts.base ?? "/api/bff";
-    
+
     // Dev guard: prevent double /api/bff prefix
     if (process.env.NODE_ENV !== 'production' && path.startsWith('/api/bff')) {
         throw new Error(
@@ -27,7 +27,7 @@ async function request<T>(
             `The base URL is already set to "${base}", so pass paths like "/admin/overview" instead of "/api/bff/admin/overview".`
         );
     }
-    
+
     const url = path.startsWith("http") ? path : `${base}${path}`;
 
     const res = await fetch(url, {

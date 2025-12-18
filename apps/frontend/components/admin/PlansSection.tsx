@@ -149,7 +149,9 @@ export default function PlansSection() {
       const res = await apiClient.delete(`/api/admin/plans/${id}`);
       if (res.ok) {
         toast({ title: "Success", description: "Plan retired successfully" });
-        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
+        // Invalidate cache and refetch to update UI instantly
+        invalidatePlansCache();
+        await loadPlans();
       } else {
         toast({
           title: "Error",

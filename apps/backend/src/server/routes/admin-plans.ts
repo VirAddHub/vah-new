@@ -190,7 +190,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
         'Pragma': 'no-cache',
         'Expires': '0'
     });
-    
+
     const planId = parseInt(req.params.id);
     const adminId = req.user?.id;
     const pool = getPool();
@@ -469,7 +469,7 @@ router.delete('/plans/:id', requireAdmin, async (req: Request, res: Response) =>
         'Pragma': 'no-cache',
         'Expires': '0'
     });
-    
+
     const planId = parseInt(req.params.id);
     const pool = getPool();
 

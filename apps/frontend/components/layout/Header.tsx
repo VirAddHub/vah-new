@@ -22,7 +22,7 @@ export function Header({ onNavigate }: HeaderProps) {
     const handleNavClick = (page: string, href?: string) => {
         // Scroll to top before navigation
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        
+
         if (href) {
             window.location.href = href;
         } else if (page === 'login') {
@@ -82,36 +82,36 @@ export function Header({ onNavigate }: HeaderProps) {
                 </div>
             </div>
 
-                {/* Mobile menu */}
-                {isMenuOpen && (
-                    <div className="md:hidden border-t border-border/50 bg-background">
-                        <div className="safe-pad pt-4 pb-6 space-y-2">
-                            {navItems.map((item) => (
-                                <button
-                                    key={item.label}
-                                    onClick={() => handleNavClick(item.page, (item as any).href)}
-                                    className="tt-min block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
-                                >
-                                    {item.label}
-                                </button>
-                            ))}
-                            <div className="pt-4 space-y-3">
-                                <button
-                                    onClick={() => handleNavClick('login')}
-                                    className="tt-min w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
-                                >
-                                    Log in
-                                </button>
-                                <Button
-                                    onClick={() => handleNavClick('signup')}
-                                    className="tt-min w-full rounded-md font-medium transition-all duration-200"
-                                >
-                                    Get started
-                                </Button>
-                            </div>
+            {/* Mobile menu */}
+            {isMenuOpen && (
+                <div className="md:hidden border-t border-border/50 bg-background">
+                    <div className="safe-pad pt-4 pb-6 space-y-2">
+                        {navItems.map((item) => (
+                            <button
+                                key={item.label}
+                                onClick={() => handleNavClick(item.page, (item as any).href)}
+                                className="tt-min block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                        <div className="pt-4 space-y-3">
+                            <button
+                                onClick={() => handleNavClick('login')}
+                                className="tt-min w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                            >
+                                Log in
+                            </button>
+                            <Button
+                                onClick={() => handleNavClick('signup')}
+                                className="tt-min w-full rounded-md font-medium transition-all duration-200"
+                            >
+                                Get started
+                            </Button>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
         </header>
     );
 }

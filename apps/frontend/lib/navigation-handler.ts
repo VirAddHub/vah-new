@@ -9,7 +9,7 @@ export function createNavigationHandler(router: any) {
         if (typeof window !== 'undefined') {
             window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         }
-        
+
         // Handle navigation based on page
         switch (page) {
             case 'home':

@@ -26,19 +26,19 @@ function generateETag(plans: any[]): string {
 router.get('/plans', async (req: Request, res: Response) => {
     try {
         const pool = getPool();
-        
+
         // First, get max updated_at for ETag generation (lightweight query)
         const maxUpdatedResult = await pool.query(
             `SELECT MAX(updated_at) as max_updated_at
              FROM plans
              WHERE active = true AND retired_at IS NULL`
         );
-        
+
         const maxUpdatedAt = maxUpdatedResult.rows[0]?.max_updated_at;
-        const etag = maxUpdatedAt 
+        const etag = maxUpdatedAt
             ? `"${createHash('md5').update(String(new Date(maxUpdatedAt).getTime())).digest('hex')}"`
             : generateETag([]);
-        
+
         // Check If-None-Match header for conditional request
         const ifNoneMatch = req.headers['if-none-match'];
         if (ifNoneMatch === etag || ifNoneMatch === etag.replace(/"/g, '')) {

@@ -22,7 +22,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
     const handleNavClick = (page: string, href?: string) => {
         // Scroll to top before navigation
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        
+
         if (href) {
             window.location.href = href;
         } else if (page === 'login') {
