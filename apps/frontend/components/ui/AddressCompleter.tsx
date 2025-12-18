@@ -21,9 +21,6 @@ import {
 
 import type { AddressSuggestion } from '@/lib/account/addressTypes';
 
-// Re-export for backward compatibility
-export type { AddressSuggestion };
-
 interface AddressCompleterProps {
     onAddressSelect: (address: AddressSuggestion) => void;
     initialAddress?: Partial<AddressSuggestion>;
