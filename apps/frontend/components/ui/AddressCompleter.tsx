@@ -19,22 +19,10 @@ import {
     Map
 } from "lucide-react";
 
-export interface AddressSuggestion {
-    id: string;
-    formatted_address: string;
-    address_line_1: string;
-    address_line_2?: string;
-    city: string;
-    postcode: string;
-    country: string;
-    latitude?: number;
-    longitude?: number;
-    building_name?: string;
-    premise?: string;
-    thoroughfare?: string;
-    dependent_locality?: string;
-    administrative_area?: string;
-}
+import type { AddressSuggestion } from '@/lib/account/addressTypes';
+
+// Re-export for backward compatibility
+export type { AddressSuggestion };
 
 interface AddressCompleterProps {
     onAddressSelect: (address: AddressSuggestion) => void;

@@ -10,7 +10,7 @@ import { MapPin, Edit, Plus } from 'lucide-react';
 import { Address } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import { AddressCompleter } from '@/components/ui/AddressCompleter';
-import type { AddressSuggestion } from '@/components/ui/AddressCompleter';
+import type { AddressSuggestion } from '@/lib/account/addressTypes';
 
 interface ForwardingAddressCardProps {
   address: Address | null;
