@@ -26,7 +26,7 @@ export default function AccountPage() {
     const user = userData?.data?.user;
     const profile = profileData?.data;
     const o = overview?.data;
-    const invoices = invoicesData?.data?.items || [];
+    const invoicesRaw = invoicesData?.data?.items || [];
 
     // Build account data from existing APIs
     const data = useMemo<AccountPageData>(() => {
@@ -70,7 +70,7 @@ export default function AccountPage() {
             : null;
 
         // Transform invoices
-        const invoiceRows: InvoiceRow[] = invoices.map((inv: any) => ({
+        const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => ({
             invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
             description: inv.description || 'Subscription payment',
             total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
