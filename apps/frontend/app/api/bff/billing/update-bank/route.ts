@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (isBackendOriginConfigError(error)) {
       console.error('[BFF update-bank] Server misconfigured:', error.message);
       return NextResponse.json(
-        { ok: false, error: 'Server misconfigured: BACKEND_API_ORIGIN is not set or invalid' },
+        { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
