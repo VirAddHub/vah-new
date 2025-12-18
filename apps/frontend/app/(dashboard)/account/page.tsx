@@ -20,10 +20,10 @@ import { User } from 'lucide-react';
 export default function AccountPage() {
     // Fetch account data from existing APIs
     const { data: accountData } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
-    const { data: overview, mutate: mutateOverview } = useSWR('/api/billing/overview', swrFetcher);
-    const { data: invoicesData, mutate: mutateInvoices } = useSWR('/api/billing/invoices?page=1&page_size=12', swrFetcher);
+    const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
+    const { data: invoicesData, mutate: mutateInvoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
     const { data: userData, mutate: mutateUser } = useSWR('/api/auth/whoami', swrFetcher);
-    const { data: profileData, mutate: mutateProfile } = useSWR('/api/profile', swrFetcher);
+    const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
 
     const user = userData?.data?.user;
     const profile = profileData?.data;
@@ -94,7 +94,7 @@ export default function AccountPage() {
     // Handlers
     const handleSaveContact = async (contact: BusinessContactInfo) => {
         try {
-            const response = await fetch('/api/profile', {
+            const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -114,6 +114,7 @@ export default function AccountPage() {
             // Refresh profile data
             await mutateProfile();
             await mutateUser();
+            await mutateOverview();
         } catch (error) {
             throw error;
         }
@@ -121,7 +122,7 @@ export default function AccountPage() {
 
     const handleSaveAddress = async (address: Address) => {
         try {
-            const response = await fetch('/api/profile', {
+            const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
