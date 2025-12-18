@@ -86,18 +86,23 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     setIsSaving(true);
     try {
       await onSave(finalAddress);
+      // Update local state with saved address
       setAddress(finalAddress);
+      // Close dialog immediately after successful save
       setIsDialogOpen(false);
-      toast({
-        title: "Saved",
-        description: "Your forwarding address has been updated.",
+      // Reset manual entry state for next time
+      setUseManualEntry(false);
+      // Reset manual address fields
+      setManualAddress({
+        line1: '',
+        line2: '',
+        city: '',
+        postcode: ''
       });
+      // Note: Toast notification is handled by parent component
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save forwarding address. Please try again.",
-        variant: "destructive",
-      });
+      // Error toast is handled by parent component
+      // Don't close dialog on error so user can retry
     } finally {
       setIsSaving(false);
     }
