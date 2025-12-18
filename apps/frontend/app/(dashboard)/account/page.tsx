@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -121,11 +121,28 @@ export default function AccountPage() {
             }
 
             // Refresh all relevant data after successful PATCH
-            await mutateProfile();
-            await mutateAccount();
-            await mutateUser();
-            await mutateOverview();
+            // Use global mutate to ensure ALL components using these keys refresh
+            await Promise.all([
+                mutateProfile(),
+                mutateAccount(),
+                mutateUser(),
+                mutateOverview(),
+                // Global mutate to refresh any other components using these keys
+                globalMutate('/api/bff/profile'),
+                globalMutate('/api/bff/account'),
+                globalMutate('/api/auth/whoami'),
+            ]);
+
+            toast({
+                title: "Saved",
+                description: "Contact information has been updated.",
+            });
         } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to save contact information",
+                variant: "destructive",
+            });
             throw error;
         }
     };
@@ -148,10 +165,27 @@ export default function AccountPage() {
             }
 
             // Refresh all relevant data after successful PATCH
-            await mutateProfile();
-            await mutateAccount();
-            await mutateUser();
+            // Use global mutate to ensure ALL components using these keys refresh
+            await Promise.all([
+                mutateProfile(),
+                mutateAccount(),
+                mutateUser(),
+                // Global mutate to refresh any other components using these keys
+                globalMutate('/api/bff/profile'),
+                globalMutate('/api/bff/account'),
+                globalMutate('/api/auth/whoami'),
+            ]);
+
+            toast({
+                title: "Saved",
+                description: "Forwarding address has been updated.",
+            });
         } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to save forwarding address",
+                variant: "destructive",
+            });
             throw error;
         }
     };
