@@ -77,7 +77,21 @@ export type BuildArgs = {
 
 type ModelBuilder = (a: BuildArgs) => AnyDict;
 
-export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], ModelBuilder> = {
+// Shared builder for Welcome and WelcomeKyc (both use "welcome-email" template)
+const welcomeEmailBuilder: ModelBuilder = (a) => {
+  const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+  const ctaUrl = a.ctaUrl ?? a.cta_url ?? a.dashboardUrl;
+  return {
+    first_name,
+    name: first_name, // backward compatibility
+    dashboard_link: ctaUrl,
+    cta_url: ctaUrl,
+  };
+};
+
+// Build modelBuilders object - Welcome and WelcomeKyc both map to "welcome-email"
+// so we need to handle the duplicate key programmatically
+const _modelBuilders: Record<string, ModelBuilder> = {
   // SECURITY
   [Templates.PasswordReset]: (a) => {
     const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
@@ -97,22 +111,9 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
   },
 
   // ONBOARDING
-  [Templates.Welcome]: (a) => {
-    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
-    return {
-      first_name,
-      name: first_name, // backward compatibility
-      dashboard_link: a.dashboardUrl ?? a.ctaUrl,
-    };
-  },
-  [Templates.WelcomeKyc]: (a) => {
-    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
-    return {
-      first_name,
-      name: first_name, // backward compatibility
-      cta_url: a.ctaUrl ?? a.cta_url,
-    };
-  },
+  // Welcome and WelcomeKyc both use "welcome-email" template alias
+  [Templates.Welcome]: welcomeEmailBuilder,
+  // Note: WelcomeKyc is added programmatically below since it has the same template alias value
 
   // BILLING
   [Templates.PlanCancelled]: (a) => {
@@ -265,3 +266,9 @@ export const modelBuilders: Record<(typeof Templates)[keyof typeof Templates], M
     };
   },
 };
+
+// Add WelcomeKyc mapping (same as Welcome since both use "welcome-email")
+_modelBuilders[Templates.WelcomeKyc] = welcomeEmailBuilder;
+
+// Export with proper type (both Welcome and WelcomeKyc map to the same template alias)
+export const modelBuilders = _modelBuilders as Record<(typeof Templates)[keyof typeof Templates], ModelBuilder>;
