@@ -8,13 +8,12 @@ import { Footer } from '@/components/Footer';
 import dynamic from 'next/dynamic';
 
 // Lazy load account components to avoid circular dependencies
-const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(m => ({ default: m.AccountBillingCard })), { ssr: false });
-const BusinessContactCard = dynamic(() => import('@/components/account/BusinessContactCard').then(m => ({ default: m.BusinessContactCard })), { ssr: false });
-const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(m => ({ default: m.ForwardingAddressCard })), { ssr: false });
-const OwnersCard = dynamic(() => import('@/components/account/OwnersCard').then(m => ({ default: m.OwnersCard })), { ssr: false });
-const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(m => ({ default: m.InvoicesCard })), { ssr: false });
+const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(mod => ({ default: mod.AccountBillingCard })), { ssr: false });
+const BusinessContactCard = dynamic(() => import('@/components/account/BusinessContactCard').then(mod => ({ default: mod.BusinessContactCard })), { ssr: false });
+const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(mod => ({ default: mod.ForwardingAddressCard })), { ssr: false });
+const OwnersCard = dynamic(() => import('@/components/account/OwnersCard').then(mod => ({ default: mod.OwnersCard })), { ssr: false });
+const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(mod => ({ default: mod.InvoicesCard })), { ssr: false });
 import { AccountPageData, BusinessContactInfo, Address, BusinessOwner, InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
-import { mockAccountData } from '@/lib/account/mockAccountData';
 import { toast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
 
