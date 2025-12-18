@@ -90,6 +90,12 @@ router.get('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
  * Create new plan (admin only)
  */
 router.post('/plans', requireAdmin, async (req: Request, res: Response) => {
+    // Ensure no caching on mutation endpoints
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
     const pool = getPool();
     const {
         name,
@@ -178,6 +184,13 @@ router.post('/plans', requireAdmin, async (req: Request, res: Response) => {
  * Update plan (admin only) - Enhanced with comprehensive tracking
  */
 router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
+    // Ensure no caching on mutation endpoints
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    
     const planId = parseInt(req.params.id);
     const adminId = req.user?.id;
     const pool = getPool();
@@ -450,6 +463,13 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
  * Delete/retire plan (admin only)
  */
 router.delete('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
+    // Ensure no caching on mutation endpoints
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
+    
     const planId = parseInt(req.params.id);
     const pool = getPool();
 

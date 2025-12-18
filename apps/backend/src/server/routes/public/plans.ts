@@ -1,13 +1,55 @@
-import { Router } from 'express';
-import { selectMany } from '../../db-helpers';
+import { Router, Request, Response } from 'express';
+import { selectMany, getPool } from '../../db-helpers';
 import { ok } from '../../lib/apiResponse';
+import { createHash } from 'crypto';
 
 const router = Router();
 
-router.get('/plans', async (_req, res) => {
+/**
+ * Generate ETag from plans data (based on max updated_at or content hash)
+ */
+function generateETag(plans: any[]): string {
+    if (plans.length === 0) {
+        return createHash('md5').update('empty').digest('hex');
+    }
+    // Use max updated_at timestamp as ETag basis (more stable than content hash)
+    const maxUpdatedAt = Math.max(...plans.map(p => {
+        const updatedAt = p.updated_at;
+        if (!updatedAt) return 0;
+        const ts = typeof updatedAt === 'string' ? new Date(updatedAt).getTime() : updatedAt;
+        return isNaN(ts) ? 0 : ts;
+    }));
+    return `"${createHash('md5').update(String(maxUpdatedAt)).digest('hex')}"`;
+}
+
+router.get('/plans', async (req: Request, res: Response) => {
     try {
+        const pool = getPool();
+        
+        // First, get max updated_at for ETag generation (lightweight query)
+        const maxUpdatedResult = await pool.query(
+            `SELECT MAX(updated_at) as max_updated_at
+             FROM plans
+             WHERE active = true AND retired_at IS NULL`
+        );
+        
+        const maxUpdatedAt = maxUpdatedResult.rows[0]?.max_updated_at;
+        const etag = maxUpdatedAt 
+            ? `"${createHash('md5').update(String(new Date(maxUpdatedAt).getTime())).digest('hex')}"`
+            : generateETag([]);
+        
+        // Check If-None-Match header for conditional request
+        const ifNoneMatch = req.headers['if-none-match'];
+        if (ifNoneMatch === etag || ifNoneMatch === etag.replace(/"/g, '')) {
+            res.set({
+                'ETag': etag,
+                'Cache-Control': 'public, max-age=30, stale-while-revalidate=60'
+            });
+            return res.status(304).end();
+        }
+
         const rows = await selectMany(
-            `SELECT id, name, slug, description, price_pence, interval, currency, features_json, trial_days, active, vat_inclusive
+            `SELECT id, name, slug, description, price_pence, interval, currency, features_json, trial_days, active, vat_inclusive, updated_at
              FROM plans
              WHERE active = true AND retired_at IS NULL
              ORDER BY sort ASC, price_pence ASC`
@@ -23,11 +65,10 @@ router.get('/plans', async (_req, res) => {
             isMonthly: plan.interval === 'month'
         }));
 
-        // Disable caching for fresh pricing data
+        // Set caching headers with ETag
         res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'ETag': etag,
+            'Cache-Control': 'public, max-age=30, stale-while-revalidate=60'
         });
 
         // Return as array (static list, no pagination needed)
@@ -64,10 +105,10 @@ router.get('/plans', async (_req, res) => {
             }
         ];
 
+        // Even stub plans should have cache headers (but shorter TTL)
         res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+            'ETag': generateETag(stubPlans),
+            'Cache-Control': 'public, max-age=10, stale-while-revalidate=30'
         });
 
         // Return as array (static list, no pagination needed)

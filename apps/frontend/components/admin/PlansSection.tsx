@@ -95,7 +95,9 @@ export default function PlansSection() {
         toast({ title: "Success", description: "Plan created successfully" });
         setShowCreateModal(false);
         resetForm();
-        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
+        // Invalidate cache and refetch to update UI instantly
+        invalidatePlansCache();
+        await loadPlans();
       } else {
         toast({
           title: "Error",
@@ -121,7 +123,9 @@ export default function PlansSection() {
         toast({ title: "Success", description: "Plan updated successfully" });
         setEditingPlan(null);
         resetForm();
-        invalidatePlansCache(); // Use cache invalidation instead of manual refresh
+        // Invalidate cache and refetch to update UI instantly
+        invalidatePlansCache();
+        await loadPlans();
       } else {
         toast({
           title: "Error",

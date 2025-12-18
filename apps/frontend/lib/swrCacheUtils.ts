@@ -39,10 +39,14 @@ export const invalidateForwardingCache = () => {
 };
 
 /**
- * Invalidate plans cache
+ * Invalidate plans cache (both admin and public endpoints)
  */
 export const invalidatePlansCache = () => {
+  // Invalidate admin plans endpoint
   mutate(key => typeof key === 'string' && key.includes('/api/admin/plans'));
+  // Invalidate public plans endpoint
+  mutate('/api/plans');
+  mutate(key => typeof key === 'string' && key.includes('/api/plans'));
 };
 
 /**
