@@ -5,11 +5,14 @@ import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { AccountBillingCard } from '@/components/account/AccountBillingCard';
-import { BusinessContactCard } from '@/components/account/BusinessContactCard';
-import { ForwardingAddressCard } from '@/components/account/ForwardingAddressCard';
-import { OwnersCard } from '@/components/account/OwnersCard';
-import { InvoicesCard } from '@/components/account/InvoicesCard';
+import dynamic from 'next/dynamic';
+
+// Lazy load account components to avoid circular dependencies
+const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(m => ({ default: m.AccountBillingCard })), { ssr: false });
+const BusinessContactCard = dynamic(() => import('@/components/account/BusinessContactCard').then(m => ({ default: m.BusinessContactCard })), { ssr: false });
+const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(m => ({ default: m.ForwardingAddressCard })), { ssr: false });
+const OwnersCard = dynamic(() => import('@/components/account/OwnersCard').then(m => ({ default: m.OwnersCard })), { ssr: false });
+const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(m => ({ default: m.InvoicesCard })), { ssr: false });
 import { AccountPageData, BusinessContactInfo, Address, BusinessOwner, InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
 import { mockAccountData } from '@/lib/account/mockAccountData';
 import { toast } from '@/hooks/use-toast';
@@ -87,7 +90,7 @@ export default function AccountPage() {
             owners: [], // TODO: Fetch from PSC API when available
             invoices: invoiceRows
         };
-    }, [accountData, o, profile, user, invoices]);
+    }, [accountData, o, profile, user, invoicesRaw]);
 
     // Handlers
     const handleSaveContact = async (contact: BusinessContactInfo) => {
@@ -176,8 +179,7 @@ export default function AccountPage() {
         });
     };
 
-    // Transform invoices data - use data from useMemo
-    const invoices: InvoiceRow[] = data.invoices || [];
+    // Use invoices from useMemo (already transformed)
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -229,7 +231,7 @@ export default function AccountPage() {
                     />
 
                     {/* Section E - Invoices */}
-                    <InvoicesCard invoices={invoices} />
+                    <InvoicesCard invoices={data.invoices || []} />
                 </div>
             </main>
             <Footer />
