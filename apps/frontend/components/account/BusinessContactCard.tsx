@@ -56,9 +56,12 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Business Contact Information</CardTitle>
+        <CardTitle>Business Contact</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          These details must match your verification records.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="first_name">

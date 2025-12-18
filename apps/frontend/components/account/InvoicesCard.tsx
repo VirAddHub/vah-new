@@ -18,6 +18,8 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
         return <Badge className="bg-green-600">Paid</Badge>;
       case 'not_paid':
         return <Badge variant="destructive">Not paid</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
       case 'void':
         return <Badge variant="secondary">Void</Badge>;
       default:
@@ -62,11 +64,22 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(invoice.download_url, '_blank')}
+                          onClick={() => {
+                            // BFF route already normalizes to /api/bff/billing/invoices/{id}/download
+                            const url = invoice.download_url;
+                            // Open in new tab for download
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.target = '_blank';
+                            link.download = `invoice-${invoice.invoice_no}.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
                           className="flex items-center gap-1"
                         >
                           <Download className="h-3 w-3" />
-                          Download
+                          Download PDF
                         </Button>
                       )}
                     </TableCell>

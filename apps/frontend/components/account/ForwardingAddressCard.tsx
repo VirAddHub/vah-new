@@ -119,6 +119,9 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          Used only for forwarding physical post.
+        </p>
         {address ? (
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">

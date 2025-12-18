@@ -1,0 +1,34 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'turbo.json'
+      - 'tsconfig.base.json'
+      - 'apps/backend/render.yaml'
+      - '.github/workflows/render-deploy-backend.yml'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip render]')"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Render Deploy
+        run: |
+          echo "Backend files changed - Render will auto-deploy"
+          echo "If auto-deploy is disabled, manually trigger deploy in Render dashboard"
+          
+      - name: Verify Backend Changes
+        run: |
+          echo "Changed files:"
+          git diff --name-only HEAD~1 HEAD | grep -E '^(apps/backend|packages|package\.json|turbo\.json)' || echo "No backend changes detected"

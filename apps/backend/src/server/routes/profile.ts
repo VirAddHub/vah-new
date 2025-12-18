@@ -62,6 +62,15 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
+        // Check if middle_names column exists
+        const hasMiddleNames = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'user' AND column_name = 'middle_names'
+        `).then(r => r.rows.length > 0).catch(() => false);
+
+        const middleNamesSelect = hasMiddleNames ? 'middle_names,' : '';
+
         const result = await pool.query(`
             SELECT
                 id,
@@ -69,6 +78,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 status as state,
                 first_name,
                 last_name,
+                ${middleNamesSelect}
                 phone,
                 company_name,
                 address_line1,
@@ -170,20 +180,100 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
  */
 router.patch("/", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
+    const pool = getPool();
+
+    // EXPLICIT ALLOWLIST: Only these fields can be updated via profile endpoint
+    const ALLOWED_FIELDS = [
+        'first_name',
+        'last_name',
+        'middle_names',
+        'phone',
+        'forwarding_address',
+        'name', // legacy field
+        'company_name' // if explicitly allowed
+    ];
+
+    // EXPLICIT DENYLIST: These fields are NEVER allowed to be updated via profile endpoint
+    const DENIED_FIELDS = [
+        // Registered office address (immutable)
+        'address_line1',
+        'address_line2',
+        'city',
+        'state',
+        'postal_code',
+        'country',
+        // Payment/mandate fields (webhook/admin only)
+        'gocardless_mandate_id',
+        'gocardless_customer_id',
+        'gocardless_redirect_flow_id',
+        'subscription_status',
+        'plan_id',
+        'plan_status',
+        // Email (requires verification flow)
+        'email',
+        // Verification fields (admin/webhook only)
+        'kyc_status',
+        'kyc_verified_at',
+        'kyc_verified_at_ms',
+        'companies_house_verified',
+        'ch_verification_status',
+        // System fields
+        'id',
+        'created_at',
+        'updated_at', // Updated automatically
+        'last_login_at',
+        'is_admin',
+        'role',
+        'status',
+        'password',
+        'password_reset_token',
+        'password_reset_expires',
+        'password_reset_used_at'
+    ];
+
+    // Check for denied fields first (fail fast)
+    const deniedFields = Object.keys(req.body).filter(key => DENIED_FIELDS.includes(key));
+    if (deniedFields.length > 0) {
+        const fieldNames = deniedFields.join(', ');
+        if (deniedFields.some(f => ['address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country'].includes(f))) {
+            return res.status(400).json({
+                ok: false,
+                error: 'registered_office_immutable',
+                message: 'Registered office address cannot be changed here.'
+            });
+        }
+        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+            return res.status(400).json({
+                ok: false,
+                error: 'payment_fields_immutable',
+                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+            });
+        }
+        if (deniedFields.includes('email')) {
+            return res.status(400).json({
+                ok: false,
+                error: 'email_change_not_allowed',
+                message: 'Email changes require verification. Please contact support.'
+            });
+        }
+        return res.status(400).json({
+            ok: false,
+            error: 'field_not_allowed',
+            message: `The following fields cannot be updated: ${fieldNames}`
+        });
+    }
+
+    // Extract only allowed fields from request body
     const {
         name,
+        first_name,
+        last_name,
+        middle_names,
         phone,
         company_name,
-        address_line1,
-        address_line2,
-        city,
-        state,
-        postal_code,
-        country,
         forwarding_address
     } = req.body;
 
-    const pool = getPool();
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
@@ -192,6 +282,34 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         updates.push(`name = $${paramIndex++}`);
         values.push(name);
     }
+    if (first_name !== undefined) {
+        updates.push(`first_name = $${paramIndex++}`);
+        values.push(first_name);
+    }
+    if (last_name !== undefined) {
+        updates.push(`last_name = $${paramIndex++}`);
+        values.push(last_name);
+    }
+    // Check if middle_names column exists before trying to update it
+    let hasMiddleNamesColumn = false;
+    if (middle_names !== undefined) {
+        try {
+            const colCheck = await pool.query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'middle_names'
+            `);
+            hasMiddleNamesColumn = colCheck.rows.length > 0;
+            if (hasMiddleNamesColumn) {
+                updates.push(`middle_names = $${paramIndex++}`);
+                values.push(middle_names);
+            } else {
+                console.warn('[PATCH /api/profile] middle_names column does not exist, skipping update');
+            }
+        } catch (e) {
+            console.warn('[PATCH /api/profile] Could not check for middle_names column:', e);
+        }
+    }
     if (phone !== undefined) {
         updates.push(`phone = $${paramIndex++}`);
         values.push(phone);
@@ -199,30 +317,6 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     if (company_name !== undefined) {
         updates.push(`company_name = $${paramIndex++}`);
         values.push(company_name);
-    }
-    if (address_line1 !== undefined) {
-        updates.push(`address_line1 = $${paramIndex++}`);
-        values.push(address_line1);
-    }
-    if (address_line2 !== undefined) {
-        updates.push(`address_line2 = $${paramIndex++}`);
-        values.push(address_line2);
-    }
-    if (city !== undefined) {
-        updates.push(`city = $${paramIndex++}`);
-        values.push(city);
-    }
-    if (state !== undefined) {
-        updates.push(`state = $${paramIndex++}`);
-        values.push(state);
-    }
-    if (postal_code !== undefined) {
-        updates.push(`postal_code = $${paramIndex++}`);
-        values.push(postal_code);
-    }
-    if (country !== undefined) {
-        updates.push(`country = $${paramIndex++}`);
-        values.push(country);
     }
     if (forwarding_address !== undefined) {
         updates.push(`forwarding_address = $${paramIndex++}`);
@@ -265,20 +359,71 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
  */
 router.patch("/me", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
+    const pool = getPool();
+
+    // Same allowlist/denylist as main endpoint
+    const ALLOWED_FIELDS = [
+        'first_name',
+        'last_name',
+        'middle_names',
+        'phone',
+        'forwarding_address',
+        'name',
+        'company_name'
+    ];
+
+    const DENIED_FIELDS = [
+        'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
+        'gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id',
+        'subscription_status', 'plan_id', 'plan_status',
+        'email',
+        'kyc_status', 'kyc_verified_at', 'kyc_verified_at_ms', 'companies_house_verified',
+        'id', 'created_at', 'updated_at', 'last_login_at', 'is_admin', 'role', 'status',
+        'password', 'password_reset_token', 'password_reset_expires', 'password_reset_used_at'
+    ];
+
+    // Check for denied fields
+    const deniedFields = Object.keys(req.body).filter(key => DENIED_FIELDS.includes(key));
+    if (deniedFields.length > 0) {
+        const fieldNames = deniedFields.join(', ');
+        if (deniedFields.some(f => ['address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country'].includes(f))) {
+            return res.status(400).json({
+                ok: false,
+                error: 'registered_office_immutable',
+                message: 'Registered office address cannot be changed here.'
+            });
+        }
+        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+            return res.status(400).json({
+                ok: false,
+                error: 'payment_fields_immutable',
+                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+            });
+        }
+        if (deniedFields.includes('email')) {
+            return res.status(400).json({
+                ok: false,
+                error: 'email_change_not_allowed',
+                message: 'Email changes require verification. Please contact support.'
+            });
+        }
+        return res.status(400).json({
+            ok: false,
+            error: 'field_not_allowed',
+            message: `The following fields cannot be updated: ${fieldNames}`
+        });
+    }
+
     const {
         name,
+        first_name,
+        last_name,
+        middle_names,
         phone,
         company_name,
-        address_line1,
-        address_line2,
-        city,
-        state,
-        postal_code,
-        country,
         forwarding_address
     } = req.body;
 
-    const pool = getPool();
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
@@ -287,6 +432,34 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         updates.push(`name = $${paramIndex++}`);
         values.push(name);
     }
+    if (first_name !== undefined) {
+        updates.push(`first_name = $${paramIndex++}`);
+        values.push(first_name);
+    }
+    if (last_name !== undefined) {
+        updates.push(`last_name = $${paramIndex++}`);
+        values.push(last_name);
+    }
+    // Check if middle_names column exists before trying to update it
+    let hasMiddleNamesColumnMe = false;
+    if (middle_names !== undefined) {
+        try {
+            const colCheck = await pool.query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'middle_names'
+            `);
+            hasMiddleNamesColumnMe = colCheck.rows.length > 0;
+            if (hasMiddleNamesColumnMe) {
+                updates.push(`middle_names = $${paramIndex++}`);
+                values.push(middle_names);
+            } else {
+                console.warn('[PATCH /api/profile/me] middle_names column does not exist, skipping update');
+            }
+        } catch (e) {
+            console.warn('[PATCH /api/profile/me] Could not check for middle_names column:', e);
+        }
+    }
     if (phone !== undefined) {
         updates.push(`phone = $${paramIndex++}`);
         values.push(phone);
@@ -294,30 +467,6 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
     if (company_name !== undefined) {
         updates.push(`company_name = $${paramIndex++}`);
         values.push(company_name);
-    }
-    if (address_line1 !== undefined) {
-        updates.push(`address_line1 = $${paramIndex++}`);
-        values.push(address_line1);
-    }
-    if (address_line2 !== undefined) {
-        updates.push(`address_line2 = $${paramIndex++}`);
-        values.push(address_line2);
-    }
-    if (city !== undefined) {
-        updates.push(`city = $${paramIndex++}`);
-        values.push(city);
-    }
-    if (state !== undefined) {
-        updates.push(`state = $${paramIndex++}`);
-        values.push(state);
-    }
-    if (postal_code !== undefined) {
-        updates.push(`postal_code = $${paramIndex++}`);
-        values.push(postal_code);
-    }
-    if (country !== undefined) {
-        updates.push(`country = $${paramIndex++}`);
-        values.push(country);
     }
     if (forwarding_address !== undefined) {
         updates.push(`forwarding_address = $${paramIndex++}`);

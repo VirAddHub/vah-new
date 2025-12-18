@@ -19,7 +19,7 @@ import { User } from 'lucide-react';
 
 export default function AccountPage() {
     // Fetch account data from existing APIs
-    const { data: accountData } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
+    const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
     const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
     const { data: invoicesData, mutate: mutateInvoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
     const { data: userData, mutate: mutateUser } = useSWR('/api/auth/whoami', swrFetcher);
@@ -71,14 +71,14 @@ export default function AccountPage() {
             }
             : null;
 
-        // Transform invoices
+        // Transform invoices (BFF invoices route already normalizes pdf_url to BFF endpoint)
         const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => ({
             invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
             description: inv.description || 'Subscription payment',
             total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
-            status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : 'not_paid',
+            status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
             date_label: inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A',
-            download_url: inv.download_url || inv.invoice_url
+            download_url: inv.pdf_url || inv.download_url || (inv.id ? `/api/bff/billing/invoices/${inv.id}/download` : null)
         }));
 
         return {
@@ -94,6 +94,7 @@ export default function AccountPage() {
     // Handlers
     const handleSaveContact = async (contact: BusinessContactInfo) => {
         try {
+            // SAFETY: Never send email in PATCH body (backend will reject it anyway)
             const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,8 +103,8 @@ export default function AccountPage() {
                     first_name: contact.first_name,
                     middle_names: contact.middle_names,
                     last_name: contact.last_name,
-                    phone: contact.phone,
-                    email: contact.email
+                    phone: contact.phone
+                    // email is intentionally excluded - backend blocks it
                 })
             });
 
@@ -193,9 +194,16 @@ export default function AccountPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Section A - Account & Billing */}
-                        <AccountBillingCard subscription={data.subscription} />
+                        <AccountBillingCard
+                            subscription={data.subscription}
+                            onRefresh={async () => {
+                                await mutateOverview();
+                                await mutateProfile();
+                                await mutateAccount();
+                            }}
+                        />
 
-                        {/* Section B - Business Contact Information */}
+                        {/* Section B - Business Contact */}
                         <BusinessContactCard
                             contact={data.contact}
                             onSave={handleSaveContact}
@@ -224,10 +232,6 @@ export default function AccountPage() {
                     {/* Section D - Business Owners (PSC) */}
                     <OwnersCard
                         owners={data.owners || []}
-                        onAdd={handleAddOwner}
-                        onEdit={handleEditOwner}
-                        onRemove={handleRemoveOwner}
-                        onVerify={handleVerifyOwner}
                     />
 
                     {/* Section E - Invoices */}

@@ -5,6 +5,20 @@ services:
     env: node
     plan: starter
     autoDeploy: true
+    buildFilter:
+      ignoredPaths:
+        - apps/frontend/**
+        - packages/**
+        - .github/**
+        - content/**
+        - migrations/**
+        - '*.md'
+        - .gitignore
+        - .npmrc
+        - .pre-commit-config.yaml
+        - .secrets.baseline
+        - turbo.json
+        - tsconfig.base.json
     buildCommand: |
       npm ci
       npm run build

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(request: NextRequest) {
   try {
     const cookieHeader = request.headers.get('cookie');
     const { searchParams } = new URL(request.url);
+    const backend = getBackendOrigin();
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices?${searchParams}`, {
+    const response = await fetch(`${backend}/api/billing/invoices?${searchParams}`, {
       method: 'GET',
       headers: {
         'Cookie': cookieHeader || '',
@@ -28,7 +31,15 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (error: any) {
+    // Handle backend origin configuration errors
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF billing invoices] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured: backend origin not configured' },
+        { status: 500 }
+      );
+    }
     console.error('[BFF billing invoices] error:', error);
     return NextResponse.json(
       { ok: false, error: 'Failed to fetch invoices' },
