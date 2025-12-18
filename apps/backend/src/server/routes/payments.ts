@@ -127,9 +127,9 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             billing_period: (req.body as any)?.billing_period ?? (req.body as any)?.billingPeriod ?? null,
         });
 
-        // Get user info
+        // Get user info including GoCardless fields for guardrails
         const userResult = await pool.query(`
-            SELECT id, email, first_name, last_name
+            SELECT id, email, first_name, last_name, gocardless_mandate_id, gocardless_redirect_flow_id
             FROM "user"
             WHERE id = $1
         `, [userId]);
@@ -139,6 +139,33 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         }
 
         const user = userResult.rows[0];
+
+        // Guardrail 1: If user already has a mandate, return early (prevent creating extra customers)
+        if (user.gocardless_mandate_id && user.gocardless_mandate_id.trim() !== '') {
+            console.log('[GC] redirect-flows: user already has mandate, returning alreadyLinked', {
+                user_id: userId,
+                mandate_id: user.gocardless_mandate_id
+            });
+            return res.json({
+                ok: true,
+                data: { alreadyLinked: true }
+            });
+        }
+
+        // Guardrail 2: If user has a redirect flow but no mandate, allow resume
+        if (user.gocardless_redirect_flow_id && user.gocardless_redirect_flow_id.trim() !== '' && (!user.gocardless_mandate_id || user.gocardless_mandate_id.trim() === '')) {
+            console.log('[GC] redirect-flows: user has incomplete flow, returning resume', {
+                user_id: userId,
+                redirect_flow_id: user.gocardless_redirect_flow_id
+            });
+            return res.json({
+                ok: true,
+                data: {
+                    resume: true,
+                    redirectFlowId: user.gocardless_redirect_flow_id
+                }
+            });
+        }
 
         // Persist the selected plan before redirecting to GoCardless.
         // This prevents "active + no plan" later and avoids UI inference.
@@ -362,6 +389,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
                 gocardless_mandate_id = $1,
                 gocardless_customer_id = COALESCE(gocardless_customer_id, $4),
                 plan_status = 'active',
+                subscription_status = 'active',
                 plan_start_date = COALESCE(plan_start_date, $2),
                 updated_at = $2
             WHERE id = $3

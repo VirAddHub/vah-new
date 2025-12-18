@@ -127,6 +127,23 @@ export function useSignup() {
                 throw new Error('Payment setup failed: No response from server');
             }
 
+            // Handle already linked case
+            if (paymentResp.ok && (paymentResp as any)?.data?.alreadyLinked) {
+                console.log('✅ Payment method already linked');
+                setIsComplete(true);
+                return;
+            }
+
+            // Handle resume case
+            if (paymentResp.ok && (paymentResp as any)?.data?.resume) {
+                const redirectFlowId = (paymentResp as any)?.data?.redirectFlowId;
+                console.log('✅ Resuming payment setup with flow:', redirectFlowId);
+                // Redirect to billing page with flow ID to complete
+                const appUrl = window.location.origin;
+                window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(redirectFlowId)}`;
+                return;
+            }
+
             const redirectUrl =
                 (paymentResp as any)?.redirect_url ||
                 (paymentResp as any)?.data?.redirect_url;
@@ -147,10 +164,10 @@ export function useSignup() {
             }
 
             // If payment setup fails, do NOT mark signup complete (service is not live without a mandate).
-            const errorMsg = (paymentResp as any)?.error?.message || 
-                           (paymentResp as any)?.message || 
-                           (paymentResp as any)?.error || 
-                           'Payment setup failed. Please try again.';
+            const errorMsg = (paymentResp as any)?.error?.message ||
+                (paymentResp as any)?.message ||
+                (paymentResp as any)?.error ||
+                'Payment setup failed. Please try again.';
             throw new Error(errorMsg);
 
         } catch (err) {

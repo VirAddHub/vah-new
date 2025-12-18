@@ -220,6 +220,7 @@ async function handleMandateActive(pool: any, links: any) {
             SET gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
                 gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
                 plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                subscription_status = 'active',
                 plan_start_date = COALESCE(plan_start_date, $3),
                 updated_at = $3
             WHERE id = $4
@@ -287,6 +288,7 @@ async function handlePaymentConfirmed(pool: any, links: any) {
         }
 
         // Store GoCardless identifiers on user for future lookups (best-effort)
+        // Set subscription_status when mandate is stored
         if (links?.customer || links?.mandate) {
             await pool.query(
                 `
@@ -294,6 +296,7 @@ async function handlePaymentConfirmed(pool: any, links: any) {
                 SET
                     gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
                     gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
+                    subscription_status = CASE WHEN $2 IS NOT NULL AND gocardless_mandate_id IS NULL THEN 'active' ELSE subscription_status END,
                     updated_at = $3
                 WHERE id = $4
                 `,
@@ -501,27 +504,77 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
         const userId = Number(row.user_id);
         const planId = row.plan_id ? Number(row.plan_id) : null;
 
-        // Store customer_id on user (never downgrade plan_status if already active)
+        // Webhook rule: when resolving by billing_request_id and event includes links.customer,
+        // use customer_id as source-of-truth (overwrite if different)
+        // If billingRequestId exists in event, we may have resolved via billing_request_id, so overwrite customer_id
+        const shouldOverwriteCustomerId = !!billingRequestId && !!customerId;
+
+        // Get current customer_id to check if we need to overwrite
+        const userCheck = await pool.query(
+            `SELECT gocardless_customer_id FROM "user" WHERE id = $1`,
+            [userId]
+        );
+        const currentUserCustomerId = userCheck.rows?.[0]?.gocardless_customer_id ?? null;
+
+        const subCheck = await pool.query(
+            `SELECT customer_id FROM subscription WHERE user_id = $1`,
+            [userId]
+        );
+        const currentSubCustomerId = subCheck.rows?.[0]?.customer_id ?? null;
+
+        // If overwriting customer_id and it differs, log warning
+        if (shouldOverwriteCustomerId) {
+            if (currentUserCustomerId && currentUserCustomerId !== customerId) {
+                console.warn('[GoCardless] payer_details_confirmed: overwriting user.gocardless_customer_id', {
+                    userId,
+                    old: currentUserCustomerId,
+                    new: customerId,
+                    source: 'billing_request_id resolution'
+                });
+            }
+            if (currentSubCustomerId && currentSubCustomerId !== customerId) {
+                console.warn('[GoCardless] payer_details_confirmed: overwriting subscription.customer_id', {
+                    userId,
+                    old: currentSubCustomerId,
+                    new: customerId,
+                    source: 'billing_request_id resolution'
+                });
+            }
+        }
+
+        // Store customer_id on user (overwrite if billingRequestId exists, otherwise use COALESCE)
         await pool.query(
             `
             UPDATE "user"
             SET
-              gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
+              gocardless_customer_id = CASE WHEN $5 IS TRUE AND $1 IS NOT NULL THEN $1 ELSE COALESCE(gocardless_customer_id, $1) END,
               plan_id = COALESCE(plan_id, $2),
               plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
               updated_at = $3
             WHERE id = $4
             `,
-            [String(customerId), planId, Date.now(), userId]
+            [String(customerId), planId, Date.now(), userId, shouldOverwriteCustomerId]
         );
 
-        // Ensure subscription row exists and attach customer_id (creates if missing, never downgrades active)
+        // Ensure subscription row exists and attach customer_id
         await upsertSubscriptionForUser({
             pool,
             userId,
             status: 'pending',
             customerId: String(customerId),
         });
+
+        // If overwriting, explicitly update subscription customer_id
+        if (shouldOverwriteCustomerId) {
+            await pool.query(
+                `
+                UPDATE subscription
+                SET customer_id = $1, updated_at = $2
+                WHERE user_id = $3
+                `,
+                [String(customerId), Date.now(), userId]
+            );
+        }
 
         // Mark BRQ/BRF record as confirmed (best-effort)
         try {
@@ -568,6 +621,7 @@ async function handleMandateSubmitted(pool: any, links: any) {
         if (!userId) return;
 
         // Store ids (do NOT force active here; that happens on mandates.active / flow completion)
+        // But set subscription_status when mandate is stored
         await pool.query(
             `
             UPDATE "user"
@@ -575,6 +629,7 @@ async function handleMandateSubmitted(pool: any, links: any) {
               gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
               gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
               plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
+              subscription_status = 'active',
               updated_at = $3
             WHERE id = $4
             `,
@@ -646,19 +701,68 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
                 );
                 if (brfRow.rows?.length) {
                     const userId = brfRow.rows[0].user_id;
+
+                    // Webhook rule: if event includes links.customer, use it as source-of-truth
+                    // Overwrite user.gocardless_customer_id and subscription.customer_id if different
+                    const eventCustomerId = customerId; // Already extracted above
+                    if (eventCustomerId) {
+                        // Get current customer_id from user and subscription
+                        const userCheck = await pool.query(
+                            `SELECT gocardless_customer_id FROM "user" WHERE id = $1`,
+                            [userId]
+                        );
+                        const currentUserCustomerId = userCheck.rows?.[0]?.gocardless_customer_id ?? null;
+
+                        const subCheck = await pool.query(
+                            `SELECT customer_id FROM subscription WHERE user_id = $1`,
+                            [userId]
+                        );
+                        const currentSubCustomerId = subCheck.rows?.[0]?.customer_id ?? null;
+
+                        // Log warning if overwriting different customer_id
+                        if (currentUserCustomerId && currentUserCustomerId !== eventCustomerId) {
+                            console.warn('[GoCardless] fulfilled: overwriting user.gocardless_customer_id', {
+                                userId,
+                                old: currentUserCustomerId,
+                                new: eventCustomerId,
+                                source: 'billing_request_id resolution'
+                            });
+                        }
+                        if (currentSubCustomerId && currentSubCustomerId !== eventCustomerId) {
+                            console.warn('[GoCardless] fulfilled: overwriting subscription.customer_id', {
+                                userId,
+                                old: currentSubCustomerId,
+                                new: eventCustomerId,
+                                source: 'billing_request_id resolution'
+                            });
+                        }
+
+                        // Update user and subscription with event customer_id
+                        await pool.query(
+                            `
+                            UPDATE "user"
+                            SET gocardless_customer_id = $1, updated_at = $2
+                            WHERE id = $3
+                            `,
+                            [eventCustomerId, Date.now(), userId]
+                        );
+                    }
+
                     await pool.query(
                         `
                         UPDATE subscription
                         SET
                             status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                            updated_at = $1
-                        WHERE user_id = $2
+                            customer_id = CASE WHEN $1 IS NOT NULL THEN $1 ELSE customer_id END,
+                            updated_at = $2
+                        WHERE user_id = $3
                         `,
-                        [Date.now(), userId]
+                        [eventCustomerId, Date.now(), userId]
                     );
                     console.log('[GoCardless] fulfilled: subscription marked active (via billing_request_id)', {
                         billingRequestId,
                         userId,
+                        customerId: eventCustomerId,
                     });
                 }
             } catch (e) {
@@ -720,6 +824,7 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
                         gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
                         gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
                         plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                        subscription_status = 'active',
                         updated_at = $3
                     WHERE id = $4
                     `,
@@ -747,21 +852,64 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
                 if (mappingResult.rows?.length) {
                     const userId = mappingResult.rows[0].user_id;
 
-                    // 2) attach mandate to subscription for that user
-                    const subResult = await pool.query(
+                    // Webhook rule: if event includes links.customer, use it as source-of-truth
+                    // Overwrite user.gocardless_customer_id and subscription.customer_id if different
+                    const eventCustomerId = links?.customer ?? null;
+                    let finalCustomerId = eventCustomerId;
+
+                    if (eventCustomerId) {
+                        // Get current customer_id from user and subscription
+                        const userCheck = await pool.query(
+                            `SELECT gocardless_customer_id FROM "user" WHERE id = $1`,
+                            [userId]
+                        );
+                        const currentUserCustomerId = userCheck.rows?.[0]?.gocardless_customer_id ?? null;
+
+                        const subCheck = await pool.query(
+                            `SELECT customer_id FROM subscription WHERE user_id = $1`,
+                            [userId]
+                        );
+                        const currentSubCustomerId = subCheck.rows?.[0]?.customer_id ?? null;
+
+                        // Log warning if overwriting different customer_id
+                        if (currentUserCustomerId && currentUserCustomerId !== eventCustomerId) {
+                            console.warn('[GoCardless] mandates.created: overwriting user.gocardless_customer_id', {
+                                userId,
+                                old: currentUserCustomerId,
+                                new: eventCustomerId,
+                                source: 'billing_request_id resolution'
+                            });
+                        }
+                        if (currentSubCustomerId && currentSubCustomerId !== eventCustomerId) {
+                            console.warn('[GoCardless] mandates.created: overwriting subscription.customer_id', {
+                                userId,
+                                old: currentSubCustomerId,
+                                new: eventCustomerId,
+                                source: 'billing_request_id resolution'
+                            });
+                        }
+                    } else {
+                        // Fallback to existing subscription customer_id if no event customer_id
+                        const subResult = await pool.query(
+                            `SELECT customer_id FROM subscription WHERE user_id = $1`,
+                            [userId]
+                        );
+                        finalCustomerId = subResult.rows?.[0]?.customer_id ?? null;
+                    }
+
+                    // 2) attach mandate to subscription for that user, update customer_id
+                    await pool.query(
                         `
                         UPDATE subscription
                         SET
                             mandate_id = COALESCE(mandate_id, $1),
+                            customer_id = CASE WHEN $2 IS NOT NULL THEN $2 ELSE customer_id END,
                             status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                            updated_at = $2
-                        WHERE user_id = $3
-                        RETURNING customer_id
+                            updated_at = $3
+                        WHERE user_id = $4
                         `,
-                        [mandateId, Date.now(), userId]
+                        [mandateId, finalCustomerId, Date.now(), userId]
                     );
-
-                    const subCustomerId = subResult.rows?.[0]?.customer_id ?? null;
 
                     // Also update user table (best-effort, never downgrade active status)
                     await pool.query(
@@ -769,12 +917,13 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
                         UPDATE "user"
                         SET
                             gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
-                            gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+                            gocardless_customer_id = CASE WHEN $2 IS NOT NULL THEN $2 ELSE gocardless_customer_id END,
                             plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                            subscription_status = 'active',
                             updated_at = $3
                         WHERE id = $4
                         `,
-                        [mandateId, subCustomerId, Date.now(), userId]
+                        [mandateId, finalCustomerId, Date.now(), userId]
                     );
 
                     console.log('[GoCardless] mandates.created: mandate attached + active (by billing_request)', {

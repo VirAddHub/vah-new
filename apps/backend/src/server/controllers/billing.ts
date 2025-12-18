@@ -22,7 +22,8 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     // Get user payment status
     const userResult = await pool.query(`
-      SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at
+      SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
+             gocardless_mandate_id, gocardless_redirect_flow_id
       FROM "user" WHERE id=$1
     `, [userId]);
     const user = userResult.rows[0];
@@ -72,6 +73,9 @@ export async function getBillingOverview(req: Request, res: Response) {
         grace_period: gracePeriodInfo,
         next_charge_at: sub?.next_charge_at ?? null,
         mandate_status: sub?.mandate_id ? 'active' : 'missing',
+        has_mandate: !!user?.gocardless_mandate_id,
+        has_redirect_flow: !!user?.gocardless_redirect_flow_id,
+        redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         current_price_pence: sub?.price_pence ?? 0,
         usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
       }

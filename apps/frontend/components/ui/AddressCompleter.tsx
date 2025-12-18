@@ -19,7 +19,7 @@ import {
     Map
 } from "lucide-react";
 
-interface AddressSuggestion {
+export interface AddressSuggestion {
     id: string;
     formatted_address: string;
     address_line_1: string;
