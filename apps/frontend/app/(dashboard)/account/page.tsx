@@ -33,8 +33,20 @@ export default function AccountPage() {
     // Check for errors and loading states
     const accountError = accountData && accountData.ok === false;
     const profileError = profileData && profileData.ok === false;
-    const hasError = accountError || profileError;
+    const overviewError = overview && overview.ok === false;
+    const invoicesError = invoicesData && invoicesData.ok === false;
+    const userError = userData && userData.ok === false;
+    const hasError = accountError || profileError || overviewError || invoicesError || userError;
     const isLoading = !accountData && !profileData && !userData && !overview;
+    
+    // Collect all error payloads for the banner
+    const errorPayloads = [
+        accountError ? { endpoint: '/api/bff/account', error: accountData } : null,
+        profileError ? { endpoint: '/api/bff/profile', error: profileData } : null,
+        overviewError ? { endpoint: '/api/bff/billing/overview', error: overview } : null,
+        invoicesError ? { endpoint: '/api/bff/billing/invoices', error: invoicesData } : null,
+        userError ? { endpoint: '/api/auth/whoami', error: userData } : null,
+    ].filter(Boolean) as Array<{ endpoint: string; error: any }>;
 
     // Build account data from existing APIs
     const data = useMemo<AccountPageData | null>(() => {
@@ -253,6 +265,12 @@ export default function AccountPage() {
                                 <p className="text-sm text-muted-foreground mb-4 font-mono bg-muted p-2 rounded">
                                     {errorDetails}
                                 </p>
+                            )}
+                            {errorPayloads.length > 0 && (
+                                <div className="mb-4 p-3 bg-muted rounded text-xs font-mono overflow-auto max-h-48">
+                                    <p className="font-semibold mb-2">Error Payloads:</p>
+                                    <pre>{JSON.stringify(errorPayloads, null, 2)}</pre>
+                                </div>
                             )}
                             <div className="flex gap-2 mt-4">
                                 <button

@@ -125,6 +125,42 @@ export function getBackendOrigin(): string {
 }
 
 /**
+ * Gets the backend origin and the source environment variable used.
+ * 
+ * @returns Object with origin and origin_source
+ */
+export function getBackendOriginWithSource(): { origin: string; origin_source: string } {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Production: Require NEXT_PUBLIC_BACKEND_API_ORIGIN (no fallbacks)
+  if (isProduction) {
+    if (!process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
+      throw new Error('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set');
+    }
+    const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
+    return { origin, origin_source: 'NEXT_PUBLIC_BACKEND_API_ORIGIN' };
+  }
+
+  // Non-production: Prefer NEXT_PUBLIC_BACKEND_API_ORIGIN
+  if (process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
+    const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
+    return { origin, origin_source: 'NEXT_PUBLIC_BACKEND_API_ORIGIN' };
+  }
+
+  // Non-production: Fallback to NEXT_PUBLIC_API_URL (legacy)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const origin = normalise(process.env.NEXT_PUBLIC_API_URL);
+    validateRenderOrigin(origin, 'NEXT_PUBLIC_API_URL');
+    return { origin, origin_source: 'NEXT_PUBLIC_API_URL (legacy)' };
+  }
+
+  // Non-production: Fallback to staging Render origin
+  return { origin: 'https://vah-api-staging.onrender.com', origin_source: 'fallback (staging)' };
+}
+
+/**
  * Asserts that backend origin is configured.
  * 
  * @returns The backend origin URL (same as getBackendOrigin)
