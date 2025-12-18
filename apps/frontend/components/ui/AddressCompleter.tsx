@@ -76,7 +76,7 @@ export function AddressCompleter({
         setError(null);
 
         try {
-            const url = `/api/bff/address?postcode=${encodeURIComponent(searchQuery)}&line1=`;
+            const url = `/api/bff/address/lookup?postcode=${encodeURIComponent(searchQuery)}&line1=`;
             console.log('[AddressCompleter] Fetching from:', url);
 
             const response = await fetch(url, { cache: 'no-store' });

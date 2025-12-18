@@ -16,7 +16,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    // Read response as text first
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw: raw.substring(0, 300) };
+    }
 
     // Normalise invoice PDF URL to a same-origin BFF download endpoint
     // so the browser can download with the user's cookies.
@@ -34,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     } else {
       return NextResponse.json(
-        { ok: false, error: data.error || 'Failed to fetch invoices', details: data },
+        { ok: false, error: data?.error || 'Failed to fetch invoices', status: response.status, details: data },
         { status: response.status }
       );
     }

@@ -228,6 +228,13 @@ export default function AccountPage() {
 
     // Show error state if critical data failed to load
     if (hasError && !isLoading) {
+        // Get error message from failed requests
+        const accountErrorMsg = accountData && accountData.ok === false ? accountData.error || 'Unknown error' : null;
+        const profileErrorMsg = profileData && profileData.ok === false ? profileData.error || 'Unknown error' : null;
+        const errorMessage = accountErrorMsg || profileErrorMsg || 'Failed to load account details';
+        const errorDetails = (accountData && accountData.ok === false ? accountData.details : null) || 
+                            (profileData && profileData.ok === false ? profileData.details : null);
+
         return (
             <div className="min-h-screen flex flex-col bg-background">
                 <Navigation onNavigate={() => { }} />
@@ -239,20 +246,35 @@ export default function AccountPage() {
                         </div>
                         <div className="bg-destructive/10 border border-destructive rounded-lg p-6">
                             <h2 className="text-lg font-semibold text-destructive mb-2">Unable to load account details</h2>
-                            <p className="text-muted-foreground mb-4">
-                                We couldn't load your account details. Please refresh or contact support.
+                            <p className="text-muted-foreground mb-2">
+                                {errorMessage}
                             </p>
-                            <button
-                                onClick={() => {
-                                    mutateAccount();
-                                    mutateProfile();
-                                    mutateOverview();
-                                    mutateUser();
-                                }}
-                                className="text-primary hover:underline"
-                            >
-                                Refresh page
-                            </button>
+                            {errorDetails && typeof errorDetails === 'string' && (
+                                <p className="text-sm text-muted-foreground mb-4 font-mono bg-muted p-2 rounded">
+                                    {errorDetails}
+                                </p>
+                            )}
+                            <div className="flex gap-2 mt-4">
+                                <button
+                                    onClick={() => {
+                                        mutateAccount();
+                                        mutateProfile();
+                                        mutateOverview();
+                                        mutateUser();
+                                    }}
+                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                                >
+                                    Refresh page
+                                </button>
+                                <a
+                                    href="/api/bff/debug"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+                                >
+                                    Open debug endpoint
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </main>

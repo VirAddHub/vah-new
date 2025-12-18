@@ -27,10 +27,19 @@ export async function GET(request: NextRequest) {
       }).catch(() => null),
     ]);
 
-    const overview = overviewRes?.ok ? await overviewRes.json().catch(() => null) : null;
-    const invoices = invoicesRes?.ok ? await invoicesRes.json().catch(() => null) : null;
-    const user = userRes?.ok ? await userRes.json().catch(() => null) : null;
-    const profile = profileRes?.ok ? await profileRes.json().catch(() => null) : null;
+    // Read responses as text first, then parse JSON
+    const overview = overviewRes?.ok ? await overviewRes.text().then(raw => {
+      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
+    }).catch(() => null) : null;
+    const invoices = invoicesRes?.ok ? await invoicesRes.text().then(raw => {
+      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
+    }).catch(() => null) : null;
+    const user = userRes?.ok ? await userRes.text().then(raw => {
+      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
+    }).catch(() => null) : null;
+    const profile = profileRes?.ok ? await profileRes.text().then(raw => {
+      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
+    }).catch(() => null) : null;
 
     const o = overview?.data;
     const userData = user?.data?.user;

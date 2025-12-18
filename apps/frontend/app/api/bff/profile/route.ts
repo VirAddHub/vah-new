@@ -15,13 +15,20 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    // Read response as text first
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw: raw.substring(0, 300) };
+    }
 
     if (response.ok) {
       return NextResponse.json(data, { status: response.status });
     } else {
       return NextResponse.json(
-        { ok: false, error: data.error || 'Failed to fetch profile', details: data },
+        { ok: false, error: data?.error || 'Failed to fetch profile', status: response.status, details: data },
         { status: response.status }
       );
     }
@@ -57,13 +64,20 @@ export async function PATCH(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    // Read response as text first
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw: raw.substring(0, 300) };
+    }
 
     if (response.ok) {
       return NextResponse.json(data, { status: response.status });
     } else {
       return NextResponse.json(
-        { ok: false, error: data.error || 'Failed to update profile', details: data },
+        { ok: false, error: data?.error || 'Failed to update profile', status: response.status, details: data },
         { status: response.status }
       );
     }

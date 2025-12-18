@@ -15,13 +15,20 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    // Read response as text first
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw: raw.substring(0, 300) };
+    }
 
     if (response.ok) {
       return NextResponse.json({ ok: true, data }, { status: 200 });
     } else {
       return NextResponse.json(
-        { ok: false, error: data.error || 'Health check failed', details: data, status: response.status },
+        { ok: false, error: data?.error || 'Health check failed', status: response.status, details: data },
         { status: response.status }
       );
     }
