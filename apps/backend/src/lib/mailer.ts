@@ -160,25 +160,32 @@ export async function sendWelcomeEmail({ email, firstName, name, cta_url }: { em
 
 /**
  * Send welcome email with KYC reminder
- * Uses Postmark template alias: welcome-kyc-reminder
+ * Uses Postmark template alias: welcome-email
  * Template expects: {{first_name}} and {{cta_url}}
  * 
  * Environment variable: POSTMARK_WELCOME_KYC_TEMPLATE_ID is not used (we use template alias instead).
- * The template alias "welcome-kyc-reminder" should be configured in Postmark.
+ * The template alias "welcome-email" should be configured in Postmark.
  */
 export async function sendWelcomeKycEmail({ email, firstName }: { email: string; firstName: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_ONBOARDING)) return;
 
     const ctaUrl = buildAppUrl('/dashboard');
 
-    await sendTemplateEmail({
-        to: email,
-        templateAlias: Templates.WelcomeKyc,
-        model: {
-            firstName,
-            ctaUrl,
-        },
-    });
+    try {
+        await sendTemplateEmail({
+            to: email,
+            templateAlias: Templates.WelcomeKyc,
+            model: {
+                firstName,
+                ctaUrl,
+            },
+        });
+        console.log("[postmark] sent template welcome-email to", email);
+    } catch (err: any) {
+        console.error("[postmark] failed template welcome-email", err);
+        // Don't re-throw - sendTemplateEmail already handles errors gracefully
+        // This preserves non-fatal behavior (signup route won't fail if email fails)
+    }
 }
 
 // Billing & invoices
