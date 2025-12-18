@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -20,6 +20,11 @@ interface ForwardingAddressCardProps {
 export function ForwardingAddressCard({ address: initialAddress, onSave }: ForwardingAddressCardProps) {
   const [address, setAddress] = useState<Address | null>(initialAddress);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Sync address prop when it changes from parent (after save)
+  useEffect(() => {
+    setAddress(initialAddress);
+  }, [initialAddress]);
   const [isSaving, setIsSaving] = useState(false);
   const [manualAddress, setManualAddress] = useState({
     line1: '',
@@ -86,10 +91,10 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     setIsSaving(true);
     try {
       await onSave(finalAddress);
+      // Close dialog immediately after successful save (before state updates)
+      setIsDialogOpen(false);
       // Update local state with saved address
       setAddress(finalAddress);
-      // Close dialog immediately after successful save
-      setIsDialogOpen(false);
       // Reset manual entry state for next time
       setUseManualEntry(false);
       // Reset manual address fields
@@ -103,6 +108,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     } catch (error) {
       // Error toast is handled by parent component
       // Don't close dialog on error so user can retry
+      console.error('[ForwardingAddressCard] Save error:', error);
     } finally {
       setIsSaving(false);
     }
