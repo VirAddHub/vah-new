@@ -14,7 +14,6 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
 import HowItWorks from "./HowItWorks";
 import Preview from "./Preview";
-import FooterComplianceCTA from "./FooterComplianceCTA";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -83,13 +82,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Mobile: Clean Text-First Layout */}
                     <div className="lg:hidden">
                         <div className="text-xs font-semibold text-muted-foreground tracking-wide">
-                            Fully compliant • Privacy-first • London-based
+                            Privacy-first • London-based
                         </div>
                         <h1 className="mt-3 text-[clamp(2.25rem,9vw,3.25rem)] leading-[1.05] font-bold tracking-tight text-primary">
                             An Affordable, All-Inclusive London Business Address
                         </h1>
                         <p className="mt-3 max-w-[42ch] text-pretty text-sm text-muted-foreground sm:text-base leading-relaxed">
-                            Secure a fully compliant Central London business address for just £9.97/month.
+                            Secure a Central London business address for just £9.97/month.
                         </p>
                         <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                             Everything is included — from unlimited same-day mail scanning to free UK forwarding of HMRC and Companies House letters — helping you meet the latest Companies House requirements, protect your privacy, and present a professional image without overpaying.
@@ -121,13 +120,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="hidden lg:grid lg:grid-cols-12 gap-12 items-center">
                         <div className="lg:col-span-7">
                             <div className="text-xs font-semibold text-muted-foreground tracking-wide">
-                                Fully compliant • Privacy-first • London-based
+                                Privacy-first • London-based
                             </div>
                             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl text-primary">
                                 An Affordable, All-Inclusive London Business Address
                             </h1>
                             <p className="mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
-                                Secure a fully compliant Central London business address for just £9.97/month.
+                                Secure a Central London business address for just £9.97/month.
                             </p>
                             <p className="mt-4 text-base text-muted-foreground max-w-2xl leading-relaxed">
                                 Everything is included — from unlimited same-day mail scanning to free UK forwarding of HMRC and Companies House letters — helping you meet the latest Companies House requirements, protect your privacy, and present a professional image without overpaying.
@@ -324,8 +323,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PREVIEW SECTION */}
             <Preview onNavigate={handleNavClick} />
 
-            {/* FOOTER COMPLIANCE CTA */}
-            <FooterComplianceCTA />
         </main>
     );
 }

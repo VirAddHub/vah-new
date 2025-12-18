@@ -39,9 +39,6 @@ export function createNavigationHandler(router: any) {
             case 'terms':
                 router.push('/terms');
                 break;
-            case 'compliance-check':
-                router.push('/compliance-check');
-                break;
             case 'about':
                 router.push('/about');
                 break;
