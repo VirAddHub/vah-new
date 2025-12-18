@@ -300,7 +300,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </Button>
 
                                 <p className="mt-4 text-xs text-muted-foreground text-center">
-                                    Instant signup · No hidden fees · Fully compliant
+                                    Instant signup · No hidden fees
                                 </p>
 
                                 <div className="mt-6 pt-4 border-t border-border">
