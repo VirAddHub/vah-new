@@ -216,12 +216,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     >
                                         Annual
                                     </Label>
-                                    {/* Save badge */}
-                                    <div className="absolute -top-2 -right-2 z-20">
-                                        <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1 whitespace-nowrap shadow-md">
-                                            Save ~25%
-                                        </Badge>
-                                    </div>
                                 </div>
                             </RadioGroup>
                         </div>

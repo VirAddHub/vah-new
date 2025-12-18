@@ -94,10 +94,21 @@ export default function AccountPage() {
                     throw new Error(j?.error || 'Failed to complete payment setup');
                 }
 
-                toast({
-                    title: 'Payment method connected',
-                    description: 'Your Direct Debit mandate is now set up.',
-                });
+                // Check if we should show welcome message after signup
+                const showWelcome = sessionStorage.getItem('show_welcome_after_payment');
+                if (showWelcome === 'true') {
+                    sessionStorage.removeItem('show_welcome_after_payment');
+                    toast({
+                        title: 'Welcome to VirtualAddressHub! 🎉',
+                        description: 'Your account is set up and payment method connected. Complete identity verification to start using your London address.',
+                        duration: 8000,
+                    });
+                } else {
+                    toast({
+                        title: 'Payment method connected',
+                        description: 'Your Direct Debit mandate is now set up.',
+                    });
+                }
                 setSetupStatus('done');
             } catch (e: any) {
                 toast({
@@ -477,7 +488,7 @@ export default function AccountPage() {
                                             </div>
                                             <div className="text-sm text-muted-foreground mb-2">per year</div>
                                             <div className="text-sm text-green-600 dark:text-green-400 font-semibold mb-4">
-                                                Save 25% (£29.41/year) - Same service, better value
+                                                Same service, better value
                                             </div>
                                             <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                                                 <li>• Professional London business address</li>

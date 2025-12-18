@@ -674,66 +674,133 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
     try {
         // Mandate is the "hard truth" for Direct Debit.
         const mandateId = resource?.id ?? links?.mandate ?? null;
+        // customerId is often NOT present on mandates.created
         const customerId = resource?.links?.customer ?? links?.customer ?? null;
+        // We DO have billing_request, use it as the fallback key
+        const billingRequestId = resource?.links?.billing_request ?? links?.billing_request ?? null;
 
         console.log('[GoCardless] mandates.created: processing', {
             mandateId,
             customerId,
+            billingRequestId,
             hasResource: !!resource,
             links,
         });
 
-        if (!mandateId || !customerId) {
-            console.log('[GoCardless] mandates.created: missing mandateId/customerId', {
-                mandateId,
-                customerId,
+        if (!mandateId) {
+            console.log('[GoCardless] mandates.created: missing mandateId', {
                 links,
             });
             return;
         }
 
-        // Idempotent update: find subscription by customerId and attach mandate + activate
-        const result = await pool.query(
-            `
-            UPDATE subscription
-            SET
-                mandate_id = COALESCE(mandate_id, $1),
-                status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                updated_at = $2
-            WHERE customer_id = $3
-            RETURNING user_id
-            `,
-            [mandateId, Date.now(), customerId]
-        );
-
-        if (result.rows?.length) {
-            const userId = result.rows[0].user_id;
-
-            // Also update user table (best-effort, never downgrade active status)
-            await pool.query(
+        // Path A: customerId present (keep existing behaviour)
+        if (customerId) {
+            const result = await pool.query(
                 `
-                UPDATE "user"
+                UPDATE subscription
                 SET
-                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
-                    gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
-                    plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
-                    updated_at = $3
-                WHERE id = $4
+                    mandate_id = COALESCE(mandate_id, $1),
+                    status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                    updated_at = $2
+                WHERE customer_id = $3
+                RETURNING user_id
                 `,
-                [mandateId, customerId, Date.now(), userId]
+                [mandateId, Date.now(), customerId]
             );
 
-            console.log('[GoCardless] mandates.created: mandate attached + active', {
-                customerId,
-                mandateId,
-                userId,
-            });
-        } else {
-            console.warn('[GoCardless] mandates.created: no subscription found for customer_id', {
-                customerId,
-                mandateId,
-            });
+            if (result.rows?.length) {
+                const userId = result.rows[0].user_id;
+
+                // Also update user table (best-effort, never downgrade active status)
+                await pool.query(
+                    `
+                    UPDATE "user"
+                    SET
+                        gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
+                        gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+                        plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                        updated_at = $3
+                    WHERE id = $4
+                    `,
+                    [mandateId, customerId, Date.now(), userId]
+                );
+
+                console.log('[GoCardless] mandates.created: mandate attached + active (by customer)', {
+                    customerId,
+                    mandateId,
+                    userId,
+                });
+                return;
+            }
         }
+
+        // Path B: customerId missing — resolve via billing_request mapping table
+        if (billingRequestId) {
+            try {
+                // 1) find mapping row in gc_billing_request_flow by billing_request_id
+                const mappingResult = await pool.query(
+                    `SELECT user_id, plan_id FROM gc_billing_request_flow WHERE billing_request_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [String(billingRequestId)]
+                );
+
+                if (mappingResult.rows?.length) {
+                    const userId = mappingResult.rows[0].user_id;
+
+                    // 2) attach mandate to subscription for that user
+                    const subResult = await pool.query(
+                        `
+                        UPDATE subscription
+                        SET
+                            mandate_id = COALESCE(mandate_id, $1),
+                            status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
+                            updated_at = $2
+                        WHERE user_id = $3
+                        RETURNING customer_id
+                        `,
+                        [mandateId, Date.now(), userId]
+                    );
+
+                    const subCustomerId = subResult.rows?.[0]?.customer_id ?? null;
+
+                    // Also update user table (best-effort, never downgrade active status)
+                    await pool.query(
+                        `
+                        UPDATE "user"
+                        SET
+                            gocardless_mandate_id = COALESCE(gocardless_mandate_id, $1),
+                            gocardless_customer_id = COALESCE(gocardless_customer_id, $2),
+                            plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
+                            updated_at = $3
+                        WHERE id = $4
+                        `,
+                        [mandateId, subCustomerId, Date.now(), userId]
+                    );
+
+                    console.log('[GoCardless] mandates.created: mandate attached + active (by billing_request)', {
+                        billingRequestId,
+                        mandateId,
+                        userId,
+                        customerId: subCustomerId,
+                    });
+                    return;
+                } else {
+                    console.log('[GoCardless] mandates.created: no mapping for billing_request', {
+                        billingRequestId,
+                        mandateId,
+                    });
+                }
+            } catch (e) {
+                console.warn('[GoCardless] mandates.created: failed to lookup by billing_request_id', (e as any)?.message ?? e);
+            }
+        }
+
+        console.log('[GoCardless] mandates.created: cannot attach (no customerId or billingRequestId)', {
+            mandateId,
+            customerId,
+            billingRequestId,
+            links,
+        });
     } catch (error) {
         console.error('[GoCardless] Error handling mandates.created:', error);
     }

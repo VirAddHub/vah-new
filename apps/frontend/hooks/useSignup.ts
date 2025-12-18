@@ -133,6 +133,8 @@ export function useSignup() {
 
             if (paymentResp.ok && redirectUrl) {
                 console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
+                // Store flag to show welcome message after GoCardless redirect
+                sessionStorage.setItem('show_welcome_after_payment', 'true');
                 window.location.href = redirectUrl;
                 return; // Don't set complete yet, wait for redirect
             }

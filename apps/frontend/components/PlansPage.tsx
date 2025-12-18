@@ -120,9 +120,6 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                             }`}
                                     >
                                         Annual
-                                        <span className="items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
-                                            Save 25%
-                                        </span>
                                     </button>
                                 </div>
                             </div>
