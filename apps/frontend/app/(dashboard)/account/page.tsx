@@ -387,6 +387,15 @@ export default function AccountPage() {
                             contact={data.contact}
                             onSave={handleSaveContact}
                         />
+                        
+                        {/* Debug: Show what data we have (remove in production) */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs bg-muted p-2 rounded font-mono">
+                                <p>Debug: profile={JSON.stringify({ first_name: profile?.first_name, last_name: profile?.last_name, phone: profile?.phone })}</p>
+                                <p>Debug: user={JSON.stringify({ first_name: user?.first_name, last_name: user?.last_name, phone: user?.phone })}</p>
+                                <p>Debug: contact={JSON.stringify(data.contact)}</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Section C - Forwarding Address */}

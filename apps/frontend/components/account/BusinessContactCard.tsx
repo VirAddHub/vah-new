@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,12 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const [contact, setContact] = useState<BusinessContactInfo>(initialContact);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync contact prop when it changes from parent (after data loads or save)
+  useEffect(() => {
+    setContact(initialContact);
+    setHasChanges(false); // Reset changes flag when prop updates
+  }, [initialContact]);
 
   const handleChange = (field: keyof BusinessContactInfo, value: string) => {
     setContact(prev => ({ ...prev, [field]: value }));
