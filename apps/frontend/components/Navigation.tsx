@@ -43,6 +43,11 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
     const navItems = isDashboard ? dashboardNavItems : publicNavItems;
 
+    // Debug: Log pathname and isDashboard (remove in production)
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.log('[Navigation] pathname:', pathname, 'isDashboard:', isDashboard);
+    }
+
     const handleNavClick = (page: string, href?: string) => {
         // Scroll to top before navigation
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
