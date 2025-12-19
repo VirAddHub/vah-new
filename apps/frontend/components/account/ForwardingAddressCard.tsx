@@ -20,7 +20,7 @@ interface ForwardingAddressCardProps {
 export function ForwardingAddressCard({ address: initialAddress, onSave }: ForwardingAddressCardProps) {
   const [address, setAddress] = useState<Address | null>(initialAddress);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   // Sync address prop when it changes from parent (after save)
   useEffect(() => {
     setAddress(initialAddress);
@@ -131,7 +131,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">
-          Used only for forwarding physical post.
+          Used only for forwarding physical post. You can update your forwarding address at any time.
         </p>
         {address ? (
           <div className="space-y-4">

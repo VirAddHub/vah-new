@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Lock, Mail } from 'lucide-react';
 import { BusinessContactInfo } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,33 +27,35 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   }, [initialContact]);
 
   const handleChange = (field: keyof BusinessContactInfo, value: string) => {
-    setContact(prev => ({ ...prev, [field]: value }));
-    setHasChanges(true);
+    // Only allow changes to phone (name fields are locked)
+    if (field === 'phone') {
+      setContact(prev => ({ ...prev, [field]: value }));
+      setHasChanges(true);
+    }
   };
 
   const handleSave = async () => {
-    // Validation
-    if (!contact.first_name.trim() || !contact.last_name.trim()) {
-      toast({
-        title: "Validation error",
-        description: "First name and last name are required.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Only save phone (name fields are locked and excluded from payload)
     setIsSaving(true);
     try {
-      await onSave(contact);
+      // Create payload with only phone (exclude locked fields)
+      const payload: BusinessContactInfo = {
+        first_name: initialContact.first_name, // Keep original values
+        last_name: initialContact.last_name,
+        middle_names: initialContact.middle_names,
+        email: initialContact.email,
+        phone: contact.phone, // Only phone can change
+      };
+      await onSave(payload);
       setHasChanges(false);
       toast({
         title: "Saved",
-        description: "Your contact information has been updated.",
+        description: "Your phone number has been updated.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save contact information. Please try again.",
+        description: "Failed to save phone number. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -65,76 +69,121 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
         <CardTitle>Business Contact</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          These details must match your verification records.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="first_name">
-              Full legal first name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="first_name"
-              value={contact.first_name}
-              onChange={(e) => handleChange('first_name', e.target.value)}
-              placeholder="John"
-            />
+        {/* Locked section - Name fields */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Locked for verification</span>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="first_name" className="flex items-center gap-2">
+                Full legal first name <span className="text-destructive">*</span>
+                <Badge variant="outline" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Locked
+                </Badge>
+              </Label>
+              <Input
+                id="first_name"
+                value={contact.first_name}
+                disabled
+                placeholder="John"
+                className="bg-muted"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="middle_names">Middle names</Label>
-            <Input
-              id="middle_names"
-              value={contact.middle_names || ''}
-              onChange={(e) => handleChange('middle_names', e.target.value)}
-              placeholder="James"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="middle_names" className="flex items-center gap-2">
+                Middle names
+                <Badge variant="outline" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Locked
+                </Badge>
+              </Label>
+              <Input
+                id="middle_names"
+                value={contact.middle_names || ''}
+                disabled
+                placeholder="James"
+                className="bg-muted"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="last_name" className="flex items-center gap-2">
+                Full legal last name(s) <span className="text-destructive">*</span>
+                <Badge variant="outline" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Locked
+                </Badge>
+              </Label>
+              <Input
+                id="last_name"
+                value={contact.last_name}
+                disabled
+                placeholder="Smith"
+                className="bg-muted"
+              />
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="last_name">
-              Full legal last name(s) <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="last_name"
-              value={contact.last_name}
-              onChange={(e) => handleChange('last_name', e.target.value)}
-              placeholder="Smith"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Contact telephone number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={contact.phone || ''}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              placeholder="+44 20 1234 5678"
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="email">Email address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={contact.email}
-              disabled
-              placeholder="your.email@example.com"
-            />
+          <div className="bg-muted/50 border border-muted rounded-lg p-3 space-y-2">
             <p className="text-xs text-muted-foreground">
-              This is your account email address and cannot be changed here.
+              These details are locked after verification. If you need to change them, contact support.
             </p>
+            <a
+              href="mailto:support@virtualaddresshub.co.uk?subject=Request to change verified name"
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+            >
+              <Mail className="h-3 w-3" />
+              Contact support
+            </a>
           </div>
         </div>
 
-        <div className="flex justify-end">
+        {/* Editable section - Phone and Email */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Contact telephone number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={contact.phone || ''}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder="+44 20 1234 5678"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="flex items-center gap-2">
+                Email address
+                <Badge variant="outline" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Locked
+                </Badge>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={contact.email}
+                disabled
+                placeholder="your.email@example.com"
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                This is your account email address and cannot be changed here.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
           <Button
             onClick={handleSave}
             disabled={!hasChanges || isSaving}
           >
-            {isSaving ? 'Saving...' : 'Save changes'}
+            {isSaving ? 'Saving...' : 'Save phone number'}
           </Button>
         </div>
       </CardContent>

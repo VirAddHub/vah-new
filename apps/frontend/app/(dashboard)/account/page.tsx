@@ -75,8 +75,8 @@ export default function AccountPage() {
                 pricePence = recentPaidInvoice.amount_pence;
             }
         }
-        
-        const priceLabel = pricePence && pricePence > 0 
+
+        const priceLabel = pricePence && pricePence > 0
             ? `£${(pricePence / 100).toFixed(2)}`
             : 'Price not available';
 
@@ -87,12 +87,14 @@ export default function AccountPage() {
             status: o?.status === 'active' ? 'active' : o?.status === 'cancelled' ? 'cancelled' : o?.status === 'past_due' ? 'past_due' : 'unknown'
         };
 
+        // Build contact info - prioritize profile data, fallback to user data
+        // Handle null/undefined explicitly to avoid showing empty strings when data exists
         const contact: BusinessContactInfo = {
-            first_name: profile?.first_name || user?.first_name || '',
+            first_name: (profile?.first_name ?? user?.first_name) || '',
             middle_names: profile?.middle_names || '',
-            last_name: profile?.last_name || user?.last_name || '',
-            phone: profile?.phone || user?.phone || '',
-            email: profile?.email || user?.email || ''
+            last_name: (profile?.last_name ?? user?.last_name) || '',
+            phone: (profile?.phone ?? user?.phone) || '',
+            email: (profile?.email ?? user?.email) || ''
         };
 
         // SAFETY: Never overwrite existing addresses
@@ -136,17 +138,17 @@ export default function AccountPage() {
     // Handlers
     const handleSaveContact = async (contact: BusinessContactInfo) => {
         try {
-            // SAFETY: Never send email in PATCH body (backend will reject it anyway)
+            // SAFETY: Only send phone (name fields are locked and excluded from payload)
+            // Never send email, first_name, last_name, middle_names (backend blocks them anyway)
             const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    first_name: contact.first_name,
-                    middle_names: contact.middle_names,
-                    last_name: contact.last_name,
                     phone: contact.phone
-                    // email is intentionally excluded - backend blocks it
+                    // email, first_name, last_name, middle_names are intentionally excluded:
+                    // - email: backend blocks it
+                    // - name fields: locked for verification, user cannot change them
                 })
             });
 
@@ -171,12 +173,12 @@ export default function AccountPage() {
 
             toast({
                 title: "Saved",
-                description: "Contact information has been updated.",
+                description: "Phone number has been updated.",
             });
         } catch (error) {
             toast({
                 title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save contact information",
+                description: error instanceof Error ? error.message : "Failed to save phone number",
                 variant: "destructive",
             });
             throw error;
@@ -397,7 +399,7 @@ export default function AccountPage() {
                             contact={data.contact}
                             onSave={handleSaveContact}
                         />
-                        
+
                         {/* Debug: Show what data we have (remove in production) */}
                         {process.env.NODE_ENV === 'development' && (
                             <div className="text-xs bg-muted p-2 rounded font-mono">
