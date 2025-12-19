@@ -16,11 +16,14 @@ export function Navigation({ onNavigate }: NavigationProps) {
     const pathname = usePathname();
 
     // Check if we're in dashboard context
-    const isDashboard = pathname?.startsWith('/dashboard') || 
-                       pathname?.startsWith('/account') || 
-                       pathname?.startsWith('/mail') ||
-                       pathname?.startsWith('/forwarding') ||
-                       pathname?.startsWith('/billing');
+    // Dashboard routes: /dashboard, /account, /mail, /forwarding, /billing
+    const isDashboard = Boolean(pathname && (
+        pathname.startsWith('/dashboard') || 
+        pathname.startsWith('/account') || 
+        pathname.startsWith('/mail') ||
+        pathname.startsWith('/forwarding') ||
+        pathname.startsWith('/billing')
+    ));
 
     // Dashboard navigation items
     const dashboardNavItems = [
