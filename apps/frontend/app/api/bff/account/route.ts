@@ -47,9 +47,23 @@ export async function GET(request: NextRequest) {
     const invoicesRaw = invoices?.data?.items || [];
 
     // Build AccountPageData structure
+    // Get price from billing overview, or fallback to most recent paid invoice
+    let pricePence = o?.current_price_pence;
+    if (!pricePence || pricePence === 0) {
+      // Try to get price from most recent paid invoice
+      const recentPaidInvoice = invoicesRaw.find((inv: any) => inv.status === 'paid');
+      if (recentPaidInvoice?.amount_pence) {
+        pricePence = recentPaidInvoice.amount_pence;
+      }
+    }
+    
+    const priceLabel = pricePence && pricePence > 0 
+      ? `£${(pricePence / 100).toFixed(2)}`
+      : 'Price not available';
+
     const subscription = {
       plan_name: o?.plan || 'Digital Mailbox Plan',
-      price_label: o?.current_price_pence ? `£${(o.current_price_pence / 100).toFixed(2)}` : '£9.99',
+      price_label: priceLabel,
       billing_period: (o?.cadence === 'yearly' || o?.cadence === 'annual') ? 'annual' : 'monthly',
       status: o?.status === 'active' ? 'active' : o?.status === 'cancelled' ? 'cancelled' : o?.status === 'past_due' ? 'past_due' : 'unknown'
     };
