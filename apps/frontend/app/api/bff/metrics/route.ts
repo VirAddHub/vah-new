@@ -7,8 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/metrics`;
-  
-  try {
+
     const r = await fetch(url, { 
       method: "GET", 
       headers: { 

@@ -7,8 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/ops/heartbeat`;
-  
-  try {
+
     const r = await fetch(url, { 
       method: "GET", 
       headers: { 
@@ -47,8 +46,7 @@ export async function POST(req: NextRequest) {
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/ops/self-test`;
-  
-  try {
+
     const r = await fetch(url, { 
       method: "POST", 
       headers: { 

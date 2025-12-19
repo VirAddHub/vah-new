@@ -7,7 +7,6 @@ export async function POST(req: NextRequest) {
     const backend = getBackendOrigin();
     const backendUrl = `${backend}/api/kyc/start`;
 
-  try {
     // Forward cookies for authentication
     const cookieHeader = req.headers.get('cookie') || '';
 

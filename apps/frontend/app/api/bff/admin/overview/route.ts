@@ -7,7 +7,6 @@ export async function GET(req: NextRequest) {
         const backend = getBackendOrigin();
         const url = `${backend}/api/admin/overview`;
 
-    try {
         const r = await fetch(url, {
             method: "GET",
             headers: {

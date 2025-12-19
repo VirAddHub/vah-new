@@ -84,21 +84,21 @@ export async function GET(request: NextRequest) {
     if (isBackendOriginConfigError(error)) {
       console.error('[BFF debug] Server misconfigured:', error.message);
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: 'Server misconfigured', 
+        {
+          ok: false,
+          error: 'Server misconfigured',
           details: error.message,
           config_error: true,
-          origin_source: process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ? 'NEXT_PUBLIC_BACKEND_API_ORIGIN (invalid)' : 
-                        process.env.NEXT_PUBLIC_API_URL ? 'NEXT_PUBLIC_API_URL (invalid)' : 'none'
+          origin_source: process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ? 'NEXT_PUBLIC_BACKEND_API_ORIGIN (invalid)' :
+            process.env.NEXT_PUBLIC_API_URL ? 'NEXT_PUBLIC_API_URL (invalid)' : 'none'
         },
         { status: 500 }
       );
     }
     console.error('[BFF debug] error:', error);
     return NextResponse.json(
-      { 
-        ok: false, 
+      {
+        ok: false,
         error: 'Failed to get debug info',
         details: error instanceof Error ? error.message : 'Unknown error',
         config_error: false

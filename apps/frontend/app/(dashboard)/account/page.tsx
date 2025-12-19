@@ -38,7 +38,7 @@ export default function AccountPage() {
     const userError = userData && userData.ok === false;
     const hasError = accountError || profileError || overviewError || invoicesError || userError;
     const isLoading = !accountData && !profileData && !userData && !overview;
-    
+
     // Collect all error payloads for the banner
     const errorPayloads = [
         accountError ? { endpoint: '/api/bff/account', error: accountData } : null,
@@ -244,8 +244,8 @@ export default function AccountPage() {
         const accountErrorMsg = accountData && accountData.ok === false ? accountData.error || 'Unknown error' : null;
         const profileErrorMsg = profileData && profileData.ok === false ? profileData.error || 'Unknown error' : null;
         const errorMessage = accountErrorMsg || profileErrorMsg || 'Failed to load account details';
-        const errorDetails = (accountData && accountData.ok === false ? accountData.details : null) || 
-                            (profileData && profileData.ok === false ? profileData.details : null);
+        const errorDetails = (accountData && accountData.ok === false ? accountData.details : null) ||
+            (profileData && profileData.ok === false ? profileData.details : null);
 
         return (
             <div className="min-h-screen flex flex-col bg-background">
@@ -332,6 +332,30 @@ export default function AccountPage() {
                         <User className="h-8 w-8 text-primary" />
                         <h1 className="text-3xl font-bold text-foreground">Account</h1>
                     </div>
+
+                    {/* Big banner for 500 errors */}
+                    {hasError && errorPayloads.length > 0 && (
+                        <div className="bg-destructive border-2 border-destructive rounded-lg p-6 mb-6">
+                            <h2 className="text-xl font-bold text-destructive-foreground mb-3">
+                                ⚠️ Server Error Detected
+                            </h2>
+                            <p className="text-destructive-foreground mb-4">
+                                One or more API calls returned an error. Check the details below and visit the debug endpoint for more information.
+                            </p>
+                            <div className="mb-4 p-3 bg-destructive-foreground/10 rounded text-xs font-mono overflow-auto max-h-64">
+                                <p className="font-semibold mb-2 text-destructive-foreground">Error Payloads:</p>
+                                <pre className="text-destructive-foreground">{JSON.stringify(errorPayloads, null, 2)}</pre>
+                            </div>
+                            <a
+                                href="/api/bff/debug"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block px-6 py-3 bg-destructive-foreground text-destructive rounded-md hover:opacity-90 font-semibold"
+                            >
+                                Open Debug Endpoint →
+                            </a>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Section A - Account & Billing */}
