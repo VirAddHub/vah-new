@@ -20,6 +20,20 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     const sub = subResult.rows[0];
 
+    // Get the actual price the user is paying from their most recent paid invoice
+    // This ensures users see the price they signed up with, not the current plan price
+    // Price changes in the plans table should NOT affect existing customers
+    const invoicePriceResult = await pool.query(`
+      SELECT amount_pence
+      FROM invoices
+      WHERE user_id = $1 AND status = 'paid'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [userId]);
+    
+    // Use invoice price (locked-in) as source of truth, fallback to current plan price only if no invoices
+    const lockedInPricePence = invoicePriceResult.rows[0]?.amount_pence || null;
+
     // Get user payment status
     const userResult = await pool.query(`
       SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
@@ -76,7 +90,9 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_mandate: !!user?.gocardless_mandate_id,
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
-        current_price_pence: sub?.price_pence ?? 0,
+        // Use locked-in price from invoice (what they signed up with) instead of current plan price
+        // This ensures price changes don't affect existing customers
+        current_price_pence: lockedInPricePence ?? sub?.price_pence ?? 0,
         usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
       }
     });
