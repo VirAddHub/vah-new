@@ -30,6 +30,16 @@ export default function AccountPage() {
     const o = overview?.data;
     const invoicesRaw = invoicesData?.data?.items || [];
 
+    // Debug: Log what we're getting (development only)
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.log('[Account Page] Data loaded:', {
+            profile: profile ? { first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone } : 'null',
+            user: user ? { first_name: user.first_name, last_name: user.last_name, phone: user.phone } : 'null',
+            profileData: profileData,
+            userData: userData,
+        });
+    }
+
     // Check for errors and loading states
     const accountError = accountData && accountData.ok === false;
     const profileError = profileData && profileData.ok === false;
