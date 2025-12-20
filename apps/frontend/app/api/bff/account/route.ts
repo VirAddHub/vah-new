@@ -7,24 +7,40 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
  * Returns AccountPageData structure
  */
 export async function GET(request: NextRequest) {
+  const routePath = '/api/bff/account';
+  let backendBase = '';
+  
   try {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
+    backendBase = backend;
 
     // Fetch data from multiple endpoints in parallel
     const [overviewRes, invoicesRes, userRes, profileRes] = await Promise.all([
       fetch(`${backend}/api/billing/overview`, {
         headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
-      }).catch(() => null),
+      }).catch((e) => {
+        console.error(`[BFF account] Failed to fetch billing/overview:`, e);
+        return null;
+      }),
       fetch(`${backend}/api/billing/invoices?page=1&page_size=12`, {
         headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
-      }).catch(() => null),
+      }).catch((e) => {
+        console.error(`[BFF account] Failed to fetch billing/invoices:`, e);
+        return null;
+      }),
       fetch(`${backend}/api/auth/whoami`, {
         headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
-      }).catch(() => null),
+      }).catch((e) => {
+        console.error(`[BFF account] Failed to fetch auth/whoami:`, e);
+        return null;
+      }),
       fetch(`${backend}/api/profile`, {
         headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
-      }).catch(() => null),
+      }).catch((e) => {
+        console.error(`[BFF account] Failed to fetch profile:`, e);
+        return null;
+      }),
     ]);
 
     // Read responses as text first, then parse JSON
@@ -165,24 +181,23 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error('[BFF account] Server misconfigured:', error.message);
+      console.error(`[BFF account] Server misconfigured: ${error.message}`);
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
-    console.error('[BFF account] error:', error);
-    console.error('[BFF account] error stack:', error?.stack);
-    console.error('[BFF account] error details:', {
-      message: error?.message,
-      name: error?.name,
-      cause: error?.cause,
-    });
+    console.error(`[BFF account] Exception in route ${routePath}:`, error);
+    console.error(`[BFF account] Backend base was: ${backendBase}`);
+    console.error(`[BFF account] Error stack:`, error?.stack);
     return NextResponse.json(
       { 
         ok: false, 
-        error: 'Failed to fetch account data',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+        error: { 
+          code: 'BFF_EXCEPTION', 
+          message: error?.message,
+          route: routePath 
+        }
       },
       { status: 500 }
     );
