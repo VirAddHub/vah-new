@@ -505,28 +505,17 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                     if (planCheck.rows.length > 0) {
                         const plan = planCheck.rows[0];
 
-                        // Update or create subscription record
-                        const subscriptionResult = await pool.query(
-                            'SELECT id FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
-                            [userId]
+                        // UPSERT subscription record (exactly one per user)
+                        const cadence = plan.interval === 'year' ? 'annual' : 'monthly';
+                        await pool.query(
+                            `INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
+                             VALUES ($1, $2, $3, 'pending', NOW())
+                             ON CONFLICT (user_id) DO UPDATE SET
+                               plan_name = EXCLUDED.plan_name,
+                               cadence = EXCLUDED.cadence,
+                               updated_at = NOW()`,
+                            [userId, plan.name, cadence]
                         );
-
-                        if (subscriptionResult.rows.length > 0) {
-                            // Update existing subscription
-                            await pool.query(
-                                `UPDATE subscription 
-                                 SET plan_name = $1, updated_at = $2
-                                 WHERE user_id = $3 AND id = $4`,
-                                [plan.name, TimestampUtils.forTableField('subscription', 'updated_at'), userId, subscriptionResult.rows[0].id]
-                            );
-                        } else {
-                            // Create new subscription record
-                            await pool.query(
-                                `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
-                                 VALUES ($1, $2, $3, 'active', $4, $5)`,
-                                [userId, plan.name, plan.interval, TimestampUtils.forTableField('subscription', 'created_at'), TimestampUtils.forTableField('subscription', 'updated_at')]
-                            );
-                        }
 
                         console.log(`[Admin] User ${userId} plan changed to: ${plan.name} (${plan.interval})`);
                     }
@@ -536,10 +525,12 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                 }
             }
         }
-        if (typeof plan_status === 'string') {
-            updates.push(`plan_status = $${paramIndex++}`);
-            values.push(plan_status);
-        }
+        // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
+        // Do not allow admin to set plan_status directly - it must be set by webhook handlers
+        // if (typeof plan_status === 'string') {
+        //     updates.push(`plan_status = $${paramIndex++}`);
+        //     values.push(plan_status);
+        // }
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
             values.push(kyc_status);

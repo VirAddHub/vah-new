@@ -90,8 +90,14 @@ export async function handleGcWebhook(req: Request, res: Response) {
               console.log(`[GoCardless Webhook] Payment retry ${retryCount + 1} failed for user ${failedUserId}`);
             }
 
-            // Update subscription status
-            await pool.query(`UPDATE subscription SET status='past_due', updated_at=$1 WHERE user_id=$2`, [now, failedUserId]);
+            // UPSERT pattern: ensure subscription exists, update status
+            await pool.query(`
+                INSERT INTO subscription (user_id, status, updated_at)
+                VALUES ($1, 'past_due', NOW())
+                ON CONFLICT (user_id) DO UPDATE SET
+                  status = 'past_due',
+                  updated_at = NOW()
+            `, [failedUserId]);
           }
         }
         break;
@@ -100,8 +106,16 @@ export async function handleGcWebhook(req: Request, res: Response) {
         // Update subscription details
         const subUserId = event.links?.customer_metadata?.user_id;
         if (subUserId) {
-          await pool.query(`UPDATE subscription SET cadence=COALESCE($1, cadence), status=COALESCE($2, status), next_charge_at=COALESCE($3, next_charge_at), updated_at=$4 WHERE user_id=$5`,
-            [event.details?.cadence ?? null, event.details?.status ?? null, event.details?.next_charge_at ?? null, now, subUserId]);
+          // UPSERT pattern: ensure subscription exists, update fields
+          await pool.query(`
+                INSERT INTO subscription (user_id, cadence, status, next_charge_at, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (user_id) DO UPDATE SET
+                  cadence = COALESCE(EXCLUDED.cadence, subscription.cadence),
+                  status = COALESCE(EXCLUDED.status, subscription.status),
+                  next_charge_at = COALESCE(EXCLUDED.next_charge_at, subscription.next_charge_at),
+                  updated_at = NOW()
+            `, [subUserId, event.details?.cadence ?? null, event.details?.status ?? null, event.details?.next_charge_at ?? null]);
           console.log(`[GoCardless Webhook] Updated subscription for user ${subUserId}`);
         }
         break;
@@ -110,8 +124,15 @@ export async function handleGcWebhook(req: Request, res: Response) {
         // Update subscription with active mandate
         const mandateUserId = event.links?.customer_metadata?.user_id;
         if (mandateUserId) {
-          await pool.query(`UPDATE subscription SET mandate_id=$1, status='active', updated_at=$2 WHERE user_id=$3`,
-            [event.links?.mandate, now, mandateUserId]);
+          // UPSERT pattern: ensure subscription exists, update mandate and status
+          await pool.query(`
+                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                VALUES ($1, $2, 'active', NOW())
+                ON CONFLICT (user_id) DO UPDATE SET
+                  mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
+                  status = 'active',
+                  updated_at = NOW()
+            `, [mandateUserId, event.links?.mandate]);
           console.log(`[GoCardless Webhook] Activated mandate for user ${mandateUserId}`);
         }
         break;
@@ -120,8 +141,15 @@ export async function handleGcWebhook(req: Request, res: Response) {
         // Remove mandate and mark as past_due
         const revokedUserId = event.links?.customer_metadata?.user_id;
         if (revokedUserId) {
-          await pool.query(`UPDATE subscription SET mandate_id=NULL, status='past_due', updated_at=$1 WHERE user_id=$2`,
-            [now, revokedUserId]);
+          // UPSERT pattern: ensure subscription exists, remove mandate and update status
+          await pool.query(`
+                INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                VALUES ($1, NULL, 'past_due', NOW())
+                ON CONFLICT (user_id) DO UPDATE SET
+                  mandate_id = NULL,
+                  status = 'past_due',
+                  updated_at = NOW()
+            `, [revokedUserId]);
           console.log(`[GoCardless Webhook] Revoked mandate for user ${revokedUserId}`);
         }
         break;

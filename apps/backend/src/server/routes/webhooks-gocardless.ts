@@ -194,16 +194,18 @@ async function handleMandateActive(pool: any, links: any) {
         }
 
         // 2) Attach mandate to subscription (by customer_id)
+        // Note: We update by customer_id, not user_id, so we can't use UPSERT here
+        // The subscription should already exist from earlier in the flow
         const subUpdate = await pool.query(
             `
             UPDATE subscription
-            SET mandate_id = $1,
+            SET mandate_id = COALESCE(mandate_id, $1),
                 status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                updated_at = $2
-            WHERE customer_id = $3
+                updated_at = NOW()
+            WHERE customer_id = $2
             RETURNING user_id
             `,
-            [mandateId, Date.now(), customerId]
+            [mandateId, customerId]
         );
 
         const userId = subUpdate.rows?.[0]?.user_id ?? null;
@@ -375,11 +377,14 @@ async function handlePaymentFailed(pool: any, links: any) {
         const userId = await findUserIdForPayment(pool, paymentId, links);
 
         if (userId) {
+            // UPSERT pattern: ensure subscription exists, update status
             await pool.query(`
-        UPDATE subscription 
-        SET status = 'past_due', updated_at = $1
-        WHERE user_id = $2
-      `, [Date.now(), userId]);
+                INSERT INTO subscription (user_id, status, updated_at)
+                VALUES ($1, 'past_due', NOW())
+                ON CONFLICT (user_id) DO UPDATE SET
+                  status = 'past_due',
+                  updated_at = NOW()
+            `, [userId]);
 
             console.log(`[GoCardless] Payment ${paymentId} failed for user ${userId}`);
 

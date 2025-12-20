@@ -98,12 +98,12 @@ export async function ensureUserPlanLinked(opts: {
       const plan = r.rows[0] as PlanRow;
       const now = Date.now();
       const updatedAt = TimestampUtils.forTableField("user", "updated_at") ?? now;
+      // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
       await pool.query(
         `
         UPDATE "user"
         SET
           plan_id = COALESCE(plan_id, $1),
-          plan_status = 'active',
           plan_start_date = COALESCE(plan_start_date, $2),
           updated_at = $3
         WHERE id = $4
@@ -123,12 +123,12 @@ export async function ensureUserPlanLinked(opts: {
   const now = Date.now();
   const updatedAt = TimestampUtils.forTableField("user", "updated_at") ?? now;
 
+  // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
   await pool.query(
     `
     UPDATE "user"
     SET
       plan_id = COALESCE(plan_id, $1),
-      plan_status = 'active',
       plan_start_date = COALESCE(plan_start_date, $2),
       updated_at = $3
     WHERE id = $4

@@ -50,11 +50,12 @@ export async function upsertSubscriptionForUser(opts: {
   const mandateId = opts.mandateId ?? null;
   const customerId = opts.customerId ?? null;
 
+  // UPSERT pattern: exactly one subscription per user (enforced by unique constraint)
   // Never downgrade an already-active/cancelled subscription when we upsert "pending" during checkout retries.
   // Precedence: cancelled > active > anything else.
   const insertSql = `
     INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    VALUES ($1, $2, $3, $4, $5, $6, NOW())
     ON CONFLICT (user_id) DO UPDATE SET
       plan_name = EXCLUDED.plan_name,
       cadence = EXCLUDED.cadence,
@@ -63,57 +64,11 @@ export async function upsertSubscriptionForUser(opts: {
         WHEN subscription.status = 'active' THEN subscription.status
         ELSE EXCLUDED.status
       END,
-      mandate_id = COALESCE(subscription.mandate_id, EXCLUDED.mandate_id),
-      customer_id = COALESCE(subscription.customer_id, EXCLUDED.customer_id),
-      updated_at = EXCLUDED.updated_at
+      mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
+      customer_id = COALESCE(EXCLUDED.customer_id, subscription.customer_id),
+      updated_at = NOW()
   `;
 
-  try {
-    await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, customerId, updatedAt]);
-    return;
-  } catch (e: any) {
-    // If the unique constraint isn't there yet, Postgres errors with:
-    // "there is no unique or exclusion constraint matching the ON CONFLICT specification"
-    const msg = String(e?.message || "");
-    if (!msg.toLowerCase().includes("on conflict") && e?.code !== "42P10") {
-      throw e;
-    }
-  }
-
-  // Fallback: update then insert (best-effort idempotent)
-  const upd = await pool.query(
-    `
-    UPDATE subscription
-    SET
-      plan_name = $1,
-      cadence = $2,
-      status = CASE
-        WHEN subscription.status = 'cancelled' THEN subscription.status
-        WHEN subscription.status = 'active' THEN subscription.status
-        ELSE $3
-      END,
-      mandate_id = COALESCE(mandate_id, $4),
-      customer_id = COALESCE(customer_id, $5),
-      updated_at = $6
-    WHERE user_id = $7
-    `,
-    [plan.name, cadence, status, mandateId, customerId, updatedAt, userId]
-  );
-
-  if (upd.rowCount) return;
-
-  try {
-    await pool.query(
-      `
-      INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `,
-      [userId, plan.name, cadence, status, mandateId, customerId, updatedAt]
-    );
-  } catch (e: any) {
-    // tolerate a race where another request inserted it
-    if (e?.code === "23505") return;
-    throw e;
-  }
+  await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, customerId]);
 }
 

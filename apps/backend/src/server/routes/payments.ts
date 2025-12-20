@@ -97,11 +97,13 @@ router.post('/subscriptions', requireAuth, async (req: Request, res: Response) =
     try {
         const newStatus = action === 'cancel' ? 'cancelled' : 'active';
 
+        // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
+        // Do not update plan_status here - it will be updated by webhook handlers
         await pool.query(`
             UPDATE "user"
-            SET plan_status = $1, updated_at = $2
-            WHERE id = $3
-        `, [newStatus, Date.now(), userId]);
+            SET updated_at = $1
+            WHERE id = $2
+        `, [Date.now(), userId]);
 
         // TODO: Also cancel/reactivate the mandate in GoCardless API
 
@@ -206,8 +208,8 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         );
 
         // Ensure a subscription row exists BEFORE starting GoCardless.
-        // - Insert pending only if no row exists
-        // - Never downgrade existing status (especially active)
+        // UPSERT pattern: exactly one subscription per user
+        // Never downgrade existing status (especially active)
         const planRow = await pool.query(
             `SELECT name, interval FROM plans WHERE id = $1 LIMIT 1`,
             [chosenPlanId]
@@ -219,18 +221,18 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             await pool.query(
                 `
                 INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
-                VALUES ($1, $2, $3, 'pending', $4)
+                VALUES ($1, $2, $3, 'pending', NOW())
                 ON CONFLICT (user_id) DO UPDATE SET
                   plan_name = EXCLUDED.plan_name,
                   cadence = EXCLUDED.cadence,
-                  updated_at = EXCLUDED.updated_at,
+                  updated_at = NOW(),
                   status = CASE
                     WHEN subscription.status = 'active' THEN subscription.status
                     WHEN subscription.status = 'cancelled' THEN subscription.status
                     ELSE subscription.status
                   END
                 `,
-                [userId, planName, cadenceForSub, Date.now()]
+                [userId, planName, cadenceForSub]
             );
         }
 
@@ -242,10 +244,11 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             // GoCardless not configured - skip payment setup for now
             console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
 
-            // Mark user as having payment setup pending
+            // NOTE: plan_status is only updated via GoCardless webhooks
+            // Do not set plan_status here
             await pool.query(`
                 UPDATE "user"
-                SET plan_status = 'pending_payment', updated_at = $1
+                SET updated_at = $1
                 WHERE id = $2
             `, [Date.now(), userId]);
 
@@ -319,13 +322,12 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             status: 'pending',
         });
 
-        // Mark user as pending payment setup unless already active.
+        // NOTE: plan_status is only updated via GoCardless webhooks
+        // Do not set plan_status here
         await pool.query(
             `
             UPDATE "user"
-            SET
-              plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'pending_payment' END,
-              updated_at = $1
+            SET updated_at = $1
             WHERE id = $2
             `,
             [Date.now(), userId]
@@ -382,13 +384,13 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         // In live, this will fail if no explicit plan was selected earlier.
         await ensureUserPlanLinked({ pool, userId: Number(userId), cadence: "monthly" });
 
-        // Update user + subscription with GoCardless mandate
+        // Update user with GoCardless mandate
+        // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
         await pool.query(`
             UPDATE "user"
             SET
                 gocardless_mandate_id = $1,
                 gocardless_customer_id = COALESCE(gocardless_customer_id, $4),
-                plan_status = 'active',
                 subscription_status = 'active',
                 plan_start_date = COALESCE(plan_start_date, $2),
                 updated_at = $2

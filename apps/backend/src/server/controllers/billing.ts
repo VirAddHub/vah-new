@@ -281,28 +281,17 @@ export async function postChangePlan(req: Request, res: Response) {
         [plan_id, TimestampUtils.forTableField('user', 'updated_at'), userId]
       );
 
-      // Update or create subscription record
-      const subscriptionResult = await pool.query(
-        'SELECT id FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
-        [userId]
+      // UPSERT subscription record (exactly one per user)
+      const cadence = plan.interval === 'year' ? 'annual' : 'monthly';
+      await pool.query(
+        `INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
+         VALUES ($1, $2, $3, 'pending', NOW())
+         ON CONFLICT (user_id) DO UPDATE SET
+           plan_name = EXCLUDED.plan_name,
+           cadence = EXCLUDED.cadence,
+           updated_at = NOW()`,
+        [userId, plan.name, cadence]
       );
-
-      if (subscriptionResult.rows.length > 0) {
-        // Update existing subscription
-        await pool.query(
-          `UPDATE subscription 
-           SET plan_name = $1, updated_at = $2
-           WHERE user_id = $3 AND id = $4`,
-          [plan.name, TimestampUtils.forTableField('subscription', 'updated_at'), userId, subscriptionResult.rows[0].id]
-        );
-      } else {
-        // Create new subscription record
-        await pool.query(
-          `INSERT INTO subscription (user_id, plan_name, cadence, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'active', $4, $4)`,
-          [userId, plan.name, plan.interval, TimestampUtils.forTableField('subscription', 'created_at'), TimestampUtils.forTableField('subscription', 'updated_at')]
-        );
-      }
 
       // Log the plan change for audit purposes
       await pool.query(
