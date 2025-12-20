@@ -147,6 +147,15 @@ const _modelBuilders: Record<string, ModelBuilder> = {
       effective_date: a.effectiveDate,
     };
   },
+  [Templates.InvoiceAvailable]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      invoice_amount: a.invoice_amount || a.amount || '0.00',
+      billing_period: a.billing_period || '',
+      billing_url: a.billing_url || a.billingUrl || '',
+    };
+  },
   [Templates.InvoiceSent]: (a) => {
     const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
     return {

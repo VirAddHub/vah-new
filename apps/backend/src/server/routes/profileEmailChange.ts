@@ -269,16 +269,20 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
         if (phoneChanged) {
             messages.push('Phone number updated successfully.');
         }
+        
+        // Always return success (no enumeration)
+        // If email was provided, indicate email change was started
+        const responseData: any = {};
+        if (phoneChanged) {
+            responseData.message = messages.join(' ');
+        }
         if (email) {
-            messages.push("If the email is valid, we've sent a confirmation link.");
+            responseData.email_change_started = true;
         }
 
-        // Always return success message (no enumeration)
         return res.json({
             ok: true,
-            data: {
-                message: messages.length > 0 ? messages.join(' ') : 'Contact details updated successfully.',
-            },
+            data: responseData,
         });
     } catch (error: any) {
         console.error('[PATCH /api/profile/contact] error:', error);
@@ -310,11 +314,13 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
 router.get('/confirm-email-change', async (req: Request, res: Response) => {
     const { token } = req.query;
 
+    // Always return 200 (no enumeration)
     if (!token || typeof token !== 'string') {
-        return res.status(400).json({
-            ok: false,
-            error: 'token_required',
-            message: 'Verification token is required.',
+        return res.json({
+            ok: true,
+            data: {
+                changed: false,
+            },
         });
     }
 
@@ -326,17 +332,16 @@ router.get('/confirm-email-change', async (req: Request, res: Response) => {
             ok: true,
             data: {
                 changed: result.changed,
-                message: result.changed
-                    ? 'Your email address has been updated successfully.'
-                    : 'This verification link is invalid or has expired.',
             },
         });
     } catch (error: any) {
         console.error('[GET /api/profile/confirm-email-change] error:', error);
-        return res.status(500).json({
-            ok: false,
-            error: 'confirmation_failed',
-            message: 'Failed to confirm email change.',
+        // Return success even on error (no enumeration)
+        return res.json({
+            ok: true,
+            data: {
+                changed: false,
+            },
         });
     }
 });

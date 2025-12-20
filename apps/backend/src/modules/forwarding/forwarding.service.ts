@@ -91,12 +91,28 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
 
             const forwardingRequest = fr.rows[0];
 
-            // Create charge if not official mail
+            // Create charge if not official mail (HMRC or Companies House)
+            // PRICING RULE: If tag is HMRC or Companies House: fee = £0, otherwise: fee = £2 (200 pence)
             if (!isOfficial) {
+                const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
                 await pool.query(`
-          INSERT INTO forwarding_charge (forwarding_request_id, amount_pence, status, created_at)
-          VALUES ($1, $2, $3, $4)
-        `, [forwardingRequest.id, 200, 'pending', Date.now()]);
+                    INSERT INTO charge (
+                        user_id, amount_pence, currency, type, description, 
+                        service_date, status, related_type, related_id, created_at
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                    ON CONFLICT (type, related_type, related_id) DO NOTHING
+                `, [
+                    userId,
+                    200, // £2 in pence
+                    'GBP',
+                    'forwarding_fee',
+                    'Forwarding fee (non-HMRC/Companies House)',
+                    serviceDate,
+                    'pending',
+                    'forwarding_request',
+                    forwardingRequest.id
+                ]);
             }
 
             // Create outbox event

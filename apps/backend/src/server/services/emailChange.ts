@@ -75,18 +75,32 @@ export async function requestEmailChange(
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
     
-    // Delete any existing unused requests for this user (upsert behaviour)
-    await pool.query(
-        'DELETE FROM email_change_request WHERE user_id = $1 AND used_at IS NULL',
+    // Upsert: update existing active request or insert new one
+    // Check if active request exists
+    const existingResult = await pool.query(
+        `SELECT id FROM email_change_request WHERE user_id = $1 AND used_at IS NULL LIMIT 1`,
         [userId]
     );
     
-    // Insert new request
-    await pool.query(
-        `INSERT INTO email_change_request (user_id, new_email, token_hash, expires_at, created_at)
-         VALUES ($1, $2, $3, $4, NOW())`,
-        [userId, normalisedEmail, tokenHash, expiresAt]
-    );
+    if (existingResult.rows.length > 0) {
+        // Update existing request
+        await pool.query(
+            `UPDATE email_change_request 
+             SET new_email = $1, 
+                 token_hash = $2, 
+                 expires_at = $3, 
+                 last_sent_at = NOW()
+             WHERE id = $4`,
+            [normalisedEmail, tokenHash, expiresAt, existingResult.rows[0].id]
+        );
+    } else {
+        // Insert new request
+        await pool.query(
+            `INSERT INTO email_change_request (user_id, new_email, token_hash, expires_at, last_sent_at, created_at)
+             VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+            [userId, normalisedEmail, tokenHash, expiresAt]
+        );
+    }
     
     // Build confirmation URL
     const confirmUrl = `${getAppUrl()}/account/confirm-email?token=${token}`;
@@ -325,5 +339,33 @@ export async function resendEmailChangeConfirmation(token: string): Promise<{ se
     }
     
     return { sent: true };
+}
+
+/**
+ * Cleanup expired email change requests older than 7 days
+ * 
+ * Optional maintenance function to delete old expired requests.
+ * Can be called from a cron job or maintenance script.
+ * 
+ * @returns Number of deleted requests
+ */
+export async function cleanupExpiredEmailChangeRequests(): Promise<number> {
+    const pool = getPool();
+    
+    // Delete requests that are expired and older than 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const result = await pool.query(
+        `DELETE FROM email_change_request
+         WHERE expires_at < NOW()
+           AND created_at < $1`,
+        [sevenDaysAgo]
+    );
+    
+    const deletedCount = result.rowCount || 0;
+    console.log(`[emailChange] Cleaned up ${deletedCount} expired email change requests`);
+    
+    return deletedCount;
 }
 

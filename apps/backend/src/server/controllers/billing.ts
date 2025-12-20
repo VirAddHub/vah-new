@@ -71,6 +71,24 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     const usage = usageResult.rows[0];
 
+    // Get pending forwarding fees for current period
+    const periodStart = new Date(usageMonth);
+    const periodEnd = new Date(usageMonth.getFullYear(), usageMonth.getMonth() + 1, 0);
+    const periodStartStr = periodStart.toISOString().slice(0, 10);
+    const periodEndStr = periodEnd.toISOString().slice(0, 10);
+
+    const pendingFeesResult = await pool.query(`
+      SELECT COALESCE(SUM(amount_pence), 0) as amount_pence
+      FROM charge
+      WHERE user_id = $1
+        AND status = 'pending'
+        AND type = 'forwarding_fee'
+        AND service_date >= $2
+        AND service_date <= $3
+    `, [userId, periodStartStr, periodEndStr]);
+
+    const pendingForwardingFeesPence = Number(pendingFeesResult.rows[0]?.amount_pence || 0);
+
     // Determine account status
     let accountStatus = 'active';
     let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
@@ -111,7 +129,8 @@ export async function getBillingOverview(req: Request, res: Response) {
         // This ensures price changes don't affect existing customers
         // Fallback to subscription plan price, then default plan price, then 0
         current_price_pence: lockedInPricePence ?? fallbackPricePence ?? 0,
-        usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
+        usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 },
+        pending_forwarding_fees_pence: pendingForwardingFeesPence
       }
     });
   } catch (error) {

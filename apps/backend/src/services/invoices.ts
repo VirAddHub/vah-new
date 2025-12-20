@@ -2,6 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import { getPool } from '../lib/db';
+import { sendTemplateEmail } from '../lib/mailer';
+import { Templates } from '../lib/postmark-templates';
+import { getAppUrl } from '../config/appUrl';
 
 const INVOICE_BASE_DIR = process.env.INVOICES_DIR
   ? path.resolve(process.env.INVOICES_DIR)
@@ -65,6 +68,25 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   const periodStartStr = opts.periodStart.toISOString().slice(0, 10);
   const periodEndStr = opts.periodEnd.toISOString().slice(0, 10);
 
+  // Pull all pending charges for this user within the invoice period
+  const chargesResult = await pool.query(
+    `
+    SELECT id, amount_pence
+    FROM charge
+    WHERE user_id = $1
+      AND status = 'pending'
+      AND service_date >= $2
+      AND service_date <= $3
+    `,
+    [opts.userId, periodStartStr, periodEndStr]
+  );
+
+  const charges = chargesResult.rows;
+  const chargesTotalPence = charges.reduce((sum: number, c: any) => sum + Number(c.amount_pence), 0);
+
+  // Invoice total = base plan amount + charges
+  const invoiceTotalPence = opts.amountPence + chargesTotalPence;
+
   // Insert invoice record
   const result = await pool.query<InvoiceRow>(
     `
@@ -87,7 +109,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       opts.gocardlessPaymentId,
       periodStartStr,
       periodEndStr,
-      opts.amountPence,
+      invoiceTotalPence, // Updated to include charges
       opts.currency,
       invoiceNumberFormatted,
       Date.now(),
@@ -95,6 +117,25 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   );
 
   const invoice = result.rows[0];
+
+  // Mark charges as billed
+  if (charges.length > 0) {
+    const chargeIds = charges.map((c: any) => c.id);
+    // Update charges one by one (PostgreSQL UUID array handling can be tricky)
+    for (const chargeId of chargeIds) {
+      await pool.query(
+        `
+        UPDATE charge
+        SET status = 'billed',
+            invoice_id = $1,
+            billed_at = NOW()
+        WHERE id = $2
+        `,
+        [invoice.id, chargeId]
+      );
+    }
+    console.log(`[invoices] Marked ${charges.length} charges as billed for invoice ${invoice.id}`);
+  }
 
   // Generate PDF and update pdf_path
   try {
@@ -118,10 +159,21 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       [pdfPath, invoice.id],
     );
 
-    return updated.rows[0];
+    const finalInvoice = updated.rows[0];
+
+    // Send invoice email (only if not already sent)
+    await sendInvoiceAvailableEmail(finalInvoice);
+
+    return finalInvoice;
   } catch (pdfError) {
     console.error(`[invoices] Failed to generate PDF for invoice ${invoice.id}:`, pdfError);
     // Return invoice even if PDF generation failed
+    // Still try to send email if PDF generation failed but invoice exists
+    try {
+      await sendInvoiceAvailableEmail(invoice);
+    } catch (emailError) {
+      console.error(`[invoices] Failed to send email for invoice ${invoice.id} after PDF error:`, emailError);
+    }
     return invoice;
   }
 }
@@ -345,6 +397,111 @@ export async function findUserIdForPayment(
   } catch (error) {
     console.error('[invoices] Error finding user for payment:', error);
     return null;
+  }
+}
+
+/**
+ * Format billing period as "1–31 January 2026"
+ */
+function formatBillingPeriod(periodStart: string | Date, periodEnd: string | Date): string {
+  const start = typeof periodStart === 'string' ? new Date(periodStart) : periodStart;
+  const end = typeof periodEnd === 'string' ? new Date(periodEnd) : periodEnd;
+  
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const month = end.toLocaleDateString('en-GB', { month: 'long' });
+  const year = end.getFullYear();
+  
+  return `${startDay}–${endDay} ${month} ${year}`;
+}
+
+/**
+ * Send invoice available email to user
+ * Idempotent: only sends if email_sent_at is NULL
+ */
+async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
+  const pool = getPool();
+  
+  // Check if email already sent (idempotency)
+  const checkResult = await pool.query(
+    `SELECT email_sent_at FROM invoices WHERE id = $1`,
+    [invoice.id]
+  );
+  
+  if (checkResult.rows[0]?.email_sent_at) {
+    console.log(`[invoices] Email already sent for invoice ${invoice.id}, skipping`);
+    return;
+  }
+  
+  // Get user data
+  const userResult = await pool.query(
+    `SELECT email, first_name, name FROM "user" WHERE id = $1`,
+    [invoice.user_id]
+  );
+  
+  if (userResult.rows.length === 0) {
+    const errorMsg = `User ${invoice.user_id} not found`;
+    await pool.query(
+      `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
+      [errorMsg, invoice.id]
+    );
+    console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
+    return;
+  }
+  
+  const user = userResult.rows[0];
+  
+  if (!user.email) {
+    const errorMsg = 'User email not found';
+    await pool.query(
+      `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
+      [errorMsg, invoice.id]
+    );
+    console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
+    return;
+  }
+  
+  // Format billing period
+  const billingPeriod = formatBillingPeriod(invoice.period_start, invoice.period_end);
+  
+  // Format invoice amount
+  const invoiceAmount = (invoice.amount_pence / 100).toFixed(2);
+  
+  // Build billing URL
+  const billingUrl = `${getAppUrl()}/billing#invoices`;
+  
+  // Send email
+  try {
+    await sendTemplateEmail({
+      to: user.email,
+      templateAlias: Templates.InvoiceAvailable,
+      model: {
+        firstName: user.first_name,
+        name: user.name,
+        invoice_amount: invoiceAmount,
+        billing_period: billingPeriod,
+        billing_url: billingUrl,
+      },
+      from: 'support@virtualaddresshub.co.uk',
+      replyTo: 'support@virtualaddresshub.co.uk',
+      templateId: 40508791, // Postmark Template ID
+    });
+    
+    // Mark as sent
+    await pool.query(
+      `UPDATE invoices SET email_sent_at = NOW(), email_send_error = NULL WHERE id = $1`,
+      [invoice.id]
+    );
+    
+    console.log(`[invoices] Invoice email sent for invoice ${invoice.id} to ${user.email}`);
+  } catch (error: any) {
+    const errorMsg = error?.message || 'Unknown error sending email';
+    await pool.query(
+      `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
+      [errorMsg, invoice.id]
+    );
+    console.error(`[invoices] Failed to send email for invoice ${invoice.id}:`, error);
+    // Don't throw - invoice creation should succeed even if email fails
   }
 }
 

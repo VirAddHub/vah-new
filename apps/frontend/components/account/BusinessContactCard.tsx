@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Lock, Mail } from 'lucide-react';
 import { BusinessContactInfo } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
@@ -19,48 +20,133 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const [contact, setContact] = useState<BusinessContactInfo>(initialContact);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Email change dialog state
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const newEmailInputRef = useRef<HTMLInputElement>(null);
 
   // Sync contact prop when it changes from parent (after data loads or save)
   useEffect(() => {
     setContact(initialContact);
     setHasChanges(false); // Reset changes flag when prop updates
-  }, [initialContact]);
+    
+    // Clear pending email if the email has been confirmed (email changed in backend)
+    if (pendingEmail && initialContact.email && initialContact.email === pendingEmail) {
+      setPendingEmail(null);
+    }
+  }, [initialContact, pendingEmail]);
 
   const handleChange = (field: keyof BusinessContactInfo, value: string) => {
-    // Allow changes to phone and email (name fields are locked)
-    if (field === 'phone' || field === 'email') {
+    // Allow changes to phone only (email requires confirmation dialog)
+    if (field === 'phone') {
       setContact(prev => ({ ...prev, [field]: value }));
       setHasChanges(true);
     }
   };
 
+  // Email validation
+  const isValidEmail = (email: string): boolean => {
+    if (!email || email.trim().length === 0) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const emailsMatch = newEmail === confirmEmail;
+  const isEmailFormValid = isValidEmail(newEmail) && emailsMatch && newEmail !== contact.email;
+
+  // Open email change dialog
+  const handleOpenEmailDialog = () => {
+    setNewEmail('');
+    setConfirmEmail('');
+    setIsEmailDialogOpen(true);
+    // Focus first input when dialog opens
+    setTimeout(() => {
+      newEmailInputRef.current?.focus();
+    }, 100);
+  };
+
+  // Handle email change submission
+  const handleEmailChange = async () => {
+    if (!isEmailFormValid) return;
+
+    setIsChangingEmail(true);
+    try {
+      const response = await fetch('/api/bff/profile/contact', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: newEmail }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error?.message || result.message || 'Couldn\'t start email change. Please try again.');
+      }
+
+      // Check if email change was started
+      if (result.data?.email_change_started === true) {
+        // Close dialog
+        setIsEmailDialogOpen(false);
+        setNewEmail('');
+        setConfirmEmail('');
+        
+        // Store pending email for UI display
+        setPendingEmail(newEmail);
+
+        // Show success message
+        toast({
+          title: 'Confirmation link sent',
+          description: `Confirmation link sent to ${newEmail}. Your email won't update until you confirm.`,
+        });
+      } else {
+        // Fallback message
+        toast({
+          title: 'Email change started',
+          description: `We've sent a confirmation link to ${newEmail}. Please check your inbox.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Couldn\'t start email change. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
+
+  // Handle Enter key in email dialog
+  const handleEmailDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && isEmailFormValid && !isChangingEmail) {
+      e.preventDefault();
+      handleEmailChange();
+    }
+  };
+
   const handleSave = async () => {
-    // Save phone and email (name fields are locked and excluded from payload)
+    // Save phone only (email is handled separately via dialog)
     setIsSaving(true);
     try {
-      // Create payload with phone and email (exclude locked name fields)
+      // Create payload with phone only (email change requires separate confirmation flow)
       const payload: BusinessContactInfo = {
         first_name: initialContact.first_name, // Keep original values
         last_name: initialContact.last_name,
         middle_names: initialContact.middle_names,
-        email: contact.email, // Email can now change
+        email: initialContact.email, // Keep original email (not changed here)
         phone: contact.phone, // Phone can change
       };
       await onSave(payload);
       setHasChanges(false);
       
-      const changedFields = [];
-      const emailChanged = contact.email !== initialContact.email;
       const phoneChanged = contact.phone !== initialContact.phone;
       
-      if (phoneChanged) changedFields.push('phone number');
-      if (emailChanged) {
-        // Email change requires verification - show special message
-        toast({
-          title: "Verification email sent",
-          description: "We've sent a confirmation link to your new email address. Please check your inbox and click the link to complete the change.",
-        });
-      } else if (phoneChanged) {
+      if (phoneChanged) {
         toast({
           title: "Saved",
           description: "Your phone number has been updated.",
@@ -171,16 +257,37 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
 
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={contact.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="your.email@example.com"
-              />
-              <p className="text-xs text-muted-foreground">
-                Changing your email requires verification. We'll send a confirmation link to your new email address.
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-2 bg-muted rounded-md border border-input text-sm">
+                  {contact.email || 'No email set'}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenEmailDialog}
+                >
+                  Change email
+                </Button>
+              </div>
+              {pendingEmail && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    Pending: <strong>{pendingEmail}</strong> (confirmation required)
+                  </p>
+                  <a
+                    href="/account/confirm-email"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
+                  >
+                    Resend confirmation email
+                  </a>
+                </div>
+              )}
+              {!pendingEmail && (
+                <p className="text-xs text-muted-foreground">
+                  Changing your email requires verification. We'll send a confirmation link to your new email address.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -194,6 +301,69 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
           </Button>
         </div>
       </CardContent>
+
+      {/* Email Change Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent onKeyDown={handleEmailDialogKeyDown}>
+          <DialogHeader>
+            <DialogTitle>Change Email Address</DialogTitle>
+            <DialogDescription>
+              For security, we'll send a confirmation link to your new email address.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-email">New email address</Label>
+              <Input
+                ref={newEmailInputRef}
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new.email@example.com"
+                disabled={isChangingEmail}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-email">Confirm new email address</Label>
+              <Input
+                id="confirm-email"
+                type="email"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                placeholder="new.email@example.com"
+                disabled={isChangingEmail}
+              />
+              {newEmail && confirmEmail && !emailsMatch && (
+                <p className="text-xs text-destructive">Email addresses must match</p>
+              )}
+              {newEmail && newEmail === contact.email && (
+                <p className="text-xs text-destructive">This is your current email address</p>
+              )}
+            </div>
+            <div className="bg-muted/50 border border-muted rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">
+                We'll send a confirmation link to your new email address. Your email won't update until you confirm.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEmailDialogOpen(false)}
+              disabled={isChangingEmail}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEmailChange}
+              disabled={!isEmailFormValid || isChangingEmail}
+            >
+              {isChangingEmail ? 'Sending...' : 'Send confirmation link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

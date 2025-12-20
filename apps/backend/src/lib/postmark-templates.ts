@@ -13,6 +13,7 @@ export const Templates = {
     PlanCancelled: "plan-cancelled", // pragma: allowlist secret
     PlanPriceChange: "plan-price-change", // pragma: allowlist secret
     InvoiceSent: "invoice-sent", // pragma: allowlist secret
+    InvoiceAvailable: "invoice-available", // pragma: allowlist secret - Template ID: 40508791
     PaymentFailed: "payment-failed", // pragma: allowlist secret
 
     // KYC
