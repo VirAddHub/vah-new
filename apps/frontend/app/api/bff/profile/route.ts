@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+// Force dynamic rendering - never cache this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const routePath = '/api/bff/profile';
   let backendUrl = '';
@@ -17,6 +20,7 @@ export async function GET(request: NextRequest) {
         'Cookie': cookie,
         'Content-Type': 'application/json',
       },
+      cache: 'no-store', // Never cache backend requests
     });
 
     const status = response.status;
@@ -66,7 +70,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Backend is 2xx and JSON parsed successfully
-    return NextResponse.json(json ?? { raw: textPreview }, { status: 200 });
+    return NextResponse.json(json ?? { raw: textPreview }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
@@ -111,6 +122,7 @@ export async function PATCH(request: NextRequest) {
           email: body.email,
           phone: body.phone,
         }),
+        cache: 'no-store', // Never cache backend requests
       });
 
       const raw = await contactResponse.text();
@@ -139,6 +151,7 @@ export async function PATCH(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
+      cache: 'no-store', // Never cache backend requests
     });
 
     // Read response as text first

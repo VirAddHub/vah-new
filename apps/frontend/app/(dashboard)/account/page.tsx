@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Navigation } from '@/components/Navigation';
@@ -18,6 +19,8 @@ import { toast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
 
 export default function AccountPage() {
+    const router = useRouter();
+    
     // Fetch account data from existing APIs
     const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
     const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
@@ -232,6 +235,9 @@ export default function AccountPage() {
                 globalMutate('/api/bff/account'),
                 globalMutate('/api/auth/whoami'),
             ]);
+
+            // Force Next.js App Router to refresh server data
+            router.refresh();
 
             toast({
                 title: "Saved",
