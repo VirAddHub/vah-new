@@ -760,8 +760,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 Account
               </Link>
               <button
-                onClick={() => onNavigate('help')}
+                onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')}
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                title="Open help in a new tab"
               >
                 <HelpCircle className="h-4 w-4" />
                 Help
@@ -1323,7 +1324,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         <div className="text-center py-6 space-y-2">
           <p className="text-sm text-muted-foreground">
             Need help? Visit our{" "}
-            <button onClick={() => onNavigate('help')} className="text-primary hover:underline">Help Center</button>
+            <button onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')} className="text-primary hover:underline">Help Center</button>
             {" "}or{" "}
             <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>.
           </p>
