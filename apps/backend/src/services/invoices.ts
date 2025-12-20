@@ -69,20 +69,34 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   const periodEndStr = opts.periodEnd.toISOString().slice(0, 10);
 
   // Pull all pending charges for this user within the invoice period
-  const chargesResult = await pool.query(
-    `
-    SELECT id, amount_pence
-    FROM charge
-    WHERE user_id = $1
-      AND status = 'pending'
-      AND service_date >= $2
-      AND service_date <= $3
-    `,
-    [opts.userId, periodStartStr, periodEndStr]
-  );
-
-  const charges = chargesResult.rows;
-  const chargesTotalPence = charges.reduce((sum: number, c: any) => sum + Number(c.amount_pence), 0);
+  // Note: charge table may not exist yet - handle gracefully
+  let charges: any[] = [];
+  let chargesTotalPence = 0;
+  try {
+    const chargesResult = await pool.query(
+      `
+      SELECT id, amount_pence
+      FROM charge
+      WHERE user_id = $1
+        AND status = 'pending'
+        AND service_date >= $2
+        AND service_date <= $3
+      `,
+      [opts.userId, periodStartStr, periodEndStr]
+    );
+    charges = chargesResult.rows;
+    chargesTotalPence = charges.reduce((sum: number, c: any) => sum + Number(c.amount_pence), 0);
+  } catch (chargeError: any) {
+    // Table doesn't exist yet or query failed - continue with 0 charges
+    // Error code 42P01 = relation does not exist
+    if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
+      console.warn('[createInvoiceForPayment] charge table does not exist yet, skipping charges');
+    } else {
+      console.error('[createInvoiceForPayment] Error querying charge table:', chargeError);
+    }
+    charges = [];
+    chargesTotalPence = 0;
+  }
 
   // Invoice total = base plan amount + charges
   const invoiceTotalPence = opts.amountPence + chargesTotalPence;

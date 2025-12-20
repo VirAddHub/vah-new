@@ -96,7 +96,10 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             if (!isOfficial) {
                 const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
                 await pool.query(`
-                    INSERT INTO charge (
+                    // Create charge for forwarding fee (if charge table exists)
+                    try {
+                        await pool.query(
+                            `INSERT INTO charge (
                         user_id, amount_pence, currency, type, description, 
                         service_date, status, related_type, related_id, created_at
                     )
