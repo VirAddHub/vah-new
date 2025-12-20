@@ -5,13 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
-// Client-side backend origin resolution
-function getBackendOrigin(): string {
-  // Use environment variable available on client
-  return process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || 
-         process.env.NEXT_PUBLIC_API_URL || 
-         'https://vah-api-staging.onrender.com';
-}
 
 function ConfirmEmailContent() {
   const router = useRouter();
@@ -24,24 +17,23 @@ function ConfirmEmailContent() {
 
     if (!token) {
       setStatus('error');
-      setMessage('Verification token is missing. Please check your email and try again.');
+      setMessage('This confirmation link is invalid.');
       return;
     }
 
-    // Call the backend confirmation endpoint
+    // Call the BFF confirmation endpoint
     const confirmEmailChange = async () => {
       try {
-        const backend = getBackendOrigin();
-        const response = await fetch(`${backend}/api/profile/confirm-email-change?token=${encodeURIComponent(token)}`, {
+        const response = await fetch(`/api/bff/profile/confirm-email-change?token=${encodeURIComponent(token)}`, {
           method: 'GET',
-          credentials: 'include',
+          cache: 'no-store',
         });
 
         const result = await response.json();
 
-        if (result.ok && result.data?.changed) {
+        if (result.ok && result.data?.changed === true) {
           setStatus('success');
-          setMessage(result.data.message || 'Your email address has been updated successfully.');
+          setMessage('Your email address has been confirmed.');
           
           // Redirect to account page after 3 seconds
           setTimeout(() => {
@@ -49,12 +41,12 @@ function ConfirmEmailContent() {
           }, 3000);
         } else {
           setStatus('error');
-          setMessage(result.data?.message || 'This verification link is invalid or has expired. Please request a new one.');
+          setMessage(result.data?.message || 'This confirmation link is invalid or has expired.');
         }
       } catch (error) {
         console.error('[ConfirmEmail] Error:', error);
         setStatus('error');
-        setMessage('An error occurred while confirming your email change. Please try again or contact support.');
+        setMessage('This confirmation link is invalid or has expired.');
       }
     };
 
