@@ -183,12 +183,11 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     // EXPLICIT ALLOWLIST: Only these fields can be updated via profile endpoint
+    // Note: email and phone should use /api/profile/contact endpoint (email requires verification)
     const ALLOWED_FIELDS = [
         'first_name',
         'last_name',
         'middle_names',
-        'phone',
-        'email',
         'forwarding_address',
         'name', // legacy field
         'company_name' // if explicitly allowed
@@ -256,13 +255,12 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     }
 
     // Extract only allowed fields from request body
+    // Note: email and phone updates should use /api/profile/contact endpoint
     const {
         name,
         first_name,
         last_name,
         middle_names,
-        phone,
-        email,
         company_name,
         forwarding_address
     } = req.body;
@@ -303,10 +301,7 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
             console.warn('[PATCH /api/profile] Could not check for middle_names column:', e);
         }
     }
-    if (phone !== undefined) {
-        updates.push(`phone = $${paramIndex++}`);
-        values.push(phone);
-    }
+    // Note: phone and email updates should use /api/profile/contact endpoint
     if (company_name !== undefined) {
         updates.push(`company_name = $${paramIndex++}`);
         values.push(company_name);
@@ -328,6 +323,10 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     values.push(userId);
 
     try {
+        // Get old values for audit log
+        const oldUserResult = await pool.query('SELECT email, phone, forwarding_address FROM "user" WHERE id = $1', [userId]);
+        const oldUser = oldUserResult.rows[0];
+
         const result = await pool.query(`
             UPDATE "user"
             SET ${updates.join(', ')}
@@ -339,7 +338,38 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
 
-        return res.json({ ok: true, data: result.rows[0] });
+        const newUser = result.rows[0];
+
+        // Log changes to activity_log for audit trail
+        const changes: string[] = [];
+        if (email !== undefined && oldUser?.email !== email) {
+            changes.push(`email: ${oldUser?.email || 'none'} → ${email}`);
+        }
+        if (phone !== undefined && oldUser?.phone !== phone) {
+            changes.push(`phone: ${oldUser?.phone || 'none'} → ${phone}`);
+        }
+        if (forwarding_address !== undefined && oldUser?.forwarding_address !== forwarding_address) {
+            changes.push('forwarding_address updated');
+        }
+
+        if (changes.length > 0) {
+            try {
+                await pool.query(`
+                    INSERT INTO activity_log (user_id, action, details, created_at)
+                    VALUES ($1, $2, $3, $4)
+                `, [
+                    userId,
+                    'profile.updated',
+                    JSON.stringify({ changes, updated_fields: Object.keys(req.body) }),
+                    Date.now()
+                ]);
+            } catch (auditError) {
+                // Don't fail the request if audit logging fails
+                console.warn('[PATCH /api/profile] Failed to log activity:', auditError);
+            }
+        }
+
+        return res.json({ ok: true, data: newUser });
     } catch (error: any) {
         console.error('[PATCH /api/profile] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
@@ -497,6 +527,10 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
     values.push(userId);
 
     try {
+        // Get old values for audit log
+        const oldUserResult = await pool.query('SELECT email, phone, forwarding_address FROM "user" WHERE id = $1', [userId]);
+        const oldUser = oldUserResult.rows[0];
+
         const result = await pool.query(`
             UPDATE "user"
             SET ${updates.join(', ')}
@@ -508,7 +542,38 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
 
-        return res.json({ ok: true, data: result.rows[0] });
+        const newUser = result.rows[0];
+
+        // Log changes to activity_log for audit trail
+        const changes: string[] = [];
+        if (email !== undefined && oldUser?.email !== email) {
+            changes.push(`email: ${oldUser?.email || 'none'} → ${email}`);
+        }
+        if (phone !== undefined && oldUser?.phone !== phone) {
+            changes.push(`phone: ${oldUser?.phone || 'none'} → ${phone}`);
+        }
+        if (forwarding_address !== undefined && oldUser?.forwarding_address !== forwarding_address) {
+            changes.push('forwarding_address updated');
+        }
+
+        if (changes.length > 0) {
+            try {
+                await pool.query(`
+                    INSERT INTO activity_log (user_id, action, details, created_at)
+                    VALUES ($1, $2, $3, $4)
+                `, [
+                    userId,
+                    'profile.updated',
+                    JSON.stringify({ changes, updated_fields: Object.keys(req.body) }),
+                    Date.now()
+                ]);
+            } catch (auditError) {
+                // Don't fail the request if audit logging fails
+                console.warn('[PATCH /api/profile/me] Failed to log activity:', auditError);
+            }
+        }
+
+        return res.json({ ok: true, data: newUser });
     } catch (error: any) {
         console.error('[PATCH /api/profile/me] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

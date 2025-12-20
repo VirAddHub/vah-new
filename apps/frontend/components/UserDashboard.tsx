@@ -431,14 +431,22 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     setIsCertBusy(true);
 
     try {
-      const token = getToken();
-      const response = await fetch(`${API_BASE}/api/profile/certificate`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      // Use BFF route which handles authentication via cookies
+      const response = await fetch('/api/bff/profile/certificate', {
+        method: 'GET',
         credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to prepare certificate");
+        // Try to get error message if it's JSON
+        let errorMessage = "Failed to prepare certificate";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData?.error || errorData?.message || errorMessage;
+        } catch {
+          // Not JSON, use default message
+        }
+        throw new Error(errorMessage);
       }
 
       const blob = await response.blob();
@@ -459,7 +467,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       }, 5000);
     } catch (err) {
       console.error(err);
-      alert("Sorry — we couldn’t generate your letter. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Sorry — we couldn't generate your letter. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsCertBusy(false);
     }

@@ -3,6 +3,7 @@ export const Templates = {
     // Auth / Security (no sign-in)
     PasswordReset: "password-reset-email", // pragma: allowlist secret
     PasswordChanged: "password-changed-confirmation", // pragma: allowlist secret
+    EmailChangeVerification: "mail-change-verification", // pragma: allowlist secret - Template ID: 42716349
 
     // Welcome & onboarding
     Welcome: "welcome-email", // pragma: allowlist secret

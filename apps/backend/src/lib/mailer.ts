@@ -80,6 +80,9 @@ export async function sendTemplateEmail(opts: {
     to: string;
     templateAlias: (typeof Templates)[keyof typeof Templates];
     model: BuildArgs;
+    replyTo?: string; // Optional Reply-To override
+    from?: string; // Optional From override
+    templateId?: number; // Optional TemplateId fallback
 }) {
     if (!ENV.POSTMARK_TOKEN) return;
 
@@ -89,15 +92,32 @@ export async function sendTemplateEmail(opts: {
     const build = modelBuilders[opts.templateAlias];
     const TemplateModel = build ? build(opts.model) : opts.model;
 
+    // Determine From address
+    // If from is explicitly provided, use it as-is (no name prefix)
+    // Otherwise use default with name prefix if available
+    const fromAddress = opts.from || ENV.EMAIL_FROM;
+    const fromName = opts.from ? undefined : ENV.EMAIL_FROM_NAME; // Only use name if from not overridden
+    const from = fromName ? `${fromName} <${fromAddress}>` : fromAddress;
+
+    // Determine Reply-To address
+    const replyTo = opts.replyTo || ENV.EMAIL_REPLY_TO;
+
     try {
-        await client.sendEmailWithTemplate({
-            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+        const emailOptions: any = {
+            From: from,
             To: opts.to,
             TemplateAlias: opts.templateAlias,
             TemplateModel,
-            ReplyTo: ENV.EMAIL_REPLY_TO,
+            ReplyTo: replyTo,
             MessageStream: ENV.POSTMARK_STREAM,
-        });
+        };
+
+        // Add TemplateId if provided (for fallback)
+        if (opts.templateId) {
+            emailOptions.TemplateId = opts.templateId;
+        }
+
+        await client.sendEmailWithTemplate(emailOptions);
     } catch (error: any) {
         console.error(`Failed to send template email ${opts.templateAlias}:`, error);
         console.error(`Template model sent:`, JSON.stringify(TemplateModel, null, 2));
@@ -106,12 +126,12 @@ export async function sendTemplateEmail(opts: {
         // TemplateModel already has first_name resolved by model builder
         const first_name = TemplateModel.first_name || TemplateModel.name || 'there';
         await client.sendEmail({
-            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+            From: from,
             To: opts.to,
             Subject: 'Notification',
             HtmlBody: `<p>Hi ${first_name},</p><p>You have a new notification.</p>`,
             MessageStream: ENV.POSTMARK_STREAM,
-            ReplyTo: ENV.EMAIL_REPLY_TO,
+            ReplyTo: replyTo,
         });
     }
 }

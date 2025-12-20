@@ -48,13 +48,24 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
       };
       await onSave(payload);
       setHasChanges(false);
+      
       const changedFields = [];
-      if (contact.phone !== initialContact.phone) changedFields.push('phone number');
-      if (contact.email !== initialContact.email) changedFields.push('email address');
-      toast({
-        title: "Saved",
-        description: `Your ${changedFields.join(' and ')} ${changedFields.length > 1 ? 'have' : 'has'} been updated.`,
-      });
+      const emailChanged = contact.email !== initialContact.email;
+      const phoneChanged = contact.phone !== initialContact.phone;
+      
+      if (phoneChanged) changedFields.push('phone number');
+      if (emailChanged) {
+        // Email change requires verification - show special message
+        toast({
+          title: "Verification email sent",
+          description: "We've sent a confirmation link to your new email address. Please check your inbox and click the link to complete the change.",
+        });
+      } else if (phoneChanged) {
+        toast({
+          title: "Saved",
+          description: "Your phone number has been updated.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -168,7 +179,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 placeholder="your.email@example.com"
               />
               <p className="text-xs text-muted-foreground">
-                This is your account email address. You'll use this to log in.
+                Changing your email requires verification. We'll send a confirmation link to your new email address.
               </p>
             </div>
           </div>

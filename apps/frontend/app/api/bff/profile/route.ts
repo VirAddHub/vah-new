@@ -55,6 +55,39 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const backend = getBackendOrigin();
 
+    // If email or phone is being updated, use the contact endpoint (email requires verification)
+    if (body.email !== undefined || body.phone !== undefined) {
+      const contactResponse = await fetch(`${backend}/api/profile/contact`, {
+        method: 'PATCH',
+        headers: {
+          'Cookie': cookie,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: body.email,
+          phone: body.phone,
+        }),
+      });
+
+      const raw = await contactResponse.text();
+      let data: any;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { raw: raw.substring(0, 300) };
+      }
+
+      if (contactResponse.ok) {
+        return NextResponse.json(data, { status: contactResponse.status });
+      } else {
+        return NextResponse.json(
+          { ok: false, error: data?.error || 'Failed to update contact details', status: contactResponse.status, details: data },
+          { status: contactResponse.status }
+        );
+      }
+    }
+
+    // For other profile fields, use the regular profile endpoint
     const response = await fetch(`${backend}/api/profile`, {
       method: 'PATCH',
       headers: {

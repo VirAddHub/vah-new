@@ -38,6 +38,7 @@ export type BuildArgs = {
   billingUrl?: string;
   // specific fields used by certain templates
   resetLink?: string;
+  confirmUrl?: string;
   expiryMinutes?: number | string;
 
   invoiceNumber?: string;
@@ -107,6 +108,15 @@ const _modelBuilders: Record<string, ModelBuilder> = {
     return {
       first_name,
       name: first_name, // backward compatibility
+    };
+  },
+  [Templates.EmailChangeVerification]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      confirm_url: a.ctaUrl ?? a.confirmUrl,
+      expiry_minutes: String(a.expiryMinutes ?? 30),
     };
   },
 

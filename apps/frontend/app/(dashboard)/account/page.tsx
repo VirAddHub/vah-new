@@ -174,16 +174,26 @@ export default function AccountPage() {
                 globalMutate('/api/auth/whoami'),
             ]);
 
-            const changedFields = [];
-            if (contact.phone !== data?.contact?.phone) changedFields.push('phone number');
-            if (contact.email !== data?.contact?.email) changedFields.push('email address');
+            const emailChanged = contact.email !== data?.contact?.email;
+            const phoneChanged = contact.phone !== data?.contact?.phone;
             
-            toast({
-                title: "Saved",
-                description: changedFields.length > 0 
-                    ? `Your ${changedFields.join(' and ')} ${changedFields.length > 1 ? 'have' : 'has'} been updated.`
-                    : "Your contact information has been updated.",
-            });
+            // Email change requires verification - show special message
+            if (emailChanged) {
+                toast({
+                    title: "Verification email sent",
+                    description: result.data?.message || "We've sent a confirmation link to your new email address. Please check your inbox and click the link to complete the change.",
+                });
+            } else if (phoneChanged) {
+                toast({
+                    title: "Saved",
+                    description: "Your phone number has been updated.",
+                });
+            } else {
+                toast({
+                    title: "Saved",
+                    description: "Your contact information has been updated.",
+                });
+            }
         } catch (error) {
             toast({
                 title: "Error",
