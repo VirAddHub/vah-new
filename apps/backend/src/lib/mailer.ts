@@ -108,13 +108,18 @@ export async function sendTemplateEmail(opts: {
             To: opts.to,
             TemplateAlias: opts.templateAlias,
             TemplateModel,
-            ReplyTo: replyTo,
+            ReplyTo: replyTo || 'support@virtualaddresshub.co.uk', // Explicitly set Reply-To (required for support workflow)
             MessageStream: ENV.POSTMARK_STREAM,
         };
 
         // Add TemplateId if provided (for fallback)
         if (opts.templateId) {
             emailOptions.TemplateId = opts.templateId;
+        }
+
+        // Log Reply-To for debugging
+        if (opts.templateAlias === 'email-change-notification-old-address') {
+            console.log(`[mailer] Sending email-change-notification-old-address with ReplyTo: ${emailOptions.ReplyTo}`);
         }
 
         await client.sendEmailWithTemplate(emailOptions);
