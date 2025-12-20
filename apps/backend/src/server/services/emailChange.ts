@@ -327,7 +327,8 @@ export async function resendEmailChangeConfirmation(token: string): Promise<{ se
             model: {
                 firstName: user.first_name,
                 name: user.name,
-                confirmUrl,
+                ctaUrl: confirmUrl, // Use ctaUrl to match template variable cta_url
+                confirmUrl, // Also include for backward compatibility
                 expiryMinutes: 30,
             },
             from: 'support@virtualaddresshub.co.uk',
