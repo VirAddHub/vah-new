@@ -262,7 +262,8 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         last_name,
         middle_names,
         company_name,
-        forwarding_address
+        forwarding_address,
+        // email and phone are not extracted here - they should use /api/profile/contact
     } = req.body;
 
     const updates: string[] = [];
@@ -341,13 +342,8 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         const newUser = result.rows[0];
 
         // Log changes to activity_log for audit trail
+        // Note: email and phone changes are logged in /api/profile/contact endpoint
         const changes: string[] = [];
-        if (email !== undefined && oldUser?.email !== email) {
-            changes.push(`email: ${oldUser?.email || 'none'} → ${email}`);
-        }
-        if (phone !== undefined && oldUser?.phone !== phone) {
-            changes.push(`phone: ${oldUser?.phone || 'none'} → ${phone}`);
-        }
         if (forwarding_address !== undefined && oldUser?.forwarding_address !== forwarding_address) {
             changes.push('forwarding_address updated');
         }

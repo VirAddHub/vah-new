@@ -2,7 +2,7 @@
 // Email change verification routes
 
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth } from '../../middleware/auth';
 import { getPool } from '../db';
 import { requestEmailChange, confirmEmailChange } from '../services/emailChange';
 import rateLimit from 'express-rate-limit';
