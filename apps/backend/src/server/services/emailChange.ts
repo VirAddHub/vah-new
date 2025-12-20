@@ -223,6 +223,7 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
     
     // Send security notification to OLD email address
     // This email is sent AFTER the email has been successfully changed
+    // Replies must route to support@virtualaddresshub.co.uk (intentional support workflow)
     try {
         await sendTemplateEmail({
             to: oldEmail,
@@ -234,6 +235,7 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
             },
             from: 'support@virtualaddresshub.co.uk',
             replyTo: 'support@virtualaddresshub.co.uk',
+            templateId: 42718936, // Postmark Template ID
         });
         console.log(`[emailChange] Security notification sent to old email: ${maskEmail(oldEmail)}`);
     } catch (emailError) {
