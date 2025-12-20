@@ -102,6 +102,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 is_sole_controller,
                 additional_controllers_count,
                 controllers_declared_at,
+                owners_pending_info,
                 created_at,
                 updated_at,
                 last_login_at

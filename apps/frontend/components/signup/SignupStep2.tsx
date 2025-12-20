@@ -918,6 +918,21 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                 You can add them later from your dashboard.
                                             </p>
                                         )}
+                                        
+                                        {!formData.ownersPendingInfo && formData.isSoleController === false && formData.additionalOwners && formData.additionalOwners.length > 0 && (
+                                            <div className="space-y-2">
+                                                {formData.additionalOwners.map((owner, index) => {
+                                                    const nameError = errors[`owner_${index}_name`];
+                                                    const emailError = errors[`owner_${index}_email`];
+                                                    return (nameError || emailError) ? (
+                                                        <div key={index} className="text-xs text-destructive">
+                                                            {nameError && <p>Owner {index + 1} name: {nameError}</p>}
+                                                            {emailError && <p>Owner {index + 1} email: {emailError}</p>}
+                                                        </div>
+                                                    ) : null;
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

@@ -23,10 +23,11 @@ export function middleware(request: NextRequest) {
   }
 
   // Protected routes that require authentication
-  // Exception: /account/confirm-email is public (no auth required for email verification)
+  // Exceptions: public routes (no auth required)
   const isPublicAccountRoute = pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');
+  const isPublicVerifyRoute = pathname === '/verify-owner' || pathname.startsWith('/verify-owner/');
   const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin'];
-  const isProtectedRoute = !isPublicAccountRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
+  const isProtectedRoute = !isPublicAccountRoute && !isPublicVerifyRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
 
   // Check for authentication cookie
   if (isProtectedRoute) {
