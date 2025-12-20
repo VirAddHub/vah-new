@@ -120,7 +120,18 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     setManualAddress(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    // Prevent default form submission if called from form
+    if (e) {
+      e.preventDefault();
+    }
+
+    console.log('[ForwardingAddressCard] SUBMIT FIRED', { 
+      useManualEntry, 
+      address, 
+      manualAddress 
+    });
+
     let finalAddress: Address;
 
     if (useManualEntry) {
@@ -132,6 +143,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
       ].filter(line => line && line.trim() !== '');
 
       if (addressLines.length === 0) {
+        console.log('[ForwardingAddressCard] Validation failed: no address lines');
         toast({
           title: "Validation error",
           description: "Please enter at least one address line.",
@@ -144,6 +156,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     } else if (address) {
       finalAddress = address;
     } else {
+      console.log('[ForwardingAddressCard] Validation failed: no address selected');
       toast({
         title: "Validation error",
         description: "Please select or enter an address.",
@@ -152,9 +165,11 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
       return;
     }
 
+    console.log('[ForwardingAddressCard] Calling onSave with:', finalAddress);
     setIsSaving(true);
     try {
       await onSave(finalAddress);
+      console.log('[ForwardingAddressCard] Save successful');
       // Close dialog immediately after successful save (before state updates)
       setIsDialogOpen(false);
       // Update local state with saved address
@@ -230,7 +245,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
                 <DialogHeader>
                   <DialogTitle>Edit Forwarding Address</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form onSubmit={handleSave} className="space-y-4">
                   {!useManualEntry && (
                     <div className="space-y-2">
                       <Label>Search for your address</Label>
@@ -314,14 +329,14 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
                   )}
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={handleCancel}>
+                    <Button type="button" variant="outline" onClick={handleCancel}>
                       Cancel
                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
+                    <Button type="submit" disabled={isSaving}>
                       {isSaving ? 'Saving...' : 'Save address'}
                     </Button>
                   </div>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
           </div>
@@ -341,7 +356,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
                   <DialogHeader>
                     <DialogTitle>Add Forwarding Address</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <form onSubmit={handleSave} className="space-y-4">
                     {!useManualEntry && (
                       <div className="space-y-2">
                         <Label>Search for your address</Label>
@@ -420,14 +435,14 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
                     )}
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={handleCancel}>
+                      <Button type="button" variant="outline" onClick={handleCancel}>
                         Cancel
                       </Button>
-                      <Button onClick={handleSave} disabled={isSaving}>
+                      <Button type="submit" disabled={isSaving}>
                         {isSaving ? 'Saving...' : 'Save address'}
                       </Button>
                     </div>
-                  </div>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
