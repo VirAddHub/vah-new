@@ -5,6 +5,19 @@
  * Allowed origins:
  * - https://vah-api.onrender.com (production)
  * - https://vah-api-staging.onrender.com (staging)
+ * 
+ * IMPORTANT: The origin should NOT include "/api" because BFF routes automatically
+ * add "/api" when constructing backend URLs (e.g., `${origin}/api/profile`).
+ * 
+ * The normalise() function automatically strips trailing "/api" if present to
+ * prevent double /api/api/ bugs.
+ * 
+ * Correct examples:
+ * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com
+ * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com/api (auto-fixed)
+ * 
+ * Wrong (will cause 404/500 errors):
+ * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com/api/profile (too specific)
  */
 
 // Render-only allowlist
@@ -17,13 +30,34 @@ const ALLOWED = new Set([
 let didLog = false;
 
 /**
- * Normalises an origin URL by trimming whitespace and removing trailing slashes.
+ * Normalises an origin URL by:
+ * - Trimming whitespace
+ * - Removing trailing slashes
+ * - Removing trailing "/api" to prevent double /api/api/ bugs
+ * 
+ * Example:
+ * - "https://vah-api-staging.onrender.com/api/" → "https://vah-api-staging.onrender.com"
+ * - "https://vah-api-staging.onrender.com/api" → "https://vah-api-staging.onrender.com"
+ * - "https://vah-api-staging.onrender.com/" → "https://vah-api-staging.onrender.com"
  * 
  * @param origin The origin URL to normalise
- * @returns The normalised origin URL
+ * @returns The normalised origin URL (base host only, no /api suffix)
  */
 function normalise(origin: string): string {
-  return origin.trim().replace(/\/+$/, '');
+  let normalized = origin.trim();
+  
+  // Remove trailing slashes
+  normalized = normalized.replace(/\/+$/, '');
+  
+  // Remove trailing "/api" if present (prevents double /api/api/ bugs)
+  // BFF routes already add /api when constructing URLs like `${origin}/api/profile`
+  if (normalized.toLowerCase().endsWith('/api')) {
+    normalized = normalized.slice(0, -4); // Remove "/api"
+    // Remove any trailing slashes again after removing /api
+    normalized = normalized.replace(/\/+$/, '');
+  }
+  
+  return normalized;
 }
 
 /**
@@ -68,7 +102,11 @@ export function getBackendOrigin(): string {
   // Production: Require NEXT_PUBLIC_BACKEND_API_ORIGIN (no fallbacks)
   if (isProduction) {
     if (!process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
-      const error = new Error('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set. Please configure this environment variable in your deployment settings.');
+      const error = new Error(
+        'NEXT_PUBLIC_BACKEND_API_ORIGIN is not set. ' +
+        'Please configure this environment variable in your deployment settings. ' +
+        'Example: https://vah-api-staging.onrender.com (do NOT include /api - it is added automatically)'
+      );
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
         console.error('[backendOrigin] Allowed origins:', Array.from(ALLOWED).join(', '));
@@ -82,7 +120,9 @@ export function getBackendOrigin(): string {
       validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
     } catch (validationError) {
       const error = new Error(
-        `Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: ${validationError instanceof Error ? validationError.message : 'must be Render origin'}`
+        `Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: ${validationError instanceof Error ? validationError.message : 'must be Render origin'}. ` +
+        `Note: Do NOT include /api in the origin - it is added automatically by BFF routes. ` +
+        `Example: https://vah-api-staging.onrender.com`
       );
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
@@ -93,7 +133,7 @@ export function getBackendOrigin(): string {
     }
 
     if (!didLog) {
-      console.log(`[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: ${origin}`);
+      console.log(`[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: ${origin} (normalised from: ${process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN})`);
       didLog = true;
     }
     return origin;
