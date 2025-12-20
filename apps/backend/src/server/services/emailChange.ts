@@ -217,3 +217,113 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
     return { changed: true };
 }
 
+/**
+ * Resend email change confirmation email
+ * 
+ * - Validates token and finds request
+ * - Rate limits: won't resend if last_sent_at within 60 seconds
+ * - Generates new token and updates request
+ * - Sends new verification email
+ * - Always returns success (no enumeration)
+ */
+export async function resendEmailChangeConfirmation(token: string): Promise<{ sent: boolean }> {
+    const pool = getPool();
+    
+    if (!token || token.trim().length === 0) {
+        // Return success to prevent enumeration
+        return { sent: true };
+    }
+    
+    const tokenHash = hashToken(token);
+    
+    // Find request by token hash (must be unused)
+    const requestResult = await pool.query(
+        `SELECT id, user_id, new_email, last_sent_at
+         FROM email_change_request
+         WHERE token_hash = $1 
+           AND used_at IS NULL
+         LIMIT 1`,
+        [tokenHash]
+    );
+    
+    if (requestResult.rows.length === 0) {
+        // Request not found or already used
+        // Return success to prevent enumeration
+        return { sent: true };
+    }
+    
+    const request = requestResult.rows[0];
+    const userId = request.user_id;
+    const newEmail = request.new_email;
+    const lastSentAt = request.last_sent_at;
+    
+    // Rate limiting: don't resend if last sent within 60 seconds
+    if (lastSentAt) {
+        const lastSentTime = new Date(lastSentAt).getTime();
+        const now = Date.now();
+        const timeSinceLastSent = now - lastSentTime;
+        const sixtySeconds = 60 * 1000;
+        
+        if (timeSinceLastSent < sixtySeconds) {
+            // Rate limited, but return success
+            return { sent: true };
+        }
+    }
+    
+    // Get user data for email
+    const userResult = await pool.query(
+        'SELECT first_name, name FROM "user" WHERE id = $1',
+        [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+        // User doesn't exist
+        return { sent: true };
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Generate new token
+    const newToken = generateEmailChangeToken();
+    const newTokenHash = hashToken(newToken);
+    
+    // Update expires_at to 30 minutes from now
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+    
+    // Update request with new token and last_sent_at
+    await pool.query(
+        `UPDATE email_change_request 
+         SET token_hash = $1, 
+             expires_at = $2, 
+             last_sent_at = NOW()
+         WHERE id = $3`,
+        [newTokenHash, expiresAt, request.id]
+    );
+    
+    // Build confirmation URL with new token
+    const confirmUrl = `${getAppUrl()}/account/confirm-email?token=${newToken}`;
+    
+    // Send verification email to new email address
+    try {
+        await sendTemplateEmail({
+            to: newEmail,
+            templateAlias: Templates.EmailChangeVerification,
+            model: {
+                firstName: user.first_name,
+                name: user.name,
+                confirmUrl,
+                expiryMinutes: 30,
+            },
+            from: 'support@virtualaddresshub.co.uk',
+            replyTo: 'support@virtualaddresshub.co.uk',
+            templateId: 42716349,
+        });
+    } catch (error) {
+        console.error('[emailChange] Failed to resend verification email:', error);
+        // Still return success - email might have been sent
+    }
+    
+    return { sent: true };
+}
+

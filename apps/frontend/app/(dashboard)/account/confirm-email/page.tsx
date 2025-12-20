@@ -11,11 +11,15 @@ function ConfirmEmailContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState<string>('');
+  const [token, setToken] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const tokenParam = searchParams.get('token');
+    setToken(tokenParam);
 
-    if (!token) {
+    if (!tokenParam) {
       setStatus('error');
       setMessage('This confirmation link is invalid.');
       return;
@@ -24,7 +28,7 @@ function ConfirmEmailContent() {
     // Call the BFF confirmation endpoint
     const confirmEmailChange = async () => {
       try {
-        const response = await fetch(`/api/bff/profile/confirm-email-change?token=${encodeURIComponent(token)}`, {
+        const response = await fetch(`/api/bff/profile/confirm-email-change?token=${encodeURIComponent(tokenParam)}`, {
           method: 'GET',
           cache: 'no-store',
         });
@@ -35,10 +39,10 @@ function ConfirmEmailContent() {
           setStatus('success');
           setMessage('Your email address has been confirmed.');
           
-          // Redirect to account page after 3 seconds
+          // Auto-redirect to account page after 2.5 seconds
           setTimeout(() => {
-            router.push('/account');
-          }, 3000);
+            router.replace('/account');
+          }, 2500);
         } else {
           setStatus('error');
           setMessage(result.data?.message || 'This confirmation link is invalid or has expired.');
@@ -52,6 +56,37 @@ function ConfirmEmailContent() {
 
     confirmEmailChange();
   }, [searchParams, router]);
+
+  const handleResend = async () => {
+    if (!token || resending || resendSent) return;
+
+    setResending(true);
+    try {
+      const response = await fetch('/api/bff/profile/email-change/resend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+        cache: 'no-store',
+      });
+
+      const result = await response.json();
+
+      if (result.ok) {
+        setResendSent(true);
+      } else {
+        // Still show success to user (no enumeration)
+        setResendSent(true);
+      }
+    } catch (error) {
+      console.error('[ConfirmEmail] Resend error:', error);
+      // Still show success to user (no enumeration)
+      setResendSent(true);
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -99,20 +134,44 @@ function ConfirmEmailContent() {
                   This link may have expired (links are valid for 30 minutes) or has already been used.
                 </p>
               </div>
+              
+              {resendSent ? (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    Sent — check your inbox.
+                  </p>
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                    If you still can't find it, reply to this email.
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleResend}
+                  disabled={resending || !token}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {resending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Resend confirmation email
+                    </>
+                  )}
+                </Button>
+              )}
+              
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => router.push('/account')}
                   className="w-full"
+                  variant="outline"
                 >
                   Go to Account Settings
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/contact')}
-                  className="w-full"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Contact Support
                 </Button>
               </div>
             </div>

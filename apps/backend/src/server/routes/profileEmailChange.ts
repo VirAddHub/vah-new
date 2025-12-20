@@ -4,7 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getPool } from '../db';
-import { requestEmailChange, confirmEmailChange } from '../services/emailChange';
+import { requestEmailChange, confirmEmailChange, resendEmailChangeConfirmation } from '../services/emailChange';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
@@ -337,6 +337,60 @@ router.get('/confirm-email-change', async (req: Request, res: Response) => {
             ok: false,
             error: 'confirmation_failed',
             message: 'Failed to confirm email change.',
+        });
+    }
+});
+
+/**
+ * POST /api/profile/email-change/resend
+ * Resend email change confirmation email
+ * 
+ * Request body:
+ * {
+ *   "token": string (required) - token from original confirmation email
+ * }
+ * 
+ * Response:
+ * {
+ *   "ok": true,
+ *   "data": {
+ *     "sent": boolean
+ *   }
+ * }
+ * 
+ * Always returns success (no enumeration)
+ */
+router.post('/email-change/resend', async (req: Request, res: Response) => {
+    const { token } = req.body;
+
+    if (!token || typeof token !== 'string') {
+        // Return success to prevent enumeration
+        return res.json({
+            ok: true,
+            data: {
+                sent: true,
+            },
+        });
+    }
+
+    try {
+        const result = await resendEmailChangeConfirmation(token);
+
+        // Always return success
+        return res.json({
+            ok: true,
+            data: {
+                sent: result.sent,
+            },
+        });
+    } catch (error: any) {
+        console.error('[POST /api/profile/email-change/resend] error:', error);
+        // Return success even on error (no enumeration)
+        return res.json({
+            ok: true,
+            data: {
+                sent: true,
+            },
         });
     }
 });
