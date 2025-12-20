@@ -77,7 +77,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         city: initialData?.city || '',
         postcode: initialData?.postcode || '',
         forward_country: initialData?.forward_country || 'GB',
-        isSoleController: initialData?.isSoleController ?? false, // Default to false, will be required
+        isSoleController: initialData?.isSoleController ?? undefined, // Will be required, start as undefined
         additionalControllersCount: initialData?.additionalControllersCount ?? null,
         additionalOwners: initialData?.additionalOwners || [],
         ownersPendingInfo: initialData?.ownersPendingInfo ?? false
