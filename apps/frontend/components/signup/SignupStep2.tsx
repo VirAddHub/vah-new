@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { AddressFinder } from '../ui/AddressFinder';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -38,6 +39,10 @@ export interface SignupStep2Data {
     city: string;
     postcode: string;
     forward_country: string;
+
+    // Controllers Declaration
+    isSoleController?: boolean;
+    additionalControllersCount?: number | null;
 }
 
 type CompanySearchResult = {
@@ -65,7 +70,9 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         address_line2: initialData?.address_line2 || '',
         city: initialData?.city || '',
         postcode: initialData?.postcode || '',
-        forward_country: initialData?.forward_country || 'GB'
+        forward_country: initialData?.forward_country || 'GB',
+        isSoleController: initialData?.isSoleController,
+        additionalControllersCount: initialData?.additionalControllersCount ?? null
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -742,6 +749,87 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Company Control Declaration Card */}
+                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
+                        <div className="px-6 pt-6">
+                            <h4 className="leading-none flex items-center gap-2">
+                                <Building className="h-5 w-5" />
+                                Company Control
+                            </h4>
+                        </div>
+                        <div className="px-6 pb-6 space-y-4">
+                            <div className="space-y-3">
+                                <Label className="text-base font-medium">
+                                    Are you the only director/controller of this company?
+                                </Label>
+                                <RadioGroup
+                                    value={formData.isSoleController === true ? 'yes' : formData.isSoleController === false ? 'no' : undefined}
+                                    onValueChange={(value) => {
+                                        if (value === 'yes') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                isSoleController: true,
+                                                additionalControllersCount: null
+                                            }));
+                                        } else if (value === 'no') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                isSoleController: false,
+                                                additionalControllersCount: prev.additionalControllersCount ?? null
+                                            }));
+                                        }
+                                    }}
+                                    className="space-y-2"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="yes" id="sole_controller_yes" />
+                                        <Label htmlFor="sole_controller_yes" className="font-normal cursor-pointer">
+                                            Yes — I'm the only director/controller
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="no" id="sole_controller_no" />
+                                        <Label htmlFor="sole_controller_no" className="font-normal cursor-pointer">
+                                            No — there are other directors/controllers
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
+                            {formData.isSoleController === false && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="additional_controllers_count">
+                                        How many other directors/controllers?
+                                    </Label>
+                                    <Input
+                                        id="additional_controllers_count"
+                                        type="number"
+                                        min="1"
+                                        value={formData.additionalControllersCount ?? ''}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                additionalControllersCount: value === '' ? null : parseInt(value, 10) || null
+                                            }));
+                                        }}
+                                        placeholder="e.g. 2"
+                                        className="max-w-xs"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Leave blank if you're not sure. You can update this later.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="bg-muted/50 border border-muted rounded-lg p-3">
+                                <p className="text-xs text-muted-foreground">
+                                    We ask this for compliance and account security. You can update this later.
+                                </p>
                             </div>
                         </div>
                     </div>

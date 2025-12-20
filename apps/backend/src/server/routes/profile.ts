@@ -99,6 +99,9 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 ch_verification_notes,
                 plan_id,
                 subscription_status,
+                is_sole_controller,
+                additional_controllers_count,
+                controllers_declared_at,
                 created_at,
                 updated_at,
                 last_login_at
@@ -116,11 +119,16 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         const { computeIdentityCompliance } = await import('../services/compliance');
         const compliance = computeIdentityCompliance(user);
 
+        // Derived field: controllers_verification_required
+        // True if user declared they are NOT the sole controller
+        const controllersVerificationRequired = user.is_sole_controller === false;
+
         return res.json({
             ok: true,
             data: {
                 ...user,
                 compliance,
+                controllers_verification_required: controllersVerificationRequired,
             }
         });
     } catch (error: any) {
@@ -1242,6 +1250,106 @@ router.get("/media/ch-verification/:filename", requireAuth, async (req: Request,
     } catch (error: any) {
         console.error('[GET /api/media/ch-verification/:filename] error:', error);
         return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
+    }
+});
+
+/**
+ * PATCH /api/profile/controllers
+ * Update controllers declaration
+ * 
+ * Body:
+ * {
+ *   "isSoleController": boolean,
+ *   "additionalControllersCount"?: number | null
+ * }
+ * 
+ * Validation:
+ * - If isSoleController === true: additionalControllersCount must be null or 0
+ * - If isSoleController === false: additionalControllersCount can be null (unknown) or >= 1
+ */
+router.patch("/controllers", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+    const { isSoleController, additionalControllersCount } = req.body;
+
+    // Validate required field
+    if (isSoleController === undefined || typeof isSoleController !== 'boolean') {
+        return res.status(400).json({
+            ok: false,
+            error: 'validation_error',
+            message: 'isSoleController is required and must be a boolean.',
+        });
+    }
+
+    // Validate and normalize additionalControllersCount
+    let normalizedCount: number | null = null;
+    
+    if (isSoleController === true) {
+        // If sole controller, count must be null or 0
+        if (additionalControllersCount !== null && additionalControllersCount !== undefined && additionalControllersCount !== 0) {
+            return res.status(400).json({
+                ok: false,
+                error: 'validation_error',
+                message: 'If you are the sole controller, additionalControllersCount must be null or 0.',
+            });
+        }
+        normalizedCount = null;
+    } else {
+        // If not sole controller, count can be null (unknown) or >= 1
+        if (additionalControllersCount !== null && additionalControllersCount !== undefined) {
+            const count = Number(additionalControllersCount);
+            if (isNaN(count) || count < 1) {
+                return res.status(400).json({
+                    ok: false,
+                    error: 'validation_error',
+                    message: 'If there are other controllers, additionalControllersCount must be at least 1.',
+                });
+            }
+            normalizedCount = count;
+        } else {
+            normalizedCount = null; // Unknown is allowed
+        }
+    }
+
+    try {
+        // Update user row
+        await pool.query(
+            `UPDATE "user" 
+             SET is_sole_controller = $1,
+                 additional_controllers_count = $2,
+                 controllers_declared_at = NOW(),
+                 updated_at = $3
+             WHERE id = $4`,
+            [isSoleController, normalizedCount, Date.now(), userId]
+        );
+
+        // Get updated user data
+        const result = await pool.query(
+            `SELECT is_sole_controller, additional_controllers_count, controllers_declared_at
+             FROM "user"
+             WHERE id = $1`,
+            [userId]
+        );
+
+        const user = result.rows[0];
+        const controllersVerificationRequired = user.is_sole_controller === false;
+
+        return res.json({
+            ok: true,
+            data: {
+                is_sole_controller: user.is_sole_controller,
+                additional_controllers_count: user.additional_controllers_count,
+                controllers_declared_at: user.controllers_declared_at,
+                controllers_verification_required: controllersVerificationRequired,
+            },
+        });
+    } catch (error: any) {
+        console.error('[PATCH /api/profile/controllers] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: 'database_error',
+            message: error.message,
+        });
     }
 });
 

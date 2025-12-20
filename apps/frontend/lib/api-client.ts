@@ -285,7 +285,9 @@ export const apiClient = {
         postcode?: string,
         forward_country?: string,
         billing?: string,
-        price?: string
+        price?: string,
+        isSoleController?: boolean,
+        additionalControllersCount?: number | null
     ): Promise<ApiResponse<{ user: User }>> {
         const resp = await legacyReq(apiUrl('auth/signup'), {
             method: 'POST',
@@ -307,7 +309,9 @@ export const apiClient = {
                 postcode,
                 forward_country,
                 billing,
-                price
+                price,
+                isSoleController,
+                additionalControllersCount
             }),
         });
 

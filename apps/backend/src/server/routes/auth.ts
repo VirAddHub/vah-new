@@ -251,6 +251,10 @@ const SignupSchema = z.object({
     // Step 1/3 fields that backend can ignore or store if you already do
     billing: z.enum(["monthly", "annual"]).optional(),
     price: z.string().optional(), // frontend-calculated
+
+    // Controllers declaration (optional during signup)
+    isSoleController: z.boolean().optional(),
+    additionalControllersCount: z.number().int().min(0).nullable().optional(),
 });
 
 router.post("/signup", async (req, res) => {
@@ -315,6 +319,25 @@ router.post("/signup", async (req, res) => {
         // Construct forwarding address from individual fields
         const forwardingAddress = `${i.forward_to_first_name} ${i.forward_to_last_name}\n${i.address_line1}${i.address_line2 ? '\n' + i.address_line2 : ''}\n${i.city}, ${i.postcode}\n${i.forward_country}`;
 
+        // Validate controllers declaration if provided
+        let isSoleController: boolean | null = null;
+        let additionalControllersCount: number | null = null;
+        let controllersDeclaredAt: Date | null = null;
+
+        if (i.isSoleController !== undefined) {
+            isSoleController = i.isSoleController;
+            if (isSoleController === true) {
+                // If sole controller, count must be null or 0
+                additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === 0) ? null : 0;
+            } else {
+                // If not sole controller, count can be null (unknown) or >= 1
+                additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === undefined) 
+                    ? null 
+                    : Math.max(1, i.additionalControllersCount); // Enforce >= 1 if provided
+            }
+            controllersDeclaredAt = new Date();
+        }
+
         const insertQuery = `
       INSERT INTO "user" (
         first_name, last_name, email, phone,
@@ -322,14 +345,16 @@ router.post("/signup", async (req, res) => {
         forward_to_first_name, forward_to_last_name, address_line1, address_line2,
         city, postcode, forward_country, forwarding_address,
         password, created_at, updated_at, is_admin, role,
-        billing, price
+        billing, price,
+        is_sole_controller, additional_controllers_count, controllers_declared_at
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,$12,
         $13,$14,$15,$16,
         $17,$18,$19,$20,$21,
-        $22,$23
+        $22,$23,
+        $24,$25,$26
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -340,7 +365,8 @@ router.post("/signup", async (req, res) => {
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country, forwardingAddress,
             hash, now, now, false, 'user',
-            i.billing ?? null, i.price ?? null
+            i.billing ?? null, i.price ?? null,
+            isSoleController, additionalControllersCount, controllersDeclaredAt
         ];
 
         const rs = await pool.query(insertQuery, args);
@@ -555,7 +581,7 @@ router.get("/whoami", async (req, res) => {
         // Verify user still exists and is not deleted
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, is_admin, role, kyc_status, name, first_name, last_name, forwarding_address, plan_status, plan_id FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            'SELECT id, email, is_admin, role, kyc_status, name, first_name, last_name, forwarding_address, plan_status, plan_id, is_sole_controller, additional_controllers_count, controllers_declared_at FROM "user" WHERE id = $1 AND deleted_at IS NULL',
             [payload.id]
         );
 
@@ -587,6 +613,9 @@ router.get("/whoami", async (req, res) => {
             console.warn('[auth/whoami] subscription repair failed:', (e as any)?.message ?? e);
         }
 
+        // Derived field: controllers_verification_required
+        const controllersVerificationRequired = userData.is_sole_controller === false;
+
         // Return user data from database (not token)
         return ok(res, {
             user: {
@@ -601,6 +630,10 @@ router.get("/whoami", async (req, res) => {
                 forwarding_address: userData.forwarding_address,
                 plan_status: userData.plan_status,
                 plan_id: userData.plan_id,
+                is_sole_controller: userData.is_sole_controller,
+                additional_controllers_count: userData.additional_controllers_count,
+                controllers_declared_at: userData.controllers_declared_at,
+                controllers_verification_required: controllersVerificationRequired,
             },
         });
     } catch (error) {

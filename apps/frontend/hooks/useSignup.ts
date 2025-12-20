@@ -99,7 +99,9 @@ export function useSignup() {
                 step2Data.postcode,
                 step2Data.forward_country,
                 step1Data?.billing,
-                step1Data?.price
+                step1Data?.price,
+                step2Data.isSoleController,
+                step2Data.additionalControllersCount
             );
 
             if (!signupResponse.ok) {
