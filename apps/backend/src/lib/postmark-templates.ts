@@ -4,6 +4,7 @@ export const Templates = {
     PasswordReset: "password-reset-email", // pragma: allowlist secret
     PasswordChanged: "password-changed-confirmation", // pragma: allowlist secret
     EmailChangeVerification: "mail-change-verification", // pragma: allowlist secret - Template ID: 42716349
+    EmailChangeNotificationOldAddress: "email-change-notification-old-address", // pragma: allowlist secret
 
     // Welcome & onboarding
     Welcome: "welcome-email", // pragma: allowlist secret

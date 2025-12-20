@@ -184,9 +184,9 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
     const userId = request.user_id;
     const newEmail = request.new_email;
     
-    // Get current email for audit log
+    // Get current email and user details for audit log and notification
     const userResult = await pool.query(
-        'SELECT email FROM "user" WHERE id = $1',
+        'SELECT email, first_name, name FROM "user" WHERE id = $1',
         [userId]
     );
     
@@ -196,6 +196,18 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
     }
     
     const oldEmail = userResult.rows[0].email;
+    const firstName = userResult.rows[0].first_name;
+    const name = userResult.rows[0].name;
+    
+    // Safety check: don't proceed if oldEmail === newEmail
+    if (oldEmail.trim().toLowerCase() === newEmail.trim().toLowerCase()) {
+        // Email already matches, mark request as used and return success
+        await pool.query(
+            'UPDATE email_change_request SET used_at = NOW() WHERE id = $1',
+            [request.id]
+        );
+        return { changed: true };
+    }
     
     // Update user email
     await pool.query(
@@ -208,6 +220,26 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
         'UPDATE email_change_request SET used_at = NOW() WHERE id = $1',
         [request.id]
     );
+    
+    // Send security notification to OLD email address
+    // This email is sent AFTER the email has been successfully changed
+    try {
+        await sendTemplateEmail({
+            to: oldEmail,
+            templateAlias: Templates.EmailChangeNotificationOldAddress,
+            model: {
+                firstName,
+                name,
+                new_email: newEmail,
+            },
+            from: 'support@virtualaddresshub.co.uk',
+            replyTo: 'support@virtualaddresshub.co.uk',
+        });
+        console.log(`[emailChange] Security notification sent to old email: ${maskEmail(oldEmail)}`);
+    } catch (emailError) {
+        console.error('[emailChange] Failed to send security notification to old email:', emailError);
+        // Don't fail the confirmation if notification email fails - email change is already complete
+    }
     
     // Log audit entry
     try {

@@ -120,6 +120,14 @@ const _modelBuilders: Record<string, ModelBuilder> = {
       expiry_minutes: String(a.expiryMinutes ?? 30),
     };
   },
+  [Templates.EmailChangeNotificationOldAddress]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      new_email: a.new_email || a.newEmail || '',
+    };
+  },
 
   // ONBOARDING
   // Welcome and WelcomeKyc both use "welcome-email" template alias
