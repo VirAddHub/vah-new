@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
+import { clearToken } from '@/lib/token-manager';
 
 function ConfirmEmailContent() {
   const router = useRouter();
@@ -39,9 +40,21 @@ function ConfirmEmailContent() {
           setStatus('success');
           setMessage('Your email address has been confirmed.');
           
-          // Auto-redirect to account page after 2.5 seconds
+          // Logout the user (clear all auth tokens and cookies)
+          clearToken();
+          
+          // Clear any stored user data
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('user');
+            localStorage.removeItem('auth_token');
+            // Clear session cookie
+            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          }
+          
+          // Auto-redirect to login page after 2.5 seconds
           setTimeout(() => {
-            router.replace('/account');
+            router.replace('/login?email_changed=true');
           }, 2500);
         } else {
           setStatus('error');
@@ -122,7 +135,10 @@ function ConfirmEmailContent() {
           {status === 'success' && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <p className="text-sm text-green-800 dark:text-green-200">
-                You can now log in with your new email address. Redirecting to account page...
+                Your email address has been updated. You have been logged out for security. Please log in with your new email address.
+              </p>
+              <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                Redirecting to login page...
               </p>
             </div>
           )}

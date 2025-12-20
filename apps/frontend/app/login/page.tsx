@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [emailChanged, setEmailChanged] = useState(false);
+
+    useEffect(() => {
+        // Check if redirected from email confirmation
+        if (searchParams.get('email_changed') === 'true') {
+            setEmailChanged(true);
+            // Remove query param from URL
+            router.replace('/login', { scroll: false });
+        }
+    }, [searchParams, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,6 +94,16 @@ export default function LoginPage() {
                             <h1 className="text-3xl font-bold text-primary mb-2">Welcome Back</h1>
                             <p className="text-muted-foreground">Sign in to your account</p>
                         </div>
+
+                        {/* Success Alert - Email Changed */}
+                        {emailChanged && (
+                            <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <AlertDescription className="text-green-800 dark:text-green-200">
+                                    Your email address has been updated successfully. Please log in with your new email address.
+                                </AlertDescription>
+                            </Alert>
+                        )}
 
                         {/* Error Alert */}
                         {error && (
