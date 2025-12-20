@@ -12,12 +12,16 @@
  * @returns true if the error is a backend origin configuration error
  */
 export function isBackendOriginConfigError(err: unknown): boolean {
+  if (!(err instanceof Error)) {
+    return false;
+  }
+  
+  const message = err.message.toLowerCase();
   return (
-    err instanceof Error &&
-    (
-      err.message.includes('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set') ||
-      err.message.includes('Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN') ||
-      err.message.includes('Invalid NEXT_PUBLIC_API_URL')
-    )
+    message.includes('next_public_backend_api_origin') ||
+    message.includes('next_public_api_url') ||
+    message.includes('must be render origin') ||
+    message.includes('backend origin') ||
+    message.includes('server misconfigured')
   );
 }

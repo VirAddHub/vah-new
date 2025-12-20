@@ -68,16 +68,29 @@ export function getBackendOrigin(): string {
   // Production: Require NEXT_PUBLIC_BACKEND_API_ORIGIN (no fallbacks)
   if (isProduction) {
     if (!process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
-      const error = new Error('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set');
+      const error = new Error('NEXT_PUBLIC_BACKEND_API_ORIGIN is not set. Please configure this environment variable in your deployment settings.');
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
+        console.error('[backendOrigin] Allowed origins:', Array.from(ALLOWED).join(', '));
         didLog = true;
       }
       throw error;
     }
 
     const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
-    validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
+    try {
+      validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
+    } catch (validationError) {
+      const error = new Error(
+        `Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: ${validationError instanceof Error ? validationError.message : 'must be Render origin'}`
+      );
+      if (!didLog) {
+        console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
+        console.error('[backendOrigin] Allowed origins:', Array.from(ALLOWED).join(', '));
+        didLog = true;
+      }
+      throw error;
+    }
 
     if (!didLog) {
       console.log(`[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: ${origin}`);
