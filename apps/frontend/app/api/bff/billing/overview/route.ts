@@ -42,8 +42,18 @@ export async function GET(request: NextRequest) {
       );
     }
     console.error('[BFF billing overview] error:', error);
+    console.error('[BFF billing overview] error stack:', error?.stack);
+    console.error('[BFF billing overview] error details:', {
+      message: error?.message,
+      name: error?.name,
+      cause: error?.cause,
+    });
     return NextResponse.json(
-      { ok: false, error: 'Failed to fetch billing overview' },
+      { 
+        ok: false, 
+        error: 'Failed to fetch billing overview',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     );
   }

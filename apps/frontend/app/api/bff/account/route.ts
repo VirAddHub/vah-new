@@ -28,18 +28,66 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Read responses as text first, then parse JSON
-    const overview = overviewRes?.ok ? await overviewRes.text().then(raw => {
-      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
-    }).catch(() => null) : null;
-    const invoices = invoicesRes?.ok ? await invoicesRes.text().then(raw => {
-      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
-    }).catch(() => null) : null;
-    const user = userRes?.ok ? await userRes.text().then(raw => {
-      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
-    }).catch(() => null) : null;
-    const profile = profileRes?.ok ? await profileRes.text().then(raw => {
-      try { return JSON.parse(raw); } catch { return { raw: raw.substring(0, 300) }; }
-    }).catch(() => null) : null;
+    let overview: any = null;
+    let invoices: any = null;
+    let user: any = null;
+    let profile: any = null;
+
+    try {
+      overview = overviewRes?.ok ? await overviewRes.text().then(raw => {
+        try { return JSON.parse(raw); } catch (e) { 
+          console.warn('[BFF account] Failed to parse overview JSON:', e);
+          return { raw: raw.substring(0, 300) }; 
+        }
+      }).catch((e) => {
+        console.warn('[BFF account] Failed to read overview response:', e);
+        return null;
+      }) : null;
+    } catch (e) {
+      console.warn('[BFF account] Error processing overview:', e);
+    }
+
+    try {
+      invoices = invoicesRes?.ok ? await invoicesRes.text().then(raw => {
+        try { return JSON.parse(raw); } catch (e) { 
+          console.warn('[BFF account] Failed to parse invoices JSON:', e);
+          return { raw: raw.substring(0, 300) }; 
+        }
+      }).catch((e) => {
+        console.warn('[BFF account] Failed to read invoices response:', e);
+        return null;
+      }) : null;
+    } catch (e) {
+      console.warn('[BFF account] Error processing invoices:', e);
+    }
+
+    try {
+      user = userRes?.ok ? await userRes.text().then(raw => {
+        try { return JSON.parse(raw); } catch (e) { 
+          console.warn('[BFF account] Failed to parse user JSON:', e);
+          return { raw: raw.substring(0, 300) }; 
+        }
+      }).catch((e) => {
+        console.warn('[BFF account] Failed to read user response:', e);
+        return null;
+      }) : null;
+    } catch (e) {
+      console.warn('[BFF account] Error processing user:', e);
+    }
+
+    try {
+      profile = profileRes?.ok ? await profileRes.text().then(raw => {
+        try { return JSON.parse(raw); } catch (e) { 
+          console.warn('[BFF account] Failed to parse profile JSON:', e);
+          return { raw: raw.substring(0, 300) }; 
+        }
+      }).catch((e) => {
+        console.warn('[BFF account] Failed to read profile response:', e);
+        return null;
+      }) : null;
+    } catch (e) {
+      console.warn('[BFF account] Error processing profile:', e);
+    }
 
     const o = overview?.data;
     const userData = user?.data?.user;
@@ -124,8 +172,18 @@ export async function GET(request: NextRequest) {
       );
     }
     console.error('[BFF account] error:', error);
+    console.error('[BFF account] error stack:', error?.stack);
+    console.error('[BFF account] error details:', {
+      message: error?.message,
+      name: error?.name,
+      cause: error?.cause,
+    });
     return NextResponse.json(
-      { ok: false, error: 'Failed to fetch account data' },
+      { 
+        ok: false, 
+        error: 'Failed to fetch account data',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     );
   }

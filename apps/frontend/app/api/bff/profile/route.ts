@@ -42,8 +42,18 @@ export async function GET(request: NextRequest) {
       );
     }
     console.error('[BFF profile] error:', error);
+    console.error('[BFF profile] error stack:', error?.stack);
+    console.error('[BFF profile] error details:', {
+      message: error?.message,
+      name: error?.name,
+      cause: error?.cause,
+    });
     return NextResponse.json(
-      { ok: false, error: 'Failed to fetch profile' },
+      { 
+        ok: false, 
+        error: 'Failed to fetch profile',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     );
   }
