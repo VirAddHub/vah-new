@@ -10,7 +10,7 @@ export async function getBillingOverview(req: Request, res: Response) {
   const pool = getPool();
 
   try {
-    // Get subscription and user plan info
+    // Get subscription row for user_id
     const subResult = await pool.query(`
       SELECT s.*, p.name as plan_name, p.price_pence, p.interval as plan_interval
       FROM subscription s
@@ -18,89 +18,33 @@ export async function getBillingOverview(req: Request, res: Response) {
       WHERE s.user_id=$1 ORDER BY s.id DESC LIMIT 1
     `, [userId]);
 
-    const sub = subResult.rows[0];
+    const sub = subResult.rows[0] || null;
 
-    // Get the actual price the user is paying from their most recent paid invoice
-    // This ensures users see the price they signed up with, not the current plan price
-    // Price changes in the plans table should NOT affect existing customers
-    const invoicePriceResult = await pool.query(`
-      SELECT amount_pence
+    // Get latest invoice row for user_id
+    const latestInvoiceResult = await pool.query(`
+      SELECT 
+        id,
+        invoice_number,
+        amount_pence,
+        status,
+        period_start,
+        period_end,
+        created_at
       FROM invoices
-      WHERE user_id = $1 AND status = 'paid'
+      WHERE user_id = $1
       ORDER BY created_at DESC
       LIMIT 1
     `, [userId]);
-    
-    // Use invoice price (locked-in) as source of truth, fallback to current plan price only if no invoices
-    const lockedInPricePence = invoicePriceResult.rows[0]?.amount_pence || null;
 
-    // If subscription exists but plan wasn't found (LEFT JOIN returned null for price_pence),
-    // try to get default plan price based on cadence
-    let fallbackPricePence = sub?.price_pence || null;
-    if (!fallbackPricePence && sub) {
-      // Plan wasn't found in JOIN, try to get default plan based on subscription cadence
-      const cadence = sub?.plan_interval || sub?.cadence || 'monthly';
-      const interval = (cadence === 'yearly' || cadence === 'annual') ? 'year' : 'month';
-      const defaultPlanResult = await pool.query(`
-        SELECT price_pence
-        FROM plans
-        WHERE active = true AND interval = $1
-        ORDER BY sort ASC, price_pence ASC
-        LIMIT 1
-      `, [interval]);
-      fallbackPricePence = defaultPlanResult.rows[0]?.price_pence || null;
-    }
+    const latestInvoice = latestInvoiceResult.rows[0] || null;
 
-    // Get user payment status
+    // Get user plan_status (for backward compatibility)
     const userResult = await pool.query(`
-      SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
+      SELECT plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
              gocardless_mandate_id, gocardless_redirect_flow_id
       FROM "user" WHERE id=$1
     `, [userId]);
     const user = userResult.rows[0];
-
-    const usageMonth = new Date();
-    usageMonth.setDate(1);
-    usageMonth.setHours(0, 0, 0, 0);
-    const yyyymm = `${usageMonth.getFullYear()}-${String(usageMonth.getMonth() + 1).padStart(2, '0')}`;
-
-    const usageResult = await pool.query(`
-      SELECT COALESCE(SUM(amount_pence),0) as amount_pence, COALESCE(SUM(qty),0) as qty
-      FROM usage_charges WHERE user_id=$1 AND period_yyyymm=$2
-    `, [userId, yyyymm]);
-
-    const usage = usageResult.rows[0];
-
-    // Get pending forwarding fees for current period
-    // Note: charge table may not exist yet - wrap in try/catch to prevent 500 errors
-    let pendingForwardingFeesPence = 0;
-    try {
-      const periodStart = new Date(usageMonth);
-      const periodEnd = new Date(usageMonth.getFullYear(), usageMonth.getMonth() + 1, 0);
-      const periodStartStr = periodStart.toISOString().slice(0, 10);
-      const periodEndStr = periodEnd.toISOString().slice(0, 10);
-
-      const pendingFeesResult = await pool.query(`
-        SELECT COALESCE(SUM(amount_pence), 0) as amount_pence
-        FROM charge
-        WHERE user_id = $1
-          AND status = 'pending'
-          AND type = 'forwarding_fee'
-          AND service_date >= $2
-          AND service_date <= $3
-      `, [userId, periodStartStr, periodEndStr]);
-
-      pendingForwardingFeesPence = Number(pendingFeesResult.rows[0]?.amount_pence || 0);
-    } catch (chargeError: any) {
-      // Table doesn't exist yet or query failed - return 0 (safe fallback)
-      // Error code 42P01 = relation does not exist
-      if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
-        console.warn('[getBillingOverview] charge table does not exist yet, returning 0 for pending fees');
-      } else {
-        console.error('[getBillingOverview] Error querying charge table:', chargeError);
-      }
-      pendingForwardingFeesPence = 0;
-    }
 
     // Determine account status
     let accountStatus = 'active';
@@ -125,12 +69,31 @@ export async function getBillingOverview(req: Request, res: Response) {
       }
     }
 
+    // Build response with subscription and latest invoice
     res.json({
       ok: true,
       data: {
-        plan: sub?.plan_name ?? 'Digital Mailbox Plan',
-        cadence: sub?.plan_interval ?? 'monthly',
-        status: sub?.status ?? 'active',
+        plan_status: user?.plan_status || null,
+        subscription: sub ? {
+          status: sub.status || null,
+          cadence: sub.cadence || sub.plan_interval || 'monthly',
+          next_charge_at: sub.next_charge_at || null,
+          mandate_id: sub.mandate_id || null,
+          customer_id: sub.customer_id || null,
+        } : null,
+        latest_invoice: latestInvoice ? {
+          id: latestInvoice.id,
+          invoice_number: latestInvoice.invoice_number,
+          amount_pence: latestInvoice.amount_pence,
+          status: latestInvoice.status,
+          period_start: latestInvoice.period_start,
+          period_end: latestInvoice.period_end,
+          created_at: latestInvoice.created_at,
+        } : null,
+        // Legacy fields for backward compatibility
+        plan: sub?.plan_name || 'Digital Mailbox Plan',
+        cadence: sub?.plan_interval || sub?.cadence || 'monthly',
+        status: sub?.status || 'active',
         account_status: accountStatus,
         grace_period: gracePeriodInfo,
         next_charge_at: sub?.next_charge_at ?? null,
@@ -138,12 +101,8 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_mandate: !!user?.gocardless_mandate_id,
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
-        // Use locked-in price from invoice (what they signed up with) instead of current plan price
-        // This ensures price changes don't affect existing customers
-        // Fallback to subscription plan price, then default plan price, then 0
-        current_price_pence: lockedInPricePence ?? fallbackPricePence ?? 0,
-        usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 },
-        pending_forwarding_fees_pence: pendingForwardingFeesPence
+        current_price_pence: latestInvoice?.amount_pence || sub?.price_pence || 0,
+        pending_forwarding_fees_pence: 0, // Removed charge table dependency - return 0
       }
     });
   } catch (error) {
