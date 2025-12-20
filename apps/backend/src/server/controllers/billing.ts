@@ -72,22 +72,35 @@ export async function getBillingOverview(req: Request, res: Response) {
     const usage = usageResult.rows[0];
 
     // Get pending forwarding fees for current period
-    const periodStart = new Date(usageMonth);
-    const periodEnd = new Date(usageMonth.getFullYear(), usageMonth.getMonth() + 1, 0);
-    const periodStartStr = periodStart.toISOString().slice(0, 10);
-    const periodEndStr = periodEnd.toISOString().slice(0, 10);
+    // Note: charge table may not exist yet - wrap in try/catch to prevent 500 errors
+    let pendingForwardingFeesPence = 0;
+    try {
+      const periodStart = new Date(usageMonth);
+      const periodEnd = new Date(usageMonth.getFullYear(), usageMonth.getMonth() + 1, 0);
+      const periodStartStr = periodStart.toISOString().slice(0, 10);
+      const periodEndStr = periodEnd.toISOString().slice(0, 10);
 
-    const pendingFeesResult = await pool.query(`
-      SELECT COALESCE(SUM(amount_pence), 0) as amount_pence
-      FROM charge
-      WHERE user_id = $1
-        AND status = 'pending'
-        AND type = 'forwarding_fee'
-        AND service_date >= $2
-        AND service_date <= $3
-    `, [userId, periodStartStr, periodEndStr]);
+      const pendingFeesResult = await pool.query(`
+        SELECT COALESCE(SUM(amount_pence), 0) as amount_pence
+        FROM charge
+        WHERE user_id = $1
+          AND status = 'pending'
+          AND type = 'forwarding_fee'
+          AND service_date >= $2
+          AND service_date <= $3
+      `, [userId, periodStartStr, periodEndStr]);
 
-    const pendingForwardingFeesPence = Number(pendingFeesResult.rows[0]?.amount_pence || 0);
+      pendingForwardingFeesPence = Number(pendingFeesResult.rows[0]?.amount_pence || 0);
+    } catch (chargeError: any) {
+      // Table doesn't exist yet or query failed - return 0 (safe fallback)
+      // Error code 42P01 = relation does not exist
+      if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
+        console.warn('[getBillingOverview] charge table does not exist yet, returning 0 for pending fees');
+      } else {
+        console.error('[getBillingOverview] Error querying charge table:', chargeError);
+      }
+      pendingForwardingFeesPence = 0;
+    }
 
     // Determine account status
     let accountStatus = 'active';
