@@ -115,7 +115,8 @@ const _modelBuilders: Record<string, ModelBuilder> = {
     return {
       first_name,
       name: first_name, // backward compatibility
-      confirm_url: a.ctaUrl ?? a.confirmUrl,
+      cta_url: a.ctaUrl ?? a.confirmUrl ?? a.cta_url, // Template expects cta_url
+      confirm_url: a.ctaUrl ?? a.confirmUrl ?? a.cta_url, // Also include for backward compatibility
       expiry_minutes: String(a.expiryMinutes ?? 30),
     };
   },

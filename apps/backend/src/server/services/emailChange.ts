@@ -114,7 +114,8 @@ export async function requestEmailChange(
             model: {
                 firstName,
                 name,
-                confirmUrl,
+                ctaUrl: confirmUrl, // Use ctaUrl to match template variable cta_url
+                confirmUrl, // Also include for backward compatibility
                 expiryMinutes: 30,
             },
             from: 'support@virtualaddresshub.co.uk', // From MUST always be support@
