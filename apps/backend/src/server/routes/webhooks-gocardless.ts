@@ -9,6 +9,7 @@ import {
 import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
+import { isStaleWebhookEvent, updateSubscriptionEventInfo, insertPlanStatusEvent } from '../services/planStatusAudit';
 
 const router = Router();
 
@@ -112,49 +113,53 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         const pool = getPool();
 
         for (const event of events) {
-            const { resource_type, action, links } = event;
+            const { resource_type, action, links, id: eventId, created_at: eventCreatedAt } = event;
             // GoCardless events may include a full resource object (check common patterns)
             const resource = (event as any).billing_requests || (event as any).mandates || (event as any).resource || null;
 
-            console.log(`[GoCardless webhook] Processing ${resource_type}.${action}`);
-            console.log('[GoCardless webhook] event', {
-                action,
-                resourceType: resource_type,
-                resourceId: resource?.id ?? links?.billing_request ?? links?.mandate ?? null,
-                links,
+            console.log(`[GoCardless webhook] Processing ${resource_type}.${action}`, {
+                eventId,
+                eventCreatedAt,
             });
+
+            // Event context for handlers
+            const eventContext = {
+                eventId: eventId as string | undefined,
+                eventCreatedAt: eventCreatedAt as string | undefined,
+                eventType: `${resource_type}.${action}`,
+            };
 
             switch (`${resource_type}.${action}`) {
                 case 'billing_requests.payer_details_confirmed':
-                    await handleBillingRequestPayerConfirmed(pool, links);
+                    await handleBillingRequestPayerConfirmed(pool, links, eventContext);
                     break;
 
                 case 'billing_requests.fulfilled':
-                    await handleBillingRequestFulfilled(pool, links, resource);
+                    await handleBillingRequestFulfilled(pool, links, resource, eventContext);
                     break;
 
                 case 'mandates.created':
-                    await handleMandateCreated(pool, links, resource);
+                    await handleMandateCreated(pool, links, resource, eventContext);
                     break;
 
                 case 'mandates.submitted':
-                    await handleMandateSubmitted(pool, links);
+                    await handleMandateSubmitted(pool, links, eventContext);
                     break;
 
                 case 'mandates.active':
-                    await handleMandateActive(pool, links);
+                    await handleMandateActive(pool, links, eventContext);
                     break;
 
                 case 'payments.confirmed':
-                    await handlePaymentConfirmed(pool, links);
+                    await handlePaymentConfirmed(pool, links, eventContext);
                     break;
 
                 case 'payments.failed':
-                    await handlePaymentFailed(pool, links);
+                    await handlePaymentFailed(pool, links, eventContext);
                     break;
 
                 case 'subscriptions.updated':
-                    await handleSubscriptionUpdated(pool, links);
+                    await handleSubscriptionUpdated(pool, links, eventContext);
                     break;
 
                 default:
@@ -169,7 +174,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
     }
 });
 
-async function handleMandateActive(pool: any, links: any) {
+async function handleMandateActive(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         const mandateId = links?.mandate;
         if (!mandateId) {
@@ -206,7 +211,30 @@ async function handleMandateActive(pool: any, links: any) {
             return; // Don't fail webhook, just log and return
         }
 
-        // UPSERT subscription using user_id (ensures exactly one subscription per user)
+        // 3) Check for stale event (out-of-order protection)
+        if (eventContext.eventCreatedAt) {
+            const staleCheck = await isStaleWebhookEvent(userId, eventContext.eventCreatedAt, eventContext.eventId);
+            if (staleCheck.isStale) {
+                console.warn('[GoCardless] mandates.active: stale event ignored', {
+                    userId,
+                    eventId: eventContext.eventId,
+                    eventCreatedAt: eventContext.eventCreatedAt,
+                    lastEventCreatedAt: staleCheck.lastEventCreatedAt,
+                    lastEventId: staleCheck.lastEventId,
+                });
+                return; // Ignore stale event
+            }
+        }
+
+        // 4) Get current subscription status before update (for audit)
+        const currentSub = await pool.query(
+            `SELECT id, status FROM subscription WHERE user_id = $1 LIMIT 1`,
+            [userId]
+        );
+        const oldStatus = currentSub.rows[0]?.status ?? null;
+        const subscriptionId = currentSub.rows[0]?.id ?? null;
+
+        // 5) UPSERT subscription using user_id (ensures exactly one subscription per user)
         await pool.query(
             `
             INSERT INTO subscription (user_id, mandate_id, status, updated_at)
@@ -215,26 +243,55 @@ async function handleMandateActive(pool: any, links: any) {
               mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
               status = CASE WHEN subscription.status = 'active' THEN subscription.status ELSE 'active' END,
               updated_at = NOW()
+            RETURNING id, status
             `,
             [userId, mandateId]
         );
 
-        // 3) Also store mandate/customer on user (best-effort, never downgrade active status)
-        await pool.query(
-            `
-            UPDATE "user"
-            SET gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
-                gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
-                plan_status = CASE WHEN plan_status = 'active' THEN plan_status ELSE 'active' END,
-                subscription_status = 'active',
-                plan_start_date = COALESCE(plan_start_date, $3),
-                updated_at = $3
-            WHERE id = $4
-            `,
-            [customerId, mandateId, Date.now(), userId]
+        // 6) Get new status after update
+        const updatedSub = await pool.query(
+            `SELECT id, status FROM subscription WHERE user_id = $1 LIMIT 1`,
+            [userId]
         );
+        const newStatus = updatedSub.rows[0]?.status ?? 'active';
+        const finalSubscriptionId = updatedSub.rows[0]?.id ?? subscriptionId;
 
-        // 4) Persist plan_id linkage (fixes "Active" + "No plan")
+        // 7) Update plan_status on user (cache for UI)
+        if (oldStatus !== 'active' && newStatus === 'active') {
+            await pool.query(
+                `
+                UPDATE "user"
+                SET gocardless_customer_id = COALESCE(gocardless_customer_id, $1),
+                    gocardless_mandate_id = COALESCE(gocardless_mandate_id, $2),
+                    plan_status = 'active',
+                    subscription_status = 'active',
+                    plan_start_date = COALESCE(plan_start_date, $3),
+                    updated_at = $3
+                WHERE id = $4
+                `,
+                [customerId, mandateId, Date.now(), userId]
+            );
+
+            // 8) Insert audit event
+            await insertPlanStatusEvent({
+                userId,
+                subscriptionId: finalSubscriptionId,
+                oldStatus,
+                newStatus,
+                reason: 'webhook_mandate_active',
+                gocardlessEventId: eventContext.eventId,
+                gocardlessEventType: eventContext.eventType,
+                gocardlessEventCreatedAt: eventContext.eventCreatedAt,
+                metadata: { customerId, mandateId },
+            });
+        }
+
+        // 9) Update subscription event info (after successful processing)
+        if (eventContext.eventCreatedAt) {
+            await updateSubscriptionEventInfo(userId, eventContext.eventCreatedAt, eventContext.eventId);
+        }
+
+        // 10) Persist plan_id linkage (fixes "Active" + "No plan")
         try {
             await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
         } catch (e) {
@@ -247,7 +304,7 @@ async function handleMandateActive(pool: any, links: any) {
     }
 }
 
-async function handlePaymentConfirmed(pool: any, links: any) {
+async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         const paymentId = links.payment;
         if (!paymentId) {
@@ -375,12 +432,36 @@ async function handlePaymentConfirmed(pool: any, links: any) {
     }
 }
 
-async function handlePaymentFailed(pool: any, links: any) {
+async function handlePaymentFailed(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         const paymentId = links.payment;
         const userId = await findUserIdForPayment(pool, paymentId, links);
 
         if (userId) {
+            // Check for stale event (out-of-order protection)
+            if (eventContext.eventCreatedAt) {
+                const staleCheck = await isStaleWebhookEvent(userId, eventContext.eventCreatedAt, eventContext.eventId);
+                if (staleCheck.isStale) {
+                    console.warn('[GoCardless] payments.failed: stale event ignored', {
+                        userId,
+                        paymentId,
+                        eventId: eventContext.eventId,
+                        eventCreatedAt: eventContext.eventCreatedAt,
+                        lastEventCreatedAt: staleCheck.lastEventCreatedAt,
+                        lastEventId: staleCheck.lastEventId,
+                    });
+                    return; // Ignore stale event
+                }
+            }
+
+            // Get current subscription status before update (for audit)
+            const currentSub = await pool.query(
+                `SELECT id, status FROM subscription WHERE user_id = $1 LIMIT 1`,
+                [userId]
+            );
+            const oldStatus = currentSub.rows[0]?.status ?? null;
+            const subscriptionId = currentSub.rows[0]?.id ?? null;
+
             // UPSERT pattern: ensure subscription exists, update status
             await pool.query(`
                 INSERT INTO subscription (user_id, status, updated_at)
@@ -388,7 +469,42 @@ async function handlePaymentFailed(pool: any, links: any) {
                 ON CONFLICT (user_id) DO UPDATE SET
                   status = 'past_due',
                   updated_at = NOW()
+                RETURNING id, status
             `, [userId]);
+
+            // Get new status after update
+            const updatedSub = await pool.query(
+                `SELECT id, status FROM subscription WHERE user_id = $1 LIMIT 1`,
+                [userId]
+            );
+            const newStatus = updatedSub.rows[0]?.status ?? 'past_due';
+            const finalSubscriptionId = updatedSub.rows[0]?.id ?? subscriptionId;
+
+            // Update plan_status on user (cache for UI) - only if status changed
+            if (oldStatus !== 'past_due' && newStatus === 'past_due') {
+                await pool.query(
+                    `UPDATE "user" SET plan_status = 'past_due', updated_at = $1 WHERE id = $2`,
+                    [Date.now(), userId]
+                );
+
+                // Insert audit event
+                await insertPlanStatusEvent({
+                    userId,
+                    subscriptionId: finalSubscriptionId,
+                    oldStatus,
+                    newStatus,
+                    reason: 'webhook_payment_failed',
+                    gocardlessEventId: eventContext.eventId,
+                    gocardlessEventType: eventContext.eventType,
+                    gocardlessEventCreatedAt: eventContext.eventCreatedAt,
+                    metadata: { paymentId },
+                });
+            }
+
+            // Update subscription event info (after successful processing)
+            if (eventContext.eventCreatedAt) {
+                await updateSubscriptionEventInfo(userId, eventContext.eventCreatedAt, eventContext.eventId);
+            }
 
             console.log(`[GoCardless] Payment ${paymentId} failed for user ${userId}`);
 
@@ -417,7 +533,7 @@ async function handlePaymentFailed(pool: any, links: any) {
     }
 }
 
-async function handleSubscriptionUpdated(pool: any, links: any) {
+async function handleSubscriptionUpdated(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         const subscriptionId = links.subscription;
         // Update subscription details from GoCardless
@@ -427,7 +543,7 @@ async function handleSubscriptionUpdated(pool: any, links: any) {
     }
 }
 
-async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
+async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         // Extract all possible identifiers from webhook payload
         const flowId = links?.billing_request_flow ?? links?.billing_request_flow_id ?? null;
@@ -606,7 +722,7 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any) {
     }
 }
 
-async function handleMandateSubmitted(pool: any, links: any) {
+async function handleMandateSubmitted(pool: any, links: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         const mandateId = links?.mandate ?? null;
         let customerId = links?.customer ?? null;
@@ -657,7 +773,7 @@ async function handleMandateSubmitted(pool: any, links: any) {
     }
 }
 
-async function handleBillingRequestFulfilled(pool: any, links: any, resource: any) {
+async function handleBillingRequestFulfilled(pool: any, links: any, resource: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         // Billing flow completed. Treat as "subscription can be active".
         const billingRequestId = resource?.id ?? links?.billing_request ?? null;
@@ -793,7 +909,7 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
     }
 }
 
-async function handleMandateCreated(pool: any, links: any, resource: any) {
+async function handleMandateCreated(pool: any, links: any, resource: any, eventContext: { eventId?: string; eventCreatedAt?: string; eventType: string }) {
     try {
         // Mandate is the "hard truth" for Direct Debit.
         const mandateId = resource?.id ?? links?.mandate ?? null;

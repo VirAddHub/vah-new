@@ -31,6 +31,7 @@ import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
 import { notifyOpsMailCreated } from '../../services/postmarkNotifications';
 import { sendMailScanned } from '../../lib/mailer';
+import { isUserEntitled } from '../services/entitlement';
 
 const router = Router();
 
@@ -197,27 +198,31 @@ router.post('/from-onedrive', async (req, res) => {
     });
 
     // Check user eligibility - determine if mail item should be locked
+    // Use entitlement service (subscription.status === 'active') as source of truth
+    const entitlement = await isUserEntitled(payload.userId);
     const isUserActive = !user.status || user.status === 'active';
-    const isPlanActive = !user.plan_status || user.plan_status === 'active';
     const isKycApproved =
       user.kyc_status === 'approved' ||
       user.kyc_status === 'verified'; // legacy status label
 
     // Determine if mail item should be locked
-    const locked = !isUserActive || !isPlanActive || !isKycApproved;
+    // Lock if: not entitled (subscription not active) OR user inactive OR KYC not approved
+    const locked = !entitlement.entitled || !isUserActive || !isKycApproved;
     let lockedReason: string | null = null;
 
     if (locked) {
-      if (!isUserActive) {
-        lockedReason = 'user_inactive';
-        console.warn('[internalMailImport] user_status_not_active - creating locked mail item', {
+      if (!entitlement.entitled) {
+        lockedReason = 'plan_inactive'; // Subscription not active (source of truth)
+        console.warn('[internalMailImport] user_not_entitled - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
+          subscriptionStatus: entitlement.subscriptionStatus,
+          reason: entitlement.reason,
           userSnapshot,
         });
-      } else if (!isPlanActive) {
-        lockedReason = 'plan_inactive';
-        console.warn('[internalMailImport] user_plan_inactive - creating locked mail item', {
+      } else if (!isUserActive) {
+        lockedReason = 'user_inactive';
+        console.warn('[internalMailImport] user_status_not_active - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
           userSnapshot,
