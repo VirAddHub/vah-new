@@ -101,7 +101,9 @@ export function useSignup() {
                 step1Data?.billing,
                 step1Data?.price,
                 step2Data.isSoleController,
-                step2Data.additionalControllersCount
+                step2Data.additionalControllersCount,
+                step2Data.additionalOwners,
+                step2Data.ownersPendingInfo
             );
 
             if (!signupResponse.ok) {

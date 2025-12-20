@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { AddressFinder } from '../ui/AddressFinder';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Plus, X } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
@@ -40,9 +42,13 @@ export interface SignupStep2Data {
     postcode: string;
     forward_country: string;
 
-    // Controllers Declaration
-    isSoleController?: boolean;
+    // Controllers Declaration (REQUIRED)
+    isSoleController: boolean;
     additionalControllersCount?: number | null;
+    
+    // Business Owners
+    additionalOwners?: Array<{ fullName: string; email: string }>;
+    ownersPendingInfo?: boolean;
 }
 
 type CompanySearchResult = {
@@ -71,8 +77,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         city: initialData?.city || '',
         postcode: initialData?.postcode || '',
         forward_country: initialData?.forward_country || 'GB',
-        isSoleController: initialData?.isSoleController,
-        additionalControllersCount: initialData?.additionalControllersCount ?? null
+        isSoleController: initialData?.isSoleController ?? false, // Default to false, will be required
+        additionalControllersCount: initialData?.additionalControllersCount ?? null,
+        additionalOwners: initialData?.additionalOwners || [],
+        ownersPendingInfo: initialData?.ownersPendingInfo ?? false
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -148,6 +156,30 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         if (!formData.city.trim()) newErrors.city = 'City is required';
         if (!formData.postcode.trim()) newErrors.postcode = 'Postcode is required';
         if (!formData.forward_country) newErrors.forward_country = 'Country is required';
+
+        // Controller declaration validation (REQUIRED)
+        if (formData.isSoleController === undefined) {
+            newErrors.isSoleController = 'Please indicate if you are the sole controller';
+        } else if (formData.isSoleController === false) {
+            // If not sole controller, must either have owners OR pending info
+            if (!formData.ownersPendingInfo) {
+                if (!formData.additionalOwners || formData.additionalOwners.length === 0) {
+                    newErrors.additionalOwners = 'Please add at least one business owner or indicate you don\'t have their emails yet';
+                } else {
+                    // Validate each owner
+                    formData.additionalOwners.forEach((owner, index) => {
+                        if (!owner.fullName.trim()) {
+                            newErrors[`owner_${index}_name`] = 'Full name is required';
+                        }
+                        if (!owner.email.trim()) {
+                            newErrors[`owner_${index}_email`] = 'Email is required';
+                        } else if (!/\S+@\S+\.\S+/.test(owner.email)) {
+                            newErrors[`owner_${index}_email`] = 'Please enter a valid email address';
+                        }
+                    });
+                }
+            }
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -801,34 +833,98 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             </div>
 
                             {formData.isSoleController === false && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="additional_controllers_count">
-                                        How many other directors/controllers?
-                                    </Label>
-                                    <Input
-                                        id="additional_controllers_count"
-                                        type="number"
-                                        min="1"
-                                        value={formData.additionalControllersCount ?? ''}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                additionalControllersCount: value === '' ? null : parseInt(value, 10) || null
-                                            }));
-                                        }}
-                                        placeholder="e.g. 2"
-                                        className="max-w-xs"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Leave blank if you're not sure. You can update this later.
-                                    </p>
+                                <div className="space-y-4">
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-medium">
+                                            Add other directors/owners/controllers
+                                        </Label>
+                                        
+                                        {!formData.ownersPendingInfo && (
+                                            <div className="space-y-3">
+                                                {(formData.additionalOwners || []).map((owner, index) => (
+                                                    <div key={index} className="flex gap-2 items-start">
+                                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            <Input
+                                                                placeholder="Full name"
+                                                                value={owner.fullName}
+                                                                onChange={(e) => {
+                                                                    const newOwners = [...(formData.additionalOwners || [])];
+                                                                    newOwners[index] = { ...owner, fullName: e.target.value };
+                                                                    setFormData(prev => ({ ...prev, additionalOwners: newOwners }));
+                                                                }}
+                                                            />
+                                                            <Input
+                                                                type="email"
+                                                                placeholder="Email address"
+                                                                value={owner.email}
+                                                                onChange={(e) => {
+                                                                    const newOwners = [...(formData.additionalOwners || [])];
+                                                                    newOwners[index] = { ...owner, email: e.target.value };
+                                                                    setFormData(prev => ({ ...prev, additionalOwners: newOwners }));
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const newOwners = (formData.additionalOwners || []).filter((_, i) => i !== index);
+                                                                setFormData(prev => ({ ...prev, additionalOwners: newOwners }));
+                                                            }}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            additionalOwners: [...(prev.additionalOwners || []), { fullName: '', email: '' }]
+                                                        }));
+                                                    }}
+                                                    className="w-full"
+                                                >
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    Add another owner
+                                                </Button>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="flex items-center space-x-2 pt-2">
+                                            <Checkbox
+                                                id="owners_pending_info"
+                                                checked={formData.ownersPendingInfo}
+                                                onCheckedChange={(checked) => {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        ownersPendingInfo: checked === true,
+                                                        additionalOwners: checked === true ? [] : prev.additionalOwners
+                                                    }));
+                                                }}
+                                            />
+                                            <Label htmlFor="owners_pending_info" className="text-sm font-normal cursor-pointer">
+                                                I don't have their email addresses right now
+                                            </Label>
+                                        </div>
+                                        
+                                        {formData.ownersPendingInfo && (
+                                            <p className="text-xs text-muted-foreground">
+                                                You can add them later from your dashboard.
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
                             <div className="bg-muted/50 border border-muted rounded-lg p-3">
                                 <p className="text-xs text-muted-foreground">
-                                    We ask this for compliance and account security. You can update this later.
+                                    We ask this for compliance and account security. Additional owners will need to complete identity verification.
                                 </p>
                             </div>
                         </div>

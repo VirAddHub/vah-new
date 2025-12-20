@@ -252,9 +252,16 @@ const SignupSchema = z.object({
     billing: z.enum(["monthly", "annual"]).optional(),
     price: z.string().optional(), // frontend-calculated
 
-    // Controllers declaration (optional during signup)
-    isSoleController: z.boolean().optional(),
+    // Controllers declaration (REQUIRED during signup)
+    isSoleController: z.boolean(),
     additionalControllersCount: z.number().int().min(0).nullable().optional(),
+    
+    // Business owners (required if not sole controller)
+    additionalOwners: z.array(z.object({
+        fullName: z.string().min(1).max(200),
+        email: z.string().email().trim().toLowerCase(),
+    })).optional(),
+    ownersPendingInfo: z.boolean().optional(),
 });
 
 router.post("/signup", async (req, res) => {
@@ -319,23 +326,63 @@ router.post("/signup", async (req, res) => {
         // Construct forwarding address from individual fields
         const forwardingAddress = `${i.forward_to_first_name} ${i.forward_to_last_name}\n${i.address_line1}${i.address_line2 ? '\n' + i.address_line2 : ''}\n${i.city}, ${i.postcode}\n${i.forward_country}`;
 
-        // Validate controllers declaration if provided
-        let isSoleController: boolean | null = null;
-        let additionalControllersCount: number | null = null;
-        let controllersDeclaredAt: Date | null = null;
+        // Validate controllers declaration (REQUIRED)
+        if (i.isSoleController === undefined) {
+            return res.status(400).json({
+                ok: false,
+                error: "validation_error",
+                message: "isSoleController is required",
+            });
+        }
 
-        if (i.isSoleController !== undefined) {
-            isSoleController = i.isSoleController;
-            if (isSoleController === true) {
-                // If sole controller, count must be null or 0
-                additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === 0) ? null : 0;
-            } else {
-                // If not sole controller, count can be null (unknown) or >= 1
-                additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === undefined) 
-                    ? null 
-                    : Math.max(1, i.additionalControllersCount); // Enforce >= 1 if provided
+        const isSoleController = i.isSoleController;
+        let additionalControllersCount: number | null = null;
+        const controllersDeclaredAt = new Date();
+        let ownersPendingInfo = false;
+
+        // Validate business owners logic
+        if (isSoleController === true) {
+            // If sole controller, no owners allowed
+            if (i.additionalOwners && i.additionalOwners.length > 0) {
+                return res.status(400).json({
+                    ok: false,
+                    error: "validation_error",
+                    message: "Cannot add business owners if you are the sole controller",
+                });
             }
-            controllersDeclaredAt = new Date();
+            if (i.ownersPendingInfo === true) {
+                return res.status(400).json({
+                    ok: false,
+                    error: "validation_error",
+                    message: "Cannot have pending owners if you are the sole controller",
+                });
+            }
+            additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === 0) ? null : 0;
+        } else {
+            // If not sole controller, must either have owners OR pending info
+            if (!i.additionalOwners || i.additionalOwners.length === 0) {
+                if (i.ownersPendingInfo !== true) {
+                    return res.status(400).json({
+                        ok: false,
+                        error: "validation_error",
+                        message: "If you are not the sole controller, you must either add business owners or indicate that you don't have their email addresses yet",
+                    });
+                }
+                ownersPendingInfo = true;
+            } else {
+                // Owners provided, validate at least 1
+                if (i.additionalOwners.length < 1) {
+                    return res.status(400).json({
+                        ok: false,
+                        error: "validation_error",
+                        message: "At least one business owner is required if you are not the sole controller",
+                    });
+                }
+                ownersPendingInfo = false;
+            }
+            additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === undefined) 
+                ? null 
+                : Math.max(1, i.additionalControllersCount);
         }
 
         const insertQuery = `
@@ -346,7 +393,7 @@ router.post("/signup", async (req, res) => {
         city, postcode, forward_country, forwarding_address,
         password, created_at, updated_at, is_admin, role,
         billing, price,
-        is_sole_controller, additional_controllers_count, controllers_declared_at
+        is_sole_controller, additional_controllers_count, controllers_declared_at, owners_pending_info
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
@@ -354,7 +401,7 @@ router.post("/signup", async (req, res) => {
         $13,$14,$15,$16,
         $17,$18,$19,$20,$21,
         $22,$23,
-        $24,$25,$26
+        $24,$25,$26,$27
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -366,11 +413,24 @@ router.post("/signup", async (req, res) => {
             i.city, i.postcode, i.forward_country, forwardingAddress,
             hash, now, now, false, 'user',
             i.billing ?? null, i.price ?? null,
-            isSoleController, additionalControllersCount, controllersDeclaredAt
+            isSoleController, additionalControllersCount, controllersDeclaredAt, ownersPendingInfo
         ];
 
         const rs = await pool.query(insertQuery, args);
         const row = rs.rows[0];
+        
+        // Create business owners if provided
+        if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
+            const { createBusinessOwner } = await import('../services/businessOwners');
+            for (const owner of i.additionalOwners) {
+                try {
+                    await createBusinessOwner(row.id, owner.fullName, owner.email);
+                } catch (error) {
+                    console.error(`[auth/signup] Failed to create business owner ${owner.email}:`, error);
+                    // Don't fail signup if owner creation fails - can be added later
+                }
+            }
+        }
 
         // Manual test:
         // 1) Go to /signup on the frontend and create a brand new user with a fresh email.

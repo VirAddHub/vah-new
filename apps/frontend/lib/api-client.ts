@@ -287,7 +287,9 @@ export const apiClient = {
         billing?: string,
         price?: string,
         isSoleController?: boolean,
-        additionalControllersCount?: number | null
+        additionalControllersCount?: number | null,
+        additionalOwners?: Array<{ fullName: string; email: string }>,
+        ownersPendingInfo?: boolean
     ): Promise<ApiResponse<{ user: User }>> {
         const resp = await legacyReq(apiUrl('auth/signup'), {
             method: 'POST',
@@ -311,7 +313,9 @@ export const apiClient = {
                 billing,
                 price,
                 isSoleController,
-                additionalControllersCount
+                additionalControllersCount,
+                additionalOwners,
+                ownersPendingInfo
             }),
         });
 

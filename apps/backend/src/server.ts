@@ -38,6 +38,7 @@ import onedriveWebhook from "./server/routes/webhooks-onedrive";
 import gocardlessWebhook from "./server/routes/webhooks-gocardless";
 import profileRouter from "./server/routes/profile";
 import profileEmailChangeRouter from "./server/routes/profileEmailChange";
+import businessOwnersRouter from "./server/routes/businessOwners";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
 import devRouter from "./server/routes/dev";
@@ -398,6 +399,7 @@ async function start() {
     app.use('/api/profile', profileEmailChangeRouter); // Mount email change routes
     app.use('/api/profile', robustPasswordResetRouter); // Mount robust password reset
     app.use('/api/profile', passwordResetRouter); // Mount password reset endpoints
+    app.use('/api/business-owners', businessOwnersRouter); // Mount business owners routes
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', debugEmailRouter);
