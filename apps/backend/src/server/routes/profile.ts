@@ -188,6 +188,7 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         'last_name',
         'middle_names',
         'phone',
+        'email',
         'forwarding_address',
         'name', // legacy field
         'company_name' // if explicitly allowed
@@ -209,8 +210,6 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         'subscription_status',
         'plan_id',
         'plan_status',
-        // Email (requires verification flow)
-        'email',
         // Verification fields (admin/webhook only)
         'kyc_status',
         'kyc_verified_at',
@@ -249,13 +248,6 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
                 message: 'Payment and mandate fields cannot be changed via profile endpoint.'
             });
         }
-        if (deniedFields.includes('email')) {
-            return res.status(400).json({
-                ok: false,
-                error: 'email_change_not_allowed',
-                message: 'Email changes require verification. Please contact support.'
-            });
-        }
         return res.status(400).json({
             ok: false,
             error: 'field_not_allowed',
@@ -270,6 +262,7 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         last_name,
         middle_names,
         phone,
+        email,
         company_name,
         forwarding_address
     } = req.body;
@@ -367,6 +360,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         'last_name',
         'middle_names',
         'phone',
+        'email',
         'forwarding_address',
         'name',
         'company_name'
@@ -376,7 +370,6 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
         'gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id',
         'subscription_status', 'plan_id', 'plan_status',
-        'email',
         'kyc_status', 'kyc_verified_at', 'kyc_verified_at_ms', 'companies_house_verified',
         'id', 'created_at', 'updated_at', 'last_login_at', 'is_admin', 'role', 'status',
         'password', 'password_reset_token', 'password_reset_expires', 'password_reset_used_at'
@@ -400,13 +393,6 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
                 message: 'Payment and mandate fields cannot be changed via profile endpoint.'
             });
         }
-        if (deniedFields.includes('email')) {
-            return res.status(400).json({
-                ok: false,
-                error: 'email_change_not_allowed',
-                message: 'Email changes require verification. Please contact support.'
-            });
-        }
         return res.status(400).json({
             ok: false,
             error: 'field_not_allowed',
@@ -420,6 +406,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         last_name,
         middle_names,
         phone,
+        email,
         company_name,
         forwarding_address
     } = req.body;
@@ -463,6 +450,31 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
     if (phone !== undefined) {
         updates.push(`phone = $${paramIndex++}`);
         values.push(phone);
+    }
+    if (email !== undefined) {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                ok: false,
+                error: 'invalid_email',
+                message: 'Please provide a valid email address.'
+            });
+        }
+        // Check if email is already in use by another user
+        const emailCheck = await pool.query(
+            'SELECT id FROM "user" WHERE email = $1 AND id != $2',
+            [email, userId]
+        );
+        if (emailCheck.rows.length > 0) {
+            return res.status(400).json({
+                ok: false,
+                error: 'email_already_in_use',
+                message: 'This email address is already in use by another account.'
+            });
+        }
+        updates.push(`email = $${paramIndex++}`);
+        values.push(email);
     }
     if (company_name !== undefined) {
         updates.push(`company_name = $${paramIndex++}`);

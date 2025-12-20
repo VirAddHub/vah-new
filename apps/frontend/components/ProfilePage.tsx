@@ -25,6 +25,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
+        email: '',
         phone: '',
         company_name: '',
         forwarding_address: ''
@@ -49,6 +50,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                     setFormData({
                         first_name: response.data.first_name || '',
                         last_name: response.data.last_name || '',
+                        email: response.data.email || '',
                         phone: response.data.phone || '',
                         company_name: response.data.company_name || '',
                         forwarding_address: response.data.forwarding_address || ''
@@ -218,12 +220,14 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                 <Label htmlFor="email">Email Address</Label>
                                 <Input
                                     id="email"
-                                    value={profile?.email || ''}
-                                    disabled
-                                    className="bg-gray-50"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => handleChange('email', e.target.value)}
+                                    disabled={!editing}
+                                    placeholder="your.email@example.com"
                                 />
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Email cannot be changed. Contact support if needed.
+                                    This is your account email address. You'll use this to log in.
                                 </p>
                             </div>
 

@@ -138,24 +138,27 @@ export default function AccountPage() {
     // Handlers
     const handleSaveContact = async (contact: BusinessContactInfo) => {
         try {
-            // SAFETY: Only send phone (name fields are locked and excluded from payload)
-            // Never send email, first_name, last_name, middle_names (backend blocks them anyway)
+            // Send phone and email (name fields are locked and excluded from payload)
+            const payload: any = {
+                phone: contact.phone
+            };
+            
+            // Include email if it has changed
+            if (contact.email && contact.email !== data?.contact?.email) {
+                payload.email = contact.email;
+            }
+            
             const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    phone: contact.phone
-                    // email, first_name, last_name, middle_names are intentionally excluded:
-                    // - email: backend blocks it
-                    // - name fields: locked for verification, user cannot change them
-                })
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
 
             if (!response.ok || !result.ok) {
-                throw new Error(result.error || 'Failed to save contact information');
+                throw new Error(result.error || result.message || 'Failed to save contact information');
             }
 
             // Refresh all relevant data after successful PATCH
@@ -171,14 +174,20 @@ export default function AccountPage() {
                 globalMutate('/api/auth/whoami'),
             ]);
 
+            const changedFields = [];
+            if (contact.phone !== data?.contact?.phone) changedFields.push('phone number');
+            if (contact.email !== data?.contact?.email) changedFields.push('email address');
+            
             toast({
                 title: "Saved",
-                description: "Phone number has been updated.",
+                description: changedFields.length > 0 
+                    ? `Your ${changedFields.join(' and ')} ${changedFields.length > 1 ? 'have' : 'has'} been updated.`
+                    : "Your contact information has been updated.",
             });
         } catch (error) {
             toast({
                 title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save phone number",
+                description: error instanceof Error ? error.message : "Failed to save contact information",
                 variant: "destructive",
             });
             throw error;

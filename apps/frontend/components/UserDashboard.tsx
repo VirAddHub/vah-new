@@ -169,18 +169,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const active = mailItems.filter((m: MailItem) => !m.deleted);
     const newCount = active.filter((m: MailItem) => !m.is_read).length;
 
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(now.getDate() - 7);
-
-    const scannedThisWeekCount = active.filter((m: MailItem) => {
-      const raw = m.scanned_at || m.created_at || m.received_date;
-      if (!raw) return false;
-      const d = new Date(raw);
-      if (Number.isNaN(d.getTime())) return false;
-      return d >= weekAgo;
-    }).length;
-
     const norm = (s: string) => s.toLowerCase().trim().replace(/[\s-]+/g, "_");
     const needsForwardingCount = active.filter((m: MailItem) => {
       const fwd = (m as any)?.forwarding_status;
@@ -195,7 +183,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return raw.includes("forward") && (raw.includes("pending") || raw.includes("requested"));
     }).length;
 
-    return { newCount, scannedThisWeekCount, needsForwardingCount };
+    return { newCount, needsForwardingCount };
   }, [mailItems]);
 
   // SWR hook for user profile - we avoid refreshInterval/polling here.
@@ -874,14 +862,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </p>
 
                   {/* Summary row (inbox-first) */}
-                  <div className="grid grid-cols-3 gap-2 md:gap-3">
+                  <div className="grid grid-cols-2 gap-2 md:gap-3">
                     <div className="rounded-xl border border-border bg-background px-3 py-2">
                       <div className="text-[11px] font-semibold text-neutral-500">New</div>
                       <div className="mt-1 text-base font-semibold text-neutral-900">{summary.newCount}</div>
-                    </div>
-                    <div className="rounded-xl border border-border bg-background px-3 py-2">
-                      <div className="text-[11px] font-semibold text-neutral-500">Scanned (7 days)</div>
-                      <div className="mt-1 text-base font-semibold text-neutral-900">{summary.scannedThisWeekCount}</div>
                     </div>
                     <div className="rounded-xl border border-border bg-background px-3 py-2">
                       <div className="text-[11px] font-semibold text-neutral-500">Forwarding pending</div>

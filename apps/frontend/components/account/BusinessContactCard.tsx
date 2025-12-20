@@ -27,35 +27,38 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   }, [initialContact]);
 
   const handleChange = (field: keyof BusinessContactInfo, value: string) => {
-    // Only allow changes to phone (name fields are locked)
-    if (field === 'phone') {
+    // Allow changes to phone and email (name fields are locked)
+    if (field === 'phone' || field === 'email') {
       setContact(prev => ({ ...prev, [field]: value }));
       setHasChanges(true);
     }
   };
 
   const handleSave = async () => {
-    // Only save phone (name fields are locked and excluded from payload)
+    // Save phone and email (name fields are locked and excluded from payload)
     setIsSaving(true);
     try {
-      // Create payload with only phone (exclude locked fields)
+      // Create payload with phone and email (exclude locked name fields)
       const payload: BusinessContactInfo = {
         first_name: initialContact.first_name, // Keep original values
         last_name: initialContact.last_name,
         middle_names: initialContact.middle_names,
-        email: initialContact.email,
-        phone: contact.phone, // Only phone can change
+        email: contact.email, // Email can now change
+        phone: contact.phone, // Phone can change
       };
       await onSave(payload);
       setHasChanges(false);
+      const changedFields = [];
+      if (contact.phone !== initialContact.phone) changedFields.push('phone number');
+      if (contact.email !== initialContact.email) changedFields.push('email address');
       toast({
         title: "Saved",
-        description: "Your phone number has been updated.",
+        description: `Your ${changedFields.join(' and ')} ${changedFields.length > 1 ? 'have' : 'has'} been updated.`,
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save phone number. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -156,23 +159,16 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                Email address
-                <Badge variant="outline" className="text-xs">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Locked
-                </Badge>
-              </Label>
+              <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
                 type="email"
-                value={contact.email}
-                disabled
+                value={contact.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="your.email@example.com"
-                className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">
-                This is your account email address and cannot be changed here.
+                This is your account email address. You'll use this to log in.
               </p>
             </div>
           </div>
@@ -183,7 +179,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
             onClick={handleSave}
             disabled={!hasChanges || isSaving}
           >
-            {isSaving ? 'Saving...' : 'Save phone number'}
+            {isSaving ? 'Saving...' : 'Save changes'}
           </Button>
         </div>
       </CardContent>

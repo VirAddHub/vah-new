@@ -34,6 +34,23 @@ export async function getBillingOverview(req: Request, res: Response) {
     // Use invoice price (locked-in) as source of truth, fallback to current plan price only if no invoices
     const lockedInPricePence = invoicePriceResult.rows[0]?.amount_pence || null;
 
+    // If subscription exists but plan wasn't found (LEFT JOIN returned null for price_pence),
+    // try to get default plan price based on cadence
+    let fallbackPricePence = sub?.price_pence || null;
+    if (!fallbackPricePence && sub) {
+      // Plan wasn't found in JOIN, try to get default plan based on subscription cadence
+      const cadence = sub?.plan_interval || sub?.cadence || 'monthly';
+      const interval = (cadence === 'yearly' || cadence === 'annual') ? 'year' : 'month';
+      const defaultPlanResult = await pool.query(`
+        SELECT price_pence
+        FROM plans
+        WHERE active = true AND interval = $1
+        ORDER BY sort ASC, price_pence ASC
+        LIMIT 1
+      `, [interval]);
+      fallbackPricePence = defaultPlanResult.rows[0]?.price_pence || null;
+    }
+
     // Get user payment status
     const userResult = await pool.query(`
       SELECT payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
@@ -92,7 +109,8 @@ export async function getBillingOverview(req: Request, res: Response) {
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         // Use locked-in price from invoice (what they signed up with) instead of current plan price
         // This ensures price changes don't affect existing customers
-        current_price_pence: lockedInPricePence ?? sub?.price_pence ?? 0,
+        // Fallback to subscription plan price, then default plan price, then 0
+        current_price_pence: lockedInPricePence ?? fallbackPricePence ?? 0,
         usage: { qty: usage?.qty ?? 0, amount_pence: usage?.amount_pence ?? 0 }
       }
     });

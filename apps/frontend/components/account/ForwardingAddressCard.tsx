@@ -34,6 +34,70 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
   });
   const [useManualEntry, setUseManualEntry] = useState(false);
 
+  // Parse existing address when dialog opens
+  // Format is typically:
+  // Name/Line1
+  // Street address/Line2
+  // City, Postcode
+  // Country (optional, usually last line)
+  const parseExistingAddress = (addr: Address | null) => {
+    if (!addr?.formatted) {
+      return { line1: '', line2: '', city: '', postcode: '' };
+    }
+    
+    const lines = addr.formatted.split('\n').filter(line => line.trim() !== '');
+    
+    if (lines.length === 0) {
+      return { line1: '', line2: '', city: '', postcode: '' };
+    }
+    
+    // Find the line with city and postcode (usually has a comma)
+    let cityPostcodeLine = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].includes(',')) {
+        cityPostcodeLine = i;
+        break;
+      }
+    }
+    
+    if (cityPostcodeLine >= 0) {
+      const cityPostcodeMatch = lines[cityPostcodeLine].match(/^(.+?),\s*(.+)$/);
+      if (cityPostcodeMatch) {
+        return {
+          line1: lines[0] || '',
+          line2: cityPostcodeLine > 1 ? lines[1] : '',
+          city: cityPostcodeMatch[1].trim(),
+          postcode: cityPostcodeMatch[2].trim()
+        };
+      }
+    }
+    
+    // Fallback: if no comma found, try to extract from last lines
+    if (lines.length >= 2) {
+      // Assume last line might be postcode, second to last might be city
+      const lastLine = lines[lines.length - 1];
+      const secondLastLine = lines.length > 1 ? lines[lines.length - 2] : '';
+      
+      // Check if last line looks like a postcode (UK format: letters and numbers)
+      if (/^[A-Z0-9\s]+$/i.test(lastLine.trim()) && lastLine.trim().length <= 10) {
+        return {
+          line1: lines[0] || '',
+          line2: lines.length > 2 ? lines[1] : '',
+          city: secondLastLine || '',
+          postcode: lastLine.trim()
+        };
+      }
+    }
+    
+    // Final fallback: just use first line
+    return {
+      line1: lines[0] || '',
+      line2: lines.length > 1 ? lines[1] : '',
+      city: lines.length > 2 ? lines[lines.length - 2] : '',
+      postcode: lines.length > 1 ? lines[lines.length - 1] : ''
+    };
+  };
+
   const handleAddressSelect = (suggestion: AddressSuggestion) => {
     const addressLines = [
       suggestion.address_line_1,
@@ -118,7 +182,24 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
     // Reset to initial state
     setAddress(initialAddress);
     setUseManualEntry(false);
+    setManualAddress(parseExistingAddress(initialAddress));
     setIsDialogOpen(false);
+  };
+
+  // When dialog opens, pre-populate manual address fields if address exists
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (open && address) {
+      // Pre-populate manual address fields with existing address
+      const parsed = parseExistingAddress(address);
+      setManualAddress(parsed);
+      // Start with manual entry if address exists (easier to edit)
+      setUseManualEntry(true);
+    } else if (!open) {
+      // Reset when closing
+      setUseManualEntry(false);
+      setManualAddress({ line1: '', line2: '', city: '', postcode: '' });
+    }
   };
 
   return (
@@ -138,7 +219,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
             <div className="p-4 bg-muted rounded-lg">
               <pre className="whitespace-pre-wrap text-sm font-mono">{address.formatted}</pre>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Edit className="h-4 w-4" />
@@ -157,6 +238,11 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
                         onAddressSelect={handleAddressSelect}
                         placeholder="Start typing your postcode to search..."
                       />
+                      {address && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Current address will be replaced when you select a new one.
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -244,7 +330,7 @@ export function ForwardingAddressCard({ address: initialAddress, onSave }: Forwa
             <div className="p-8 text-center border-2 border-dashed rounded-lg">
               <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">No forwarding address configured</p>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
