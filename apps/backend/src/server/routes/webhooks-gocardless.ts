@@ -193,27 +193,31 @@ async function handleMandateActive(pool: any, links: any) {
             return;
         }
 
-        // 2) Attach mandate to subscription (by customer_id)
-        // Note: We update by customer_id, not user_id, so we can't use UPSERT here
-        // The subscription should already exist from earlier in the flow
-        const subUpdate = await pool.query(
-            `
-            UPDATE subscription
-            SET mandate_id = COALESCE(mandate_id, $1),
-                status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                updated_at = NOW()
-            WHERE customer_id = $2
-            RETURNING user_id
-            `,
-            [mandateId, customerId]
+        // 2) Resolve user_id from customer_id, then UPSERT subscription
+        const userLookup = await pool.query(
+            `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+            [customerId]
         );
 
-        const userId = subUpdate.rows?.[0]?.user_id ?? null;
+        const userId = userLookup.rows?.[0]?.id ?? null;
 
         if (!userId) {
-            console.warn('[GoCardless] mandates.active: no subscription found for customer_id', { customerId, mandateId });
-            return;
+            console.warn('[GoCardless] mandates.active: unknown_customer_id', { customerId, mandateId });
+            return; // Don't fail webhook, just log and return
         }
+
+        // UPSERT subscription using user_id (ensures exactly one subscription per user)
+        await pool.query(
+            `
+            INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+            VALUES ($1, $2, 'active', NOW())
+            ON CONFLICT (user_id) DO UPDATE SET
+              mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
+              status = CASE WHEN subscription.status = 'active' THEN subscription.status ELSE 'active' END,
+              updated_at = NOW()
+            `,
+            [userId, mandateId]
+        );
 
         // 3) Also store mandate/customer on user (best-effort, never downgrade active status)
         await pool.query(
@@ -673,27 +677,37 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
             return;
         }
 
-        // Find subscription by customerId (preferred) or billingRequestId
+        // Find subscription by customerId (preferred) - resolve user_id first, then UPSERT
         if (customerId) {
-            const result = await pool.query(
-                `
-                UPDATE subscription
-                SET
-                    status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                    updated_at = $1
-                WHERE customer_id = $2
-                RETURNING user_id
-                `,
-                [Date.now(), customerId]
+            const userLookup = await pool.query(
+                `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+                [customerId]
             );
 
-            if (result.rows?.length) {
+            const userId = userLookup.rows?.[0]?.id ?? null;
+
+            if (userId) {
+                // UPSERT subscription using user_id (ensures exactly one subscription per user)
+                await pool.query(
+                    `
+                    INSERT INTO subscription (user_id, status, updated_at)
+                    VALUES ($1, 'active', NOW())
+                    ON CONFLICT (user_id) DO UPDATE SET
+                      status = CASE WHEN subscription.status = 'active' THEN subscription.status ELSE 'active' END,
+                      updated_at = NOW()
+                    `,
+                    [userId]
+                );
+
                 console.log('[GoCardless] fulfilled: subscription marked active', {
                     customerId,
                     billingRequestId,
-                    userId: result.rows[0].user_id,
+                    userId,
                 });
                 return;
+            } else {
+                console.warn('[GoCardless] fulfilled: unknown_customer_id', { customerId, billingRequestId });
+                // Continue to fallback logic below
             }
         }
 
@@ -803,23 +817,28 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
             return;
         }
 
-        // Path A: customerId present (keep existing behaviour)
+        // Path A: customerId present - resolve user_id first, then UPSERT
         if (customerId) {
-            const result = await pool.query(
-                `
-                UPDATE subscription
-                SET
-                    mandate_id = COALESCE(mandate_id, $1),
-                    status = CASE WHEN status = 'active' THEN status ELSE 'active' END,
-                    updated_at = $2
-                WHERE customer_id = $3
-                RETURNING user_id
-                `,
-                [mandateId, Date.now(), customerId]
+            const userLookup = await pool.query(
+                `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
+                [customerId]
             );
 
-            if (result.rows?.length) {
-                const userId = result.rows[0].user_id;
+            const userId = userLookup.rows?.[0]?.id ?? null;
+
+            if (userId) {
+                // UPSERT subscription using user_id (ensures exactly one subscription per user)
+                await pool.query(
+                    `
+                    INSERT INTO subscription (user_id, mandate_id, status, updated_at)
+                    VALUES ($1, $2, 'active', NOW())
+                    ON CONFLICT (user_id) DO UPDATE SET
+                      mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
+                      status = CASE WHEN subscription.status = 'active' THEN subscription.status ELSE 'active' END,
+                      updated_at = NOW()
+                    `,
+                    [userId, mandateId]
+                );
 
                 // Also update user table (best-effort, never downgrade active status)
                 await pool.query(
@@ -842,6 +861,9 @@ async function handleMandateCreated(pool: any, links: any, resource: any) {
                     userId,
                 });
                 return;
+            } else {
+                console.warn('[GoCardless] mandates.created: unknown_customer_id', { customerId, mandateId });
+                // Continue to Path B fallback below
             }
         }
 
