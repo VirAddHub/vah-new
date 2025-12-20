@@ -799,7 +799,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     Are you the only director/controller of this company?
                                 </Label>
                                 <RadioGroup
-                                    value={formData.isSoleController === true ? 'yes' : formData.isSoleController === false ? 'no' : undefined}
+                                    value={formData.isSoleController === true ? 'yes' : formData.isSoleController === false ? 'no' : ''}
                                     onValueChange={(value) => {
                                         if (value === 'yes') {
                                             setFormData(prev => ({
