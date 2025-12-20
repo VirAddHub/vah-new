@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+// Force dynamic rendering - never cache this route
+export const dynamic = 'force-dynamic';
+
 /**
  * PATCH /api/bff/profile/contact
  * Update contact details (email and/or phone)
