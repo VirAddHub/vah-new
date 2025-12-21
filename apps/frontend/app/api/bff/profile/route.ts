@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
+        'X-Debug-Backend-Origin': backendUrl, // Debug: shows which backend URL was called
       },
     });
   } catch (error: any) {
