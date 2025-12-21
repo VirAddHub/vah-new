@@ -573,14 +573,33 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         setSelectedMailForForwarding(null);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || errorData.error || 'Failed to create forwarding request';
-
-        toast({
-          title: "Forwarding Request Failed",
-          description: errorMessage,
-          variant: "destructive",
-          durationMs: 5000,
-        });
+        
+        // Handle incomplete forwarding address error
+        if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
+          const missingFields = errorData.fields || [];
+          const fieldLabels: Record<string, string> = {
+            'name': 'Full Name',
+            'address_line_1': 'Address Line 1',
+            'city': 'City',
+            'postal_code': 'Postcode',
+          };
+          const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
+          
+          toast({
+            title: "Incomplete Forwarding Address",
+            description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,
+            variant: "destructive",
+            durationMs: 6000,
+          });
+        } else {
+          const errorMessage = errorData.message || errorData.error || 'Failed to create forwarding request';
+          toast({
+            title: "Forwarding Request Failed",
+            description: errorMessage,
+            variant: "destructive",
+            durationMs: 5000,
+          });
+        }
       }
     } catch (error: any) {
       console.error('Forwarding error:', error);

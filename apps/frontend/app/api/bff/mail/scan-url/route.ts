@@ -11,6 +11,14 @@ export async function GET(request: NextRequest) {
     const mailItemId = searchParams.get('mailItemId');
     const disposition = searchParams.get('disposition') || 'inline';
 
+    // Log at the very top to confirm handler is reached
+    console.log('[scan-url] incoming', { 
+      disposition, 
+      mailItemId,
+      hasCookie: !!request.headers.get('cookie'),
+      hasAuthHeader: !!request.headers.get('authorization'),
+    });
+
     if (!mailItemId) {
       return NextResponse.json({ error: 'mailItemId is required' }, { status: 400 });
     }
@@ -44,6 +52,12 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('[scan-url] backend error', { 
+        disposition, 
+        status: response.status, 
+        mailItemId,
+        errorText: errorText.substring(0, 200) // Truncate for logging
+      });
       return NextResponse.json(
         { error: `Backend error: ${response.status} - ${errorText}` },
         { status: response.status }
@@ -53,7 +67,11 @@ export async function GET(request: NextRequest) {
     // Get the PDF content
     const pdfBuffer = await response.arrayBuffer();
 
+    // Log before returning to confirm success
+    console.log('[scan-url] responding', { disposition, status: 200, mailItemId });
+
     // Return the PDF with proper headers
+    // BOTH inline and attachment use the EXACT same code path - only Content-Disposition header differs
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
