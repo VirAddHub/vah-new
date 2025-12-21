@@ -415,6 +415,17 @@ router.post('/from-onedrive', async (req, res) => {
 
     const mailItem = result.rows[0];
 
+    // Explicit log immediately after mail_item insert
+    console.log('[internalMailImport] ✅ Mail item inserted into database:', {
+      mailId: mailItem.id,
+      userId: payload.userId,
+      subject: mailItem.subject,
+      tag: mailItem.tag,
+      fileName: payload.fileName,
+      oneDriveFileId: payload.oneDriveFileId,
+      hasLockedColumns,
+    });
+
     const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
     console.log('[internalMailImport] Successfully created NEW mail item:', {
       mailId: mailItem.id,
@@ -527,13 +538,22 @@ router.post('/from-onedrive', async (req, res) => {
     // This ensures 100% confidence that email = correct user = correct dashboard
     if (!isLocked) {
       try {
+        console.log('[internalMailImport] 📧 Attempting to send Postmark email notification:', {
+          email: userForEmail.email,
+          userId: verifiedMailItem.user_id,
+          mailId: verifiedMailItem.id,
+          fileName: payload.fileName,
+          tagTitle,
+        });
+
         await sendMailScanned({
           email: userForEmail.email, // Use verified email from database
           firstName: userForEmail.first_name || "there",
           subject: `New mail received - ${tagTitle}`,
           cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
         });
-        console.log('[internalMailImport] ✅ Email notification sent to user:', {
+        
+        console.log('[internalMailImport] ✅ Postmark email notification sent successfully:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,

@@ -182,28 +182,43 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
 
-        // TEMPORARILY DISABLED: Allow forwarding with incomplete address
-        // TODO: Fix user's forwarding address in database
-        console.log('[forwarding] TEMPORARILY ALLOWING forwarding with incomplete address', {
-            userId,
-            hasName: !!name,
-            hasAddress1: !!address1,
-            hasCity: !!city,
-            hasPostal: !!postal
-        });
+        // Validate required fields for UK forwarding
+        const missingFields: string[] = [];
+        if (!name || name.trim() === '') {
+            missingFields.push('name');
+        }
+        if (!address1 || address1.trim() === '') {
+            missingFields.push('address_line_1');
+        }
+        if (!city || city.trim() === '') {
+            missingFields.push('city');
+        }
+        if (!postal || postal.trim() === '') {
+            missingFields.push('postal_code');
+        }
 
-        // Use fallback values for missing fields
-        const finalName = name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown';
-        const finalAddress1 = address1 || 'Address not provided';
-        const finalCity = city || 'City not provided';
-        const finalPostal = postal || 'Postal not provided';
+        if (missingFields.length > 0) {
+            console.warn('[forwarding] Rejecting forwarding request - incomplete address', {
+                userId,
+                missingFields,
+                hasName: !!name,
+                hasAddress1: !!address1,
+                hasCity: !!city,
+                hasPostal: !!postal
+            });
+            return res.status(400).json({
+                ok: false,
+                error: 'forwarding_address_incomplete',
+                fields: missingFields,
+                message: `Your forwarding address is incomplete. Please update your profile with: ${missingFields.join(', ')}.`
+            });
+        }
 
-        console.log('[forwarding] Using fallback values:', {
-            finalName,
-            finalAddress1,
-            finalCity,
-            finalPostal
-        });
+        // All required fields are present
+        const finalName = name.trim();
+        const finalAddress1 = address1.trim();
+        const finalCity = city.trim();
+        const finalPostal = postal.trim();
 
         // Check KYC requirement before creating forwarding request
         // Get mail item to check tag
