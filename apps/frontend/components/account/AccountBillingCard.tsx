@@ -25,33 +25,76 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
   const handleReactivate = async () => {
     setIsLoading('reactivate');
     try {
-      const response = await fetch('/api/bff/payments/subscription', {
+      // Get plan_id from overview or use subscription data
+      // The backend will use user.plan_id if not provided, but we should try to get it
+      const planId = overview?.data?.plan_id || null;
+      const billingPeriod = subscription.billing_period || 'monthly';
+
+      const response = await fetch('/api/bff/payments/redirect-flows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action: 'reactivate' }),
+        body: JSON.stringify({
+          plan_id: planId,
+          billing_period: billingPeriod,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to reactivate subscription');
+        throw new Error(data.error || 'Failed to restart subscription');
       }
 
-      toast({
-        title: "Subscription reactivated",
-        description: "Your subscription has been reactivated successfully.",
-      });
-
-      // Refresh data
-      await mutateOverview();
-      if (onRefresh) {
-        await onRefresh();
+      // Handle already linked case
+      if (data.data?.alreadyLinked) {
+        toast({
+          title: "Already active",
+          description: "Your subscription is already active.",
+        });
+        await mutateOverview();
+        if (onRefresh) {
+          await onRefresh();
+        }
+        return;
       }
+
+      // Handle resume case
+      if (data.data?.resume && data.data?.redirectFlowId) {
+        const appUrl = window.location.origin;
+        window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(data.data.redirectFlowId)}`;
+        return;
+      }
+
+      // Handle redirect URL
+      const redirectUrl = data.data?.redirect_url || data.redirect_url;
+      if (redirectUrl) {
+        toast({
+          title: "Redirecting to payment setup",
+          description: "You'll be redirected to complete your payment setup.",
+        });
+        window.location.href = redirectUrl;
+        return;
+      }
+
+      // Handle skip payment case (GoCardless not configured)
+      if (data.data?.skip_payment) {
+        toast({
+          title: "Payment setup",
+          description: data.data.message || "Payment setup will be completed later.",
+        });
+        await mutateOverview();
+        if (onRefresh) {
+          await onRefresh();
+        }
+        return;
+      }
+
+      throw new Error('No redirect URL received');
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to reactivate subscription. Please try again.",
+        description: error.message || "Failed to restart subscription. Please try again.",
         variant: "destructive",
       });
     } finally {
