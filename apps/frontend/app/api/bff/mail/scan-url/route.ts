@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
+import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
+// Force dynamic rendering - never cache this route
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,19 +15,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'mailItemId is required' }, { status: 400 });
     }
 
-    // Get the JWT token from the Authorization header
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    const cookie = request.headers.get('cookie') || '';
+    const authHeader = request.headers.get('authorization') || '';
+    const backend = getBackendOrigin();
 
     // Forward the request to the backend
-    const backendUrl = `${API_BASE}/api/mail-items/${mailItemId}/download?disposition=${disposition}`;
+    const backendUrl = `${backend}/api/mail-items/${mailItemId}/download?disposition=${disposition}`;
+
+    const headers: HeadersInit = {
+      'User-Agent': 'VAH-Frontend-BFF/1.0',
+    };
+
+    // Forward cookies (primary auth method)
+    if (cookie) {
+      headers['Cookie'] = cookie;
+    }
+
+    // Also forward Authorization header if present (for backward compatibility)
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
 
     const response = await fetch(backendUrl, {
-      headers: {
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        'User-Agent': 'VAH-Frontend-BFF/1.0',
-      },
+      headers,
       credentials: 'include',
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -50,7 +65,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    // Handle backend origin configuration errors
+    if (isBackendOriginConfigError(error)) {
+      console.error('[BFF mail scan-url] Server misconfigured:', error.message);
+      return NextResponse.json(
+        { error: 'Server misconfigured', details: error.message },
+        { status: 500 }
+      );
+    }
     console.error('[BFF mail scan-url] error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
