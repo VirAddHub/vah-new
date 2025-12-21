@@ -146,15 +146,38 @@ export async function GET(request: NextRequest) {
       : null;
 
     // SAFETY: Preserve business_address if it exists (display only, never delete)
+    // Format: address_line2 (if exists), address_line1, city postal_code
+    // Example:
+    //   Second Floor, Tanner Place
+    //   54–58 Tanner Street
+    //   London SE1 3PH
     const business_address = (profileData?.address_line1 || profileData?.city)
       ? {
-        formatted: [
-          profileData?.address_line1,
-          profileData?.address_line2,
-          profileData?.city,
-          profileData?.postal_code,
-          profileData?.country
-        ].filter(line => line && line.trim() !== '').join('\n')
+        formatted: (() => {
+          const lines: string[] = [];
+          
+          // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
+          if (profileData?.address_line2?.trim()) {
+            lines.push(profileData.address_line2.trim());
+          }
+          
+          // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
+          if (profileData?.address_line1?.trim()) {
+            lines.push(profileData.address_line1.trim());
+          }
+          
+          // Line 3: city postal_code (e.g., "London SE1 3PH")
+          const cityPostal = [
+            profileData?.city?.trim(),
+            profileData?.postal_code?.trim()
+          ].filter(Boolean).join(' ');
+          
+          if (cityPostal) {
+            lines.push(cityPostal);
+          }
+          
+          return lines.join('\n');
+        })()
       }
       : null;
 

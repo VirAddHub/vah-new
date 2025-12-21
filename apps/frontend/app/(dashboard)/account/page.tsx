@@ -97,6 +97,36 @@ export default function AccountPage() {
                     : merged.forwarding_address;
             }
             
+            // Reformat business_address if we have profile data with address fields
+            // Format: address_line2 (if exists), address_line1, city postal_code
+            if (profile?.address_line1 || profile?.city) {
+                const lines: string[] = [];
+                
+                // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
+                if (profile?.address_line2?.trim()) {
+                    lines.push(profile.address_line2.trim());
+                }
+                
+                // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
+                if (profile?.address_line1?.trim()) {
+                    lines.push(profile.address_line1.trim());
+                }
+                
+                // Line 3: city postal_code (e.g., "London SE1 3PH")
+                const cityPostal = [
+                    profile?.city?.trim(),
+                    profile?.postal_code?.trim()
+                ].filter(Boolean).join(' ');
+                
+                if (cityPostal) {
+                    lines.push(cityPostal);
+                }
+                
+                if (lines.length > 0) {
+                    merged.business_address = { formatted: lines.join('\n') };
+                }
+            }
+            
             return merged;
         }
 
@@ -138,15 +168,38 @@ export default function AccountPage() {
             : null;
 
         // SAFETY: Preserve business_address if it exists (display only, never delete)
+        // Format: address_line2 (if exists), address_line1, city postal_code
+        // Example:
+        //   Second Floor, Tanner Place
+        //   54–58 Tanner Street
+        //   London SE1 3PH
         const business_address: Address | null = (profile?.address_line1 || profile?.city)
             ? {
-                formatted: [
-                    profile?.address_line1,
-                    profile?.address_line2,
-                    profile?.city,
-                    profile?.postal_code,
-                    profile?.country
-                ].filter(line => line && line.trim() !== '').join('\n')
+                formatted: (() => {
+                    const lines: string[] = [];
+                    
+                    // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
+                    if (profile?.address_line2?.trim()) {
+                        lines.push(profile.address_line2.trim());
+                    }
+                    
+                    // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
+                    if (profile?.address_line1?.trim()) {
+                        lines.push(profile.address_line1.trim());
+                    }
+                    
+                    // Line 3: city postal_code (e.g., "London SE1 3PH")
+                    const cityPostal = [
+                        profile?.city?.trim(),
+                        profile?.postal_code?.trim()
+                    ].filter(Boolean).join(' ');
+                    
+                    if (cityPostal) {
+                        lines.push(cityPostal);
+                    }
+                    
+                    return lines.join('\n');
+                })()
             }
             : null;
 
