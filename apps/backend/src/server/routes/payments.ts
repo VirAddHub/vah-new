@@ -142,11 +142,24 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
         const user = userResult.rows[0];
 
-        // Guardrail 1: If user already has a mandate, return early (prevent creating extra customers)
-        if (user.gocardless_mandate_id && user.gocardless_mandate_id.trim() !== '') {
-            console.log('[GC] redirect-flows: user already has mandate, returning alreadyLinked', {
+        // Guardrail 1: Only block if user has active subscription with mandate
+        // Allow restart for cancelled/past_due users even if mandate_id exists
+        const sub = await pool.query(
+            `SELECT status, mandate_id
+             FROM subscription
+             WHERE user_id = $1`,
+            [userId]
+        );
+
+        const subStatus = sub.rows[0]?.status ?? null;
+        const mandateId = (user.gocardless_mandate_id || sub.rows[0]?.mandate_id || '').trim();
+
+        // ✅ If user is actually active, block creating extra flows
+        if (mandateId && subStatus === 'active') {
+            console.log('[GC] redirect-flows: active user already linked, returning alreadyLinked', {
                 user_id: userId,
-                mandate_id: user.gocardless_mandate_id
+                mandate_id: mandateId,
+                subStatus
             });
             return res.json({
                 ok: true,
@@ -154,19 +167,37 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             });
         }
 
+        // ✅ Otherwise allow user to restart payment setup (even if mandate_id exists)
+        // because mandate might be revoked/expired OR subscription not active
+
         // Guardrail 2: If user has a redirect flow but no mandate, allow resume
+        // BUT only if subscription is active or pending (not cancelled/past_due)
         if (user.gocardless_redirect_flow_id && user.gocardless_redirect_flow_id.trim() !== '' && (!user.gocardless_mandate_id || user.gocardless_mandate_id.trim() === '')) {
-            console.log('[GC] redirect-flows: user has incomplete flow, returning resume', {
+            // Only resume if subscription is active or pending (not cancelled/past_due)
+            if (subStatus === 'active' || subStatus === 'pending') {
+                console.log('[GC] redirect-flows: user has incomplete flow, returning resume', {
+                    user_id: userId,
+                    redirect_flow_id: user.gocardless_redirect_flow_id,
+                    subStatus
+                });
+                return res.json({
+                    ok: true,
+                    data: {
+                        resume: true,
+                        redirectFlowId: user.gocardless_redirect_flow_id
+                    }
+                });
+            }
+            // If subscription is cancelled/past_due, clear old redirect_flow_id and allow restart
+            console.log('[GC] redirect-flows: clearing old redirect_flow_id for restart', {
                 user_id: userId,
-                redirect_flow_id: user.gocardless_redirect_flow_id
+                old_redirect_flow_id: user.gocardless_redirect_flow_id,
+                subStatus
             });
-            return res.json({
-                ok: true,
-                data: {
-                    resume: true,
-                    redirectFlowId: user.gocardless_redirect_flow_id
-                }
-            });
+            await pool.query(
+                `UPDATE "user" SET gocardless_redirect_flow_id = NULL, updated_at = $1 WHERE id = $2`,
+                [Date.now(), userId]
+            );
         }
 
         // Persist the selected plan before redirecting to GoCardless.
@@ -228,7 +259,7 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
                   updated_at = NOW(),
                   status = CASE
                     WHEN subscription.status = 'active' THEN subscription.status
-                    WHEN subscription.status = 'cancelled' THEN subscription.status
+                    WHEN subscription.status = 'cancelled' THEN 'pending'
                     ELSE subscription.status
                   END
                 `,
