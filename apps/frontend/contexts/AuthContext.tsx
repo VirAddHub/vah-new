@@ -120,10 +120,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 const json = await res.json();
                 console.log('🔍 AuthContext Init - Whoami response:', json);
 
-                // Backend returns: { ok: true, data: { user_id, email, is_admin, role } }
-                const apiUser = json?.data || json?.user || null;
-                if (!apiUser) {
-                    console.log('❌ AuthContext Init - No user data in response');
+                // Accept both shapes:
+                // A) { ok: true, data: { id, email, ... } } - user fields directly in data
+                // B) { ok: true, data: { user: { id, email, ... } } } - user nested in data.user
+                // C) { ok: true, user: { id, email, ... } } - user at top level (legacy)
+                const userData =
+                    (json?.data && typeof json.data === 'object' && 'id' in json.data ? json.data : null) ??
+                    (json?.data?.user && typeof json.data.user === 'object' ? json.data.user : null) ??
+                    (json?.user && typeof json.user === 'object' ? json.user : null);
+
+                if (!userData) {
+                    console.warn('❌ AuthContext Init - No user data in response. Response shape:', json);
+                    setUser(null as any);
+                    setStatus('guest');
+                    setIsLoading(false);
+                    setAuthInitialized(true);
+                    return;
+                }
+
+                // Extract ID - handle both user_id and id fields
+                const userId = userData.user_id ?? userData.id;
+                if (!userId) {
+                    console.warn('❌ AuthContext Init - User data missing ID field. User data:', userData);
                     setUser(null as any);
                     setStatus('guest');
                     setIsLoading(false);
@@ -133,17 +151,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 // shape-normalise minimal fields used in UI
                 const clientUser = {
-                    id: String(apiUser.user_id ?? apiUser.id ?? ''),
-                    email: apiUser.email,
-                    first_name: apiUser.first_name,
-                    last_name: apiUser.last_name,
-                    is_admin: !!apiUser.is_admin,
-                    role: apiUser.role === 'admin' ? 'admin' : 'user',
+                    id: String(userId),
+                    email: userData.email || '',
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    is_admin: !!userData.is_admin,
+                    role: userData.role === 'admin' ? 'admin' : 'user',
                 };
 
-                console.log('✅ AuthContext Init - User authenticated:', clientUser);
-                setUser(clientUser as any);
-                setStatus('authed');
+                // Only log success if we have a valid user with ID
+                if (clientUser.id && clientUser.id !== '') {
+                    console.log('✅ AuthContext Init - User authenticated:', clientUser);
+                    setUser(clientUser as any);
+                    setStatus('authed');
+                } else {
+                    console.warn('❌ AuthContext Init - User ID is empty after parsing:', clientUser);
+                    setUser(null as any);
+                    setStatus('guest');
+                }
                 setIsLoading(false);
                 setAuthInitialized(true);
             } catch (e) {
