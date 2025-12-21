@@ -168,6 +168,7 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                     
                     // Use Postmark client directly to send forwarding request confirmation
                     const { getClient } = await import('../../lib/mailer');
+                    const { ENV, emailGuard } = await import('../../env');
                     const client = getClient();
                     if (client && emailGuard(ENV.EMAIL_MAIL)) {
                         const firstName = user.first_name || 'there';
