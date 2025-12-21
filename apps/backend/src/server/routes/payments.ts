@@ -170,28 +170,36 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         // ✅ Otherwise allow user to restart payment setup (even if mandate_id exists)
         // because mandate might be revoked/expired OR subscription not active
 
-        // Guardrail 2: If user has a redirect flow but no mandate, allow resume
-        // BUT only if subscription is active or pending (not cancelled/past_due)
-        if (user.gocardless_redirect_flow_id && user.gocardless_redirect_flow_id.trim() !== '' && (!user.gocardless_mandate_id || user.gocardless_mandate_id.trim() === '')) {
-            // Only resume if subscription is active or pending (not cancelled/past_due)
-            if (subStatus === 'active' || subStatus === 'pending') {
-                console.log('[GC] redirect-flows: user has incomplete flow, returning resume', {
+        // Guardrail 2: If user has a redirect flow but no mandate, allow resume (ONLY if flow is still valid)
+        if (user.gocardless_redirect_flow_id?.trim() && !user.gocardless_mandate_id?.trim()) {
+            const flowId = user.gocardless_redirect_flow_id.trim();
+
+            // ✅ Only resume if we have a durable record still in 'created'
+            const flow = await pool.query(
+                `SELECT status FROM gc_redirect_flow WHERE flow_id = $1 LIMIT 1`,
+                [flowId]
+            );
+
+            if (flow.rows[0]?.status === 'created') {
+                console.log('[GC] redirect-flows: resuming existing flow', {
                     user_id: userId,
-                    redirect_flow_id: user.gocardless_redirect_flow_id,
+                    flow_id: flowId,
                     subStatus
                 });
                 return res.json({
                     ok: true,
                     data: {
                         resume: true,
-                        redirectFlowId: user.gocardless_redirect_flow_id
+                        redirectFlowId: flowId
                     }
                 });
             }
-            // If subscription is cancelled/past_due, clear old redirect_flow_id and allow restart
-            console.log('[GC] redirect-flows: clearing old redirect_flow_id for restart', {
+
+            // ❌ Otherwise: stale flow id — clear it and continue to create a new one
+            console.log('[GC] redirect-flows: clearing stale redirect_flow_id', {
                 user_id: userId,
-                old_redirect_flow_id: user.gocardless_redirect_flow_id,
+                old_redirect_flow_id: flowId,
+                flow_status: flow.rows[0]?.status ?? 'not_found',
                 subStatus
             });
             await pool.query(
@@ -290,6 +298,20 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
                     message: "Payment setup will be completed later"
                 },
                 redirect_url: null
+            });
+        }
+
+        // If user had an old flow id, mark it stale so we don't "resume" it again
+        if (user.gocardless_redirect_flow_id?.trim()) {
+            await pool.query(
+                `UPDATE gc_redirect_flow
+                 SET status = 'stale'
+                 WHERE flow_id = $1 AND status = 'created'`,
+                [user.gocardless_redirect_flow_id.trim()]
+            );
+            console.log('[GC] redirect-flows: marked old flow as stale', {
+                user_id: userId,
+                old_flow_id: user.gocardless_redirect_flow_id.trim()
             });
         }
 
