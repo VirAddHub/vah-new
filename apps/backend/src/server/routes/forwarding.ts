@@ -162,6 +162,20 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         const user = userResult.rows[0];
 
+        // Debug: Log user forwarding snapshot BEFORE parsing
+        const userFullResult = await pool.query(`
+            SELECT id, email, first_name, last_name, forwarding_address
+            FROM "user" 
+            WHERE id = $1
+        `, [userId]);
+        const userFull = userFullResult.rows[0];
+        console.log("[forwarding] user forwarding snapshot", {
+            userId: userFull.id,
+            email: userFull.email,
+            forwarding_address: userFull.forwarding_address,
+            forwarding_address_lines: userFull.forwarding_address ? userFull.forwarding_address.split('\n') : [],
+        });
+
         if (!user.forwarding_address) {
             console.warn('[forwarding] 400 no forwarding address', { userId });
             return res.status(400).json({
@@ -174,13 +188,35 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         // Parse the stored forwarding address
         const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
+        console.log("[forwarding] parsed address lines", {
+            totalLines: addressLines.length,
+            lines: addressLines,
+        });
+        
         const name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
         const address1 = addressLines[1] || '';
         const address2 = addressLines[2] || undefined; // Optional second address line
         const cityPostal = addressLines[addressLines.length - 2] || '';
         const country = addressLines[addressLines.length - 1] || 'GB';
 
+        console.log("[forwarding] extracted fields before validation", {
+            name,
+            address1,
+            address2,
+            cityPostal,
+            country,
+            cityPostalLength: cityPostal.length,
+        });
+
         const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
+        
+        console.log("[forwarding] split cityPostal", {
+            cityPostal,
+            city,
+            postal,
+            cityLength: city?.length || 0,
+            postalLength: postal?.length || 0,
+        });
 
         // Validate required fields for UK forwarding
         const missingFields: string[] = [];

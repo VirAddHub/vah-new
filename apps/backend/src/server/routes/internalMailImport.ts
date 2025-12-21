@@ -415,15 +415,16 @@ router.post('/from-onedrive', async (req, res) => {
 
     const mailItem = result.rows[0];
 
-    // Explicit log immediately after mail_item insert
-    console.log('[internalMailImport] ✅ Mail item inserted into database:', {
-      mailId: mailItem.id,
-      userId: payload.userId,
+    // Explicit log immediately after mail_item insert (after COMMIT)
+    console.log('[mailImport] mail_item created', {
+      mail_item_id: mailItem.id,
+      user_id: payload.userId,
       subject: mailItem.subject,
+      received_date: new Date(receivedAtMs).toISOString().split('T')[0],
       tag: mailItem.tag,
       fileName: payload.fileName,
-      oneDriveFileId: payload.oneDriveFileId,
       hasLockedColumns,
+      locked: hasLockedColumns ? (mailItem.locked === true) : false,
     });
 
     const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
@@ -561,6 +562,11 @@ router.post('/from-onedrive', async (req, res) => {
           confirmation: 'Mail item is confirmed in database for this user',
         });
       } catch (emailError) {
+        console.error('[mailImport] new-mail email failed', {
+          to: userForEmail.email,
+          mail_item_id: verifiedMailItem.id,
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        });
         console.error('[internalMailImport] ❌ Failed to send email notification to user:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
@@ -571,10 +577,15 @@ router.post('/from-onedrive', async (req, res) => {
         // Don't fail the webhook if email fails, but log it clearly
       }
     } else {
+      console.log('[mailImport] new-mail email skipped - mail item is locked', {
+        mail_item_id: verifiedMailItem.id,
+        userId: verifiedMailItem.user_id,
+        lockedReason: hasLockedColumns ? (mailItem.locked_reason || null) : 'locked columns not available',
+      });
       console.log('[internalMailImport] ⚠️ Skipping email notification - mail item is locked', {
         mailId: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,
-        lockedReason: mailItem.locked_reason,
+        lockedReason: hasLockedColumns ? (mailItem.locked_reason || null) : 'locked columns not available',
         fileName: payload.fileName,
       });
     }
@@ -617,6 +628,11 @@ router.post('/from-onedrive', async (req, res) => {
       lockedReason: mailItem.locked_reason || null,
     });
   } catch (error: any) {
+    console.error('[mailImport] mail insert failed — email skipped', {
+      error: error.message || String(error),
+      fileName: payload?.fileName,
+      userId: payload?.userId,
+    });
     console.error('[internalMailImport] Error:', error);
     return res.status(500).json({
       ok: false,

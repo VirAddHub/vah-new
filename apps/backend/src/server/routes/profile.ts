@@ -191,6 +191,10 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
+    // Debug: Log incoming payload
+    console.log("[profile] PATCH payload keys", Object.keys(req.body || {}));
+    console.log("[profile] PATCH payload", req.body);
+
     // EXPLICIT ALLOWLIST: Only these fields can be updated via profile endpoint
     // Note: email and phone should use /api/profile/contact endpoint (email requires verification)
     const ALLOWED_FIELDS = [
@@ -349,6 +353,19 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         }
 
         const newUser = result.rows[0];
+
+        // Debug: Log saved forwarding snapshot
+        const afterResult = await pool.query(`
+            SELECT id, email, forwarding_address
+            FROM "user" 
+            WHERE id = $1
+        `, [userId]);
+        console.log("[profile] saved forwarding snapshot", {
+            userId: afterResult.rows[0].id,
+            email: afterResult.rows[0].email,
+            forwarding_address: afterResult.rows[0].forwarding_address,
+            forwarding_address_lines: afterResult.rows[0].forwarding_address ? afterResult.rows[0].forwarding_address.split('\n') : [],
+        });
 
         // Log changes to activity_log for audit trail
         // Note: email and phone changes are logged in /api/profile/contact endpoint
