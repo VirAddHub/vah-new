@@ -364,7 +364,7 @@ router.post('/from-onedrive', async (req, res) => {
       fileName: payload.fileName,
       oneDriveFileId: payload.oneDriveFileId,
       locked: isLocked,
-      lockedReason: mailItem.locked_reason,
+      lockedReason: hasLockedColumns ? (mailItem.locked_reason || null) : null,
     });
 
     // VERIFY mail item exists in database before sending emails
