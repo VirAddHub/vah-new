@@ -347,9 +347,9 @@ router.post('/from-onedrive', async (req, res) => {
         receivedAtMs,                       // $12: received_at_ms
         now,                                // $13: created_at
         now,                                // $14: updated_at
-        locked,                             // $15: locked
-        lockedReason,                       // $16: locked_reason
-        locked ? `Ingested while ${lockedReason}` : null, // $17: admin_note
+        locked,                             // $12: locked
+        lockedReason,                       // $13: locked_reason
+        locked ? `Ingested while ${lockedReason}` : null, // $14: admin_note
       ]
     );
 
