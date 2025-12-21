@@ -226,6 +226,7 @@ export default function AccountPage() {
 
             // Refresh all relevant data after successful PATCH
             // Use global mutate to ensure ALL components using these keys refresh
+            // IMPORTANT: Revalidate both whoami and profile to prevent stale cache
             await Promise.all([
                 mutateProfile(),
                 mutateAccount(),

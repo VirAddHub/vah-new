@@ -35,6 +35,10 @@ export async function proxy(req: NextRequest, targetPath: string) {
     cache: 'no-store',
     redirect: 'manual',
   };
+  
+  // Add cache-control headers to prevent backend from returning 304
+  headers.set('cache-control', 'no-store');
+  headers.set('pragma', 'no-cache');
 
   let r: Response;
   try {
@@ -59,7 +63,8 @@ export async function proxy(req: NextRequest, targetPath: string) {
   r.headers.forEach((val, key) => {
     const k = key.toLowerCase();
     if (k === 'set-cookie') { setCookies.push(val); return; }
-    if (/^(content-type|x-|ratelimit-|link|cache-control|vary)$/i.test(key)) resp.headers.set(key, val);
+    if (/^(content-type|x-|ratelimit-|link|vary)$/i.test(key)) resp.headers.set(key, val);
+    // Skip cache-control from backend - we override it below
   });
   for (const c of setCookies) {
     const parts = c.split(';').map(s => s.trim());
@@ -70,6 +75,11 @@ export async function proxy(req: NextRequest, targetPath: string) {
     resp.headers.append('set-cookie', filtered.join('; '));
   }
   resp.headers.set('Vary', 'Cookie');
+  
+  // IMPORTANT: Force no-store to prevent 304 responses and browser caching
+  resp.headers.set('cache-control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  resp.headers.set('pragma', 'no-cache');
+  resp.headers.set('expires', '0');
 
   return resp;
 }
