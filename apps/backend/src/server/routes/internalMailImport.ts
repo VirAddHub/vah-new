@@ -305,57 +305,117 @@ router.post('/from-onedrive', async (req, res) => {
     const subject = `${tagTitle} letter — ${formatUkDateShort(dateForSubject)}`;
     const senderName = tagTitle;
 
+    // Check if locked columns exist (migration 042 may not have run)
+    const hasLockedColumns = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'mail_item' AND column_name = 'locked'
+    `).then(r => r.rows.length > 0).catch(() => false);
+
     // Insert mail item with scan_file_url initially null
     // The worker will move the file to processed folder and update this URL with the final location
     // Always create the mail item, but mark it as locked if user/plan/kyc is inactive
-    const result = await pool.query(
-      `INSERT INTO mail_item (
-        idempotency_key, user_id, subject, sender_name, received_date,
-        scan_file_url, file_size, scanned, status, tag, notes,
-        received_at_ms, created_at, updated_at, locked, locked_reason, admin_note
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-      ON CONFLICT (idempotency_key) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        subject = EXCLUDED.subject,
-        sender_name = EXCLUDED.sender_name,
-        received_date = EXCLUDED.received_date,
-        scan_file_url = EXCLUDED.scan_file_url,
-        file_size = EXCLUDED.file_size,
-        scanned = EXCLUDED.scanned,
-        status = EXCLUDED.status,
-        tag = EXCLUDED.tag,
-        notes = EXCLUDED.notes,
-        received_at_ms = EXCLUDED.received_at_ms,
-        updated_at = EXCLUDED.updated_at,
-        locked = EXCLUDED.locked,
-        locked_reason = EXCLUDED.locked_reason,
-        admin_note = EXCLUDED.admin_note
-      RETURNING id, subject, status, tag, locked, locked_reason`,
-      [
-        idempotencyKey,                    // $1: idempotency_key
-        payload.userId,                     // $2: user_id
-        subject,                            // $3: subject
-        senderName,                         // $4: sender_name
-        new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
-        null,                               // $6: scan_file_url - set to null initially, will be updated after file move
-        0,                                  // $7: file_size (not provided in payload)
-        true,                               // $8: scanned (true for OneDrive files)
-        'received',                         // $9: status
-        payload.sourceSlug,                 // $10: tag
-        `OneDrive import: ${payload.fileName}`, // $11: notes
-        receivedAtMs,                       // $12: received_at_ms
-        now,                                // $13: created_at
-        now,                                // $14: updated_at
-        locked,                             // $12: locked
-        lockedReason,                       // $13: locked_reason
-        locked ? `Ingested while ${lockedReason}` : null, // $14: admin_note
-      ]
-    );
+    let result;
+    if (hasLockedColumns) {
+      // Migration 042 has run - use locked columns
+      result = await pool.query(
+        `INSERT INTO mail_item (
+          idempotency_key, user_id, subject, sender_name, received_date,
+          scan_file_url, file_size, scanned, status, tag, notes,
+          received_at_ms, created_at, updated_at, locked, locked_reason, admin_note
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ON CONFLICT (idempotency_key) DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          subject = EXCLUDED.subject,
+          sender_name = EXCLUDED.sender_name,
+          received_date = EXCLUDED.received_date,
+          scan_file_url = EXCLUDED.scan_file_url,
+          file_size = EXCLUDED.file_size,
+          scanned = EXCLUDED.scanned,
+          status = EXCLUDED.status,
+          tag = EXCLUDED.tag,
+          notes = EXCLUDED.notes,
+          received_at_ms = EXCLUDED.received_at_ms,
+          updated_at = EXCLUDED.updated_at,
+          locked = EXCLUDED.locked,
+          locked_reason = EXCLUDED.locked_reason,
+          admin_note = EXCLUDED.admin_note
+        RETURNING id, subject, status, tag, locked, locked_reason`,
+        [
+          idempotencyKey,                    // $1: idempotency_key
+          payload.userId,                     // $2: user_id
+          subject,                            // $3: subject
+          senderName,                         // $4: sender_name
+          new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
+          null,                               // $6: scan_file_url - set to null initially, will be updated after file move
+          0,                                  // $7: file_size (not provided in payload)
+          true,                               // $8: scanned (true for OneDrive files)
+          'received',                         // $9: status
+          payload.sourceSlug,                 // $10: tag
+          `OneDrive import: ${payload.fileName}`, // $11: notes
+          receivedAtMs,                       // $12: received_at_ms
+          now,                                // $13: created_at
+          now,                                // $14: updated_at
+          locked,                             // $15: locked
+          lockedReason,                       // $16: locked_reason
+          locked ? `Ingested while ${lockedReason}` : null, // $17: admin_note
+        ]
+      );
+    } else {
+      // Migration 042 has NOT run - create mail item without locked columns
+      console.warn('[internalMailImport] locked columns not available - migration 042 not run', {
+        fileName: payload.fileName,
+        userId: payload.userId,
+        locked: locked,
+        lockedReason: lockedReason,
+      });
+      
+      result = await pool.query(
+        `INSERT INTO mail_item (
+          idempotency_key, user_id, subject, sender_name, received_date,
+          scan_file_url, file_size, scanned, status, tag, notes,
+          received_at_ms, created_at, updated_at, admin_note
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ON CONFLICT (idempotency_key) DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          subject = EXCLUDED.subject,
+          sender_name = EXCLUDED.sender_name,
+          received_date = EXCLUDED.received_date,
+          scan_file_url = EXCLUDED.scan_file_url,
+          file_size = EXCLUDED.file_size,
+          scanned = EXCLUDED.scanned,
+          status = EXCLUDED.status,
+          tag = EXCLUDED.tag,
+          notes = EXCLUDED.notes,
+          received_at_ms = EXCLUDED.received_at_ms,
+          updated_at = EXCLUDED.updated_at,
+          admin_note = EXCLUDED.admin_note
+        RETURNING id, subject, status, tag`,
+        [
+          idempotencyKey,                    // $1: idempotency_key
+          payload.userId,                     // $2: user_id
+          subject,                            // $3: subject
+          senderName,                         // $4: sender_name
+          new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
+          null,                               // $6: scan_file_url - set to null initially, will be updated after file move
+          0,                                  // $7: file_size (not provided in payload)
+          true,                               // $8: scanned (true for OneDrive files)
+          'received',                         // $9: status
+          payload.sourceSlug,                 // $10: tag
+          `OneDrive import: ${payload.fileName}`, // $11: notes
+          receivedAtMs,                       // $12: received_at_ms
+          now,                                // $13: created_at
+          now,                                // $14: updated_at
+          locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $15: admin_note
+        ]
+      );
+    }
 
     const mailItem = result.rows[0];
 
-    const isLocked = mailItem.locked === true;
+    const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
     console.log('[internalMailImport] Successfully created NEW mail item:', {
       mailId: mailItem.id,
       userId: payload.userId,
