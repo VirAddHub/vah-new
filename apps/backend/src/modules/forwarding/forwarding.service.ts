@@ -154,6 +154,47 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             await pool.query('COMMIT');
 
             console.log(`[Forwarding] Created request ${forwardingRequest.id} for user ${userId}`);
+
+            // Send email notification to user about forwarding request creation
+            try {
+                const userResult = await pool.query(
+                    'SELECT email, first_name, last_name FROM "user" WHERE id = $1',
+                    [userId]
+                );
+                if (userResult.rows.length > 0) {
+                    const user = userResult.rows[0];
+                    const mailerModule = await import('../../lib/mailer');
+                    const forwardingAddress = `${to.name}\n${to.address1}${to.address2 ? '\n' + to.address2 : ''}\n${to.city}, ${to.postal}\n${to.country}`;
+                    
+                    // Use Postmark client directly to send forwarding request confirmation
+                    const { getClient } = await import('../../lib/mailer');
+                    const client = getClient();
+                    if (client && emailGuard(ENV.EMAIL_MAIL)) {
+                        const firstName = user.first_name || 'there';
+                        
+                        await client.sendEmail({
+                            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+                            To: user.email,
+                            Subject: 'Forwarding Request Received',
+                            HtmlBody: `
+                                <p>Hi ${firstName},</p>
+                                <p>We've received your forwarding request for your mail item.</p>
+                                <p><strong>Forwarding Address:</strong></p>
+                                <p>${forwardingAddress.replace(/\n/g, '<br>')}</p>
+                                <p>We'll process your request and notify you once your mail has been dispatched.</p>
+                                <p>Thank you for using VirtualAddressHub!</p>
+                            `,
+                            MessageStream: ENV.POSTMARK_STREAM,
+                            ReplyTo: ENV.EMAIL_REPLY_TO || 'support@virtualaddresshub.co.uk',
+                        });
+                        console.log(`[Forwarding] ✅ Email notification sent to user ${userId} for request ${forwardingRequest.id}`);
+                    }
+                }
+            } catch (emailError) {
+                console.error(`[Forwarding] ❌ Failed to send email notification for request ${forwardingRequest.id}:`, emailError);
+                // Don't fail the forwarding request if email fails
+            }
+
             return forwardingRequest;
         } catch (error) {
             await pool.query('ROLLBACK');

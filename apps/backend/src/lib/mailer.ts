@@ -42,7 +42,7 @@ export function buildAppUrl(path: string = '/dashboard'): string {
 }
 
 let _client: any | null = null;
-function getClient() {
+export function getClient() {
     if (!_client) {
         if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
         _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);

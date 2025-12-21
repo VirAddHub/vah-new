@@ -97,6 +97,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 COALESCE(f.name, m.subject) as file_name,
                 COALESCE(f.size, m.file_size) as file_size,
                 COALESCE(f.web_url, m.scan_file_url) as file_url,
+                fr.status as forwarding_status,
                 CASE 
                     -- GDPR forwarding window: 30 days (see apps/backend/src/config/gdpr.ts - GDPR_FORWARDING_WINDOW_DAYS)
                     WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
@@ -105,6 +106,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 END as gdpr_expired
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
+            LEFT JOIN forwarding_request fr ON fr.mail_item_id = m.id AND fr.status IN ('Requested', 'Processing')
             WHERE m.user_id = $1 ${deletedFilter}
             ORDER BY m.created_at DESC`,
             [userId],
