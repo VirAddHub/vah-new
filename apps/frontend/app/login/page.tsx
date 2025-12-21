@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [emailChanged, setEmailChanged] = useState(false);
+    // Hard guard to prevent double-submit
+    const isSubmittingRef = useRef(false);
 
     useEffect(() => {
         // Check if redirected from email confirmation
@@ -26,15 +28,22 @@ export default function LoginPage() {
         }
     }, [searchParams, router]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        // Hard guard to prevent double-submit
+        if (isSubmittingRef.current) {
+            console.warn('[Login] Submit blocked - already submitting');
+            return;
+        }
+        
+        isSubmittingRef.current = true;
         setError('');
         setLoading(true);
 
         try {
-            // Call backend login endpoint
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-            const response = await fetch(`${apiUrl}/api/auth/login`, {
+            // IMPORTANT: Use BFF route, not direct backend call
+            const response = await fetch('/api/bff/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,27 +55,34 @@ export default function LoginPage() {
             const data = await response.json();
 
             if (!response.ok || !data.ok) {
-                setError(data.message || 'Invalid email or password');
+                setError(data.error || data.message || 'Invalid email or password');
                 setLoading(false);
+                isSubmittingRef.current = false;
                 return;
             }
 
             // Store token in localStorage and cookie
-            const token = data.data.token;
-            localStorage.setItem('vah_jwt', token);
-            localStorage.setItem('vah_user', JSON.stringify(data.data.user));
+            const token = data.data?.token || data.token;
+            if (token) {
+                localStorage.setItem('vah_jwt', token);
+                if (data.data?.user) {
+                    localStorage.setItem('vah_user', JSON.stringify(data.data.user));
+                }
 
-            // Set cookie for middleware (must match middleware cookie name: vah_session)
-            document.cookie = `vah_session=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+                // Set cookie for middleware (must match middleware cookie name: vah_session)
+                document.cookie = `vah_session=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+            }
 
             // Redirect to dashboard
-            const isAdmin = data.data.user.is_admin || data.data.user.role === 'admin';
+            const user = data.data?.user || data.user;
+            const isAdmin = user?.is_admin || user?.role === 'admin';
             window.location.href = isAdmin ? '/admin/dashboard' : '/dashboard';
 
         } catch (err: any) {
             console.error('Login error:', err);
             setError('Failed to connect to server');
             setLoading(false);
+            isSubmittingRef.current = false;
         }
     };
 
@@ -154,6 +170,7 @@ export default function LoginPage() {
                         {/* Footer Links */}
                         <div className="mt-6 text-center space-y-2">
                             <button
+                                type="button"
                                 onClick={() => router.push('/signup')}
                                 className="text-sm text-primary hover:underline"
                             >
@@ -161,6 +178,7 @@ export default function LoginPage() {
                             </button>
                             <br />
                             <button
+                                type="button"
                                 onClick={() => router.push('/reset-password')}
                                 className="text-sm text-primary hover:underline"
                             >
