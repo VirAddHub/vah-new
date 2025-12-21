@@ -116,6 +116,21 @@ export function getBackendOrigin(): string {
     }
 
     const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    
+    // Guard: Ensure origin does NOT end with /api (BFF routes add /api automatically)
+    if (origin.toLowerCase().endsWith('/api')) {
+      const error = new Error(
+        `Invalid backend origin: must NOT end with /api. Got: ${origin}. ` +
+        `BFF routes automatically add /api when constructing URLs. ` +
+        `Example: https://vah-api-staging.onrender.com (not .../api)`
+      );
+      if (!didLog) {
+        console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
+        didLog = true;
+      }
+      throw error;
+    }
+    
     try {
       validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
     } catch (validationError) {
@@ -142,6 +157,21 @@ export function getBackendOrigin(): string {
   // Non-production: Prefer NEXT_PUBLIC_BACKEND_API_ORIGIN
   if (process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
     const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
+    
+    // Guard: Ensure origin does NOT end with /api (BFF routes add /api automatically)
+    if (origin.toLowerCase().endsWith('/api')) {
+      const error = new Error(
+        `Invalid backend origin: must NOT end with /api. Got: ${origin}. ` +
+        `BFF routes automatically add /api when constructing URLs. ` +
+        `Example: https://vah-api-staging.onrender.com (not .../api)`
+      );
+      if (!didLog) {
+        console.error('[backendOrigin] ERROR:', error.message);
+        didLog = true;
+      }
+      throw error;
+    }
+    
     validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
 
     if (!didLog) {

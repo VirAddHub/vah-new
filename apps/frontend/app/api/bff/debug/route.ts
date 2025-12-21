@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
     };
 
     // Fetch whoami and profile
+    // Note: backend from getBackendOrigin() is base URL (e.g., https://vah-api-staging.onrender.com)
+    // BFF routes add /api/ when constructing backend URLs
     const [whoami, profile] = await Promise.all([
       fetchWithPreview(`${backend}/api/auth/whoami`),
       fetchWithPreview(`${backend}/api/profile`),
