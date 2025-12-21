@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxy } from '../../_lib/proxy';
+import { proxy } from '../../../_lib/proxy';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
