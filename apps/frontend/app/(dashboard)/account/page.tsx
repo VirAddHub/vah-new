@@ -28,7 +28,9 @@ export default function AccountPage() {
     const { data: userData, mutate: mutateUser } = useSWR('/api/auth/whoami', swrFetcher);
     const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
 
-    const user = userData?.data?.user;
+    // Handle different response shapes for whoami
+    // Backend can return: { ok: true, data: { user: {...} } } or { ok: true, data: {...} }
+    const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
     const o = overview?.data;
     const invoicesRaw = invoicesData?.data?.items || [];
@@ -36,8 +38,20 @@ export default function AccountPage() {
     // Debug: Log what we're getting (development only)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
         console.log('[Account Page] Data loaded:', {
-            profile: profile ? { first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone } : 'null',
-            user: user ? { first_name: user.first_name, last_name: user.last_name, phone: user.phone } : 'null',
+            profile: profile ? { 
+                first_name: profile.first_name, 
+                last_name: profile.last_name, 
+                phone: profile.phone,
+                email: profile.email,
+                forwarding_address: profile.forwarding_address 
+            } : 'null',
+            user: user ? { 
+                first_name: user.first_name, 
+                last_name: user.last_name, 
+                phone: user.phone,
+                email: user.email,
+                forwarding_address: user.forwarding_address 
+            } : 'null',
             profileData: profileData,
             userData: userData,
         });
@@ -63,9 +77,27 @@ export default function AccountPage() {
 
     // Build account data from existing APIs
     const data = useMemo<AccountPageData | null>(() => {
-        // If we have account data from dedicated endpoint, use it
+        // If we have account data from dedicated endpoint, use it but merge with latest profile/user data
+        // to ensure email and forwarding_address are always up-to-date
         if (accountData?.ok) {
-            return accountData.data;
+            const merged = { ...accountData.data };
+            
+            // Always use latest email from profile or user (accountData might be stale)
+            if (profile?.email || user?.email) {
+                merged.contact = {
+                    ...merged.contact,
+                    email: profile?.email || user?.email || merged.contact?.email || '',
+                };
+            }
+            
+            // Always use latest forwarding_address from profile or user (accountData might be stale)
+            if (profile?.forwarding_address || user?.forwarding_address) {
+                merged.forwarding_address = profile?.forwarding_address || user?.forwarding_address
+                    ? { formatted: profile?.forwarding_address || user?.forwarding_address || '' }
+                    : merged.forwarding_address;
+            }
+            
+            return merged;
         }
 
         // Build from individual API responses (fallback)

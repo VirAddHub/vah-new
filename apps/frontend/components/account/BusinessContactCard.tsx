@@ -29,6 +29,17 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const newEmailInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync contact prop when it changes from parent (after save or data refresh)
+  useEffect(() => {
+    if (initialContact) {
+      setContact(initialContact);
+      // Clear pending email if contact email matches (email change confirmed)
+      if (pendingEmail && initialContact.email === pendingEmail) {
+        setPendingEmail(null);
+      }
+    }
+  }, [initialContact, pendingEmail]);
+
   // Sync contact prop when it changes from parent (after data loads or save)
   useEffect(() => {
     setContact(initialContact);
