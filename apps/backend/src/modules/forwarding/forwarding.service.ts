@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { getPool } from '../../server/db';
 import { LegalTransitions } from './state';
 import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
+import { MAIL_STATUS } from './mailStatus';
 
 // Free forwarding tags (lowercase slugs)
 const FREE_FORWARD_TAGS = new Set(['hmrc', 'companies_house']);
@@ -74,14 +75,15 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             // Check for existing active forwarding request (idempotent check)
             // Treat these as "active" requests where we should not allow duplicates
+            // Use canonical status values: Requested, Processing, Dispatched (case-sensitive)
             const existing = await pool.query(`
                 SELECT id, status FROM forwarding_request 
                 WHERE user_id = $1 
                   AND mail_item_id = $2 
-                  AND status IN ('Requested', 'Processing', 'dispatched')
+                  AND status IN ($3, $4, $5)
                 ORDER BY id DESC
                 LIMIT 1
-            `, [userId, mailItemId]);
+            `, [userId, mailItemId, MAIL_STATUS.Requested, MAIL_STATUS.Processing, MAIL_STATUS.Dispatched]);
 
             if (existing.rows.length > 0) {
                 await pool.query('COMMIT');
@@ -118,31 +120,34 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             if (chargeAmount > 0) {
                 try {
-                    // Check if charge already exists (idempotency check)
-                    // Partial unique index can't be used in ON CONFLICT, so we check first
-                    const existingCharge = await pool.query(
-                        `SELECT id FROM charge 
-                         WHERE type = 'forwarding_fee'
-                           AND related_type = 'forwarding_request'
-                           AND related_id = $1
-                           AND status = 'pending'`,
-                        [forwardingRequest.id]
+                    // Insert charge - use ON CONFLICT with WHERE clause to match partial unique index
+                    // The index is: (type, related_type, related_id) WHERE related_type IS NOT NULL AND related_id IS NOT NULL
+                    const chargeResult = await pool.query(
+                        `INSERT INTO charge (
+                            user_id, amount_pence, currency, type, description,
+                            service_date, status, related_type, related_id, created_at
+                        )
+                        VALUES ($1, $2, 'GBP', 'forwarding_fee', $3, CURRENT_DATE, 'pending', 'forwarding_request', $4, NOW())
+                        ON CONFLICT (type, related_type, related_id)
+                        WHERE related_type IS NOT NULL AND related_id IS NOT NULL
+                        DO NOTHING
+                        RETURNING id`,
+                        [userId, chargeAmount, `Forwarding fee for request #${forwardingRequest.id}`, forwardingRequest.id]
                     );
 
-                    if (existingCharge.rows.length === 0) {
-                        // Insert new charge
-                        const chargeResult = await pool.query(
-                            `INSERT INTO charge (
-                                user_id, amount_pence, currency, type, description,
-                                service_date, status, related_type, related_id, created_at
-                            )
-                            VALUES ($1, $2, 'GBP', 'forwarding_fee', $3, CURRENT_DATE, 'pending', 'forwarding_request', $4, NOW())
-                            RETURNING id`,
-                            [userId, chargeAmount, `Forwarding fee for request #${forwardingRequest.id}`, forwardingRequest.id]
-                        );
-                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0].id}, amount=${chargeAmount} pence, forwarding_request_id=${forwardingRequest.id}`);
+                    if (chargeResult.rows.length > 0) {
+                        console.log(`[forwarding] charge_created`, {
+                            requestId: forwardingRequest.id,
+                            chargeId: chargeResult.rows[0].id,
+                            chargeAmount,
+                            userId
+                        });
                     } else {
-                        console.log(`[forwarding] ⏭️ Charge already exists (id=${existingCharge.rows[0].id}) for forwarding_request_id=${forwardingRequest.id}, skipped (idempotent)`);
+                        console.log(`[forwarding] charge_exists`, {
+                            requestId: forwardingRequest.id,
+                            chargeAmount,
+                            userId
+                        });
                     }
                 } catch (chargeError: any) {
                     // Only swallow "table missing". Everything else should throw.
