@@ -991,7 +991,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                                 <Badge className={`rounded-full px-4 py-1 text-base font-medium ${status.badgeClass}`}>
                                   {status.label}
                                 </Badge>
-                                <span className="text-base text-neutral-500">{time}</span>
                               </div>
                             </div>
                           </div>
@@ -1128,7 +1127,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                               const rows: Array<{ label: string; value: React.ReactNode }> = [
                                 { label: "From", value: selectedMailDetail.sender_name || "—" },
                                 { label: "Subject", value: selectedMailDetail.subject || "—" },
-                                { label: "Received", value: received },
                                 {
                                   label: "Status",
                                   value: (
