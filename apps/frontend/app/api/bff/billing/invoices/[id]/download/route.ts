@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
-export async function GET(request: NextRequest, ctx: { params: { id: string } }) {
-  const id = ctx.params.id;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  // Handle Next.js 13+ App Router params (may be Promise)
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const id = resolvedParams.id;
+  
   console.log('[BFF PDF DOWNLOAD] Request received', {
     invoiceId: id,
     url: request.url,
@@ -24,7 +30,7 @@ export async function GET(request: NextRequest, ctx: { params: { id: string } })
 
     const backendUrl = `${backend}/api/billing/invoices/${encodeURIComponent(id)}/download`;
     const headers: Record<string, string> = {};
-    
+
     if (cookie) {
       headers['Cookie'] = cookie;
     }
@@ -49,13 +55,13 @@ export async function GET(request: NextRequest, ctx: { params: { id: string } })
       const headers = new Headers(resp.headers);
       // Ensure the browser treats it as a download if backend didn't set it
       if (!headers.get("content-type")) headers.set("content-type", "application/pdf");
-      
+
       console.log('[BFF PDF DOWNLOAD] Returning PDF response', {
         invoiceId: id,
         status: resp.status,
         contentType: headers.get('content-type'),
       });
-      
+
       return new NextResponse(resp.body, { status: resp.status, headers });
     } else {
       // For non-2xx responses, try to parse JSON error
@@ -65,14 +71,14 @@ export async function GET(request: NextRequest, ctx: { params: { id: string } })
         status: resp.status,
         errorText: errorText.substring(0, 200), // First 200 chars
       });
-      
+
       let errorData;
       try {
         errorData = JSON.parse(errorText);
       } catch {
         errorData = { error: errorText || 'Failed to download invoice' };
       }
-      
+
       return NextResponse.json(
         { ok: false, error: errorData.error || 'Failed to download invoice', details: errorData },
         { status: resp.status }
