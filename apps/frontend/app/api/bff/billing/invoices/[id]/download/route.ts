@@ -8,38 +8,22 @@ export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: { id: string } }
 ) {
   // Log immediately to confirm route is being hit
   console.log('[BFF PDF DOWNLOAD] Route handler called', {
     url: request.url,
     method: request.method,
-    paramsType: typeof context.params,
-    isPromise: context.params instanceof Promise,
+    params,
     timestamp: new Date().toISOString(),
   });
 
-  // Handle Next.js 13+ App Router params (may be Promise)
-  let id: string;
-  try {
-    const resolvedParams = context.params instanceof Promise ? await context.params : context.params;
-    id = resolvedParams.id;
-    console.log('[BFF PDF DOWNLOAD] Params resolved', { id, resolvedParams });
-  } catch (paramError: any) {
-    console.error('[BFF PDF DOWNLOAD] Error resolving params', {
-      error: paramError.message,
-      stack: paramError.stack,
-      url: request.url,
-    });
-    return NextResponse.json(
-      { ok: false, error: 'Failed to parse invoice ID' },
-      { status: 400 }
-    );
-  }
+  // Next.js 14: params is synchronous, not a Promise
+  const id = params?.id;
   
   // Validate invoice ID
   if (!id || id === 'undefined' || id === 'null' || id.trim() === '') {
-    console.error('[BFF PDF DOWNLOAD] Invalid invoice ID', { id, url: request.url });
+    console.error('[BFF PDF DOWNLOAD] Invalid invoice ID', { id, params, url: request.url });
     return NextResponse.json(
       { ok: false, error: 'Invalid invoice ID' },
       { status: 400 }
