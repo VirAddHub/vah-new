@@ -383,14 +383,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       try {
         const mailItemId = selectedMailDetail.id;
 
-        // Same URL-building strategy as PDFViewerModal
-        const apiBaseRaw =
-          process.env.NEXT_PUBLIC_API_BASE ||
-          process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ||
-          '';
-        const apiBase = apiBaseRaw.replace(/\/+$/, '');
-        const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
-        const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(mailItemId))}&disposition=inline`;
+        // Use BFF route (relative path - handled by Next.js)
+        const url = `/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(mailItemId))}&disposition=inline`;
 
         const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
         const res = await fetch(url, {

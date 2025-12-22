@@ -22,14 +22,8 @@ export function usePDFPreloader({ apiBase, useBlobFallback = true }: PDFPreloade
 
         const preloadPromise = (async () => {
             try {
-                // Build URL
-                const apiBaseRaw = apiBase ||
-                    process.env.NEXT_PUBLIC_API_BASE ||
-                    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ||
-                    '';
-                const apiBaseClean = apiBaseRaw.replace(/\/+$/, '');
-                const baseWithApi = apiBaseClean.endsWith('/api') ? apiBaseClean : `${apiBaseClean}/api`;
-                const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
+                // Use BFF route (relative path - handled by Next.js)
+                const url = `/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
 
                 if (!useBlobFallback) {
                     preloadedUrls.current.set(mailItemId, url);

@@ -58,14 +58,8 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                // Build absolute backend URL so the browser sends vah_session automatically
-                const apiBaseRaw =
-                    process.env.NEXT_PUBLIC_API_BASE ||
-                    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN ||
-                    '';
-                const apiBase = apiBaseRaw.replace(/\/+$/, '');
-                const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
-                const url = `${baseWithApi}/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
+                // Use BFF route (relative path - handled by Next.js) so the browser sends vah_session automatically
+                const url = `/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(mailItemId)}&disposition=inline`;
 
                 if (!useBlobFallback) {
                     if (!cancelled) setViewerUrl(url);

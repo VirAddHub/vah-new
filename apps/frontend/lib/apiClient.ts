@@ -216,8 +216,8 @@ export const mailApi = {
     },
 
     async downloadScan(id: string): Promise<Blob> {
-        // Use the backend BFF route directly for secure PDF streaming
-        const response = await fetch(`${API_BASE}/api/bff/mail/scan-url?mailItemId=${id}&disposition=attachment`, {
+        // Use the BFF route (relative path - handled by Next.js) for secure PDF streaming
+        const response = await fetch(`/api/bff/mail/scan-url?mailItemId=${id}&disposition=attachment`, {
             credentials: 'include', // Include vah_session cookie
             cache: 'no-store',
         });

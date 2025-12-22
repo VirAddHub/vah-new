@@ -6,8 +6,8 @@ export async function openInline(url: string) {
     if (!match) throw new Error("Invalid mail item URL");
     const itemId = parseInt(match[1]);
 
-    // Use the BFF route for safe headers
-    const newTabUrl = `${API_BASE}/api/bff/mail/scan-url?mailItemId=${itemId}&disposition=inline`;
+    // Use the BFF route for safe headers (relative path - handled by Next.js)
+    const newTabUrl = `/api/bff/mail/scan-url?mailItemId=${itemId}&disposition=inline`;
     const tab = window.open(newTabUrl, "_blank", "noopener,noreferrer");
     if (!tab) throw new Error("Popup blocked — allow popups for VirtualAddressHub.");
 }
@@ -18,11 +18,8 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
     if (!match) throw new Error("Invalid mail item URL");
     const itemId = parseInt(match[1]);
 
-    // Use BFF route for safe headers - construct absolute backend URL
-    const apiBaseRaw = process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || '';
-    const apiBase = apiBaseRaw.replace(/\/+$/, '');
-    const baseWithApi = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
-    const downloadUrl = `${baseWithApi}/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
+    // Use BFF route for safe headers (relative path - handled by Next.js)
+    const downloadUrl = `/api/bff/mail/scan-url?mailItemId=${itemId}&disposition=attachment`;
 
     try {
         // Fetch with credentials to include vah_session cookie
