@@ -359,6 +359,7 @@ export async function sendMailForwarded({ email, firstName, name, forwarding_add
 
     try {
         // Try the template first
+        const dashboardUrl = buildAppUrl('/dashboard');
         await sendTemplateEmail({
             to: email,
             templateAlias: Templates.MailForwarded,
@@ -367,6 +368,7 @@ export async function sendMailForwarded({ email, firstName, name, forwarding_add
                 name,
                 forwarding_address: forwarding_address || 'Your forwarding address',
                 forwarded_date: forwarded_date || new Date().toLocaleDateString('en-GB'),
+                dashboardUrl,
             },
         });
     } catch (error) {

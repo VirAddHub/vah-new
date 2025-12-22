@@ -246,11 +246,13 @@ const _modelBuilders: Record<string, ModelBuilder> = {
   },
   [Templates.MailForwarded]: (a) => {
     const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    const dashboardUrl = a.dashboardUrl || a.ctaUrl || a.cta_url || '/dashboard';
     return {
       first_name,
       name: first_name, // backward compatibility
       forwarding_address: a.forwardingAddress || a.forwarding_address,
       forwarded_date: a.forwardedDate || a.forwarded_date,
+      dashboard_url: dashboardUrl,
     };
   },
   [Templates.MailAfterCancellation]: (a) => {

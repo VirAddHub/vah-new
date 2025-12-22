@@ -6,6 +6,6 @@
   "TemplateType": "Standard",
   "LayoutTemplate": null,
   "Subject": "Your mail has been forwarded ✈️",
-  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your requested letter has been forwarded to:</p>\r\n\r\n<p>🏠 {{forwarding_address}}<br>\r\n📬 Sent on: {{forwarded_date}}</p>\r\n\r\n<p>Thanks for using VirtualAddressHub!</p>\r\n\r\n<p>If you have any questions, just reply to this email.</p>\r\n\r\n<p>— The VirtualAddressHub Team</p>\r\n",
-  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYour requested letter has been forwarded to:\r\n\r\n{{forwarding_address}}  \r\nSent on: {{forwarded_date}}\r\n\r\nThanks for using VirtualAddressHub!\r\n\r\nIf you have any questions, just reply to this email.\r\n\r\n— The VirtualAddressHub Team\r\n"
+  "HtmlBody": "<p>Hi {{first_name}},</p>\r\n\r\n<p>Your requested letter has been successfully forwarded using your saved forwarding address.</p>\r\n\r\n<p>📬 Sent on: {{forwarded_date}}</p>\r\n\r\n<p>You can view the full forwarding details at any time in your dashboard.</p>\r\n\r\n<p><a href=\"{{dashboard_url}}\">View my mail activity</a></p>\r\n\r\n<p>If you have any questions, just reply to this email and our team will be happy to help.</p>\r\n\r\n<p>Thanks,<br>The VirtualAddressHub Team</p>\r\n",
+  "TextBody": "\r\nHi {{first_name}},\r\n\r\nYour requested letter has been successfully forwarded using your saved forwarding address.\r\n\r\nSent on: {{forwarded_date}}\r\n\r\nYou can view the full forwarding details at any time in your dashboard:\r\n{{dashboard_url}}\r\n\r\nIf you have any questions, just reply to this email and our team will be happy to help.\r\n\r\nThanks,\r\nThe VirtualAddressHub Team\r\n"
 }
