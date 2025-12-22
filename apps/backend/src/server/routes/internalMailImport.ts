@@ -429,7 +429,7 @@ router.post('/from-onedrive', async (req, res) => {
     });
 
     const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
-    console.log('[internalMailImport] Successfully created NEW mail item:', {
+    console.log('[mailImport] Successfully created NEW mail item:', {
       mailId: mailItem.id,
       userId: payload.userId,
       subject: mailItem.subject,
@@ -570,7 +570,7 @@ router.post('/from-onedrive', async (req, res) => {
           mail_item_id: verifiedMailItem.id,
           error: emailError instanceof Error ? emailError.message : String(emailError),
         });
-        console.error('[internalMailImport] ❌ Failed to send email notification to user:', {
+        console.error('[mailImport] ❌ Failed to send email notification to user:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
@@ -633,8 +633,8 @@ router.post('/from-onedrive', async (req, res) => {
   } catch (error: any) {
     console.error('[mailImport] mail insert failed — email skipped', {
       error: error.message || String(error),
-      fileName: payload?.fileName,
-      userId: payload?.userId,
+      fileName: (payload as any)?.fileName || 'unknown',
+      userId: (payload as any)?.userId || 'unknown',
     });
     console.error('[internalMailImport] Error:', error);
     return res.status(500).json({
