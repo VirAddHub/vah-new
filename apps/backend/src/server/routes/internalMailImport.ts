@@ -102,6 +102,9 @@ const tryParseDateFromFilename = (fileName: string): Date | null => {
 };
 
 router.post('/from-onedrive', async (req, res) => {
+  // Declare payload outside try block so it's accessible in catch block
+  let payload: z.infer<typeof MailImportPayload> | undefined;
+  
   try {
     // Check secret header
     const secret = req.headers['x-mail-import-secret'];
@@ -126,7 +129,6 @@ router.post('/from-onedrive', async (req, res) => {
     }
 
     // Validate payload
-    let payload: z.infer<typeof MailImportPayload>;
     try {
       payload = MailImportPayload.parse(req.body);
     } catch (e) {
@@ -633,8 +635,8 @@ router.post('/from-onedrive', async (req, res) => {
   } catch (error: any) {
     console.error('[mailImport] mail insert failed — email skipped', {
       error: error.message || String(error),
-      fileName: (payload as any)?.fileName || 'unknown',
-      userId: (payload as any)?.userId || 'unknown',
+      fileName: payload?.fileName || 'unknown',
+      userId: payload?.userId || 'unknown',
     });
     console.error('[internalMailImport] Error:', error);
     return res.status(500).json({
