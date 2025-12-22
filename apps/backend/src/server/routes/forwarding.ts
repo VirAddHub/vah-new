@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
+import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode } from '../utils/ukPostcode';
 
 const router = Router();
 const pool = getPool();
@@ -162,18 +163,21 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         const user = userResult.rows[0];
 
-        // Debug: Log user forwarding snapshot BEFORE parsing
+        // Debug: Log user forwarding snapshot BEFORE parsing (don't log full address in production)
         const userFullResult = await pool.query(`
             SELECT id, email, first_name, last_name, forwarding_address
             FROM "user" 
             WHERE id = $1
         `, [userId]);
         const userFull = userFullResult.rows[0];
+        const addressLinesCount = userFull.forwarding_address ? userFull.forwarding_address.split('\n').length : 0;
+        const hasPostcodeInAddress = userFull.forwarding_address ? hasUKPostcode(userFull.forwarding_address) : false;
         console.log("[forwarding] user forwarding snapshot", {
             userId: userFull.id,
             email: userFull.email,
-            forwarding_address: userFull.forwarding_address,
-            forwarding_address_lines: userFull.forwarding_address ? userFull.forwarding_address.split('\n') : [],
+            address_lines_count: addressLinesCount,
+            has_postcode_detected: hasPostcodeInAddress,
+            // Don't log full address for privacy
         });
 
         if (!user.forwarding_address) {
@@ -190,10 +194,12 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         // Handle multiple formats:
         // Format 1 (with name): Name\nAddress1\nAddress2\nCity, Postcode\nCountry
         // Format 2 (no name): Address1\nAddress2\nCity\nPostcode
+        // Format 3 (3 lines): Address1\nCity\nPostcode
+        // Format 4 (5+ lines): Building\nAddress1\nAddress2\nCity\nPostcode
         const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
         console.log("[forwarding] parsed address lines", {
             totalLines: addressLines.length,
-            lines: addressLines,
+            // Don't log full address lines for privacy
         });
         
         let name: string;
@@ -201,85 +207,169 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         let address2: string | undefined;
         let city: string;
         let postal: string;
-        let country: string = 'GB';
+        let country: string = 'GB'; // Default to GB for UK forwarding
 
-        // Try to detect format by checking if first line looks like a name (has no numbers typically)
-        // or if last line looks like a country code
+        // Step 1: Find UK postcode in the address (check last 2-3 lines)
+        // This is more reliable than guessing country codes
+        let postcodeLineIndex = -1;
+        let extractedPostcode: string | null = null;
+        
+        for (let i = Math.max(0, addressLines.length - 3); i < addressLines.length; i++) {
+            const line = addressLines[i] || '';
+            const found = extractUKPostcode(line);
+            if (found) {
+                postcodeLineIndex = i;
+                extractedPostcode = found;
+                break;
+            }
+        }
+        
+        // Step 2: Detect format based on postcode location and line count
         const firstLine = addressLines[0] || '';
-        const lastLine = addressLines[addressLines.length - 1] || '';
-        const secondLastLine = addressLines[addressLines.length - 2] || '';
-        
-        // Check if last line is a country code (2-3 letters, or common country names)
-        const isCountryLine = lastLine.length <= 3 || 
-            ['GB', 'UK', 'United Kingdom', 'USA', 'US'].includes(lastLine.toUpperCase());
-        
-        // Check if first line contains numbers (likely an address line, not a name)
         const firstLineHasNumbers = /\d/.test(firstLine);
+        const lastLine = addressLines[addressLines.length - 1] || '';
+        const hasPostcodeInLastLine = postcodeLineIndex === addressLines.length - 1;
+        const hasPostcodeInSecondLastLine = postcodeLineIndex === addressLines.length - 2;
         
-        if (isCountryLine && !firstLineHasNumbers && addressLines.length >= 4) {
-            // Format 1: Name\nAddress1\nAddress2\nCity, Postcode\nCountry
-            name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
-            address1 = addressLines[1] || '';
-            address2 = addressLines[2] || undefined;
-            const cityPostal = secondLastLine || '';
-            country = lastLine || 'GB';
+        // Check if last line might be country (only if no postcode found there)
+        const mightBeCountryLine = !hasPostcodeInLastLine && 
+            (lastLine.length <= 3 || ['GB', 'UK', 'United Kingdom', 'USA', 'US', 'England', 'Scotland', 'Wales'].includes(lastLine.toUpperCase()));
+        
+        if (postcodeLineIndex >= 0 && extractedPostcode) {
+            // We found a postcode - use it as anchor point
+            const postcodeLine = addressLines[postcodeLineIndex];
             
-            // Try splitting city and postal by comma
-            const parts = cityPostal.split(',').map((s: string) => s.trim());
-            if (parts.length >= 2) {
-                city = parts.slice(0, -1).join(', '); // Everything except last part is city
-                postal = parts[parts.length - 1]; // Last part is postcode
+            // Extract city and postcode from the postcode line
+            if (postcodeLine.includes(',')) {
+                // City, Postcode format
+                const parts = postcodeLine.split(',').map((s: string) => s.trim());
+                city = parts.slice(0, -1).join(', '); // Everything except last part
+                postal = normalizeUKPostcode(parts[parts.length - 1]) || extractedPostcode;
             } else {
-                // No comma - assume entire line is city, postal might be missing
-                city = cityPostal;
-                postal = '';
+                // Postcode might be standalone or mixed with city
+                // Try to extract postcode and treat rest as city
+                const withoutPostcode = postcodeLine.replace(UK_POSTCODE_REGEX, '').trim();
+                city = withoutPostcode || (postcodeLineIndex > 0 ? addressLines[postcodeLineIndex - 1] : '') || '';
+                postal = extractedPostcode;
+            }
+            
+            // Determine address lines based on postcode position
+            if (postcodeLineIndex === 0) {
+                // Postcode is first line (unusual but handle it)
+                name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                address1 = '';
+                address2 = undefined;
+            } else if (postcodeLineIndex === 1) {
+                // Format: Address1\nPostcode (2 lines)
+                name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                address1 = addressLines[0] || '';
+                address2 = undefined;
+            } else if (postcodeLineIndex === 2) {
+                // Format: Address1\nCity\nPostcode (3 lines) OR Address1\nAddress2\nPostcode
+                name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                address1 = addressLines[0] || '';
+                // If city was extracted from postcode line, don't use addressLines[1] as city
+                if (!city || city === addressLines[1]) {
+                    address2 = undefined;
+                } else {
+                    address2 = addressLines[1] || undefined;
+                }
+            } else {
+                // Format: Name/Address1\nAddress2\n...\nCity\nPostcode (4+ lines)
+                // Check if first line looks like a name (no numbers) vs address (has numbers)
+                if (!firstLineHasNumbers && addressLines.length >= 4) {
+                    // Format 1: Name\nAddress1\nAddress2\n...\nCity\nPostcode
+                    name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                    address1 = addressLines[1] || '';
+                    address2 = addressLines.length > 3 ? addressLines[2] : undefined;
+                } else {
+                    // Format 2: Address1\nAddress2\n...\nCity\nPostcode
+                    name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                    address1 = addressLines[0] || '';
+                    address2 = addressLines.length > 2 ? addressLines[1] : undefined;
+                }
+                
+                // If country line exists and postcode is second-to-last
+                if (mightBeCountryLine && hasPostcodeInSecondLastLine) {
+                    country = lastLine;
+                }
             }
         } else {
-            // Format 2: Address1\nAddress2\nCity\nPostcode (no name, no country)
-            name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-            address1 = addressLines[0] || '';
-            address2 = addressLines[1] || undefined;
+            // No postcode found - fallback to old logic (but this should rarely happen)
+            console.warn('[forwarding] No UK postcode detected in address, using fallback parsing', {
+                userId,
+                addressLinesCount: addressLines.length,
+            });
             
-            // Last two lines should be city and postcode
+            name = firstLineHasNumbers ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim());
+            address1 = firstLineHasNumbers ? addressLines[0] : (addressLines[1] || '');
+            address2 = addressLines.length > 2 ? addressLines[2] : undefined;
+            
             if (addressLines.length >= 2) {
-                city = addressLines[addressLines.length - 2] || '';
-                postal = addressLines[addressLines.length - 1] || '';
-            } else if (addressLines.length === 1) {
-                // Only one line - assume it's address1, no city/postcode
-                city = '';
-                postal = '';
+                const cityPostal = addressLines[addressLines.length - 2] || '';
+                if (cityPostal.includes(',')) {
+                    const parts = cityPostal.split(',').map((s: string) => s.trim());
+                    city = parts.slice(0, -1).join(', ');
+                    postal = parts[parts.length - 1];
+                } else {
+                    city = cityPostal;
+                    postal = addressLines[addressLines.length - 1] || '';
+                }
             } else {
                 city = '';
                 postal = '';
+            }
+            
+            if (mightBeCountryLine) {
+                country = lastLine;
+            }
+        }
+
+        // Normalize postcode if we have one
+        if (postal) {
+            const normalized = normalizeUKPostcode(postal);
+            if (normalized) {
+                postal = normalized;
             }
         }
 
         console.log("[forwarding] extracted fields before validation", {
-            name,
-            address1,
-            address2,
-            city,
-            postal,
-            country,
-            cityLength: city?.length || 0,
-            postalLength: postal?.length || 0,
-            detectedFormat: isCountryLine && !firstLineHasNumbers ? 'with_name_and_country' : 'address_only',
+            hasName: !!name && name.trim() !== '',
+            hasAddress1: !!address1 && address1.trim() !== '',
+            hasAddress2: !!address2,
+            hasCity: !!city && city.trim() !== '',
+            hasPostcode: !!postal && postal.trim() !== '',
+            postcodeNormalized: postal || null,
+            detectedFormat: postcodeLineIndex >= 0 ? 'postcode_anchored' : 'fallback',
+            postcodeLineIndex,
         });
 
         // Validate required fields for UK forwarding
+        // Required: address1, city, postcode
+        // Optional: address2, country (defaults to GB)
+        // Name: falls back to user's first_name/last_name if missing
         const missingFields: string[] = [];
-        if (!name || name.trim() === '') {
+        
+        // Name is optional (we use user's name as fallback)
+        // Only require it if user doesn't have first_name/last_name
+        if ((!name || name.trim() === '') && (!user.first_name && !user.last_name)) {
             missingFields.push('name');
         }
+        
         if (!address1 || address1.trim() === '') {
             missingFields.push('address_line_1');
         }
+        
         if (!city || city.trim() === '') {
             missingFields.push('city');
         }
+        
         if (!postal || postal.trim() === '') {
             missingFields.push('postal_code');
         }
+        
+        // Country is optional (defaults to GB)
+        // Don't require it
 
         if (missingFields.length > 0) {
             console.warn('[forwarding] Rejecting forwarding request - incomplete address', {
