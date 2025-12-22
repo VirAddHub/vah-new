@@ -275,6 +275,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
 
   try {
     // Get invoice with full details needed for PDF generation
+    console.log('[PDF DOWNLOAD] Fetching invoice from database', { invoiceId });
     const result = await pool.query(
       `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end 
        FROM invoices WHERE id=$1 LIMIT 1`,
@@ -283,37 +284,52 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     const inv = result.rows[0];
     
     if (!inv) {
+      console.log('[PDF DOWNLOAD] Invoice not found in database', { invoiceId });
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
 
-    // Debug logging (guarded by env var)
-    if (process.env.DEBUG_BILLING === '1') {
-      console.log('[downloadInvoicePdf] DEBUG invoice', {
-        invoiceId: inv.id,
-        invoiceUserId: String(inv.user_id),
-        invoiceUserIdType: typeof inv.user_id,
-        callerId: String(callerId),
-        callerIdType: typeof callerId,
-      });
-    }
+    console.log('[PDF DOWNLOAD] Invoice found', {
+      invoiceId: inv.id,
+      invoiceNumber: inv.invoice_number,
+      invoiceUserId: String(inv.user_id),
+      pdfPath: inv.pdf_path || 'null',
+      amountPence: inv.amount_pence,
+    });
 
     // Authorization: admin can access any invoice, otherwise must own it
     // CRITICAL: Convert both to BigInt for safe comparison (Postgres BIGINT may come as string)
     const ownerId = BigInt(inv.user_id);
-    if (!isAdmin && callerId !== ownerId) {
-      if (process.env.DEBUG_BILLING === '1') {
-        console.log('[downloadInvoicePdf] DEBUG auth failed', {
-          callerId: String(callerId),
-          ownerId: String(ownerId),
-          isAdmin,
-        });
-      }
+    const authorized = isAdmin || callerId === ownerId;
+    
+    console.log('[PDF DOWNLOAD] Authorization check', {
+      invoiceId,
+      callerId: callerId.toString(),
+      ownerId: ownerId.toString(),
+      isAdmin,
+      authorized,
+    });
+    
+    if (!authorized) {
+      console.log('[PDF DOWNLOAD] Authorization failed', {
+        invoiceId,
+        callerId: callerId.toString(),
+        ownerId: ownerId.toString(),
+        isAdmin,
+      });
       return res.status(403).json({ ok: false, error: 'forbidden' });
     }
 
     // Recompute invoice amount from charges before generating PDF (ensures correctness)
+    console.log('[PDF DOWNLOAD] Recomputing invoice amount', { invoiceId });
     const { recomputeInvoiceTotal } = await import('../../services/billing/invoiceService');
     const correctAmountPence = await recomputeInvoiceTotal(pool, inv.id, inv.currency || 'GBP');
+    
+    console.log('[PDF DOWNLOAD] Invoice amount recomputed', {
+      invoiceId,
+      originalAmount: inv.amount_pence,
+      recomputedAmount: correctAmountPence,
+      currency: inv.currency || 'GBP',
+    });
     
     // Use recomputed amount for PDF generation
     const amountPence = correctAmountPence;
@@ -346,7 +362,17 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     }
 
     // PDF doesn't exist - generate on-demand
-    console.log(`[downloadInvoicePdf] Generating PDF on-demand for invoice ${invoiceId}`);
+    console.log('[PDF DOWNLOAD] Generating PDF on-demand', {
+      invoiceId,
+      userId: callerId.toString(),
+      invoiceNumber: inv.invoice_number,
+      amountPence: amountPence,
+      currency: inv.currency || 'GBP',
+      periodStart: inv.period_start,
+      periodEnd: inv.period_end,
+      baseDir,
+      pdfPath: pdfPath || 'null',
+    });
     
     try {
       const { generateInvoicePdf } = await import('../../services/invoices');
