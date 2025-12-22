@@ -5,6 +5,32 @@ import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 
+/**
+ * Get sum of pending forwarding fees for a user
+ * Returns 0 if charge table doesn't exist or on error
+ */
+async function getPendingForwardingFees(userId: number): Promise<number> {
+  const pool = getPool();
+  try {
+    const result = await pool.query(
+      `SELECT COALESCE(SUM(amount_pence), 0) as total_pence
+       FROM charge
+       WHERE user_id = $1
+         AND status = 'pending'
+         AND type = 'forwarding_fee'`,
+      [userId]
+    );
+    return Number(result.rows[0]?.total_pence || 0);
+  } catch (error: any) {
+    // Table doesn't exist yet or query failed - return 0 gracefully
+    if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
+      return 0;
+    }
+    console.error('[getPendingForwardingFees] Error:', error);
+    return 0;
+  }
+}
+
 export async function getBillingOverview(req: Request, res: Response) {
   const userId = Number(req.user!.id);
   const pool = getPool();
@@ -102,7 +128,7 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         current_price_pence: latestInvoice?.amount_pence || sub?.price_pence || 0,
-        pending_forwarding_fees_pence: 0, // Removed charge table dependency - return 0
+        pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
       }
     });
   } catch (error) {
