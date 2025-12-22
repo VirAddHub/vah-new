@@ -540,12 +540,13 @@ router.post('/from-onedrive', async (req, res) => {
     // This ensures 100% confidence that email = correct user = correct dashboard
     if (!isLocked) {
       try {
-        console.log('[internalMailImport] 📧 Attempting to send Postmark email notification:', {
+        console.log('[mailImport] 📧 Attempting to send Postmark email notification:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
           fileName: payload.fileName,
           tagTitle,
+          subject: verifiedMailItem.subject,
         });
 
         await sendMailScanned({
@@ -555,11 +556,12 @@ router.post('/from-onedrive', async (req, res) => {
           cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
         });
         
-        console.log('[internalMailImport] ✅ Postmark email notification sent successfully:', {
+        console.log('[mailImport] ✅ Postmark email notification sent successfully:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
           fileName: payload.fileName,
+          tagTitle,
           confirmation: 'Mail item is confirmed in database for this user',
         });
       } catch (emailError) {
