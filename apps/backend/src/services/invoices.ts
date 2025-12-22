@@ -284,7 +284,7 @@ export async function generateInvoicePdf(opts: {
 
   // Get user details
   const userResult = await pool.query(
-    `SELECT email, first_name, last_name, business_name, trading_name FROM "user" WHERE id = $1`,
+    `SELECT email, first_name, last_name, company_name FROM "user" WHERE id = $1`,
     [opts.userId]
   );
   const user = userResult.rows[0];
@@ -327,11 +327,8 @@ export async function generateInvoicePdf(opts: {
 
   // Customer details
   doc.text('Bill to:');
-  if (user.business_name) {
-    doc.text(user.business_name);
-  }
-  if (user.trading_name) {
-    doc.text(`Trading as: ${user.trading_name}`);
+  if (user.company_name) {
+    doc.text(user.company_name);
   }
   const customerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Customer';
   doc.text(customerName);
