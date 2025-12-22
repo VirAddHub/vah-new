@@ -190,6 +190,68 @@ describe('InvoiceService', () => {
       expect(result2.totalChargesPence).toBe(400); // Both charges
     });
 
+    it('should recompute amount correctly when charges are attached after invoice creation', async () => {
+      // Create invoice first with 0 charges
+      const result1 = await generateInvoiceForPeriod({
+        userId: testUserId,
+        periodStart: testPeriodStart,
+        periodEnd: testPeriodEnd,
+        billingInterval: 'monthly',
+      });
+
+      expect(result1.totalChargesPence).toBe(0);
+      expect(result1.attachedCount).toBe(0);
+
+      // Verify invoice amount is 0
+      const invoice1 = await pool.query(
+        'SELECT amount_pence FROM invoices WHERE id = $1',
+        [result1.invoiceId]
+      );
+      expect(invoice1.rows[0].amount_pence).toBe(0);
+
+      // Now create charges and attach them
+      await pool.query(
+        `INSERT INTO charge (
+          user_id, amount_pence, currency, type, description,
+          service_date, status, related_type, related_id
+        )
+        VALUES
+          ($1, 200, 'GBP', 'forwarding_fee', 'Test charge 1', $2, 'pending', 'forwarding_request', 1),
+          ($1, 200, 'GBP', 'forwarding_fee', 'Test charge 2', $2, 'pending', 'forwarding_request', 2)`,
+        [testUserId, testPeriodStart]
+      );
+
+      // Call generateInvoiceForPeriod again - should attach charges and recompute amount
+      const result2 = await generateInvoiceForPeriod({
+        userId: testUserId,
+        periodStart: testPeriodStart,
+        periodEnd: testPeriodEnd,
+        billingInterval: 'monthly',
+      });
+
+      // Should return same invoice ID
+      expect(result2.invoiceId).toBe(result1.invoiceId);
+      // Should attach both charges
+      expect(result2.attachedCount).toBe(2);
+      // Should recompute amount correctly from all attached charges
+      expect(result2.totalChargesPence).toBe(400);
+      expect(result2.invoiceAmountPence).toBe(400);
+
+      // Verify invoice amount is updated in DB
+      const invoice2 = await pool.query(
+        'SELECT amount_pence FROM invoices WHERE id = $1',
+        [result1.invoiceId]
+      );
+      expect(invoice2.rows[0].amount_pence).toBe(400);
+
+      // Verify charges are marked as billed
+      const charges = await pool.query(
+        'SELECT * FROM charge WHERE invoice_id = $1 AND status = $2',
+        [result1.invoiceId, 'billed']
+      );
+      expect(charges.rows).toHaveLength(2);
+    });
+
     it('should not attach charges that are already billed', async () => {
       // Create an invoice and a billed charge
       const invoiceRes = await pool.query(

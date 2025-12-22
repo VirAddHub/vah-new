@@ -194,23 +194,13 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         periodStart = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
       }
 
-      // Check if invoice already exists for this period
+      // Format period dates to 'YYYY-MM-DD' strings (UTC safe)
       const periodStartStr = periodStart.toISOString().slice(0, 10);
       const periodEndStr = periodEnd.toISOString().slice(0, 10);
 
-      const existing = await pool.query(
-        `SELECT id FROM invoices 
-         WHERE user_id = $1 
-           AND period_start = $2 
-           AND period_end = $3
-         LIMIT 1`,
-        [userId, periodStartStr, periodEndStr]
-      );
-
-      if (existing.rows.length > 0) {
-        skipped.push({ user_id: userId, reason: 'invoice_already_exists' });
-        continue;
-      }
+      // Always call generateInvoiceForPeriod even if invoice exists
+      // This ensures charges are attached and amount_pence is recomputed correctly
+      // generateInvoiceForPeriod is idempotent and will update existing invoice
 
       // Only generate invoice if we're at or past the period end date
       const periodEndTime = periodEnd.getTime();
@@ -230,14 +220,14 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         periodEnd: periodEndStr,
         billingInterval: interval,
         currency: 'GBP',
-        // No gocardlessPaymentId - invoice is 'issued', not 'paid'
+        gocardlessPaymentId: null, // No payment ID yet - invoice is 'issued', not 'paid'
       });
 
       // Generate PDF and send email
       try {
         const invoice = await createInvoiceForPayment({
           userId,
-          gocardlessPaymentId: null, // No payment ID yet
+          gocardlessPaymentId: undefined, // No payment ID yet
           amountPence: invoiceResult.totalChargesPence,
           currency: 'GBP',
           periodStart,

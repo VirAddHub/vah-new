@@ -125,8 +125,8 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             if (chargeAmount > 0) {
                 try {
-                    // Insert charge - use ON CONFLICT with WHERE clause to match partial unique index
-                    // The index is: (type, related_type, related_id) WHERE related_type IS NOT NULL AND related_id IS NOT NULL
+                    // Insert charge - idempotent using unique index on (type, related_type, related_id)
+                    // INVARIANT: Only one charge per forwarding_request (enforced by unique index)
                     const chargeResult = await pool.query(
                         `INSERT INTO charge (
                             user_id, amount_pence, currency, type, description,
@@ -137,7 +137,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                         WHERE related_type IS NOT NULL AND related_id IS NOT NULL
                         DO NOTHING
                         RETURNING id`,
-                        [userId, chargeAmount, `Forwarding fee for request #${forwardingRequest.id}`, forwardingRequest.id]
+                        [userId, chargeAmount, 'Forwarding fee (non-HMRC/Companies House)', forwardingRequest.id]
                     );
 
                     if (chargeResult.rows.length > 0) {

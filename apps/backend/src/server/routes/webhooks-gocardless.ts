@@ -404,6 +404,7 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
 
             // Then create PDF and send email using existing service
             // Note: createInvoiceForPayment will find the existing invoice by gocardless_payment_id
+            // It's idempotent and won't resend email if email_sent_at is already set
             const invoice = await createInvoiceForPayment({
                 userId,
                 gocardlessPaymentId: paymentId,
@@ -414,6 +415,7 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
             });
 
             // Ensure status is 'paid' (createInvoiceForPayment may have created a new one or found existing)
+            // This is idempotent - safe to call multiple times
             await pool.query(
                 `UPDATE invoices SET status = 'paid' WHERE id = $1`,
                 [invoice.id]

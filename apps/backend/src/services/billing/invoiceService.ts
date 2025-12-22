@@ -24,6 +24,8 @@ export interface GenerateInvoiceForPeriodResult {
   attachedCount: number;
   totalChargesPence: number;
   invoiceAmountPence: number;
+  periodStart: string;
+  periodEnd: string;
 }
 
 /**
@@ -108,7 +110,7 @@ export async function generateInvoiceForPeriod(
   }
 
   if (existingInvoice.rows.length > 0) {
-    // Update existing invoice
+    // Update existing invoice - keep status as-is unless explicitly changed
     invoiceId = existingInvoice.rows[0].id;
     
     // Update gocardless_payment_id if provided and not already set
@@ -123,8 +125,9 @@ export async function generateInvoiceForPeriod(
     
     console.log('[invoiceService] invoice_exists', { userId, invoiceId, periodStartStr, periodEndStr });
   } else {
-    // Create new invoice
-    const status = gocardlessPaymentId ? 'paid' : 'issued';
+    // Create new invoice - default status is 'issued' unless creating from payment flow
+    // Status will be set to 'paid' later in webhook handler if gocardlessPaymentId is provided
+    const status = 'issued'; // Always start as 'issued', webhook will update to 'paid'
     const invRes = await pool.query<{ id: number }>(
       `
       INSERT INTO invoices (
@@ -148,7 +151,7 @@ export async function generateInvoiceForPeriod(
       ]
     );
     invoiceId = invRes.rows[0].id;
-    console.log('[invoiceService] invoice_created', { userId, invoiceId, periodStartStr, periodEndStr });
+    console.log('[invoiceService] invoice_created', { userId, invoiceId, periodStartStr, periodEndStr, status });
   }
 
   // 2) Attach pending charges in period
@@ -182,8 +185,10 @@ export async function generateInvoiceForPeriod(
     console.warn('[invoiceService] charge table missing, skipping charge attachment');
   }
 
-  // 3) Recompute invoice amount from attached charges
-  // Invoice amount = SUM of all charges with invoice_id = invoiceId
+  // 3) CRITICAL FIX: Recompute invoice amount from authoritative source
+  // Invoice amount MUST equal SUM(charge.amount_pence) WHERE charge.invoice_id = invoice.id AND status='billed'
+  // This ensures correctness even if charges were attached in a previous run or attached elsewhere
+  // Always compute from charge table (authoritative source), not from UPDATE ... RETURNING
   let totalChargesPence = 0;
   try {
     const chargesSum = await pool.query<{ total_pence: number }>(
@@ -191,6 +196,7 @@ export async function generateInvoiceForPeriod(
       SELECT COALESCE(SUM(amount_pence), 0)::bigint AS total_pence
       FROM charge
       WHERE invoice_id = $1
+        AND status = 'billed'
       `,
       [invoiceId]
     );
@@ -200,16 +206,18 @@ export async function generateInvoiceForPeriod(
     const msg = String(chargeError?.message || '');
     if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
       console.error('[invoiceService] Error computing charge total:', chargeError);
+      throw chargeError;
     }
     totalChargesPence = 0;
   }
 
-  // Update invoice amount
+  // Update invoice amount - this is the authoritative source
+  // INVARIANT: invoice.amount_pence = SUM(charge.amount_pence WHERE invoice_id = invoice.id AND status='billed')
   await pool.query(
     `UPDATE invoices 
-     SET amount_pence = $1
-     WHERE id = $2`,
-    [totalChargesPence, invoiceId]
+     SET amount_pence = $1, currency = $2
+     WHERE id = $3`,
+    [totalChargesPence, currency, invoiceId]
   );
 
   console.log('[invoiceService] invoice_ready', {
@@ -226,6 +234,8 @@ export async function generateInvoiceForPeriod(
     attachedCount,
     totalChargesPence,
     invoiceAmountPence: totalChargesPence,
+    periodStart: periodStartStr,
+    periodEnd: periodEndStr,
   };
 }
 

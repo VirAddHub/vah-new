@@ -26,7 +26,7 @@ export interface InvoiceRow {
 
 export interface CreateInvoiceOptions {
   userId: number;
-  gocardlessPaymentId: string;
+  gocardlessPaymentId?: string | null; // Optional: null/undefined when invoice is 'issued', set when 'paid'
   amountPence: number;
   currency: string;
   periodStart: Date;
@@ -39,24 +39,27 @@ export interface CreateInvoiceOptions {
 export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promise<InvoiceRow> {
   const pool = getPool();
 
-  // Check if invoice already exists for this payment
-  const existing = await pool.query<InvoiceRow>(
-    `SELECT * FROM invoices WHERE gocardless_payment_id = $1`,
-    [opts.gocardlessPaymentId]
-  );
+  // Check if invoice already exists for this payment (if payment ID provided)
+  let existing: any = { rows: [] };
+  if (opts.gocardlessPaymentId) {
+    existing = await pool.query<InvoiceRow>(
+      `SELECT * FROM invoices WHERE gocardless_payment_id = $1`,
+      [opts.gocardlessPaymentId]
+    );
 
-  if (existing.rows.length > 0) {
-    // Update status to 'paid' since payment is confirmed
-    await pool.query(
-      `UPDATE invoices SET status = 'paid' WHERE id = $1`,
-      [existing.rows[0].id]
-    );
-    console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}, updated status to 'paid'`);
-    const updated = await pool.query<InvoiceRow>(
-      `SELECT * FROM invoices WHERE id = $1`,
-      [existing.rows[0].id]
-    );
-    return updated.rows[0];
+    if (existing.rows.length > 0) {
+      // Update status to 'paid' since payment is confirmed
+      await pool.query(
+        `UPDATE invoices SET status = 'paid' WHERE id = $1`,
+        [existing.rows[0].id]
+      );
+      console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}, updated status to 'paid'`);
+      const updated = await pool.query<InvoiceRow>(
+        `SELECT * FROM invoices WHERE id = $1`,
+        [existing.rows[0].id]
+      );
+      return updated.rows[0];
+    }
   }
 
   // Get invoice number sequence
@@ -111,6 +114,8 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   const invoiceTotalPence = opts.amountPence + chargesTotalPence;
 
   // Insert invoice record
+  // Status: 'paid' if gocardlessPaymentId provided, 'issued' otherwise
+  const status = opts.gocardlessPaymentId ? 'paid' : 'issued';
   const result = await pool.query<InvoiceRow>(
     `
     INSERT INTO invoices (
@@ -124,16 +129,17 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       invoice_number,
       created_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, 'paid', $7, $8)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *
     `,
     [
       opts.userId,
-      opts.gocardlessPaymentId,
+      opts.gocardlessPaymentId || null,
       periodStartStr,
       periodEndStr,
       invoiceTotalPence, // Updated to include charges
       opts.currency,
+      status,
       invoiceNumberFormatted,
       Date.now(),
     ],
