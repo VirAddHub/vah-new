@@ -66,13 +66,18 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
 
             // Check for existing active forwarding request
             const existing = await pool.query(`
-        SELECT id FROM forwarding_request 
+        SELECT id, status FROM forwarding_request 
         WHERE user_id = $1 AND mail_item_id = $2 AND status IN ('Requested','Processing')
       `, [userId, mailItemId]);
 
             if (existing.rows.length > 0) {
                 await pool.query('COMMIT');
-                return existing.rows[0];
+                // Return existing request with flag indicating it wasn't created
+                return {
+                    ...existing.rows[0],
+                    _created: false,
+                    _existing: true
+                };
             }
 
             // Create forwarding request
@@ -90,6 +95,9 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             ]);
 
             const forwardingRequest = fr.rows[0];
+            // Mark as newly created
+            forwardingRequest._created = true;
+            forwardingRequest._existing = false;
 
             // Create charge if not official mail (HMRC or Companies House)
             // PRICING RULE: If tag is HMRC or Companies House: fee = £0, otherwise: fee = £2 (200 pence)
