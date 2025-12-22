@@ -67,7 +67,15 @@ const fetcher = (url: string) => {
   const headers: Record<string, string> = { 'Accept': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  return fetch(`${API_BASE}${url}`, {
+  // BFF routes should be relative (handled by Next.js), not absolute backend URLs
+  // If url already starts with /api/bff, use it as-is (relative - handled by Next.js)
+  // If url starts with http, use it as-is (absolute URL)
+  // Otherwise, it's a backend route - prepend API_BASE
+  const finalUrl = url.startsWith('/api/bff') || url.startsWith('http') 
+    ? url 
+    : `${API_BASE}${url}`;
+
+  return fetch(finalUrl, {
     headers,
     credentials: 'include'
   }).then(r => {
