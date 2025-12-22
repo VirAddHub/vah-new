@@ -23,6 +23,46 @@ interface LoginProps {
   onNavigate?: (page: string) => void;
 }
 
+// Map backend error codes to user-friendly messages
+function getLoginErrorMessage(backendError: string | undefined): { message: string; showResetHint: boolean } {
+    if (!backendError) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+
+    const errorLower = backendError.toLowerCase().trim();
+    
+    // Map technical error codes to friendly messages
+    if (errorLower === 'invalid_credentials' || errorLower.includes('invalid') || errorLower.includes('credentials')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    if (errorLower.includes('not found') || errorLower.includes('user not found')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    if (errorLower.includes('password')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    // For other errors, use a generic message
+    return {
+        message: 'We couldn\'t sign you in. Please check your details or reset your password.',
+        showResetHint: true,
+    };
+}
+
 // REVISED: Removed `onSuccess` prop and related logic.
 export default function Login({ onNavigate }: LoginProps) {
   const [email, setEmail] = useState('');
@@ -30,6 +70,7 @@ export default function Login({ onNavigate }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResetHint, setShowResetHint] = useState(false);
   const { login } = useAuth(); // Use the context
 
 
@@ -38,6 +79,7 @@ export default function Login({ onNavigate }: LoginProps) {
     if (isLoading) return;
 
     setError('');
+    setShowResetHint(false);
     if (!email || !password) {
       setError('Please enter both email and password');
       return;
@@ -53,8 +95,10 @@ export default function Login({ onNavigate }: LoginProps) {
       // redirect effect in the parent page component. No need to do anything here.
       
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
-      setError(message);
+      const errorMessage = err instanceof Error ? err.message : undefined;
+      const errorInfo = getLoginErrorMessage(errorMessage);
+      setError(errorInfo.message);
+      setShowResetHint(errorInfo.showResetHint);
       setIsLoading(false); // Only set loading to false on error
     }
   };
@@ -86,7 +130,14 @@ export default function Login({ onNavigate }: LoginProps) {
         <CardContent>
           {error && (
             <Alert className="mb-4">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="space-y-2">
+                <div className="font-medium">{error}</div>
+                {showResetHint && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Forgot your password? You can reset it below.
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 

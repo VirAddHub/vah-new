@@ -8,12 +8,53 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
+// Map backend error codes to user-friendly messages
+function getLoginErrorMessage(backendError: string | undefined): { message: string; showResetHint: boolean } {
+    if (!backendError) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+
+    const errorLower = backendError.toLowerCase().trim();
+    
+    // Map technical error codes to friendly messages
+    if (errorLower === 'invalid_credentials' || errorLower.includes('invalid') || errorLower.includes('credentials')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    if (errorLower.includes('not found') || errorLower.includes('user not found')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    if (errorLower.includes('password')) {
+        return {
+            message: 'The email or password you entered is incorrect.',
+            showResetHint: true,
+        };
+    }
+    
+    // For other errors, use a generic message
+    return {
+        message: 'We couldn\'t sign you in. Please check your details or reset your password.',
+        showResetHint: true,
+    };
+}
+
 export default function LoginPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [showResetHint, setShowResetHint] = useState(false);
     const [loading, setLoading] = useState(false);
     const [emailChanged, setEmailChanged] = useState(false);
     // Hard guard to prevent double-submit
@@ -39,6 +80,7 @@ export default function LoginPage() {
         
         isSubmittingRef.current = true;
         setError('');
+        setShowResetHint(false);
         setLoading(true);
 
         try {
@@ -55,7 +97,9 @@ export default function LoginPage() {
             const data = await response.json();
 
             if (!response.ok || !data.ok) {
-                setError(data.error || data.message || 'Invalid email or password');
+                const errorInfo = getLoginErrorMessage(data.error || data.message);
+                setError(errorInfo.message);
+                setShowResetHint(errorInfo.showResetHint);
                 setLoading(false);
                 isSubmittingRef.current = false;
                 return;
@@ -80,7 +124,8 @@ export default function LoginPage() {
 
         } catch (err: any) {
             console.error('Login error:', err);
-            setError('Failed to connect to server');
+            setError('Failed to connect to server. Please try again.');
+            setShowResetHint(false);
             setLoading(false);
             isSubmittingRef.current = false;
         }
@@ -124,7 +169,14 @@ export default function LoginPage() {
                         {/* Error Alert */}
                         {error && (
                             <Alert className="mb-6 border-destructive/50 text-destructive">
-                                <AlertDescription>{error}</AlertDescription>
+                                <AlertDescription className="space-y-2">
+                                    <div className="font-medium">{error}</div>
+                                    {showResetHint && (
+                                        <div className="text-sm text-muted-foreground mt-2">
+                                            Forgot your password? You can reset it below.
+                                        </div>
+                                    )}
+                                </AlertDescription>
                             </Alert>
                         )}
 
