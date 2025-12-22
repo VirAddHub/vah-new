@@ -137,7 +137,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // SWR hook for mail items - no automatic polling to prevent 429 errors
   // Include archived items by default so the frontend can filter them
   const { data: mailData, error: mailError, isLoading: mailLoading, mutate: refreshMail } = useSWR(
-    '/api/mail-items?includeArchived=true',
+    '/api/bff/mail-items?includeArchived=true',
     fetcher,
     {
       revalidateOnFocus: false,

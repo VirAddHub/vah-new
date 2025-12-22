@@ -25,7 +25,7 @@ export default function AccountPage() {
     const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
     const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
     const { data: invoicesData, mutate: mutateInvoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
-    const { data: userData, mutate: mutateUser } = useSWR('/api/auth/whoami', swrFetcher);
+    const { data: userData, mutate: mutateUser } = useSWR('/api/bff/auth/whoami', swrFetcher);
     const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
 
     // Handle different response shapes for whoami
@@ -72,7 +72,7 @@ export default function AccountPage() {
         profileError ? { endpoint: '/api/bff/profile', error: profileData } : null,
         overviewError ? { endpoint: '/api/bff/billing/overview', error: overview } : null,
         invoicesError ? { endpoint: '/api/bff/billing/invoices', error: invoicesData } : null,
-        userError ? { endpoint: '/api/auth/whoami', error: userData } : null,
+        userError ? { endpoint: '/api/bff/auth/whoami', error: userData } : null,
     ].filter(Boolean) as Array<{ endpoint: string; error: any }>;
 
     // Build account data from existing APIs
@@ -259,7 +259,7 @@ export default function AccountPage() {
                 // Global mutate to refresh any other components using these keys
                 globalMutate('/api/bff/profile'),
                 globalMutate('/api/bff/account'),
-                globalMutate('/api/auth/whoami'),
+                globalMutate('/api/bff/auth/whoami'),
             ]);
 
             const emailChanged = contact.email !== data?.contact?.email;
@@ -319,7 +319,7 @@ export default function AccountPage() {
                 // Global mutate to refresh any other components using these keys
                 globalMutate('/api/bff/profile'),
                 globalMutate('/api/bff/account'),
-                globalMutate('/api/auth/whoami'),
+                globalMutate('/api/bff/auth/whoami'),
             ]);
 
             // Force Next.js App Router to refresh server data

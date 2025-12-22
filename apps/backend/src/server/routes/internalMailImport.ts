@@ -416,7 +416,7 @@ router.post('/from-onedrive', async (req, res) => {
     const mailItem = result.rows[0];
 
     // Explicit log immediately after mail_item insert (after COMMIT)
-    console.log('[mailImport] mail_item created', {
+    console.log('[mailImport] ✅ mail_item created successfully', {
       mail_item_id: mailItem.id,
       user_id: payload.userId,
       subject: mailItem.subject,
@@ -425,6 +425,7 @@ router.post('/from-onedrive', async (req, res) => {
       fileName: payload.fileName,
       hasLockedColumns,
       locked: hasLockedColumns ? (mailItem.locked === true) : false,
+      locked_reason: hasLockedColumns ? (mailItem.locked_reason || null) : null,
     });
 
     const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
