@@ -156,6 +156,8 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             console.log(`[Forwarding] Created request ${forwardingRequest.id} for user ${userId}`);
 
             // Send email notification to user about forwarding request creation
+            // Note: This sends a "request received" email (custom), not the "mail forwarded" template
+            // The "mail forwarded" template (ID: 40508790, alias: "mail-forwarded") is sent when admin completes the forwarding
             try {
                 const userResult = await pool.query(
                     'SELECT email, first_name, last_name FROM "user" WHERE id = $1',
@@ -163,7 +165,6 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                 );
                 if (userResult.rows.length > 0) {
                     const user = userResult.rows[0];
-                    const mailerModule = await import('../../lib/mailer');
                     const forwardingAddress = `${to.name}\n${to.address1}${to.address2 ? '\n' + to.address2 : ''}\n${to.city}, ${to.postal}\n${to.country}`;
                     
                     // Use Postmark client directly to send forwarding request confirmation
