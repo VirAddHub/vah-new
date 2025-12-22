@@ -187,35 +187,83 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
         }
 
         // Parse the stored forwarding address
+        // Handle multiple formats:
+        // Format 1 (with name): Name\nAddress1\nAddress2\nCity, Postcode\nCountry
+        // Format 2 (no name): Address1\nAddress2\nCity\nPostcode
         const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
         console.log("[forwarding] parsed address lines", {
             totalLines: addressLines.length,
             lines: addressLines,
         });
         
-        const name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
-        const address1 = addressLines[1] || '';
-        const address2 = addressLines[2] || undefined; // Optional second address line
-        const cityPostal = addressLines[addressLines.length - 2] || '';
-        const country = addressLines[addressLines.length - 1] || 'GB';
+        let name: string;
+        let address1: string;
+        let address2: string | undefined;
+        let city: string;
+        let postal: string;
+        let country: string = 'GB';
+
+        // Try to detect format by checking if first line looks like a name (has no numbers typically)
+        // or if last line looks like a country code
+        const firstLine = addressLines[0] || '';
+        const lastLine = addressLines[addressLines.length - 1] || '';
+        const secondLastLine = addressLines[addressLines.length - 2] || '';
+        
+        // Check if last line is a country code (2-3 letters, or common country names)
+        const isCountryLine = lastLine.length <= 3 || 
+            ['GB', 'UK', 'United Kingdom', 'USA', 'US'].includes(lastLine.toUpperCase());
+        
+        // Check if first line contains numbers (likely an address line, not a name)
+        const firstLineHasNumbers = /\d/.test(firstLine);
+        
+        if (isCountryLine && !firstLineHasNumbers && addressLines.length >= 4) {
+            // Format 1: Name\nAddress1\nAddress2\nCity, Postcode\nCountry
+            name = addressLines[0] || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            address1 = addressLines[1] || '';
+            address2 = addressLines[2] || undefined;
+            const cityPostal = secondLastLine || '';
+            country = lastLine || 'GB';
+            
+            // Try splitting city and postal by comma
+            const parts = cityPostal.split(',').map((s: string) => s.trim());
+            if (parts.length >= 2) {
+                city = parts.slice(0, -1).join(', '); // Everything except last part is city
+                postal = parts[parts.length - 1]; // Last part is postcode
+            } else {
+                // No comma - assume entire line is city, postal might be missing
+                city = cityPostal;
+                postal = '';
+            }
+        } else {
+            // Format 2: Address1\nAddress2\nCity\nPostcode (no name, no country)
+            name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            address1 = addressLines[0] || '';
+            address2 = addressLines[1] || undefined;
+            
+            // Last two lines should be city and postcode
+            if (addressLines.length >= 2) {
+                city = addressLines[addressLines.length - 2] || '';
+                postal = addressLines[addressLines.length - 1] || '';
+            } else if (addressLines.length === 1) {
+                // Only one line - assume it's address1, no city/postcode
+                city = '';
+                postal = '';
+            } else {
+                city = '';
+                postal = '';
+            }
+        }
 
         console.log("[forwarding] extracted fields before validation", {
             name,
             address1,
             address2,
-            cityPostal,
-            country,
-            cityPostalLength: cityPostal.length,
-        });
-
-        const [city, postal] = cityPostal.split(',').map((s: string) => s.trim());
-        
-        console.log("[forwarding] split cityPostal", {
-            cityPostal,
             city,
             postal,
+            country,
             cityLength: city?.length || 0,
             postalLength: postal?.length || 0,
+            detectedFormat: isCountryLine && !firstLineHasNumbers ? 'with_name_and_country' : 'address_only',
         });
 
         // Validate required fields for UK forwarding
