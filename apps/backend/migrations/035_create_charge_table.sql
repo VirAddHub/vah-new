@@ -53,7 +53,5 @@ COMMENT ON COLUMN charge.service_date IS
 COMMENT ON COLUMN charge.related_type IS 
     'Type of related entity: forwarding_request, etc.';
 COMMENT ON COLUMN charge.related_id IS 
-    'ID of the related entity (e.g., forwarding_request.id)';
-COMMENT ON COLUMN charge.idempotency IS 
-    'Unique constraint on (type, related_type, related_id) prevents duplicate charges if webhook/job retries';
+    'ID of the related entity (e.g., forwarding_request.id). Unique constraint on (type, related_type, related_id) prevents duplicate charges if webhook/job retries';
 
