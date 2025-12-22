@@ -13,7 +13,7 @@ export async function GET(
   // Handle Next.js 13+ App Router params (may be Promise)
   const resolvedParams = params instanceof Promise ? await params : params;
   const id = resolvedParams.id;
-  
+
   // Validate invoice ID
   if (!id || id === 'undefined' || id === 'null') {
     console.error('[BFF PDF DOWNLOAD] Invalid invoice ID', { id, url: request.url });
