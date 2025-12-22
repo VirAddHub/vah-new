@@ -97,7 +97,7 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             
             if (!isOfficial) {
                 const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
-                // Create charge for forwarding fee (if charge table exists)
+                // Create charge for forwarding fee (idempotent check before insert)
                 try {
                     // Check if charge already exists (idempotency check)
                     const existingCharge = await pool.query(
@@ -130,18 +130,23 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                                 forwardingRequest.id
                             ]
                         );
-                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0]?.id}, amount=200 pence, forwarding_request_id=${forwardingRequest.id}`);
+                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0]?.id}, amount=200 pence, forwarding_request_id=${forwardingRequest.id}, user_id=${userId}`);
                     } else {
-                        console.log(`[forwarding] ⏭️ Charge already exists for forwarding_request_id=${forwardingRequest.id}, skipping (idempotent)`);
+                        console.log(`[forwarding] ⏭️ Charge already exists (id=${existingCharge.rows[0].id}) for forwarding_request_id=${forwardingRequest.id}, skipping (idempotent)`);
                     }
-                    // If charge already exists, skip (idempotent)
                 } catch (chargeError: any) {
                     // Table doesn't exist yet or insert failed - log but don't fail forwarding
                     // Error code 42P01 = relation does not exist
                     if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
                         console.warn('[forwarding] charge table does not exist yet, skipping charge creation');
                     } else {
-                        console.error('[forwarding] Error creating charge:', chargeError);
+                        console.error('[forwarding] ❌ Error creating charge:', {
+                            code: chargeError?.code,
+                            message: chargeError?.message,
+                            detail: chargeError?.detail,
+                            hint: chargeError?.hint,
+                            stack: chargeError?.stack
+                        });
                     }
                     // Continue - forwarding request is still created successfully
                 }
