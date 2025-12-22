@@ -432,11 +432,11 @@ export default function AccountPage() {
     // Show error state if critical data failed to load
     if (hasError && !isLoading) {
         // Get error message from failed requests
-        const accountErrorMsg = accountData && accountData.ok === false ? accountData.error || 'Unknown error' : null;
-        const profileErrorMsg = profileData && profileData.ok === false ? profileData.error || 'Unknown error' : null;
+        const accountErrorMsg = accountData && !accountData.ok ? (accountData as any).error || 'Unknown error' : null;
+        const profileErrorMsg = profileData && !profileData.ok ? (profileData as any).error || 'Unknown error' : null;
         const errorMessage = accountErrorMsg || profileErrorMsg || 'Failed to load account details';
-        const errorDetails = (accountData && accountData.ok === false ? accountData.details : null) ||
-            (profileData && profileData.ok === false ? profileData.details : null);
+        const errorDetails = (accountData && !accountData.ok ? (accountData as any).details : null) ||
+            (profileData && !profileData.ok ? (profileData as any).details : null);
 
         return (
             <div className="min-h-screen flex flex-col bg-background">
