@@ -282,7 +282,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       [invoiceId]
     );
     const inv = result.rows[0];
-    
+
     if (!inv) {
       console.log('[PDF DOWNLOAD] Invoice not found in database', { invoiceId });
       return res.status(404).json({ ok: false, error: 'not_found' });
@@ -300,7 +300,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     // CRITICAL: Convert both to BigInt for safe comparison (Postgres BIGINT may come as string)
     const ownerId = BigInt(inv.user_id);
     const authorized = isAdmin || callerId === ownerId;
-    
+
     console.log('[PDF DOWNLOAD] Authorization check', {
       invoiceId,
       callerId: callerId.toString(),
@@ -308,7 +308,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       isAdmin,
       authorized,
     });
-    
+
     if (!authorized) {
       console.log('[PDF DOWNLOAD] Authorization failed', {
         invoiceId,
@@ -323,14 +323,14 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     console.log('[PDF DOWNLOAD] Recomputing invoice amount', { invoiceId });
     const { recomputeInvoiceTotal } = await import('../../services/billing/invoiceService');
     const correctAmountPence = await recomputeInvoiceTotal(pool, inv.id, inv.currency || 'GBP');
-    
+
     console.log('[PDF DOWNLOAD] Invoice amount recomputed', {
       invoiceId,
       originalAmount: inv.amount_pence,
       recomputedAmount: correctAmountPence,
       currency: inv.currency || 'GBP',
     });
-    
+
     // Use recomputed amount for PDF generation
     const amountPence = correctAmountPence;
 
@@ -346,13 +346,13 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       const rel = String(pdfPath).replace(/^\/+/, ''); // strip leading slash
       // Expected: invoices/YYYY/userId/invoice-123.pdf
       fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
-      
+
       if (fs.existsSync(fullPath)) {
         // PDF exists - stream it
         const filename = inv.invoice_number
           ? `${inv.invoice_number}.pdf`
           : `invoice-${invoiceId}.pdf`;
-        
+
         const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
@@ -373,10 +373,10 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       baseDir,
       pdfPath: pdfPath || 'null',
     });
-    
+
     try {
       const { generateInvoicePdf } = await import('../../services/invoices');
-      
+
       // Generate PDF using recomputed amount
       const generatedPath = await generateInvoicePdf({
         invoiceId: inv.id,
@@ -407,7 +407,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       const filename = inv.invoice_number
         ? `${inv.invoice_number}.pdf`
         : `invoice-${invoiceId}.pdf`;
-      
+
       const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);

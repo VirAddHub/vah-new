@@ -3,29 +3,76 @@ import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 export async function GET(request: NextRequest, ctx: { params: { id: string } }) {
+  const id = ctx.params.id;
+  console.log('[BFF PDF DOWNLOAD] Request received', {
+    invoiceId: id,
+    url: request.url,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const cookie = request.headers.get("cookie") || "";
-    const id = ctx.params.id;
+    const authHeader = request.headers.get("authorization") || "";
     const backend = getBackendOrigin();
 
-    const resp = await fetch(
-      `${backend}/api/billing/invoices/${encodeURIComponent(id)}/download`,
-      {
-        method: "GET",
-        headers: {
-          Cookie: cookie,
-        },
-      }
-    );
+    console.log('[BFF PDF DOWNLOAD] Proxying to backend', {
+      invoiceId: id,
+      backendUrl: `${backend}/api/billing/invoices/${encodeURIComponent(id)}/download`,
+      hasCookie: !!cookie,
+      hasAuthHeader: !!authHeader,
+    });
+
+    const backendUrl = `${backend}/api/billing/invoices/${encodeURIComponent(id)}/download`;
+    const headers: Record<string, string> = {};
+    
+    if (cookie) {
+      headers['Cookie'] = cookie;
+    }
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
+
+    const resp = await fetch(backendUrl, {
+      method: "GET",
+      headers,
+    });
+
+    console.log('[BFF PDF DOWNLOAD] Backend response', {
+      invoiceId: id,
+      status: resp.status,
+      statusText: resp.statusText,
+      contentType: resp.headers.get('content-type'),
+      contentLength: resp.headers.get('content-length'),
+    });
 
     if (resp.ok) {
       const headers = new Headers(resp.headers);
       // Ensure the browser treats it as a download if backend didn't set it
       if (!headers.get("content-type")) headers.set("content-type", "application/pdf");
+      
+      console.log('[BFF PDF DOWNLOAD] Returning PDF response', {
+        invoiceId: id,
+        status: resp.status,
+        contentType: headers.get('content-type'),
+      });
+      
       return new NextResponse(resp.body, { status: resp.status, headers });
     } else {
       // For non-2xx responses, try to parse JSON error
-      const errorData = await resp.json().catch(() => ({ error: 'Failed to download invoice' }));
+      const errorText = await resp.text();
+      console.error('[BFF PDF DOWNLOAD] Backend error response', {
+        invoiceId: id,
+        status: resp.status,
+        errorText: errorText.substring(0, 200), // First 200 chars
+      });
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText || 'Failed to download invoice' };
+      }
+      
       return NextResponse.json(
         { ok: false, error: errorData.error || 'Failed to download invoice', details: errorData },
         { status: resp.status }
@@ -34,13 +81,20 @@ export async function GET(request: NextRequest, ctx: { params: { id: string } })
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error("[BFF billing invoice download] Server misconfigured:", error.message);
+      console.error("[BFF PDF DOWNLOAD] Server misconfigured", {
+        invoiceId: id,
+        error: error.message,
+      });
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
-    console.error("[BFF billing invoice download] error:", error);
+    console.error("[BFF PDF DOWNLOAD] Fatal error", {
+      invoiceId: id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json({ ok: false, error: "Failed to download invoice" }, { status: 500 });
   }
 }
