@@ -32,16 +32,20 @@ export function InvoicesTable() {
     swrFetcher
   );
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | number | null | undefined) => {
+    if (!dateStr) return 'N/A';
     try {
-      const date = new Date(dateStr);
+      // Handle bigint (epoch milliseconds) or date string
+      const timestamp = typeof dateStr === 'number' ? dateStr : Number(dateStr);
+      const date = isNaN(timestamp) ? new Date(dateStr as string) : new Date(timestamp);
+      if (isNaN(date.getTime())) return String(dateStr);
       return new Intl.DateTimeFormat("en-GB", {
         day: "2-digit",
         month: "short",
         year: "2-digit",
       }).format(date);
     } catch {
-      return dateStr;
+      return String(dateStr);
     }
   };
 
@@ -97,7 +101,8 @@ export function InvoicesTable() {
           {!isLoading && !error && invoices.length > 0 && invoices.map((inv) => {
             const isPaid = inv.status.toLowerCase() === "paid";
             const invoiceNumber = inv.invoice_number || `#${String(inv.id).padStart(9, '0')}`;
-            const displayDate = inv.period_end || inv.created_at;
+            // Prefer period_end (string 'YYYY-MM-DD'), fallback to date (created_at as bigint) or created_at
+            const displayDate = inv.period_end || inv.date || inv.created_at;
 
             return (
               <tr key={inv.id} className="hover:bg-gray-50 transition-colors">

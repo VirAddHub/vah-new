@@ -213,7 +213,7 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         continue;
       }
 
-      // Generate invoice with all pending charges
+      // Generate invoice with all pending charges (recalculates amount even if invoice exists)
       const invoiceResult = await generateInvoiceForPeriod({
         userId,
         periodStart: periodStartStr,
@@ -223,7 +223,8 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         gocardlessPaymentId: null, // No payment ID yet - invoice is 'issued', not 'paid'
       });
 
-      // Generate PDF and send email
+      // Generate PDF and send email (regenerates PDF if missing or amount changed)
+      // This ensures PDF exists even if invoice was created before PDF generation flow
       try {
         const invoice = await createInvoiceForPayment({
           userId,

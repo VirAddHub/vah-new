@@ -39,7 +39,12 @@ export interface CreateInvoiceOptions {
 export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promise<InvoiceRow> {
   const pool = getPool();
 
-  // Check if invoice already exists for this payment (if payment ID provided)
+  // Convert dates to ISO string format for TEXT columns (needed for period lookup)
+  const periodStartStr = opts.periodStart.toISOString().slice(0, 10);
+  const periodEndStr = opts.periodEnd.toISOString().slice(0, 10);
+
+  // Check if invoice already exists
+  // Priority: 1) by payment ID (if provided), 2) by period (if no payment ID)
   let existing: any = { rows: [] };
   if (opts.gocardlessPaymentId) {
     existing = await pool.query<InvoiceRow>(
@@ -60,6 +65,63 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       );
       return updated.rows[0];
     }
+  } else {
+    // No payment ID - check by period to see if we should regenerate PDF
+    existing = await pool.query<InvoiceRow>(
+      `SELECT * FROM invoices 
+       WHERE user_id = $1 
+         AND period_start = $2 
+         AND period_end = $3
+       ORDER BY id DESC
+       LIMIT 1`,
+      [opts.userId, periodStartStr, periodEndStr]
+    );
+
+    if (existing.rows.length > 0) {
+      const existingInvoice = existing.rows[0];
+      // If PDF doesn't exist or amount changed, regenerate PDF
+      if (!existingInvoice.pdf_path || existingInvoice.amount_pence !== opts.amountPence) {
+        console.log(`[invoices] Regenerating PDF for invoice ${existingInvoice.id} (missing PDF or amount changed)`);
+        
+        // Update invoice amount if it changed
+        if (existingInvoice.amount_pence !== opts.amountPence) {
+          await pool.query(
+            `UPDATE invoices SET amount_pence = $1 WHERE id = $2`,
+            [opts.amountPence, existingInvoice.id]
+          );
+        }
+
+        // Regenerate PDF
+        try {
+          const pdfPath = await generateInvoicePdf({
+            invoiceId: existingInvoice.id,
+            invoiceNumber: existingInvoice.invoice_number || `INV-${existingInvoice.id}`,
+            userId: opts.userId,
+            amountPence: opts.amountPence,
+            currency: opts.currency,
+            periodStart: existingInvoice.period_start,
+            periodEnd: existingInvoice.period_end,
+          });
+
+          const updated = await pool.query<InvoiceRow>(
+            `UPDATE invoices SET pdf_path = $1 WHERE id = $2 RETURNING *`,
+            [pdfPath, existingInvoice.id]
+          );
+
+          const finalInvoice = updated.rows[0];
+          await sendInvoiceAvailableEmail(finalInvoice);
+          return finalInvoice;
+        } catch (pdfError) {
+          console.error(`[invoices] Failed to regenerate PDF for invoice ${existingInvoice.id}:`, pdfError);
+          // Return existing invoice even if PDF generation failed
+          return existingInvoice;
+        }
+      } else {
+        // PDF exists and amount matches - return existing invoice
+        console.log(`[invoices] Invoice ${existingInvoice.id} already has PDF, skipping regeneration`);
+        return existingInvoice;
+      }
+    }
   }
 
   // Get invoice number sequence
@@ -76,9 +138,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
   const invoiceNumberFormatted = `VAH-${year}-${String(invoiceNumber).padStart(6, '0')}`;
 
-  // Convert dates to ISO string format for TEXT columns
-  const periodStartStr = opts.periodStart.toISOString().slice(0, 10);
-  const periodEndStr = opts.periodEnd.toISOString().slice(0, 10);
+  // periodStartStr and periodEndStr already defined above
 
   // Pull all pending charges for this user within the invoice period
   // Note: charge table may not exist yet - handle gracefully

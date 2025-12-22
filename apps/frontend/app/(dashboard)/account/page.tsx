@@ -204,14 +204,44 @@ export default function AccountPage() {
             : null;
 
         // Transform invoices (BFF invoices route already normalizes pdf_url to BFF endpoint)
-        const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => ({
-            invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
-            description: inv.description || 'Subscription payment',
-            total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
-            status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
-            date_label: inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A',
-            download_url: inv.pdf_url || inv.download_url || (inv.id ? `/api/bff/billing/invoices/${inv.id}/download` : null)
-        }));
+        const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => {
+            // Handle date: created_at is bigint (epoch ms), period_end is string 'YYYY-MM-DD'
+            let dateLabel = 'N/A';
+            if (inv.period_end) {
+                // Use period_end if available (string format 'YYYY-MM-DD')
+                try {
+                    const date = new Date(inv.period_end);
+                    if (!isNaN(date.getTime())) {
+                        dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+                    }
+                } catch (e) {
+                    // Fall through to created_at
+                }
+            }
+            if (dateLabel === 'N/A' && inv.date) {
+                // created_at is bigint (epoch milliseconds)
+                try {
+                    const timestamp = typeof inv.date === 'number' ? inv.date : Number(inv.date);
+                    if (!isNaN(timestamp) && timestamp > 0) {
+                        const date = new Date(timestamp);
+                        if (!isNaN(date.getTime())) {
+                            dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+                        }
+                    }
+                } catch (e) {
+                    // Keep 'N/A'
+                }
+            }
+
+            return {
+                invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
+                description: inv.description || 'Subscription payment',
+                total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
+                status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
+                date_label: dateLabel,
+                download_url: inv.pdf_url || inv.download_url || (inv.id ? `/api/bff/billing/invoices/${inv.id}/download` : null)
+            };
+        });
 
         return {
             subscription,

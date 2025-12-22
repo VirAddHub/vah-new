@@ -6,6 +6,7 @@ import { z } from 'zod';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/auth';
 import { generateInvoiceForPeriod, repairOrphanCharges } from '../../services/billing/invoiceService';
+import { getPool } from '../../lib/db';
 
 const router = Router();
 
@@ -123,6 +124,112 @@ router.post('/repair-orphan-charges', adminBillingLimiter, async (req: Request, 
       ok: false,
       error: 'server_error',
       message: error?.message || 'Failed to repair orphan charges',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/billing/recalculate-invoice
+ * Recalculate invoice amount from attached charges and regenerate PDF
+ * 
+ * Body: { invoice_id: number }
+ * 
+ * Returns: { ok: true, data: { invoice_id, amount_pence, pdf_generated } }
+ */
+const recalculateInvoiceSchema = z.object({
+  invoice_id: z.number().int().positive(),
+});
+
+router.post('/recalculate-invoice', adminBillingLimiter, async (req: Request, res: Response) => {
+  try {
+    const validation = recalculateInvoiceSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        ok: false,
+        error: 'validation_error',
+        message: validation.error.issues.map((e) => e.message).join(', '),
+      });
+    }
+
+    const { invoice_id } = validation.data;
+    const pool = getPool();
+
+    // Get invoice details
+    const invoiceResult = await pool.query(
+      `SELECT id, user_id, period_start, period_end, billing_interval, currency, pdf_path
+       FROM invoices WHERE id = $1`,
+      [invoice_id]
+    );
+
+    if (invoiceResult.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: 'invoice_not_found',
+        message: `Invoice ${invoice_id} not found`,
+      });
+    }
+
+    const invoice = invoiceResult.rows[0];
+
+    // Recalculate amount from attached charges
+    const chargesSum = await pool.query<{ total_pence: number }>(
+      `
+      SELECT COALESCE(SUM(amount_pence), 0)::bigint AS total_pence
+      FROM charge
+      WHERE invoice_id = $1
+        AND status = 'billed'
+      `,
+      [invoice_id]
+    );
+
+    const totalChargesPence = Number(chargesSum.rows[0]?.total_pence || 0);
+
+    // Update invoice amount
+    await pool.query(
+      `UPDATE invoices 
+       SET amount_pence = $1, currency = COALESCE($2, 'GBP')
+       WHERE id = $3`,
+      [totalChargesPence, invoice.currency, invoice_id]
+    );
+
+    // Regenerate PDF if it doesn't exist or if amount changed
+    let pdfGenerated = false;
+    if (!invoice.pdf_path || totalChargesPence !== invoice.amount_pence) {
+      try {
+        const { createInvoiceForPayment } = await import('../../services/invoices');
+        const periodStart = new Date(invoice.period_start);
+        const periodEnd = new Date(invoice.period_end);
+        
+        await createInvoiceForPayment({
+          userId: invoice.user_id,
+          gocardlessPaymentId: null,
+          amountPence: totalChargesPence,
+          currency: invoice.currency || 'GBP',
+          periodStart,
+          periodEnd,
+        });
+        pdfGenerated = true;
+      } catch (pdfError: any) {
+        console.error(`[admin-billing] Failed to regenerate PDF for invoice ${invoice_id}:`, pdfError);
+        // Continue - amount is updated even if PDF fails
+      }
+    }
+
+    return res.status(200).json({
+      ok: true,
+      data: {
+        invoice_id,
+        amount_pence: totalChargesPence,
+        pdf_generated: pdfGenerated,
+      },
+    });
+  } catch (error: any) {
+    console.error('[admin-billing] Error recalculating invoice:', error);
+    return res.status(500).json({
+      ok: false,
+      error: 'server_error',
+      message: error?.message || 'Failed to recalculate invoice',
     });
   }
 });
