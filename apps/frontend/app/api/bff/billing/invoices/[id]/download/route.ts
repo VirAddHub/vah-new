@@ -126,3 +126,5 @@ export async function GET(
   }
 }
 
+// Route file marker - ensures file is included in build
+
