@@ -75,19 +75,25 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             // Check for existing active forwarding request (idempotent check)
             // Treat these as "active" requests where we should not allow duplicates
-            // Use canonical status values: Requested, Processing, Dispatched (case-sensitive)
+            // IMPORTANT: match your real status casing. Your DB has 'Requested' and 'dispatched' (case variations)
             const existing = await pool.query(`
                 SELECT id, status FROM forwarding_request 
                 WHERE user_id = $1 
                   AND mail_item_id = $2 
-                  AND status IN ($3, $4, $5)
+                  AND status IN ('Requested', 'Processing', 'dispatched', 'Dispatched')
                 ORDER BY id DESC
                 LIMIT 1
-            `, [userId, mailItemId, MAIL_STATUS.Requested, MAIL_STATUS.Processing, MAIL_STATUS.Dispatched]);
+            `, [userId, mailItemId]);
 
             if (existing.rows.length > 0) {
                 await pool.query('COMMIT');
                 const existingRequest = existing.rows[0];
+                console.log('[forwarding] duplicate_request', {
+                    userId,
+                    mailItemId,
+                    requestId: existingRequest.id,
+                    status: existingRequest.status
+                });
                 return {
                     forwarding_request: existingRequest,
                     request_id: existingRequest.id,
@@ -116,7 +122,6 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
             // Decide billable + create charge
             // PRICING RULE: If tag is HMRC or Companies House: fee = £0, otherwise: fee = £2 (200 pence)
             const chargeAmount = isOfficial ? 0 : 200;
-            console.log(`[forwarding] Mail tag check: tag="${mailData.tag}", isOfficial=${isOfficial}, chargeAmount=${chargeAmount} pence`);
 
             if (chargeAmount > 0) {
                 try {
@@ -187,15 +192,13 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             await pool.query('COMMIT');
 
-            console.log(`[Forwarding] Created request ${forwardingRequest.id} for user ${userId}`);
-
-            return {
-                forwarding_request: forwardingRequest,
-                request_id: forwardingRequest.id,
-                created: true,
-                message: 'Forwarding request created successfully',
-                charge_amount: chargeAmount,
-            };
+            console.log('[forwarding] request_created', {
+                userId,
+                mailItemId,
+                requestId: forwardingRequest.id,
+                chargeAmount,
+                tag: mailData.tag
+            });
 
             // Send email notification to user about forwarding request creation
             // Uses Postmark template "mail-forwarded" (ID: 40508790, alias: "mail-forwarded")
