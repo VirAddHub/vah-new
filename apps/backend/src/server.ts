@@ -62,6 +62,7 @@ import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminForwardingDebugRouter from "./server/routes/admin-forwarding-debug";
 import adminForwardingLocksRouter from "./server/routes/admin-forwarding-locks";
 import adminStatsRouter from "./server/routes/admin-stats";
+import adminBillingRouter from "./server/routes/admin-billing";
 import adminPlansRouter from "./server/routes/admin-plans";
 import adminMailItemsRouter from "./server/routes/admin-mail-items";
 import adminActivityRouter from "./server/routes/admin-activity";
@@ -445,6 +446,8 @@ async function start() {
     logger.info('[mount] /api (admin-forwarding-locks) mounted');
     app.use('/api/admin', adminStatsRouter);
     logger.info('[mount] /api/admin (stats) mounted');
+    app.use('/api/admin', adminBillingRouter);
+    logger.info('[mount] /api/admin (billing) mounted');
     app.use('/api/admin', adminPlansRouter);
     logger.info('[mount] /api/admin (plans) mounted');
     app.use('/api/admin', adminMailItemsRouter);

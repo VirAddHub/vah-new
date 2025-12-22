@@ -6,6 +6,7 @@ import {
     getBillingPeriodForUser,
     findUserIdForPayment
 } from '../../services/invoices';
+import { generateInvoiceForPeriod } from '../../services/billing/invoiceService';
 import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
@@ -375,12 +376,30 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
         const amountPence = paymentDetails?.amount ?? links.amount ?? 997; // Fallback to £9.97
         const currency = paymentDetails?.currency ?? 'GBP';
 
-        // Create invoice with PDF
+        // Generate invoice with automated charge attachment
+        // This uses the new invoiceService which automatically:
+        // 1. Creates/updates invoice for the period
+        // 2. Attaches pending charges in the period
+        // 3. Recomputes invoice amount from attached charges
         try {
+            // First, generate invoice with charge attachment
+            const invoiceResult = await generateInvoiceForPeriod({
+                userId,
+                periodStart,
+                periodEnd,
+                billingInterval: 'monthly', // TODO: derive from subscription
+                currency,
+                gocardlessPaymentId: paymentId,
+            });
+
+            console.log(`[Webhook] ✅ Invoice generated: ID ${invoiceResult.invoiceId}, attached ${invoiceResult.attachedCount} charges, total ${invoiceResult.totalChargesPence}p`);
+
+            // Then create PDF and send email using existing service
+            // Note: createInvoiceForPayment will find the existing invoice by gocardless_payment_id
             const invoice = await createInvoiceForPayment({
                 userId,
                 gocardlessPaymentId: paymentId,
-                amountPence,
+                amountPence: invoiceResult.totalChargesPence, // Use computed amount from charges
                 currency,
                 periodStart,
                 periodEnd,
