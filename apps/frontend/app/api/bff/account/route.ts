@@ -9,7 +9,7 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 export async function GET(request: NextRequest) {
   const routePath = '/api/bff/account';
   let backendBase = '';
-  
+
   try {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
@@ -51,9 +51,9 @@ export async function GET(request: NextRequest) {
 
     try {
       overview = overviewRes?.ok ? await overviewRes.text().then(raw => {
-        try { return JSON.parse(raw); } catch (e) { 
+        try { return JSON.parse(raw); } catch (e) {
           console.warn('[BFF account] Failed to parse overview JSON:', e);
-          return { raw: raw.substring(0, 300) }; 
+          return { raw: raw.substring(0, 300) };
         }
       }).catch((e) => {
         console.warn('[BFF account] Failed to read overview response:', e);
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
 
     try {
       invoices = invoicesRes?.ok ? await invoicesRes.text().then(raw => {
-        try { return JSON.parse(raw); } catch (e) { 
+        try { return JSON.parse(raw); } catch (e) {
           console.warn('[BFF account] Failed to parse invoices JSON:', e);
-          return { raw: raw.substring(0, 300) }; 
+          return { raw: raw.substring(0, 300) };
         }
       }).catch((e) => {
         console.warn('[BFF account] Failed to read invoices response:', e);
@@ -79,9 +79,9 @@ export async function GET(request: NextRequest) {
 
     try {
       user = userRes?.ok ? await userRes.text().then(raw => {
-        try { return JSON.parse(raw); } catch (e) { 
+        try { return JSON.parse(raw); } catch (e) {
           console.warn('[BFF account] Failed to parse user JSON:', e);
-          return { raw: raw.substring(0, 300) }; 
+          return { raw: raw.substring(0, 300) };
         }
       }).catch((e) => {
         console.warn('[BFF account] Failed to read user response:', e);
@@ -93,9 +93,9 @@ export async function GET(request: NextRequest) {
 
     try {
       profile = profileRes?.ok ? await profileRes.text().then(raw => {
-        try { return JSON.parse(raw); } catch (e) { 
+        try { return JSON.parse(raw); } catch (e) {
           console.warn('[BFF account] Failed to parse profile JSON:', e);
-          return { raw: raw.substring(0, 300) }; 
+          return { raw: raw.substring(0, 300) };
         }
       }).catch((e) => {
         console.warn('[BFF account] Failed to read profile response:', e);
@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
         pricePence = recentPaidInvoice.amount_pence;
       }
     }
-    
-    const priceLabel = pricePence && pricePence > 0 
+
+    const priceLabel = pricePence && pricePence > 0
       ? `£${(pricePence / 100).toFixed(2)}`
       : 'Price not available';
 
@@ -155,27 +155,27 @@ export async function GET(request: NextRequest) {
       ? {
         formatted: (() => {
           const lines: string[] = [];
-          
+
           // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
           if (profileData?.address_line2?.trim()) {
             lines.push(profileData.address_line2.trim());
           }
-          
+
           // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
           if (profileData?.address_line1?.trim()) {
             lines.push(profileData.address_line1.trim());
           }
-          
+
           // Line 3: city postal_code (e.g., "London SE1 3PH")
           const cityPostal = [
             profileData?.city?.trim(),
             profileData?.postal_code?.trim()
           ].filter(Boolean).join(' ');
-          
+
           if (cityPostal) {
             lines.push(cityPostal);
           }
-          
+
           return lines.join('\n');
         })()
       }
@@ -185,16 +185,68 @@ export async function GET(request: NextRequest) {
     // Never use raw pdf_url or pdf_path from backend - always use BFF route for authentication
     const invoiceRows = invoicesRaw.map((inv: any) => {
       const hasPdf = Boolean(inv?.pdf_url || inv?.pdf_path);
-      const downloadUrl = hasPdf && inv.id 
-        ? `/api/bff/billing/invoices/${inv.id}/download` 
+      const downloadUrl = hasPdf && inv.id
+        ? `/api/bff/billing/invoices/${inv.id}/download`
         : null;
-      
+
+      // Handle date: created_at is bigint (epoch ms), period_end is string 'YYYY-MM-DD'
+      let dateLabel = 'N/A';
+
+      // Try period_end first (preferred - billing period end date)
+      if (inv.period_end) {
+        try {
+          // period_end is string 'YYYY-MM-DD'
+          const dateStr = String(inv.period_end).trim();
+          if (dateStr && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const date = new Date(dateStr + 'T00:00:00Z'); // Add time to avoid timezone issues
+            if (!isNaN(date.getTime())) {
+              dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            }
+          }
+        } catch (e) {
+          // Fall through to other date sources
+        }
+      }
+
+      // Fallback to date field (created_at as bigint)
+      if (dateLabel === 'N/A' && inv.date) {
+        try {
+          const timestamp = typeof inv.date === 'number' ? inv.date : Number(inv.date);
+          if (!isNaN(timestamp) && timestamp > 0) {
+            // Handle both epoch seconds and milliseconds
+            const ts = timestamp > 1e12 ? timestamp : timestamp * 1000;
+            const date = new Date(ts);
+            if (!isNaN(date.getTime())) {
+              dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            }
+          }
+        } catch (e) {
+          // Keep 'N/A'
+        }
+      }
+
+      // Last fallback: created_at if available
+      if (dateLabel === 'N/A' && inv.created_at) {
+        try {
+          const timestamp = typeof inv.created_at === 'number' ? inv.created_at : Number(inv.created_at);
+          if (!isNaN(timestamp) && timestamp > 0) {
+            const ts = timestamp > 1e12 ? timestamp : timestamp * 1000;
+            const date = new Date(ts);
+            if (!isNaN(date.getTime())) {
+              dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            }
+          }
+        } catch (e) {
+          // Keep 'N/A'
+        }
+      }
+
       return {
         invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
         description: inv.description || 'Subscription payment',
         total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
         status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
-        date_label: inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A',
+        date_label: dateLabel,
         download_url: downloadUrl
       };
     });
@@ -222,12 +274,12 @@ export async function GET(request: NextRequest) {
     console.error(`[BFF account] Backend base was: ${backendBase}`);
     console.error(`[BFF account] Error stack:`, error?.stack);
     return NextResponse.json(
-      { 
-        ok: false, 
-        error: { 
-          code: 'BFF_EXCEPTION', 
+      {
+        ok: false,
+        error: {
+          code: 'BFF_EXCEPTION',
           message: error?.message,
-          route: routePath 
+          route: routePath
         }
       },
       { status: 500 }
