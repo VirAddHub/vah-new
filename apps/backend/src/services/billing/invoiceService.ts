@@ -43,6 +43,54 @@ function normalizeDate(date: Date | string): string {
 }
 
 /**
+ * Recompute invoice total from attached charges (authoritative source)
+ * INVARIANT: invoice.amount_pence = SUM(charge.amount_pence WHERE invoice_id = invoice.id AND status='billed')
+ * 
+ * @param pool Database pool
+ * @param invoiceId Invoice ID
+ * @param currency Currency (defaults to 'GBP')
+ * @returns Total amount in pence
+ */
+export async function recomputeInvoiceTotal(
+  pool: any,
+  invoiceId: number,
+  currency: string = 'GBP'
+): Promise<number> {
+  let totalChargesPence = 0;
+  try {
+    const chargesSum = await pool.query(
+      `
+      SELECT COALESCE(SUM(amount_pence), 0)::bigint AS total_pence
+      FROM charge
+      WHERE invoice_id = $1
+        AND status = 'billed'
+      `,
+      [invoiceId]
+    );
+    totalChargesPence = Number((chargesSum.rows[0] as any)?.total_pence || 0);
+  } catch (chargeError: any) {
+    // Table doesn't exist - use 0
+    const msg = String(chargeError?.message || '');
+    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
+      console.error('[invoiceService] Error computing charge total:', chargeError);
+      throw chargeError;
+    }
+    totalChargesPence = 0;
+  }
+
+  // Update invoice amount - this is the authoritative source
+  // INVARIANT: invoice.amount_pence = SUM(charge.amount_pence WHERE invoice_id = invoice.id AND status='billed')
+  await pool.query(
+    `UPDATE invoices 
+     SET amount_pence = $1, currency = $2
+     WHERE id = $3`,
+    [totalChargesPence, currency, invoiceId]
+  );
+
+  return totalChargesPence;
+}
+
+/**
  * Generate invoice for a user's billing period
  * 
  * Process:
@@ -189,36 +237,7 @@ export async function generateInvoiceForPeriod(
   // Invoice amount MUST equal SUM(charge.amount_pence) WHERE charge.invoice_id = invoice.id AND status='billed'
   // This ensures correctness even if charges were attached in a previous run or attached elsewhere
   // Always compute from charge table (authoritative source), not from UPDATE ... RETURNING
-  let totalChargesPence = 0;
-  try {
-    const chargesSum = await pool.query<{ total_pence: number }>(
-      `
-      SELECT COALESCE(SUM(amount_pence), 0)::bigint AS total_pence
-      FROM charge
-      WHERE invoice_id = $1
-        AND status = 'billed'
-      `,
-      [invoiceId]
-    );
-    totalChargesPence = Number(chargesSum.rows[0]?.total_pence || 0);
-  } catch (chargeError: any) {
-    // Table doesn't exist - use 0
-    const msg = String(chargeError?.message || '');
-    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
-      console.error('[invoiceService] Error computing charge total:', chargeError);
-      throw chargeError;
-    }
-    totalChargesPence = 0;
-  }
-
-  // Update invoice amount - this is the authoritative source
-  // INVARIANT: invoice.amount_pence = SUM(charge.amount_pence WHERE invoice_id = invoice.id AND status='billed')
-  await pool.query(
-    `UPDATE invoices 
-     SET amount_pence = $1, currency = $2
-     WHERE id = $3`,
-    [totalChargesPence, currency, invoiceId]
-  );
+  const totalChargesPence = await recomputeInvoiceTotal(pool, invoiceId, currency);
 
   console.log('[invoiceService] invoice_ready', {
     userId,

@@ -178,13 +178,23 @@ export async function listInvoices(req: Request, res: Response) {
 }
 
 export async function downloadInvoicePdf(req: Request, res: Response) {
-  const userId = Number(req.user!.id);
+  const callerId = BigInt(req.user!.id);
   const isAdmin = req.user!.is_admin || false;
   const invoiceId = Number(req.params.id);
   const pool = getPool();
 
   if (!invoiceId || Number.isNaN(invoiceId)) {
     return res.status(400).json({ ok: false, error: 'invalid_invoice_id' });
+  }
+
+  // Debug logging (guarded by env var)
+  if (process.env.DEBUG_BILLING === '1') {
+    console.log('[downloadInvoicePdf] DEBUG', {
+      callerId: String(callerId),
+      callerEmail: req.user!.email,
+      isAdmin,
+      invoiceId,
+    });
   }
 
   try {
@@ -200,10 +210,37 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
 
+    // Debug logging (guarded by env var)
+    if (process.env.DEBUG_BILLING === '1') {
+      console.log('[downloadInvoicePdf] DEBUG invoice', {
+        invoiceId: inv.id,
+        invoiceUserId: String(inv.user_id),
+        invoiceUserIdType: typeof inv.user_id,
+        callerId: String(callerId),
+        callerIdType: typeof callerId,
+      });
+    }
+
     // Authorization: admin can access any invoice, otherwise must own it
-    if (!isAdmin && inv.user_id !== userId) {
+    // CRITICAL: Convert both to BigInt for safe comparison (Postgres BIGINT may come as string)
+    const ownerId = BigInt(inv.user_id);
+    if (!isAdmin && callerId !== ownerId) {
+      if (process.env.DEBUG_BILLING === '1') {
+        console.log('[downloadInvoicePdf] DEBUG auth failed', {
+          callerId: String(callerId),
+          ownerId: String(ownerId),
+          isAdmin,
+        });
+      }
       return res.status(403).json({ ok: false, error: 'forbidden' });
     }
+
+    // Recompute invoice amount from charges before generating PDF (ensures correctness)
+    const { recomputeInvoiceTotal } = await import('../../services/billing/invoiceService');
+    const correctAmountPence = await recomputeInvoiceTotal(pool, inv.id, inv.currency || 'GBP');
+    
+    // Use recomputed amount for PDF generation
+    const amountPence = correctAmountPence;
 
     const baseDir = process.env.INVOICES_DIR
       ? path.resolve(process.env.INVOICES_DIR)
@@ -238,12 +275,12 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     try {
       const { generateInvoicePdf } = await import('../../services/invoices');
       
-      // Generate PDF
+      // Generate PDF using recomputed amount
       const generatedPath = await generateInvoicePdf({
         invoiceId: inv.id,
         invoiceNumber: inv.invoice_number || `INV-${inv.id}`,
         userId: inv.user_id,
-        amountPence: inv.amount_pence,
+        amountPence: amountPence, // Use recomputed amount, not inv.amount_pence
         currency: inv.currency || 'GBP',
         periodStart: inv.period_start,
         periodEnd: inv.period_end,
