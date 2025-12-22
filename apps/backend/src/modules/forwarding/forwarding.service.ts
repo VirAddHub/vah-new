@@ -93,6 +93,8 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
 
             // Create charge if not official mail (HMRC or Companies House)
             // PRICING RULE: If tag is HMRC or Companies House: fee = £0, otherwise: fee = £2 (200 pence)
+            console.log(`[forwarding] Mail tag check: tag="${mailData.tag}", isOfficial=${isOfficial}, willCreateCharge=${!isOfficial}`);
+            
             if (!isOfficial) {
                 const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
                 // Create charge for forwarding fee (if charge table exists)
@@ -109,12 +111,13 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                     
                     if (existingCharge.rows.length === 0) {
                         // Insert new charge
-                        await pool.query(
+                        const chargeResult = await pool.query(
                             `INSERT INTO charge (
                                 user_id, amount_pence, currency, type, description, 
                                 service_date, status, related_type, related_id, created_at
                             )
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                            RETURNING id`,
                             [
                                 userId,
                                 200, // £2 in pence
@@ -127,6 +130,9 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                                 forwardingRequest.id
                             ]
                         );
+                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0]?.id}, amount=200 pence, forwarding_request_id=${forwardingRequest.id}`);
+                    } else {
+                        console.log(`[forwarding] ⏭️ Charge already exists for forwarding_request_id=${forwardingRequest.id}, skipping (idempotent)`);
                     }
                     // If charge already exists, skip (idempotent)
                 } catch (chargeError: any) {
@@ -139,6 +145,8 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                     }
                     // Continue - forwarding request is still created successfully
                 }
+            } else {
+                console.log(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}"), no charge created (free forwarding)`);
             }
 
             // Create outbox event
