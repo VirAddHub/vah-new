@@ -293,6 +293,36 @@ export async function generateInvoicePdf(opts: {
     throw new Error(`User ${opts.userId} not found`);
   }
 
+  // Get all billed charges for this invoice (for line items breakdown)
+  let charges: Array<{ description: string; amount_pence: number; service_date: string }> = [];
+  try {
+    const chargesResult = await pool.query(
+      `
+      SELECT description, amount_pence, service_date
+      FROM charge
+      WHERE invoice_id = $1
+        AND status = 'billed'
+      ORDER BY service_date DESC, created_at DESC
+      `,
+      [opts.invoiceId]
+    );
+    charges = chargesResult.rows.map((row: any) => ({
+      description: row.description || 'Service charge',
+      amount_pence: Number(row.amount_pence || 0),
+      service_date: row.service_date ? new Date(row.service_date).toISOString().slice(0, 10) : '',
+    }));
+  } catch (chargeError: any) {
+    // Table doesn't exist or query failed - continue without charges
+    const msg = String(chargeError?.message || '');
+    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
+      console.warn('[generateInvoicePdf] Error fetching charges:', chargeError);
+    }
+  }
+
+  // Calculate base plan amount (total - charges)
+  const chargesTotalPence = charges.reduce((sum, c) => sum + c.amount_pence, 0);
+  const basePlanPence = opts.amountPence - chargesTotalPence;
+
   // Ensure directory exists: data/invoices/YYYY/user_id
   const year = new Date(opts.periodEnd).getFullYear();
   const dir = path.join(INVOICE_BASE_DIR, String(year), String(opts.userId));
@@ -335,13 +365,38 @@ export async function generateInvoicePdf(opts: {
   doc.text(user.email);
   doc.moveDown();
 
-  // Description
-  doc.text('Description: Digital Mailbox Plan – Monthly subscription');
-  doc.moveDown();
+  // Line items table
+  doc.fontSize(12);
+  doc.text('Items:', { underline: true });
+  doc.moveDown(0.5);
 
-  // Amount
+  // Base plan subscription
+  if (basePlanPence > 0) {
+    const baseAmount = (basePlanPence / 100).toFixed(2);
+    doc.text(`Digital Mailbox Plan – Monthly subscription`, { continued: true });
+    doc.text(`${opts.currency} ${baseAmount}`, { align: 'right' });
+    doc.moveDown(0.3);
+  }
+
+  // Individual charges
+  for (const charge of charges) {
+    if (charge.amount_pence > 0) {
+      const chargeAmount = (charge.amount_pence / 100).toFixed(2);
+      const chargeDate = charge.service_date ? ` (${charge.service_date})` : '';
+      doc.text(`${charge.description}${chargeDate}`, { continued: true });
+      doc.text(`${opts.currency} ${chargeAmount}`, { align: 'right' });
+      doc.moveDown(0.3);
+    }
+  }
+
+  doc.moveDown(0.5);
+
+  // Total
   const amount = (opts.amountPence / 100).toFixed(2);
-  doc.fontSize(14).text(`Total: ${opts.currency} ${amount}`, { align: 'right' });
+  doc.fontSize(14).font('Helvetica-Bold');
+  doc.text('Total:', { continued: true });
+  doc.text(`${opts.currency} ${amount}`, { align: 'right' });
+  doc.font('Helvetica').fontSize(12);
   doc.moveDown(2);
 
   // Footer
