@@ -97,27 +97,38 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                 const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
                 // Create charge for forwarding fee (if charge table exists)
                 try {
-                    // Use the unique index name for ON CONFLICT (partial index with WHERE clause)
-                    await pool.query(
-                        `INSERT INTO charge (
-                            user_id, amount_pence, currency, type, description, 
-                            service_date, status, related_type, related_id, created_at
-                        )
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-                        ON CONFLICT ON CONSTRAINT idx_charge_idempotency DO NOTHING
-                        `,
-                        [
-                            userId,
-                            200, // £2 in pence
-                            'GBP',
-                            'forwarding_fee',
-                            'Forwarding fee (non-HMRC/Companies House)',
-                            serviceDate,
-                            'pending',
-                            'forwarding_request',
-                            forwardingRequest.id
-                        ]
+                    // Check if charge already exists (idempotency check)
+                    const existingCharge = await pool.query(
+                        `SELECT id FROM charge 
+                         WHERE type = $1 
+                           AND related_type = $2 
+                           AND related_id = $3
+                           AND status = 'pending'`,
+                        ['forwarding_fee', 'forwarding_request', forwardingRequest.id]
                     );
+                    
+                    if (existingCharge.rows.length === 0) {
+                        // Insert new charge
+                        await pool.query(
+                            `INSERT INTO charge (
+                                user_id, amount_pence, currency, type, description, 
+                                service_date, status, related_type, related_id, created_at
+                            )
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                            [
+                                userId,
+                                200, // £2 in pence
+                                'GBP',
+                                'forwarding_fee',
+                                'Forwarding fee (non-HMRC/Companies House)',
+                                serviceDate,
+                                'pending',
+                                'forwarding_request',
+                                forwardingRequest.id
+                            ]
+                        );
+                    }
+                    // If charge already exists, skip (idempotent)
                 } catch (chargeError: any) {
                     // Table doesn't exist yet or insert failed - log but don't fail forwarding
                     // Error code 42P01 = relation does not exist
