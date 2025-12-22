@@ -80,7 +80,8 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                                 credentials: 'include', // Include cookies
                               });
 
-                              console.log('[InvoicesCard] Fetch response', {
+                              // Log response details - expand this object in console to see full details
+                              const responseDetails = {
                                 invoiceNo: invoice.invoice_no,
                                 status: response.status,
                                 statusText: response.statusText,
@@ -88,8 +89,12 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                                 contentLength: response.headers.get('content-length'),
                                 ok: response.ok,
                                 url: response.url,
+                                redirected: response.redirected,
+                                type: response.type,
                                 headers: Object.fromEntries(response.headers.entries()),
-                              });
+                              };
+                              console.log('[InvoicesCard] Fetch response', responseDetails);
+                              console.log('[InvoicesCard] Response status:', response.status, response.statusText);
                               
                               if (!response.ok) {
                                 let errorText = '';
