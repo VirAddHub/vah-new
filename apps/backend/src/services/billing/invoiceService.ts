@@ -9,6 +9,7 @@
  */
 
 import { getPool } from '../../lib/db';
+import { invoicePeriodRelatedId } from './chargeIdempotency';
 
 export interface GenerateInvoiceForPeriodOptions {
   userId: number;
@@ -91,9 +92,98 @@ export async function recomputeInvoiceTotal(
 }
 
 /**
+ * Ensure subscription charge exists for billing period (idempotent)
+ * Creates a subscription_fee charge if it doesn't already exist
+ */
+async function ensureSubscriptionChargeForPeriod(opts: {
+  pool: any;
+  userId: number;
+  periodStart: string;
+  periodEnd: string;
+  billingInterval: 'monthly' | 'annual';
+  currency: string;
+}): Promise<void> {
+  const { pool, userId, periodStart, periodEnd, billingInterval, currency } = opts;
+
+  // Get plan price from plans table
+  const interval = billingInterval === 'monthly' ? 'month' : 'year';
+  let amountPence: number;
+  let description: string;
+
+  try {
+    const planResult = await pool.query(
+      `SELECT price_pence FROM plans 
+       WHERE interval = $1 AND active = true AND retired_at IS NULL 
+       ORDER BY sort ASC, price_pence ASC 
+       LIMIT 1`,
+      [interval]
+    );
+
+    if (planResult.rows.length > 0) {
+      amountPence = Number(planResult.rows[0].price_pence);
+    } else {
+      // Fallback to hardcoded prices if plan not found
+      amountPence = billingInterval === 'monthly' ? 999 : 8999;
+    }
+  } catch (planError: any) {
+    // Plans table might not exist - use fallback
+    console.warn('[ensureSubscriptionCharge] Error fetching plan price, using fallback:', planError);
+    amountPence = billingInterval === 'monthly' ? 999 : 8999;
+  }
+
+  description = billingInterval === 'monthly'
+    ? 'Digital Mailbox Plan – Monthly subscription'
+    : 'Digital Mailbox Plan – Annual subscription';
+
+  // Generate deterministic related_id
+  const relatedId = invoicePeriodRelatedId(userId, periodStart, periodEnd);
+
+  // Insert subscription charge (idempotent via unique constraint)
+  try {
+    await pool.query(
+      `
+      INSERT INTO charge (
+        user_id,
+        amount_pence,
+        currency,
+        type,
+        description,
+        service_date,
+        status,
+        related_type,
+        related_id
+      )
+      VALUES (
+        $1, $2, $3,
+        'subscription_fee',
+        $4,
+        $5::date,
+        'pending',
+        'invoice_period',
+        $6
+      )
+      ON CONFLICT (type, related_type, related_id)
+      WHERE related_type IS NOT NULL AND related_id IS NOT NULL
+      DO NOTHING
+      `,
+      [userId, amountPence, currency, description, periodStart, relatedId]
+    );
+  } catch (chargeError: any) {
+    // Table doesn't exist - skip
+    const msg = String(chargeError?.message || '');
+    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
+      console.error('[ensureSubscriptionCharge] Error creating subscription charge:', chargeError);
+      throw chargeError;
+    }
+    console.warn('[ensureSubscriptionCharge] charge table missing, skipping subscription charge');
+  }
+}
+
+/**
  * Generate invoice for a user's billing period
  * 
  * Process:
+ * 0. Ensure subscription charge exists for period (idempotent)
  * 1. Upsert invoice row keyed by (user_id, period_start, period_end)
  * 2. Attach pending charges in period: UPDATE charge SET invoice_id, status='billed', billed_at
  * 3. Recompute invoice.amount_pence from attached charges
@@ -115,6 +205,16 @@ export async function generateInvoiceForPeriod(
 
   const periodStartStr = normalizeDate(periodStart);
   const periodEndStr = normalizeDate(periodEnd);
+
+  // 0) Ensure subscription charge exists for this period (idempotent)
+  await ensureSubscriptionChargeForPeriod({
+    pool,
+    userId,
+    periodStart: periodStartStr,
+    periodEnd: periodEndStr,
+    billingInterval,
+    currency,
+  });
 
   // 1) Upsert invoice (idempotent by user_id + period)
   // Check if invoice exists for this period

@@ -6,6 +6,82 @@ import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocar
 import { TimestampUtils } from '../../lib/timestamp-utils';
 
 /**
+ * GET /api/billing/invoices/:id
+ * Get invoice details with line items breakdown
+ */
+export async function getInvoiceById(req: Request, res: Response) {
+  const userId = Number(req.user!.id);
+  const invoiceId = Number(req.params.id);
+  const pool = getPool();
+
+  if (!invoiceId || Number.isNaN(invoiceId)) {
+    return res.status(400).json({ ok: false, error: 'invalid_invoice_id' });
+  }
+
+  try {
+    // Get invoice
+    const invoiceResult = await pool.query(
+      `SELECT * FROM invoices WHERE id = $1 AND user_id = $2 LIMIT 1`,
+      [invoiceId, userId]
+    );
+
+    if (invoiceResult.rows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'not_found' });
+    }
+
+    const invoice = invoiceResult.rows[0];
+
+    // Get all charges (line items) for this invoice
+    let items: any[] = [];
+    try {
+      const itemsResult = await pool.query(
+        `
+        SELECT 
+          service_date,
+          description,
+          amount_pence,
+          currency,
+          type,
+          related_type,
+          related_id
+        FROM charge
+        WHERE invoice_id = $1
+          AND status = 'billed'
+        ORDER BY service_date ASC, created_at ASC
+        `,
+        [invoiceId]
+      );
+      items = itemsResult.rows.map((row: any) => ({
+        service_date: row.service_date,
+        description: row.description,
+        amount_pence: Number(row.amount_pence || 0),
+        currency: row.currency || 'GBP',
+        type: row.type,
+        related_type: row.related_type,
+        related_id: row.related_id ? String(row.related_id) : null,
+      }));
+    } catch (itemsError: any) {
+      // Table doesn't exist - return empty items
+      const msg = String(itemsError?.message || '');
+      if (!msg.includes('relation "charge" does not exist') && itemsError?.code !== '42P01') {
+        console.error('[getInvoiceById] Error fetching items:', itemsError);
+      }
+    }
+
+    return res.json({
+      ok: true,
+      data: {
+        invoice,
+        items,
+      },
+    });
+  } catch (error: any) {
+    console.error('[getInvoiceById] error:', error);
+    return res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
+/**
  * Get sum of pending forwarding fees for a user
  * Returns 0 if charge table doesn't exist or on error
  */

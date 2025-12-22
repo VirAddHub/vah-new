@@ -370,26 +370,77 @@ export async function generateInvoicePdf(opts: {
   doc.text('Items:', { underline: true });
   doc.moveDown(0.5);
 
-  // Base plan subscription
-  if (basePlanPence > 0) {
-    const baseAmount = (basePlanPence / 100).toFixed(2);
-    doc.text(`Digital Mailbox Plan – Monthly subscription`, { continued: true });
-    doc.text(`${opts.currency} ${baseAmount}`, { align: 'right' });
+  if (charges.length === 0 && basePlanPence === 0) {
+    doc.text('No billable activity this period');
+    doc.moveDown(0.5);
+  } else {
+    // Table header (visual only, PDFKit doesn't have real tables)
+    const startX = 50;
+    const descWidth = 350;
+    const dateWidth = 100;
+    const amountWidth = 100;
+    const rightAlignX = startX + descWidth + dateWidth;
+
+    // Draw header line
+    doc.moveTo(startX, doc.y).lineTo(startX + descWidth + dateWidth + amountWidth, doc.y).stroke();
+    doc.moveDown(0.3);
+
+    // All charges (including subscription)
+    const allItems = [...charges];
+    if (basePlanPence > 0) {
+      // Find subscription charge or add base plan
+      const subscriptionCharge = charges.find(c => c.description?.includes('subscription'));
+      if (!subscriptionCharge) {
+        allItems.unshift({
+          description: 'Digital Mailbox Plan – Monthly subscription',
+          amount_pence: basePlanPence,
+          service_date: periodStartStr,
+        });
+      }
+    }
+
+    // Sort by service_date ASC, then created_at ASC
+    allItems.sort((a, b) => {
+      const dateA = a.service_date || '';
+      const dateB = b.service_date || '';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return 0;
+    });
+
+    // Render each line item
+    for (const item of allItems) {
+      if (item.amount_pence > 0) {
+        const itemAmount = (item.amount_pence / 100).toFixed(2);
+        const itemDate = item.service_date || '';
+        
+        // Description
+        doc.text(item.description || 'Service charge', startX, doc.y, {
+          width: descWidth,
+          ellipsis: true,
+        });
+        
+        // Date
+        if (itemDate) {
+          doc.text(itemDate, startX + descWidth, doc.y, {
+            width: dateWidth,
+          });
+        }
+        
+        // Amount (right-aligned)
+        doc.text(`${opts.currency} ${itemAmount}`, rightAlignX, doc.y, {
+          width: amountWidth,
+          align: 'right',
+        });
+        
+        doc.moveDown(0.4);
+      }
+    }
+
+    doc.moveDown(0.3);
+    // Draw separator line
+    doc.moveTo(startX, doc.y).lineTo(startX + descWidth + dateWidth + amountWidth, doc.y).stroke();
     doc.moveDown(0.3);
   }
-
-  // Individual charges
-  for (const charge of charges) {
-    if (charge.amount_pence > 0) {
-      const chargeAmount = (charge.amount_pence / 100).toFixed(2);
-      const chargeDate = charge.service_date ? ` (${charge.service_date})` : '';
-      doc.text(`${charge.description}${chargeDate}`, { continued: true });
-      doc.text(`${opts.currency} ${chargeAmount}`, { align: 'right' });
-      doc.moveDown(0.3);
-    }
-  }
-
-  doc.moveDown(0.5);
 
   // Total
   const amount = (opts.amountPence / 100).toFixed(2);
