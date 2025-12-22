@@ -656,24 +656,29 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const sessionKey = `vah_identity_complete_banner_counted_${userId}`;
 
       const prevState = localStorage.getItem(stateKey);
+      
+      // If user is NOT complete, always show banner (don't track state)
+      if (!isComplete) {
+        setShowIdentitySuccessBanner(false); // Don't show success banner if not complete
+        return;
+      }
+
+      // User IS complete - only show banner for first 3 sessions after verification
       if (isComplete && prevState !== "1") {
+        // First time seeing complete state - reset counters
         localStorage.setItem(stateKey, "1");
         localStorage.setItem(countKey, "0");
         sessionStorage.removeItem(sessionKey);
-      } else if (!isComplete && prevState !== "0") {
-        localStorage.setItem(stateKey, "0");
-        localStorage.setItem(countKey, "0");
-        sessionStorage.removeItem(sessionKey);
-        setShowIdentitySuccessBanner(true);
-        return;
       }
 
-      if (!isComplete) {
-        setShowIdentitySuccessBanner(true);
-        return;
-      }
-
+      // Check if we've shown banner 3+ times already
       const current = Number(localStorage.getItem(countKey) || "0") || 0;
+      if (current >= 3) {
+        setShowIdentitySuccessBanner(false);
+        return;
+      }
+
+      // Check if we've counted this session already
       if (!sessionStorage.getItem(sessionKey)) {
         const next = current + 1;
         localStorage.setItem(countKey, String(next));

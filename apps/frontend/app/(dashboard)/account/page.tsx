@@ -58,8 +58,8 @@ export default function AccountPage() {
     }
 
     // Check for errors and loading states
-    const accountError = accountData && accountData.ok === false;
-    const profileError = profileData && profileData.ok === false;
+    const accountError = accountData && !accountData.ok;
+    const profileError = profileData && !profileData.ok;
     const overviewError = overview && overview.ok === false;
     const invoicesError = invoicesData && invoicesData.ok === false;
     const userError = userData && userData.ok === false;
@@ -207,23 +207,47 @@ export default function AccountPage() {
         const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => {
             // Handle date: created_at is bigint (epoch ms), period_end is string 'YYYY-MM-DD'
             let dateLabel = 'N/A';
+            
+            // Try period_end first (preferred - billing period end date)
             if (inv.period_end) {
-                // Use period_end if available (string format 'YYYY-MM-DD')
                 try {
-                    const date = new Date(inv.period_end);
-                    if (!isNaN(date.getTime())) {
-                        dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+                    // period_end is string 'YYYY-MM-DD'
+                    const dateStr = String(inv.period_end).trim();
+                    if (dateStr && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        const date = new Date(dateStr + 'T00:00:00Z'); // Add time to avoid timezone issues
+                        if (!isNaN(date.getTime())) {
+                            dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+                        }
                     }
                 } catch (e) {
-                    // Fall through to created_at
+                    // Fall through to other date sources
                 }
             }
+            
+            // Fallback to date field (created_at as bigint)
             if (dateLabel === 'N/A' && inv.date) {
-                // created_at is bigint (epoch milliseconds)
                 try {
                     const timestamp = typeof inv.date === 'number' ? inv.date : Number(inv.date);
                     if (!isNaN(timestamp) && timestamp > 0) {
-                        const date = new Date(timestamp);
+                        // Handle both epoch seconds and milliseconds
+                        const ts = timestamp > 1e12 ? timestamp : timestamp * 1000;
+                        const date = new Date(ts);
+                        if (!isNaN(date.getTime())) {
+                            dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+                        }
+                    }
+                } catch (e) {
+                    // Keep 'N/A'
+                }
+            }
+            
+            // Last fallback: created_at if available
+            if (dateLabel === 'N/A' && inv.created_at) {
+                try {
+                    const timestamp = typeof inv.created_at === 'number' ? inv.created_at : Number(inv.created_at);
+                    if (!isNaN(timestamp) && timestamp > 0) {
+                        const ts = timestamp > 1e12 ? timestamp : timestamp * 1000;
+                        const date = new Date(ts);
                         if (!isNaN(date.getTime())) {
                             dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
                         }
