@@ -361,7 +361,7 @@ export function MailManagement({
                     <MailItemCard
                         sender={sender}
                         subject={subject}
-                        timeLabel={timeLabel}
+                        timeLabel={undefined}
                         statusLabel={statusLabel}
                         statusVariant={statusVariant}
                         mailType={mailType}

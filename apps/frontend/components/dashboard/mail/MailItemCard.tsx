@@ -59,7 +59,7 @@ export function MailItemCard({
             {isUnread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
           <div className="mt-0.5 text-xs text-neutral-500 truncate">
-            {(timeLabel ? timeLabel : "—")} • {displayStatusLabel}
+            {displayStatusLabel}
           </div>
         </div>
       </div>
@@ -81,13 +81,10 @@ export function MailItemCard({
 
         {/* right meta */}
         <div className="shrink-0 text-right">
-          {timeLabel && <div className="text-lg text-neutral-500">{timeLabel}</div>}
           {showStatusPill && (
-            <div className="mt-2">
-              <Badge className={`rounded-full px-4 py-1 text-base font-medium ${badgeClass}`}>
-                {displayStatusLabel}
-              </Badge>
-            </div>
+            <Badge className={`rounded-full px-4 py-1 text-base font-medium ${badgeClass}`}>
+              {displayStatusLabel}
+            </Badge>
           )}
         </div>
       </div>
