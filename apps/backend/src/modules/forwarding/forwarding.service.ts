@@ -26,7 +26,15 @@ export interface CreateForwardingInput {
     idemKey?: string;
 }
 
-export async function createForwardingRequest(input: CreateForwardingInput) {
+export type CreateForwardingResult = {
+    forwarding_request: any;
+    request_id: number;
+    created: boolean;
+    message: string;
+    charge_amount: number; // pence
+};
+
+export async function createForwardingRequest(input: CreateForwardingInput): Promise<CreateForwardingResult> {
     const { userId, mailItemId, to, reason, method, idemKey = `srv-${crypto.randomUUID()}` } = input;
     const pool = getPool();
 
@@ -64,19 +72,26 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
 
             const isOfficial = isOfficialMail(mailData.tag);
 
-            // Check for existing active forwarding request
+            // Check for existing active forwarding request (idempotent check)
+            // Treat these as "active" requests where we should not allow duplicates
             const existing = await pool.query(`
-        SELECT id, status FROM forwarding_request 
-        WHERE user_id = $1 AND mail_item_id = $2 AND status IN ('Requested','Processing')
-      `, [userId, mailItemId]);
+                SELECT id, status FROM forwarding_request 
+                WHERE user_id = $1 
+                  AND mail_item_id = $2 
+                  AND status IN ('Requested', 'Processing', 'dispatched')
+                ORDER BY id DESC
+                LIMIT 1
+            `, [userId, mailItemId]);
 
             if (existing.rows.length > 0) {
                 await pool.query('COMMIT');
-                // Return existing request with flag indicating it wasn't created
+                const existingRequest = existing.rows[0];
                 return {
-                    ...existing.rows[0],
-                    _created: false,
-                    _existing: true
+                    forwarding_request: existingRequest,
+                    request_id: existingRequest.id,
+                    created: false,
+                    message: `Forwarding already requested (Request #${existingRequest.id})`,
+                    charge_amount: 0,
                 };
             }
 
@@ -95,68 +110,42 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             ]);
 
             const forwardingRequest = fr.rows[0];
-            // Mark as newly created
-            forwardingRequest._created = true;
-            forwardingRequest._existing = false;
 
-            // Create charge if not official mail (HMRC or Companies House)
+            // Decide billable + create charge
             // PRICING RULE: If tag is HMRC or Companies House: fee = £0, otherwise: fee = £2 (200 pence)
-            console.log(`[forwarding] Mail tag check: tag="${mailData.tag}", isOfficial=${isOfficial}, willCreateCharge=${!isOfficial}`);
-            
-            if (!isOfficial) {
-                const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
-                // Create charge for forwarding fee (idempotent check before insert)
+            const chargeAmount = isOfficial ? 0 : 200;
+            console.log(`[forwarding] Mail tag check: tag="${mailData.tag}", isOfficial=${isOfficial}, chargeAmount=${chargeAmount} pence`);
+
+            if (chargeAmount > 0) {
                 try {
-                    // Check if charge already exists (idempotency check)
-                    const existingCharge = await pool.query(
-                        `SELECT id FROM charge 
-                         WHERE type = $1 
-                           AND related_type = $2 
-                           AND related_id = $3
-                           AND status = 'pending'`,
-                        ['forwarding_fee', 'forwarding_request', forwardingRequest.id]
+                    // Insert charge - idempotent (unique index prevents duplicates)
+                    const chargeResult = await pool.query(
+                        `INSERT INTO charge (
+                            user_id, amount_pence, currency, type, description,
+                            service_date, status, related_type, related_id, created_at
+                        )
+                        VALUES ($1, $2, 'GBP', 'forwarding_fee', $3, CURRENT_DATE, 'pending', 'forwarding_request', $4, NOW())
+                        ON CONFLICT (type, related_type, related_id) 
+                        WHERE related_type IS NOT NULL AND related_id IS NOT NULL
+                        DO NOTHING
+                        RETURNING id`,
+                        [userId, chargeAmount, `Forwarding fee for request #${forwardingRequest.id}`, forwardingRequest.id]
                     );
-                    
-                    if (existingCharge.rows.length === 0) {
-                        // Insert new charge
-                        const chargeResult = await pool.query(
-                            `INSERT INTO charge (
-                                user_id, amount_pence, currency, type, description, 
-                                service_date, status, related_type, related_id, created_at
-                            )
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-                            RETURNING id`,
-                            [
-                                userId,
-                                200, // £2 in pence
-                                'GBP',
-                                'forwarding_fee',
-                                'Forwarding fee (non-HMRC/Companies House)',
-                                serviceDate,
-                                'pending',
-                                'forwarding_request',
-                                forwardingRequest.id
-                            ]
-                        );
-                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0]?.id}, amount=200 pence, forwarding_request_id=${forwardingRequest.id}, user_id=${userId}`);
+
+                    if (chargeResult.rows.length > 0) {
+                        console.log(`[forwarding] ✅ Charge created: id=${chargeResult.rows[0].id}, amount=${chargeAmount} pence, forwarding_request_id=${forwardingRequest.id}`);
                     } else {
-                        console.log(`[forwarding] ⏭️ Charge already exists (id=${existingCharge.rows[0].id}) for forwarding_request_id=${forwardingRequest.id}, skipping (idempotent)`);
+                        console.log(`[forwarding] ⏭️ Charge already exists for forwarding_request_id=${forwardingRequest.id}, skipped (idempotent)`);
                     }
                 } catch (chargeError: any) {
-                    // Table doesn't exist yet or insert failed - log but don't fail forwarding
-                    // Error code 42P01 = relation does not exist
-                    if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
-                        console.warn('[forwarding] charge table does not exist yet, skipping charge creation');
+                    // Only swallow "table missing". Everything else should throw.
+                    const msg = String(chargeError?.message || '');
+                    if (msg.includes('relation "charge" does not exist') || chargeError?.code === '42P01') {
+                        console.warn('[forwarding] charge table missing, skipping charge creation');
                     } else {
-                        console.error('[forwarding] ❌ Error creating charge:', {
-                            code: chargeError?.code,
-                            message: chargeError?.message,
-                            detail: chargeError?.detail,
-                            hint: chargeError?.hint,
-                            stack: chargeError?.stack
-                        });
+                        // Re-throw other errors - they're real problems
+                        throw chargeError;
                     }
-                    // Continue - forwarding request is still created successfully
                 }
             } else {
                 console.log(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}"), no charge created (free forwarding)`);
@@ -187,6 +176,14 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             await pool.query('COMMIT');
 
             console.log(`[Forwarding] Created request ${forwardingRequest.id} for user ${userId}`);
+
+            return {
+                forwarding_request: forwardingRequest,
+                request_id: forwardingRequest.id,
+                created: true,
+                message: 'Forwarding request created successfully',
+                charge_amount: chargeAmount,
+            };
 
             // Send email notification to user about forwarding request creation
             // Uses Postmark template "mail-forwarded" (ID: 40508790, alias: "mail-forwarded")

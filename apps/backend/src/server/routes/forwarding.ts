@@ -433,25 +433,14 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             method: req.body?.method || 'standard',
         });
 
-        // Check if this was a new request or existing one
-        const wasCreated = result._created !== false;
-        const requestId = result.id;
-
-        // Clean up internal flags before returning
-        const { _created, _existing, ...forwardingRequest } = result;
-
-        return res.json({
+        return res.status(200).json({
             ok: true,
             data: {
-                forwarding_request: forwardingRequest,
-                request_id: requestId,
-                created: wasCreated,
-                message: wasCreated 
-                    ? 'Forwarding request created successfully' 
-                    : `Forwarding already requested (Request #${requestId})`,
-                pricing: 'billable_200', // Will be determined by service
-                mail_tag: 'UNKNOWN', // Will be determined by service
-                charge_amount: wasCreated ? 200 : 0, // Only charge if newly created
+                forwarding_request: result.forwarding_request,
+                request_id: result.request_id,
+                created: result.created,
+                message: result.message,
+                charge_amount: result.charge_amount,
             },
         });
     } catch (e: any) {
