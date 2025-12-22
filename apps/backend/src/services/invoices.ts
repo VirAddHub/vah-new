@@ -46,8 +46,17 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   );
 
   if (existing.rows.length > 0) {
-    console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}`);
-    return existing.rows[0];
+    // Update status to 'paid' since payment is confirmed
+    await pool.query(
+      `UPDATE invoices SET status = 'paid' WHERE id = $1`,
+      [existing.rows[0].id]
+    );
+    console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}, updated status to 'paid'`);
+    const updated = await pool.query<InvoiceRow>(
+      `SELECT * FROM invoices WHERE id = $1`,
+      [existing.rows[0].id]
+    );
+    return updated.rows[0];
   }
 
   // Get invoice number sequence

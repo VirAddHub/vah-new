@@ -394,6 +394,14 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
 
             console.log(`[Webhook] ✅ Invoice generated: ID ${invoiceResult.invoiceId}, attached ${invoiceResult.attachedCount} charges, total ${invoiceResult.totalChargesPence}p`);
 
+            // Update invoice status to 'paid' since payment is confirmed
+            await pool.query(
+                `UPDATE invoices 
+                 SET status = 'paid', gocardless_payment_id = COALESCE(gocardless_payment_id, $1)
+                 WHERE id = $2`,
+                [paymentId, invoiceResult.invoiceId]
+            );
+
             // Then create PDF and send email using existing service
             // Note: createInvoiceForPayment will find the existing invoice by gocardless_payment_id
             const invoice = await createInvoiceForPayment({
@@ -405,7 +413,13 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                 periodEnd,
             });
 
-            console.log(`[Webhook] ✅ Invoice created: ${invoice.invoice_number} (ID: ${invoice.id}) for user ${userId}`);
+            // Ensure status is 'paid' (createInvoiceForPayment may have created a new one or found existing)
+            await pool.query(
+                `UPDATE invoices SET status = 'paid' WHERE id = $1`,
+                [invoice.id]
+            );
+
+            console.log(`[Webhook] ✅ Invoice created: ${invoice.invoice_number} (ID: ${invoice.id}) for user ${userId}, status: paid`);
             console.log(`[Webhook] 📄 PDF path: ${invoice.pdf_path || 'pending generation'}`);
 
             // Send invoice email (best-effort)
