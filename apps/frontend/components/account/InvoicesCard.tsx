@@ -64,7 +64,7 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
+                          onClick={async () => {
                             // BFF route already normalizes to /api/bff/billing/invoices/{id}/download
                             const url = invoice.download_url!;
                             console.log('[InvoicesCard] Download clicked', {
@@ -73,24 +73,56 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                               fullUrl: window.location.origin + url,
                             });
                             
-                            // Open in new tab for download
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.target = '_blank';
-                            link.download = `invoice-${invoice.invoice_no}.pdf`;
-                            
-                            // Add error handler
-                            link.onerror = (e) => {
+                            try {
+                              // Use fetch first to check if route exists and get proper error
+                              const response = await fetch(url, {
+                                method: 'GET',
+                                credentials: 'include', // Include cookies
+                              });
+                              
+                              console.log('[InvoicesCard] Fetch response', {
+                                invoiceNo: invoice.invoice_no,
+                                status: response.status,
+                                statusText: response.statusText,
+                                contentType: response.headers.get('content-type'),
+                                ok: response.ok,
+                              });
+                              
+                              if (!response.ok) {
+                                const errorText = await response.text();
+                                console.error('[InvoicesCard] Download failed', {
+                                  invoiceNo: invoice.invoice_no,
+                                  status: response.status,
+                                  error: errorText,
+                                });
+                                alert(`Failed to download invoice: ${response.status} ${response.statusText}`);
+                                return;
+                              }
+                              
+                              // If it's a PDF, download it
+                              if (response.headers.get('content-type')?.includes('application/pdf')) {
+                                const blob = await response.blob();
+                                const blobUrl = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = blobUrl;
+                                link.download = `invoice-${invoice.invoice_no}.pdf`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(blobUrl);
+                              } else {
+                                // Fallback to opening in new tab
+                                window.open(url, '_blank');
+                              }
+                            } catch (error: any) {
                               console.error('[InvoicesCard] Download error', {
                                 invoiceNo: invoice.invoice_no,
                                 url,
-                                error: e,
+                                error: error.message,
+                                stack: error.stack,
                               });
-                            };
-                            
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
+                              alert(`Failed to download invoice: ${error.message}`);
+                            }
                           }}
                           className="flex items-center gap-1"
                         >
