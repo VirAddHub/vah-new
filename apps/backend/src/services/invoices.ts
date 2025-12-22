@@ -241,6 +241,20 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
     console.log(`[invoices] Marked ${charges.length} charges as billed for invoice ${invoice.id}`);
   }
 
+  // Recompute invoice amount from charges before generating PDF (ensures correctness)
+  const { recomputeInvoiceAmount } = await import('./billing/invoiceService');
+  await recomputeInvoiceAmount({
+    pool,
+    invoiceId: invoice.id,
+  });
+  
+  // Re-fetch invoice to get updated amount
+  const refreshedInvoice = await pool.query<InvoiceRow>(
+    `SELECT * FROM invoices WHERE id = $1`,
+    [invoice.id]
+  );
+  const invoiceToUse = refreshedInvoice.rows[0] || invoice;
+
   // Generate PDF and update pdf_path
   try {
     const pdfPath = await generateInvoicePdf({
@@ -253,15 +267,15 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       periodEnd: invoiceToUse.period_end,
     });
 
-      const updated = await pool.query<InvoiceRow>(
-        `
+    const updated = await pool.query<InvoiceRow>(
+      `
       UPDATE invoices
       SET pdf_path = $1
       WHERE id = $2
       RETURNING *
       `,
-        [pdfPath, invoiceToUse.id],
-      );
+      [pdfPath, invoiceToUse.id],
+    );
 
       const finalInvoice = updated.rows[0];
 
