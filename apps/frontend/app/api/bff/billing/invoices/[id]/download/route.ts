@@ -9,7 +9,7 @@ export async function GET(
   // Handle Next.js 13+ App Router params (may be Promise)
   const resolvedParams = params instanceof Promise ? await params : params;
   const id = resolvedParams.id;
-  
+
   console.log('[BFF PDF DOWNLOAD] Request received', {
     invoiceId: id,
     url: request.url,

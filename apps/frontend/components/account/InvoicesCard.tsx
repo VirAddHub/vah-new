@@ -67,11 +67,27 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                           onClick={() => {
                             // BFF route already normalizes to /api/bff/billing/invoices/{id}/download
                             const url = invoice.download_url!;
+                            console.log('[InvoicesCard] Download clicked', {
+                              invoiceNo: invoice.invoice_no,
+                              downloadUrl: url,
+                              fullUrl: window.location.origin + url,
+                            });
+                            
                             // Open in new tab for download
                             const link = document.createElement('a');
                             link.href = url;
                             link.target = '_blank';
                             link.download = `invoice-${invoice.invoice_no}.pdf`;
+                            
+                            // Add error handler
+                            link.onerror = (e) => {
+                              console.error('[InvoicesCard] Download error', {
+                                invoiceNo: invoice.invoice_no,
+                                url,
+                                error: e,
+                              });
+                            };
+                            
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
