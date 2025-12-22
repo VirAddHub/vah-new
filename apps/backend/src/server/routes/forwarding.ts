@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
-import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode } from '../utils/ukPostcode';
+import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode, UK_POSTCODE_REGEX } from '../utils/ukPostcode';
 
 const router = Router();
 const pool = getPool();
@@ -306,7 +306,7 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             address2 = addressLines.length > 2 ? addressLines[2] : undefined;
             
             if (addressLines.length >= 2) {
-                const cityPostal = addressLines[addressLines.length - 2] || '';
+        const cityPostal = addressLines[addressLines.length - 2] || '';
                 if (cityPostal.includes(',')) {
                     const parts = cityPostal.split(',').map((s: string) => s.trim());
                     city = parts.slice(0, -1).join(', ');
@@ -373,13 +373,13 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
 
         if (missingFields.length > 0) {
             console.warn('[forwarding] Rejecting forwarding request - incomplete address', {
-                userId,
+            userId,
                 missingFields,
-                hasName: !!name,
-                hasAddress1: !!address1,
-                hasCity: !!city,
-                hasPostal: !!postal
-            });
+            hasName: !!name,
+            hasAddress1: !!address1,
+            hasCity: !!city,
+            hasPostal: !!postal
+        });
             return res.status(400).json({
                 ok: false,
                 error: 'forwarding_address_incomplete',

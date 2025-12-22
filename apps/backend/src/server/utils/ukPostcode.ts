@@ -8,7 +8,7 @@
  * Matches formats like: SW1A 1AA, M1 1AA, B33 8TH, W1A 0AX, EC1A 1BB
  * Pattern: ([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})
  */
-const UK_POSTCODE_REGEX = /([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})/i;
+export const UK_POSTCODE_REGEX = /([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})/i;
 
 /**
  * Extract UK postcode from a string
