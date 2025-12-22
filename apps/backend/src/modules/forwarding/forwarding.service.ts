@@ -156,8 +156,7 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
             console.log(`[Forwarding] Created request ${forwardingRequest.id} for user ${userId}`);
 
             // Send email notification to user about forwarding request creation
-            // Note: This sends a "request received" email (custom), not the "mail forwarded" template
-            // The "mail forwarded" template (ID: 40508790, alias: "mail-forwarded") is sent when admin completes the forwarding
+            // Uses Postmark template "mail-forwarded" (ID: 40508790, alias: "mail-forwarded")
             try {
                 const userResult = await pool.query(
                     'SELECT email, first_name, last_name FROM "user" WHERE id = $1',
@@ -165,29 +164,19 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                 );
                 if (userResult.rows.length > 0) {
                     const user = userResult.rows[0];
-                    const forwardingAddress = `${to.name}\n${to.address1}${to.address2 ? '\n' + to.address2 : ''}\n${to.city}, ${to.postal}\n${to.country}`;
-                    
-                    // Use Postmark client directly to send forwarding request confirmation
-                    const { getClient } = await import('../../lib/mailer');
+                    const { sendMailForwarded } = await import('../../lib/mailer');
                     const { ENV, emailGuard } = await import('../../env');
-                    const client = getClient();
-                    if (client && emailGuard(ENV.EMAIL_MAIL)) {
-                        const firstName = user.first_name || 'there';
+                    
+                    if (emailGuard(ENV.EMAIL_MAIL)) {
+                        const forwardingAddress = `${to.name}\n${to.address1}${to.address2 ? '\n' + to.address2 : ''}\n${to.city}, ${to.postal}\n${to.country}`;
                         
-                        await client.sendEmail({
-                            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
-                            To: user.email,
-                            Subject: 'Forwarding Request Received',
-                            HtmlBody: `
-                                <p>Hi ${firstName},</p>
-                                <p>We've received your forwarding request for your mail item.</p>
-                                <p><strong>Forwarding Address:</strong></p>
-                                <p>${forwardingAddress.replace(/\n/g, '<br>')}</p>
-                                <p>We'll process your request and notify you once your mail has been dispatched.</p>
-                                <p>Thank you for using VirtualAddressHub!</p>
-                            `,
-                            MessageStream: ENV.POSTMARK_STREAM,
-                            ReplyTo: ENV.EMAIL_REPLY_TO || 'support@virtualaddresshub.co.uk',
+                        // Use Postmark template via sendMailForwarded function
+                        await sendMailForwarded({
+                            email: user.email,
+                            firstName: user.first_name,
+                            name: user.first_name || user.last_name,
+                            forwarding_address: forwardingAddress,
+                            forwarded_date: new Date().toLocaleDateString('en-GB'),
                         });
                         console.log(`[Forwarding] ✅ Email notification sent to user ${userId} for request ${forwardingRequest.id}`);
                     }
