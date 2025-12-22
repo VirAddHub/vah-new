@@ -269,8 +269,9 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
 /**
  * Generate PDF invoice
+ * Exported for on-demand generation in download endpoint
  */
-async function generateInvoicePdf(opts: {
+export async function generateInvoicePdf(opts: {
   invoiceId: number;
   invoiceNumber: string;
   userId: number;

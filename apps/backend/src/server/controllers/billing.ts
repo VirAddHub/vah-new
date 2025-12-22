@@ -179,6 +179,7 @@ export async function listInvoices(req: Request, res: Response) {
 
 export async function downloadInvoicePdf(req: Request, res: Response) {
   const userId = Number(req.user!.id);
+  const isAdmin = req.user!.is_admin || false;
   const invoiceId = Number(req.params.id);
   const pool = getPool();
 
@@ -187,33 +188,95 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
   }
 
   try {
+    // Get invoice with full details needed for PDF generation
     const result = await pool.query(
-      `SELECT id, user_id, invoice_number, pdf_path FROM invoices WHERE id=$1 AND user_id=$2 LIMIT 1`,
-      [invoiceId, userId]
+      `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end 
+       FROM invoices WHERE id=$1 LIMIT 1`,
+      [invoiceId]
     );
     const inv = result.rows[0];
-    if (!inv) return res.status(404).json({ ok: false, error: 'not_found' });
-    if (!inv.pdf_path) return res.status(404).json({ ok: false, error: 'pdf_not_available' });
+    
+    if (!inv) {
+      return res.status(404).json({ ok: false, error: 'not_found' });
+    }
+
+    // Authorization: admin can access any invoice, otherwise must own it
+    if (!isAdmin && inv.user_id !== userId) {
+      return res.status(403).json({ ok: false, error: 'forbidden' });
+    }
 
     const baseDir = process.env.INVOICES_DIR
       ? path.resolve(process.env.INVOICES_DIR)
       : path.join(process.cwd(), 'data', 'invoices');
 
-    const rel = String(inv.pdf_path).replace(/^\/+/, ''); // strip leading slash
-    // Expected: invoices/YYYY/userId/invoice-123.pdf
-    const fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
+    let pdfPath = inv.pdf_path;
+    let fullPath: string | null = null;
 
-    if (!fs.existsSync(fullPath)) {
-      return res.status(404).json({ ok: false, error: 'file_not_found' });
+    // Check if PDF exists
+    if (pdfPath) {
+      const rel = String(pdfPath).replace(/^\/+/, ''); // strip leading slash
+      // Expected: invoices/YYYY/userId/invoice-123.pdf
+      fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
+      
+      if (fs.existsSync(fullPath)) {
+        // PDF exists - stream it
+        const filename = inv.invoice_number
+          ? `${inv.invoice_number}.pdf`
+          : `invoice-${invoiceId}.pdf`;
+        
+        const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+        fs.createReadStream(fullPath).pipe(res);
+        return;
+      }
     }
 
-    const filename = inv.invoice_number
-      ? `${inv.invoice_number}.pdf`
-      : `invoice-${invoiceId}.pdf`;
+    // PDF doesn't exist - generate on-demand
+    console.log(`[downloadInvoicePdf] Generating PDF on-demand for invoice ${invoiceId}`);
+    
+    try {
+      const { generateInvoicePdf } = await import('../../services/invoices');
+      
+      // Generate PDF
+      const generatedPath = await generateInvoicePdf({
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoice_number || `INV-${inv.id}`,
+        userId: inv.user_id,
+        amountPence: inv.amount_pence,
+        currency: inv.currency || 'GBP',
+        periodStart: inv.period_start,
+        periodEnd: inv.period_end,
+      });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    fs.createReadStream(fullPath).pipe(res);
+      // Update invoice with generated PDF path
+      await pool.query(
+        `UPDATE invoices SET pdf_path = $1 WHERE id = $2`,
+        [generatedPath, inv.id]
+      );
+
+      // Resolve full path for streaming
+      const rel = String(generatedPath).replace(/^\/+/, '');
+      fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
+
+      if (!fs.existsSync(fullPath)) {
+        console.error(`[downloadInvoicePdf] Generated PDF not found at ${fullPath}`);
+        return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
+      }
+
+      // Stream the generated PDF
+      const filename = inv.invoice_number
+        ? `${inv.invoice_number}.pdf`
+        : `invoice-${invoiceId}.pdf`;
+      
+      const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+      fs.createReadStream(fullPath).pipe(res);
+    } catch (pdfError: any) {
+      console.error(`[downloadInvoicePdf] Failed to generate PDF for invoice ${invoiceId}:`, pdfError);
+      return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
+    }
   } catch (error: any) {
     console.error('[downloadInvoicePdf] error:', error);
     return res.status(500).json({ ok: false, error: 'download_failed' });
