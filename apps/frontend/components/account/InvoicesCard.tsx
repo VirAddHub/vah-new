@@ -66,7 +66,7 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                           size="sm"
                           onClick={() => {
                             // BFF route already normalizes to /api/bff/billing/invoices/{id}/download
-                            const url = invoice.download_url;
+                            const url = invoice.download_url!;
                             // Open in new tab for download
                             const link = document.createElement('a');
                             link.href = url;
