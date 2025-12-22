@@ -400,28 +400,28 @@ export async function generateInvoicePdf(opts: {
     doc.moveTo(startX, doc.y).lineTo(startX + descWidth + dateWidth + amountWidth, doc.y).stroke();
     doc.moveDown(0.3);
 
-    // All charges (including subscription)
-    const allItems = [...charges];
-    if (basePlanPence > 0) {
-      // Find subscription charge or add base plan
-      const subscriptionCharge = charges.find(c => c.description?.includes('subscription'));
-      if (!subscriptionCharge) {
-        allItems.unshift({
-          description: 'Digital Mailbox Plan – Monthly subscription',
-          amount_pence: basePlanPence,
-          service_date: periodStartStr,
-        });
-      }
+    // All charges (including subscription) - already sorted by DB query (service_date ASC, created_at ASC)
+    // Subscription charge should already be in charges array if it was created
+    const allItems = charges;
+    
+    // Verify total matches
+    const itemsSum = allItems.reduce((sum, item) => sum + item.amount_pence, 0);
+    if (itemsSum !== opts.amountPence) {
+      console.warn('[generateInvoicePdf] Amount mismatch', {
+        invoiceId: opts.invoiceId,
+        invoiceAmount: opts.amountPence,
+        itemsSum,
+        difference: opts.amountPence - itemsSum,
+      });
     }
 
-    // Sort by service_date ASC, then created_at ASC (already sorted from DB query)
-    // No need to re-sort since DB query already orders correctly
-
     // Render each line item
+    let renderedItemsSum = 0;
     for (const item of allItems) {
       if (item.amount_pence > 0) {
         const itemAmount = (item.amount_pence / 100).toFixed(2);
         const itemDate = item.service_date || '';
+        renderedItemsSum += item.amount_pence;
         
         // Description
         doc.text(item.description || 'Service charge', startX, doc.y, {
@@ -444,6 +444,15 @@ export async function generateInvoicePdf(opts: {
         
         doc.moveDown(0.4);
       }
+    }
+    
+    // Log if rendered items don't match invoice total
+    if (renderedItemsSum !== opts.amountPence) {
+      console.warn('[generateInvoicePdf] Rendered items mismatch', {
+        invoiceId: opts.invoiceId,
+        invoiceAmount: opts.amountPence,
+        renderedSum: renderedItemsSum,
+      });
     }
 
     doc.moveDown(0.3);
