@@ -181,15 +181,23 @@ export async function GET(request: NextRequest) {
       }
       : null;
 
-    // Transform invoices (BFF invoices route already normalizes pdf_url to BFF endpoint)
-    const invoiceRows = invoicesRaw.map((inv: any) => ({
-      invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
-      description: inv.description || 'Subscription payment',
-      total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
-      status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
-      date_label: inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A',
-      download_url: inv.pdf_url || inv.download_url || (inv.id ? `/api/bff/billing/invoices/${inv.id}/download` : null)
-    }));
+    // Transform invoices - always use BFF download route if PDF exists
+    // Never use raw pdf_url or pdf_path from backend - always use BFF route for authentication
+    const invoiceRows = invoicesRaw.map((inv: any) => {
+      const hasPdf = Boolean(inv?.pdf_url || inv?.pdf_path);
+      const downloadUrl = hasPdf && inv.id 
+        ? `/api/bff/billing/invoices/${inv.id}/download` 
+        : null;
+      
+      return {
+        invoice_no: inv.invoice_number || inv.id?.toString() || 'N/A',
+        description: inv.description || 'Subscription payment',
+        total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
+        status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
+        date_label: inv.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A',
+        download_url: downloadUrl
+      };
+    });
 
     const accountData = {
       subscription,
