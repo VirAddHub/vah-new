@@ -231,7 +231,13 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                 // Don't fail the forwarding request if email fails
             }
 
-            return forwardingRequest;
+            return {
+                forwarding_request: forwardingRequest,
+                request_id: forwardingRequest.id,
+                created: true,
+                message: 'Forwarding request created successfully',
+                charge_amount: chargeAmount,
+            };
         } catch (error) {
             await pool.query('ROLLBACK');
             throw error;
