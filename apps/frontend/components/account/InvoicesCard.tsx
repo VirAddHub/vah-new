@@ -72,33 +72,54 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                               downloadUrl: url,
                               fullUrl: window.location.origin + url,
                             });
-                            
+
                             try {
                               // Use fetch first to check if route exists and get proper error
                               const response = await fetch(url, {
                                 method: 'GET',
                                 credentials: 'include', // Include cookies
                               });
-                              
+
                               console.log('[InvoicesCard] Fetch response', {
                                 invoiceNo: invoice.invoice_no,
                                 status: response.status,
                                 statusText: response.statusText,
                                 contentType: response.headers.get('content-type'),
+                                contentLength: response.headers.get('content-length'),
                                 ok: response.ok,
+                                url: response.url,
+                                headers: Object.fromEntries(response.headers.entries()),
                               });
                               
                               if (!response.ok) {
-                                const errorText = await response.text();
+                                let errorText = '';
+                                try {
+                                  errorText = await response.text();
+                                } catch (e) {
+                                  errorText = `Failed to read error response: ${e}`;
+                                }
+                                
                                 console.error('[InvoicesCard] Download failed', {
                                   invoiceNo: invoice.invoice_no,
                                   status: response.status,
+                                  statusText: response.statusText,
                                   error: errorText,
+                                  url: response.url,
+                                  fullError: {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    headers: Object.fromEntries(response.headers.entries()),
+                                    body: errorText.substring(0, 500),
+                                  },
                                 });
-                                alert(`Failed to download invoice: ${response.status} ${response.statusText}`);
+                                
+                                const errorMsg = errorText ? 
+                                  (errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText) :
+                                  `${response.status} ${response.statusText}`;
+                                alert(`Failed to download invoice: ${errorMsg}`);
                                 return;
                               }
-                              
+
                               // If it's a PDF, download it
                               if (response.headers.get('content-type')?.includes('application/pdf')) {
                                 const blob = await response.blob();
@@ -115,13 +136,15 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                                 window.open(url, '_blank');
                               }
                             } catch (error: any) {
-                              console.error('[InvoicesCard] Download error', {
+                              console.error('[InvoicesCard] Download error (catch block)', {
                                 invoiceNo: invoice.invoice_no,
                                 url,
-                                error: error.message,
-                                stack: error.stack,
+                                errorName: error?.name,
+                                errorMessage: error?.message,
+                                errorStack: error?.stack,
+                                fullError: error,
                               });
-                              alert(`Failed to download invoice: ${error.message}`);
+                              alert(`Failed to download invoice: ${error?.message || 'Unknown error'}`);
                             }
                           }}
                           className="flex items-center gap-1"

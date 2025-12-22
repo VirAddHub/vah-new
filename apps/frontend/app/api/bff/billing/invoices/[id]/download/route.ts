@@ -20,7 +20,7 @@ export async function GET(
 
   // Next.js 14: params is synchronous, not a Promise
   const id = params?.id;
-  
+
   // Validate invoice ID
   if (!id || id === 'undefined' || id === 'null' || id.trim() === '') {
     console.error('[BFF PDF DOWNLOAD] Invalid invoice ID', { id, params, url: request.url });
