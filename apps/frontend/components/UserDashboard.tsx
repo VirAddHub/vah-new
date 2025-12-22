@@ -71,8 +71,8 @@ const fetcher = (url: string) => {
   // If url already starts with /api/bff, use it as-is (relative - handled by Next.js)
   // If url starts with http, use it as-is (absolute URL)
   // Otherwise, it's a backend route - prepend API_BASE
-  const finalUrl = url.startsWith('/api/bff') || url.startsWith('http') 
-    ? url 
+  const finalUrl = url.startsWith('/api/bff') || url.startsWith('http')
+    ? url
     : `${API_BASE}${url}`;
 
   return fetch(finalUrl, {
@@ -575,7 +575,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         setSelectedMailForForwarding(null);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        
+
         // Handle incomplete forwarding address error
         if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
           const missingFields = errorData.fields || [];
@@ -586,7 +586,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             'postal_code': 'Postcode',
           };
           const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
-          
+
           toast({
             title: "Incomplete Forwarding Address",
             description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,
@@ -656,7 +656,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       const sessionKey = `vah_identity_complete_banner_counted_${userId}`;
 
       const prevState = localStorage.getItem(stateKey);
-      
+
       // If user is NOT complete, always show banner (don't track state)
       if (!isComplete) {
         setShowIdentitySuccessBanner(false); // Don't show success banner if not complete

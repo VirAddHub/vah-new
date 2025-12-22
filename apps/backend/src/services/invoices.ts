@@ -109,8 +109,23 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
           );
 
           const finalInvoice = updated.rows[0];
-          await sendInvoiceAvailableEmail(finalInvoice);
-          return finalInvoice;
+          
+          // Recompute invoice amount from charges before sending email (ensures correctness)
+          const { recomputeInvoiceAmount } = await import('./billing/invoiceService');
+          await recomputeInvoiceAmount({
+            pool,
+            invoiceId: finalInvoice.id,
+          });
+          
+          // Re-fetch invoice to get updated amount
+          const refreshedInvoice = await pool.query<InvoiceRow>(
+            `SELECT * FROM invoices WHERE id = $1`,
+            [finalInvoice.id]
+          );
+          const invoiceToReturn = refreshedInvoice.rows[0] || finalInvoice;
+          
+          await sendInvoiceAvailableEmail(invoiceToReturn);
+          return invoiceToReturn;
         } catch (pdfError) {
           console.error(`[invoices] Failed to regenerate PDF for invoice ${existingInvoice.id}:`, pdfError);
           // Return existing invoice even if PDF generation failed
@@ -229,31 +244,31 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   // Generate PDF and update pdf_path
   try {
     const pdfPath = await generateInvoicePdf({
-      invoiceId: invoice.id,
+      invoiceId: invoiceToUse.id,
       invoiceNumber: invoiceNumberFormatted,
-      userId: invoice.user_id,
-      amountPence: invoice.amount_pence,
-      currency: invoice.currency,
-      periodStart: invoice.period_start,
-      periodEnd: invoice.period_end,
+      userId: invoiceToUse.user_id,
+      amountPence: invoiceToUse.amount_pence, // Use recomputed amount
+      currency: invoiceToUse.currency,
+      periodStart: invoiceToUse.period_start,
+      periodEnd: invoiceToUse.period_end,
     });
 
-    const updated = await pool.query<InvoiceRow>(
-      `
+      const updated = await pool.query<InvoiceRow>(
+        `
       UPDATE invoices
       SET pdf_path = $1
       WHERE id = $2
       RETURNING *
       `,
-      [pdfPath, invoice.id],
-    );
+        [pdfPath, invoiceToUse.id],
+      );
 
-    const finalInvoice = updated.rows[0];
+      const finalInvoice = updated.rows[0];
 
-    // Send invoice email (only if not already sent)
-    await sendInvoiceAvailableEmail(finalInvoice);
+      // Send invoice email (only if not already sent)
+      await sendInvoiceAvailableEmail(finalInvoice);
 
-    return finalInvoice;
+      return finalInvoice;
   } catch (pdfError) {
     console.error(`[invoices] Failed to generate PDF for invoice ${invoice.id}:`, pdfError);
     // Return invoice even if PDF generation failed
@@ -298,11 +313,11 @@ export async function generateInvoicePdf(opts: {
   try {
     const chargesResult = await pool.query(
       `
-      SELECT description, amount_pence, service_date
+      SELECT description, amount_pence, service_date, created_at
       FROM charge
       WHERE invoice_id = $1
         AND status = 'billed'
-      ORDER BY service_date DESC, created_at DESC
+      ORDER BY service_date ASC, created_at ASC
       `,
       [opts.invoiceId]
     );
@@ -399,13 +414,8 @@ export async function generateInvoicePdf(opts: {
       }
     }
 
-    // Sort by service_date ASC, then created_at ASC
-    allItems.sort((a, b) => {
-      const dateA = a.service_date || '';
-      const dateB = b.service_date || '';
-      if (dateA !== dateB) return dateA.localeCompare(dateB);
-      return 0;
-    });
+    // Sort by service_date ASC, then created_at ASC (already sorted from DB query)
+    // No need to re-sort since DB query already orders correctly
 
     // Render each line item
     for (const item of allItems) {

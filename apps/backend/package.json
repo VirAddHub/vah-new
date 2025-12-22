@@ -38,6 +38,7 @@
     "test:e2e:ci": "BASE_URL=$BASE_URL npm -w apps/backend run test:e2e",
     "postmark:upsert": "node scripts/postmark-upsert-webhook.mjs",
     "test:smoke": "jest -c jest.backend.config.cjs --passWithNoTests --runTestsByPath tests/smoke.spec.ts tests/auth.smoke.spec.ts",
+    "billing:smoke": "ts-node --project tsconfig.server.json scripts/billing-smoke.ts",
     "test:basic": "node test/test-basic.mjs",
     "test:prepush": "npm run typecheck",
     "test:prepush:smoke": "node scripts/prepush-smoke.mjs",

@@ -79,6 +79,30 @@ export async function recomputeInvoiceTotal(
     totalChargesPence = 0;
   }
 
+  // Get current invoice amount for comparison (debug logging)
+  let currentInvoiceAmount = 0;
+  try {
+    const invoiceResult = await pool.query(
+      `SELECT amount_pence FROM invoices WHERE id = $1`,
+      [invoiceId]
+    );
+    if (invoiceResult.rows.length > 0) {
+      currentInvoiceAmount = Number(invoiceResult.rows[0].amount_pence || 0);
+    }
+  } catch (e) {
+    // Ignore
+  }
+
+  // Log mismatch if found (debug-safe)
+  if (currentInvoiceAmount !== totalChargesPence) {
+    console.error('[invoiceService] INVOICE AMOUNT MISMATCH', {
+      invoiceId,
+      currentInvoiceAmount,
+      computedFromCharges: totalChargesPence,
+      difference: totalChargesPence - currentInvoiceAmount,
+    });
+  }
+
   // Update invoice amount - this is the authoritative source
   // INVARIANT: invoice.amount_pence = SUM(charge.amount_pence WHERE invoice_id = invoice.id AND status='billed')
   await pool.query(
@@ -89,6 +113,16 @@ export async function recomputeInvoiceTotal(
   );
 
   return totalChargesPence;
+}
+
+/**
+ * Recompute invoice amount (alias for recomputeInvoiceTotal for consistency)
+ */
+export async function recomputeInvoiceAmount(opts: {
+  pool: any;
+  invoiceId: number;
+}): Promise<number> {
+  return recomputeInvoiceTotal(opts.pool, opts.invoiceId, 'GBP');
 }
 
 /**

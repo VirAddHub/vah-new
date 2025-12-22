@@ -20,7 +20,7 @@ import { User } from 'lucide-react';
 
 export default function AccountPage() {
     const router = useRouter();
-    
+
     // Fetch account data from existing APIs
     const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
     const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
@@ -38,19 +38,19 @@ export default function AccountPage() {
     // Debug: Log what we're getting (development only)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
         console.log('[Account Page] Data loaded:', {
-            profile: profile ? { 
-                first_name: profile.first_name, 
-                last_name: profile.last_name, 
+            profile: profile ? {
+                first_name: profile.first_name,
+                last_name: profile.last_name,
                 phone: profile.phone,
                 email: profile.email,
-                forwarding_address: profile.forwarding_address 
+                forwarding_address: profile.forwarding_address
             } : 'null',
-            user: user ? { 
-                first_name: user.first_name, 
-                last_name: user.last_name, 
+            user: user ? {
+                first_name: user.first_name,
+                last_name: user.last_name,
                 phone: user.phone,
                 email: user.email,
-                forwarding_address: user.forwarding_address 
+                forwarding_address: user.forwarding_address
             } : 'null',
             profileData: profileData,
             userData: userData,
@@ -81,7 +81,7 @@ export default function AccountPage() {
         // to ensure email and forwarding_address are always up-to-date
         if (accountData?.ok) {
             const merged = { ...accountData.data };
-            
+
             // Always use latest email from profile or user (accountData might be stale)
             if (profile?.email || user?.email) {
                 merged.contact = {
@@ -89,44 +89,44 @@ export default function AccountPage() {
                     email: profile?.email || user?.email || merged.contact?.email || '',
                 };
             }
-            
+
             // Always use latest forwarding_address from profile or user (accountData might be stale)
             if (profile?.forwarding_address || user?.forwarding_address) {
                 merged.forwarding_address = profile?.forwarding_address || user?.forwarding_address
                     ? { formatted: profile?.forwarding_address || user?.forwarding_address || '' }
                     : merged.forwarding_address;
             }
-            
+
             // Reformat business_address if we have profile data with address fields
             // Format: address_line2 (if exists), address_line1, city postal_code
             if (profile?.address_line1 || profile?.city) {
                 const lines: string[] = [];
-                
+
                 // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
                 if (profile?.address_line2?.trim()) {
                     lines.push(profile.address_line2.trim());
                 }
-                
+
                 // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
                 if (profile?.address_line1?.trim()) {
                     lines.push(profile.address_line1.trim());
                 }
-                
+
                 // Line 3: city postal_code (e.g., "London SE1 3PH")
                 const cityPostal = [
                     profile?.city?.trim(),
                     profile?.postal_code?.trim()
                 ].filter(Boolean).join(' ');
-                
+
                 if (cityPostal) {
                     lines.push(cityPostal);
                 }
-                
+
                 if (lines.length > 0) {
                     merged.business_address = { formatted: lines.join('\n') };
                 }
             }
-            
+
             return merged;
         }
 
@@ -177,27 +177,27 @@ export default function AccountPage() {
             ? {
                 formatted: (() => {
                     const lines: string[] = [];
-                    
+
                     // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
                     if (profile?.address_line2?.trim()) {
                         lines.push(profile.address_line2.trim());
                     }
-                    
+
                     // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
                     if (profile?.address_line1?.trim()) {
                         lines.push(profile.address_line1.trim());
                     }
-                    
+
                     // Line 3: city postal_code (e.g., "London SE1 3PH")
                     const cityPostal = [
                         profile?.city?.trim(),
                         profile?.postal_code?.trim()
                     ].filter(Boolean).join(' ');
-                    
+
                     if (cityPostal) {
                         lines.push(cityPostal);
                     }
-                    
+
                     return lines.join('\n');
                 })()
             }
@@ -207,7 +207,7 @@ export default function AccountPage() {
         const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => {
             // Handle date: created_at is bigint (epoch ms), period_end is string 'YYYY-MM-DD'
             let dateLabel = 'N/A';
-            
+
             // Try period_end first (preferred - billing period end date)
             if (inv.period_end) {
                 try {
@@ -223,7 +223,7 @@ export default function AccountPage() {
                     // Fall through to other date sources
                 }
             }
-            
+
             // Fallback to date field (created_at as bigint)
             if (dateLabel === 'N/A' && inv.date) {
                 try {
@@ -240,7 +240,7 @@ export default function AccountPage() {
                     // Keep 'N/A'
                 }
             }
-            
+
             // Last fallback: created_at if available
             if (dateLabel === 'N/A' && inv.created_at) {
                 try {
@@ -284,12 +284,12 @@ export default function AccountPage() {
             const payload: any = {
                 phone: contact.phone
             };
-            
+
             // Include email if it has changed
             if (contact.email && contact.email !== data?.contact?.email) {
                 payload.email = contact.email;
             }
-            
+
             const response = await fetch('/api/bff/profile', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -318,7 +318,7 @@ export default function AccountPage() {
 
             const emailChanged = contact.email !== data?.contact?.email;
             const phoneChanged = contact.phone !== data?.contact?.phone;
-            
+
             // Email change requires verification - show special message
             if (emailChanged) {
                 toast({
