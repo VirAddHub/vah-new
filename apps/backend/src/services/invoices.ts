@@ -82,7 +82,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       // If PDF doesn't exist or amount changed, regenerate PDF
       if (!existingInvoice.pdf_path || existingInvoice.amount_pence !== opts.amountPence) {
         console.log(`[invoices] Regenerating PDF for invoice ${existingInvoice.id} (missing PDF or amount changed)`);
-        
+
         // Update invoice amount if it changed
         if (existingInvoice.amount_pence !== opts.amountPence) {
           await pool.query(
@@ -109,21 +109,21 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
           );
 
           const finalInvoice = updated.rows[0];
-          
+
           // Recompute invoice amount from charges before sending email (ensures correctness)
           const { recomputeInvoiceAmount } = await import('./billing/invoiceService');
           await recomputeInvoiceAmount({
             pool,
             invoiceId: finalInvoice.id,
           });
-          
+
           // Re-fetch invoice to get updated amount
           const refreshedInvoice = await pool.query<InvoiceRow>(
             `SELECT * FROM invoices WHERE id = $1`,
             [finalInvoice.id]
           );
           const invoiceToReturn = refreshedInvoice.rows[0] || finalInvoice;
-          
+
           await sendInvoiceAvailableEmail(invoiceToReturn);
           return invoiceToReturn;
         } catch (pdfError) {
@@ -247,7 +247,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
     pool,
     invoiceId: invoice.id,
   });
-  
+
   // Re-fetch invoice to get updated amount
   const refreshedInvoice = await pool.query<InvoiceRow>(
     `SELECT * FROM invoices WHERE id = $1`,
@@ -277,12 +277,12 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       [pdfPath, invoiceToUse.id],
     );
 
-      const finalInvoice = updated.rows[0];
+    const finalInvoice = updated.rows[0];
 
-      // Send invoice email (only if not already sent)
-      await sendInvoiceAvailableEmail(finalInvoice);
+    // Send invoice email (only if not already sent)
+    await sendInvoiceAvailableEmail(finalInvoice);
 
-      return finalInvoice;
+    return finalInvoice;
   } catch (pdfError) {
     console.error(`[invoices] Failed to generate PDF for invoice ${invoice.id}:`, pdfError);
     // Return invoice even if PDF generation failed
@@ -309,9 +309,20 @@ export async function generateInvoicePdf(opts: {
   periodStart: string | Date;
   periodEnd: string | Date;
 }): Promise<string> {
+  console.log('[generateInvoicePdf] Starting PDF generation', {
+    invoiceId: opts.invoiceId,
+    invoiceNumber: opts.invoiceNumber,
+    userId: opts.userId,
+    amountPence: opts.amountPence,
+    currency: opts.currency,
+    periodStart: opts.periodStart,
+    periodEnd: opts.periodEnd,
+  });
+
   const pool = getPool();
 
   // Get user details
+  console.log('[generateInvoicePdf] Fetching user details', { userId: opts.userId });
   const userResult = await pool.query(
     `SELECT email, first_name, last_name, company_name FROM "user" WHERE id = $1`,
     [opts.userId]
@@ -319,8 +330,15 @@ export async function generateInvoicePdf(opts: {
   const user = userResult.rows[0];
 
   if (!user) {
+    console.error('[generateInvoicePdf] User not found', { userId: opts.userId });
     throw new Error(`User ${opts.userId} not found`);
   }
+
+  console.log('[generateInvoicePdf] User found', {
+    userId: opts.userId,
+    email: user.email,
+    name: `${user.first_name} ${user.last_name}`,
+  });
 
   // Get all billed charges for this invoice (for line items breakdown)
   let charges: Array<{ description: string; amount_pence: number; service_date: string }> = [];
@@ -356,10 +374,23 @@ export async function generateInvoicePdf(opts: {
   const year = new Date(opts.periodEnd).getFullYear();
   const dir = path.join(INVOICE_BASE_DIR, String(year), String(opts.userId));
 
+  console.log('[generateInvoicePdf] Creating directory', {
+    invoiceId: opts.invoiceId,
+    directory: dir,
+    invoiceBaseDir: INVOICE_BASE_DIR,
+  });
+
   await fs.promises.mkdir(dir, { recursive: true });
+  console.log('[generateInvoicePdf] Directory created/verified', { directory: dir });
 
   const filename = `invoice-${opts.invoiceId}.pdf`;
   const fullPath = path.join(dir, filename);
+
+  console.log('[generateInvoicePdf] PDF file path', {
+    invoiceId: opts.invoiceId,
+    filename,
+    fullPath,
+  });
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const writeStream = fs.createWriteStream(fullPath);
@@ -373,14 +404,14 @@ export async function generateInvoicePdf(opts: {
   doc.fontSize(12);
   doc.text(`Invoice: ${opts.invoiceNumber}`);
   doc.text(`Invoice date: ${new Date().toISOString().slice(0, 10)}`);
-  
-  const periodStartStr = typeof opts.periodStart === 'string' 
-    ? opts.periodStart 
+
+  const periodStartStr = typeof opts.periodStart === 'string'
+    ? opts.periodStart
     : opts.periodStart.toISOString().slice(0, 10);
-  const periodEndStr = typeof opts.periodEnd === 'string' 
-    ? opts.periodEnd 
+  const periodEndStr = typeof opts.periodEnd === 'string'
+    ? opts.periodEnd
     : opts.periodEnd.toISOString().slice(0, 10);
-  
+
   doc.text(`Billing period: ${periodStartStr} – ${periodEndStr}`);
   doc.moveDown();
 
@@ -417,7 +448,7 @@ export async function generateInvoicePdf(opts: {
     // All charges (including subscription) - already sorted by DB query (service_date ASC, created_at ASC)
     // Subscription charge should already be in charges array if it was created
     const allItems = charges;
-    
+
     // Verify total matches
     const itemsSum = allItems.reduce((sum, item) => sum + item.amount_pence, 0);
     if (itemsSum !== opts.amountPence) {
@@ -436,30 +467,30 @@ export async function generateInvoicePdf(opts: {
         const itemAmount = (item.amount_pence / 100).toFixed(2);
         const itemDate = item.service_date || '';
         renderedItemsSum += item.amount_pence;
-        
+
         // Description
         doc.text(item.description || 'Service charge', startX, doc.y, {
           width: descWidth,
           ellipsis: true,
         });
-        
+
         // Date
         if (itemDate) {
           doc.text(itemDate, startX + descWidth, doc.y, {
             width: dateWidth,
           });
         }
-        
+
         // Amount (right-aligned)
         doc.text(`${opts.currency} ${itemAmount}`, rightAlignX, doc.y, {
           width: amountWidth,
           align: 'right',
         });
-        
+
         doc.moveDown(0.4);
       }
     }
-    
+
     // Log if rendered items don't match invoice total
     if (renderedItemsSum !== opts.amountPence) {
       console.warn('[generateInvoicePdf] Rendered items mismatch', {
@@ -546,7 +577,7 @@ export async function getBillingPeriodForUser(userId: number): Promise<{ periodS
       [userId],
     );
     const planStart = userRes.rows[0]?.plan_start_date;
-    
+
     if (planStart) {
       const start = new Date(Number(planStart));
       start.setHours(0, 0, 0, 0);
@@ -555,7 +586,7 @@ export async function getBillingPeriodForUser(userId: number): Promise<{ periodS
         periodEnd: today,
       };
     }
-    
+
     // Default: last 30 days
     const start = new Date(today);
     start.setDate(start.getDate() - 30);
@@ -590,7 +621,7 @@ export async function findUserIdForPayment(
       `SELECT user_id FROM invoices WHERE gocardless_payment_id = $1 LIMIT 1`,
       [gocardlessPaymentId]
     );
-    
+
     if (invoiceResult.rows.length > 0) {
       return invoiceResult.rows[0].user_id;
     }
@@ -601,7 +632,7 @@ export async function findUserIdForPayment(
         `SELECT user_id FROM subscription WHERE mandate_id = $1 LIMIT 1`,
         [paymentLinks.mandate]
       );
-      
+
       if (mandateResult.rows.length > 0) {
         return mandateResult.rows[0].user_id;
       }
@@ -613,7 +644,7 @@ export async function findUserIdForPayment(
         `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
         [paymentLinks.customer]
       );
-      
+
       if (customerResult.rows.length > 0) {
         return customerResult.rows[0].id;
       }
@@ -632,12 +663,12 @@ export async function findUserIdForPayment(
 function formatBillingPeriod(periodStart: string | Date, periodEnd: string | Date): string {
   const start = typeof periodStart === 'string' ? new Date(periodStart) : periodStart;
   const end = typeof periodEnd === 'string' ? new Date(periodEnd) : periodEnd;
-  
+
   const startDay = start.getDate();
   const endDay = end.getDate();
   const month = end.toLocaleDateString('en-GB', { month: 'long' });
   const year = end.getFullYear();
-  
+
   return `${startDay}–${endDay} ${month} ${year}`;
 }
 
@@ -647,24 +678,24 @@ function formatBillingPeriod(periodStart: string | Date, periodEnd: string | Dat
  */
 async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
   const pool = getPool();
-  
+
   // Check if email already sent (idempotency)
   const checkResult = await pool.query(
     `SELECT email_sent_at FROM invoices WHERE id = $1`,
     [invoice.id]
   );
-  
+
   if (checkResult.rows[0]?.email_sent_at) {
     console.log(`[invoices] Email already sent for invoice ${invoice.id}, skipping`);
     return;
   }
-  
+
   // Get user data
   const userResult = await pool.query(
     `SELECT email, first_name, name FROM "user" WHERE id = $1`,
     [invoice.user_id]
   );
-  
+
   if (userResult.rows.length === 0) {
     const errorMsg = `User ${invoice.user_id} not found`;
     await pool.query(
@@ -674,9 +705,9 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
     console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
     return;
   }
-  
+
   const user = userResult.rows[0];
-  
+
   if (!user.email) {
     const errorMsg = 'User email not found';
     await pool.query(
@@ -686,16 +717,16 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
     console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
     return;
   }
-  
+
   // Format billing period
   const billingPeriod = formatBillingPeriod(invoice.period_start, invoice.period_end);
-  
+
   // Format invoice amount
   const invoiceAmount = (invoice.amount_pence / 100).toFixed(2);
-  
+
   // Build billing URL
   const billingUrl = `${getAppUrl()}/billing#invoices`;
-  
+
   // Send email
   try {
     await sendTemplateEmail({
@@ -712,13 +743,13 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
       replyTo: 'support@virtualaddresshub.co.uk',
       templateId: 40508791, // Postmark Template ID
     });
-    
+
     // Mark as sent
     await pool.query(
       `UPDATE invoices SET email_sent_at = NOW(), email_send_error = NULL WHERE id = $1`,
       [invoice.id]
     );
-    
+
     console.log(`[invoices] Invoice email sent for invoice ${invoice.id} to ${user.email}`);
   } catch (error: any) {
     const errorMsg = error?.message || 'Unknown error sending email';
