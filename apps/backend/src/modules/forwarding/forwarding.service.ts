@@ -97,13 +97,14 @@ export async function createForwardingRequest(input: CreateForwardingInput) {
                 const serviceDate = new Date().toISOString().split('T')[0]; // Today's date
                 // Create charge for forwarding fee (if charge table exists)
                 try {
+                    // Use the unique index name for ON CONFLICT (partial index with WHERE clause)
                     await pool.query(
                         `INSERT INTO charge (
                             user_id, amount_pence, currency, type, description, 
                             service_date, status, related_type, related_id, created_at
                         )
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-                        ON CONFLICT (type, related_type, related_id) DO NOTHING
+                        ON CONFLICT ON CONSTRAINT idx_charge_idempotency DO NOTHING
                         `,
                         [
                             userId,
