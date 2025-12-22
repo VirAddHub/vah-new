@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+// Force dynamic rendering - never cache PDF downloads
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
@@ -9,6 +13,15 @@ export async function GET(
   // Handle Next.js 13+ App Router params (may be Promise)
   const resolvedParams = params instanceof Promise ? await params : params;
   const id = resolvedParams.id;
+  
+  // Validate invoice ID
+  if (!id || id === 'undefined' || id === 'null') {
+    console.error('[BFF PDF DOWNLOAD] Invalid invoice ID', { id, url: request.url });
+    return NextResponse.json(
+      { ok: false, error: 'Invalid invoice ID' },
+      { status: 400 }
+    );
+  }
 
   console.log('[BFF PDF DOWNLOAD] Request received', {
     invoiceId: id,
