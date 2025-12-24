@@ -22,7 +22,7 @@
     "prebuild:shared": "cd ../../packages/shared && npm run build",
     "postinstall": "bash scripts/patch-native.sh",
     "clean": "rimraf dist",
-    "build": "rm -rf dist && npx tsc -p tsconfig.server.json && node scripts/write-build-meta.cjs && node scripts/postbuild-shims.cjs && node scripts/verify-build.cjs",
+    "build": "npm run prebuild:shared && rm -rf dist && npx tsc -p tsconfig.server.json && node scripts/write-build-meta.cjs && node scripts/postbuild-shims.cjs && node scripts/verify-build.cjs",
     "build:backend": "npm run build",
     "prestart:backend": "node scripts/prestart.cjs",
     "predev": "echo 'PostgreSQL mode - ensure DATABASE_URL is set'",
