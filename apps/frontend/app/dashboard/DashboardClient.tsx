@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserDashboard } from '@/components/UserDashboard';
+import { clearToken, setStoredUser } from '@/lib/token-manager';
 
 export default function DashboardClient() {
     const router = useRouter();
@@ -22,8 +23,14 @@ export default function DashboardClient() {
     }, [router]);
 
     const handleLogout = () => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
+        // Clear local auth state
+        clearToken();
+        setStoredUser(null);
+
+        // Clear backend session cookie (HttpOnly may not be readable, but expiry still works)
+        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        // Also clear CSRF cookie explicitly (defensive)
+        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         router.push('/login');
     };
 

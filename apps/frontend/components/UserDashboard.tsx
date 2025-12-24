@@ -817,7 +817,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 className="tt-min flex items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Sign out</span>
               </Button>
             </div>
           </div>
