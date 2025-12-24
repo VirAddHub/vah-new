@@ -12,6 +12,8 @@
     "typescript": "^5.0.0"
   },
   "exports": {
-    "./mailStatus": "./src/mailStatus.ts"
+    ".": "./src/index.ts",
+    "./mailStatus": "./src/mailStatus.ts",
+    "./forwardingStatus": "./src/forwardingStatus.ts"
   }
 }
