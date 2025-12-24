@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc 2>&1 || (echo 'TypeScript compilation failed' && exit 1)",
+    "build": "tsc",
     "dev": "tsc --watch"
   },
   "devDependencies": {
