@@ -37,7 +37,7 @@ async function getGraphAccessToken(): Promise<string> {
   }
 
   const token = await getGraphToken();
-  
+
   // Cache token for 55 minutes (tokens typically expire in 1 hour)
   cachedToken = {
     token,
@@ -92,11 +92,11 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     console.error(`[onedriveClient] Failed to list OneDrive files: ${response.status}`);
     console.error(`[onedriveClient] URL attempted: ${url}`);
     console.error(`[onedriveClient] Error details: ${errorText}`);
-    
+
     if (response.status === 404) {
       throw new Error(`OneDrive folder not found (404). Check ONEDRIVE_MAIL_INBOX_FOLDER_ID="${inboxFolderId}". The folder ID may be incorrect or the folder doesn't exist. Use Microsoft Graph Explorer to find the correct folder ID.`);
     }
-    
+
     throw new Error(`Failed to list OneDrive files: ${response.status} ${errorText}`);
   }
 

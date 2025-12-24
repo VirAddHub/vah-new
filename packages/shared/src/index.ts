@@ -1,4 +1,4 @@
 // packages/shared/src/index.ts
 // Re-export all shared modules
-export * from './mailStatus';
-export * from './forwardingStatus';
+export * from './mailStatus.js';
+export * from './forwardingStatus.js';
