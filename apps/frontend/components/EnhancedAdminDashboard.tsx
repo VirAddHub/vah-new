@@ -86,6 +86,7 @@ import {
     PieChart,
     Users2,
     CreditCard,
+    Receipt,
     Building2,
     Clipboard,
 } from "lucide-react";
@@ -595,6 +596,15 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                             variant="ghost"
                             size="sm"
                             className="gap-1.5 h-8 px-3"
+                            onClick={() => router.push('/admin/invoices')}
+                        >
+                            <Receipt className="h-4 w-4" />
+                            <span className="text-sm">Invoices</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 h-8 px-3"
                             onClick={() => router.push('/admin/filename-generator')}
                         >
                             <Clipboard className="h-4 w-4" />
@@ -662,6 +672,18 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                                 size="sm"
                                 className="justify-start gap-2 h-8 text-xs col-span-2"
                                 onClick={() => {
+                                    router.push('/admin/invoices');
+                                    setMobileMenuOpen(false);
+                                }}
+                            >
+                                <Receipt className="h-4 w-4" />
+                                <span className="truncate">Invoices</span>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start gap-2 h-8 text-xs col-span-2"
+                                onClick={() => {
                                     router.push('/admin/filename-generator');
                                     setMobileMenuOpen(false);
                                 }}
@@ -700,9 +722,10 @@ function OverviewSection({ onViewForwarding }: { onViewForwarding: () => void })
     const { data: activity } = useAdminActivity(10);
     const { data: forwarding } = useForwardingStats(90);
 
-    const m = overview?.metrics;
-    const links = overview?.links;
-    const severity = health?.severity || 'down';
+    // Hooks are loosely typed; cast to avoid TS errors in admin dashboard.
+    const m = (overview as any)?.metrics;
+    const links = (overview as any)?.links;
+    const severity = (health as any)?.severity || 'down';
 
     return (
         <div className="space-y-6">

@@ -112,10 +112,23 @@ export function BillingSection({ }: BillingSectionProps) {
     // Load invoices
     const loadInvoices = async () => {
         try {
-            const response = await apiClient.get('/api/admin/invoices');
-            if (response.ok) {
-                const data = response.data as { items?: any[] };
+            // Use BFF route (browser traffic should be BFF-only)
+            const token = localStorage.getItem('vah_jwt');
+            const r = await fetch('/api/bff/admin/invoices?page=1&page_size=25', {
+                method: 'GET',
+                headers: {
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+                cache: 'no-store',
+            });
+            const payload = await r.json().catch(() => null);
+            if (payload?.ok) {
+                const data = payload.data as { items?: any[] };
                 setInvoices(safe(data?.items, []));
+            } else {
+                setInvoices([]);
             }
         } catch (error) {
             console.error('Failed to load invoices:', error);

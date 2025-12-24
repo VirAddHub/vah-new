@@ -53,8 +53,12 @@ export default function AdminInvoicesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [email, setEmail] = useState("");
-  const [userId, setUserId] = useState("");
+  // Primary workflow: search/select a user, then list their invoices
+  const [userQuery, setUserQuery] = useState("");
+  const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<{ id: number; email: string } | null>(null);
+
+  // Optional advanced filters
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -104,8 +108,8 @@ export default function AdminInvoicesPage() {
       const qs = new URLSearchParams();
       qs.set("page", String(nextPage));
       qs.set("page_size", String(pageSize));
-      if (email.trim()) qs.set("email", email.trim());
-      if (userId.trim()) qs.set("user_id", userId.trim());
+      if (selectedUser?.email) qs.set("email", selectedUser.email);
+      if (selectedUser?.id) qs.set("user_id", String(selectedUser.id));
       if (invoiceNumber.trim()) qs.set("invoice_number", invoiceNumber.trim());
       if (from.trim()) qs.set("from", from.trim());
       if (to.trim()) qs.set("to", to.trim());
@@ -168,6 +172,43 @@ export default function AdminInvoicesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingAuth, token]);
 
+  // Fetch user suggestions (admin user search)
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!token) return;
+      const q = userQuery.trim();
+      if (!q) {
+        setUserSuggestions([]);
+        return;
+      }
+
+      try {
+        const r = await fetch(`/api/bff/admin/users/search?q=${encodeURIComponent(q)}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+          credentials: "include",
+        });
+        const data = await r.json().catch(() => null);
+        if (cancelled) return;
+        if (r.ok && data?.ok && Array.isArray(data?.data)) {
+          setUserSuggestions(data.data);
+        } else {
+          setUserSuggestions([]);
+        }
+      } catch {
+        if (!cancelled) setUserSuggestions([]);
+      }
+    }
+
+    const t = setTimeout(run, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [token, userQuery]);
+
   if (loadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -201,12 +242,40 @@ export default function AdminInvoicesPage() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Customer email</div>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="support@virtualaddresshub.co.uk" />
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">User ID</div>
-                <Input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="4" />
+                <div className="text-sm text-muted-foreground mb-1">User (email or ID)</div>
+                <Input
+                  value={userQuery}
+                  onChange={(e) => {
+                    setUserQuery(e.target.value);
+                    setSelectedUser(null);
+                  }}
+                  placeholder="Search a user…"
+                />
+                {selectedUser ? (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Selected: <span className="font-medium">{selectedUser.email}</span> (ID {selectedUser.id})
+                  </div>
+                ) : null}
+                {!selectedUser && userSuggestions.length > 0 ? (
+                  <div className="mt-2 border rounded-md bg-background max-h-52 overflow-auto">
+                    {userSuggestions.slice(0, 10).map((u: any) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                        onClick={() => {
+                          setSelectedUser({ id: Number(u.id), email: String(u.email || "") });
+                          setUserQuery(String(u.email || u.id));
+                          setUserSuggestions([]);
+                          loadInvoices(1);
+                        }}
+                      >
+                        <div className="font-medium">{u.email || "—"}</div>
+                        <div className="text-xs text-muted-foreground">User {u.id}</div>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div>
                 <div className="text-sm text-muted-foreground mb-1">Invoice number</div>
@@ -227,8 +296,9 @@ export default function AdminInvoicesPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setEmail("");
-                    setUserId("");
+                    setUserQuery("");
+                    setUserSuggestions([]);
+                    setSelectedUser(null);
                     setInvoiceNumber("");
                     setFrom("");
                     setTo("");
