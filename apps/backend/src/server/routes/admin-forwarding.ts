@@ -8,7 +8,7 @@ import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
-import { parseForwardingStatus, FWD_LABEL } from '../../shared/src/forwardingStatus';
+import { parseForwardingStatus, FWD_LABEL } from '@vah/shared';
 
 const router = Router();
 

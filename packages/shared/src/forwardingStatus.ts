@@ -1,4 +1,4 @@
-// apps/shared/src/forwardingStatus.ts
+// packages/shared/src/forwardingStatus.ts
 export type ForwardingStatus = 'requested'|'in_progress'|'dispatched'|'cancelled';
 
 export const FWD_STATUS: Record<ForwardingStatus, ForwardingStatus> = {
