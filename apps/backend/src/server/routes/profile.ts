@@ -1283,7 +1283,8 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
         const filePath = path.join(uploadDir, filename);
 
         // Write validated file to disk
-        await fs.promises.writeFile(filePath, req.file.buffer);
+        // Buffer is compatible with writeFile, but TypeScript needs explicit type
+        await fs.promises.writeFile(filePath, Buffer.from(req.file.buffer));
 
         // Build the proof URL (relative path or full URL depending on your setup)
         const proofUrl = `/api/profile/media/ch-verification/${filename}`;
