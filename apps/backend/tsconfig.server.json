@@ -14,9 +14,6 @@
         "checkJs": false,
         "noEmit": false,
         "noImplicitAny": false,
-        "types": [
-            "node"
-        ],
         "typeRoots": [
             "./src/types",
             "../../node_modules/@types",
