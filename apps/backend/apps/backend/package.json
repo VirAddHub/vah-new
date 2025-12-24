@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "@types/swagger-jsdoc": "^6.0.4"
-  },
-  "dependencies": {
-    "swagger-jsdoc": "^6.2.8"
-  }
-}
