@@ -16,6 +16,9 @@ async function main() {
     console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no changes)' : 'EXECUTE (will generate PDFs)'}`);
 
     const pool = getPool();
+    let successCount = 0;
+    let warningCount = 0;
+    let errorCount = 0;
 
     try {
         // 1. Find invoices that need backfilling
@@ -49,10 +52,11 @@ async function main() {
 
             console.log(`  User: ${invoice.user_id}`);
             console.log(`  Amount: ${(amountPence / 100).toFixed(2)} ${invoice.currency}`);
-            console.log(`  Period: ${JSON.stringify(periodStart)} to ${JSON.stringify(periodEnd)}`);
+            console.log(`  Period: ${String(periodStart)} to ${String(periodEnd)}`);
 
             if (DRY_RUN) {
                 console.log(`  [DRY RUN] Would generate PDF and update DB.`);
+                successCount++;
                 continue;
             }
 
@@ -67,6 +71,7 @@ async function main() {
 
                 if (recomputed !== amountPence) {
                     console.warn(`  WARNING: Amount mismatch! DB says ${amountPence}, recompute says ${recomputed}. Updating DB to match recompute.`);
+                    warningCount++;
                     // Update the invoice amount to be correct before generating PDF
                     await pool.query('UPDATE invoices SET amount_pence = $1 WHERE id = $2', [recomputed, invoice.id]);
                 }
@@ -90,24 +95,31 @@ async function main() {
                     [pdfPath, invoice.id]
                 );
                 console.log('  Database updated.');
+                successCount++;
 
             } catch (err: any) {
                 console.error(`  ERROR processing invoice ${invoice.id}:`, err.message);
+                errorCount++;
             }
         }
 
         console.log('\n--- Backfill Complete ---');
+        console.log(`Summary: ${successCount} succeeded, ${warningCount} warnings, ${errorCount} errors`);
 
     } catch (error: any) {
         console.error('Fatal error:', error);
-        process.exit(1);
+        process.exitCode = 1;
     } finally {
-        // Close pool to allow script to exit
-        // Note: getPool() returns a singleton, so we should be careful if other things are running,
-        // but this is a standalone script.
-        // pool.end() might be needed if the script hangs.
-        process.exit(0);
+        // Close pool to allow script to exit cleanly
+        try {
+            await pool.end();
+        } catch (e) {
+            console.warn('Warning: error closing pool', e);
+        }
     }
 }
 
-main();
+main().catch((err) => {
+    console.error('Unhandled error in main:', err);
+    process.exit(1);
+});
