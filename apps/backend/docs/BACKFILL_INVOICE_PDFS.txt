@@ -1,0 +1,35 @@
+# Invoice PDF Backfill Guide
+
+This guide explains how to use the `backfill-invoices-pdf.ts` script to generate missing PDF files for invoices that are marked as 'paid' in the database but lack a generated PDF file.
+
+## Why is this needed?
+The system currently uses "Lazy PDF Generation", meaning PDFs are generated on-demand when a user clicks download. This is efficient but means that:
+1.  `pdf_path` in the database is often `NULL` even for paid invoices.
+2.  Admin exports or bulk operations might fail if they expect a PDF to exist.
+
+## How to run the backfill
+
+Run the following command from the `apps/backend` directory:
+
+```bash
+# Dry run (default) - explicitly shows what would happen
+npm run ts-node scripts/backfill-invoices-pdf.ts -- --dry-run
+
+# Live run - actually generates the PDFs
+npm run ts-node scripts/backfill-invoices-pdf.ts -- --execute
+```
+
+## What it does
+1.  Connects to the database.
+2.  Finds all invoices where:
+    *   `status = 'paid'`
+    *   `pdf_path` is `NULL` (or file missing on disk)
+3.  For each invoice:
+    *   Recomputes the invoice total from line items (safety check).
+    *   Generates the PDF using the standard `generateInvoicePdf` service.
+    *   Updates the `pdf_path` in the database.
+4.  Logs progress and any errors.
+
+## Safety
+-   The script is **idempotent**: running it multiple times is safe.
+-   It **verifies amounts** before generating.
