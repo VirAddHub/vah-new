@@ -28,6 +28,20 @@ export async function proxy(req: NextRequest, targetPath: string) {
   headers.set('x-forwarded-host', url.host);
   headers.set('x-forwarded-proto', url.protocol.replace(':', ''));
 
+  // CSRF: Double-submit cookie pattern
+  // Backend expects X-CSRF-Token header to match vah_csrf_token cookie.
+  // Since browsers only talk to BFF, we set the header server-side when proxying.
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && cookie) {
+    const m = cookie.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
+    if (m?.[1]) {
+      try {
+        headers.set('x-csrf-token', decodeURIComponent(m[1]));
+      } catch {
+        headers.set('x-csrf-token', m[1]);
+      }
+    }
+  }
+
   const init: RequestInit = {
     method: req.method,
     headers,

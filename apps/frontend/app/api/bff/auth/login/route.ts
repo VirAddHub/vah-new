@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If backend status is not 2xx, return backend error
+    // If backend status is not 2xx, return backend error (ensure no-store so it won't be cached)
     if (status < 200 || status >= 300) {
       return NextResponse.json(
         { 
@@ -68,12 +68,19 @@ export async function POST(request: NextRequest) {
           error: json?.error || json?.message || 'Login failed',
           details: json ?? textPreview 
         }, 
-        { status: status }
+        {
+          status: status,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        }
       );
     }
 
     // Backend is 2xx and JSON parsed successfully
-    return NextResponse.json(json ?? { ok: true, data: {} }, { 
+    return NextResponse.json(json ?? { ok: true, data: {} }, {
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -87,7 +94,14 @@ export async function POST(request: NextRequest) {
       console.error(`[BFF auth/login] Server misconfigured: ${error.message}`);
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
-        { status: 500 }
+        {
+          status: 500,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        }
       );
     }
     console.error(`[BFF auth/login] Exception in route ${routePath}:`, error);
@@ -102,7 +116,14 @@ export async function POST(request: NextRequest) {
           route: routePath 
         }
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
     );
   }
 }

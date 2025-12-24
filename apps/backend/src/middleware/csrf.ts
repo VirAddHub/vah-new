@@ -79,14 +79,29 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
     return next();
   }
 
-  // Skip CSRF for webhook endpoints (they have their own auth)
-  if (req.path.startsWith('/api/webhooks/') || req.path.startsWith('/api/internal/')) {
+  // Resolve full path (app may mount this middleware at '/api', so req.path can be '/auth/login')
+  const fullPath = String(req.originalUrl || req.path || '').split('?')[0];
+
+  // If the request has no session cookie, it's not an authenticated browser session yet.
+  // CSRF protection is only meaningful once a session cookie exists.
+  if (!req.cookies?.vah_session) {
     return next();
   }
 
-  // Skip CSRF for public endpoints that don't change state
-  // (e.g., password reset requests - they're rate-limited and have their own tokens)
-  if (req.path === '/api/auth/password-reset/request' || req.path === '/api/auth/password-reset/confirm') {
+  // Skip CSRF for webhook/internal endpoints (they have their own auth)
+  if (fullPath.startsWith('/api/webhooks') || fullPath.startsWith('/api/internal')) {
+    return next();
+  }
+
+  // Skip CSRF for auth endpoints (login/signup/password reset) to avoid blocking first-time token establishment.
+  // Note: these are still protected by rate limiting and do not leak enumeration details.
+  if (
+    fullPath === '/api/auth/login' ||
+    fullPath === '/api/auth/signup' ||
+    fullPath === '/api/auth/reset-password/confirm' ||
+    fullPath === '/api/profile/reset-password-request' ||
+    fullPath === '/api/profile/reset-password'
+  ) {
     return next();
   }
 
