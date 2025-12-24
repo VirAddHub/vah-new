@@ -450,17 +450,12 @@ export async function generateInvoicePdf(opts: {
   const rightBlockX = left + Math.min(logoRenderedWidth, 160) + (logoPath ? 16 : 0);
   const rightBlockWidth = left + usableWidth - rightBlockX;
 
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(18)
-    .fillColor('#111')
-    .text('VirtualAddressHub Ltd', rightBlockX, headerY, { width: rightBlockWidth, align: 'right' });
-
+  // Address block (right side). Intentionally omit the large black company name per UX request.
   doc
     .font('Helvetica')
     .fontSize(9)
     .fillColor('#444')
-    .text('Second Floor, Tanner Place', rightBlockX, doc.y + 2, { width: rightBlockWidth, align: 'right' })
+    .text('Second Floor, Tanner Place', rightBlockX, headerY, { width: rightBlockWidth, align: 'right' })
     .text('54–58 Tanner Street', rightBlockX, doc.y, { width: rightBlockWidth, align: 'right' })
     .text('London SE1 3PH', rightBlockX, doc.y, { width: rightBlockWidth, align: 'right' });
 
@@ -488,9 +483,11 @@ export async function generateInvoicePdf(opts: {
     });
   }
 
+  // Ensure subsequent content is left-aligned (PDFKit can retain the last x position from previous text calls)
+  doc.x = left;
   doc.font('Helvetica').fontSize(11).fillColor('#111');
-  doc.text(`Invoice: ${opts.invoiceNumber}`);
-  doc.text(`Invoice date: ${invoiceDateStr}`);
+  doc.text(`Invoice: ${opts.invoiceNumber}`, left);
+  doc.text(`Invoice date: ${invoiceDateStr}`, left);
 
   const periodStartStr = typeof opts.periodStart === 'string'
     ? opts.periodStart
@@ -499,22 +496,22 @@ export async function generateInvoicePdf(opts: {
     ? opts.periodEnd
     : opts.periodEnd.toISOString().slice(0, 10);
 
-  doc.text(`Billing period: ${periodStartStr} – ${periodEndStr}`);
+  doc.text(`Billing period: ${periodStartStr} – ${periodEndStr}`, left);
   doc.moveDown(1.2);
 
   // Customer details
-  doc.font('Helvetica-Bold').text('Bill to:');
+  doc.font('Helvetica-Bold').text('Bill to:', left);
   doc.font('Helvetica');
   if (user.company_name) {
-    doc.text(user.company_name);
+    doc.text(user.company_name, left);
   }
   const customerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Customer';
-  doc.text(customerName);
-  doc.text(user.email);
+  doc.text(customerName, left);
+  doc.text(user.email, left);
   doc.moveDown(1.2);
 
   // Line items table
-  doc.font('Helvetica-Bold').fontSize(12).text('Items');
+  doc.font('Helvetica-Bold').fontSize(12).text('Items', left);
   doc.font('Helvetica').fontSize(11);
   doc.moveDown(0.6);
 
@@ -564,7 +561,9 @@ export async function generateInvoicePdf(opts: {
       if (item.amount_pence <= 0) continue;
 
       const y = doc.y;
-      const desc = item.description || 'Service charge';
+      const descRaw = item.description || 'Service charge';
+      // Clean up migrated descriptions in PDFs (keep "non-HMRC/Companies House", remove "(legacy)")
+      const desc = descRaw.replace(/\s*\(legacy\)\s*/gi, '').trim();
       const itemDate = item.service_date || '';
       const amountStr = formatMoney(item.amount_pence, opts.currency);
 
