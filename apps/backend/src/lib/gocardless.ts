@@ -61,7 +61,7 @@ export async function gcCreateBrfUrl(
           ...(metadata || {})
         }
       }
-    });
+    }) as any;
 
     // Step 2: Create billing request flow
     const brf = await gcRequest('/billing_request_flows', 'POST', {
@@ -71,7 +71,7 @@ export async function gcCreateBrfUrl(
         },
         redirect_uri: redirectUri
       }
-    });
+    }) as any;
 
     return {
       redirect_url: brf.billing_request_flows.authorisation_url,
@@ -101,14 +101,14 @@ export async function gcCreateUpdateBankLink(userId: number): Promise<GcLink> {
 // Complete flow (when user returns from GoCardless)
 export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: string; customer_id?: string }> {
   try {
-    const flow = await gcRequest(`/billing_request_flows/${flowId}`);
+    const flow = await gcRequest(`/billing_request_flows/${flowId}`) as any;
 
     if (flow.billing_request_flows.state !== 'completed') {
       throw new Error('Flow not completed');
     }
 
     // Get the billing request to find the mandate
-    const billingRequest = await gcRequest(`/billing_requests/${flow.billing_request_flows.links.billing_request}`);
+    const billingRequest = await gcRequest(`/billing_requests/${flow.billing_request_flows.links.billing_request}`) as any;
 
     return {
       mandate_id: billingRequest.billing_requests.links.mandate,
@@ -121,7 +121,7 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
 }
 
 export async function gcGetMandate(mandateId: string): Promise<{ customer_id?: string }> {
-  const m = await gcRequest(`/mandates/${mandateId}`);
+  const m = await gcRequest(`/mandates/${mandateId}`) as any;
   return { customer_id: m?.mandates?.links?.customer };
 }
 
@@ -145,7 +145,7 @@ export async function gcCreatePayment(opts: {
       links: { mandate: opts.mandateId },
       metadata: opts.metadata || undefined,
     },
-  });
+  }) as any;
 
   const id = payload?.payments?.id;
   if (!id) throw new Error('GoCardless payment creation returned no id');
@@ -180,6 +180,6 @@ export async function gcGetPayment(paymentId: string): Promise<{
     customer?: string;
   };
 }> {
-  const payment = await gcRequest(`/payments/${paymentId}`);
+  const payment = await gcRequest(`/payments/${paymentId}`) as any;
   return payment.payments;
 }

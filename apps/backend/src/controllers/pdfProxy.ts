@@ -50,7 +50,7 @@ export async function streamPdfFromUrl(
     } else {
       console.log(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
       // Non-SharePoint URL: fetch directly
-      finalResp = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' });
+      finalResp = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' } as RequestInit);
     }
 
     if (!finalResp.ok) {

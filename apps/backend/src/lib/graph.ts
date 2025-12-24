@@ -17,7 +17,7 @@ async function fetchAppToken(): Promise<string> {
         body,
     });
     if (!resp.ok) throw new Error(`Graph token error ${resp.status}`);
-    const json = await resp.json();
+    const json = await resp.json() as { access_token: string; expires_in?: number };
     const now = Math.floor(Date.now() / 1000);
     cached = { token: json.access_token, exp: now + (json.expires_in ?? 3600) };
     return cached.token;

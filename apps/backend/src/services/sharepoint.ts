@@ -76,7 +76,7 @@ async function fetchOneDriveContentByPath(
         const d = await driveResp.text().catch(() => "");
         throw new Error(`Graph drive lookup error ${driveResp.status}: ${d}`);
     }
-    const { id: driveId } = await driveResp.json();
+    const { id: driveId } = await driveResp.json() as { id: string };
     log("[GRAPH DEBUG] driveId:", driveId);
 
     const candidates = new Set<string>([drivePath]);

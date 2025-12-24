@@ -60,7 +60,7 @@ export async function fetchGraphFileByUserPath(
         headers: { Authorization: `Bearer ${token}` },
         redirect: 'follow',
         cache: 'no-store',
-    });
+    } as RequestInit);
 
     console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
 
@@ -81,7 +81,7 @@ export async function fetchGraphFileByUserPath(
             headers: { Authorization: `Bearer ${token}` },
             redirect: 'follow',
             cache: 'no-store',
-        });
+        } as RequestInit);
 
         if (processedR.ok) {
             console.log(`[msGraph] Found file in Processed_Mail (fallback succeeded)`);
@@ -100,10 +100,10 @@ export async function fetchGraphFileByUserPath(
                 method: 'GET',
                 headers: { Authorization: `Bearer ${token}` },
                 cache: 'no-store',
-            });
+            } as RequestInit);
 
             if (listResp.ok) {
-                const listData = await listResp.json();
+                const listData = await listResp.json() as { value?: Array<{ name: string }> };
                 console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
             } else {
                 console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);

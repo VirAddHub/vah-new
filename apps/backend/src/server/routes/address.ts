@@ -93,7 +93,7 @@ router.get('/lookup', async (req, res) => {
       return res.status(502).json({ ok: false, error: errorText || 'lookup_failed' });
     }
 
-    const data = await r.json();
+    const data = await r.json() as { result?: Array<{ line_1?: string; line_2?: string; post_town?: string; postcode?: string }> };
 
     // Transform Ideal Postcodes response to match expected format
     const addresses: string[] = [];

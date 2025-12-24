@@ -100,7 +100,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     throw new Error(`Failed to list OneDrive files: ${response.status} ${errorText}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { value?: Array<any> };
 
   if (!Array.isArray(data.value)) {
     console.error('[onedriveClient] Unexpected Graph response format:', data);
@@ -186,7 +186,7 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
   }
 
   // Parse the moved file's metadata from PATCH response
-  const movedItem = await response.json();
+  const movedItem = await response.json() as { id: string; name?: string; createdDateTime?: string; size?: number; webUrl?: string; '@microsoft.graph.downloadUrl'?: string };
 
   // Fetch the item again to ensure we get the updated webUrl (SharePoint URLs may not update immediately in PATCH response)
   const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
@@ -199,7 +199,7 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
 
   let finalItem = movedItem;
   if (getResponse.ok) {
-    finalItem = await getResponse.json();
+    finalItem = await getResponse.json() as typeof movedItem;
     console.log(`[onedriveClient] Fetched moved file to verify URL`, {
       fileId: finalItem.id,
       hasWebUrl: !!finalItem.webUrl,
@@ -213,10 +213,10 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
 
   return {
     id: finalItem.id,
-    name: finalItem.name,
-    createdDateTime: finalItem.createdDateTime,
-    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
-    size: finalItem.size,
+    name: finalItem.name || '',
+    createdDateTime: finalItem.createdDateTime || '',
+    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'] || '', // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
+    size: finalItem.size || 0,
   };
 }
 

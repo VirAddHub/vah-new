@@ -48,14 +48,14 @@ async function validateImageMagicBytes(fileBuffer, originalName) {
         }
 
         const { mime, ext } = fileType;
-        
+
         if (!ALLOWED_IMAGE_MIME_TYPES.includes(mime)) {
             return { valid: false, error: `File type mismatch: detected ${mime}, expected image` };
         }
 
         const originalExt = path.extname(originalName).toLowerCase();
         const detectedExt = `.${ext}`;
-        
+
         const extMap = {
             '.jpg': ['.jpg', '.jpeg'],
             '.jpeg': ['.jpg', '.jpeg'],
@@ -100,10 +100,10 @@ router.post("/blog/upload", upload.single('image'), async (req, res) => {
                 mimetype: req.file.mimetype,
                 error: validation.error
             });
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'invalid_file', 
-                message: validation.error || 'File validation failed. Only image files are allowed.' 
+            return res.status(400).json({
+                ok: false,
+                error: 'invalid_file',
+                message: validation.error || 'File validation failed. Only image files are allowed.'
             });
         }
 

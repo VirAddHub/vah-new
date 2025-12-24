@@ -69,7 +69,7 @@ async function validateFileMagicBytes(fileBuffer: Buffer, originalName: string):
 
         // Verify the detected type matches allowed types
         const { mime, ext } = fileType;
-        
+
         // Check MIME type
         if (!ALLOWED_MIME_TYPES.includes(mime)) {
             return { valid: false, error: `File type mismatch: detected ${mime}, expected PDF or image` };
@@ -78,7 +78,7 @@ async function validateFileMagicBytes(fileBuffer: Buffer, originalName: string):
         // Check extension matches detected type
         const originalExt = path.extname(originalName).toLowerCase();
         const detectedExt = `.${ext}`;
-        
+
         // Map common extensions
         const extMap: Record<string, string[]> = {
             '.jpg': ['.jpg', '.jpeg'],
@@ -1264,10 +1264,10 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
                 mimetype: req.file.mimetype,
                 error: validation.error
             });
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'invalid_file', 
-                message: validation.error || 'File validation failed. Only PDF and image files are allowed.' 
+            return res.status(400).json({
+                ok: false,
+                error: 'invalid_file',
+                message: validation.error || 'File validation failed. Only PDF and image files are allowed.'
             });
         }
 
@@ -1402,7 +1402,7 @@ router.patch("/controllers", requireAuth, async (req: Request, res: Response) =>
 
     // Validate and normalize additionalControllersCount
     let normalizedCount: number | null = null;
-    
+
     if (isSoleController === true) {
         // If sole controller, count must be null or 0
         if (additionalControllersCount !== null && additionalControllersCount !== undefined && additionalControllersCount !== 0) {
