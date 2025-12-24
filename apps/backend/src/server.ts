@@ -197,6 +197,10 @@ app.use(cors({
 // cookies must come before any access to req.cookies
 app.use(cookieParser());
 
+// CSRF protection - ensure token cookie is set for all requests
+import { ensureCsrfToken, requireCsrfToken } from './middleware/csrf';
+app.use('/api', ensureCsrfToken);
+
 // compression
 app.use(compression());
 
@@ -392,6 +396,10 @@ async function start() {
     const { authenticateJWT } = require('./middleware/auth');
     app.use('/api', authenticateJWT);
     logger.info('[middleware] JWT authentication middleware mounted');
+
+    // CSRF protection for state-changing requests (after auth, before routes)
+    app.use('/api', requireCsrfToken);
+    logger.info('[middleware] CSRF protection middleware mounted');
 
     // Mount other routes
     app.use('/api/auth', authRouter);

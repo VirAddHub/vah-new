@@ -7,43 +7,98 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
+import { fileTypeFromBuffer } from 'file-type';
 
 const router = Router();
 
+// Allowed file extensions (whitelist approach)
+const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+];
+
 // Configure multer for file uploads (Companies House verification)
-const uploadStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(process.cwd(), 'data', 'ch-verification');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const userId = (req as any).user?.id;
-        const timestamp = Date.now();
-        const ext = path.extname(file.originalname);
-        const filename = `ch-verification-${userId}-${timestamp}${ext}`;
-        cb(null, filename);
-    }
-});
+// Using memory storage to validate magic bytes before saving
+const uploadStorage = multer.memoryStorage();
 
 const chVerificationUpload = multer({
     storage: uploadStorage,
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req, file, cb) => {
-        // Allow images and PDFs
-        if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    fileFilter: async (req, file, cb) => {
+        try {
+            // Step 1: Whitelist file extension (client-provided, but first check)
+            const ext = path.extname(file.originalname).toLowerCase();
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                return (cb as any)(new Error('File extension not allowed. Only PDF and image files are permitted.'), false);
+            }
+
+            // Step 2: Basic mimetype check (can be spoofed, but fail fast)
+            if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+                return (cb as any)(new Error('File type not allowed. Only PDF and image files are permitted.'), false);
+            }
+
+            // Note: Magic-byte validation happens after multer processes the file
+            // in the route handler, before saving to disk
             cb(null, true);
-        } else {
-            // Multer 2.x FileFilterCallback expects null for errors, but we pass Error for rejection
-            // Type assertion needed due to strict multer 2.x types
-            (cb as any)(new Error('Only image files and PDFs are allowed'), false);
+        } catch (error: any) {
+            (cb as any)(new Error(`File validation error: ${error.message}`), false);
         }
     }
 });
+
+/**
+ * Validate file using magic bytes (file-type library)
+ * This prevents spoofed Content-Type headers
+ */
+async function validateFileMagicBytes(fileBuffer: Buffer, originalName: string): Promise<{ valid: boolean; error?: string }> {
+    try {
+        // Read magic bytes to determine actual file type
+        // Convert Buffer to Uint8Array for file-type compatibility
+        const uint8Array = new Uint8Array(fileBuffer);
+        const fileType = await fileTypeFromBuffer(uint8Array);
+
+        if (!fileType) {
+            return { valid: false, error: 'Could not determine file type from file contents' };
+        }
+
+        // Verify the detected type matches allowed types
+        const { mime, ext } = fileType;
+        
+        // Check MIME type
+        if (!ALLOWED_MIME_TYPES.includes(mime)) {
+            return { valid: false, error: `File type mismatch: detected ${mime}, expected PDF or image` };
+        }
+
+        // Check extension matches detected type
+        const originalExt = path.extname(originalName).toLowerCase();
+        const detectedExt = `.${ext}`;
+        
+        // Map common extensions
+        const extMap: Record<string, string[]> = {
+            '.jpg': ['.jpg', '.jpeg'],
+            '.jpeg': ['.jpg', '.jpeg'],
+            '.png': ['.png'],
+            '.gif': ['.gif'],
+            '.webp': ['.webp'],
+            '.pdf': ['.pdf']
+        };
+
+        const validExts = extMap[detectedExt] || [detectedExt];
+        if (!validExts.includes(originalExt)) {
+            return { valid: false, error: `File extension mismatch: detected ${detectedExt}, got ${originalExt}` };
+        }
+
+        return { valid: true };
+    } catch (error: any) {
+        return { valid: false, error: `File validation error: ${error.message}` };
+    }
+}
 
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -1200,8 +1255,38 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
             return res.status(400).json({ ok: false, error: 'missing_file', message: 'No file provided' });
         }
 
+        // SECURITY: Validate file using magic bytes (prevents Content-Type spoofing)
+        const validation = await validateFileMagicBytes(req.file.buffer, req.file.originalname);
+        if (!validation.valid) {
+            console.warn('[POST /api/profile/ch-verification] File validation failed:', {
+                userId,
+                filename: req.file.originalname,
+                mimetype: req.file.mimetype,
+                error: validation.error
+            });
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'invalid_file', 
+                message: validation.error || 'File validation failed. Only PDF and image files are allowed.' 
+            });
+        }
+
+        // File is valid - save to disk
+        const uploadDir = path.join(process.cwd(), 'data', 'ch-verification');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const timestamp = Date.now();
+        const ext = path.extname(req.file.originalname);
+        const filename = `ch-verification-${userId}-${timestamp}${ext}`;
+        const filePath = path.join(uploadDir, filename);
+
+        // Write validated file to disk
+        await fs.promises.writeFile(filePath, req.file.buffer);
+
         // Build the proof URL (relative path or full URL depending on your setup)
-        const proofUrl = `/api/profile/media/ch-verification/${req.file.filename}`;
+        const proofUrl = `/api/profile/media/ch-verification/${filename}`;
         const fullUrl = process.env.API_BASE_URL
             ? `${process.env.API_BASE_URL}${proofUrl}`
             : proofUrl;

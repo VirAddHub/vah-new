@@ -1,5 +1,5 @@
 // packages/shared/src/forwardingStatus.ts
-export type ForwardingStatus = 'requested'|'in_progress'|'dispatched'|'cancelled';
+export type ForwardingStatus = 'requested' | 'in_progress' | 'dispatched' | 'cancelled';
 
 export const FWD_STATUS: Record<ForwardingStatus, ForwardingStatus> = {
   requested: 'requested',
