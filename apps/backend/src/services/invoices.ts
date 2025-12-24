@@ -396,14 +396,101 @@ export async function generateInvoicePdf(opts: {
   const writeStream = fs.createWriteStream(fullPath);
   doc.pipe(writeStream);
 
-  // Header
-  doc.fontSize(20).text('VirtualAddressHub Ltd', { align: 'right' });
-  doc.moveDown();
+  // Page + layout helpers
+  const left = doc.page.margins.left;
+  const right = doc.page.margins.right;
+  const top = doc.page.margins.top;
+  const pageWidth = doc.page.width;
+  const usableWidth = pageWidth - left - right;
+
+  const formatMoney = (amountPence: number, currency: string) => `${currency} ${(amountPence / 100).toFixed(2)}`;
+
+  // Try to include VAH logo (PNG) – best-effort only (PDF should still render without it)
+  // Note: Render runs from repo root; process.cwd() is a reliable anchor in both dev + prod.
+  const logoCandidates = [
+    path.join(process.cwd(), 'apps/frontend/public/email/logo.png'),
+    path.join(process.cwd(), 'apps/frontend/public/images/logo.png'),
+  ];
+
+  let logoPath: string | null = null;
+  for (const candidate of logoCandidates) {
+    try {
+      if (fs.existsSync(candidate)) {
+        logoPath = candidate;
+        break;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Header (logo left, company details right)
+  const headerY = top;
+  const logoMaxWidth = 140;
+  const logoMaxHeight = 36;
+  let logoRenderedWidth = 0;
+
+  if (logoPath) {
+    try {
+      // Fit within max bounds; PDFKit will preserve aspect ratio with just width OR height.
+      // We'll constrain by height (more consistent across different source images).
+      doc.image(logoPath, left, headerY, { height: logoMaxHeight });
+      logoRenderedWidth = logoMaxWidth; // reserve space; exact rendered width depends on image aspect ratio
+    } catch (e) {
+      console.warn('[generateInvoicePdf] Failed to render logo, continuing without it', {
+        invoiceId: opts.invoiceId,
+        logoPath,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      logoPath = null;
+      logoRenderedWidth = 0;
+    }
+  }
+
+  const rightBlockX = left + Math.min(logoRenderedWidth, 160) + (logoPath ? 16 : 0);
+  const rightBlockWidth = left + usableWidth - rightBlockX;
+
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(18)
+    .fillColor('#111')
+    .text('VirtualAddressHub Ltd', rightBlockX, headerY, { width: rightBlockWidth, align: 'right' });
+
+  doc
+    .font('Helvetica')
+    .fontSize(9)
+    .fillColor('#444')
+    .text('Second Floor, Tanner Place', rightBlockX, doc.y + 2, { width: rightBlockWidth, align: 'right' })
+    .text('54–58 Tanner Street', rightBlockX, doc.y, { width: rightBlockWidth, align: 'right' })
+    .text('London SE1 3PH', rightBlockX, doc.y, { width: rightBlockWidth, align: 'right' });
+
+  // Separator
+  doc.moveDown(1.0);
+  doc.moveTo(left, doc.y).lineTo(left + usableWidth, doc.y).strokeColor('#E6E6E6').stroke();
+  doc.moveDown(1.0);
 
   // Invoice details
-  doc.fontSize(12);
+  // Use invoice.created_at if present (created_at is stored as epoch ms in this codebase)
+  let invoiceDateStr = new Date().toISOString().slice(0, 10);
+  try {
+    const invRes = await pool.query(`SELECT created_at FROM invoices WHERE id = $1`, [opts.invoiceId]);
+    const createdAt = invRes.rows?.[0]?.created_at;
+    if (createdAt !== undefined && createdAt !== null) {
+      const n = Number(createdAt);
+      if (!Number.isNaN(n) && n > 0) {
+        invoiceDateStr = new Date(n).toISOString().slice(0, 10);
+      }
+    }
+  } catch (e) {
+    console.warn('[generateInvoicePdf] Failed to load invoice created_at, using today', {
+      invoiceId: opts.invoiceId,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  doc.font('Helvetica').fontSize(11).fillColor('#111');
   doc.text(`Invoice: ${opts.invoiceNumber}`);
-  doc.text(`Invoice date: ${new Date().toISOString().slice(0, 10)}`);
+  doc.text(`Invoice date: ${invoiceDateStr}`);
 
   const periodStartStr = typeof opts.periodStart === 'string'
     ? opts.periodStart
@@ -413,37 +500,48 @@ export async function generateInvoicePdf(opts: {
     : opts.periodEnd.toISOString().slice(0, 10);
 
   doc.text(`Billing period: ${periodStartStr} – ${periodEndStr}`);
-  doc.moveDown();
+  doc.moveDown(1.2);
 
   // Customer details
-  doc.text('Bill to:');
+  doc.font('Helvetica-Bold').text('Bill to:');
+  doc.font('Helvetica');
   if (user.company_name) {
     doc.text(user.company_name);
   }
   const customerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Customer';
   doc.text(customerName);
   doc.text(user.email);
-  doc.moveDown();
+  doc.moveDown(1.2);
 
   // Line items table
-  doc.fontSize(12);
-  doc.text('Items:', { underline: true });
-  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').fontSize(12).text('Items');
+  doc.font('Helvetica').fontSize(11);
+  doc.moveDown(0.6);
 
   if (charges.length === 0 && basePlanPence === 0) {
     doc.text('No billable activity this period');
     doc.moveDown(0.5);
   } else {
-    // Table header (visual only, PDFKit doesn't have real tables)
-    const startX = 50;
-    const descWidth = 350;
-    const dateWidth = 100;
-    const amountWidth = 100;
-    const rightAlignX = startX + descWidth + dateWidth;
+    // Table columns derived from page width (prevents clipping on the right edge)
+    const startX = left;
+    const colGap = 10;
+    const amountWidth = 95;
+    const dateWidth = 95;
+    const descWidth = Math.max(220, usableWidth - amountWidth - dateWidth - colGap * 2);
+    const dateX = startX + descWidth + colGap;
+    const amountX = dateX + dateWidth + colGap;
 
-    // Draw header line
-    doc.moveTo(startX, doc.y).lineTo(startX + descWidth + dateWidth + amountWidth, doc.y).stroke();
-    doc.moveDown(0.3);
+    // Header row
+    const headerY2 = doc.y;
+    doc.font('Helvetica-Bold').fillColor('#333');
+    doc.text('Description', startX, headerY2, { width: descWidth });
+    doc.text('Date', dateX, headerY2, { width: dateWidth });
+    doc.text('Amount', amountX, headerY2, { width: amountWidth, align: 'right' });
+    doc.font('Helvetica').fillColor('#111');
+
+    doc.y = headerY2 + 16;
+    doc.moveTo(startX, doc.y).lineTo(startX + usableWidth, doc.y).strokeColor('#E6E6E6').stroke();
+    doc.moveDown(0.6);
 
     // All charges (including subscription) - already sorted by DB query (service_date ASC, created_at ASC)
     // Subscription charge should already be in charges array if it was created
@@ -460,35 +558,27 @@ export async function generateInvoicePdf(opts: {
       });
     }
 
-    // Render each line item
+    // Render each line item (lock all columns to the same Y per row)
     let renderedItemsSum = 0;
     for (const item of allItems) {
-      if (item.amount_pence > 0) {
-        const itemAmount = (item.amount_pence / 100).toFixed(2);
-        const itemDate = item.service_date || '';
-        renderedItemsSum += item.amount_pence;
+      if (item.amount_pence <= 0) continue;
 
-        // Description
-        doc.text(item.description || 'Service charge', startX, doc.y, {
-          width: descWidth,
-          ellipsis: true,
-        });
+      const y = doc.y;
+      const desc = item.description || 'Service charge';
+      const itemDate = item.service_date || '';
+      const amountStr = formatMoney(item.amount_pence, opts.currency);
 
-        // Date
-        if (itemDate) {
-          doc.text(itemDate, startX + descWidth, doc.y, {
-            width: dateWidth,
-          });
-        }
+      const descHeight = doc.heightOfString(desc, { width: descWidth });
+      const dateHeight = itemDate ? doc.heightOfString(itemDate, { width: dateWidth }) : 0;
+      const amountHeight = doc.heightOfString(amountStr, { width: amountWidth });
+      const rowHeight = Math.max(descHeight, dateHeight, amountHeight, 12);
 
-        // Amount (right-aligned)
-        doc.text(`${opts.currency} ${itemAmount}`, rightAlignX, doc.y, {
-          width: amountWidth,
-          align: 'right',
-        });
+      doc.text(desc, startX, y, { width: descWidth });
+      if (itemDate) doc.text(itemDate, dateX, y, { width: dateWidth });
+      doc.text(amountStr, amountX, y, { width: amountWidth, align: 'right' });
 
-        doc.moveDown(0.4);
-      }
+      renderedItemsSum += item.amount_pence;
+      doc.y = y + rowHeight + 6;
     }
 
     // Log if rendered items don't match invoice total
@@ -502,17 +592,16 @@ export async function generateInvoicePdf(opts: {
 
     doc.moveDown(0.3);
     // Draw separator line
-    doc.moveTo(startX, doc.y).lineTo(startX + descWidth + dateWidth + amountWidth, doc.y).stroke();
-    doc.moveDown(0.3);
+    doc.moveTo(startX, doc.y).lineTo(startX + usableWidth, doc.y).strokeColor('#E6E6E6').stroke();
+    doc.moveDown(0.6);
   }
 
   // Total
-  const amount = (opts.amountPence / 100).toFixed(2);
-  doc.fontSize(14).font('Helvetica-Bold');
-  doc.text('Total:', { continued: true });
-  doc.text(`${opts.currency} ${amount}`, { align: 'right' });
-  doc.font('Helvetica').fontSize(12);
-  doc.moveDown(2);
+  doc.font('Helvetica-Bold').fontSize(12).fillColor('#111');
+  doc.text('Total', left, doc.y, { width: usableWidth - 95, align: 'right' });
+  doc.text(formatMoney(opts.amountPence, opts.currency), left, doc.y - 12, { width: usableWidth, align: 'right' });
+  doc.font('Helvetica').fontSize(11).fillColor('#111');
+  doc.moveDown(1.6);
 
   // Footer
   doc.fontSize(9).fillColor('#666').text('Thank you for your business.');
