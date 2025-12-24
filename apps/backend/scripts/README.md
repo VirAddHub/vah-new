@@ -1,8 +1,18 @@
-# Database Management Scripts
+# Backend scripts
 
-This directory contains scripts for securely managing user accounts and passwords in the PostgreSQL database.
+This directory contains operational scripts for the backend (DB maintenance, admin utilities, testing helpers, and deployment tools).
 
-## Scripts Overview
+## Folders
+
+- `admin/` – admin/user maintenance helpers (toggles, creating test users/mail)
+- `migrations/` – one-off migration helpers (beyond the normal SQL migration runner)
+- `maintenance/` – backfills and data fixes
+- `testing/` – smoke tests and helpers you can run locally
+- `deployment/` – deploy helpers and checks
+
+## Common scripts
+
+### Admin password tools (existing)
 
 ### 1. `admin-set-password.ps1` (PowerShell)
 Securely updates admin passwords with proper bcrypt hashing and password strength validation.

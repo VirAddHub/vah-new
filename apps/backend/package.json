@@ -179,7 +179,7 @@
     "@esbuild-kit/core-utils/esbuild": "^0.25.0",
     "@esbuild-kit/esm-loader/esbuild": "^0.25.0"
   },
-  "main": "add-email-toggles.js",
+  "main": "dist/src/server.js",
   "directories": {
     "doc": "docs",
     "example": "examples",
