@@ -212,7 +212,10 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_mandate: !!user?.gocardless_mandate_id,
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
-        current_price_pence: latestInvoice?.amount_pence || sub?.price_pence || 0,
+        // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
+        current_price_pence: sub?.price_pence || 0,
+        // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
+        latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
         pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
       }
     });

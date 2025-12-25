@@ -131,15 +131,8 @@ export default function AccountPage() {
         }
 
         // Build from individual API responses (fallback)
-        // Get price from billing overview, or fallback to most recent paid invoice
-        let pricePence = o?.current_price_pence;
-        if (!pricePence || pricePence === 0) {
-            // Try to get price from most recent paid invoice
-            const recentPaidInvoice = invoicesRaw.find((inv: any) => inv.status === 'paid');
-            if (recentPaidInvoice?.amount_pence) {
-                pricePence = recentPaidInvoice.amount_pence;
-            }
-        }
+        // Plan price from billing overview. Do NOT fall back to invoice totals (they can include forwarding fees).
+        const pricePence = o?.current_price_pence;
 
         const priceLabel = pricePence && pricePence > 0
             ? `£${(pricePence / 100).toFixed(2)}`
