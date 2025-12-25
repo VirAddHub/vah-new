@@ -619,6 +619,50 @@ export async function generateInvoicePdf(opts: {
 }
 
 /**
+ * Ensure an invoice has a PDF and the "invoice available" email is sent.
+ * Intended for end-of-period invoice finalisation.
+ *
+ * Idempotent:
+ * - PDF generation can be re-run safely (overwrites file, updates pdf_path if needed)
+ * - Email send is guarded by invoices.email_sent_at
+ */
+export async function ensureInvoicePdfAndEmail(invoiceId: number): Promise<InvoiceRow> {
+  const pool = getPool();
+
+  // Always recompute invoice amount from authoritative charge rows before generating PDFs/emails.
+  const { recomputeInvoiceAmount } = await import('./billing/invoiceService');
+  await recomputeInvoiceAmount({ pool, invoiceId });
+
+  const invRes = await pool.query<InvoiceRow>(`SELECT * FROM invoices WHERE id = $1 LIMIT 1`, [invoiceId]);
+  const invoice = invRes.rows[0];
+  if (!invoice) {
+    throw new Error(`Invoice ${invoiceId} not found`);
+  }
+
+  // Generate PDF and persist path
+  const pdfPath = await generateInvoicePdf({
+    invoiceId: invoice.id,
+    invoiceNumber: String(invoice.invoice_number || `INV-${invoice.user_id}-${String(invoice.period_end || '').replace(/-/g, '')}`),
+    userId: invoice.user_id,
+    amountPence: Number(invoice.amount_pence || 0),
+    currency: invoice.currency || 'GBP',
+    periodStart: invoice.period_start,
+    periodEnd: invoice.period_end,
+  });
+
+  const updated = await pool.query<InvoiceRow>(
+    `UPDATE invoices SET pdf_path = $1 WHERE id = $2 RETURNING *`,
+    [pdfPath, invoice.id]
+  );
+  const finalInvoice = updated.rows[0] || invoice;
+
+  // Send invoice email once (idempotent)
+  await sendInvoiceAvailableEmail(finalInvoice);
+
+  return finalInvoice;
+}
+
+/**
  * List all invoices for a user
  */
 export async function listInvoicesForUser(userId: number): Promise<InvoiceRow[]> {

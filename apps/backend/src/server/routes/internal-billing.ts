@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { gcCreatePayment } from '../../lib/gocardless';
 import { generateInvoiceForPeriod } from '../../services/billing/invoiceService';
-import { createInvoiceForPayment } from '../../services/invoices';
+import { ensureInvoicePdfAndEmail } from '../../services/invoices';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -41,8 +42,10 @@ function addInterval(from: Date, interval: string): Date {
 /**
  * POST /api/internal/billing/run
  *
- * Creates GoCardless payments for due active subscriptions.
- * Webhooks (payments.confirmed/failed) handle invoicing + status updates.
+ * Creates GoCardless payments for invoices that are ready to be collected.
+ * This should be scheduled to run at end-of-period (after invoices are generated).
+ *
+ * Idempotent: will not create another payment if invoices.gocardless_payment_id is already set.
  */
 router.post('/billing/run', async (req: Request, res: Response) => {
   const authErr = requireCronSecret(req, res);
@@ -50,73 +53,69 @@ router.post('/billing/run', async (req: Request, res: Response) => {
 
   const pool = getPool();
   const now = Date.now();
-  const created: Array<{ user_id: number; plan_id: number; payment_id: string }> = [];
+  const created: Array<{ user_id: number; invoice_id: number; payment_id: string }> = [];
   const skipped: Array<{ user_id: number; reason: string }> = [];
 
-  // Eligible subs: active + mandate present + user active + plan present/active
-  const subs = await pool.query(
+  // Find invoices that should be collected:
+  // - issued (not yet paid)
+  // - period ended
+  // - no GC payment linked yet
+  // - user + subscription active and has mandate
+  const invoicesToCollect = await pool.query(
     `
     SELECT
-      s.user_id,
-      s.mandate_id,
-      u.plan_id,
-      p.price_pence,
-      p.interval
-    FROM subscription s
-    JOIN "user" u ON u.id = s.user_id
-    JOIN plans p ON p.id = u.plan_id
+      i.id AS invoice_id,
+      i.user_id,
+      i.amount_pence,
+      i.currency,
+      i.period_end,
+      s.mandate_id
+    FROM invoices i
+    JOIN subscription s ON s.user_id = i.user_id
+    JOIN "user" u ON u.id = i.user_id
     WHERE
-      s.status = 'active'
+      i.status = 'issued'
+      AND (i.gocardless_payment_id IS NULL OR i.gocardless_payment_id = '')
+      AND i.period_end::date <= (NOW()::date)
+      AND s.status = 'active'
       AND s.mandate_id IS NOT NULL
       AND COALESCE(s.mandate_id,'') <> ''
       AND u.plan_status = 'active'
-      AND u.plan_id IS NOT NULL
-      AND p.active = true
-      AND p.retired_at IS NULL
+    ORDER BY i.id ASC
+    LIMIT 500
     `
   );
 
-  for (const row of subs.rows) {
+  for (const row of invoicesToCollect.rows) {
+    const invoiceId = Number(row.invoice_id);
     const userId = Number(row.user_id);
     const mandateId = String(row.mandate_id || '');
-    const planId = Number(row.plan_id);
-    const pricePence = Number(row.price_pence);
-    const interval = String(row.interval || 'month');
+    const amountPence = Number(row.amount_pence || 0);
+    const currency = String(row.currency || 'GBP');
 
     if (!mandateId) {
       skipped.push({ user_id: userId, reason: 'missing_mandate' });
       continue;
     }
-    if (!planId || !Number.isFinite(planId)) {
-      skipped.push({ user_id: userId, reason: 'missing_plan' });
-      continue;
-    }
-    if (!Number.isFinite(pricePence) || pricePence <= 0) {
-      skipped.push({ user_id: userId, reason: 'invalid_price' });
-      continue;
-    }
-
-    // Determine whether due based on last paid invoice
-    const lastInv = await pool.query(
-      `SELECT created_at FROM invoices WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
-      [userId]
-    );
-    const lastCreated = lastInv.rows?.[0]?.created_at ? Number(lastInv.rows[0].created_at) : null;
-    const dueAt = lastCreated ? addInterval(new Date(lastCreated), interval).getTime() : now;
-
-    if (lastCreated && now < dueAt) {
-      skipped.push({ user_id: userId, reason: 'not_due_yet' });
+    if (!Number.isFinite(amountPence) || amountPence <= 0) {
+      skipped.push({ user_id: userId, reason: 'invalid_invoice_amount' });
       continue;
     }
 
     try {
       const payment = await gcCreatePayment({
-        amountPence: pricePence,
-        currency: 'GBP',
+        amountPence,
+        currency,
         mandateId,
-        metadata: { user_id: String(userId), plan_id: String(planId) },
+        metadata: { user_id: String(userId), invoice_id: String(invoiceId) },
       });
-      created.push({ user_id: userId, plan_id: planId, payment_id: payment.payment_id });
+
+      await pool.query(
+        `UPDATE invoices SET gocardless_payment_id = $1 WHERE id = $2`,
+        [payment.payment_id, invoiceId]
+      );
+
+      created.push({ user_id: userId, invoice_id: invoiceId, payment_id: payment.payment_id });
     } catch (e: any) {
       skipped.push({ user_id: userId, reason: `payment_create_failed:${String(e?.message || e)}` });
     }
@@ -125,7 +124,7 @@ router.post('/billing/run', async (req: Request, res: Response) => {
   return res.json({
     ok: true,
     now,
-    eligible: subs.rows.length,
+    eligible: invoicesToCollect.rows.length,
     created_count: created.length,
     skipped_count: skipped.length,
     created,
@@ -223,17 +222,9 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         gocardlessPaymentId: null, // No payment ID yet - invoice is 'issued', not 'paid'
       });
 
-      // Generate PDF and send email (regenerates PDF if missing or amount changed)
-      // This ensures PDF exists even if invoice was created before PDF generation flow
+      // Finalise invoice: generate PDF + send invoice email ONCE (idempotent)
       try {
-        const invoice = await createInvoiceForPayment({
-          userId,
-          gocardlessPaymentId: undefined, // No payment ID yet
-          amountPence: invoiceResult.totalChargesPence,
-          currency: 'GBP',
-          periodStart,
-          periodEnd,
-        });
+        const invoice = await ensureInvoicePdfAndEmail(invoiceResult.invoiceId);
 
         generated.push({
           user_id: userId,
@@ -242,20 +233,20 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
           charges_attached: invoiceResult.attachedCount,
         });
 
-        console.log(`[billing] Generated invoice ${invoice.id} for user ${userId} with ${invoiceResult.attachedCount} charges`);
+        logger.info('[billing] generated invoice', { invoiceId: invoice.id, userId, charges: invoiceResult.attachedCount });
       } catch (invoiceError: any) {
         errors.push({
           user_id: userId,
           error: `PDF/email generation failed: ${invoiceError?.message || invoiceError}`,
         });
-        console.error(`[billing] Failed to generate PDF/email for user ${userId}:`, invoiceError);
+        logger.error('[billing] failed to generate PDF/email', { userId, message: invoiceError?.message || String(invoiceError) });
       }
     } catch (error: any) {
       errors.push({
         user_id: userId,
         error: error?.message || String(error),
       });
-      console.error(`[billing] Error generating invoice for user ${userId}:`, error);
+      logger.error('[billing] error generating invoice', { userId, message: error?.message || String(error) });
     }
   }
 

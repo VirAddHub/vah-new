@@ -331,6 +331,49 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
 
         logger.info('[gocardless] payments.confirmed processing', { paymentId: redactId(paymentId) });
 
+        // If we already linked the payment to an invoice in /internal/billing/run, mark it paid directly.
+        // This avoids period math issues and guarantees the right invoice is updated.
+        try {
+            const invByPayment = await pool.query(
+                `SELECT id, user_id, period_start, period_end, billing_interval, currency
+                 FROM invoices
+                 WHERE gocardless_payment_id = $1
+                 LIMIT 1`,
+                [paymentId]
+            );
+            if (invByPayment.rows.length > 0) {
+                const inv = invByPayment.rows[0];
+                const billingInterval = (String(inv.billing_interval || 'monthly').toLowerCase() === 'annual' || String(inv.billing_interval || '').toLowerCase() === 'year')
+                    ? 'annual'
+                    : 'monthly';
+                const currency = String(inv.currency || 'GBP');
+
+                // Re-run invoice generation for the stored period to attach any last-minute charges and recompute totals (idempotent).
+                try {
+                    await generateInvoiceForPeriod({
+                        userId: Number(inv.user_id),
+                        periodStart: String(inv.period_start),
+                        periodEnd: String(inv.period_end),
+                        billingInterval,
+                        currency,
+                        gocardlessPaymentId: paymentId,
+                    });
+                } catch (e) {
+                    logger.warn('[gocardless] recompute invoice on payment.confirmed failed', { message: (e as any)?.message ?? String(e) });
+                }
+
+                await pool.query(
+                    `UPDATE invoices SET status = 'paid', gocardless_payment_id = COALESCE(gocardless_payment_id, $1) WHERE id = $2`,
+                    [paymentId, inv.id]
+                );
+
+                logger.info('[gocardless] marked invoice paid', { invoiceId: inv.id, userId: inv.user_id, paymentId: redactId(paymentId) });
+                return;
+            }
+        } catch (e) {
+            logger.warn('[gocardless] lookup invoice by payment failed', { message: (e as any)?.message ?? String(e) });
+        }
+
         // Fetch payment details from GoCardless API
         let paymentDetails;
         try {
@@ -392,29 +435,18 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
         const amountPence = paymentDetails?.amount ?? links.amount ?? 997; // Fallback to £9.97
         const currency = paymentDetails?.currency ?? 'GBP';
 
-        // Generate invoice with automated charge attachment
-        // This uses the new invoiceService which automatically:
-        // 1. Creates/updates invoice for the period
-        // 2. Attaches pending charges in the period
-        // 3. Recomputes invoice amount from attached charges
+        // If invoice wasn't linked in /internal/billing/run, fall back to legacy behaviour:
+        // resolve user and period, attach charges, and mark the period invoice as paid (no email).
         try {
-            // First, generate invoice with charge attachment
             const invoiceResult = await generateInvoiceForPeriod({
                 userId,
                 periodStart,
                 periodEnd,
-                billingInterval: 'monthly', // TODO: derive from subscription
+                billingInterval: 'monthly',
                 currency,
                 gocardlessPaymentId: paymentId,
             });
 
-            logger.info('[gocardless] invoice generated', {
-                invoiceId: invoiceResult.invoiceId,
-                attachedCount: invoiceResult.attachedCount,
-                totalChargesPence: invoiceResult.totalChargesPence,
-            });
-
-            // Update invoice status to 'paid' since payment is confirmed
             await pool.query(
                 `UPDATE invoices 
                  SET status = 'paid', gocardless_payment_id = COALESCE(gocardless_payment_id, $1)
@@ -422,59 +454,13 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                 [paymentId, invoiceResult.invoiceId]
             );
 
-            // Then create PDF and send email using existing service
-            // Note: createInvoiceForPayment will find the existing invoice by gocardless_payment_id
-            // It's idempotent and won't resend email if email_sent_at is already set
-            const invoice = await createInvoiceForPayment({
+            logger.info('[gocardless] marked period invoice paid (fallback)', {
                 userId,
-                gocardlessPaymentId: paymentId,
-                amountPence: invoiceResult.totalChargesPence, // Use computed amount from charges
-                currency,
-                periodStart,
-                periodEnd,
+                invoiceId: invoiceResult.invoiceId,
+                paymentId: redactId(paymentId),
             });
-
-            // Ensure status is 'paid' (createInvoiceForPayment may have created a new one or found existing)
-            // This is idempotent - safe to call multiple times
-            await pool.query(
-                `UPDATE invoices SET status = 'paid' WHERE id = $1`,
-                [invoice.id]
-            );
-
-            logger.info('[gocardless] invoice created/updated', {
-                userId,
-                invoiceId: invoice.id,
-                invoiceNumber: invoice.invoice_number,
-                status: 'paid',
-                hasPdfPath: Boolean(invoice.pdf_path),
-            });
-
-            // Send invoice email (best-effort)
-            try {
-                const u = await pool.query(
-                    `SELECT email, first_name, last_name, company_name FROM "user" WHERE id=$1 LIMIT 1`,
-                    [userId]
-                );
-                const user = u.rows[0];
-                if (user?.email) {
-                    const amount = `£${(Number(amountPence) / 100).toFixed(2)}`;
-                    await sendInvoiceSent({
-                        email: user.email,
-                        firstName: user.first_name,
-                        name: user.company_name || [user.first_name, user.last_name].filter(Boolean).join(' '),
-                        invoice_number: invoice.invoice_number || undefined,
-                        amount,
-                        cta_url: undefined,
-                    });
-                }
-            } catch (emailErr) {
-                logger.warn('[gocardless] failed to send invoice email', {
-                    paymentId: redactId(paymentId),
-                    message: (emailErr as any)?.message ?? String(emailErr),
-                });
-            }
         } catch (invoiceError) {
-            logger.error('[gocardless] failed to create invoice for payment', {
+            logger.error('[gocardless] failed to mark invoice paid (fallback)', {
                 paymentId: redactId(paymentId),
                 message: (invoiceError as any)?.message ?? String(invoiceError),
             });
