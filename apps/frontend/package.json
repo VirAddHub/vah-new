@@ -85,7 +85,11 @@
         "vaul": "^0.9.5",
         "web-vitals": "^5.1.0",
         "winston": "^3.11.0",
-        "zod": "^3.22.0"
+        "zod": "^3.22.0",
+        "eslint": "^8.57.1",
+        "eslint-config-next": "^16.0.5",
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1"
     },
     "devDependencies": {
         "@next/bundle-analyzer": "^15.5.6",
@@ -98,11 +102,7 @@
         "@types/multer": "^1.4.0",
         "@types/nodemailer": "^6.4.0",
         "@types/pg": "^8.10.0",
-        "@typescript-eslint/eslint-plugin": "^8.44.1",
-        "@typescript-eslint/parser": "^8.44.1",
         "canvas": "^3.2.0",
-        "eslint": "^8.57.1",
-        "eslint-config-next": "^16.0.5",
         "husky": "^9.1.7",
         "jest": "^29.7.0",
         "jest-environment-jsdom": "^29.7.0"

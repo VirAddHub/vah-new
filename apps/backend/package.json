@@ -116,7 +116,6 @@
     "drizzle-orm": "0.44.5",
     "esbuild": "^0.25.10",
     "express": "5.1.0",
-    "express-list-endpoints": "^7.1.1",
     "express-rate-limit": "8.1.0",
     "express-session": "1.18.2",
     "express-validator": "^7.3.1",
