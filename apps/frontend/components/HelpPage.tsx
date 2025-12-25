@@ -7,7 +7,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-import { useMemo } from "react";
+import { useMemo, ReactNode } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -39,7 +39,7 @@ type FAQ = {
   id: string;
   category: CategoryName;
   q: string;
-  a: string;
+  a: string | ReactNode;
 };
 
 const FAQS: FAQ[] = [
@@ -80,25 +80,37 @@ Please note: The address cannot be used for personal post, residential use, reta
     id: "vah-registered-vs-trading",
     category: "Understanding Your Virtual Address",
     q: "What's the difference between a Registered Office and a Trading Address?",
-    a: `A **Registered Office** is your company's official legal address on Companies House. Government bodies like Companies House and HMRC send official notices there.
-
-A **Trading Address** (or business correspondence address) is where everyday business mail is sent – things like client letters, invoices, contracts, and suppliers.
-
-With VirtualAddressHub, you can use our address as:
-- Your **Registered Office** and **Director's Service Address** on Companies House
-- Your **business correspondence address** for clients and other professional contacts`,
+    a: (
+      <div className="space-y-3">
+        <p>
+          A <strong>Registered Office</strong> is your company's official legal address on Companies House. Government bodies like Companies House and HMRC send official notices there.
+        </p>
+        <p>
+          A <strong>Trading Address</strong> (or business correspondence address) is where everyday business mail is sent – things like client letters, invoices, contracts, and suppliers.
+        </p>
+        <p>With VirtualAddressHub, you can use our address as:</p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>Your <strong>Registered Office</strong> and <strong>Director's Service Address</strong> on Companies House</li>
+          <li>Your <strong>business correspondence address</strong> for clients and other professional contacts</li>
+        </ul>
+      </div>
+    ),
   },
   {
     id: "vah-stop-paying",
     category: "Understanding Your Virtual Address",
     q: "What happens to my mail if I stop paying?",
-    a: `If you cancel your plan or your payments stop:
-
-- We stop accepting **new** mail to your VirtualAddressHub address.
-- Existing scanned items remain in your dashboard for a limited time so you can download anything important.
-- After our retention period, any remaining physical mail is securely destroyed in line with our Mail Handling Policy.
-
-If you think you might need the address again in future, contact support before cancelling so we can explain your options.`,
+    a: (
+      <div className="space-y-3">
+        <p>If you cancel your plan or your payments stop:</p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>We stop accepting <strong>new</strong> mail to your VirtualAddressHub address.</li>
+          <li>Existing scanned items remain in your dashboard for a limited time so you can download anything important.</li>
+          <li>After our retention period, any remaining physical mail is securely destroyed in line with our Mail Handling Policy.</li>
+        </ul>
+        <p>If you think you might need the address again in future, contact support before cancelling so we can explain your options.</p>
+      </div>
+    ),
   },
 
   // Mail Handling & Management
@@ -112,10 +124,16 @@ If you think you might need the address again in future, contact support before 
     id: "mail-forwarding",
     category: "Mail Handling & Management",
     q: "Do you forward physical letters too?",
-    a: `Yes—on request from your dashboard:
-• HMRC & Companies House letters: forwarded free within the UK.
-• Other UK letters: £2 per item (covers postage & handling).
-• International forwarding: Royal Mail rate + £3 handling fee.`,
+    a: (
+      <div className="space-y-3">
+        <p>Yes—on request from your dashboard:</p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>HMRC & Companies House letters: forwarded free within the UK.</li>
+          <li>Other UK letters: £2 per item (covers postage & handling).</li>
+          <li>International forwarding: Royal Mail rate + £3 handling fee.</li>
+        </ul>
+      </div>
+    ),
   },
   {
     id: "mail-retention",
@@ -149,38 +167,81 @@ If you think you might need the address again in future, contact support before 
     id: "account-payment-method",
     category: "Managing your account",
     q: "How do I update my payment method?",
-    a: `You can update your Direct Debit details any time from your dashboard under **Settings → Billing**.
-
-Click **Update bank details** and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.`,
+    a: (
+      <div className="space-y-3">
+        <p>
+          You can update your Direct Debit details any time from your dashboard under <strong>Settings → Billing</strong>.
+        </p>
+        <p>
+          Click <strong>Update bank details</strong> and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.
+        </p>
+      </div>
+    ),
   },
   {
     id: "account-invoices",
     category: "Managing your account",
     q: "Where can I download my invoices?",
-    a: `We generate an invoice for each successful payment.
-
-You can view and download your invoices from **Dashboard → Billing & Invoices**. We also email you a copy of each invoice to the email address on your account.`,
+    a: (
+      <div className="space-y-3">
+        <p>We generate an invoice for each successful payment.</p>
+        <p>
+          You can view and download your invoices from <strong>Dashboard → Billing & Invoices</strong>. We also email you a copy of each invoice to the email address on your account.
+        </p>
+      </div>
+    ),
   },
   {
     id: "account-password-reset",
     category: "Managing your account",
     q: "I forgot my password – how do I reset it?",
-    a: `On the login page, click **Forgot your password?** and enter the email address linked to your account.
-
-We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.`,
+    a: (
+      <div className="space-y-3">
+        <p>
+          On the login page, click <strong>Forgot your password?</strong> and enter the email address linked to your account.
+        </p>
+        <p>
+          We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.
+        </p>
+      </div>
+    ),
   },
   {
     id: "account-cancel-subscription",
     category: "Managing your account",
     q: "How do I cancel my subscription?",
-    a: `You can cancel at any time from your dashboard under **Billing → Cancel subscription**.
+    a: (
+      <div className="space-y-3">
+        <p>
+          You're free to cancel your VirtualAddressHub plan, but because this is a
+          regulated address service we handle cancellation requests manually.
+        </p>
 
-When you cancel, your plan will remain active until the end of your current billing period. After that:
-- We stop accepting new mail to your VirtualAddressHub address.
-- You will no longer be charged.
-- You will still be able to log in and download existing scans for a limited time.
+        <p>
+          Just <strong>email us at support@virtualaddresshub.co.uk</strong> with the subject
+          <strong> "Cancellation Request"</strong>, and include:
+        </p>
 
-If you're unsure or need help, you can always contact support before cancelling.`,
+        <ul className="list-disc ml-6 space-y-1">
+          <li>Your full name</li>
+          <li>Account email</li>
+          <li>Your company name (if applicable)</li>
+          <li>The date you'd like the service to end</li>
+        </ul>
+
+        <p><strong>Once processed:</strong></p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>Your plan stays active until the end of the billing period</li>
+          <li>We stop accepting new mail after your cancellation date</li>
+          <li>You can still access and download past scans for a limited time</li>
+        </ul>
+
+        <p>
+          If you're unsure or need guidance, email us — we're happy to help before
+          you decide.
+        </p>
+      </div>
+    ),
   },
 
   // Mail & troubleshooting
@@ -188,27 +249,41 @@ If you're unsure or need help, you can always contact support before cancelling.
     id: "troubleshooting-mail-delay",
     category: "Mail & troubleshooting",
     q: "My mail hasn't appeared in my dashboard yet – what should I do?",
-    a: `Most mail is scanned and uploaded to your dashboard within **one working day** of arriving at our office.
-
-If it has been more than **two working days** (Monday to Friday, excluding bank holidays) and you're expecting something important, please contact support with:
-- Your name
-- Your company name (if applicable)
-- The sender's name (if known)
-
-We'll check our internal logs and storage to locate it for you.`,
+    a: (
+      <div className="space-y-3">
+        <p>
+          Most mail is scanned and uploaded to your dashboard within <strong>one working day</strong> of arriving at our office.
+        </p>
+        <p>
+          If it has been more than <strong>two working days</strong> (Monday to Friday, excluding bank holidays) and you're expecting something important, please contact support with:
+        </p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>Your name</li>
+          <li>Your company name (if applicable)</li>
+          <li>The sender's name (if known)</li>
+        </ul>
+        <p>We'll check our internal logs and storage to locate it for you.</p>
+      </div>
+    ),
   },
   {
     id: "troubleshooting-id-rejected",
     category: "Mail & troubleshooting",
     q: "Why was my ID rejected during verification?",
-    a: `There are a few common reasons identity checks fail:
-
-- The document is blurry, cropped, or partially hidden
-- The details on the document don't match the details on your account
-- The document is expired or not fully visible
-- The proof of address is not in your name or not accepted by our provider
-
-In most cases you can simply try again with a clearer or different document from the same country. If you're unsure what went wrong, contact support and we'll explain what needs to be updated.`,
+    a: (
+      <div className="space-y-3">
+        <p>There are a few common reasons identity checks fail:</p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>The document is blurry, cropped, or partially hidden</li>
+          <li>The details on the document don't match the details on your account</li>
+          <li>The document is expired or not fully visible</li>
+          <li>The proof of address is not in your name or not accepted by our provider</li>
+        </ul>
+        <p>
+          In most cases you can simply try again with a clearer or different document from the same country. If you're unsure what went wrong, contact support and we'll explain what needs to be updated.
+        </p>
+      </div>
+    ),
   },
 
   // International customers
@@ -224,17 +299,29 @@ You don't need to live in the UK to use our address. All we require is that you 
     id: "international-visa-residency",
     category: "International customers",
     q: "Do I need a UK visa or residency to use a virtual address?",
-    a: `No. You do **not** need a UK visa or UK residency status to hold a virtual business address with us.
-
-However, you are responsible for making sure you meet any legal or tax requirements in your home country and in the UK.`,
+    a: (
+      <div className="space-y-3">
+        <p>
+          No. You do <strong>not</strong> need a UK visa or UK residency status to hold a virtual business address with us.
+        </p>
+        <p>
+          However, you are responsible for making sure you meet any legal or tax requirements in your home country and in the UK.
+        </p>
+      </div>
+    ),
   },
   {
     id: "international-company-formation",
     category: "International customers",
     q: "Can you help me set up a UK company?",
-    a: `We don't currently offer a full company formation service.
-
-You can register a company directly with Companies House yourself, and then use VirtualAddressHub as your **Registered Office** and **Director's Service Address** once your account with us is approved.`,
+    a: (
+      <div className="space-y-3">
+        <p>We don't currently offer a full company formation service.</p>
+        <p>
+          You can register a company directly with Companies House yourself, and then use VirtualAddressHub as your <strong>Registered Office</strong> and <strong>Director's Service Address</strong> once your account with us is approved.
+        </p>
+      </div>
+    ),
   },
 
   // Compliance & Security
@@ -248,12 +335,17 @@ You can register a company directly with Companies House yourself, and then use 
     id: "compliance-kyc",
     category: "Compliance & Security",
     q: "What ID will I need to provide during sign-up?",
-    a: `For UK KYC compliance, you'll need:
-• A valid photo ID (passport, driving licence, or national ID)
-• Proof of residential address (issued within the last 3 months)
-• A selfie to verify your identity
-
-Verification is completed securely online.`,
+    a: (
+      <div className="space-y-3">
+        <p>For UK KYC compliance, you'll need:</p>
+        <ul className="list-disc ml-6 space-y-1">
+          <li>A valid photo ID (passport, driving licence, or national ID)</li>
+          <li>Proof of residential address (issued within the last 3 months)</li>
+          <li>A selfie to verify your identity</li>
+        </ul>
+        <p>Verification is completed securely online.</p>
+      </div>
+    ),
   },
   {
     id: "compliance-gdpr",
@@ -330,11 +422,35 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
   // JSON-LD for FAQ rich results
   const faqJsonLd = useMemo(() => {
-    const list = FAQS.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
-    }));
+    const list = FAQS.map((f) => {
+      // Extract text from JSX answers for JSON-LD
+      let answerText = '';
+      if (typeof f.a === 'string') {
+        answerText = f.a;
+      } else {
+        // Extract text content from JSX answers for SEO
+        const jsxTextMap: Record<string, string> = {
+          'vah-registered-vs-trading': `A Registered Office is your company's official legal address on Companies House. Government bodies like Companies House and HMRC send official notices there. A Trading Address (or business correspondence address) is where everyday business mail is sent – things like client letters, invoices, contracts, and suppliers. With VirtualAddressHub, you can use our address as: Your Registered Office and Director's Service Address on Companies House, Your business correspondence address for clients and other professional contacts.`,
+          'vah-stop-paying': `If you cancel your plan or your payments stop: We stop accepting new mail to your VirtualAddressHub address. Existing scanned items remain in your dashboard for a limited time so you can download anything important. After our retention period, any remaining physical mail is securely destroyed in line with our Mail Handling Policy. If you think you might need the address again in future, contact support before cancelling so we can explain your options.`,
+          'mail-forwarding': `Yes—on request from your dashboard: HMRC & Companies House letters: forwarded free within the UK. Other UK letters: £2 per item (covers postage & handling). International forwarding: Royal Mail rate + £3 handling fee.`,
+          'account-payment-method': `You can update your Direct Debit details any time from your dashboard under Settings → Billing. Click Update bank details and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.`,
+          'account-invoices': `We generate an invoice for each successful payment. You can view and download your invoices from Dashboard → Billing & Invoices. We also email you a copy of each invoice to the email address on your account.`,
+          'account-password-reset': `On the login page, click Forgot your password? and enter the email address linked to your account. We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.`,
+          'account-cancel-subscription': `You're free to cancel your VirtualAddressHub plan, but because this is a regulated address service we handle cancellation requests manually. Just email us at support@virtualaddresshub.co.uk with the subject "Cancellation Request", and include: Your full name, Account email, Your company name (if applicable), The date you'd like the service to end. Once processed: Your plan stays active until the end of the billing period, We stop accepting new mail after your cancellation date, You can still access and download past scans for a limited time. If you're unsure or need guidance, email us — we're happy to help before you decide.`,
+          'troubleshooting-mail-delay': `Most mail is scanned and uploaded to your dashboard within one working day of arriving at our office. If it has been more than two working days (Monday to Friday, excluding bank holidays) and you're expecting something important, please contact support with: Your name, Your company name (if applicable), The sender's name (if known). We'll check our internal logs and storage to locate it for you.`,
+          'troubleshooting-id-rejected': `There are a few common reasons identity checks fail: The document is blurry, cropped, or partially hidden. The details on the document don't match the details on your account. The document is expired or not fully visible. The proof of address is not in your name or not accepted by our provider. In most cases you can simply try again with a clearer or different document from the same country. If you're unsure what went wrong, contact support and we'll explain what needs to be updated.`,
+          'international-visa-residency': `No. You do not need a UK visa or UK residency status to hold a virtual business address with us. However, you are responsible for making sure you meet any legal or tax requirements in your home country and in the UK.`,
+          'international-company-formation': `We don't currently offer a full company formation service. You can register a company directly with Companies House yourself, and then use VirtualAddressHub as your Registered Office and Director's Service Address once your account with us is approved.`,
+          'compliance-kyc': `For UK KYC compliance, you'll need: A valid photo ID (passport, driving licence, or national ID), Proof of residential address (issued within the last 3 months), A selfie to verify your identity. Verification is completed securely online.`,
+        };
+        answerText = jsxTextMap[f.id] || 'Please see the full answer in the FAQ section above.';
+      }
+      return {
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: answerText },
+      };
+    });
     return {
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -412,8 +528,12 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                     <AccordionTrigger className="text-left px-4">
                       <span className="leading-tight">{f.q}</span>
                     </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 whitespace-pre-line text-sm text-muted-foreground">
-                      {f.a}
+                    <AccordionContent className="px-4 pb-4 text-sm text-muted-foreground">
+                      {typeof f.a === 'string' ? (
+                        <div className="whitespace-pre-line">{f.a}</div>
+                      ) : (
+                        f.a
+                      )}
                     </AccordionContent>
                   </AccordionItem>
                 ))}
