@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 
 /**
  * BFF endpoint that aggregates account data from multiple backend endpoints
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     backendBase = backend;
 
     // Fetch data from multiple endpoints in parallel
-    const [overviewRes, invoicesRes, userRes, profileRes] = await Promise.all([
+    const [overviewRes, invoicesRes, userRes, profileRes, registeredOfficeRes] = await Promise.all([
       fetch(`${backend}/api/billing/overview`, {
         headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
       }).catch((e) => {
@@ -41,6 +42,12 @@ export async function GET(request: NextRequest) {
         console.error(`[BFF account] Failed to fetch profile:`, e);
         return null;
       }),
+      fetch(`${backend}/api/profile/registered-office-address`, {
+        headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
+      }).catch((e) => {
+        console.error(`[BFF account] Failed to fetch registered-office-address:`, e);
+        return null;
+      }),
     ]);
 
     // Read responses as text first, then parse JSON
@@ -48,6 +55,7 @@ export async function GET(request: NextRequest) {
     let invoices: any = null;
     let user: any = null;
     let profile: any = null;
+    let registeredOffice: any = null;
 
     try {
       overview = overviewRes?.ok ? await overviewRes.text().then(raw => {
@@ -105,6 +113,20 @@ export async function GET(request: NextRequest) {
       console.warn('[BFF account] Error processing profile:', e);
     }
 
+    try {
+      registeredOffice = registeredOfficeRes?.ok ? await registeredOfficeRes.text().then(raw => {
+        try { return JSON.parse(raw); } catch (e) {
+          console.warn('[BFF account] Failed to parse registered-office JSON:', e);
+          return { raw: raw.substring(0, 300) };
+        }
+      }).catch((e) => {
+        console.warn('[BFF account] Failed to read registered-office response:', e);
+        return null;
+      }) : null;
+    } catch (e) {
+      console.warn('[BFF account] Error processing registered-office:', e);
+    }
+
     const o = overview?.data;
     const userData = user?.data?.user;
     const profileData = profile?.data;
@@ -138,41 +160,29 @@ export async function GET(request: NextRequest) {
       ? { formatted: profileData?.forwarding_address || userData?.forwarding_address || '' }
       : null;
 
-    // SAFETY: Preserve business_address if it exists (display only, never delete)
-    // Format: address_line2 (if exists), address_line1, city postal_code
-    // Example:
-    //   Second Floor, Tanner Place
-    //   54–58 Tanner Street
-    //   London SE1 3PH
-    const business_address = (profileData?.address_line1 || profileData?.city)
-      ? {
-        formatted: (() => {
-          const lines: string[] = [];
-
-          // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
-          if (profileData?.address_line2?.trim()) {
-            lines.push(profileData.address_line2.trim());
-          }
-
-          // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
-          if (profileData?.address_line1?.trim()) {
-            lines.push(profileData.address_line1.trim());
-          }
-
-          // Line 3: city postal_code (e.g., "London SE1 3PH")
-          const cityPostal = [
-            profileData?.city?.trim(),
-            profileData?.postal_code?.trim()
-          ].filter(Boolean).join(' ');
-
-          if (cityPostal) {
-            lines.push(cityPostal);
-          }
-
-          return lines.join('\n');
-        })()
-      }
-      : null;
+    // Business address (Registered Office) - use the correct address from config
+    // This is the same for all users and comes from the backend config
+    let business_address = null;
+    if (registeredOffice?.ok && registeredOffice?.data) {
+      const addr = registeredOffice.data;
+      // Format: line1, line2, city postcode
+      const formatted = [
+        addr.line1,
+        addr.line2,
+        `${addr.city} ${addr.postcode}`,
+      ].filter(Boolean).join('\n');
+      business_address = { formatted };
+    } else {
+      // Fallback: if registered office endpoint fails (e.g., KYC not approved),
+      // use the config directly for display purposes
+      business_address = {
+        formatted: [
+          REGISTERED_OFFICE_ADDRESS.line1,
+          REGISTERED_OFFICE_ADDRESS.line2,
+          `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
+        ].filter(Boolean).join('\n'),
+      };
+    }
 
     // Transform invoices - always use BFF download route if PDF exists
     // Never use raw pdf_url or pdf_path from backend - always use BFF route for authentication

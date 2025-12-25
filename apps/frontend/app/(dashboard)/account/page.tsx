@@ -17,6 +17,7 @@ const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').t
 import { AccountPageData, BusinessContactInfo, Address, BusinessOwner, InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
+import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 
 export default function AccountPage() {
     const router = useRouter();
@@ -97,35 +98,8 @@ export default function AccountPage() {
                     : merged.forwarding_address;
             }
 
-            // Reformat business_address if we have profile data with address fields
-            // Format: address_line2 (if exists), address_line1, city postal_code
-            if (profile?.address_line1 || profile?.city) {
-                const lines: string[] = [];
-
-                // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
-                if (profile?.address_line2?.trim()) {
-                    lines.push(profile.address_line2.trim());
-                }
-
-                // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
-                if (profile?.address_line1?.trim()) {
-                    lines.push(profile.address_line1.trim());
-                }
-
-                // Line 3: city postal_code (e.g., "London SE1 3PH")
-                const cityPostal = [
-                    profile?.city?.trim(),
-                    profile?.postal_code?.trim()
-                ].filter(Boolean).join(' ');
-
-                if (cityPostal) {
-                    lines.push(cityPostal);
-                }
-
-                if (lines.length > 0) {
-                    merged.business_address = { formatted: lines.join('\n') };
-                }
-            }
+            // Business address comes from the BFF endpoint (registered office address from config)
+            // No need to reformat from profile data - it's already correct from the backend
 
             return merged;
         }
@@ -160,41 +134,21 @@ export default function AccountPage() {
             ? { formatted: profile?.forwarding_address || user?.forwarding_address || '' }
             : null;
 
-        // SAFETY: Preserve business_address if it exists (display only, never delete)
-        // Format: address_line2 (if exists), address_line1, city postal_code
-        // Example:
-        //   Second Floor, Tanner Place
-        //   54–58 Tanner Street
-        //   London SE1 3PH
-        const business_address: Address | null = (profile?.address_line1 || profile?.city)
-            ? {
-                formatted: (() => {
-                    const lines: string[] = [];
-
-                    // Line 1: address_line2 (if exists, e.g., "Second Floor, Tanner Place")
-                    if (profile?.address_line2?.trim()) {
-                        lines.push(profile.address_line2.trim());
-                    }
-
-                    // Line 2: address_line1 (street address, e.g., "54–58 Tanner Street")
-                    if (profile?.address_line1?.trim()) {
-                        lines.push(profile.address_line1.trim());
-                    }
-
-                    // Line 3: city postal_code (e.g., "London SE1 3PH")
-                    const cityPostal = [
-                        profile?.city?.trim(),
-                        profile?.postal_code?.trim()
-                    ].filter(Boolean).join(' ');
-
-                    if (cityPostal) {
-                        lines.push(cityPostal);
-                    }
-
-                    return lines.join('\n');
-                })()
-            }
-            : null;
+        // Business address (Registered Office) - should come from BFF account endpoint
+        // If not available, fallback to config for display purposes
+        let business_address: Address | null = null;
+        if (accountData?.ok && accountData.data?.business_address) {
+            business_address = accountData.data.business_address;
+        } else {
+            // Fallback: use config directly if BFF endpoint didn't provide it
+            business_address = {
+                formatted: [
+                    REGISTERED_OFFICE_ADDRESS.line1,
+                    REGISTERED_OFFICE_ADDRESS.line2,
+                    `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
+                ].filter(Boolean).join('\n'),
+            };
+        }
 
         // Transform invoices (BFF invoices route already normalizes pdf_url to BFF endpoint)
         const invoiceRows: InvoiceRow[] = invoicesRaw.map((inv: any) => {
@@ -253,8 +207,8 @@ export default function AccountPage() {
             // Always use BFF download route if invoice has a PDF (pdf_url or pdf_path indicates PDF exists)
             // Never use raw pdf_path from backend - always use BFF route for authentication
             const hasPdf = Boolean(inv?.pdf_url || inv?.pdf_path);
-            const downloadUrl = hasPdf && inv.id 
-                ? `/api/bff/billing/invoices/${inv.id}/download` 
+            const downloadUrl = hasPdf && inv.id
+                ? `/api/bff/billing/invoices/${inv.id}/download`
                 : null;
 
             return {

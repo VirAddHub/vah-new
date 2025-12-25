@@ -28,6 +28,9 @@ type CategoryName =
   | "Understanding Your Virtual Address"
   | "Mail Handling & Management"
   | "Pricing & Billing"
+  | "Managing your account"
+  | "Mail & troubleshooting"
+  | "International customers"
   | "Compliance & Security"
   | "Who We Support"
   | "Getting Started";
@@ -73,6 +76,30 @@ Please note: The address cannot be used for personal post, residential use, reta
     q: "Can I just use Royal Mail to redirect my post to you?",
     a: `No. Royal Mail does not permit redirection to virtual office providers. Please give your new VirtualAddressHub address directly to clients, suppliers, and your bank.`,
   },
+  {
+    id: "vah-registered-vs-trading",
+    category: "Understanding Your Virtual Address",
+    q: "What's the difference between a Registered Office and a Trading Address?",
+    a: `A **Registered Office** is your company's official legal address on Companies House. Government bodies like Companies House and HMRC send official notices there.
+
+A **Trading Address** (or business correspondence address) is where everyday business mail is sent – things like client letters, invoices, contracts, and suppliers.
+
+With VirtualAddressHub, you can use our address as:
+- Your **Registered Office** and **Director's Service Address** on Companies House
+- Your **business correspondence address** for clients and other professional contacts`,
+  },
+  {
+    id: "vah-stop-paying",
+    category: "Understanding Your Virtual Address",
+    q: "What happens to my mail if I stop paying?",
+    a: `If you cancel your plan or your payments stop:
+
+- We stop accepting **new** mail to your VirtualAddressHub address.
+- Existing scanned items remain in your dashboard for a limited time so you can download anything important.
+- After our retention period, any remaining physical mail is securely destroyed in line with our Mail Handling Policy.
+
+If you think you might need the address again in future, contact support before cancelling so we can explain your options.`,
+  },
 
   // Mail Handling & Management
   {
@@ -115,6 +142,99 @@ Please note: The address cannot be used for personal post, residential use, reta
     category: "Pricing & Billing",
     q: "How easy is it to cancel?",
     a: `Very easy. You can cancel anytime from your dashboard or by emailing support.`,
+  },
+
+  // Managing your account
+  {
+    id: "account-payment-method",
+    category: "Managing your account",
+    q: "How do I update my payment method?",
+    a: `You can update your Direct Debit details any time from your dashboard under **Settings → Billing**.
+
+Click **Update bank details** and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.`,
+  },
+  {
+    id: "account-invoices",
+    category: "Managing your account",
+    q: "Where can I download my invoices?",
+    a: `We generate an invoice for each successful payment.
+
+You can view and download your invoices from **Dashboard → Billing & Invoices**. We also email you a copy of each invoice to the email address on your account.`,
+  },
+  {
+    id: "account-password-reset",
+    category: "Managing your account",
+    q: "I forgot my password – how do I reset it?",
+    a: `On the login page, click **Forgot your password?** and enter the email address linked to your account.
+
+We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.`,
+  },
+  {
+    id: "account-cancel-subscription",
+    category: "Managing your account",
+    q: "How do I cancel my subscription?",
+    a: `You can cancel at any time from your dashboard under **Billing → Cancel subscription**.
+
+When you cancel, your plan will remain active until the end of your current billing period. After that:
+- We stop accepting new mail to your VirtualAddressHub address.
+- You will no longer be charged.
+- You will still be able to log in and download existing scans for a limited time.
+
+If you're unsure or need help, you can always contact support before cancelling.`,
+  },
+
+  // Mail & troubleshooting
+  {
+    id: "troubleshooting-mail-delay",
+    category: "Mail & troubleshooting",
+    q: "My mail hasn't appeared in my dashboard yet – what should I do?",
+    a: `Most mail is scanned and uploaded to your dashboard within **one working day** of arriving at our office.
+
+If it has been more than **two working days** (Monday to Friday, excluding bank holidays) and you're expecting something important, please contact support with:
+- Your name
+- Your company name (if applicable)
+- The sender's name (if known)
+
+We'll check our internal logs and storage to locate it for you.`,
+  },
+  {
+    id: "troubleshooting-id-rejected",
+    category: "Mail & troubleshooting",
+    q: "Why was my ID rejected during verification?",
+    a: `There are a few common reasons identity checks fail:
+
+- The document is blurry, cropped, or partially hidden
+- The details on the document don't match the details on your account
+- The document is expired or not fully visible
+- The proof of address is not in your name or not accepted by our provider
+
+In most cases you can simply try again with a clearer or different document from the same country. If you're unsure what went wrong, contact support and we'll explain what needs to be updated.`,
+  },
+
+  // International customers
+  {
+    id: "international-non-uk-resident",
+    category: "International customers",
+    q: "Do I need to live in the UK to use VirtualAddressHub?",
+    a: `No. International founders are welcome.
+
+You don't need to live in the UK to use our address. All we require is that you successfully complete identity verification under UK AML (anti-money laundering) regulations.`,
+  },
+  {
+    id: "international-visa-residency",
+    category: "International customers",
+    q: "Do I need a UK visa or residency to use a virtual address?",
+    a: `No. You do **not** need a UK visa or UK residency status to hold a virtual business address with us.
+
+However, you are responsible for making sure you meet any legal or tax requirements in your home country and in the UK.`,
+  },
+  {
+    id: "international-company-formation",
+    category: "International customers",
+    q: "Can you help me set up a UK company?",
+    a: `We don't currently offer a full company formation service.
+
+You can register a company directly with Companies House yourself, and then use VirtualAddressHub as your **Registered Office** and **Director's Service Address** once your account with us is approved.`,
   },
 
   // Compliance & Security
@@ -196,6 +316,9 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       "Understanding Your Virtual Address",
       "Mail Handling & Management",
       "Pricing & Billing",
+      "Managing your account",
+      "Mail & troubleshooting",
+      "International customers",
       "Compliance & Security",
       "Who We Support",
       "Getting Started",
