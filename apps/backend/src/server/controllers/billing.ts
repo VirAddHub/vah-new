@@ -151,11 +151,57 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     // Get user plan_status (for backward compatibility)
     const userResult = await pool.query(`
-      SELECT plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
+      SELECT plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
              gocardless_mandate_id, gocardless_redirect_flow_id
       FROM "user" WHERE id=$1
     `, [userId]);
     const user = userResult.rows[0];
+
+    // Resolve plan (single source of truth for display price)
+    // Prefer user.plan_id; fallback to subscription cadence/interval.
+    let resolvedPlan: { id: number; name: string; interval: string; price_pence: number } | null = null;
+    const planId = user?.plan_id ? Number(user.plan_id) : null;
+    if (planId) {
+      try {
+        const r = await pool.query(
+          `SELECT id, name, interval, price_pence
+             FROM plans
+            WHERE id = $1 AND active = true AND retired_at IS NULL
+            LIMIT 1`,
+          [planId]
+        );
+        resolvedPlan = r.rows[0] || null;
+      } catch (e) {
+        logger.warn('[getBillingOverview] plan_lookup_by_id_failed', { message: (e as any)?.message ?? String(e) });
+      }
+    }
+
+    if (!resolvedPlan) {
+      const cadence = (sub?.plan_interval || sub?.cadence || 'monthly').toString().toLowerCase();
+      const interval = cadence.includes('year') || cadence.includes('annual') ? 'year' : 'month';
+      try {
+        const r = await pool.query(
+          `SELECT id, name, interval, price_pence
+             FROM plans
+            WHERE interval = $1 AND active = true AND retired_at IS NULL
+            ORDER BY sort ASC, price_pence ASC
+            LIMIT 1`,
+          [interval]
+        );
+        resolvedPlan = r.rows[0] || null;
+      } catch (e) {
+        logger.warn('[getBillingOverview] plan_lookup_by_interval_failed', { message: (e as any)?.message ?? String(e) });
+      }
+    }
+
+    const resolvedPlanName = resolvedPlan?.name || sub?.plan_name || 'Digital Mailbox Plan';
+    const resolvedCadence =
+      (resolvedPlan?.interval || sub?.plan_interval || sub?.cadence || 'monthly')
+        .toString()
+        .toLowerCase()
+        .includes('year')
+        ? 'annual'
+        : 'monthly';
 
     // Determine account status
     let accountStatus = 'active';
@@ -202,8 +248,9 @@ export async function getBillingOverview(req: Request, res: Response) {
           created_at: latestInvoice.created_at,
         } : null,
         // Legacy fields for backward compatibility
-        plan: sub?.plan_name || 'Digital Mailbox Plan',
-        cadence: sub?.plan_interval || sub?.cadence || 'monthly',
+        plan_id: resolvedPlan?.id ?? planId ?? null,
+        plan: resolvedPlanName,
+        cadence: resolvedCadence,
         status: sub?.status || 'active',
         account_status: accountStatus,
         grace_period: gracePeriodInfo,
@@ -213,7 +260,7 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
-        current_price_pence: sub?.price_pence || 0,
+        current_price_pence: resolvedPlan?.price_pence ?? sub?.price_pence ?? 0,
         // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
         latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
         pending_forwarding_fees_pence: await getPendingForwardingFees(userId),

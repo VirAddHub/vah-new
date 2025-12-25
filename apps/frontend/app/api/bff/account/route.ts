@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     const subscription = {
       plan_name: o?.plan || 'Digital Mailbox Plan',
       price_label: priceLabel,
-      billing_period: (o?.cadence === 'yearly' || o?.cadence === 'annual') ? 'annual' : 'monthly',
+      billing_period: (o?.cadence === 'yearly' || o?.cadence === 'annual' || o?.cadence === 'year') ? 'annual' : 'monthly',
       status: o?.status === 'active' ? 'active' : o?.status === 'cancelled' ? 'cancelled' : o?.status === 'past_due' ? 'past_due' : 'unknown'
     };
 
