@@ -14,7 +14,7 @@ import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import http from 'http';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 
 // Centralized environment config
 import { HOST, PORT } from './config/env';
@@ -95,8 +95,10 @@ import { quizRouter } from "./server/routes/quiz";
 import internalMailImportRouter from "./server/routes/internalMailImport";
 
 
+type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
-const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
+const addressRouter =
+    ((addressRouterImport as MaybeDefault<unknown>) as any)?.default ?? addressRouterImport;
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -146,12 +148,12 @@ app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), po
 app.use(
     '/api/webhooks',
     express.raw({ type: 'application/json' }),
-    (req: any, _res: any, next: any) => {
+    ((req: Request & { rawBody?: string }, _res: Response, next: NextFunction) => {
         if (req.path === '/gocardless') {
             req.rawBody = req.body?.toString?.('utf8') ?? '';
         }
         next();
-    },
+    }) satisfies RequestHandler,
     gocardlessWebhook
 );
 
@@ -253,7 +255,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // CSRF protection for state-changing routes
-const csrfProtection = (req: any, res: any, next: any) => {
+const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
     // Skip CSRF for webhooks and API routes that don't change state
     if (req.path.startsWith('/api/webhooks/') ||
         req.path.startsWith('/api/metrics') ||
@@ -261,8 +263,8 @@ const csrfProtection = (req: any, res: any, next: any) => {
         return next();
     }
 
-    const token = req.headers['x-csrf-token'] || req.body._csrf;
-    const sessionToken = req.session?.csrfToken;
+    const token = (req.headers['x-csrf-token'] as string | undefined) || (req.body as any)?._csrf;
+    const sessionToken = (req as any).session?.csrfToken as string | undefined;
 
     if (!token || !sessionToken || token !== sessionToken) {
         return res.status(403).json({ error: 'Invalid CSRF token' });
@@ -384,7 +386,7 @@ async function start() {
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // JSON parse error handler
-    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+    app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
         if (err instanceof SyntaxError && 'body' in err) {
             return res.status(400).json({ ok: false, error: "Invalid JSON" });
         }
@@ -622,13 +624,13 @@ async function start() {
     logger.info('[mount] Error handler middleware mounted');
 
     // ---- Global error handlers to prevent crashes ----
-    process.on("unhandledRejection", (reason) => {
+    process.on("unhandledRejection", (reason: unknown) => {
         logger.error("[unhandledRejection]", {
             message: (reason && (reason as any).message) ? (reason as any).message : String(reason),
         });
     });
 
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", (error: unknown) => {
         logger.error("[uncaughtException]", { message: (error as any)?.message ?? String(error) });
         // Don't exit - let the platform restart if truly fatal
     });
@@ -637,8 +639,8 @@ async function start() {
     if (process.env.RUN_STARTUP_MIGRATIONS === 'true') {
         logger.info('[migration] running_startup_migrations');
         const { runStartupMigrations } = require('./scripts/startup-migrate');
-        runStartupMigrations().catch((e: any) => {
-            logger.error('[migration] startup_migrations_failed', { message: e?.message ?? String(e) });
+        runStartupMigrations().catch((e: unknown) => {
+            logger.error('[migration] startup_migrations_failed', { message: (e as any)?.message ?? String(e) });
         });
     }
 
@@ -689,7 +691,7 @@ async function start() {
             try { stopForwardingLocksCleanup(); } catch { }
             try { stopSelfTestScheduler(); } catch { }
         } catch { }
-        server.close(err => {
+        server.close((err: unknown) => {
             if (err) {
                 logger.error('[boot] server_close_failed', { message: (err as any)?.message ?? String(err) });
                 process.exit(1);
@@ -701,7 +703,7 @@ async function start() {
     process.on('SIGINT', shutdown);
 }
 
-start().catch(err => {
+start().catch((err: unknown) => {
     logger.error('[boot] fatal_start_error', { message: (err as any)?.message ?? String(err) });
     process.exit(1);
 });

@@ -6,6 +6,7 @@ import { sendTemplateEmail } from '../lib/mailer';
 import { Templates } from '../lib/postmark-templates';
 import { getAppUrl } from '../config/appUrl';
 import { logger } from '../lib/logger';
+import type { Pool } from 'pg';
 
 function redactEmail(email: unknown): string {
   const s = String(email || '');
@@ -54,7 +55,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
   // Check if invoice already exists
   // Priority: 1) by payment ID (if provided), 2) by period (if no payment ID)
-  let existing: any = { rows: [] };
+  let existing: { rows: InvoiceRow[] } = { rows: [] };
   if (opts.gocardlessPaymentId) {
     existing = await pool.query<InvoiceRow>(
       `SELECT * FROM invoices WHERE gocardless_payment_id = $1`,
@@ -180,7 +181,8 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
   // Pull all pending charges for this user within the invoice period
   // Note: charge table may not exist yet - handle gracefully
-  let charges: any[] = [];
+  type PendingChargeRow = { id: string | number; amount_pence: number | string };
+  let charges: PendingChargeRow[] = [];
   let chargesTotalPence = 0;
   try {
     const chargesResult = await pool.query(
@@ -194,8 +196,8 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       `,
       [opts.userId, periodStartStr, periodEndStr]
     );
-    charges = chargesResult.rows;
-    chargesTotalPence = charges.reduce((sum: number, c: any) => sum + Number(c.amount_pence), 0);
+    charges = chargesResult.rows as PendingChargeRow[];
+    chargesTotalPence = charges.reduce((sum, c) => sum + Number(c.amount_pence), 0);
   } catch (chargeError: any) {
     // Table doesn't exist yet or query failed - continue with 0 charges
     // Error code 42P01 = relation does not exist
@@ -251,7 +253,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
   // Mark charges as billed
   if (charges.length > 0) {
-    const chargeIds = charges.map((c: any) => c.id);
+    const chargeIds = charges.map((c) => c.id);
     // Update charges one by one (PostgreSQL UUID array handling can be tricky)
     for (const chargeId of chargeIds) {
       await pool.query(
@@ -784,9 +786,9 @@ export async function getBillingPeriodForUser(userId: number): Promise<{ periodS
  * Find user ID from GoCardless payment ID
  */
 export async function findUserIdForPayment(
-  pool: any,
+  pool: Pool,
   gocardlessPaymentId: string,
-  paymentLinks?: any
+  paymentLinks?: { mandate?: string; customer?: string; [k: string]: unknown }
 ): Promise<number | null> {
   try {
     // Option 1: Check if we already have an invoice for this payment
@@ -824,7 +826,7 @@ export async function findUserIdForPayment(
     }
 
     return null;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.warn('[invoices] find_user_for_payment_failed', { message: (error as any)?.message ?? String(error) });
     return null;
   }
