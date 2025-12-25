@@ -81,6 +81,12 @@ apps/frontend/out/
 # TypeScript build info
 *.tsbuildinfo
 
+# Local-only API docs artifacts (do not commit)
+**/openapi*.json
+**/swagger*.json
+**/swagger*.yaml
+**/swagger*.yml
+
 # -----------------------------
 # Security: stop tracking creds, seeds, cookies, test fixtures
 # -----------------------------

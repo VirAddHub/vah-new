@@ -9,7 +9,6 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import winston from 'winston';
 import compression from 'compression';
 import morgan from 'morgan';
-import swaggerUi from 'swagger-ui-express';
 import crypto from 'crypto';
 import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
@@ -95,8 +94,6 @@ import bffMailScanRouter from "./routes/bff-mail-scan";
 import { quizRouter } from "./server/routes/quiz";
 import internalMailImportRouter from "./server/routes/internalMailImport";
 
-import { buildOpenApiFromExpressApp } from "./openapi/buildOpenApi";
-import { requireAdmin } from "./middleware/auth";
 
 // handle CJS/ESM default interop safely
 const addressRouter: any = (addressRouterImport as any)?.default ?? addressRouterImport;
@@ -603,24 +600,6 @@ async function start() {
 
     app.use(webhookRouter);
     logger.info('[mount] webhook routes mounted');
-
-    // ---- Swagger/OpenAPI docs ----
-    // - enabled by default in non-production
-    // - in production, requires ENABLE_SWAGGER=true and admin auth
-    const enableSwagger = process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
-    if (enableSwagger) {
-        const spec = buildOpenApiFromExpressApp(app);
-        if (process.env.NODE_ENV === 'production') {
-            app.get('/api/openapi.json', requireAdmin, (_req, res) => res.json(spec));
-            app.use('/api/docs', requireAdmin, swaggerUi.serve, swaggerUi.setup(spec, { explorer: true }));
-        } else {
-            app.get('/api/openapi.json', (_req, res) => res.json(spec));
-            app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(spec, { explorer: true }));
-        }
-        logger.info('[swagger] enabled', { prod: process.env.NODE_ENV === 'production' });
-    } else {
-        logger.info('[swagger] disabled');
-    }
 
     // 404 handler that still returns CORS
     app.use((req, res) => {
