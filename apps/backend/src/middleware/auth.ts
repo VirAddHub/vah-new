@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, generateToken } from '../lib/jwt';
 import { getPool } from '../server/db';
 import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from '../config/auth';
+import { logger } from '../lib/logger';
 
 /**
  * Optional JWT authentication middleware
@@ -26,7 +27,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
     if (!payload) {
         // Invalid or expired token - clear cookie and continue without setting req.user
-        console.warn('[JWT] Token verification failed for path:', req.path);
+        logger.warn('[jwt] token_verification_failed', { path: req.path });
         res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
         return next();
     }
@@ -38,7 +39,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
     // If token is expired, clear cookie and continue as unauthenticated
     if (secondsLeft <= 0) {
-        console.warn('[JWT] Token expired for path:', req.path);
+        logger.warn('[jwt] token_expired', { path: req.path });
         res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
         return next();
     }
@@ -46,12 +47,15 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     // Valid token - attach user data to request
     // Convert id to number if it's a string
     const userId = typeof payload.id === 'string' ? parseInt(payload.id) : payload.id;
-    req.user = {
+    const user = {
         id: userId,
         email: payload.email || '',
-        is_admin: payload.is_admin
+        is_admin: payload.is_admin,
     };
-    console.log('[JWT] Authenticated user:', req.user.id, req.user.email, 'is_admin:', req.user.is_admin);
+    req.user = user;
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[jwt] authenticated', { userId: user.id, is_admin: Boolean(user.is_admin) });
+    }
 
     // Rolling session refresh: if token has less than REFRESH_THRESHOLD_SECONDS remaining, issue a new token
     if (secondsLeft > 0 && secondsLeft < SESSION_REFRESH_THRESHOLD_SECONDS) {
@@ -62,7 +66,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         ).then((result) => {
             // Guard: don't set cookies if headers already sent
             if (res.headersSent) {
-                console.warn('[JWT] Cannot refresh token: headers already sent');
+                logger.warn('[jwt] cannot_refresh_headers_sent', { userId });
                 return;
             }
 
@@ -84,18 +88,20 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
                         path: '/',
                         maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // 60 minutes
                     });
-                    console.log('[JWT] Token refreshed for user:', userId);
+                    if (process.env.NODE_ENV !== 'production') {
+                        logger.debug('[jwt] token_refreshed', { userId });
+                    }
                 }
             }
         }).catch((err) => {
-            console.error('[JWT] Failed to refresh token:', err);
+            logger.warn('[jwt] refresh_failed_nonfatal', { message: err?.message ?? String(err) });
             // Don't fail the request if refresh fails
         });
     }
 
     // Update last_active_at asynchronously (don't wait for it)
-    updateUserActivity(req.user.id).catch(err => {
-        console.error('[Activity] Failed to update last_active_at:', err);
+    updateUserActivity(userId).catch(err => {
+        logger.warn('[activity] last_active_at_update_failed', { message: err?.message ?? String(err) });
     });
 
     next();
@@ -113,7 +119,7 @@ async function updateUserActivity(userId: number): Promise<void> {
         );
     } catch (error) {
         // Silently fail - don't disrupt the request
-        console.error('[Activity] Error updating user activity:', error);
+        logger.warn('[activity] last_active_at_update_error', { message: (error as any)?.message ?? String(error) });
     }
 }
 

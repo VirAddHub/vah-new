@@ -10,6 +10,8 @@
 
 import { getPool } from '../../lib/db';
 import { invoicePeriodRelatedId } from './chargeIdempotency';
+import type { Pool } from 'pg';
+import { logger } from '../../lib/logger';
 
 export interface GenerateInvoiceForPeriodOptions {
   userId: number;
@@ -53,7 +55,7 @@ function normalizeDate(date: Date | string): string {
  * @returns Total amount in pence
  */
 export async function recomputeInvoiceTotal(
-  pool: any,
+  pool: Pool,
   invoiceId: number,
   currency: string = 'GBP'
 ): Promise<number> {
@@ -69,11 +71,12 @@ export async function recomputeInvoiceTotal(
       [invoiceId]
     );
     totalChargesPence = Number((chargesSum.rows[0] as any)?.total_pence || 0);
-  } catch (chargeError: any) {
+  } catch (chargeError: unknown) {
     // Table doesn't exist - use 0
-    const msg = String(chargeError?.message || '');
-    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
-      console.error('[invoiceService] Error computing charge total:', chargeError);
+    const msg = String((chargeError as any)?.message || '');
+    const code = (chargeError as any)?.code;
+    if (!msg.includes('relation "charge" does not exist') && code !== '42P01') {
+      logger.error('[invoiceService] charge_total_failed', { invoiceId, message: msg, code });
       throw chargeError;
     }
     totalChargesPence = 0;
@@ -89,13 +92,13 @@ export async function recomputeInvoiceTotal(
     if (invoiceResult.rows.length > 0) {
       currentInvoiceAmount = Number(invoiceResult.rows[0].amount_pence || 0);
     }
-  } catch (e) {
+  } catch {
     // Ignore
   }
 
   // Log mismatch if found (debug-safe)
   if (currentInvoiceAmount !== totalChargesPence) {
-    console.error('[invoiceService] INVOICE AMOUNT MISMATCH', {
+    logger.warn('[invoiceService] invoice_amount_mismatch', {
       invoiceId,
       currentInvoiceAmount,
       computedFromCharges: totalChargesPence,
@@ -119,7 +122,7 @@ export async function recomputeInvoiceTotal(
  * Recompute invoice amount (alias for recomputeInvoiceTotal for consistency)
  */
 export async function recomputeInvoiceAmount(opts: {
-  pool: any;
+  pool: Pool;
   invoiceId: number;
 }): Promise<number> {
   return recomputeInvoiceTotal(opts.pool, opts.invoiceId, 'GBP');
@@ -130,7 +133,7 @@ export async function recomputeInvoiceAmount(opts: {
  * Creates a subscription_fee charge if it doesn't already exist
  */
 async function ensureSubscriptionChargeForPeriod(opts: {
-  pool: any;
+  pool: Pool;
   userId: number;
   periodStart: string;
   periodEnd: string;
@@ -159,9 +162,11 @@ async function ensureSubscriptionChargeForPeriod(opts: {
       // Fallback to hardcoded prices if plan not found
       amountPence = billingInterval === 'monthly' ? 999 : 8999;
     }
-  } catch (planError: any) {
+  } catch (planError: unknown) {
     // Plans table might not exist - use fallback
-    console.warn('[ensureSubscriptionCharge] Error fetching plan price, using fallback:', planError);
+    logger.warn('[ensureSubscriptionCharge] plan_price_lookup_failed_fallback', {
+      message: (planError as any)?.message ?? String(planError),
+    });
     amountPence = billingInterval === 'monthly' ? 999 : 8999;
   }
 
@@ -202,14 +207,17 @@ async function ensureSubscriptionChargeForPeriod(opts: {
       `,
       [userId, amountPence, currency, description, periodStart, relatedId]
     );
-  } catch (chargeError: any) {
+  } catch (chargeError: unknown) {
     // Table doesn't exist - skip
-    const msg = String(chargeError?.message || '');
-    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
-      console.error('[ensureSubscriptionCharge] Error creating subscription charge:', chargeError);
+    const msg = String((chargeError as any)?.message || '');
+    const code = (chargeError as any)?.code;
+    if (!msg.includes('relation "charge" does not exist') && code !== '42P01') {
+      logger.error('[ensureSubscriptionCharge] create_subscription_charge_failed', { userId, message: msg, code });
       throw chargeError;
     }
-    console.warn('[ensureSubscriptionCharge] charge table missing, skipping subscription charge');
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug('[ensureSubscriptionCharge] charge_table_missing_skip');
+    }
   }
 }
 
@@ -299,7 +307,7 @@ export async function generateInvoiceForPeriod(
   if (existingInvoice.rows.length > 0) {
     // Update existing invoice - keep status as-is unless explicitly changed
     invoiceId = existingInvoice.rows[0].id;
-    
+
     // Update gocardless_payment_id if provided and not already set
     if (gocardlessPaymentId) {
       await pool.query(
@@ -309,7 +317,7 @@ export async function generateInvoiceForPeriod(
         [gocardlessPaymentId, invoiceId]
       );
     }
-    
+
     console.log('[invoiceService] invoice_exists', { userId, invoiceId, periodStartStr, periodEndStr, isFrozen });
   } else {
     // Create new invoice - default status is 'issued' unless creating from payment flow
@@ -409,7 +417,7 @@ export async function generateInvoiceForPeriod(
  */
 export async function repairOrphanCharges(): Promise<number> {
   const pool = getPool();
-  
+
   try {
     const result = await pool.query(
       `
@@ -420,10 +428,10 @@ export async function repairOrphanCharges(): Promise<number> {
         AND invoice_id IS NULL
       `
     );
-    
+
     const updatedCount = result.rowCount || 0;
     console.log('[invoiceService] repair_orphan_charges', { updatedCount });
-    
+
     return updatedCount;
   } catch (error: any) {
     const msg = String(error?.message || '');

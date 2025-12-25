@@ -5,6 +5,15 @@ import { getPool } from '../lib/db';
 import { sendTemplateEmail } from '../lib/mailer';
 import { Templates } from '../lib/postmark-templates';
 import { getAppUrl } from '../config/appUrl';
+import { logger } from '../lib/logger';
+
+function redactEmail(email: unknown): string {
+  const s = String(email || '');
+  if (!s.includes('@')) return 'redacted';
+  const [user, domain] = s.split('@');
+  const safeUser = user.length <= 2 ? `${user[0] ?? ''}…` : `${user.slice(0, 2)}…`;
+  return `${safeUser}@${domain}`;
+}
 
 const INVOICE_BASE_DIR = process.env.INVOICES_DIR
   ? path.resolve(process.env.INVOICES_DIR)
@@ -58,7 +67,9 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
         `UPDATE invoices SET status = 'paid' WHERE id = $1`,
         [existing.rows[0].id]
       );
-      console.log(`[invoices] Invoice already exists for payment ${opts.gocardlessPaymentId}, updated status to 'paid'`);
+      logger.info('[invoices] invoice_exists_for_payment_status_set_paid', {
+        invoiceId: existing.rows[0].id,
+      });
       const updated = await pool.query<InvoiceRow>(
         `SELECT * FROM invoices WHERE id = $1`,
         [existing.rows[0].id]
@@ -81,7 +92,14 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
       const existingInvoice = existing.rows[0];
       // If PDF doesn't exist or amount changed, regenerate PDF
       if (!existingInvoice.pdf_path || existingInvoice.amount_pence !== opts.amountPence) {
-        console.log(`[invoices] Regenerating PDF for invoice ${existingInvoice.id} (missing PDF or amount changed)`);
+        if (process.env.NODE_ENV !== 'production') {
+          logger.debug('[invoices] regenerating_pdf_for_invoice', {
+            invoiceId: existingInvoice.id,
+            hasPdfPath: Boolean(existingInvoice.pdf_path),
+            oldAmountPence: existingInvoice.amount_pence,
+            newAmountPence: opts.amountPence,
+          });
+        }
 
         // Update invoice amount if it changed
         if (existingInvoice.amount_pence !== opts.amountPence) {
@@ -127,13 +145,18 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
           await sendInvoiceAvailableEmail(invoiceToReturn);
           return invoiceToReturn;
         } catch (pdfError) {
-          console.error(`[invoices] Failed to regenerate PDF for invoice ${existingInvoice.id}:`, pdfError);
+          logger.error('[invoices] regenerate_pdf_failed', {
+            invoiceId: existingInvoice.id,
+            message: (pdfError as any)?.message ?? String(pdfError),
+          });
           // Return existing invoice even if PDF generation failed
           return existingInvoice;
         }
       } else {
         // PDF exists and amount matches - return existing invoice
-        console.log(`[invoices] Invoice ${existingInvoice.id} already has PDF, skipping regeneration`);
+        if (process.env.NODE_ENV !== 'production') {
+          logger.debug('[invoices] invoice_already_has_pdf_skipping_regeneration', { invoiceId: existingInvoice.id });
+        }
         return existingInvoice;
       }
     }
@@ -177,9 +200,13 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
     // Table doesn't exist yet or query failed - continue with 0 charges
     // Error code 42P01 = relation does not exist
     if (chargeError?.code === '42P01' || chargeError?.message?.includes('does not exist')) {
-      console.warn('[createInvoiceForPayment] charge table does not exist yet, skipping charges');
+      if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[createInvoiceForPayment] charge_table_missing_skip_charges');
+      }
     } else {
-      console.error('[createInvoiceForPayment] Error querying charge table:', chargeError);
+      logger.error('[createInvoiceForPayment] charge_query_failed', {
+        message: chargeError?.message ?? String(chargeError),
+      });
     }
     charges = [];
     chargesTotalPence = 0;
@@ -238,7 +265,9 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
         [invoice.id, chargeId]
       );
     }
-    console.log(`[invoices] Marked ${charges.length} charges as billed for invoice ${invoice.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug('[invoices] marked_charges_billed', { invoiceId: invoice.id, count: charges.length });
+    }
   }
 
   // Recompute invoice amount from charges before generating PDF (ensures correctness)
@@ -284,13 +313,19 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
 
     return finalInvoice;
   } catch (pdfError) {
-    console.error(`[invoices] Failed to generate PDF for invoice ${invoice.id}:`, pdfError);
+    logger.error('[invoices] pdf_generation_failed', {
+      invoiceId: invoice.id,
+      message: (pdfError as any)?.message ?? String(pdfError),
+    });
     // Return invoice even if PDF generation failed
     // Still try to send email if PDF generation failed but invoice exists
     try {
       await sendInvoiceAvailableEmail(invoice);
     } catch (emailError) {
-      console.error(`[invoices] Failed to send email for invoice ${invoice.id} after PDF error:`, emailError);
+      logger.error('[invoices] email_send_failed_after_pdf_error', {
+        invoiceId: invoice.id,
+        message: (emailError as any)?.message ?? String(emailError),
+      });
     }
     return invoice;
   }
@@ -309,20 +344,22 @@ export async function generateInvoicePdf(opts: {
   periodStart: string | Date;
   periodEnd: string | Date;
 }): Promise<string> {
-  console.log('[generateInvoicePdf] Starting PDF generation', {
-    invoiceId: opts.invoiceId,
-    invoiceNumber: opts.invoiceNumber,
-    userId: opts.userId,
-    amountPence: opts.amountPence,
-    currency: opts.currency,
-    periodStart: opts.periodStart,
-    periodEnd: opts.periodEnd,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] start', {
+      invoiceId: opts.invoiceId,
+      invoiceNumber: opts.invoiceNumber,
+      userId: opts.userId,
+      amountPence: opts.amountPence,
+      currency: opts.currency,
+    });
+  }
 
   const pool = getPool();
 
   // Get user details
-  console.log('[generateInvoicePdf] Fetching user details', { userId: opts.userId });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] fetching_user_details', { userId: opts.userId });
+  }
   const userResult = await pool.query(
     `SELECT email, first_name, last_name, company_name FROM "user" WHERE id = $1`,
     [opts.userId]
@@ -330,15 +367,16 @@ export async function generateInvoicePdf(opts: {
   const user = userResult.rows[0];
 
   if (!user) {
-    console.error('[generateInvoicePdf] User not found', { userId: opts.userId });
+    logger.error('[generateInvoicePdf] user_not_found', { userId: opts.userId });
     throw new Error(`User ${opts.userId} not found`);
   }
 
-  console.log('[generateInvoicePdf] User found', {
-    userId: opts.userId,
-    email: user.email,
-    name: `${user.first_name} ${user.last_name}`,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] user_found', {
+      userId: opts.userId,
+      email: redactEmail(user.email),
+    });
+  }
 
   // Get all billed charges for this invoice (for line items breakdown)
   let charges: Array<{ description: string; amount_pence: number; service_date: string }> = [];
@@ -362,7 +400,9 @@ export async function generateInvoicePdf(opts: {
     // Table doesn't exist or query failed - continue without charges
     const msg = String(chargeError?.message || '');
     if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
-      console.warn('[generateInvoicePdf] Error fetching charges:', chargeError);
+      logger.warn('[generateInvoicePdf] fetch_charges_failed', {
+        message: chargeError?.message ?? String(chargeError),
+      });
     }
   }
 
@@ -374,23 +414,24 @@ export async function generateInvoicePdf(opts: {
   const year = new Date(opts.periodEnd).getFullYear();
   const dir = path.join(INVOICE_BASE_DIR, String(year), String(opts.userId));
 
-  console.log('[generateInvoicePdf] Creating directory', {
-    invoiceId: opts.invoiceId,
-    directory: dir,
-    invoiceBaseDir: INVOICE_BASE_DIR,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] ensure_directory', {
+      invoiceId: opts.invoiceId,
+      directory: dir,
+    });
+  }
 
   await fs.promises.mkdir(dir, { recursive: true });
-  console.log('[generateInvoicePdf] Directory created/verified', { directory: dir });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] directory_ready', { directory: dir });
+  }
 
   const filename = `invoice-${opts.invoiceId}.pdf`;
   const fullPath = path.join(dir, filename);
 
-  console.log('[generateInvoicePdf] PDF file path', {
-    invoiceId: opts.invoiceId,
-    filename,
-    fullPath,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[generateInvoicePdf] pdf_file_path', { invoiceId: opts.invoiceId, filename });
+  }
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const writeStream = fs.createWriteStream(fullPath);
@@ -437,7 +478,7 @@ export async function generateInvoicePdf(opts: {
       doc.image(logoPath, left, headerY, { height: logoMaxHeight });
       logoRenderedWidth = logoMaxWidth; // reserve space; exact rendered width depends on image aspect ratio
     } catch (e) {
-      console.warn('[generateInvoicePdf] Failed to render logo, continuing without it', {
+      logger.warn('[generateInvoicePdf] logo_render_failed_continuing', {
         invoiceId: opts.invoiceId,
         logoPath,
         error: e instanceof Error ? e.message : String(e),
@@ -477,7 +518,7 @@ export async function generateInvoicePdf(opts: {
       }
     }
   } catch (e) {
-    console.warn('[generateInvoicePdf] Failed to load invoice created_at, using today', {
+    logger.warn('[generateInvoicePdf] invoice_created_at_load_failed_using_today', {
       invoiceId: opts.invoiceId,
       error: e instanceof Error ? e.message : String(e),
     });
@@ -547,7 +588,7 @@ export async function generateInvoicePdf(opts: {
     // Verify total matches
     const itemsSum = allItems.reduce((sum, item) => sum + item.amount_pence, 0);
     if (itemsSum !== opts.amountPence) {
-      console.warn('[generateInvoicePdf] Amount mismatch', {
+      logger.warn('[generateInvoicePdf] amount_mismatch', {
         invoiceId: opts.invoiceId,
         invoiceAmount: opts.amountPence,
         itemsSum,
@@ -582,7 +623,7 @@ export async function generateInvoicePdf(opts: {
 
     // Log if rendered items don't match invoice total
     if (renderedItemsSum !== opts.amountPence) {
-      console.warn('[generateInvoicePdf] Rendered items mismatch', {
+      logger.warn('[generateInvoicePdf] rendered_items_mismatch', {
         invoiceId: opts.invoiceId,
         invoiceAmount: opts.amountPence,
         renderedSum: renderedItemsSum,
@@ -784,7 +825,7 @@ export async function findUserIdForPayment(
 
     return null;
   } catch (error) {
-    console.error('[invoices] Error finding user for payment:', error);
+    logger.warn('[invoices] find_user_for_payment_failed', { message: (error as any)?.message ?? String(error) });
     return null;
   }
 }
@@ -818,7 +859,9 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
   );
 
   if (checkResult.rows[0]?.email_sent_at) {
-    console.log(`[invoices] Email already sent for invoice ${invoice.id}, skipping`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug('[invoices] email_already_sent_skipping', { invoiceId: invoice.id });
+    }
     return;
   }
 
@@ -834,7 +877,7 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
       `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
       [errorMsg, invoice.id]
     );
-    console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
+    logger.error('[invoices] email_send_user_not_found', { invoiceId: invoice.id });
     return;
   }
 
@@ -846,7 +889,7 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
       `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
       [errorMsg, invoice.id]
     );
-    console.error(`[invoices] ${errorMsg} for invoice ${invoice.id}`);
+    logger.error('[invoices] email_send_missing_user_email', { invoiceId: invoice.id });
     return;
   }
 
@@ -882,14 +925,17 @@ async function sendInvoiceAvailableEmail(invoice: InvoiceRow): Promise<void> {
       [invoice.id]
     );
 
-    console.log(`[invoices] Invoice email sent for invoice ${invoice.id} to ${user.email}`);
+    logger.info('[invoices] invoice_email_sent', { invoiceId: invoice.id, to: redactEmail(user.email) });
   } catch (error: any) {
     const errorMsg = error?.message || 'Unknown error sending email';
     await pool.query(
       `UPDATE invoices SET email_send_error = $1 WHERE id = $2`,
       [errorMsg, invoice.id]
     );
-    console.error(`[invoices] Failed to send email for invoice ${invoice.id}:`, error);
+    logger.error('[invoices] invoice_email_send_failed_nonfatal', {
+      invoiceId: invoice.id,
+      message: errorMsg,
+    });
     // Don't throw - invoice creation should succeed even if email fails
   }
 }

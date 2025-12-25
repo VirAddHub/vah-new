@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
 import { fileTypeFromBuffer } from 'file-type';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -188,7 +189,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/profile] error:', error);
+        logger.error('[GET /api/profile] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -233,7 +234,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
 
         return res.json({ ok: true, data: { me: result.rows[0] } });
     } catch (error: any) {
-        console.error('[GET /api/profile/me] error:', error);
+        logger.error('[GET /api/profile/me] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -246,9 +247,10 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
-    // Debug: Log incoming payload
-    console.log("[profile] PATCH payload keys", Object.keys(req.body || {}));
-    console.log("[profile] PATCH payload", req.body);
+    // Debug: Log payload keys only (never full body) in non-production
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug("[profile] PATCH payload keys", { keys: Object.keys(req.body || {}) });
+    }
 
     // EXPLICIT ALLOWLIST: Only these fields can be updated via profile endpoint
     // Note: email and phone should use /api/profile/contact endpoint (email requires verification)
@@ -364,10 +366,12 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
                 updates.push(`middle_names = $${paramIndex++}`);
                 values.push(middle_names);
             } else {
-                console.warn('[PATCH /api/profile] middle_names column does not exist, skipping update');
+                if (process.env.NODE_ENV !== 'production') {
+                    logger.debug('[PATCH /api/profile] middle_names column does not exist, skipping update');
+                }
             }
         } catch (e) {
-            console.warn('[PATCH /api/profile] Could not check for middle_names column:', e);
+            logger.warn('[PATCH /api/profile] could_not_check_middle_names_column', { message: (e as any)?.message ?? String(e) });
         }
     }
     // Note: phone and email updates should use /api/profile/contact endpoint
@@ -415,12 +419,15 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
             FROM "user" 
             WHERE id = $1
         `, [userId]);
-        console.log("[profile] saved forwarding snapshot", {
-            userId: afterResult.rows[0].id,
-            email: afterResult.rows[0].email,
-            forwarding_address: afterResult.rows[0].forwarding_address,
-            forwarding_address_lines: afterResult.rows[0].forwarding_address ? afterResult.rows[0].forwarding_address.split('\n') : [],
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            logger.debug("[profile] saved forwarding snapshot", {
+                userId: afterResult.rows[0].id,
+                hasForwardingAddress: Boolean(afterResult.rows[0].forwarding_address),
+                forwardingAddressLinesCount: afterResult.rows[0].forwarding_address
+                    ? String(afterResult.rows[0].forwarding_address).split('\n').length
+                    : 0,
+            });
+        }
 
         // Log changes to activity_log for audit trail
         // Note: email and phone changes are logged in /api/profile/contact endpoint
@@ -442,13 +449,15 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
                 ]);
             } catch (auditError) {
                 // Don't fail the request if audit logging fails
-                console.warn('[PATCH /api/profile] Failed to log activity:', auditError);
+                logger.warn('[PATCH /api/profile] failed_to_log_activity_nonfatal', {
+                    message: (auditError as any)?.message ?? String(auditError),
+                });
             }
         }
 
         return res.json({ ok: true, data: newUser });
     } catch (error: any) {
-        console.error('[PATCH /api/profile] error:', error);
+        logger.error('[PATCH /api/profile] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -548,10 +557,12 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
                 updates.push(`middle_names = $${paramIndex++}`);
                 values.push(middle_names);
             } else {
-                console.warn('[PATCH /api/profile/me] middle_names column does not exist, skipping update');
+                if (process.env.NODE_ENV !== 'production') {
+                    logger.debug('[PATCH /api/profile/me] middle_names column does not exist, skipping update');
+                }
             }
         } catch (e) {
-            console.warn('[PATCH /api/profile/me] Could not check for middle_names column:', e);
+            logger.warn('[PATCH /api/profile/me] could_not_check_middle_names_column', { message: (e as any)?.message ?? String(e) });
         }
     }
     if (phone !== undefined) {
@@ -627,12 +638,15 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
             FROM "user" 
             WHERE id = $1
         `, [userId]);
-        console.log("[profile] saved forwarding snapshot", {
-            userId: afterResult.rows[0]?.id,
-            email: afterResult.rows[0]?.email,
-            forwarding_address: afterResult.rows[0]?.forwarding_address,
-            forwarding_address_lines: afterResult.rows[0]?.forwarding_address ? afterResult.rows[0].forwarding_address.split('\n') : [],
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            logger.debug("[profile] saved forwarding snapshot", {
+                userId: afterResult.rows[0]?.id,
+                hasForwardingAddress: Boolean(afterResult.rows[0]?.forwarding_address),
+                forwardingAddressLinesCount: afterResult.rows[0]?.forwarding_address
+                    ? String(afterResult.rows[0].forwarding_address).split('\n').length
+                    : 0,
+            });
+        }
 
         // Log changes to activity_log for audit trail
         const changes: string[] = [];
@@ -659,13 +673,15 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
                 ]);
             } catch (auditError) {
                 // Don't fail the request if audit logging fails
-                console.warn('[PATCH /api/profile/me] Failed to log activity:', auditError);
+                logger.warn('[PATCH /api/profile/me] failed_to_log_activity_nonfatal', {
+                    message: (auditError as any)?.message ?? String(auditError),
+                });
             }
         }
 
         return res.json({ ok: true, data: newUser });
     } catch (error: any) {
-        console.error('[PATCH /api/profile/me] error:', error);
+        logger.error('[PATCH /api/profile/me] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -724,7 +740,7 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
             },
         });
     } catch (error: any) {
-        console.error('[GET /api/profile/registered-office-address] error:', error);
+        logger.error('[GET /api/profile/registered-office-address] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
     }
 });
@@ -865,44 +881,64 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         try {
             if (configuredLogoPath && fs.existsSync(configuredLogoPath)) {
-                console.log('[Certificate] Loading logo from VAH_LOGO_PATH:', configuredLogoPath);
+                if (process.env.NODE_ENV !== 'production') {
+                    logger.debug('[Certificate] loading_logo_from_VAH_LOGO_PATH', { configuredLogoPath });
+                }
                 doc.image(configuredLogoPath, logoX, logoY, { width: imgWidth });
                 drewImage = true;
             } else {
                 const logoUrlToTry = configuredLogoUrl || defaultRemoteLogoUrl;
-                console.log('[Certificate] Fetching logo from URL:', logoUrlToTry);
+                if (process.env.NODE_ENV !== 'production') {
+                    logger.debug('[Certificate] fetching_logo_from_url', { logoUrlToTry });
+                }
                 try {
                     const logoBuf = await fetchLogoBuffer(logoUrlToTry);
                     doc.image(logoBuf, logoX, logoY, { width: imgWidth });
                     drewImage = true;
-                    console.log('[Certificate] Successfully drew logo from URL');
+                    if (process.env.NODE_ENV !== 'production') {
+                        logger.debug('[Certificate] drew_logo_from_url');
+                    }
                 } catch (error) {
-                    console.warn('[Certificate] Failed to fetch logo from URL, falling back to local paths:', error);
+                    logger.warn('[Certificate] fetch_logo_failed_fallback_to_local', {
+                        message: (error as any)?.message ?? String(error),
+                    });
                 }
 
                 if (!drewImage) {
                     const logoPath = configuredLogoPath || defaultLogoPath;
-                    console.log('[Certificate] Attempting local logo path:', logoPath);
+                    if (process.env.NODE_ENV !== 'production') {
+                        logger.debug('[Certificate] attempting_local_logo_path', { logoPath });
+                    }
                     if (fs.existsSync(logoPath)) {
                         doc.image(logoPath, logoX, logoY, { width: imgWidth });
                         drewImage = true;
-                        console.log('[Certificate] Successfully drew logo from local path');
+                        if (process.env.NODE_ENV !== 'production') {
+                            logger.debug('[Certificate] drew_logo_from_local_path');
+                        }
                     } else if (fs.existsSync(alternativeLogoPath)) {
-                        console.log('[Certificate] Trying alternative local logo path:', alternativeLogoPath);
+                        if (process.env.NODE_ENV !== 'production') {
+                            logger.debug('[Certificate] trying_alternative_local_logo_path', { alternativeLogoPath });
+                        }
                         doc.image(alternativeLogoPath, logoX, logoY, { width: imgWidth });
                         drewImage = true;
-                        console.log('[Certificate] Successfully drew alternative logo from local path');
+                        if (process.env.NODE_ENV !== 'production') {
+                            logger.debug('[Certificate] drew_logo_from_alternative_local_path');
+                        }
                     } else {
-                        console.log('[Certificate] No local logo file found (this is expected on backend-only deploys).');
+                        if (process.env.NODE_ENV !== 'production') {
+                            logger.debug('[Certificate] no_local_logo_file_found');
+                        }
                     }
                 }
             }
         } catch (error) {
-            console.error('[Certificate] Error loading logo image:', error);
+            logger.error('[Certificate] logo_load_error', { message: (error as any)?.message ?? String(error) });
         }
 
         if (!drewImage) {
-            console.log('[Certificate] Falling back to text logo');
+            if (process.env.NODE_ENV !== 'production') {
+                logger.debug('[Certificate] falling_back_to_text_logo');
+            }
             doc.fillColor(COLORS.text)
                 .fontSize(18)
                 .font(FONT.bold)
@@ -1036,7 +1072,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         }
 
         if (chosen.total > availableH) {
-            console.warn('[Certificate] Content still exceeds single-page target; clamping spacing aggressively.');
+            logger.warn('[Certificate] content_still_exceeds_single_page_target_clamping');
             chosen = measure(0.80);
         }
 
@@ -1194,7 +1230,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.end();
 
     } catch (error: any) {
-        console.error('[GET /api/profile/certificate] error:', error);
+        logger.error('[GET /api/profile/certificate] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'certificate_generation_failed', message: error.message });
     }
 });
@@ -1237,7 +1273,7 @@ router.get("/ch-verification", requireAuth, async (req: Request, res: Response) 
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/profile/ch-verification] error:', error);
+        logger.error('[GET /api/profile/ch-verification] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -1258,11 +1294,11 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
         // SECURITY: Validate file using magic bytes (prevents Content-Type spoofing)
         const validation = await validateFileMagicBytes(req.file.buffer, req.file.originalname);
         if (!validation.valid) {
-            console.warn('[POST /api/profile/ch-verification] File validation failed:', {
+            logger.warn('[POST /api/profile/ch-verification] file_validation_failed', {
                 userId,
                 filename: req.file.originalname,
                 mimetype: req.file.mimetype,
-                error: validation.error
+                error: validation.error,
             });
             return res.status(400).json({
                 ok: false,
@@ -1316,7 +1352,7 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
             data: updateResult.rows[0]
         });
     } catch (error: any) {
-        console.error('[POST /api/profile/ch-verification] error:', error);
+        logger.error('[POST /api/profile/ch-verification] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'upload_error', message: error.message });
     }
 });
@@ -1367,7 +1403,7 @@ router.get("/media/ch-verification/:filename", requireAuth, async (req: Request,
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);
     } catch (error: any) {
-        console.error('[GET /api/media/ch-verification/:filename] error:', error);
+        logger.error('[GET /api/media/ch-verification/:filename] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
     }
 });
@@ -1463,7 +1499,7 @@ router.patch("/controllers", requireAuth, async (req: Request, res: Response) =>
             },
         });
     } catch (error: any) {
-        console.error('[PATCH /api/profile/controllers] error:', error);
+        logger.error('[PATCH /api/profile/controllers] error', { message: error?.message ?? String(error) });
         return res.status(500).json({
             ok: false,
             error: 'database_error',

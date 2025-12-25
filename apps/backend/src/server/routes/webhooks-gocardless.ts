@@ -643,7 +643,9 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventCo
                 if (r3.rows?.length) row = r3.rows[0];
             }
         } catch (e) {
-            console.warn('[GoCardless] payer_details_confirmed: gc_billing_request_flow lookup failed', (e as any)?.message ?? e);
+            logger.warn('[gocardless] payer_details_confirmed: gc_billing_request_flow_lookup_failed', {
+                message: (e as any)?.message ?? String(e),
+            });
         }
 
         // Fallback: try gc_redirect_flow if we have flowId
@@ -675,11 +677,17 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventCo
         }
 
         if (!row?.user_id) {
-            console.log('[GoCardless] payer_details_confirmed: could not resolve user', {
-                flowId,
-                billingRequestId,
-                customerId,
-                tried: ['gc_billing_request_flow (flow_id)', 'gc_billing_request_flow (request_id)', 'gc_billing_request_flow (customer_id)', 'gc_redirect_flow', 'user.gocardless_customer_id'],
+            logger.warn('[gocardless] payer_details_confirmed: could_not_resolve_user', {
+                flowId: redactId(flowId),
+                billingRequestId: redactId(billingRequestId),
+                customerId: redactId(customerId),
+                tried: [
+                    'gc_billing_request_flow (flow_id)',
+                    'gc_billing_request_flow (request_id)',
+                    'gc_billing_request_flow (customer_id)',
+                    'gc_redirect_flow',
+                    'user.gocardless_customer_id',
+                ],
             });
             return;
         }
@@ -708,18 +716,18 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventCo
         // If overwriting customer_id and it differs, log warning
         if (shouldOverwriteCustomerId) {
             if (currentUserCustomerId && currentUserCustomerId !== customerId) {
-                console.warn('[GoCardless] payer_details_confirmed: overwriting user.gocardless_customer_id', {
+                logger.warn('[gocardless] payer_details_confirmed: overwriting_user_customer_id', {
                     userId,
-                    old: currentUserCustomerId,
-                    new: customerId,
+                    old: redactId(currentUserCustomerId),
+                    new: redactId(customerId),
                     source: 'billing_request_id resolution'
                 });
             }
             if (currentSubCustomerId && currentSubCustomerId !== customerId) {
-                console.warn('[GoCardless] payer_details_confirmed: overwriting subscription.customer_id', {
+                logger.warn('[gocardless] payer_details_confirmed: overwriting_subscription_customer_id', {
                     userId,
-                    old: currentSubCustomerId,
-                    new: customerId,
+                    old: redactId(currentSubCustomerId),
+                    new: redactId(customerId),
                     source: 'billing_request_id resolution'
                 });
             }
@@ -774,9 +782,12 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventCo
             // ignore (table may not exist yet)
         }
 
-        console.log(`[GoCardless] payer_details_confirmed: linked customer ${customerId} to user ${userId}, subscription updated`);
+        logger.info('[gocardless] payer_details_confirmed: linked_customer_to_user', {
+            userId,
+            customerId: redactId(customerId),
+        });
     } catch (e) {
-        console.error('[GoCardless] Error handling billing_requests.payer_details_confirmed:', e);
+        logger.error('[gocardless] payer_details_confirmed handler_error', { message: (e as any)?.message ?? String(e) });
     }
 }
 
@@ -793,7 +804,9 @@ async function handleMandateSubmitted(pool: any, links: any, eventContext: { eve
                 const m = await gcGetMandate(String(mandateId));
                 customerId = m.customer_id ?? null;
             } catch (e) {
-                console.warn('[GoCardless] mandate.submitted hydrate customer failed:', (e as any)?.message ?? e);
+                logger.warn('[gocardless] mandates.submitted hydrate_customer_failed', {
+                    message: (e as any)?.message ?? String(e),
+                });
             }
         }
 
@@ -827,7 +840,7 @@ async function handleMandateSubmitted(pool: any, links: any, eventContext: { eve
             customerId: customerId ?? null,
         });
     } catch (e) {
-        console.error('[GoCardless] Error handling mandates.submitted:', e);
+        logger.error('[gocardless] mandates.submitted handler_error', { message: (e as any)?.message ?? String(e) });
     }
 }
 
@@ -843,10 +856,9 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
             null;
 
         if (!customerId && !billingRequestId) {
-            console.log('[GoCardless] fulfilled: missing customerId/billingRequestId', {
-                billingRequestId,
-                customerId,
-                links,
+            logger.warn('[gocardless] billing_requests.fulfilled missing_identifiers', {
+                billingRequestId: redactId(billingRequestId),
+                customerId: redactId(customerId),
             });
             return;
         }
@@ -873,14 +885,17 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
                     [userId]
                 );
 
-                console.log('[GoCardless] fulfilled: subscription marked active', {
-                    customerId,
-                    billingRequestId,
+                logger.info('[gocardless] billing_requests.fulfilled subscription_marked_active', {
                     userId,
+                    customerId: redactId(customerId),
+                    billingRequestId: redactId(billingRequestId),
                 });
                 return;
             } else {
-                console.warn('[GoCardless] fulfilled: unknown_customer_id', { customerId, billingRequestId });
+                logger.warn('[gocardless] billing_requests.fulfilled unknown_customer_id', {
+                    customerId: redactId(customerId),
+                    billingRequestId: redactId(billingRequestId),
+                });
                 // Continue to fallback logic below
             }
         }
@@ -914,18 +929,18 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
 
                         // Log warning if overwriting different customer_id
                         if (currentUserCustomerId && currentUserCustomerId !== eventCustomerId) {
-                            console.warn('[GoCardless] fulfilled: overwriting user.gocardless_customer_id', {
+                            logger.warn('[gocardless] billing_requests.fulfilled overwriting_user_customer_id', {
                                 userId,
-                                old: currentUserCustomerId,
-                                new: eventCustomerId,
+                                old: redactId(currentUserCustomerId),
+                                new: redactId(eventCustomerId),
                                 source: 'billing_request_id resolution'
                             });
                         }
                         if (currentSubCustomerId && currentSubCustomerId !== eventCustomerId) {
-                            console.warn('[GoCardless] fulfilled: overwriting subscription.customer_id', {
+                            logger.warn('[gocardless] billing_requests.fulfilled overwriting_subscription_customer_id', {
                                 userId,
-                                old: currentSubCustomerId,
-                                new: eventCustomerId,
+                                old: redactId(currentSubCustomerId),
+                                new: redactId(eventCustomerId),
                                 source: 'billing_request_id resolution'
                             });
                         }
@@ -952,18 +967,22 @@ async function handleBillingRequestFulfilled(pool: any, links: any, resource: an
                         `,
                         [eventCustomerId, Date.now(), userId]
                     );
-                    console.log('[GoCardless] fulfilled: subscription marked active (via billing_request_id)', {
-                        billingRequestId,
+                    logger.info('[gocardless] billing_requests.fulfilled subscription_marked_active_via_billing_request', {
                         userId,
-                        customerId: eventCustomerId,
+                        billingRequestId: redactId(billingRequestId),
+                        customerId: redactId(eventCustomerId),
                     });
                 }
             } catch (e) {
-                console.warn('[GoCardless] fulfilled: failed to lookup by billing_request_id', (e as any)?.message ?? e);
+                logger.warn('[gocardless] billing_requests.fulfilled lookup_by_billing_request_failed', {
+                    message: (e as any)?.message ?? String(e),
+                });
             }
         }
     } catch (error) {
-        console.error('[GoCardless] Error handling billing_requests.fulfilled:', error);
+        logger.error('[gocardless] billing_requests.fulfilled handler_error', {
+            message: (error as any)?.message ?? String(error),
+        });
     }
 }
 
@@ -976,18 +995,17 @@ async function handleMandateCreated(pool: any, links: any, resource: any, eventC
         // We DO have billing_request, use it as the fallback key
         const billingRequestId = resource?.links?.billing_request ?? links?.billing_request ?? null;
 
-        console.log('[GoCardless] mandates.created: processing', {
-            mandateId,
-            customerId,
-            billingRequestId,
-            hasResource: !!resource,
-            links,
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            logger.debug('[gocardless] mandates.created processing', {
+                mandateId: redactId(mandateId),
+                customerId: redactId(customerId),
+                billingRequestId: redactId(billingRequestId),
+                hasResource: Boolean(resource),
+            });
+        }
 
         if (!mandateId) {
-            console.log('[GoCardless] mandates.created: missing mandateId', {
-                links,
-            });
+            logger.warn('[gocardless] mandates.created missing_mandateId');
             return;
         }
 
@@ -1029,14 +1047,17 @@ async function handleMandateCreated(pool: any, links: any, resource: any, eventC
                     [mandateId, customerId, Date.now(), userId]
                 );
 
-                console.log('[GoCardless] mandates.created: mandate attached + active (by customer)', {
-                    customerId,
-                    mandateId,
+                logger.info('[gocardless] mandates.created mandate_attached_active_by_customer', {
                     userId,
+                    customerId: redactId(customerId),
+                    mandateId: redactId(mandateId),
                 });
                 return;
             } else {
-                console.warn('[GoCardless] mandates.created: unknown_customer_id', { customerId, mandateId });
+                logger.warn('[gocardless] mandates.created unknown_customer_id', {
+                    customerId: redactId(customerId),
+                    mandateId: redactId(mandateId),
+                });
                 // Continue to Path B fallback below
             }
         }
@@ -1074,18 +1095,18 @@ async function handleMandateCreated(pool: any, links: any, resource: any, eventC
 
                         // Log warning if overwriting different customer_id
                         if (currentUserCustomerId && currentUserCustomerId !== eventCustomerId) {
-                            console.warn('[GoCardless] mandates.created: overwriting user.gocardless_customer_id', {
+                            logger.warn('[gocardless] mandates.created overwriting_user_customer_id', {
                                 userId,
-                                old: currentUserCustomerId,
-                                new: eventCustomerId,
+                                old: redactId(currentUserCustomerId),
+                                new: redactId(eventCustomerId),
                                 source: 'billing_request_id resolution'
                             });
                         }
                         if (currentSubCustomerId && currentSubCustomerId !== eventCustomerId) {
-                            console.warn('[GoCardless] mandates.created: overwriting subscription.customer_id', {
+                            logger.warn('[gocardless] mandates.created overwriting_subscription_customer_id', {
                                 userId,
-                                old: currentSubCustomerId,
-                                new: eventCustomerId,
+                                old: redactId(currentSubCustomerId),
+                                new: redactId(eventCustomerId),
                                 source: 'billing_request_id resolution'
                             });
                         }
@@ -1127,32 +1148,35 @@ async function handleMandateCreated(pool: any, links: any, resource: any, eventC
                         [mandateId, finalCustomerId, Date.now(), userId]
                     );
 
-                    console.log('[GoCardless] mandates.created: mandate attached + active (by billing_request)', {
-                        billingRequestId,
-                        mandateId,
+                    logger.info('[gocardless] mandates.created mandate_attached_active_by_billing_request', {
                         userId,
-                        customerId: finalCustomerId,
+                        billingRequestId: redactId(billingRequestId),
+                        mandateId: redactId(mandateId),
+                        customerId: redactId(finalCustomerId),
                     });
                     return;
                 } else {
-                    console.log('[GoCardless] mandates.created: no mapping for billing_request', {
-                        billingRequestId,
-                        mandateId,
+                    logger.warn('[gocardless] mandates.created no_mapping_for_billing_request', {
+                        billingRequestId: redactId(billingRequestId),
+                        mandateId: redactId(mandateId),
                     });
                 }
             } catch (e) {
-                console.warn('[GoCardless] mandates.created: failed to lookup by billing_request_id', (e as any)?.message ?? e);
+                logger.warn('[gocardless] mandates.created lookup_by_billing_request_failed', {
+                    message: (e as any)?.message ?? String(e),
+                });
             }
         }
 
-        console.log('[GoCardless] mandates.created: cannot attach (no customerId or billingRequestId)', {
-            mandateId,
-            customerId,
-            billingRequestId,
-            links,
+        logger.warn('[gocardless] mandates.created cannot_attach_missing_customer_or_billing_request', {
+            mandateId: redactId(mandateId),
+            customerId: redactId(customerId),
+            billingRequestId: redactId(billingRequestId),
         });
     } catch (error) {
-        console.error('[GoCardless] Error handling mandates.created:', error);
+        logger.error('[gocardless] mandates.created handler_error', {
+            message: (error as any)?.message ?? String(error),
+        });
     }
 }
 
@@ -1213,7 +1237,9 @@ async function findUserIdForGcIdentifiers(
 
         return null;
     } catch (error) {
-        console.error('[GoCardless] Error resolving user from GC identifiers:', error);
+        logger.error('[gocardless] resolve_user_from_identifiers_error', {
+            message: (error as any)?.message ?? String(error),
+        });
         return null;
     }
 }

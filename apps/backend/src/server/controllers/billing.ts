@@ -4,6 +4,15 @@ import path from 'path';
 import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
+import { logger } from '../../lib/logger';
+
+function redactEmail(email: unknown): string {
+  const s = String(email || '');
+  if (!s.includes('@')) return 'redacted';
+  const [user, domain] = s.split('@');
+  const safeUser = user.length <= 2 ? `${user[0] ?? ''}…` : `${user.slice(0, 2)}…`;
+  return `${safeUser}@${domain}`;
+}
 
 /**
  * GET /api/billing/invoices/:id
@@ -64,7 +73,7 @@ export async function getInvoiceById(req: Request, res: Response) {
       // Table doesn't exist - return empty items
       const msg = String(itemsError?.message || '');
       if (!msg.includes('relation "charge" does not exist') && itemsError?.code !== '42P01') {
-        console.error('[getInvoiceById] Error fetching items:', itemsError);
+        logger.error('[getInvoiceById] fetch_items_failed', { message: itemsError?.message ?? String(itemsError) });
       }
     }
 
@@ -76,7 +85,7 @@ export async function getInvoiceById(req: Request, res: Response) {
       },
     });
   } catch (error: any) {
-    console.error('[getInvoiceById] error:', error);
+    logger.error('[getInvoiceById] error', { message: error?.message ?? String(error) });
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 }
@@ -102,7 +111,7 @@ async function getPendingForwardingFees(userId: number): Promise<number> {
     if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
       return 0;
     }
-    console.error('[getPendingForwardingFees] Error:', error);
+    logger.error('[getPendingForwardingFees] error', { message: error?.message ?? String(error) });
     return 0;
   }
 }
@@ -208,7 +217,7 @@ export async function getBillingOverview(req: Request, res: Response) {
       }
     });
   } catch (error) {
-    console.error('[getBillingOverview] error:', error);
+    logger.error('[getBillingOverview] error', { message: (error as any)?.message ?? String(error) });
     res.status(500).json({ ok: false, error: 'Failed to fetch billing overview' });
   }
 }
@@ -265,9 +274,9 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
 
   // Debug logging (guarded by env var)
   if (process.env.DEBUG_BILLING === '1') {
-    console.log('[downloadInvoicePdf] DEBUG', {
+    logger.debug('[downloadInvoicePdf] debug', {
       callerId: String(callerId),
-      callerEmail: req.user!.email,
+      callerEmail: redactEmail(req.user!.email),
       isAdmin,
       invoiceId,
     });
@@ -275,7 +284,9 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
 
   try {
     // Get invoice with full details needed for PDF generation
-    console.log('[PDF DOWNLOAD] Fetching invoice from database', { invoiceId });
+    if (process.env.DEBUG_BILLING === '1') {
+      logger.debug('[billing] pdf_download_fetch_invoice', { invoiceId });
+    }
     const result = await pool.query(
       `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end 
        FROM invoices WHERE id=$1 LIMIT 1`,
@@ -284,33 +295,37 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     const inv = result.rows[0];
 
     if (!inv) {
-      console.log('[PDF DOWNLOAD] Invoice not found in database', { invoiceId });
+      logger.warn('[billing] pdf_download_invoice_not_found', { invoiceId });
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
 
-    console.log('[PDF DOWNLOAD] Invoice found', {
-      invoiceId: inv.id,
-      invoiceNumber: inv.invoice_number,
-      invoiceUserId: String(inv.user_id),
-      pdfPath: inv.pdf_path || 'null',
-      amountPence: inv.amount_pence,
-    });
+    if (process.env.DEBUG_BILLING === '1') {
+      logger.debug('[billing] pdf_download_invoice_found', {
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoice_number,
+        invoiceUserId: String(inv.user_id),
+        hasPdfPath: Boolean(inv.pdf_path),
+        amountPence: inv.amount_pence,
+      });
+    }
 
     // Authorization: admin can access any invoice, otherwise must own it
     // CRITICAL: Convert both to BigInt for safe comparison (Postgres BIGINT may come as string)
     const ownerId = BigInt(inv.user_id);
     const authorized = isAdmin || callerId === ownerId;
 
-    console.log('[PDF DOWNLOAD] Authorization check', {
-      invoiceId,
-      callerId: callerId.toString(),
-      ownerId: ownerId.toString(),
-      isAdmin,
-      authorized,
-    });
+    if (process.env.DEBUG_BILLING === '1') {
+      logger.debug('[billing] pdf_download_auth_check', {
+        invoiceId,
+        callerId: callerId.toString(),
+        ownerId: ownerId.toString(),
+        isAdmin,
+        authorized,
+      });
+    }
 
     if (!authorized) {
-      console.log('[PDF DOWNLOAD] Authorization failed', {
+      logger.warn('[billing] pdf_download_forbidden', {
         invoiceId,
         callerId: callerId.toString(),
         ownerId: ownerId.toString(),
@@ -320,16 +335,20 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     }
 
     // Recompute invoice amount from charges before generating PDF (ensures correctness)
-    console.log('[PDF DOWNLOAD] Recomputing invoice amount', { invoiceId });
+    if (process.env.DEBUG_BILLING === '1') {
+      logger.debug('[billing] pdf_download_recompute_amount', { invoiceId });
+    }
     const { recomputeInvoiceTotal } = await import('../../services/billing/invoiceService');
     const correctAmountPence = await recomputeInvoiceTotal(pool, inv.id, inv.currency || 'GBP');
 
-    console.log('[PDF DOWNLOAD] Invoice amount recomputed', {
-      invoiceId,
-      originalAmount: inv.amount_pence,
-      recomputedAmount: correctAmountPence,
-      currency: inv.currency || 'GBP',
-    });
+    if (process.env.DEBUG_BILLING === '1') {
+      logger.debug('[billing] pdf_download_amount_recomputed', {
+        invoiceId,
+        originalAmount: inv.amount_pence,
+        recomputedAmount: correctAmountPence,
+        currency: inv.currency || 'GBP',
+      });
+    }
 
     // Use recomputed amount for PDF generation
     const amountPence = correctAmountPence;
@@ -362,16 +381,9 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
     }
 
     // PDF doesn't exist - generate on-demand
-    console.log('[PDF DOWNLOAD] Generating PDF on-demand', {
+    logger.info('[billing] pdf_download_generating_on_demand', {
       invoiceId,
-      userId: callerId.toString(),
       invoiceNumber: inv.invoice_number,
-      amountPence: amountPence,
-      currency: inv.currency || 'GBP',
-      periodStart: inv.period_start,
-      periodEnd: inv.period_end,
-      baseDir,
-      pdfPath: pdfPath || 'null',
     });
 
     try {
@@ -399,7 +411,7 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
 
       if (!fs.existsSync(fullPath)) {
-        console.error(`[downloadInvoicePdf] Generated PDF not found at ${fullPath}`);
+        logger.error('[downloadInvoicePdf] generated_pdf_missing', { invoiceId, fullPath });
         return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
       }
 
@@ -413,11 +425,14 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
       res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
       fs.createReadStream(fullPath).pipe(res);
     } catch (pdfError: any) {
-      console.error(`[downloadInvoicePdf] Failed to generate PDF for invoice ${invoiceId}:`, pdfError);
+      logger.error('[downloadInvoicePdf] generate_pdf_failed', {
+        invoiceId,
+        message: pdfError?.message ?? String(pdfError),
+      });
       return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
     }
   } catch (error: any) {
-    console.error('[downloadInvoicePdf] error:', error);
+    logger.error('[downloadInvoicePdf] error', { message: error?.message ?? String(error) });
     return res.status(500).json({ ok: false, error: 'download_failed' });
   }
 }
@@ -428,7 +443,7 @@ export async function postUpdateBank(req: Request, res: Response) {
     const link = await gcCreateUpdateBankLink(userId);
     res.json({ ok: true, data: link });
   } catch (error) {
-    console.error('[postUpdateBank] error:', error);
+    logger.error('[postUpdateBank] error', { message: (error as any)?.message ?? String(error) });
     res.status(500).json({ ok: false, error: 'Failed to create update bank link' });
   }
 }
@@ -439,7 +454,7 @@ export async function postReauthorise(req: Request, res: Response) {
     const link = await gcCreateReauthoriseLink(userId);
     res.json({ ok: true, data: link });
   } catch (error) {
-    console.error('[postReauthorise] error:', error);
+    logger.error('[postReauthorise] error', { message: (error as any)?.message ?? String(error) });
     res.status(500).json({ ok: false, error: 'Failed to create reauthorization link' });
   }
 }
@@ -508,7 +523,11 @@ export async function postChangePlan(req: Request, res: Response) {
 
       await pool.query('COMMIT');
 
-      console.log(`[postChangePlan] User ${userId} changed to plan: ${plan.name} (${plan.interval})`);
+      logger.info('[postChangePlan] plan_changed', {
+        userId,
+        planName: plan.name,
+        interval: plan.interval,
+      });
 
       res.json({
         ok: true,
@@ -525,7 +544,7 @@ export async function postChangePlan(req: Request, res: Response) {
       throw transactionError;
     }
   } catch (error) {
-    console.error('[postChangePlan] error:', error);
+    logger.error('[postChangePlan] error', { message: (error as any)?.message ?? String(error) });
     res.status(500).json({ ok: false, error: 'Failed to change plan' });
   }
 }

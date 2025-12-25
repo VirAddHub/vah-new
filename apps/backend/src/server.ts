@@ -185,7 +185,7 @@ app.use(cors({
         }
 
         // Reject all other origins with explicit error
-        console.warn('[CORS] Blocked origin:', origin);
+        logger.warn('[cors] blocked_origin', { origin });
         return cb(new Error(`CORS policy: Origin ${origin} not allowed`), false);
     },
     credentials: true,
@@ -350,7 +350,7 @@ async function start() {
             const has = fs
                 .readFileSync('dist/server/index.js', 'utf8')
                 .includes('storage_expires_at');
-            if (has) console.warn('[warn] dist still references storage_expires_at; rebuild needed');
+            if (has) logger.warn('[warn] dist still references storage_expires_at; rebuild needed');
         } catch (e) {
             // Ignore if dist doesn't exist yet
         }
@@ -529,9 +529,11 @@ async function start() {
     // Mount address router
     if (addressRouter && typeof addressRouter === 'function') {
         app.use('/api/address', addressRouter);
-        console.log('[mount] /api/address mounted');
+        logger.info('[mount] /api/address mounted');
     } else {
-        console.log('[mount] ERROR: addressRouter is not a function:', typeof addressRouter);
+        logger.error('[mount] /api/address not mounted (addressRouter not a function)', {
+            type: typeof addressRouter,
+        });
     }
 
     app.use('/api/admin-audit', adminAuditRouter);
@@ -620,19 +622,23 @@ async function start() {
 
     // ---- Global error handlers to prevent crashes ----
     process.on("unhandledRejection", (reason) => {
-        console.error("[unhandledRejection]", reason);
+        logger.error("[unhandledRejection]", {
+            message: (reason && (reason as any).message) ? (reason as any).message : String(reason),
+        });
     });
 
     process.on("uncaughtException", (error) => {
-        console.error("[uncaughtException]", error);
+        logger.error("[uncaughtException]", { message: (error as any)?.message ?? String(error) });
         // Don't exit - let the platform restart if truly fatal
     });
 
     // ---- Run startup migrations ----
     if (process.env.RUN_STARTUP_MIGRATIONS === 'true') {
-        console.log('[migration] Running startup migrations...');
+        logger.info('[migration] running_startup_migrations');
         const { runStartupMigrations } = require('./scripts/startup-migrate');
-        runStartupMigrations().catch(console.error);
+        runStartupMigrations().catch((e: any) => {
+            logger.error('[migration] startup_migrations_failed', { message: e?.message ?? String(e) });
+        });
     }
 
     // ---- Server bootstrap: bind to Render's PORT or fallback ----
@@ -650,21 +656,23 @@ async function start() {
 
         // Start maintenance service
         systemMaintenance.start();
-        console.log('[boot] System maintenance service started');
+        logger.info('[boot] system_maintenance_started');
 
         // Print extremely explicit diagnostics for Render logs:
-        console.log('[boot] Render deployment:', process.env.RENDER_EXTERNAL_URL || '(unknown)');
-        console.log('[boot] DATABASE_URL:', process.env.DATABASE_URL ? 'set' : 'missing');
-        console.log('[boot] CORS origins:', cors);
-        console.log(`[server] listening on port ${PORT} (NODE_ENV=${env})`);
-        console.log('[boot] health check:', '/api/healthz');
-        console.log('[boot] NODE_ENV:', env);
-        console.log('[boot] GoCardless webhook route:', '/api/webhooks/gocardless');
-        console.log('[GC]', { env: gcEnv, tokenPrefix: gcToken ? gcToken.slice(0, 7) : '(missing)' });
+        logger.info('[boot] deployment_info', {
+            renderExternalUrl: process.env.RENDER_EXTERNAL_URL || '(unknown)',
+            databaseUrl: process.env.DATABASE_URL ? 'set' : 'missing',
+            corsOrigins: cors,
+            port: PORT,
+            nodeEnv: env,
+            gocardlessWebhookRoute: '/api/webhooks/gocardless',
+            gcEnv,
+            gcTokenPrefix: gcToken ? gcToken.slice(0, 7) : '(missing)',
+        });
 
         // Debug logging for APP_BASE_URL (non-production only)
         if (env !== 'production') {
-            console.log('[boot] APP_BASE_URL:', process.env.APP_BASE_URL || '(not set - will use default)');
+            logger.debug('[boot] app_base_url', { appBaseUrl: process.env.APP_BASE_URL || '(not set)' });
         }
 
         // Log Graph API configuration
@@ -673,16 +681,16 @@ async function start() {
 
     // ---- Graceful shutdown (prevents crash loops) ----
     const shutdown = (signal: NodeJS.Signals) => {
-        console.log(`[boot] received ${signal}, shutting down...`);
+        logger.info('[boot] shutdown_signal', { signal });
         try {
             // Stop background intervals so we don't run jobs during shutdown.
-            try { systemMaintenance.stop(); } catch {}
-            try { stopForwardingLocksCleanup(); } catch {}
-            try { stopSelfTestScheduler(); } catch {}
-        } catch {}
+            try { systemMaintenance.stop(); } catch { }
+            try { stopForwardingLocksCleanup(); } catch { }
+            try { stopSelfTestScheduler(); } catch { }
+        } catch { }
         server.close(err => {
             if (err) {
-                console.error('[boot] error during server.close:', err);
+                logger.error('[boot] server_close_failed', { message: (err as any)?.message ?? String(err) });
                 process.exit(1);
             }
             process.exit(0);
@@ -693,7 +701,7 @@ async function start() {
 }
 
 start().catch(err => {
-    console.error(err);
+    logger.error('[boot] fatal_start_error', { message: (err as any)?.message ?? String(err) });
     process.exit(1);
 });
 

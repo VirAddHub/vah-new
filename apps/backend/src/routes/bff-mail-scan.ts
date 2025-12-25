@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../server/db';
 import { requireAuth } from '../middleware/auth';
 import { streamPdfFromUrl } from '../controllers/pdfProxy';
+import { logger } from '../lib/logger';
 
 const router = Router();
 
@@ -15,11 +16,17 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         const disposition = (req.query.disposition as string) === 'attachment' ? 'attachment' : 'inline';
         if (!mailItemId || Number.isNaN(mailItemId)) return res.status(400).send('mailItemId required');
 
-        const user = (req as any).user as { id: number; is_admin?: boolean; is_staff?: boolean };
+        const user = req.user;
+        if (!user?.id) return res.status(401).send('Unauthenticated');
 
-        // Debug logging
-        console.log(`[BFF DEBUG] User ID: ${user.id}, is_admin: ${user.is_admin}, is_staff: ${(user as any).is_staff}`);
-        console.log(`[BFF DEBUG] Requested mailItemId: ${mailItemId}`);
+        if (process.env.NODE_ENV !== 'production') {
+            logger.debug('[bff:mail/scan-url] request', {
+                mailItemId,
+                disposition,
+                userId: user.id,
+                is_admin: Boolean(user.is_admin),
+            });
+        }
 
         const pool = getPool();
         const { rows } = await pool.query<{
@@ -35,8 +42,6 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         if (!rows.length) return res.status(404).send('Mail item not found');
         const item = rows[0];
 
-        console.log(`[BFF DEBUG] Mail item user_id: ${item.user_id}, deleted: ${item.deleted}, has_scan_url: ${!!item.scan_file_url}`);
-
         // Coerce potential string/bigint DB values to number for safe comparison
         const dbUserId =
             typeof item.user_id === 'bigint' ? Number(item.user_id) :
@@ -48,11 +53,10 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
                     Number(user.id);
 
         const isOwner = dbUserId === sessionUserId;
-        const isPrivileged = !!(user.is_admin || (user as any).is_staff);
-        console.log(`[BFF DEBUG] isOwner: ${isOwner}, isPrivileged: ${isPrivileged}, dbUserId: ${dbUserId}, sessionUserId: ${sessionUserId}`);
+        const isPrivileged = Boolean(user.is_admin);
 
         if (!isOwner && !isPrivileged) {
-            console.warn('[bff:mail/scan-url] forbidden', { mailItemId, dbUserId, sessionUserId, isPrivileged });
+            logger.warn('[bff:mail/scan-url] forbidden', { mailItemId, dbUserId, sessionUserId, isPrivileged });
             return res.status(403).send('Forbidden');
         }
         if (item.deleted) return res.status(410).send('Mail item deleted');
@@ -64,7 +68,7 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         const filename = (item.subject || `document-${item.id}`) + '.pdf';
         return streamPdfFromUrl(res, httpsUrl, filename, disposition);
     } catch (err) {
-        console.error('[bff:mail/scan-url]', err);
+        logger.error('[bff:mail/scan-url] error', { message: (err as any)?.message ?? String(err) });
         return res.status(500).send('Internal Server Error');
     }
 });
@@ -79,7 +83,8 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
         const disposition = (req.query.disposition as string) === 'attachment' ? 'attachment' : 'inline';
         if (!id || Number.isNaN(id)) return res.status(400).send('Invalid id');
 
-        const user = (req as any).user as { id: number; is_admin?: boolean; is_staff?: boolean };
+        const user = req.user;
+        if (!user?.id) return res.status(401).send('Unauthenticated');
 
         const pool = getPool();
         const { rows } = await pool.query<{
@@ -104,9 +109,9 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
                 typeof user.id === 'string' ? parseInt(user.id as any, 10) :
                     Number(user.id);
         const isOwner = dbUserId === sessionUserId;
-        const isPrivileged = !!(user.is_admin || (user as any).is_staff);
+        const isPrivileged = Boolean(user.is_admin);
         if (!isOwner && !isPrivileged) {
-            console.warn('[bff:legacy-download] forbidden', { id, dbUserId, sessionUserId, isPrivileged });
+            logger.warn('[bff:legacy-download] forbidden', { id, dbUserId, sessionUserId, isPrivileged });
             return res.status(403).send('Forbidden');
         }
         if (item.deleted) return res.status(410).send('Mail item deleted');
@@ -118,7 +123,7 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
         const filename = (item.subject || `document-${item.id}`) + '.pdf';
         return streamPdfFromUrl(res, httpsUrl, filename, disposition);
     } catch (err) {
-        console.error('[bff:legacy-download]', err);
+        logger.error('[bff:legacy-download] error', { message: (err as any)?.message ?? String(err) });
         return res.status(500).send('Internal Server Error');
     }
 });
@@ -138,7 +143,7 @@ async function resolveToHttpsUrl(ref: string): Promise<string | null> {
             return await (global as any).resolveOneDriveDownloadUrl(ref);
         }
     } catch (e) {
-        console.warn('[resolveToHttpsUrl] resolver failed', e);
+        logger.warn('[resolveToHttpsUrl] resolver_failed', { message: (e as any)?.message ?? String(e) });
     }
     return null;
 }
