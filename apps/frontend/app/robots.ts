@@ -1,25 +1,31 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    // STAGING MODE: Block all crawlers until GDPR compliance is complete
-    // TODO: Replace with production robots.txt after GDPR approval
+  const env = process.env.VERCEL_ENV ?? process.env.NODE_ENV;
+  const isProd = env === 'production';
 
-    const isStaging = process.env.NODE_ENV !== 'production' ||
-        process.env.VERCEL_URL?.includes('vercel.app') ||
-        !process.env.NEXT_PUBLIC_GA_ID
-
-    if (isStaging) {
-        return {
-            rules: [{ userAgent: '*', disallow: '/' }],
-            sitemap: [],
-        }
-    }
-
-    // PRODUCTION MODE: Allow crawling with sitemap
-    const base = 'https://virtualaddresshub.co.uk'
+  if (!isProd) {
+    // Prevent duplicate content indexing from preview/staging/dev deployments.
     return {
-        rules: [{ userAgent: '*', allow: '/' }],
-        sitemap: [`${base}/sitemap.xml`],
-        host: base,
-    }
+      rules: [
+        {
+          userAgent: '*',
+          disallow: '/',
+        },
+      ],
+    };
+  }
+
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://virtualaddresshub.co.uk';
+
+  // Production must always be indexable.
+  return {
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+      },
+    ],
+    sitemap: `${base}/sitemap.xml`,
+  };
 }
