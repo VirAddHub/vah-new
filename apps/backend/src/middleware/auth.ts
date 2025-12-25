@@ -4,6 +4,14 @@ import { getPool } from '../server/db';
 import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from '../config/auth';
 import { logger } from '../lib/logger';
 
+function errorMessage(e: unknown): string {
+    if (e && typeof e === 'object' && 'message' in e) {
+        const msg = (e as { message?: unknown }).message;
+        if (typeof msg === 'string') return msg;
+    }
+    return String(e);
+}
+
 /**
  * Optional JWT authentication middleware
  * Verifies JWT token if present (from header or cookie) and attaches user to req.user
@@ -94,14 +102,14 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
                 }
             }
         }).catch((err) => {
-            logger.warn('[jwt] refresh_failed_nonfatal', { message: err?.message ?? String(err) });
+            logger.warn('[jwt] refresh_failed_nonfatal', { message: errorMessage(err) });
             // Don't fail the request if refresh fails
         });
     }
 
     // Update last_active_at asynchronously (don't wait for it)
     updateUserActivity(userId).catch(err => {
-        logger.warn('[activity] last_active_at_update_failed', { message: err?.message ?? String(err) });
+        logger.warn('[activity] last_active_at_update_failed', { message: errorMessage(err) });
     });
 
     next();
@@ -117,9 +125,9 @@ async function updateUserActivity(userId: number): Promise<void> {
             'UPDATE "user" SET last_active_at = $1 WHERE id = $2',
             [Date.now(), userId]
         );
-    } catch (error) {
+    } catch (error: unknown) {
         // Silently fail - don't disrupt the request
-        logger.warn('[activity] last_active_at_update_error', { message: (error as any)?.message ?? String(error) });
+        logger.warn('[activity] last_active_at_update_error', { message: errorMessage(error) });
     }
 }
 

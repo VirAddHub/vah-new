@@ -1,7 +1,20 @@
 // apps/backend/src/services/billing/invoiceBuilder.ts
 import { getPool } from '../../lib/db';
+import type { Pool } from 'pg';
+import { logger } from '../../lib/logger';
 
 type Cadence = 'monthly' | 'annual';
+
+function errorInfo(e: unknown): { message: string; code?: string } {
+  if (e && typeof e === 'object') {
+    const anyE = e as { message?: unknown; code?: unknown };
+    return {
+      message: typeof anyE.message === 'string' ? anyE.message : String(e),
+      code: typeof anyE.code === 'string' ? anyE.code : undefined,
+    };
+  }
+  return { message: String(e) };
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -72,13 +85,15 @@ export async function createInvoiceForUserPeriod(
       [userId, start, end]
     );
     chargesPence = chargesRes.rows[0]?.charges_pence ?? 0;
-  } catch (chargeError: any) {
+  } catch (chargeError: unknown) {
     // Table doesn't exist yet - continue with 0 charges
-    const msg = String(chargeError?.message || '');
-    if (msg.includes('relation "charge" does not exist') || chargeError?.code === '42P01') {
-      console.warn('[invoice_builder] charge table missing, skipping charges');
+    const { message: msg, code } = errorInfo(chargeError);
+    if (msg.includes('relation "charge" does not exist') || code === '42P01') {
+      if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[invoice_builder] charge table missing, skipping charges');
+      }
     } else {
-      console.error('[invoice_builder] Error querying charges:', chargeError);
+      logger.error('[invoice_builder] charge_query_failed', { message: msg, code });
     }
     chargesPence = 0;
   }
@@ -86,15 +101,9 @@ export async function createInvoiceForUserPeriod(
   const basePence = basePricePence(cadence);
   const totalPence = basePence + chargesPence;
 
-  console.log('[invoice_builder] computed', {
-    userId,
-    cadence,
-    start,
-    end,
-    basePence,
-    chargesPence,
-    totalPence,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[invoice_builder] computed', { userId, cadence, start, end, basePence, chargesPence, totalPence });
+  }
 
   // 2) Get or generate invoice number
   // Use existing invoice number sequence logic
@@ -114,9 +123,11 @@ export async function createInvoiceForUserPeriod(
     const sequence = seqResult.rows[0].sequence;
     invoiceNumber = String(sequence);
     invoiceNumberFormatted = `VAH-${year}-${String(sequence).padStart(6, '0')}`;
-  } catch (seqError: any) {
+  } catch (seqError: unknown) {
     // Fallback if invoices_seq table doesn't exist
-    console.warn('[invoice_builder] invoices_seq table missing, using fallback invoice number');
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug('[invoice_builder] invoices_seq missing, using fallback invoice number');
+    }
     invoiceNumber = `${userId}-${start}`;
     invoiceNumberFormatted = `INV-${userId}-${start}`;
   }
@@ -145,7 +156,9 @@ export async function createInvoiceForUserPeriod(
          WHERE id = $2`,
         [totalPence, invoiceId]
       );
-      console.log('[invoice_builder] invoice_exists', { userId, invoiceId, gocardlessPaymentId });
+      if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[invoice_builder] invoice_exists', { userId, invoiceId });
+      }
     } else {
       // Create new invoice
       const invRes = await pool.query<{ id: number }>(
@@ -183,7 +196,9 @@ export async function createInvoiceForUserPeriod(
          WHERE id = $2`,
         [totalPence, invoiceId]
       );
-      console.log('[invoice_builder] invoice_exists', { userId, invoiceId, start, end });
+      if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[invoice_builder] invoice_exists', { userId, invoiceId, start, end });
+      }
     } else {
       // Create new invoice
       const invRes = await pool.query<{ id: number }>(
@@ -221,23 +236,17 @@ export async function createInvoiceForUserPeriod(
       [invoiceId, userId, start, end]
     );
     chargesAttached = chargesUpdate.rowCount || 0;
-  } catch (chargeError: any) {
+  } catch (chargeError: unknown) {
     // Table doesn't exist - skip charge update
-    const msg = String(chargeError?.message || '');
-    if (!msg.includes('relation "charge" does not exist') && chargeError?.code !== '42P01') {
-      console.error('[invoice_builder] Error updating charges:', chargeError);
+    const { message: msg, code } = errorInfo(chargeError);
+    if (!msg.includes('relation "charge" does not exist') && code !== '42P01') {
+      logger.error('[invoice_builder] charge_update_failed', { message: msg, code, invoiceId, userId });
     }
   }
 
-  console.log('[invoice_builder] invoice_ready', {
-    userId,
-    invoiceId,
-    created,
-    chargesAttached,
-    totalPence,
-    start,
-    end,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug('[invoice_builder] invoice_ready', { userId, invoiceId, created, chargesAttached, totalPence, start, end });
+  }
 
   return {
     invoiceId,

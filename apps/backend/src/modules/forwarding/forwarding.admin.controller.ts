@@ -161,6 +161,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
     if (!admin) {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
+    const adminId = typeof admin.id === 'string' ? Number.parseInt(admin.id, 10) : Number(admin.id);
+    if (!Number.isFinite(adminId)) {
+        return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
 
     const id = Number(req.params.id);
     const parse = AdminUpdateSchema.safeParse(req.body);
@@ -393,7 +397,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
 
             // Clear cache to ensure fresh data on next GET request
-            clearAdminForwardingCache(admin.id);
+            clearAdminForwardingCache(adminId);
 
             return res.json({ ok: true, data: upd.rows[0] });
 

@@ -30,3 +30,8 @@ if [ "${found}" -ne 0 ]; then
 else
   echo "✅ No banned test bypass detected"
 fi
+
+# Also prevent new `any` from being introduced (diff-based; does not fail on legacy any).
+if [ -f "scripts/no-new-any.sh" ]; then
+  bash scripts/no-new-any.sh
+fi

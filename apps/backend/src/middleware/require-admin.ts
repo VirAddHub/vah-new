@@ -10,7 +10,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     }
     
     // User exists but not admin
-    if (!(user.is_admin || (user as any).is_staff)) {
+    if (!(user.is_admin || user.is_staff)) {
         return res.status(403).json({ ok: false, error: 'forbidden' });
     }
     

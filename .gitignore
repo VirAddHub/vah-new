@@ -145,5 +145,8 @@ apps/frontend/out/
 # Test scripts - keep local
 *.sh
 
+# Allow build/CI guard scripts
+!apps/backend/scripts/no-new-any.sh
+
 # Local template file
 quiz-day0-template.html

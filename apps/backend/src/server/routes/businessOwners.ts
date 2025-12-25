@@ -7,6 +7,16 @@ import * as businessOwnersService from '../services/businessOwners';
 
 const router = Router();
 
+function toNumberId(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'string') {
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) ? n : NaN;
+    }
+    return NaN;
+}
+
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
     if (!req.user?.id) {
@@ -21,19 +31,20 @@ function requireAuth(req: Request, res: Response, next: Function) {
  */
 router.get('/', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.id;
+        const userId = toNumberId(req.user!.id);
+        if (!Number.isFinite(userId)) return res.status(401).json({ ok: false, error: 'unauthenticated' });
         const owners = await businessOwnersService.getBusinessOwners(userId);
         
         return res.json({
             ok: true,
             data: owners,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[GET /api/business-owners] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message,
+            message: error instanceof Error ? error.message : String(error),
         });
     }
 });
@@ -46,7 +57,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
  */
 router.post('/', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.id;
+        const userId = toNumberId(req.user!.id);
+        if (!Number.isFinite(userId)) return res.status(401).json({ ok: false, error: 'unauthenticated' });
         const { fullName, email } = req.body;
         
         if (!fullName || !email) {
@@ -91,12 +103,12 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
                 message: 'Business owner added and verification email sent',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[POST /api/business-owners] error:', error);
         return res.status(400).json({
             ok: false,
             error: 'validation_error',
-            message: error.message || 'Failed to add business owner',
+            message: (error instanceof Error && error.message) ? error.message : 'Failed to add business owner',
         });
     }
 });
@@ -107,7 +119,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
  */
 router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
     try {
-        const userId = req.user!.id;
+        const userId = toNumberId(req.user!.id);
+        if (!Number.isFinite(userId)) return res.status(401).json({ ok: false, error: 'unauthenticated' });
         const ownerId = parseInt(req.params.id, 10);
         
         if (isNaN(ownerId)) {

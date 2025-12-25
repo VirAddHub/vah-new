@@ -6,6 +6,24 @@ import { logger } from '../lib/logger';
 
 const router = Router();
 
+function errorMessage(e: unknown): string {
+    if (e && typeof e === 'object' && 'message' in e) {
+        const msg = (e as { message?: unknown }).message;
+        if (typeof msg === 'string') return msg;
+    }
+    return String(e);
+}
+
+function toNumberId(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'string') {
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) ? n : NaN;
+    }
+    return NaN;
+}
+
 /**
  * New path (recommended):
  * GET /api/bff/mail/scan-url?mailItemId=123&disposition=inline|attachment
@@ -43,14 +61,8 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
         const item = rows[0];
 
         // Coerce potential string/bigint DB values to number for safe comparison
-        const dbUserId =
-            typeof item.user_id === 'bigint' ? Number(item.user_id) :
-                typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
-                    Number(item.user_id);
-        const sessionUserId =
-            typeof user.id === 'bigint' ? Number(user.id) :
-                typeof user.id === 'string' ? parseInt(user.id as any, 10) :
-                    Number(user.id);
+        const dbUserId = toNumberId(item.user_id);
+        const sessionUserId = toNumberId(user.id);
 
         const isOwner = dbUserId === sessionUserId;
         const isPrivileged = Boolean(user.is_admin);
@@ -67,8 +79,8 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
 
         const filename = (item.subject || `document-${item.id}`) + '.pdf';
         return streamPdfFromUrl(res, httpsUrl, filename, disposition);
-    } catch (err) {
-        logger.error('[bff:mail/scan-url] error', { message: (err as any)?.message ?? String(err) });
+    } catch (err: unknown) {
+        logger.error('[bff:mail/scan-url] error', { message: errorMessage(err) });
         return res.status(500).send('Internal Server Error');
     }
 });
@@ -100,14 +112,8 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
         if (!rows.length) return res.status(404).send('Mail item not found');
         const item = rows[0];
 
-        const dbUserId =
-            typeof item.user_id === 'bigint' ? Number(item.user_id) :
-                typeof item.user_id === 'string' ? parseInt(item.user_id, 10) :
-                    Number(item.user_id);
-        const sessionUserId =
-            typeof user.id === 'bigint' ? Number(user.id) :
-                typeof user.id === 'string' ? parseInt(user.id as any, 10) :
-                    Number(user.id);
+        const dbUserId = toNumberId(item.user_id);
+        const sessionUserId = toNumberId(user.id);
         const isOwner = dbUserId === sessionUserId;
         const isPrivileged = Boolean(user.is_admin);
         if (!isOwner && !isPrivileged) {
@@ -122,8 +128,8 @@ router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, 
 
         const filename = (item.subject || `document-${item.id}`) + '.pdf';
         return streamPdfFromUrl(res, httpsUrl, filename, disposition);
-    } catch (err) {
-        logger.error('[bff:legacy-download] error', { message: (err as any)?.message ?? String(err) });
+    } catch (err: unknown) {
+        logger.error('[bff:legacy-download] error', { message: errorMessage(err) });
         return res.status(500).send('Internal Server Error');
     }
 });
@@ -139,11 +145,12 @@ async function resolveToHttpsUrl(ref: string): Promise<string | null> {
     // e.g. onedrive:item:{driveId}:{itemId} → Graph /content 302 → CDN
     try {
         // @ts-ignore - if this exists in your file already, call it:
-        if (typeof (global as any).resolveOneDriveDownloadUrl === 'function') {
-            return await (global as any).resolveOneDriveDownloadUrl(ref);
+        const g = global as unknown as { resolveOneDriveDownloadUrl?: unknown };
+        if (typeof g.resolveOneDriveDownloadUrl === 'function') {
+            return await (g.resolveOneDriveDownloadUrl as (r: string) => Promise<string | null>)(ref);
         }
-    } catch (e) {
-        logger.warn('[resolveToHttpsUrl] resolver_failed', { message: (e as any)?.message ?? String(e) });
+    } catch (e: unknown) {
+        logger.warn('[resolveToHttpsUrl] resolver_failed', { message: errorMessage(e) });
     }
     return null;
 }

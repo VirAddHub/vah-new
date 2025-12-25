@@ -97,8 +97,13 @@ import internalMailImportRouter from "./server/routes/internalMailImport";
 
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
-const addressRouter =
-    ((addressRouterImport as MaybeDefault<unknown>) as any)?.default ?? addressRouterImport;
+function unwrapDefault<T>(m: MaybeDefault<T>): T {
+    if (m && typeof m === "object" && "default" in m) {
+        return (m as { default?: T }).default ?? (m as unknown as T);
+    }
+    return m as T;
+}
+const addressRouter = unwrapDefault(addressRouterImport as unknown as MaybeDefault<typeof addressRouterImport>);
 
 // Legacy routes (CommonJS requires - will be converted to ES modules eventually)
 // Use path.join to resolve paths correctly - need to go back to project root
@@ -285,8 +290,17 @@ const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
         return next();
     }
 
-    const token = (req.headers['x-csrf-token'] as string | undefined) || (req.body as any)?._csrf;
-    const sessionToken = (req as any).session?.csrfToken as string | undefined;
+    const headerToken = req.headers['x-csrf-token'];
+    const tokenFromHeader = typeof headerToken === 'string' ? headerToken : undefined;
+    const body = req.body as unknown;
+    const tokenFromBody =
+        body && typeof body === 'object' && '_csrf' in body && typeof (body as { _csrf?: unknown })._csrf === 'string'
+            ? (body as { _csrf: string })._csrf
+            : undefined;
+    const token = tokenFromHeader || tokenFromBody;
+
+    const maybeSession = req as unknown as { session?: { csrfToken?: unknown } };
+    const sessionToken = typeof maybeSession.session?.csrfToken === 'string' ? maybeSession.session.csrfToken : undefined;
 
     if (!token || !sessionToken || token !== sessionToken) {
         return res.status(403).json({ error: 'Invalid CSRF token' });
@@ -647,13 +661,19 @@ async function start() {
 
     // ---- Global error handlers to prevent crashes ----
     process.on("unhandledRejection", (reason: unknown) => {
-        logger.error("[unhandledRejection]", {
-            message: (reason && (reason as any).message) ? (reason as any).message : String(reason),
-        });
+        const msg =
+            reason && typeof reason === 'object' && 'message' in reason && typeof (reason as { message?: unknown }).message === 'string'
+                ? String((reason as { message: string }).message)
+                : String(reason);
+        logger.error("[unhandledRejection]", { message: msg });
     });
 
     process.on("uncaughtException", (error: unknown) => {
-        logger.error("[uncaughtException]", { message: (error as any)?.message ?? String(error) });
+        const msg =
+            error && typeof error === 'object' && 'message' in error && typeof (error as { message?: unknown }).message === 'string'
+                ? String((error as { message: string }).message)
+                : String(error);
+        logger.error("[uncaughtException]", { message: msg });
         // Don't exit - let the platform restart if truly fatal
     });
 
@@ -662,7 +682,11 @@ async function start() {
         logger.info('[migration] running_startup_migrations');
         const { runStartupMigrations } = require('./scripts/startup-migrate');
         runStartupMigrations().catch((e: unknown) => {
-            logger.error('[migration] startup_migrations_failed', { message: (e as any)?.message ?? String(e) });
+            const msg =
+                e && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string'
+                    ? String((e as { message: string }).message)
+                    : String(e);
+            logger.error('[migration] startup_migrations_failed', { message: msg });
         });
     }
 
@@ -715,7 +739,11 @@ async function start() {
         } catch { }
         server.close((err: unknown) => {
             if (err) {
-                logger.error('[boot] server_close_failed', { message: (err as any)?.message ?? String(err) });
+                const msg =
+                    err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string'
+                        ? String((err as { message: string }).message)
+                        : String(err);
+                logger.error('[boot] server_close_failed', { message: msg });
                 process.exit(1);
             }
             process.exit(0);
@@ -726,7 +754,11 @@ async function start() {
 }
 
 start().catch((err: unknown) => {
-    logger.error('[boot] fatal_start_error', { message: (err as any)?.message ?? String(err) });
+    const msg =
+        err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string'
+            ? String((err as { message: string }).message)
+            : String(err);
+    logger.error('[boot] fatal_start_error', { message: msg });
     process.exit(1);
 });
 
