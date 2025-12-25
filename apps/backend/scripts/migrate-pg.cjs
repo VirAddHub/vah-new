@@ -37,6 +37,10 @@ function collectMigrationFiles() {
 
 const files = collectMigrationFiles();
 
+function isConcurrentIndexMigration(sql) {
+    return /\bCREATE\s+INDEX\s+CONCURRENTLY\b/i.test(sql);
+}
+
 (async () => {
     const client = new Client({
         connectionString: DATABASE_URL,
@@ -132,8 +136,19 @@ const files = collectMigrationFiles();
             if (applied.has(filename)) { console.log('[pg-migrate] skip', filename); continue; }
             const sql = fs.readFileSync(absolutePath, 'utf8');
             console.log('[pg-migrate] apply', filename);
-            await client.query(sql);
-            await client.query(`INSERT INTO ${MIGRATIONS_TABLE}(name) VALUES ($1)`, [filename]);
+            if (isConcurrentIndexMigration(sql)) {
+                // CREATE INDEX CONCURRENTLY cannot run inside a transaction block.
+                await client.query('COMMIT');
+                try {
+                    await client.query(sql);
+                    await client.query(`INSERT INTO ${MIGRATIONS_TABLE}(name) VALUES ($1)`, [filename]);
+                } finally {
+                    await client.query('BEGIN');
+                }
+            } else {
+                await client.query(sql);
+                await client.query(`INSERT INTO ${MIGRATIONS_TABLE}(name) VALUES ($1)`, [filename]);
+            }
         }
 
         await client.query('COMMIT');

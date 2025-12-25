@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
-import { SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
+import { BCRYPT_ROUNDS, SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
@@ -139,7 +139,7 @@ router.post("/debug-update-password", async (req, res) => {
         const userId = userResult.rows[0].id;
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
         // Update password
         const updateResult = await pool.query(`
@@ -256,7 +256,7 @@ const SignupSchema = z.object({
     // Controllers declaration (REQUIRED during signup)
     isSoleController: z.boolean(),
     additionalControllersCount: z.number().int().min(0).nullable().optional(),
-    
+
     // Business owners (required if not sole controller)
     additionalOwners: z.array(z.object({
         fullName: z.string().min(1).max(200),
@@ -267,7 +267,9 @@ const SignupSchema = z.object({
 
 router.post("/signup", async (req, res) => {
     // Avoid logging PII (emails/names/raw body) in production logs.
-    logger.debug('[auth/signup] request received', { hasBody: Boolean(req.body) });
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[auth/signup] request received', { hasBody: Boolean(req.body) });
+    }
 
     const parsed = SignupSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -283,7 +285,9 @@ router.post("/signup", async (req, res) => {
     // Normalize
     const email = i.email.toLowerCase();
 
-    logger.debug('[auth/signup] parsed', { billing: i.billing ?? 'unknown' });
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[auth/signup] parsed', { billing: i.billing ?? 'unknown' });
+    }
 
     try {
         // Enforce unique email at app layer (still rely on DB unique index if you have it)
@@ -305,7 +309,7 @@ router.post("/signup", async (req, res) => {
             });
         }
 
-        const hash = await bcrypt.hash(i.password, 12);
+        const hash = await bcrypt.hash(i.password, BCRYPT_ROUNDS);
 
         // Insert using the `password` column (we know this exists from the schema)
         const now = Date.now();
@@ -366,8 +370,8 @@ router.post("/signup", async (req, res) => {
                 }
                 ownersPendingInfo = false;
             }
-            additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === undefined) 
-                ? null 
+            additionalControllersCount = (i.additionalControllersCount === null || i.additionalControllersCount === undefined)
+                ? null
                 : Math.max(1, i.additionalControllersCount);
         }
 
@@ -404,18 +408,22 @@ router.post("/signup", async (req, res) => {
 
         const rs = await pool.query(insertQuery, args);
         const row = rs.rows[0];
-        
+
         // Create business owners if provided
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
             const { createBusinessOwner } = await import('../services/businessOwners');
-            for (const owner of i.additionalOwners) {
-                try {
-                    await createBusinessOwner(row.id, owner.fullName, owner.email);
-                } catch (error) {
-                    logger.warn('[auth/signup] failed to create business owner', { message: (error as any)?.message ?? String(error) });
-                    // Don't fail signup if owner creation fails - can be added later
-                }
-            }
+            await Promise.allSettled(
+                i.additionalOwners.map((owner) =>
+                    createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
+                        logger.error('[auth/signup] failed_to_create_business_owner', {
+                            userId: row.id,
+                            // Only log email in dev; avoid PII in prod logs.
+                            ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
+                            message: (error as any)?.message ?? String(error),
+                        });
+                    })
+                )
+            );
         }
 
         // Manual test:
@@ -425,18 +433,24 @@ router.post("/signup", async (req, res) => {
         //    using the template with variables {{first_name}} and {{cta_url}}.
         // 4) Click the link in the email and confirm it lands on the dashboard (with ?next=/dashboard if relevant).
 
-        // Send welcome + KYC email after successful signup (non-fatal)
-        try {
-            const displayName = row.first_name?.trim() || row.last_name?.trim() || (row.email ? row.email.split("@")[0] : "") || "there";
-            await sendWelcomeKycEmail({
-                email: row.email,
-                firstName: displayName,
+        // Send welcome + KYC email (non-blocking, non-fatal)
+        const displayName =
+            row.first_name?.trim() ||
+            row.last_name?.trim() ||
+            (row.email ? row.email.split("@")[0] : "") ||
+            "there";
+        sendWelcomeKycEmail({
+            email: row.email,
+            firstName: displayName,
+        })
+            .then(() => logger.info('[auth/signup] welcome_email_sent', { userId: row.id }))
+            .catch((emailError: any) => {
+                logger.warn('[auth/signup] welcome_email_failed_nonfatal', {
+                    userId: row.id,
+                    ...(process.env.NODE_ENV !== 'production' ? { email: row.email } : {}),
+                    message: emailError?.message || String(emailError),
+                });
             });
-            logger.info('[auth/signup] welcome_email_sent', { userId: row.id });
-        } catch (emailError: any) {
-            // Don't fail signup if email fails - log and continue
-            logger.warn('[auth/signup] welcome_email_failed', { userId: row.id, message: emailError?.message || String(emailError) });
-        }
 
         // Auto-login after signup (so the user can immediately set up GoCardless mandate)
         const token = generateToken({
@@ -526,12 +540,20 @@ router.post("/login", async (req, res) => {
         // Note: KYC verification is done in the dashboard after login
         // Users can log in regardless of KYC status - KYC is enforced at the feature level (mail forwarding, certificates, etc.)
 
-        // Update last_login_at timestamp
+        // Update last_login_at timestamp (non-blocking)
         const now = Date.now();
-        await pool.query(
-            'UPDATE "user" SET last_login_at = $1, last_active_at = $2 WHERE id = $3',
-            [now, now, userData.id]
-        );
+        pool
+            .query('UPDATE "user" SET last_login_at = $1, last_active_at = $2 WHERE id = $3', [
+                now,
+                now,
+                userData.id,
+            ])
+            .catch((err: any) => {
+                logger.warn('[auth/login] failed_to_update_last_login_at', {
+                    userId: userData.id,
+                    message: err?.message ?? String(err),
+                });
+            });
 
         // Generate JWT token
         const token = generateToken({
@@ -733,8 +755,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         }
 
         // Hash the new password
-        const saltRounds = 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
         // Update user's password and mark token as used
         const updateResult = await pool.query(`

@@ -4,6 +4,8 @@ import { generateResetTokenRaw, hashToken, verifyToken, expiryFromNow } from "..
 import { sendTemplateEmail } from "../../../lib/mailer";
 import { Templates } from "../../../lib/postmark-templates";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { BCRYPT_ROUNDS } from "../../../config/auth";
+import { logger } from "../../../lib/logger";
 
 const ttl = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES ?? 30);
 
@@ -41,26 +43,21 @@ export default function passwordResetRouter(pool: Pool) {
         [hash, expiresAt.toISOString(), user.id]
       );
 
-      // fire-and-forget; do not leak errors
-      try {
-        await sendTemplateEmail({
-          to: email,
-          templateAlias: Templates.PasswordReset,
-          model: {
-            firstName: user.first_name || 'there',
-            resetLink: `${process.env.APP_BASE_URL || 'http://localhost:3000'}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
-            expiryMinutes: ttl,
-          },
-        });
-      } catch (err) {
-        // Log error but don't expose to user
-        console.error('[reset] email send failed:', {
+      // fire-and-forget; do not leak errors (non-blocking)
+      sendTemplateEmail({
+        to: email,
+        templateAlias: Templates.PasswordReset,
+        model: {
+          firstName: user.first_name || 'there',
+          resetLink: `${process.env.APP_BASE_URL || 'http://localhost:3000'}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+          expiryMinutes: ttl,
+        },
+      }).catch((err) => {
+        logger.warn('[profile/password-reset] email_send_failed_nonfatal', {
           message: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-          email: email,
           templateAlias: Templates.PasswordReset,
         });
-      }
+      });
 
       return res.sendStatus(204);
     } catch (err) {
@@ -106,7 +103,7 @@ export default function passwordResetRouter(pool: Pool) {
     // Update password + invalidate token
     // Use your existing password hash helper (e.g., argon2/bcrypt). Reuse what login uses.
     const bcrypt = await import("bcrypt");
-    const newHash = await bcrypt.hash(newPassword, 12);
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
     await pool.query(
       `UPDATE "user"

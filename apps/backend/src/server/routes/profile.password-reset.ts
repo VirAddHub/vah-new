@@ -5,6 +5,8 @@ import { generateRawToken, hashToken, verifyToken } from '../security/reset-toke
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { ENV } from '../../env';
+import { BCRYPT_ROUNDS } from '../../config/auth';
+import { logger } from '../../lib/logger';
 
 // Config via env with sensible defaults
 const TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES ?? 30);
@@ -74,22 +76,23 @@ passwordResetRouter.post('/reset-password-request', limiter, async (req, res) =>
             },
           });
         } catch (err) {
-          // We still return 200; just log with details
-          console.error('password-reset email send failed:', {
+          logger.warn('[profile.password-reset] email_send_failed_nonfatal', {
             message: err instanceof Error ? err.message : String(err),
-            stack: err instanceof Error ? err.stack : undefined,
-            email: user.email,
             templateAlias: Templates.PasswordReset,
           });
         }
       } catch (tokenErr) {
-        console.error('password-reset token creation failed', tokenErr);
+        logger.error('[profile.password-reset] token_creation_failed', {
+          message: tokenErr instanceof Error ? tokenErr.message : String(tokenErr),
+        });
       }
     }
 
     return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
   } catch (err) {
-    console.error('password-reset-request fatal error', err);
+    logger.error('[profile.password-reset] request_fatal', {
+      message: err instanceof Error ? err.message : String(err),
+    });
     return res.status(200).json({ ok: true, message: 'If that email exists, we\'ve sent a link.' });
   }
 });
@@ -133,7 +136,7 @@ passwordResetRouter.post('/reset-password', limiter, async (req, res) => {
   }
 
   const bcrypt = await import('bcrypt');
-  const passwordHash = await bcrypt.hash(newPassword, 12);
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
   await pool.query(
     'UPDATE "user" SET password = $1, reset_token_used_at = NOW(), reset_token_hash = NULL, reset_token_expires_at = NULL WHERE id = $2',

@@ -9,6 +9,8 @@ import { Templates } from '../../../lib/postmark-templates';
 import { APP_BASE_URL } from '../../../config/env';
 import { withTimeout } from '../../../lib/withTimeout';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { BCRYPT_ROUNDS } from '../../../config/auth';
+import { logger } from '../../../lib/logger';
 
 const router = Router();
 
@@ -51,13 +53,16 @@ router.post('/reset-password-request', limiter, async (req, res) => {
         })(),
         1500,
         'user lookup'
-      ).catch(e => { console.error('[reset] lookup', e.message); return null; });
+      ).catch((e: any) => {
+        logger.warn('[password-reset-request] user_lookup_failed', { message: e?.message ?? String(e) });
+        return null;
+      });
 
       if (!user) return;
 
       // Generate token fast (sync + bcrypt)
       const raw = crypto.randomBytes(32).toString('hex');
-      const hash = await bcrypt.hash(raw, 12);
+      const hash = await bcrypt.hash(raw, BCRYPT_ROUNDS);
       const ttlMinutes = 30;
       const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
@@ -77,7 +82,10 @@ router.post('/reset-password-request', limiter, async (req, res) => {
         })(),
         1500,
         'token save'
-      ).catch(e => { console.error('[reset] save', e.message); return null; });
+      ).catch((e: any) => {
+        logger.warn('[password-reset-request] token_save_failed', { message: e?.message ?? String(e) });
+        return null;
+      });
 
       if (!saved) return;
 
@@ -95,15 +103,13 @@ router.post('/reset-password-request', limiter, async (req, res) => {
         2000,
         'email send'
       ).catch(e => {
-        console.error('[reset] email send failed:', {
-          message: e.message,
-          stack: e.stack,
-          email: user.email,
+        logger.warn('[password-reset-request] email_send_failed_nonfatal', {
+          message: e?.message ?? String(e),
           templateAlias: Templates.PasswordReset,
         });
       });
     } catch (e: any) {
-      console.error('[reset] fatal', e.message);
+      logger.error('[password-reset-request] fatal', { message: e?.message ?? String(e) });
     }
   });
 });

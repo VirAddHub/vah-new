@@ -6,6 +6,8 @@ import { getPool } from '../db';
 import { sendPasswordResetEmail } from '../../lib/mailer';
 import { ENV } from '../../env';
 import type { Request, Response } from 'express';
+import { BCRYPT_ROUNDS } from '../../config/auth';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -64,14 +66,18 @@ router.post('/reset-password-request', [
         cta_url: resetUrl
       });
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError);
+      logger.warn('[password-reset] email_send_failed_nonfatal', {
+        message: emailError instanceof Error ? emailError.message : String(emailError),
+      });
       // Don't fail the request if email fails
     }
 
     res.json(publicResp);
 
   } catch (error) {
-    console.error('Password reset request error:', error);
+    logger.error('[password-reset] request_error', {
+      message: error instanceof Error ? error.message : String(error),
+    });
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -136,7 +142,7 @@ router.post('/reset-password', [
     }
 
     // Hash new password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const now = Date.now();
 
     // Update password and clear reset token
@@ -152,7 +158,9 @@ router.post('/reset-password', [
     });
 
   } catch (error) {
-    console.error('Password reset error:', error);
+    logger.error('[password-reset] reset_error', {
+      message: error instanceof Error ? error.message : String(error),
+    });
     res.status(500).json({
       success: false,
       message: 'Server error'
