@@ -1,5 +1,6 @@
 // PostgreSQL-only database helper - NO SQLite support
 import { Pool, PoolClient, QueryResultRow } from "pg";
+import { logger } from "./logger";
 
 // Lazy DB initialization - don't connect at import time
 let pool: Pool | undefined;
@@ -19,16 +20,19 @@ export function getPool() {
         pool = new Pool({
             connectionString: url,
             ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-            // Add proper connection settings to prevent SASL errors
-            connectionTimeoutMillis: 10000,
-            idleTimeoutMillis: 30000,
-            max: 20, // Maximum number of clients in the pool
-            min: 2,  // Minimum number of clients in the pool
-            // Ensure password is handled correctly
+            // Production safety defaults (tunable via env)
+            max: Number(process.env.PGPOOL_MAX || 20),
+            idleTimeoutMillis: Number(process.env.PGPOOL_IDLE_TIMEOUT_MS || 30_000),
+            connectionTimeoutMillis: Number(process.env.PGPOOL_CONN_TIMEOUT_MS || 2_000),
+            // Fail-fast on long-running queries from the client side (server-side statement_timeout can be added later)
+            query_timeout: Number(process.env.PG_QUERY_TIMEOUT_MS || 10_000),
+            // Allow process to exit if this is the only thing keeping it alive (useful for scripts)
             allowExitOnIdle: true,
         });
 
-        // Don't connect immediately - let first query open the connection
+        pool.on("error", (err) => {
+            logger.error("[db] unexpected pool error", { message: err?.message });
+        });
     }
     return pool;
 }
@@ -52,6 +56,16 @@ export async function tx<T>(fn: (client: PoolClient) => Promise<T>) {
         throw err;
     } finally {
         client.release();
+    }
+}
+
+export async function closePool(): Promise<void> {
+    if (pool) {
+        try {
+            await pool.end();
+        } finally {
+            pool = undefined;
+        }
     }
 }
 

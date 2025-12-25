@@ -3,6 +3,7 @@ import { Router, Request, Response } from 'express';
 import { requireAdmin } from '../../middleware/auth';
 import { getPool } from '../../server/db';
 import { z } from 'zod';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -15,17 +16,28 @@ const locks = new Map<number, {
 }>();
 
 // Clean up expired locks (older than 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  const fiveMinutes = 5 * 60 * 1000;
-  
-  for (const [requestId, lock] of locks.entries()) {
-    if (now - lock.locked_at > fiveMinutes) {
-      locks.delete(requestId);
-      console.log(`[LockManager] Auto-unlocked expired lock for request ${requestId}`);
+// Guard against duplicate intervals (dev hot reload / accidental multiple imports).
+let cleanupInterval: NodeJS.Timeout | null = null;
+function startCleanupInterval() {
+  if (cleanupInterval) return;
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+
+    let cleaned = 0;
+    for (const [requestId, lock] of locks.entries()) {
+      if (now - lock.locked_at > fiveMinutes) {
+        locks.delete(requestId);
+        cleaned += 1;
+      }
     }
-  }
-}, 60000); // Check every minute
+
+    if (cleaned > 0) {
+      logger.debug('[LockManager] auto-unlocked expired locks', { cleaned });
+    }
+  }, 60_000); // Check every minute
+}
+startCleanupInterval();
 
 const LockSchema = z.object({
   admin_id: z.number().int().positive(),
@@ -87,7 +99,7 @@ router.post('/admin/forwarding/requests/:id/lock', requireAdmin, async (req: Req
       locked_at: Date.now()
     });
 
-    console.log(`[LockManager] Request ${id} locked by ${admin_name} (${admin_id})`);
+    logger.debug('[LockManager] locked', { requestId: id, adminId: admin_id });
 
     res.json({
       ok: true,
@@ -136,7 +148,7 @@ router.post('/admin/forwarding/requests/:id/unlock', requireAdmin, async (req: R
     // Unlock the request
     locks.delete(id);
 
-    console.log(`[LockManager] Request ${id} unlocked by ${admin.email}`);
+    logger.debug('[LockManager] unlocked', { requestId: id, adminId: admin.id });
 
     res.json({
       ok: true,
@@ -204,7 +216,7 @@ router.post('/admin/forwarding/requests/:id/force-unlock', requireAdmin, async (
     }
 
     // Log the force unlock for audit purposes
-    console.log(`[LockManager] FORCE UNLOCK: Request ${id} force unlocked by ${admin.email} (was locked by ${existingLock.admin_name})`);
+    logger.warn('[LockManager] force unlock', { requestId: id, adminId: admin.id });
 
     // Force unlock the request (any admin can force unlock)
     locks.delete(id);

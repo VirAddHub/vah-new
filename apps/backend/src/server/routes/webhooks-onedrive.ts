@@ -191,13 +191,14 @@ const tagToTitle = (tagSlug: string): string => {
 };
 
 // ---- Per-route raw capture ----
-router.use(express.raw({ type: 'application/json' }), (req: any, _res, next) => {
+router.use(express.raw({ type: 'application/json' }), (req: any, res: any, next) => {
   if (Buffer.isBuffer(req.body)) {
     req.rawBody = req.body;
     try {
       req.parsedBody = JSON.parse(req.rawBody.toString('utf8'));
-    } catch {
-      req.parsedBody = undefined;
+    } catch (err) {
+      // Malformed JSON should not crash the server; reject early
+      return res.status(400).json({ ok: false, error: 'invalid_json' });
     }
   } else {
     req.parsedBody = req.body && typeof req.body === 'object' ? req.body : undefined;

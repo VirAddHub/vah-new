@@ -1,25 +1,11 @@
 // apps/backend/src/server/db.ts
-import { Pool, PoolConfig } from "pg";
-
-let pool: Pool | null = null;
-
-function sslConfigFromEnv(): PoolConfig["ssl"] {
-    const url = process.env.DATABASE_URL || "";
-    const disable =
-        /sslmode=disable/i.test(url) || process.env.PGSSLMODE === "disable";
-    // Render Postgres usually needs TLS; local often doesn't.
-    return disable ? false : { rejectUnauthorized: false };
-}
+// IMPORTANT: Keep a single Pool instance for the whole process.
+// Many parts of the codebase import getPool from `src/lib/db`. Re-export it here to avoid double pools.
+import type { Pool } from "pg";
+import { closePool as closeSharedPool, getPool as getSharedPool } from "../lib/db";
 
 export function getPool(): Pool {
-    if (!pool) {
-        pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: sslConfigFromEnv(),
-            // (optional) tweak timeouts here if needed
-        });
-    }
-    return pool;
+    return getSharedPool();
 }
 
 export async function ensureSchema(): Promise<void> {
@@ -35,8 +21,5 @@ export async function ensureSchema(): Promise<void> {
 }
 
 export async function closePool(): Promise<void> {
-    if (pool) {
-        await pool.end();
-        pool = null;
-    }
+    await closeSharedPool();
 }
