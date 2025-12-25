@@ -11,8 +11,16 @@ import { sendInvoiceSent, sendPaymentFailed } from '../../lib/mailer';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { isStaleWebhookEvent, updateSubscriptionEventInfo, insertPlanStatusEvent } from '../services/planStatusAudit';
+import { logger } from '../../lib/logger';
 
 const router = Router();
+
+function redactId(id: unknown): string {
+    const s = String(id || '');
+    if (!s) return 'n/a';
+    if (s.length <= 8) return `${s.slice(0, 2)}…`;
+    return `${s.slice(0, 2)}…${s.slice(-4)}`;
+}
 
 /**
  * POST /api/webhooks/gocardless
@@ -31,7 +39,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         const rawBody = (req as any).rawBody || req.body?.toString?.() || JSON.stringify(req.body);
         const signature = req.headers['webhook-signature'] as string;
 
-        console.log('[gocardless] webhook hit', {
+        logger.debug('[gocardless] webhook hit', {
             method: req.method,
             path: req.path,
             hasSignature: Boolean(signature),
@@ -43,7 +51,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         try {
             webhook = JSON.parse(rawBody);
         } catch (e) {
-            console.error('[gocardless] webhook JSON parse failed');
+            logger.warn('[gocardless] webhook JSON parse failed');
         }
 
         // Persist webhook receipt immediately (so we can confirm delivery even if signature fails)
@@ -81,7 +89,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
                 ]
             );
         } catch (e) {
-            console.error('[gocardless] failed to insert webhook_log', e);
+            logger.error('[gocardless] failed to insert webhook_log', { message: (e as any)?.message ?? String(e) });
         }
 
         // Verify webhook signature (always required in production)
@@ -89,16 +97,16 @@ router.post('/gocardless', async (req: Request, res: Response) => {
         const secret = process.env.GC_WEBHOOK_SECRET || '';
 
         if (isProd && !secret) {
-            console.error('[GoCardless webhook] Missing webhook secret (set GC_WEBHOOK_SECRET)');
+            logger.error('[gocardless] missing GC_WEBHOOK_SECRET');
             return res.status(500).json({ ok: false, error: 'missing_gc_webhook_secret' });
         }
 
         if (!gcVerifyWebhookSignature(rawBody, signature)) {
             if (isProd) {
-                console.error('[GoCardless webhook] Invalid signature');
+                logger.warn('[gocardless] invalid signature');
                 return res.status(401).json({ error: 'Invalid signature' });
             }
-            console.warn('[GoCardless webhook] Signature verification skipped (non-production or secret not set)');
+            logger.warn('[gocardless] signature verification skipped (non-production or secret not set)');
         }
 
         if (!webhook) {
@@ -118,8 +126,9 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             // GoCardless events may include a full resource object (check common patterns)
             const resource = (event as any).billing_requests || (event as any).mandates || (event as any).resource || null;
 
-            console.log(`[GoCardless webhook] Processing ${resource_type}.${action}`, {
-                eventId,
+            logger.debug('[gocardless] processing event', {
+                type: `${resource_type}.${action}`,
+                eventId: redactId(eventId),
                 eventCreatedAt,
             });
 
@@ -164,13 +173,13 @@ router.post('/gocardless', async (req: Request, res: Response) => {
                     break;
 
                 default:
-                    console.log(`[GoCardless webhook] Unhandled event: ${resource_type}.${action}`);
+                    logger.debug('[gocardless] unhandled event', { type: `${resource_type}.${action}` });
             }
         }
 
         res.json({ received: true });
     } catch (error) {
-        console.error('[GoCardless webhook] error:', error);
+        logger.error('[gocardless] webhook handler error', { message: (error as any)?.message ?? String(error) });
         res.status(500).json({ error: 'Webhook processing failed' });
     }
 });
@@ -179,7 +188,7 @@ async function handleMandateActive(pool: any, links: any, eventContext: { eventI
     try {
         const mandateId = links?.mandate;
         if (!mandateId) {
-            console.warn('[GoCardless] mandates.active: no mandate_id in links');
+            logger.warn('[gocardless] mandates.active missing mandate_id');
             return;
         }
 
@@ -189,13 +198,13 @@ async function handleMandateActive(pool: any, links: any, eventContext: { eventI
             const mandateRes = await gcGetMandate(String(mandateId));
             customerId = mandateRes?.customer_id ?? null;
         } catch (e) {
-            console.warn('[GoCardless] mandates.active: failed to fetch mandate from API:', (e as any)?.message ?? e);
+            logger.warn('[gocardless] mandates.active failed to fetch mandate', { message: (e as any)?.message ?? String(e) });
             // Fallback: try webhook links (though they're usually empty for mandates.active)
             customerId = links?.customer ?? null;
         }
 
         if (!customerId) {
-            console.warn('[GoCardless] mandates.active: no customer_id found for mandate', { mandateId });
+            logger.warn('[gocardless] mandates.active missing customer_id', { mandateId: redactId(mandateId) });
             return;
         }
 
@@ -208,7 +217,10 @@ async function handleMandateActive(pool: any, links: any, eventContext: { eventI
         const userId = userLookup.rows?.[0]?.id ?? null;
 
         if (!userId) {
-            console.warn('[GoCardless] mandates.active: unknown_customer_id', { customerId, mandateId });
+            logger.warn('[gocardless] mandates.active unknown_customer_id', {
+                customerId: redactId(customerId),
+                mandateId: redactId(mandateId),
+            });
             return; // Don't fail webhook, just log and return
         }
 
@@ -216,12 +228,12 @@ async function handleMandateActive(pool: any, links: any, eventContext: { eventI
         if (eventContext.eventCreatedAt) {
             const staleCheck = await isStaleWebhookEvent(userId, eventContext.eventCreatedAt, eventContext.eventId);
             if (staleCheck.isStale) {
-                console.warn('[GoCardless] mandates.active: stale event ignored', {
+                logger.warn('[gocardless] mandates.active stale event ignored', {
                     userId,
-                    eventId: eventContext.eventId,
+                    eventId: redactId(eventContext.eventId),
                     eventCreatedAt: eventContext.eventCreatedAt,
                     lastEventCreatedAt: staleCheck.lastEventCreatedAt,
-                    lastEventId: staleCheck.lastEventId,
+                    lastEventId: redactId(staleCheck.lastEventId),
                 });
                 return; // Ignore stale event
             }
@@ -296,12 +308,16 @@ async function handleMandateActive(pool: any, links: any, eventContext: { eventI
         try {
             await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
         } catch (e) {
-            console.error('[GoCardless] mandates.active: plan linkage failed for user', userId, e);
+            logger.warn('[gocardless] mandates.active plan linkage failed', { userId, message: (e as any)?.message ?? String(e) });
         }
 
-        console.log(`[GoCardless] mandates.active: attached mandate ${mandateId} to subscription for user ${userId} (customer ${customerId})`);
+        logger.info('[gocardless] mandates.active attached mandate', {
+            userId,
+            mandateId: redactId(mandateId),
+            customerId: redactId(customerId),
+        });
     } catch (error) {
-        console.error('[GoCardless] Error handling mandates.active:', error);
+        logger.error('[gocardless] mandates.active handler error', { message: (error as any)?.message ?? String(error) });
     }
 }
 
@@ -309,19 +325,19 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
     try {
         const paymentId = links.payment;
         if (!paymentId) {
-            console.error('[Webhook] ❌ No payment ID in links');
+            logger.error('[gocardless] payments.confirmed missing payment_id');
             return;
         }
 
-        console.log(`[Webhook] 💳 Processing payment confirmed: ${paymentId}`);
+        logger.info('[gocardless] payments.confirmed processing', { paymentId: redactId(paymentId) });
 
         // Fetch payment details from GoCardless API
         let paymentDetails;
         try {
             paymentDetails = await gcGetPayment(paymentId);
-            console.log(`[Webhook] ✅ Fetched payment details: ${paymentDetails.amount}p ${paymentDetails.currency}`);
+            logger.debug('[gocardless] payment details fetched', { amountPence: paymentDetails.amount, currency: paymentDetails.currency });
         } catch (apiError) {
-            console.error(`[Webhook] ⚠️  Failed to fetch payment ${paymentId} from API:`, apiError);
+            logger.warn('[gocardless] failed to fetch payment from API', { paymentId: redactId(paymentId), message: (apiError as any)?.message ?? String(apiError) });
             // Continue with webhook data if API call fails
             paymentDetails = null;
         }
@@ -330,11 +346,11 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
         const userId = await findUserIdForPayment(pool, paymentId, links);
 
         if (!userId) {
-            console.error(`[Webhook] ❌ Could not find user for payment ${paymentId}`);
+            logger.warn('[gocardless] could not find user for payment', { paymentId: redactId(paymentId) });
             return;
         }
 
-        console.log(`[Webhook] 👤 Found user ${userId} for payment ${paymentId}`);
+        logger.info('[gocardless] resolved user for payment', { userId, paymentId: redactId(paymentId) });
 
         // Update subscription status
         await upsertSubscriptionForUser({
@@ -348,7 +364,7 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
         try {
             await ensureUserPlanLinked({ pool, userId, cadence: "monthly" });
         } catch (e) {
-            console.error('[GoCardless] Plan linkage missing in live environment for user', userId, e);
+            logger.warn('[gocardless] plan linkage missing in live environment', { userId, message: (e as any)?.message ?? String(e) });
         }
 
         // Store GoCardless identifiers on user for future lookups (best-effort)
@@ -370,7 +386,7 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
 
         // Get billing period
         const { periodStart, periodEnd } = await getBillingPeriodForUser(userId);
-        console.log(`[Webhook] 📅 Billing period: ${periodStart.toISOString()} to ${periodEnd.toISOString()}`);
+        logger.debug('[gocardless] billing period resolved', { userId, periodStart: periodStart.toISOString(), periodEnd: periodEnd.toISOString() });
 
         // Get payment amount (from API or webhook)
         const amountPence = paymentDetails?.amount ?? links.amount ?? 997; // Fallback to £9.97
@@ -392,7 +408,11 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                 gocardlessPaymentId: paymentId,
             });
 
-            console.log(`[Webhook] ✅ Invoice generated: ID ${invoiceResult.invoiceId}, attached ${invoiceResult.attachedCount} charges, total ${invoiceResult.totalChargesPence}p`);
+            logger.info('[gocardless] invoice generated', {
+                invoiceId: invoiceResult.invoiceId,
+                attachedCount: invoiceResult.attachedCount,
+                totalChargesPence: invoiceResult.totalChargesPence,
+            });
 
             // Update invoice status to 'paid' since payment is confirmed
             await pool.query(
@@ -421,8 +441,13 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                 [invoice.id]
             );
 
-            console.log(`[Webhook] ✅ Invoice created: ${invoice.invoice_number} (ID: ${invoice.id}) for user ${userId}, status: paid`);
-            console.log(`[Webhook] 📄 PDF path: ${invoice.pdf_path || 'pending generation'}`);
+            logger.info('[gocardless] invoice created/updated', {
+                userId,
+                invoiceId: invoice.id,
+                invoiceNumber: invoice.invoice_number,
+                status: 'paid',
+                hasPdfPath: Boolean(invoice.pdf_path),
+            });
 
             // Send invoice email (best-effort)
             try {
@@ -443,10 +468,16 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                     });
                 }
             } catch (emailErr) {
-                console.error(`[Webhook] ⚠️ Failed to send invoice email for ${paymentId}:`, emailErr);
+                logger.warn('[gocardless] failed to send invoice email', {
+                    paymentId: redactId(paymentId),
+                    message: (emailErr as any)?.message ?? String(emailErr),
+                });
             }
         } catch (invoiceError) {
-            console.error(`[Webhook] ❌ Failed to create invoice for payment ${paymentId}:`, invoiceError);
+            logger.error('[gocardless] failed to create invoice for payment', {
+                paymentId: redactId(paymentId),
+                message: (invoiceError as any)?.message ?? String(invoiceError),
+            });
             // Don't throw - payment is still confirmed
         }
 
@@ -461,9 +492,9 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
             WHERE id = $2
         `, [Date.now(), userId]);
 
-        console.log(`[Webhook] ✅ Payment ${paymentId} confirmed and processed for user ${userId}`);
+        logger.info('[gocardless] payment confirmed processed', { paymentId: redactId(paymentId), userId });
     } catch (error) {
-        console.error('[GoCardless] Error handling payment.confirmed:', error);
+        logger.error('[gocardless] payment.confirmed handler error', { message: (error as any)?.message ?? String(error) });
     }
 }
 
@@ -477,13 +508,13 @@ async function handlePaymentFailed(pool: any, links: any, eventContext: { eventI
             if (eventContext.eventCreatedAt) {
                 const staleCheck = await isStaleWebhookEvent(userId, eventContext.eventCreatedAt, eventContext.eventId);
                 if (staleCheck.isStale) {
-                    console.warn('[GoCardless] payments.failed: stale event ignored', {
+                    logger.warn('[gocardless] payments.failed stale event ignored', {
                         userId,
-                        paymentId,
-                        eventId: eventContext.eventId,
+                        paymentId: redactId(paymentId),
+                        eventId: redactId(eventContext.eventId),
                         eventCreatedAt: eventContext.eventCreatedAt,
                         lastEventCreatedAt: staleCheck.lastEventCreatedAt,
-                        lastEventId: staleCheck.lastEventId,
+                        lastEventId: redactId(staleCheck.lastEventId),
                     });
                     return; // Ignore stale event
                 }
@@ -541,7 +572,7 @@ async function handlePaymentFailed(pool: any, links: any, eventContext: { eventI
                 await updateSubscriptionEventInfo(userId, eventContext.eventCreatedAt, eventContext.eventId);
             }
 
-            console.log(`[GoCardless] Payment ${paymentId} failed for user ${userId}`);
+            logger.info('[gocardless] payment failed processed', { paymentId: redactId(paymentId), userId });
 
             // Best-effort email
             try {
@@ -560,11 +591,14 @@ async function handlePaymentFailed(pool: any, links: any, eventContext: { eventI
                     });
                 }
             } catch (emailErr) {
-                console.error(`[Webhook] ⚠️ Failed to send payment failed email for ${paymentId}:`, emailErr);
+                logger.warn('[gocardless] failed to send payment failed email', {
+                    paymentId: redactId(paymentId),
+                    message: (emailErr as any)?.message ?? String(emailErr),
+                });
             }
         }
     } catch (error) {
-        console.error('[GoCardless] Error handling payment.failed:', error);
+        logger.error('[gocardless] payment.failed handler error', { message: (error as any)?.message ?? String(error) });
     }
 }
 
@@ -572,9 +606,9 @@ async function handleSubscriptionUpdated(pool: any, links: any, eventContext: { 
     try {
         const subscriptionId = links.subscription;
         // Update subscription details from GoCardless
-        console.log(`[GoCardless] Subscription ${subscriptionId} updated`);
+        logger.debug('[gocardless] subscription updated', { subscriptionId: redactId(subscriptionId) });
     } catch (error) {
-        console.error('[GoCardless] Error handling subscription.updated:', error);
+        logger.error('[gocardless] subscription.updated handler error', { message: (error as any)?.message ?? String(error) });
     }
 }
 
@@ -586,7 +620,10 @@ async function handleBillingRequestPayerConfirmed(pool: any, links: any, eventCo
         const customerId = links?.customer ?? null;
 
         if (!customerId) {
-            console.log('[GoCardless] payer_details_confirmed: missing customer_id', { flowId, billingRequestId });
+            logger.warn('[gocardless] payer_details_confirmed missing customer_id', {
+                flowId: redactId(flowId),
+                billingRequestId: redactId(billingRequestId),
+            });
             return;
         }
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { performance } from 'node:perf_hooks';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -11,17 +12,20 @@ function getCacheKey(postcode: string, line1: string): string {
   return `${postcode}::${line1}`;
 }
 
-// loud module-load log so we know the file is actually in the build
-console.log('[address] router module loaded - v2');
+function redactPostcode(postcode: string): string {
+  // Do not log full postcodes (PII-ish). Keep only outcode area as a hint.
+  // Examples: "SE1 3PH" -> "SE1…", "N70EY" -> "N7…"
+  const t = String(postcode || '').trim().toUpperCase().replace(/\s+/g, '');
+  const outcode = t.slice(0, Math.min(3, t.length));
+  return outcode ? `${outcode}…` : 'unknown';
+}
 
 router.get('/', (req, res) => {
-  console.log('[address] GET / (ok)');
   return res.json({ ok: true, ping: 'address-root' });
 });
 
 // Debug route to test API key and environment
 router.get('/debug', (req, res) => {
-  console.log('[address] DEBUG route called');
   const hasApiKey = !!process.env.IDEAL_POSTCODES_API_KEY;
   const apiKeyLength = process.env.IDEAL_POSTCODES_API_KEY?.length || 0;
   const apiKeyPrefix = process.env.IDEAL_POSTCODES_API_KEY?.substring(0, 8) || 'none';
@@ -45,7 +49,7 @@ router.get('/lookup', async (req, res) => {
 
   const API_KEY = process.env.IDEAL_POSTCODES_API_KEY;
   if (!API_KEY) {
-    console.log('[address] IDEAL_POSTCODES_API_KEY missing');
+    logger.error('[address] missing IDEAL_POSTCODES_API_KEY');
     return res.status(500).json({ ok: false, error: 'IDEAL_POSTCODES_API_KEY missing' });
   }
 
@@ -53,7 +57,7 @@ router.get('/lookup', async (req, res) => {
   const line1 = String(req.query.line1 || '').trim();
 
   if (!postcode) {
-    console.log('[address] postcode required');
+    logger.debug('[address] postcode required');
     return res.status(400).json({ ok: false, error: 'postcode required' });
   }
 
@@ -62,11 +66,15 @@ router.get('/lookup', async (req, res) => {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) {
     const latency = Math.round(performance.now() - t0);
-    console.log(`[address] cache hit ${postcode} ${line1 ? '(filtered)' : ''} ${latency}ms`);
+    logger.debug('[address] cache hit', {
+      postcode: redactPostcode(postcode),
+      filtered: Boolean(line1),
+      latencyMs: latency,
+    });
     return res.json(hit.data);
   }
 
-  console.log('[address] Looking up postcode:', postcode);
+  logger.debug('[address] lookup start', { postcode: redactPostcode(postcode), filtered: Boolean(line1) });
 
   try {
     // Ideal Postcodes API endpoint
@@ -89,7 +97,7 @@ router.get('/lookup', async (req, res) => {
 
     if (!r.ok) {
       const errorText = await r.text().catch(() => 'lookup_failed');
-      console.log('[address] API error:', r.status, errorText);
+      logger.warn('[address] provider error', { status: r.status });
       return res.status(502).json({ ok: false, error: errorText || 'lookup_failed' });
     }
 
@@ -115,13 +123,23 @@ router.get('/lookup', async (req, res) => {
     cache.set(key, { at: Date.now(), data: payload });
 
     const latency = Math.round(performance.now() - t0);
-    console.log(`[address] lookup ${postcode} ${line1 ? '(filtered)' : ''} ${addresses.length} results ${latency}ms`);
+    logger.debug('[address] lookup ok', {
+      postcode: redactPostcode(postcode),
+      filtered: Boolean(line1),
+      results: addresses.length,
+      latencyMs: latency,
+    });
 
     return res.json(payload);
   } catch (err: any) {
     const latency = Math.round(performance.now() - t0);
     const msg = err?.name === 'AbortError' ? 'lookup_timeout' : (err?.message || 'lookup_error');
-    console.log(`[address] error ${postcode} ${line1 ? '(filtered)' : ''} ${msg} ${latency}ms`);
+    logger.warn('[address] lookup failed', {
+      postcode: redactPostcode(postcode),
+      filtered: Boolean(line1),
+      error: msg,
+      latencyMs: latency,
+    });
     return res.status(502).json({ ok: false, error: msg });
   }
 });

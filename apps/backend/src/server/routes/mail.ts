@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -116,7 +117,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
 
         return res.json({ ok: true, ...result });
     } catch (error: any) {
-        console.error('[GET /api/mail-items] error:', error);
+        logger.error('[mail] list error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -159,7 +160,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/mail-items/:id] error:', error);
+        logger.error('[mail] get error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -220,7 +221,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[PATCH /api/mail-items/:id] error:', error);
+        logger.error('[mail] patch error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -262,7 +263,7 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/mail-items/:id/tag] error:', error);
+        logger.error('[mail] tag error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -299,7 +300,7 @@ router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[DELETE /api/mail-items/:id] error:', error);
+        logger.error('[mail] delete error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -336,7 +337,7 @@ router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Re
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/mail-items/:id/restore] error:', error);
+        logger.error('[mail] restore error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -377,11 +378,11 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
                 id
             ]);
 
-            // Log successful scan URL request for audit
-            console.log(`[SCAN-URL AUDIT] user_id=${userId}, mail_item_id=${id}, action=scan_url_request, ip=${req.ip || 'unknown'}`);
+            // Avoid logging user_id / IP / URL in production logs. Keep minimal observability only.
+            logger.debug('[mail] scan-url audit recorded', { mailItemId: id });
         } catch (downloadError: any) {
             // Table may not exist yet - log but don't fail the request
-            console.warn('[GET /api/mail-items/:id/scan-url] Could not record download (table may not exist):', downloadError.message);
+            logger.warn('[mail] scan-url audit not recorded', { message: downloadError?.message });
         }
 
         return res.json({
@@ -391,7 +392,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
             expired: false // We can add expiry logic later if needed
         });
     } catch (error: any) {
-        console.error('[GET /api/mail-items/:id/scan-url] error:', error);
+        logger.error('[mail] scan-url error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
@@ -419,14 +420,11 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
             return res.status(404).json({ ok: false, error: 'no_file_url' });
         }
 
-        // Debug logging
-        console.log(`[DOWNLOAD DEBUG] Mail ID: ${mailId}, User ID: ${userId}`);
-        console.log(`[DOWNLOAD DEBUG] File URL: ${result.url}`);
-        console.log(`[DOWNLOAD DEBUG] Filename: ${result.filename}`);
+        logger.debug('[mail] download requested', { mailItemId: mailId, disposition });
 
         // Extract SharePoint drive path from URL
         const drivePath = extractDrivePathFromSharePointUrl(result.url);
-        console.log(`[DOWNLOAD DEBUG] Extracted drive path: ${drivePath}`);
+        logger.debug('[mail] drive path extracted', { mailItemId: mailId, ok: Boolean(drivePath) });
 
         // Stream file from SharePoint via Graph API (pass fileUrl for per-file UPN)
         await streamSharePointFileByPath(res, drivePath, {
@@ -436,7 +434,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         });
 
     } catch (err: any) {
-        console.error('[GET /api/mail-items/:id/download] Error:', err);
+        logger.error('[mail] download error', { message: err?.message });
         if (!res.headersSent) {
             res.status(500).json({ ok: false, error: 'internal_error', message: err.message });
         }
