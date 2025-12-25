@@ -39,6 +39,14 @@ function startCleanupInterval() {
 }
 startCleanupInterval();
 
+export function stopForwardingLocksCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+    logger.info('[LockManager] cleanup interval stopped');
+  }
+}
+
 const LockSchema = z.object({
   admin_id: z.number().int().positive(),
   admin_name: z.string().min(1),

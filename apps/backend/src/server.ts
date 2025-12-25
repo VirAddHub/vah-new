@@ -50,6 +50,8 @@ import triggerMigrateRouter from "./routes/trigger-migrate";
 import webhookMigrateRouter from "./routes/webhook-migrate";
 import directMigrateRouter from "./routes/direct-migrate";
 import webhookRouter from "./server/routes/webhooks";
+import { stopForwardingLocksCleanup } from "./server/routes/admin-forwarding-locks";
+import { stopSelfTestScheduler } from "./server/routes/ops-selftest";
 
 // NEW: Import missing endpoints
 import mailRouter from "./server/routes/mail";
@@ -672,6 +674,12 @@ async function start() {
     // ---- Graceful shutdown (prevents crash loops) ----
     const shutdown = (signal: NodeJS.Signals) => {
         console.log(`[boot] received ${signal}, shutting down...`);
+        try {
+            // Stop background intervals so we don't run jobs during shutdown.
+            try { systemMaintenance.stop(); } catch {}
+            try { stopForwardingLocksCleanup(); } catch {}
+            try { stopSelfTestScheduler(); } catch {}
+        } catch {}
         server.close(err => {
             if (err) {
                 console.error('[boot] error during server.close:', err);

@@ -3,6 +3,7 @@ import { Router, Request, Response } from "express";
 import { requireAuth } from "../../middleware/auth";
 import axios from "axios";
 import { metrics } from "../../lib/metrics";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -18,6 +19,16 @@ let selfTestMetrics = {
   lastRunTimestamp: 0,
   lastRunSuccess: false
 };
+
+let scheduler: NodeJS.Timeout | null = null;
+
+export function stopSelfTestScheduler() {
+  if (scheduler) {
+    clearInterval(scheduler);
+    scheduler = null;
+    logger.info("[SELFTEST] Scheduler stopped");
+  }
+}
 
 // ---- Utilities ----
 function ok<T>(res: Response, data: T) {
@@ -142,16 +153,19 @@ router.get("/ops/self-test/status", requireAuth, (req: Request, res: Response) =
 if (ENABLED && process.env.SELFTEST_INTERVAL_MIN) {
   const min = Math.max(5, parseInt(process.env.SELFTEST_INTERVAL_MIN, 10) || 15);
   
-  console.log(`[SELFTEST] Starting scheduled self-tests every ${min} minutes`);
+  logger.info("[SELFTEST] Starting scheduled self-tests", { everyMinutes: min });
   
-  setInterval(async () => {
+  // Guard against duplicate intervals (dev reload / double import)
+  if (!scheduler) {
+    scheduler = setInterval(async () => {
     try {
       await runSelfTest();
-      console.log(`[SELFTEST] Scheduled run completed successfully`);
+        logger.debug("[SELFTEST] Scheduled run completed successfully");
     } catch (error) {
-      console.error(`[SELFTEST] Scheduled run failed:`, error);
+        logger.warn("[SELFTEST] Scheduled run failed", { message: error instanceof Error ? error.message : String(error) });
     }
-  }, min * 60 * 1000);
+    }, min * 60 * 1000);
+  }
 }
 
 export default router;

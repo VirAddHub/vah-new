@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
 import { sendMailScanned } from '../../lib/mailer';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -30,7 +31,10 @@ function parseBasic(auth?: string) {
   try {
     const [user, pass] = Buffer.from(auth.slice(6), 'base64').toString('utf8').split(':');
     return { user, pass };
-  } catch { return null; }
+  } catch (err) {
+    logger.debug('[onedrive-webhook] failed to parse basic auth header');
+    return null;
+  }
 }
 
 // Helper functions
