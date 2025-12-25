@@ -53,6 +53,16 @@ body {
     overflow-x: hidden;
 }
 
+*:focus {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 img,
 picture,
 video,
@@ -911,13 +921,6 @@ iframe {
     /* Section band using your --section-alt */
     .section--alt {
         background-color: hsl(var(--section-alt));
-    }
-
-    /* High-visibility focus rings (keyboard a11y) */
-    :where(button, a, input, textarea, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
-        outline: 2px solid hsl(var(--ring));
-        outline-offset: 3px;
-        border-radius: 6px;
     }
 
     /* Card base */

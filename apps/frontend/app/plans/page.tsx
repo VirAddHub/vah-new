@@ -9,7 +9,7 @@ export default async function PlansPage() {
     const plans = data?.data ?? [];
 
     return (
-        <main className="p-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <main id="main-content" role="main" className="p-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {plans.length === 0 ? (
                 <p>No plans.</p>
             ) : plans.map((p: any) => (

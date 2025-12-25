@@ -11,7 +11,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <HeaderWithNav />
-      <main className="flex-1 relative z-0 w-full bg-background">
+      <main id="main-content" role="main" className="flex-1 relative z-0 w-full bg-background">
         <PlansPage onNavigate={(page: string, data?: any) => {
           if (page === 'signup') {
             router.push(`/signup${data?.initialBilling ? `?billing=${data.initialBilling}` : ''}`);

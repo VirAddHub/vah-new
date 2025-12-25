@@ -42,7 +42,7 @@ export function Header({ onNavigate }: HeaderProps) {
                 <VAHLogo onNavigate={onNavigate} size="md" />
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex gap-8 text-sm lg:text-base leading-[1.2] text-muted-foreground">
+                <nav aria-label="Main navigation" className="hidden md:flex gap-8 text-sm lg:text-base leading-[1.2] text-muted-foreground">
                     {navItems.map((item) => (
                         <button
                             key={item.label}

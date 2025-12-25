@@ -151,7 +151,7 @@ export default function FilenameGeneratorPage() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+      <main id="main-content" role="main" className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold">Mail filename generator</h1>
           <p className="text-sm text-muted-foreground">

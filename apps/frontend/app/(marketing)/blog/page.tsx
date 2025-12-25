@@ -2,7 +2,7 @@
 
 export default function BlogPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main id="main-content" role="main" className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-semibold">Blog debug page</h1>
         <p className="text-sm text-neutral-600">

@@ -115,7 +115,7 @@ export default async function BlogPostPage({
   return (
     <div className="min-h-screen flex flex-col relative">
       <HeaderWithNav />
-      <main className="flex-1 relative z-0 w-full">
+      <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
         <div className="max-w-3xl mx-auto px-4 py-12">
           <h1 className="text-3xl font-semibold text-foreground mb-6">
             {post.title}

@@ -17,7 +17,7 @@ export default function BlogError({
   });
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+    <main id="main-content" role="main" className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl mb-4 text-primary">
         Something went wrong
       </h1>

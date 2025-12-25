@@ -71,7 +71,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 <VAHLogo onNavigate={onNavigate} size="md" />
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex gap-6 text-sm lg:text-base leading-[1.2] text-muted-foreground">
+                <nav aria-label="Main navigation" className="hidden md:flex gap-6 text-sm lg:text-base leading-[1.2] text-muted-foreground">
                     {isDashboard ? (
                         // Dashboard navigation with icons
                         navItems.map((item: any) => (

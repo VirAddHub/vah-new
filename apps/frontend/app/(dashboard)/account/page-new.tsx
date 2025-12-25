@@ -152,7 +152,7 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation onNavigate={() => { }} />
-      <main className="flex-1">
+      <main id="main-content" role="main" className="flex-1">
         <div className="max-w-6xl mx-auto p-6 space-y-8">
           <div className="flex items-center gap-3">
             <User className="h-8 w-8 text-primary" />
