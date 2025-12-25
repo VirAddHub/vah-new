@@ -33,6 +33,16 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/about',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
+
   // Experimental features for performance
   experimental: {
     optimizeCss: true,
