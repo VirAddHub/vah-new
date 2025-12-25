@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const Database = require('better-sqlite3');
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const { resolveDbPath } = require('./lib/db-path.cjs');
 
 function usage() {

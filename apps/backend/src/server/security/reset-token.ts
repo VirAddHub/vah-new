@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 export function generateRawToken(bytes = 32): string {
   return crypto.randomBytes(bytes).toString('base64url'); // URL-safe, no padding

@@ -132,7 +132,7 @@ passwordResetRouter.post('/reset-password', limiter, async (req, res) => {
     return res.status(400).json({ error: 'invalid_or_expired_token' });
   }
 
-  const bcrypt = await import('bcryptjs');
+  const bcrypt = await import('bcrypt');
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
   await pool.query(

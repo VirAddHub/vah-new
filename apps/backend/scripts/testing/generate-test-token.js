@@ -6,7 +6,7 @@
  */
 
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const { getPool } = require('./src/db');
 
 async function generateTestToken(email = 'support@virtualaddresshub.co.uk') {

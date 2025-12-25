@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 const DEFAULT_TTL_MIN = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES ?? 30);
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? 12);

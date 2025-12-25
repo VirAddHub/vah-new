@@ -1,5 +1,5 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const { newToken } = require("../lib/token");
 const { sendEmail } = require("../lib/mailer");
 

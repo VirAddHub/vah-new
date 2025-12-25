@@ -1,17 +1,18 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { getPool } from '../db';
 import { sendPasswordResetEmail } from '../../lib/mailer';
 import { ENV } from '../../env';
+import type { Request, Response } from 'express';
 
 const router = Router();
 
 // POST /api/profile/reset-password-request
 router.post('/reset-password-request', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required')
-], async (req, res) => {
+], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -86,7 +87,7 @@ router.post('/reset-password', [
     .withMessage('Password must be at least 8 characters')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain uppercase, lowercase, and number')
-], async (req, res) => {
+], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

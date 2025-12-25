@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { getPool } from '../../db';
 import { sendTemplateEmail } from '../../../lib/mailer';
 import { Templates } from '../../../lib/postmark-templates';

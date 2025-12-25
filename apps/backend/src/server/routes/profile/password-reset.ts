@@ -105,7 +105,7 @@ export default function passwordResetRouter(pool: Pool) {
 
     // Update password + invalidate token
     // Use your existing password hash helper (e.g., argon2/bcrypt). Reuse what login uses.
-    const bcrypt = await import("bcryptjs");
+    const bcrypt = await import("bcrypt");
     const newHash = await bcrypt.hash(newPassword, 12);
 
     await pool.query(

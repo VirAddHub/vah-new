@@ -9,7 +9,6 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import winston from 'winston';
 import compression from 'compression';
 import morgan from 'morgan';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
