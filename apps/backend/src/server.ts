@@ -159,17 +159,44 @@ app.use(
 
 // security + CORS (must be before browser-facing routes)
 app.use(helmet());
+// HSTS: tell browsers to only use HTTPS for this domain (prod only)
+if (process.env.NODE_ENV === 'production') {
+    // 2 years, include subdomains, preload list compatible
+    app.use(helmet.hsts({ maxAge: 63072000, includeSubDomains: true, preload: true }));
+}
+
+// Enforce HTTPS behind proxies (Render/Vercel set x-forwarded-proto)
+app.use((req: Request, res: Response, next: NextFunction) => {
+    if (process.env.NODE_ENV !== 'production') return next();
+    const xfProto = (req.headers['x-forwarded-proto'] as string | undefined) || '';
+    if (xfProto && xfProto !== 'https') {
+        // Redirect safe methods; reject unsafe methods to avoid clients replaying POSTs unexpectedly.
+        if (req.method === 'GET' || req.method === 'HEAD') {
+            const host = req.headers.host || '';
+            return res.redirect(308, `https://${host}${req.originalUrl}`);
+        }
+        return res.status(400).json({ ok: false, error: 'https_required' });
+    }
+    return next();
+});
 
 // CORS first - apply to ALL responses including errors
 app.use(cors({
     origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+        const isProd = process.env.NODE_ENV === 'production';
         const allowedOrigins = [
-            'https://vah-new-frontend-75d6.vercel.app',
-            'https://vah-frontend-final.vercel.app',
+            // prod domains
             'https://virtualaddresshub.co.uk',
             'https://www.virtualaddresshub.co.uk',
-            'http://localhost:3000',
-            'http://localhost:3001'
+            // explicit staging/frontends
+            'https://vah-new-frontend-75d6.vercel.app',
+            'https://vah-frontend-final.vercel.app',
+            // local dev only
+            ...(isProd ? [] : ['http://localhost:3000', 'http://localhost:3001']),
+            // optional extra allowlist via env (comma-separated)
+            ...(process.env.CORS_ORIGINS
+                ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+                : []),
         ];
 
         // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
@@ -179,11 +206,6 @@ app.use(cors({
 
         // Check if origin is in allowlist
         if (allowedOrigins.includes(origin)) {
-            return cb(null, true);
-        }
-
-        // Check for Vercel preview deployments
-        if (/^https:\/\/vah-new-frontend-[\w-]+\.vercel\.app$/.test(origin)) {
             return cb(null, true);
         }
 

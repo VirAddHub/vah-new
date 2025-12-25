@@ -6,6 +6,7 @@ import { Templates } from "../../../lib/postmark-templates";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { BCRYPT_ROUNDS } from "../../../config/auth";
 import { logger } from "../../../lib/logger";
+import { getAppUrl } from "../../../config/appUrl";
 
 const ttl = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES ?? 30);
 
@@ -49,7 +50,7 @@ export default function passwordResetRouter(pool: Pool) {
         templateAlias: Templates.PasswordReset,
         model: {
           firstName: user.first_name || 'there',
-          resetLink: `${process.env.APP_BASE_URL || 'http://localhost:3000'}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+          resetLink: `${getAppUrl()}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
           expiryMinutes: ttl,
         },
       }).catch((err) => {
