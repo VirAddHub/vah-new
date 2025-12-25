@@ -240,21 +240,11 @@ export async function generateInvoiceForPeriod(
   const periodStartStr = normalizeDate(periodStart);
   const periodEndStr = normalizeDate(periodEnd);
 
-  // 0) Ensure subscription charge exists for this period (idempotent)
-  await ensureSubscriptionChargeForPeriod({
-    pool,
-    userId,
-    periodStart: periodStartStr,
-    periodEnd: periodEndStr,
-    billingInterval,
-    currency,
-  });
-
   // 1) Upsert invoice (idempotent by user_id + period)
   // Check if invoice exists for this period
-  const existingInvoice = await pool.query<{ id: number }>(
+  const existingInvoice = await pool.query<{ id: number; gocardless_payment_id?: string | null; email_sent_at?: string | null; status?: string | null }>(
     `
-    SELECT id FROM invoices
+    SELECT id, gocardless_payment_id, email_sent_at, status FROM invoices
     WHERE user_id = $1
       AND period_start = $2
       AND period_end = $3
@@ -266,6 +256,21 @@ export async function generateInvoiceForPeriod(
 
   let invoiceId: number;
   const createdAtMs = Date.now();
+  const existing = existingInvoice.rows[0];
+  const isFrozen = Boolean(existing?.email_sent_at) || Boolean(existing?.gocardless_payment_id);
+
+  // 0) Ensure subscription charge exists for this period (idempotent)
+  // Only when the invoice is still open. If the invoice is frozen, we must not create/attach new items into that closed period.
+  if (!isFrozen) {
+    await ensureSubscriptionChargeForPeriod({
+      pool,
+      userId,
+      periodStart: periodStartStr,
+      periodEnd: periodEndStr,
+      billingInterval,
+      currency,
+    });
+  }
 
   // Generate invoice number using existing sequence
   const year = new Date(periodEndStr).getFullYear();
@@ -305,7 +310,7 @@ export async function generateInvoiceForPeriod(
       );
     }
     
-    console.log('[invoiceService] invoice_exists', { userId, invoiceId, periodStartStr, periodEndStr });
+    console.log('[invoiceService] invoice_exists', { userId, invoiceId, periodStartStr, periodEndStr, isFrozen });
   } else {
     // Create new invoice - default status is 'issued' unless creating from payment flow
     // Status will be set to 'paid' later in webhook handler if gocardlessPaymentId is provided
@@ -340,23 +345,29 @@ export async function generateInvoiceForPeriod(
   // Only mark charges as billed when invoice_id is set (invariant)
   let attachedCount = 0;
   try {
-    const chargesUpdate = await pool.query(
-      `
-      UPDATE charge
-      SET
-        invoice_id = $1,
-        status = 'billed',
-        billed_at = NOW()
-      WHERE user_id = $2
-        AND status = 'pending'
-        AND service_date >= $3::date
-        AND service_date <= $4::date
-        AND invoice_id IS NULL
-      `,
-      [invoiceId, userId, periodStartStr, periodEndStr]
-    );
-    attachedCount = chargesUpdate.rowCount || 0;
-    console.log('[invoiceService] charges_attached', { userId, invoiceId, attachedCount });
+    if (isFrozen) {
+      // Freeze rule: once invoice is finalized/charged, never attach new charges to it.
+      // Any late-arriving charges will remain pending and will be picked up by the NEXT invoice run.
+      attachedCount = 0;
+      console.log('[invoiceService] charges_attach_skipped_frozen', { userId, invoiceId });
+    } else {
+      const chargesUpdate = await pool.query(
+        `
+        UPDATE charge
+        SET
+          invoice_id = $1,
+          status = 'billed',
+          billed_at = NOW()
+        WHERE user_id = $2
+          AND status = 'pending'
+          AND service_date <= $3::date
+          AND invoice_id IS NULL
+        `,
+        [invoiceId, userId, periodEndStr]
+      );
+      attachedCount = chargesUpdate.rowCount || 0;
+      console.log('[invoiceService] charges_attached', { userId, invoiceId, attachedCount, upTo: periodEndStr });
+    }
   } catch (chargeError: any) {
     // Table doesn't exist - skip charge update
     const msg = String(chargeError?.message || '');
