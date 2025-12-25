@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserDashboard } from '@/components/UserDashboard';
+import dynamic from 'next/dynamic';
 import { clearToken, setStoredUser } from '@/lib/token-manager';
+
+const UserDashboard = dynamic(
+    () => import('@/components/UserDashboard').then((mod) => ({ default: mod.UserDashboard })),
+    {
+        loading: () => (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            </div>
+        ),
+    }
+);
 
 export default function DashboardClient() {
     const router = useRouter();

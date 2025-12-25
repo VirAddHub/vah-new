@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { mdxComponents } from "../app/blog/_components/mdx-components";
@@ -210,9 +211,12 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 {/* Author Signature Block */}
                 <div className="max-w-4xl mx-auto mt-10 pt-6 border-t border-border">
                     <footer className="flex items-center gap-4">
-                        <img
+                        <Image
                             src={post.authorImage || "/images/authors/liban.jpg"}
                             alt={post.authorName || "Liban Adan"}
+                            width={48}
+                            height={48}
+                            loading="lazy"
                             className="h-12 w-12 rounded-full object-cover"
                         />
                         <div>
