@@ -6,6 +6,7 @@ import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
 import { WebVitalsProvider } from '@/components/WebVitalsProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -166,13 +167,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                     Skip to main content
                 </a>
-                <WebVitalsProvider>
-                    <SWRProvider>
-                        <Providers>
-                            <ToastRoot>{children}</ToastRoot>
-                        </Providers>
-                    </SWRProvider>
-                </WebVitalsProvider>
+                <ErrorBoundary>
+                    <WebVitalsProvider>
+                        <SWRProvider>
+                            <Providers>
+                                <ToastRoot>{children}</ToastRoot>
+                            </Providers>
+                        </SWRProvider>
+                    </WebVitalsProvider>
+                </ErrorBoundary>
             </body>
         </html>
     );
