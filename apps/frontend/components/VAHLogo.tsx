@@ -70,22 +70,6 @@ export function VAHLogo({
         }
     };
 
-    // Use button if onNavigate is provided, otherwise use Link
-    const LogoElement = onNavigate ? 'button' : Link;
-    const logoProps = onNavigate
-        ? {
-            onClick: handleClick,
-            className: cn(logoVariants({ size }), className),
-            'aria-label': `${fullName} homepage`,
-            type: 'button' as const
-        }
-        : {
-            href,
-            onClick: handleClick,
-            className: cn(logoVariants({ size }), className),
-            'aria-label': `${fullName} homepage`
-        };
-
     // Dynamic logo sizing based on `size` prop
     const logoDimensions = {
         sm: { width: 120, height: 30 },
@@ -94,19 +78,41 @@ export function VAHLogo({
         xl: { width: 240, height: 60 },
     }[size || "md"];
 
+    const inner = (
+        <div className="flex items-center">
+            {/* Use img tag for SVG since Next.js Image doesn't optimize SVGs well */}
+            <img
+                src="/images/logo.svg"
+                alt={fullName}
+                width={logoDimensions.width}
+                height={logoDimensions.height}
+                className="h-auto transition-opacity duration-200 group-hover:opacity-90"
+                style={{ maxWidth: '100%', height: 'auto' }}
+            />
+        </div>
+    );
+
+    if (onNavigate) {
+        return (
+            <button
+                onClick={handleClick}
+                className={cn(logoVariants({ size }), className)}
+                aria-label={`${fullName} homepage`}
+                type="button"
+            >
+                {inner}
+            </button>
+        );
+    }
+
     return (
-        <LogoElement {...logoProps}>
-            <div className="flex items-center">
-                {/* Use img tag for SVG since Next.js Image doesn't optimize SVGs well */}
-                <img
-                    src="/images/logo.svg"
-                    alt={fullName}
-                    width={logoDimensions.width}
-                    height={logoDimensions.height}
-                    className="h-auto transition-opacity duration-200 group-hover:opacity-90"
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                />
-            </div>
-        </LogoElement>
+        <Link
+            href={href}
+            onClick={handleClick}
+            className={cn(logoVariants({ size }), className)}
+            aria-label={`${fullName} homepage`}
+        >
+            {inner}
+        </Link>
     );
 }

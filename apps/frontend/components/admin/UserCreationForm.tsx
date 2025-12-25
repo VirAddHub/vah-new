@@ -26,9 +26,23 @@ import {
     UserPlus,
     Building,
 } from "lucide-react";
-import { apiClient, logAdminAction, validateEmail, validatePassword } from "../../lib";
+import { apiClient } from "../../lib/apiClient";
+import { isEmail, validatePassword } from "../../lib";
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
 import { usePlans } from "../../hooks/usePlans";
+
+const logAdminAction = async (action: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/admin-action', {
+            action,
+            data,
+            timestamp: new Date().toISOString(),
+            adminId: null // set by backend
+        });
+    } catch {
+        // Logging should never break the UI
+    }
+};
 
 interface UserCreationFormProps {
     onSuccess: (user: any) => void;
@@ -122,7 +136,7 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
         if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
-        } else if (!validateEmail(formData.email)) {
+        } else if (!isEmail(formData.email)) {
             errors.email = 'Please enter a valid email address';
         }
 
@@ -208,8 +222,17 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
 
             const response = await apiClient.post('/api/admin/users/create', userData);
 
+            if (!response.ok) {
+                throw new Error((response as any)?.message || (response as any)?.error || 'Failed to create user');
+            }
+
+            const createdUser =
+                (response as any)?.user ??
+                (response as any)?.data?.user ??
+                (response as any)?.data;
+
             await logAdminAction('admin_create_user_success', {
-                userId: response.user.id,
+                userId: createdUser?.id,
                 email: formData.email,
                 companyName: formData.companyName
             });
@@ -218,7 +241,7 @@ export function UserCreationForm({ onSuccess, onCancel }: UserCreationFormProps)
 
             // Call success callback with created user
             setTimeout(() => {
-                onSuccess(response.user);
+                onSuccess(createdUser);
             }, 1500);
 
         } catch (error: any) {

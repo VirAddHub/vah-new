@@ -42,8 +42,8 @@ export interface SignupStep2Data {
     postcode: string;
     forward_country: string;
 
-    // Controllers Declaration (REQUIRED)
-    isSoleController: boolean;
+    // Controllers Declaration (required in UI, optional in type for progressive completion)
+    isSoleController?: boolean;
     additionalControllersCount?: number | null;
     
     // Business Owners

@@ -432,17 +432,17 @@ type Fail = { ok: false; error: string; code?: number };
 
 export const AuthAPI = {
     async login(email: string, password: string): Promise<LoginOk | Fail> {
-        const { res, data } = await api(apiUrl('auth/login'), {
+        const result = await legacyReq<{ token: string; user: unknown }>(apiUrl('auth/login'), {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
 
-        if (!res.ok || !data?.ok) {
-            return { ok: false, error: data?.message || data?.error || `HTTP ${res.status}`, code: res.status };
+        if (!result.ok) {
+            return { ok: false, error: (result as any)?.message || (result as any)?.error || 'Login failed', code: (result as any)?.code || 500 };
         }
 
-        const token = data?.data?.token;
-        const rawUser = data?.data?.user;
+        const token = (result.data as any)?.token;
+        const rawUser = (result.data as any)?.user;
 
         if (!token || !rawUser) {
             return { ok: false, error: 'Invalid response from server', code: 500 };

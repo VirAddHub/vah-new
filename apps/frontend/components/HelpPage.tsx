@@ -318,7 +318,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button
-              variant="default"
+              variant="primary"
               className="bg-primary text-white hover:bg-primary/90"
               onClick={() => onNavigate?.("contact")}
             >

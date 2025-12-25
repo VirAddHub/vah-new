@@ -31,31 +31,30 @@ export function SystemHealthSection() {
                 fetch('/api/admin/service-status/onedrive', { credentials: 'include' })
             ]);
 
-            const serviceData: ServiceHealth[] = serviceChecks.map((result, index) => {
+            const serviceData = await Promise.all(serviceChecks.map(async (result, index): Promise<ServiceHealth> => {
                 const serviceNames = ['Payment Gateway', 'KYC Verification (Sumsub)', 'Email Notifications', 'Mail Processing API'];
-                const serviceIcons = [CreditCard, Shield, Mail, Server];
                 
                 if (result.status === 'fulfilled' && result.value.ok) {
-                    return result.value.json().then((data: any) => ({
+                    const data: any = await result.value.json().catch(() => ({}));
+                    return {
                         name: serviceNames[index],
                         status: data.status || 'healthy',
                         uptime: data.uptime || 99.9,
                         lastCheck: Date.now(),
                         description: data.message || 'Service operational'
-                    }));
+                    };
                 } else {
-                    return Promise.resolve({
+                    return {
                         name: serviceNames[index],
                         status: 'down' as const,
                         uptime: 0,
                         lastCheck: Date.now(),
                         description: 'Service check failed'
-                    });
+                    };
                 }
-            });
+            }));
 
-            const resolvedServices = await Promise.all(serviceData);
-            setServices(resolvedServices);
+            setServices(serviceData);
             setLastRefresh(new Date());
         } catch (error) {
             console.error('Failed to fetch service health:', error);

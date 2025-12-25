@@ -79,12 +79,7 @@ const nextConfig = {
   },
 
   // ESLint and TypeScript configs
-  eslint: {
-    ignoreDuringBuilds: true
-  },
-  typescript: {
-    ignoreBuildErrors: true
-  }
+  // Do not ignore build errors: keep CI/build honest.
 };
 
 module.exports = withBundleAnalyzer(nextConfig);

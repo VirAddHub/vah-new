@@ -16,7 +16,11 @@
         "build:backend": "npm run -w apps/backend build",
         "dev:backend": "node apps/backend/dist/server/index.js",
         "install:all": "npm install --workspaces",
-        "test": "npm run test --workspaces --if-present"
+        "test": "npm run test --workspaces --if-present",
+        "typecheck": "npm -w apps/frontend run type-check && npm -w apps/backend run typecheck:backend",
+        "lint": "npm -w apps/frontend run lint",
+        "format": "prettier -w .",
+        "format:check": "prettier -c ."
     },
     "devDependencies": {
         "@next/bundle-analyzer": "^16.0.4",

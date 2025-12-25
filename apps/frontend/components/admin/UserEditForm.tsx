@@ -22,9 +22,23 @@ import {
     UserCheck,
     UserX,
 } from "lucide-react";
-import { apiClient, logAdminAction, validateEmail } from "../../lib";
+import { apiClient } from "../../lib/apiClient";
+import { isEmail } from "../../lib";
 import { getErrorMessage, getErrorStack } from "../../lib/errors";
 import { usePlans } from "../../hooks/usePlans";
+
+const logAdminAction = async (action: string, data?: any) => {
+    try {
+        await apiClient.post('/api/audit/admin-action', {
+            action,
+            data,
+            timestamp: new Date().toISOString(),
+            adminId: null // set by backend
+        });
+    } catch {
+        // Logging should never break the UI
+    }
+};
 
 interface UserEditFormProps {
     user: any;
@@ -113,7 +127,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
         if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
-        } else if (!validateEmail(formData.email)) {
+        } else if (!isEmail(formData.email)) {
             errors.email = 'Please enter a valid email address';
         }
 
@@ -182,6 +196,15 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
 
             const response = await apiClient.put(`/api/admin/users/${user.id}`, userData);
 
+            if (!response.ok) {
+                throw new Error((response as any)?.message || (response as any)?.error || 'Failed to update user');
+            }
+
+            const updatedUser =
+                (response as any)?.user ??
+                (response as any)?.data?.user ??
+                (response as any)?.data;
+
             await logAdminAction('admin_edit_user_success', {
                 userId: user.id,
                 email: formData.email,
@@ -192,7 +215,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
 
             // Call success callback with updated user
             setTimeout(() => {
-                onSuccess(response.user);
+                onSuccess(updatedUser);
             }, 1500);
 
         } catch (error: any) {

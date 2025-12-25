@@ -10,10 +10,8 @@ async function fetcher(url: string) {
     if (!result.ok) {
         throw new Error(result.message || 'Failed to fetch');
     }
-    // Backend returns { ok: true, ...data } or { ok: true, data: {...} }
-    // If result.data has an 'ok' field, it means backend already wrapped it, return as-is
-    // Otherwise, backend returned data directly, so use result.data
-    return result.data?.ok !== undefined ? result.data : result.data;
+    // `result.data` is runtime-shaped; keep this minimal and safe.
+    return result.data as any;
 }
 
 export const useAdminOverview = () =>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, Clock, TrendingUp } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from './button';
 
 interface SearchResult {
   id: string;

@@ -120,10 +120,11 @@ export function ConcurrencySafeForwardingTable() {
                 await refetchRequests();
             } else {
                 // Handle concurrency conflicts
-                if (response.data?.error?.includes('locked by another admin')) {
-                    const lockInfo = response.data.lockInfo;
+                const payload = response.data as any;
+                if (payload?.error?.includes('locked by another admin')) {
+                    const lockInfo = payload.lockInfo;
                     setLockInfo(prev => new Map(prev).set(requestId, lockInfo));
-                } else if (response.data?.error?.includes('Version mismatch')) {
+                } else if (payload?.error?.includes('Version mismatch')) {
                     // Refresh data to get latest version
                     await refetchRequests();
                 }

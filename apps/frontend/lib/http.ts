@@ -4,7 +4,9 @@
  * No localStorage tokens needed - uses HttpOnly cookies
  */
 
-export type ApiError = { ok: false; status: number; code?: string; message: string };
+// Note: `data` is optional even on errors because some legacy call sites destructure `{ data }`
+// before checking `ok`. Keep this minimal to avoid widening everything to `any`.
+export type ApiError = { ok: false; status: number; code?: string; message: string; data?: unknown };
 export type ApiOk<T> = { ok: true; data: T };
 export type ApiResponse<T> = ApiOk<T> | ApiError;
 

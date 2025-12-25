@@ -168,7 +168,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       console.log('[UsersSection] Deleted users API response:', res);
       if (res.ok && res.data) {
         // Backend returns { items: [...], total: ..., pages: ... }
-        const users = Array.isArray(res.data) ? res.data : res.data.items || [];
+        const payload: any = res.data;
+        const users = Array.isArray(payload) ? payload : payload?.items || [];
         setDeletedUsers(users);
         console.log('[UsersSection] Set deleted users:', users.length, 'users');
       } else {

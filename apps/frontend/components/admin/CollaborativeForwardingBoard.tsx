@@ -391,18 +391,16 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       } else {
         // Rollback on failure
         setRows(originalRows);
-        console.error('Failed to update status:', response.error);
+        console.error('Failed to update status:', result?.error);
 
         // Simple error message - no complex auto-heal logic
-        const payload = response.payload;
+        const payload = result;
         let errorMsg = "Error updating status. Please try again.";
 
         if (payload?.error === "illegal_transition") {
           errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
         } else if (payload?.message) {
           errorMsg = payload.message;
-        } else if (response?.message) {
-          errorMsg = response.message;
         }
 
         toast({
@@ -418,14 +416,9 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       console.error('Error updating status:', error);
 
       // Simple error message - no complex auto-heal logic
-      const payload = error?.payload;
       let errorMsg = "Error updating status. Please try again.";
 
-      if (payload?.error === "illegal_transition") {
-        errorMsg = `Illegal: ${payload.from} → ${payload.to}. Allowed: ${payload.allowed?.join(", ") || "none"}`;
-      } else if (payload?.message) {
-        errorMsg = payload.message;
-      } else if (error?.message) {
+      if (error?.message) {
         errorMsg = error.message;
       }
 
@@ -579,7 +572,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                   request.status?.toLowerCase() === 'complete') && (
                     <Button
                       size="sm"
-                      variant="default"
+                      variant="primary"
                       className="bg-green-600 hover:bg-green-700 text-white"
                       disabled
                     >

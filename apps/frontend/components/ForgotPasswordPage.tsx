@@ -5,7 +5,24 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { postJson } from '@/lib/api';
+
+async function postJson(path: string, body: unknown) {
+  const res = await fetch(path, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  if (!res.ok) throw data ?? new Error(`HTTP ${res.status}`);
+  return data;
+}
 
 interface ForgotPasswordPageProps {
   onNavigate: (page: string) => void;

@@ -1,0 +1,11 @@
+node_modules
+dist
+.next
+coverage
+**/*.min.js
+**/*.map
+package-lock.json
+apps/backend/dist
+apps/backend/reports
+apps/backend/test-results
+

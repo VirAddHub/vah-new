@@ -1,11 +1,12 @@
 {
     "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "target": "es5",
+        "target": "es2018",
+        "downlevelIteration": true,
         "lib": [
             "dom",
             "dom.iterable",
-            "es6"
+            "es2018"
         ],
         "allowJs": true,
         "skipLibCheck": true,
@@ -39,6 +40,14 @@
     ],
     "exclude": [
         "node_modules",
-        "lib/apiClient.example.ts"
+        "lib/apiClient.example.ts",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "tests/**",
+        "playwright/**",
+        "app/**/page-new.tsx",
+        "app/**/page-old.tsx"
     ]
 }

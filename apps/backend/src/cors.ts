@@ -30,8 +30,13 @@ function isAllowed(origin: string | undefined): boolean {
     return false;
 }
 
-export const corsOptions = {
-    origin(origin, cb) {
+type CorsOptionsOnly = Exclude<
+    NonNullable<Parameters<typeof cors>[0]>,
+    (...args: any[]) => any
+>;
+
+export const corsOptions: CorsOptionsOnly = {
+    origin(origin: string | undefined, cb: (err: Error | null, allow?: boolean | string) => void) {
         if (isAllowed(origin)) return cb(null, origin || true);
         return cb(new Error('Not allowed by CORS'));
     },

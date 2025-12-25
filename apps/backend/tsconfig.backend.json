@@ -30,6 +30,9 @@
         "app",
         "lib",
         "hooks",
-        "middleware.ts"
+        "middleware.ts",
+        "**/__tests__/**",
+        "**/*.test.ts",
+        "**/*.spec.ts"
     ]
 }

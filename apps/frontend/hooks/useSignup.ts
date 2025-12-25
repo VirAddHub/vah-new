@@ -29,6 +29,14 @@ export interface SignupStep2Data {
     city: string;
     postcode: string;
     forward_country: string;
+
+    // Controllers declaration (required in UI, but optional in type to allow progressive form fill)
+    isSoleController?: boolean;
+    additionalControllersCount?: number | null;
+
+    // Business owners (only required when not sole controller)
+    additionalOwners?: Array<{ fullName: string; email: string }>;
+    ownersPendingInfo?: boolean;
 }
 
 export interface SignupStep3Data {

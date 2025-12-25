@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Progress } from '../ui/progress';
 import { Package, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 
 interface BundleWidgetProps {
@@ -66,7 +66,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
         { name: 'Common', size: 50000, limit: 100000 },
       ]
     };
-    
+
     setBundleData(mockData);
   }, []);
 
@@ -133,7 +133,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
           {bundleData.bundles.map((bundle) => {
             const isOverLimit = bundle.size > bundle.limit;
             const isWarning = bundle.size > bundle.limit * 0.8 && !isOverLimit;
-            
+
             return (
               <div key={bundle.name} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
@@ -142,8 +142,8 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
                     {formatBytes(bundle.size)} / {formatBytes(bundle.limit)}
                   </span>
                 </div>
-                <Progress 
-                  value={(bundle.size / bundle.limit) * 100} 
+                <Progress
+                  value={(bundle.size / bundle.limit) * 100}
                   className="h-1"
                 />
                 {isOverLimit && (
@@ -158,9 +158,9 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
 
         {/* Action Button */}
         {onViewDetails && (
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full"
             onClick={onViewDetails}
           >

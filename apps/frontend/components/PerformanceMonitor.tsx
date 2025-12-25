@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import type { Metric } from 'web-vitals';
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 
 export function PerformanceMonitor() {
   useEffect(() => {
     // Monitor Core Web Vitals
-    getCLS((metric) => {
+    onCLS((metric: Metric) => {
       console.log('CLS:', metric);
       // Send to analytics
       if (typeof window !== 'undefined' && window.gtag) {
@@ -18,18 +19,7 @@ export function PerformanceMonitor() {
       }
     });
 
-    getFID((metric) => {
-      console.log('FID:', metric);
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'web_vitals', {
-          event_category: 'Performance',
-          event_label: 'FID',
-          value: Math.round(metric.value),
-        });
-      }
-    });
-
-    getFCP((metric) => {
+    onFCP((metric: Metric) => {
       console.log('FCP:', metric);
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'web_vitals', {
@@ -40,7 +30,7 @@ export function PerformanceMonitor() {
       }
     });
 
-    getLCP((metric) => {
+    onLCP((metric: Metric) => {
       console.log('LCP:', metric);
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'web_vitals', {
@@ -51,12 +41,24 @@ export function PerformanceMonitor() {
       }
     });
 
-    getTTFB((metric) => {
+    onTTFB((metric: Metric) => {
       console.log('TTFB:', metric);
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'web_vitals', {
           event_category: 'Performance',
           event_label: 'TTFB',
+          value: Math.round(metric.value),
+        });
+      }
+    });
+
+    // INP (replaces FID)
+    onINP((metric: Metric) => {
+      console.log('INP:', metric);
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'web_vitals', {
+          event_category: 'Performance',
+          event_label: 'INP',
           value: Math.round(metric.value),
         });
       }

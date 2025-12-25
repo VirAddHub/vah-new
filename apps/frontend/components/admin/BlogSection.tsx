@@ -719,7 +719,7 @@ export function BlogSection() {
                                         return (
                                             <Button
                                                 key={pageNum}
-                                                variant={page === pageNum ? "default" : "outline"}
+                                                variant={page === pageNum ? "primary" : "outline"}
                                                 size="sm"
                                                 onClick={() => setPage(pageNum)}
                                                 className="min-w-[2.5rem]"

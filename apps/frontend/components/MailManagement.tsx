@@ -360,7 +360,6 @@ export function MailManagement({
                 }}>
                     <MailItemCard
                         sender={sender}
-                        subject={subject}
                         timeLabel={undefined}
                         statusLabel={statusLabel}
                         statusVariant={statusVariant}

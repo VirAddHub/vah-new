@@ -1,5 +1,14 @@
 export type ApiOk<T> = { ok: true; data: T };
-export type ApiErr = { ok: false; error: string; code?: number; errorCode?: string };
+// Keep `data` optional for legacy consumers that read `err.data` (e.g. admin tables)
+export type ApiErr = {
+  ok: false;
+  error: string;
+  code?: number;
+  errorCode?: string;
+  message?: string;
+  status?: number;
+  data?: unknown;
+};
 export type ApiResponse<T> = ApiOk<T> | ApiErr;
 
 export const isOk = <T,>(r: ApiResponse<T>): r is ApiOk<T> => r.ok === true;

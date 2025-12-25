@@ -72,11 +72,11 @@ export const invalidateAllAdminCache = () => {
  */
 export const optimisticUpdate = <T>(
   cacheKey: string | string[],
-  updateFn: (currentData: T) => T,
+  updateFn: (currentData: T | undefined) => T,
   rollbackFn?: () => void
 ) => {
   // Apply optimistic update
-  mutate(cacheKey, updateFn, false);
+  mutate(cacheKey as any, updateFn as any, { revalidate: false } as any);
 
   // Return rollback function
   return () => {

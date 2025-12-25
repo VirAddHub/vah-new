@@ -146,17 +146,12 @@ export function initWebVitals(): void {
   if (typeof window === 'undefined') return;
 
   // Import web-vitals library dynamically
-  import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB, getINP }) => {
-    getCLS(reportWebVitals);
-    getFID(reportWebVitals);
-    getFCP(reportWebVitals);
-    getLCP(reportWebVitals);
-    getTTFB(reportWebVitals);
-    
-    // INP is newer, check if available
-    if (getINP) {
-      getINP(reportWebVitals);
-    }
+  import('web-vitals').then(({ onCLS, onFCP, onLCP, onTTFB, onINP }) => {
+    onCLS(reportWebVitals);
+    onFCP(reportWebVitals);
+    onLCP(reportWebVitals);
+    onTTFB(reportWebVitals);
+    onINP(reportWebVitals);
   }).catch((error) => {
     console.warn('Failed to load web-vitals library:', error);
   });

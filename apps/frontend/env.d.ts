@@ -8,3 +8,7 @@ declare namespace NodeJS {
         NEXT_PUBLIC_FEATURE_SUMSUB?: "true" | "false";
     }
 }
+
+interface Window {
+    gtag?: (...args: any[]) => void;
+}

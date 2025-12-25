@@ -77,12 +77,12 @@ export function CoreWebVitalsOptimizer() {
 
     // Monitor Core Web Vitals
     if (typeof window !== 'undefined' && 'web-vital' in window) {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(console.log);
-        getFID(console.log);
-        getFCP(console.log);
-        getLCP(console.log);
-        getTTFB(console.log);
+      import('web-vitals').then(({ onCLS, onFCP, onLCP, onTTFB, onINP }) => {
+        onCLS(console.log);
+        onFCP(console.log);
+        onLCP(console.log);
+        onTTFB(console.log);
+        onINP(console.log);
       });
     }
   }, []);

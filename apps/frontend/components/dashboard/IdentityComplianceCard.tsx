@@ -115,7 +115,7 @@ export function IdentityComplianceCard({
                     .withConf({
                         lang: 'en',
                     })
-                    .on('onError', (error: unknown) => {
+                    .on('idCheck.onError', (error: unknown) => {
                         console.error('[IdentityComplianceCard] Sumsub onError', error);
                         toast({
                             title: "Verification Error",
@@ -123,7 +123,7 @@ export function IdentityComplianceCard({
                             variant: "destructive",
                         });
                     })
-                    .on('onReady', () => {
+                    .on('idCheck.onReady', () => {
                         console.log('[IdentityComplianceCard] Sumsub ready');
                     })
                     .onMessage((type: string, payload: any) => {

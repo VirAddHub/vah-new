@@ -29,6 +29,8 @@ import { apiClient, safe, adminApi } from "../../lib/apiClient";
 import { useApiData } from "../../lib/client-hooks";
 import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
+import { getErrorMessage, getErrorStack } from "../../lib/errors";
+import { invalidateMailCache } from "../../lib/swrCacheUtils";
 
 const logAdminAction = async (action: string, data?: any) => {
     try {
@@ -38,12 +40,10 @@ const logAdminAction = async (action: string, data?: any) => {
             timestamp: new Date().toISOString(),
             adminId: null // Will be set by backend
         });
-    } catch (error) {
-        console.error('Failed to log admin action:', error);
+    } catch {
+        // Logging should never break the UI
     }
 };
-import { getErrorMessage, getErrorStack } from "../../lib/errors";
-import { invalidateMailCache } from "../../lib/swrCacheUtils";
 
 interface MailItem {
     id: number;
@@ -70,6 +70,7 @@ export function MailSection({ }: MailSectionProps) {
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
     const [offset, setOffset] = useState(0);
     const [limit] = useState(20);
+    const [actionLoading, setActionLoading] = useState(false);
 
     // Use simple debounced search hook (no callback needed with SWR)
     const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, shouldSearch } = useSimpleDebouncedSearch(300, 0);
@@ -110,7 +111,7 @@ export function MailSection({ }: MailSectionProps) {
         data: statsData,
         isLoading: statsLoading,
         error: statsError
-    } = useAuthedSWR<{ total: number; received: number; processed: number; forwarded: number }>(
+    } = useAuthedSWR<{ total: number; received: number; processed: number; forwarded: number; pending?: number }>(
         '/api/admin/mail-items/stats',
         {
             dedupingInterval: 10000, // 10 seconds deduplication for stats
@@ -125,7 +126,7 @@ export function MailSection({ }: MailSectionProps) {
     const stats = statsData;
 
     const filteredItems = mailItems;
-    const loading = mailItemsLoading || statsLoading;
+    const loading = mailItemsLoading || statsLoading || actionLoading;
 
     const handleAddItem = async () => {
         try {
@@ -163,7 +164,7 @@ export function MailSection({ }: MailSectionProps) {
     };
 
     const handleProcessItem = async (itemId: number) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_process_mail_item', { itemId });
             await adminApi.updateMailItem(itemId.toString(), { status: 'processed' });
@@ -171,12 +172,12 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handleTagItem = async (itemId: number, tag: string) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_tag_mail_item', { itemId, tag });
             await adminApi.updateMailItem(itemId.toString(), { tag });
@@ -184,12 +185,12 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handleForwardItem = async (itemId: number) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_forward_mail_item', { itemId });
             await apiClient.post(`/api/admin/mail-items/${itemId}/forward`);
@@ -197,12 +198,12 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_forward_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handleDeleteItem = async (itemId: number) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_delete_mail_item', { itemId });
             await apiClient.delete(`/api/admin/mail-items/${itemId}`);
@@ -210,14 +211,14 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_delete_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handleBulkAction = async (action: string) => {
         if (selectedItems.length === 0) return;
 
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_bulk_mail_action', { action, itemIds: selectedItems });
             await apiClient.post(`/api/admin/mail-items/bulk/${action}`, { itemIds: selectedItems });
@@ -226,7 +227,7 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
@@ -244,7 +245,7 @@ export function MailSection({ }: MailSectionProps) {
     };
 
     const handleExportMail = async () => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             await logAdminAction('admin_export_mail', {
                 filters: { statusFilter, tagFilter, searchTerm, tab: selectedTab }
@@ -264,7 +265,7 @@ export function MailSection({ }: MailSectionProps) {
         } catch (error) {
             await logAdminAction('admin_export_mail_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     };
 
