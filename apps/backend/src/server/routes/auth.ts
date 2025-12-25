@@ -8,6 +8,7 @@ import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
 import { ok, unauthorized, badRequest, serverError, conflict } from "../lib/apiResponse";
+import { logger } from "../../lib/logger";
 
 const router = Router();
 
@@ -156,7 +157,7 @@ router.post("/debug-update-password", async (req, res) => {
         });
 
     } catch (error: any) {
-        console.error('[debug-update-password] error:', error);
+        logger.error('[debug-update-password] error', { message: error?.message });
         res.status(500).json({ ok: false, error: error.message });
     }
 });
@@ -183,7 +184,7 @@ router.post("/test-email", async (req, res) => {
 
         res.json({ ok: true, message: "Test email sent successfully" });
     } catch (error: any) {
-        console.error('[test-email] error:', error);
+        logger.error('[test-email] error', { message: error?.message });
         res.status(500).json({ ok: false, error: error.message || 'email_failed' });
     }
 });
@@ -215,7 +216,7 @@ router.post("/test-ch-email", async (req, res) => {
 
         res.json({ ok: true, message: `CH verification ${emailType} email sent successfully` });
     } catch (error: any) {
-        console.error('[test-ch-email] error:', error);
+        logger.error('[test-ch-email] error', { message: error?.message });
         res.status(500).json({ ok: false, error: error.message || 'email_failed' });
     }
 });
@@ -265,13 +266,8 @@ const SignupSchema = z.object({
 });
 
 router.post("/signup", async (req, res) => {
-    // Debug logging: log incoming signup request
-    console.log('[SignupDebug] Incoming signup request', {
-        email: req.body?.email,
-        first_name: req.body?.first_name,
-        last_name: req.body?.last_name,
-        rawBody: JSON.stringify(req.body),
-    });
+    // Avoid logging PII (emails/names/raw body) in production logs.
+    logger.debug('[auth/signup] request received', { hasBody: Boolean(req.body) });
 
     const parsed = SignupSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -287,11 +283,7 @@ router.post("/signup", async (req, res) => {
     // Normalize
     const email = i.email.toLowerCase();
 
-    // Debug logging: log normalized email
-    console.log('[SignupDebug] Normalized email', {
-        original: i.email,
-        normalized: email,
-    });
+    logger.debug('[auth/signup] parsed', { billing: i.billing ?? 'unknown' });
 
     try {
         // Enforce unique email at app layer (still rely on DB unique index if you have it)
@@ -303,13 +295,7 @@ router.post("/signup", async (req, res) => {
         const count = Number(exists.rows[0]?.count ?? 0);
 
         if (count > 0) {
-            // Debug logging: log duplicate email detection
-            console.warn('[SignupDebug] Duplicate email detected', {
-                email: email,
-                normalizedEmail: email,
-                count: count,
-                existingUserQuery: `SELECT id, email, first_name, last_name FROM "user" WHERE email = $1`,
-            });
+            logger.info('[auth/signup] duplicate_email', { count });
 
             return res.status(409).json({
                 ok: false,
@@ -426,7 +412,7 @@ router.post("/signup", async (req, res) => {
                 try {
                     await createBusinessOwner(row.id, owner.fullName, owner.email);
                 } catch (error) {
-                    console.error(`[auth/signup] Failed to create business owner ${owner.email}:`, error);
+                    logger.warn('[auth/signup] failed to create business owner', { message: (error as any)?.message ?? String(error) });
                     // Don't fail signup if owner creation fails - can be added later
                 }
             }
@@ -446,14 +432,10 @@ router.post("/signup", async (req, res) => {
                 email: row.email,
                 firstName: displayName,
             });
-            console.log(`[auth/signup] ✅ Welcome + KYC email sent to ${row.email}`);
+            logger.info('[auth/signup] welcome_email_sent', { userId: row.id });
         } catch (emailError: any) {
             // Don't fail signup if email fails - log and continue
-            console.error(`[auth/signup] ⚠️ Failed to send welcome + KYC email to ${row.email} (non-fatal):`, emailError?.message || emailError);
-            // Log the full error for debugging template alias issues
-            if (emailError?.response?.body) {
-                console.error(`[auth/signup] Postmark error details:`, emailError.response.body);
-            }
+            logger.warn('[auth/signup] welcome_email_failed', { userId: row.id, message: emailError?.message || String(emailError) });
         }
 
         // Auto-login after signup (so the user can immediately set up GoCardless mandate)
@@ -489,14 +471,11 @@ router.post("/signup", async (req, res) => {
         const m = String(err?.message || "");
         if (m.includes("duplicate key value") && m.toLowerCase().includes("email")) {
             // Debug logging: log DB constraint violation
-            console.warn('[SignupDebug] Duplicate email detected via DB constraint', {
-                email: email,
-                error: m,
-            });
+            logger.info('[auth/signup] duplicate_email_db_constraint', { error: m });
 
             return conflict(res, 'email_exists', 'An account already exists with this email address.');
         }
-        console.error("[auth/signup] error:", err);
+        logger.error("[auth/signup] error", { message: err?.message || String(err) });
         return serverError(res, "Server error during signup");
     }
 });
@@ -588,7 +567,7 @@ router.post("/login", async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[auth/login] Error:', error);
+        logger.error('[auth/login] error', { message: (error as any)?.message ?? String(error) });
         res.status(500).json({
             ok: false,
             error: "internal_error",
@@ -610,7 +589,7 @@ router.post("/logout", (req, res) => {
 
         res.json({ ok: true, message: "Logged out successfully" });
     } catch (error) {
-        console.error('[auth/logout] Error:', error);
+        logger.error('[auth/logout] error', { message: (error as any)?.message ?? String(error) });
         res.status(500).json({
             ok: false,
             error: "internal_error",
@@ -670,7 +649,7 @@ router.get("/whoami", async (req, res) => {
             }
         } catch (e) {
             // Never block whoami if this repair fails.
-            console.warn('[auth/whoami] subscription repair failed:', (e as any)?.message ?? e);
+            logger.warn('[auth/whoami] subscription repair failed', { message: (e as any)?.message ?? String(e) });
         }
 
         // Derived field: controllers_verification_required
@@ -697,7 +676,7 @@ router.get("/whoami", async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('[auth/whoami] Error:', error);
+        logger.error('[auth/whoami] error', { message: (error as any)?.message ?? String(error) });
         return unauthorized(res, "Invalid or expired session");
     }
 });
@@ -770,7 +749,7 @@ router.post("/reset-password/confirm", async (req, res) => {
 
         // Verify the update was successful
         if (updateResult.rowCount !== 1) {
-            console.error('[reset-confirm] Database update failed:', {
+            logger.error('[reset-confirm] database update failed', {
                 userId: validUser.id,
                 rowCount: updateResult.rowCount,
                 expected: 1
@@ -782,7 +761,7 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        console.log('[reset-confirm] Password updated successfully for user:', validUser.id);
+        logger.info('[reset-confirm] password updated', { userId: validUser.id });
 
         return res.status(200).json({
             ok: true,
@@ -790,7 +769,7 @@ router.post("/reset-password/confirm", async (req, res) => {
         });
 
     } catch (error: any) {
-        console.error('[reset-confirm] error:', error);
+        logger.error('[reset-confirm] error', { message: error?.message });
         return res.status(500).json({
             ok: false,
             error: "server_error",

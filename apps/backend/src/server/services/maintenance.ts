@@ -1,5 +1,6 @@
 import { concurrencyService } from '../services/concurrency';
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 
 export class SystemMaintenanceService {
     private static instance: SystemMaintenanceService;
@@ -18,11 +19,11 @@ export class SystemMaintenanceService {
      */
     start(): void {
         if (this.isRunning) {
-            console.log('[SystemMaintenance] Service already running');
+            logger.debug('[SystemMaintenance] Service already running');
             return;
         }
 
-        console.log('[SystemMaintenance] Starting maintenance service...');
+        logger.info('[SystemMaintenance] Starting maintenance service...');
         this.isRunning = true;
 
         // Run cleanup every 5 minutes
@@ -42,7 +43,7 @@ export class SystemMaintenanceService {
             return;
         }
 
-        console.log('[SystemMaintenance] Stopping maintenance service...');
+        logger.info('[SystemMaintenance] Stopping maintenance service...');
         this.isRunning = false;
 
         if (this.cleanupInterval) {
@@ -56,12 +57,12 @@ export class SystemMaintenanceService {
      */
     private async performMaintenance(): Promise<void> {
         try {
-            console.log('[SystemMaintenance] Performing maintenance tasks...');
+            logger.debug('[SystemMaintenance] Performing maintenance tasks...');
             
             // 1. Clean up expired locks
             const expiredLocksCleaned = await concurrencyService.cleanupExpiredLocks();
             if (expiredLocksCleaned > 0) {
-                console.log(`[SystemMaintenance] Cleaned up ${expiredLocksCleaned} expired locks`);
+                logger.info('[SystemMaintenance] Cleaned up expired locks', { count: expiredLocksCleaned });
             }
 
             // 2. Clean up old admin activity logs (keep last 30 days)
@@ -73,9 +74,9 @@ export class SystemMaintenanceService {
             // 4. Update system metrics
             await this.updateSystemMetrics();
 
-            console.log('[SystemMaintenance] Maintenance completed successfully');
+            logger.debug('[SystemMaintenance] Maintenance completed successfully');
         } catch (error) {
-            console.error('[SystemMaintenance] Error during maintenance:', error);
+            logger.error('[SystemMaintenance] Error during maintenance', { message: (error as any)?.message ?? String(error) });
         }
     }
 
@@ -92,10 +93,10 @@ export class SystemMaintenanceService {
             );
             
             if (result.rowCount && result.rowCount > 0) {
-                console.log(`[SystemMaintenance] Cleaned up ${result.rowCount} old activity logs`);
+                logger.info('[SystemMaintenance] Cleaned up old activity logs', { count: result.rowCount });
             }
         } catch (error) {
-            console.error('[SystemMaintenance] Error cleaning up activity logs:', error);
+            logger.error('[SystemMaintenance] Error cleaning up activity logs', { message: (error as any)?.message ?? String(error) });
         }
     }
 
@@ -113,10 +114,10 @@ export class SystemMaintenanceService {
             );
             
             if (result.rowCount && result.rowCount > 0) {
-                console.log(`[SystemMaintenance] Cleaned up ${result.rowCount} old concurrent operations`);
+                logger.info('[SystemMaintenance] Cleaned up old concurrent operations', { count: result.rowCount });
             }
         } catch (error) {
-            console.error('[SystemMaintenance] Error cleaning up concurrent operations:', error);
+            logger.error('[SystemMaintenance] Error cleaning up concurrent operations', { message: (error as any)?.message ?? String(error) });
         }
     }
 
@@ -138,19 +139,19 @@ export class SystemMaintenanceService {
             `);
             
             const systemStats = stats.rows[0];
-            console.log('[SystemMaintenance] System stats:', systemStats);
+            logger.debug('[SystemMaintenance] System stats', systemStats);
             
             // Log any concerning metrics
             if (systemStats.active_locks > 100) {
-                console.warn(`[SystemMaintenance] High number of active locks: ${systemStats.active_locks}`);
+                logger.warn('[SystemMaintenance] High number of active locks', { active_locks: systemStats.active_locks });
             }
             
             if (systemStats.pending_requests > 500) {
-                console.warn(`[SystemMaintenance] High number of pending requests: ${systemStats.pending_requests}`);
+                logger.warn('[SystemMaintenance] High number of pending requests', { pending_requests: systemStats.pending_requests });
             }
             
         } catch (error) {
-            console.error('[SystemMaintenance] Error updating system metrics:', error);
+            logger.error('[SystemMaintenance] Error updating system metrics', { message: (error as any)?.message ?? String(error) });
         }
     }
 
@@ -158,7 +159,7 @@ export class SystemMaintenanceService {
      * Force cleanup of all expired locks (emergency function)
      */
     async emergencyCleanup(): Promise<void> {
-        console.log('[SystemMaintenance] Performing emergency cleanup...');
+        logger.warn('[SystemMaintenance] Performing emergency cleanup...');
         
         try {
             const pool = getPool();
@@ -168,9 +169,9 @@ export class SystemMaintenanceService {
                 'DELETE FROM admin_operation_locks WHERE expires_at < NOW()'
             );
             
-            console.log(`[SystemMaintenance] Emergency cleanup completed. Removed ${result.rowCount || 0} expired locks`);
+            logger.warn('[SystemMaintenance] Emergency cleanup completed', { removed: result.rowCount || 0 });
         } catch (error) {
-            console.error('[SystemMaintenance] Error during emergency cleanup:', error);
+            logger.error('[SystemMaintenance] Error during emergency cleanup', { message: (error as any)?.message ?? String(error) });
         }
     }
 
@@ -221,7 +222,7 @@ export class SystemMaintenanceService {
                 issues
             };
         } catch (error) {
-            console.error('[SystemMaintenance] Error getting system health:', error);
+            logger.error('[SystemMaintenance] Error getting system health', { message: (error as any)?.message ?? String(error) });
             return {
                 healthy: false,
                 activeLocks: 0,
