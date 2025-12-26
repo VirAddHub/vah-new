@@ -37,6 +37,7 @@ export default function AdminInvoiceDetailPage() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,8 +176,6 @@ export default function AdminInvoiceDetailPage() {
     { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
     { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
   ] as const;
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
