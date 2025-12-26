@@ -203,6 +203,10 @@ export async function getBillingOverview(req: Request, res: Response) {
         ? 'annual'
         : 'monthly';
 
+    // Fallback price if plan lookup failed (use same defaults as invoiceService)
+    // This ensures we always show a price even if plan lookup fails
+    const fallbackPricePence = resolvedCadence === 'annual' ? 8999 : 999;
+
     // Determine account status
     let accountStatus = 'active';
     let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
@@ -260,7 +264,12 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
-        current_price_pence: resolvedPlan?.price_pence ?? sub?.price_pence ?? 0,
+        // Use fallback prices if plan lookup failed or returned invalid price (0 or null) to ensure price is always displayed
+        current_price_pence: (resolvedPlan?.price_pence && resolvedPlan.price_pence > 0) 
+          ? resolvedPlan.price_pence 
+          : (sub?.price_pence && sub.price_pence > 0) 
+            ? sub.price_pence 
+            : fallbackPricePence,
         // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
         latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
         pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
