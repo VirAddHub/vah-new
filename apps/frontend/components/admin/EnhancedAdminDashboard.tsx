@@ -2,22 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { apiClient, safe } from "@/lib/apiClient";
-import {
-    adminService,
-    mailService,
-    forwardingService,
-    billingService
-} from "@/lib/services";
 import { useAuthedSWR } from "@/lib/useAuthedSWR";
-// useAdminHeartbeat removed - using Sentry instead
-import { adminApi } from "@/lib/services/http";
 // Monitoring hooks removed - using Sentry instead
 // import { useAdminOverview, useAdminHealth, useAdminActivity, useForwardingStats } from "@/lib/hooks/useAdminOverview";
 // import RecentActivityCard from "@/components/admin/RecentActivityCard";
@@ -28,49 +13,11 @@ import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 // AdminStats removed - using Sentry instead
 import { AdminUsersTable } from "@/components/admin/parts/AdminUsersTable";
 import {
-    Mail,
     Users,
     Truck,
     FileText,
     Settings,
-    LogOut,
-    Shield,
-    Activity,
-    Check,
-    Play,
-    RotateCcw,
-    Trash2,
-    UserX,
-    UserCheck,
-    AlertTriangle,
-    Server,
-    Menu,
-    X,
-    Search,
-    Filter,
-    Download,
-    Plus,
-    Eye,
-    Edit,
-    MoreHorizontal,
-    TrendingUp,
-    TrendingDown,
-    DollarSign,
     Package,
-    Clock,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    ArrowUp,
-    ArrowDown,
-    Calendar,
-    BarChart3,
-    PieChart,
-    Users2,
-    CreditCard,
-    Receipt,
-    Building2,
-    Clipboard,
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -169,29 +116,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     const users = usersData?.items ?? [];
     const usersTotal = usersData?.total ?? 0;
-
-    // Monitoring state removed - using Sentry instead
-
-    // Throttle repeated requests
-    const usersLastLoadedAtRef = useRef<number | null>(null);
-
-    // Overview and monitoring state removed - using Sentry instead
-
-    // Recent activity state
-    const [recentActivity, setRecentActivity] = useState<any[]>([]);
-    const [isLoadingActivity, setIsLoadingActivity] = useState(false);
-
-    // ⛔️ Ensure we never setState after unmount
-    const mountedRef = useRef(true);
-    useEffect(() => {
-        mountedRef.current = true;
-        return () => {
-            mountedRef.current = false;
-        };
-    }, []);
-
-    // 🔒 Abort previous request before firing a new one
-    const abortRef = useRef<AbortController | null>(null);
 
     // Overview and monitoring loading functions removed - using Sentry instead
 
