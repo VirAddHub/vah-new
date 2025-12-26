@@ -122,11 +122,20 @@ export async function getBillingOverview(req: Request, res: Response) {
 
   try {
     // Get subscription row for user_id
+    // Try to join plans via subscription.plan_name first, then fallback to user.plan_id
     const subResult = await pool.query(`
-      SELECT s.*, p.name as plan_name, p.price_pence, p.interval as plan_interval
+      SELECT 
+        s.*,
+        COALESCE(p1.name, p2.name) as plan_name,
+        COALESCE(p1.price_pence, p2.price_pence) as price_pence,
+        COALESCE(p1.interval, p2.interval) as plan_interval
       FROM subscription s
-      LEFT JOIN plans p ON s.plan_name = p.name
-      WHERE s.user_id=$1 ORDER BY s.id DESC LIMIT 1
+      LEFT JOIN "user" u ON u.id = s.user_id
+      LEFT JOIN plans p1 ON s.plan_name = p1.name AND p1.active = true AND p1.retired_at IS NULL
+      LEFT JOIN plans p2 ON u.plan_id = p2.id AND p2.active = true AND p2.retired_at IS NULL
+      WHERE s.user_id=$1 
+      ORDER BY s.id DESC 
+      LIMIT 1
     `, [userId]);
 
     const sub = subResult.rows[0] || null;
@@ -158,9 +167,11 @@ export async function getBillingOverview(req: Request, res: Response) {
     const user = userResult.rows[0];
 
     // Resolve plan (single source of truth for display price)
-    // Prefer user.plan_id; fallback to subscription cadence/interval.
+    // Priority: 1) user.plan_id, 2) subscription JOIN price, 3) subscription cadence lookup, 4) latest invoice subscription charge
     let resolvedPlan: { id: number; name: string; interval: string; price_pence: number } | null = null;
     const planId = user?.plan_id ? Number(user.plan_id) : null;
+    
+    // Priority 1: Lookup by user's plan_id (most reliable)
     if (planId) {
       try {
         const r = await pool.query(
@@ -176,6 +187,27 @@ export async function getBillingOverview(req: Request, res: Response) {
       }
     }
 
+    // Priority 2: Use price from subscription JOIN (if the JOIN worked)
+    if (!resolvedPlan && sub?.price_pence && sub.price_pence > 0) {
+      // We have a price from the subscription JOIN, but need to get the full plan details
+      const cadence = (sub?.plan_interval || sub?.cadence || 'monthly').toString().toLowerCase();
+      const interval = cadence.includes('year') || cadence.includes('annual') ? 'year' : 'month';
+      try {
+        const r = await pool.query(
+          `SELECT id, name, interval, price_pence
+             FROM plans
+            WHERE interval = $1 AND price_pence = $2 AND active = true AND retired_at IS NULL
+            ORDER BY sort ASC
+            LIMIT 1`,
+          [interval, sub.price_pence]
+        );
+        resolvedPlan = r.rows[0] || null;
+      } catch (e) {
+        logger.warn('[getBillingOverview] plan_lookup_by_price_failed', { message: (e as any)?.message ?? String(e) });
+      }
+    }
+
+    // Priority 3: Lookup by subscription cadence/interval (fallback)
     if (!resolvedPlan) {
       const cadence = (sub?.plan_interval || sub?.cadence || 'monthly').toString().toLowerCase();
       const interval = cadence.includes('year') || cadence.includes('annual') ? 'year' : 'month';
@@ -191,6 +223,38 @@ export async function getBillingOverview(req: Request, res: Response) {
         resolvedPlan = r.rows[0] || null;
       } catch (e) {
         logger.warn('[getBillingOverview] plan_lookup_by_interval_failed', { message: (e as any)?.message ?? String(e) });
+      }
+    }
+
+    // Priority 4: Try to extract subscription charge from latest invoice
+    if (!resolvedPlan && latestInvoice?.amount_pence) {
+      try {
+        // Get subscription charge from latest invoice (exclude forwarding fees)
+        const chargeResult = await pool.query(
+          `SELECT amount_pence, type
+             FROM invoice_charges
+            WHERE invoice_id = $1 AND type = 'subscription_fee'
+            ORDER BY id ASC
+            LIMIT 1`,
+          [latestInvoice.id]
+        );
+        if (chargeResult.rows.length > 0) {
+          const subscriptionCharge = chargeResult.rows[0].amount_pence;
+          // Find plan with matching price
+          const r = await pool.query(
+            `SELECT id, name, interval, price_pence
+               FROM plans
+              WHERE price_pence = $1 AND active = true AND retired_at IS NULL
+              ORDER BY sort ASC
+              LIMIT 1`,
+            [subscriptionCharge]
+          );
+          if (r.rows.length > 0) {
+            resolvedPlan = r.rows[0];
+          }
+        }
+      } catch (e) {
+        logger.warn('[getBillingOverview] plan_lookup_from_invoice_failed', { message: (e as any)?.message ?? String(e) });
       }
     }
 
@@ -264,12 +328,12 @@ export async function getBillingOverview(req: Request, res: Response) {
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
-        // Use fallback prices if plan lookup failed or returned invalid price (0 or null) to ensure price is always displayed
+        // Priority: resolvedPlan > subscription JOIN price > fallback (only if all lookups failed)
         current_price_pence: (resolvedPlan?.price_pence && resolvedPlan.price_pence > 0) 
           ? resolvedPlan.price_pence 
           : (sub?.price_pence && sub.price_pence > 0) 
             ? sub.price_pence 
-            : fallbackPricePence,
+            : fallbackPricePence, // Last resort fallback - should rarely be needed
         // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
         latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
         pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
