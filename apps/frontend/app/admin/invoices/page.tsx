@@ -69,6 +69,7 @@ export default function AdminInvoicesPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [total, setTotal] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem("vah_jwt");
@@ -160,8 +161,14 @@ export default function AdminInvoicesPage() {
       a.download = `${inv.invoice_number || `invoice-${inv.id}`}.pdf`;
       document.body.appendChild(a);
       a.click();
-      a.remove();
       URL.revokeObjectURL(objectUrl);
+      // Safely remove the element if it's still a child
+      if (a.parentNode === document.body) {
+        document.body.removeChild(a);
+      } else if (a.remove) {
+        // Fallback to modern API if parentNode check fails
+        a.remove();
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to download PDF");
     }
@@ -246,8 +253,6 @@ export default function AdminInvoicesPage() {
     { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
     { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
   ] as const;
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">

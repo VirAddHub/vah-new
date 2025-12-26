@@ -118,8 +118,14 @@ export default function AdminInvoiceDetailPage() {
       a.download = `${invoice?.invoice_number || `invoice-${id}`}.pdf`;
       document.body.appendChild(a);
       a.click();
-      a.remove();
       URL.revokeObjectURL(objectUrl);
+      // Safely remove the element if it's still a child
+      if (a.parentNode === document.body) {
+        document.body.removeChild(a);
+      } else if (a.remove) {
+        // Fallback to modern API if parentNode check fails
+        a.remove();
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to download PDF");
     }
