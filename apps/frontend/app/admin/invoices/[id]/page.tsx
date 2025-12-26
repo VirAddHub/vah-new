@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AdminHeader } from "@/components/admin/parts/AdminHeader";
+import { Users, Truck, FileText, Settings, Package } from "lucide-react";
 
 function parseDateMaybe(v: unknown): Date | null {
   if (typeof v === "number" && Number.isFinite(v)) {
@@ -145,101 +147,148 @@ export default function AdminInvoiceDetailPage() {
   const createdLabel = created ? created.toLocaleString("en-GB") : "—";
   const amountLabel = moneyFmt.format((Number(invoice?.amount_pence || 0) / 100) || 0);
 
+  const handleLogout = () => {
+    localStorage.removeItem('vah_jwt');
+    localStorage.removeItem('vah_user');
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    router.push('/login');
+  };
+
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  const menuItems = [
+    { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+    { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
+    { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
+    { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+  ] as const;
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">{invoice?.invoice_number || `Invoice #${id}`}</h1>
-            <p className="text-muted-foreground">Invoice details and line items</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/admin/invoices")}>
-              Back
-            </Button>
-            <Button onClick={downloadPdf} disabled={loading}>
-              Download PDF
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background">
+      <AdminHeader
+        onNavigate={handleNavigate}
+        menuItems={menuItems}
+        activeSection=""
+        onSelectSection={(section) => {
+          if (section === 'users') router.push('/admin/dashboard?section=users');
+          else if (section === 'forwarding') router.push('/admin/dashboard?section=forwarding');
+          else if (section === 'plans') router.push('/admin/dashboard?section=plans');
+          else if (section === 'blog') router.push('/admin/dashboard?section=blog');
+          else if (section === 'settings') router.push('/admin/dashboard?section=settings');
+          else router.push('/admin/dashboard');
+        }}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        onLogout={handleLogout}
+        onGoInvoices={() => router.push('/admin/invoices')}
+        onGoFilenameGenerator={() => router.push('/admin/filename-generator')}
+        activePage="invoices"
+      />
 
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+      <main id="main-content" role="main" className="p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-3xl font-bold">{invoice?.invoice_number || `Invoice #${id}`}</h1>
+              <p className="text-muted-foreground">Invoice details and line items</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.push("/admin/invoices")}>
+                Back
+              </Button>
+              <Button onClick={downloadPdf} disabled={loading}>
+                Download PDF
+              </Button>
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground">Customer</div>
-              <div className="font-medium">{invoice?.email || "—"}</div>
-              <div className="text-xs text-muted-foreground">User {invoice?.user_id ?? "—"}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Status</div>
-              <Badge variant={invoice?.status === "paid" ? "default" : "secondary"}>{invoice?.status || "—"}</Badge>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Amount</div>
-              <div className="font-medium">{amountLabel}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Billing period</div>
-              <div className="font-medium">
-                {invoice?.period_start || "—"} → {invoice?.period_end || "—"}
+          {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Customer</div>
+                <div className="font-medium">{invoice?.email || "—"}</div>
+                <div className="text-xs text-muted-foreground">User {invoice?.user_id ?? "—"}</div>
               </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Created</div>
-              <div className="font-medium">{createdLabel}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Invoice ID</div>
-              <div className="font-medium">{invoice?.id ?? id}</div>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <div className="text-sm text-muted-foreground">Status</div>
+                <Badge variant={invoice?.status === "paid" ? "default" : "secondary"}>{invoice?.status || "—"}</Badge>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Amount</div>
+                <div className="font-medium">{amountLabel}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Billing period</div>
+                <div className="font-medium">
+                  {invoice?.period_start || "—"} → {invoice?.period_end || "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Created</div>
+                <div className="font-medium">{createdLabel}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Invoice ID</div>
+                <div className="font-medium">{invoice?.id ?? id}</div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Line items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Line items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                      Loading…
-                    </TableCell>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
-                ) : items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                      No billable activity this period
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((it, idx) => (
-                    <TableRow key={`${it.service_date}-${idx}`}>
-                      <TableCell>{it.service_date || "—"}</TableCell>
-                      <TableCell>{it.description || "—"}</TableCell>
-                      <TableCell className="text-right">{moneyFmt.format((Number(it.amount_pence || 0) / 100) || 0)}</TableCell>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        Loading…
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                  ) : items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        No billable activity this period
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((it, idx) => (
+                      <TableRow key={`${it.service_date}-${idx}`}>
+                        <TableCell>{it.service_date || "—"}</TableCell>
+                        <TableCell>{it.description || "—"}</TableCell>
+                        <TableCell className="text-right">{moneyFmt.format((Number(it.amount_pence || 0) / 100) || 0)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

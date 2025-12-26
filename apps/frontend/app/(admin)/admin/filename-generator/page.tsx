@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Loader2, Search, Clipboard, ClipboardCheck } from "lucide-react";
-import { VAHLogo } from "@/components/VAHLogo";
+import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Settings, Package } from "lucide-react";
+import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 
 type AdminUserHit = {
   id: number;
@@ -131,24 +131,52 @@ export default function FilenameGeneratorPage() {
     setTimeout(() => setCopied(false), 1200);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('vah_jwt');
+    localStorage.removeItem('vah_user');
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    router.push('/login');
+  };
+
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  const menuItems = [
+    { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+    { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
+    { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
+    { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+  ] as const;
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Admin Navbar */}
-      <header className="bg-card border-b border-border">
-        <div className="flex items-center justify-between h-14 px-4">
-          <VAHLogo href="/admin/dashboard" size="md" />
-          <nav className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/admin/dashboard')}
-              className="gap-1.5 h-8 px-3"
-            >
-              <span className="text-sm">Back to Dashboard</span>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <AdminHeader
+        onNavigate={handleNavigate}
+        menuItems={menuItems}
+        activeSection=""
+        onSelectSection={(section) => {
+          if (section === 'users') router.push('/admin/dashboard?section=users');
+          else if (section === 'forwarding') router.push('/admin/dashboard?section=forwarding');
+          else if (section === 'plans') router.push('/admin/dashboard?section=plans');
+          else if (section === 'blog') router.push('/admin/dashboard?section=blog');
+          else if (section === 'settings') router.push('/admin/dashboard?section=settings');
+          else router.push('/admin/dashboard');
+        }}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        onLogout={handleLogout}
+        onGoInvoices={() => router.push('/admin/invoices')}
+        onGoFilenameGenerator={() => router.push('/admin/filename-generator')}
+        activePage="filename-generator"
+      />
 
       {/* Main Content */}
       <main id="main-content" role="main" className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">

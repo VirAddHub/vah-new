@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { MonitoringDropdown } from "@/components/admin/MonitoringDropdown";
+// MonitoringDropdown removed - using Sentry instead
 import { VAHLogo } from "@/components/VAHLogo";
 import { Clipboard, Download, LogOut, Menu, Receipt, X } from "lucide-react";
 
@@ -18,6 +18,7 @@ interface AdminHeaderProps {
   onLogout: () => void;
   onGoInvoices: () => void;
   onGoFilenameGenerator: () => void;
+  activePage?: 'invoices' | 'filename-generator' | null;
 }
 
 export function AdminHeader({
@@ -30,6 +31,7 @@ export function AdminHeader({
   onLogout,
   onGoInvoices,
   onGoFilenameGenerator,
+  activePage,
 }: AdminHeaderProps) {
   return (
     <header className="bg-card border-b border-border">
@@ -52,17 +54,27 @@ export function AdminHeader({
             </Button>
           ))}
 
-          <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-3" onClick={onGoInvoices}>
+          <Button
+            variant={activePage === 'invoices' ? "primary" : "ghost"}
+            size="sm"
+            className="gap-1.5 h-8 px-3"
+            onClick={onGoInvoices}
+          >
             <Receipt className="h-4 w-4" />
             <span className="text-sm">Invoices</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-3" onClick={onGoFilenameGenerator}>
+          <Button
+            variant={activePage === 'filename-generator' ? "primary" : "ghost"}
+            size="sm"
+            className="gap-1.5 h-8 px-3"
+            onClick={onGoFilenameGenerator}
+          >
             <Clipboard className="h-4 w-4" />
             <span className="text-sm">Filename Generator</span>
           </Button>
 
-          <MonitoringDropdown activeSection={activeSection} onSectionChange={onSelectSection} />
+          {/* Monitoring dropdown removed - using Sentry instead */}
         </nav>
 
         {/* Right Actions */}
@@ -118,7 +130,7 @@ export function AdminHeader({
             ))}
 
             <Button
-              variant="ghost"
+              variant={activePage === 'invoices' ? "primary" : "ghost"}
               size="sm"
               className="justify-start gap-2 h-8 text-xs col-span-2"
               onClick={() => {
@@ -131,7 +143,7 @@ export function AdminHeader({
             </Button>
 
             <Button
-              variant="ghost"
+              variant={activePage === 'filename-generator' ? "primary" : "ghost"}
               size="sm"
               className="justify-start gap-2 h-8 text-xs col-span-2"
               onClick={() => {
@@ -143,15 +155,7 @@ export function AdminHeader({
               <span className="truncate">Filename Generator</span>
             </Button>
 
-            <div className="col-span-2">
-              <MonitoringDropdown
-                activeSection={activeSection}
-                onSectionChange={(section) => {
-                  onSelectSection(section);
-                  setMobileMenuOpen(false);
-                }}
-              />
-            </div>
+            {/* Monitoring dropdown removed - using Sentry instead */}
           </div>
         </div>
       )}

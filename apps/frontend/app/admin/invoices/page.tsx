@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AdminHeader } from "@/components/admin/parts/AdminHeader";
+import { Users, Truck, FileText, Settings, Package } from "lucide-react";
 
 type AdminInvoiceRow = {
   id: number;
@@ -222,179 +224,221 @@ export default function AdminInvoicesPage() {
 
   if (!user) return null;
 
+  const handleLogout = () => {
+    localStorage.removeItem('vah_jwt');
+    localStorage.removeItem('vah_user');
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    router.push('/login');
+  };
+
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  const menuItems = [
+    { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+    { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
+    { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
+    { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+  ] as const;
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-background">
+      <AdminHeader
+        onNavigate={handleNavigate}
+        menuItems={menuItems}
+        activeSection=""
+        onSelectSection={(section) => {
+          if (section === 'users') router.push('/admin/dashboard?section=users');
+          else if (section === 'forwarding') router.push('/admin/dashboard?section=forwarding');
+          else if (section === 'plans') router.push('/admin/dashboard?section=plans');
+          else if (section === 'blog') router.push('/admin/dashboard?section=blog');
+          else if (section === 'settings') router.push('/admin/dashboard?section=settings');
+          else router.push('/admin/dashboard');
+        }}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        onLogout={handleLogout}
+        onGoInvoices={() => router.push('/admin/invoices')}
+        onGoFilenameGenerator={() => router.push('/admin/filename-generator')}
+        activePage="invoices"
+      />
+
+      <main id="main-content" role="main" className="p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Invoices</h1>
             <p className="text-muted-foreground">Search invoices across all customers</p>
           </div>
-          <Button variant="outline" onClick={() => router.push("/admin/dashboard")}>
-            Back to admin
-          </Button>
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Search</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">User (email or ID)</div>
-                <Input
-                  value={userQuery}
-                  onChange={(e) => {
-                    setUserQuery(e.target.value);
-                    setSelectedUser(null);
-                  }}
-                  placeholder="Search a user…"
-                />
-                {selectedUser ? (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Selected: <span className="font-medium">{selectedUser.email}</span> (ID {selectedUser.id})
-                  </div>
-                ) : null}
-                {!selectedUser && userSuggestions.length > 0 ? (
-                  <div className="mt-2 border rounded-md bg-background max-h-52 overflow-auto">
-                    {userSuggestions.slice(0, 10).map((u: any) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
-                        onClick={() => {
-                          setSelectedUser({ id: Number(u.id), email: String(u.email || "") });
-                          setUserQuery(String(u.email || u.id));
-                          setUserSuggestions([]);
-                          loadInvoices(1);
-                        }}
-                      >
-                        <div className="font-medium">{u.email || "—"}</div>
-                        <div className="text-xs text-muted-foreground">User {u.id}</div>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">User (email or ID)</div>
+                  <Input
+                    value={userQuery}
+                    onChange={(e) => {
+                      setUserQuery(e.target.value);
+                      setSelectedUser(null);
+                    }}
+                    placeholder="Search a user…"
+                  />
+                  {selectedUser ? (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Selected: <span className="font-medium">{selectedUser.email}</span> (ID {selectedUser.id})
+                    </div>
+                  ) : null}
+                  {!selectedUser && userSuggestions.length > 0 ? (
+                    <div className="mt-2 border rounded-md bg-background max-h-52 overflow-auto">
+                      {userSuggestions.slice(0, 10).map((u: any) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                          onClick={() => {
+                            setSelectedUser({ id: Number(u.id), email: String(u.email || "") });
+                            setUserQuery(String(u.email || u.id));
+                            setUserSuggestions([]);
+                            loadInvoices(1);
+                          }}
+                        >
+                          <div className="font-medium">{u.email || "—"}</div>
+                          <div className="text-xs text-muted-foreground">User {u.id}</div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Invoice number</div>
+                  <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="VAH-2025-000001" />
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">From (YYYY-MM-DD)</div>
+                  <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-01-01" />
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">To (YYYY-MM-DD)</div>
+                  <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-12-31" />
+                </div>
+                <div className="flex items-end gap-2">
+                  <Button onClick={() => loadInvoices(1)} disabled={loading}>
+                    {loading ? "Searching…" : "Search"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setUserQuery("");
+                      setUserSuggestions([]);
+                      setSelectedUser(null);
+                      setInvoiceNumber("");
+                      setFrom("");
+                      setTo("");
+                      loadInvoices(1);
+                    }}
+                    disabled={loading}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Invoice number</div>
-                <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="VAH-2025-000001" />
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">From (YYYY-MM-DD)</div>
-                <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-01-01" />
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">To (YYYY-MM-DD)</div>
-                <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-12-31" />
-              </div>
-              <div className="flex items-end gap-2">
-                <Button onClick={() => loadInvoices(1)} disabled={loading}>
-                  {loading ? "Searching…" : "Search"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setUserQuery("");
-                    setUserSuggestions([]);
-                    setSelectedUser(null);
-                    setInvoiceNumber("");
-                    setFrom("");
-                    setTo("");
-                    loadInvoices(1);
-                  }}
-                  disabled={loading}
-                >
-                  Clear
-                </Button>
-              </div>
-            </div>
 
-            {error ? <div className="text-sm text-red-600">{error}</div> : null}
-          </CardContent>
-        </Card>
+              {error ? <div className="text-sm text-red-600">{error}</div> : null}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Results{total != null ? ` (${total})` : ""}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Results{total != null ? ` (${total})` : ""}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      {loading ? "Loading…" : "No invoices found"}
-                    </TableCell>
+                    <TableHead>Invoice</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  items.map((inv) => {
-                    const created = parseDateMaybe(inv.created_at);
-                    const createdLabel = created ? created.toLocaleString("en-GB") : "—";
-                    const amount = moneyFmt.format((Number(inv.amount_pence || 0) / 100) || 0);
-                    return (
-                      <TableRow key={inv.id}>
-                        <TableCell className="font-medium">
-                          {inv.invoice_number || `Invoice #${inv.id}`}
-                          <div className="text-xs text-muted-foreground">ID: {inv.id}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{inv.email}</div>
-                          <div className="text-xs text-muted-foreground">User {inv.user_id}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={inv.status === "paid" ? "default" : "secondary"}>{inv.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{amount}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">{inv.period_start} → {inv.period_end}</div>
-                        </TableCell>
-                        <TableCell>{createdLabel}</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => router.push(`/admin/invoices/${inv.id}`)}>
-                            View
-                          </Button>
-                          <Button size="sm" onClick={() => downloadPdf(inv)}>
-                            Download PDF
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        {loading ? "Loading…" : "No invoices found"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((inv) => {
+                      const created = parseDateMaybe(inv.created_at);
+                      const createdLabel = created ? created.toLocaleString("en-GB") : "—";
+                      const amount = moneyFmt.format((Number(inv.amount_pence || 0) / 100) || 0);
+                      return (
+                        <TableRow key={inv.id}>
+                          <TableCell className="font-medium">
+                            {inv.invoice_number || `Invoice #${inv.id}`}
+                            <div className="text-xs text-muted-foreground">ID: {inv.id}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{inv.email}</div>
+                            <div className="text-xs text-muted-foreground">User {inv.user_id}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={inv.status === "paid" ? "default" : "secondary"}>{inv.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{amount}</TableCell>
+                          <TableCell>
+                            <div className="text-sm">{inv.period_start} → {inv.period_end}</div>
+                          </TableCell>
+                          <TableCell>{createdLabel}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/invoices/${inv.id}`)}>
+                              View
+                            </Button>
+                            <Button size="sm" onClick={() => downloadPdf(inv)}>
+                              Download PDF
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
 
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Page {page}
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Page {page}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => loadInvoices(page - 1)} disabled={loading || page <= 1}>
+                    Prev
+                  </Button>
+                  <Button variant="outline" onClick={() => loadInvoices(page + 1)} disabled={loading || (total != null && page * pageSize >= total)}>
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => loadInvoices(page - 1)} disabled={loading || page <= 1}>
-                  Prev
-                </Button>
-                <Button variant="outline" onClick={() => loadInvoices(page + 1)} disabled={loading || (total != null && page * pageSize >= total)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
