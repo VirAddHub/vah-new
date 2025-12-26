@@ -13,6 +13,26 @@ function errorMessage(e: unknown): string {
 }
 
 /**
+ * Public auth routes that don't require authentication and shouldn't log token verification failures
+ * These routes handle their own authentication (login, signup, etc.)
+ */
+const PUBLIC_AUTH_ROUTES = [
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/auth/reset-password/confirm',
+];
+
+/**
+ * Check if a path is a public auth route
+ */
+function isPublicAuthRoute(path: string): boolean {
+    return PUBLIC_AUTH_ROUTES.some(route => path === route || path.startsWith(route + '/'));
+}
+
+/**
  * Optional JWT authentication middleware
  * Verifies JWT token if present (from header or cookie) and attaches user to req.user
  * Does NOT require authentication - just sets req.user if valid token exists
@@ -35,7 +55,10 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
     if (!payload) {
         // Invalid or expired token - clear cookie and continue without setting req.user
-        logger.warn('[jwt] token_verification_failed', { path: req.path });
+        // Don't log warnings for public auth routes (login, signup, etc.) as invalid tokens are expected
+        if (!isPublicAuthRoute(req.path)) {
+            logger.warn('[jwt] token_verification_failed', { path: req.path });
+        }
         res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
         return next();
     }
@@ -47,7 +70,10 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 
     // If token is expired, clear cookie and continue as unauthenticated
     if (secondsLeft <= 0) {
-        logger.warn('[jwt] token_expired', { path: req.path });
+        // Don't log warnings for public auth routes (login, signup, etc.) as expired tokens are expected
+        if (!isPublicAuthRoute(req.path)) {
+            logger.warn('[jwt] token_expired', { path: req.path });
+        }
         res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
         return next();
     }
