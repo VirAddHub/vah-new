@@ -99,10 +99,11 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
 
             return () => {
                 // Cleanup: remove script if component unmounts
+                // Safely remove the element if it's still a child of document.body
                 const existingScript = document.querySelector(
                     'script[src="https://static.sumsub.com/idensic/static/sns-websdk-builder.js"]'
                 );
-                if (existingScript) {
+                if (existingScript && existingScript.parentNode === document.body) {
                     document.body.removeChild(existingScript);
                 }
             };

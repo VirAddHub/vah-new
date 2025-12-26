@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -110,9 +110,23 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
 
+  // Track previous filter values to only reset page when filters actually change
+  const prevFiltersRef = useRef({ debouncedQ, statusFilter, planFilter, kycFilter });
+  
   // Reset page when search changes (after debounce) or when filters change
+  // BUT only if the values have actually changed (not on initial mount)
   useEffect(() => {
-    onPageChange(1);
+    const prev = prevFiltersRef.current;
+    const hasChanged = 
+      prev.debouncedQ !== debouncedQ ||
+      prev.statusFilter !== statusFilter ||
+      prev.planFilter !== planFilter ||
+      prev.kycFilter !== kycFilter;
+    
+    if (hasChanged) {
+      onPageChange(1);
+      prevFiltersRef.current = { debouncedQ, statusFilter, planFilter, kycFilter };
+    }
   }, [debouncedQ, statusFilter, planFilter, kycFilter, onPageChange]);
 
   // Call onFiltersChange when any filter changes (use debounced query)

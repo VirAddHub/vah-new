@@ -134,8 +134,11 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
                                 link.download = `invoice-${invoice.invoice_no}.pdf`;
                                 document.body.appendChild(link);
                                 link.click();
-                                document.body.removeChild(link);
                                 URL.revokeObjectURL(blobUrl);
+                                // Safely remove the element if it's still a child
+                                if (link.parentNode === document.body) {
+                                    document.body.removeChild(link);
+                                }
                               } else {
                                 // Fallback to opening in new tab
                                 window.open(url, '_blank');
