@@ -29,6 +29,11 @@ type ForwardingRequest = {
   updated_at: number;
   dispatched_at?: number;
   delivered_at?: number;
+  // User information
+  user_name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
   // Real-time collaboration fields
   locked_by?: number;
   locked_by_name?: string;
@@ -47,7 +52,13 @@ interface CollaborativeForwardingBoardProps {
 }
 
 export default function CollaborativeForwardingBoard({ onDataUpdate }: CollaborativeForwardingBoardProps = {}) {
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL
+  // This ensures the same number of hooks are called on every render
+  
   const { toast } = useToast();
+  const router = useRouter();
+  
+  // State hooks - all called unconditionally
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +68,11 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   const [deletingRequest, setDeletingRequest] = useState<number | null>(null);
   const [currentAdmin, setCurrentAdmin] = useState<{ id: number; name: string } | null>(null);
   const [locks, setLocks] = useState<Map<number, AdminLock>>(new Map());
+  
+  // Context hooks - called unconditionally (will throw if context missing, which is expected)
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
-  const router = useRouter();
+  
+  // Refs - called unconditionally
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get current admin info
@@ -241,25 +255,47 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
   // Real-time polling for updates - REDUCED FREQUENCY WITH DEDUPLICATION
   useEffect(() => {
-    load();
+    let pollInterval: NodeJS.Timeout | null = null;
+    let mounted = true;
+
+    // Initial load
+    load().catch(err => {
+      if (mounted) {
+        console.error('Initial load failed:', err);
+      }
+    });
 
     // Set up polling for real-time updates - DRAMATICALLY REDUCED FREQUENCY
-    const pollInterval = setInterval(() => {
-      load();
+    pollInterval = setInterval(() => {
+      if (mounted) {
+        load().catch(err => {
+          console.error('Polling load failed:', err);
+        });
+      }
     }, 120000); // Poll every 2 minutes to prevent 429 errors
 
     return () => {
-      clearInterval(pollInterval);
+      mounted = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
-  }, []); // Remove load from dependencies to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - load is stable via useCallback dependencies
 
   // Auto-unlock requests when component unmounts
   useEffect(() => {
+    const locksRef = locks;
+    const currentAdminRef = currentAdmin;
+    
     return () => {
       // Unlock all requests locked by current admin
-      locks.forEach((lock, requestId) => {
-        if (lock.admin_id === currentAdmin?.id) {
-          unlockRequest(requestId);
+      locksRef.forEach((lock, requestId) => {
+        if (lock.admin_id === currentAdminRef?.id) {
+          // Fire and forget - don't await in cleanup
+          unlockRequest(requestId).catch(err => {
+            console.error('Failed to unlock request on unmount:', err);
+          });
         }
       });
     };
@@ -267,11 +303,18 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
   // Categorize requests for display - SIMPLIFIED 3-STAGE KANBAN
   const categorizeRequests = (requests: ForwardingRequest[]) => {
-    const filteredRequests = requests.filter(req =>
-      req.to_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      formatFRId(req.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      req.address1.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredRequests = requests.filter(req => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        (req.user_name || '').toLowerCase().includes(searchLower) ||
+        (req.first_name || '').toLowerCase().includes(searchLower) ||
+        (req.last_name || '').toLowerCase().includes(searchLower) ||
+        (req.email || '').toLowerCase().includes(searchLower) ||
+        req.to_name.toLowerCase().includes(searchLower) ||
+        formatFRId(req.id).toLowerCase().includes(searchLower) ||
+        (req.address1 || '').toLowerCase().includes(searchLower)
+      );
+    });
 
     // Simple 3-stage categorization - map all possible status values to 3 stages
     const requested = filteredRequests.filter(r => {
@@ -553,8 +596,20 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                 </div>
               </div>
 
+              {/* User name */}
+              <div className="mb-2">
+                <div className="text-xs text-muted-foreground mb-1">User:</div>
+                <div className="font-medium text-sm text-foreground">
+                  {request.user_name || 
+                   (request.first_name || request.last_name 
+                     ? `${request.first_name || ''} ${request.last_name || ''}`.trim()
+                     : request.email || `User #${request.user_id}`)}
+                </div>
+              </div>
+
               {/* Recipient info */}
               <div className="space-y-1 mb-3">
+                <div className="text-xs text-muted-foreground mb-1">Forwarding to:</div>
                 <div className="font-medium text-sm text-foreground">
                   {request.to_name || 'No name'}
                 </div>

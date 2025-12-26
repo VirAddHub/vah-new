@@ -115,7 +115,11 @@ export async function adminListForwarding(req: Request, res: Response) {
             : 'ORDER BY fr.created_at DESC';
 
         const sql = `
-      SELECT fr.*, mi.subject, mi.tag, u.email
+      SELECT fr.*, mi.subject, mi.tag, u.email, u.first_name, u.last_name,
+             COALESCE(
+               NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), ''),
+               u.email
+             ) as user_name
       FROM forwarding_request fr
       JOIN mail_item mi ON mi.id = fr.mail_item_id
       JOIN "user" u ON u.id = fr.user_id
