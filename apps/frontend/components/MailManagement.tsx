@@ -252,16 +252,13 @@ export function MailManagement({
     const handleForwardItem = useCallback(async (item: MailItem) => {
         setLoading(true);
         try {
-            const token = getToken();
-            const headers: Record<string, string> = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            };
-            if (token) headers.Authorization = `Bearer ${token}`;
-
-            const response = await fetch(`${API_BASE}/api/forwarding/requests`, {
+            // Use BFF endpoint which handles CSRF tokens automatically
+            const response = await fetch('/api/bff/forwarding/requests', {
                 method: 'POST',
-                headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
                 body: JSON.stringify({
                     mail_item_ids: [item.id],
                     notes: `Forward request for mail item ${item.id}`
@@ -520,8 +517,8 @@ export function MailManagement({
                                             type="button"
                                             onClick={() => setActiveTab(`tag:${tag}`)}
                                             className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${activeTab === `tag:${tag}`
-                                                    ? "bg-primary text-white border-primary"
-                                                    : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                                                ? "bg-primary text-white border-primary"
+                                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
                                                 }`}
                                         >
                                             {getTagLabel(tag)}

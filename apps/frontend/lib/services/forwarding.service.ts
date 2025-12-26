@@ -33,7 +33,8 @@ export const forwardingService = {
      * Get all forwarding requests for current user
      */
     async getForwardingRequests(): Promise<ForwardingRequestsResponse> {
-        const { data } = await api('/api/forwarding/requests', { method: 'GET' });
+        // Use BFF endpoint (api() helper uses /api/bff as base, so path should be /forwarding/requests)
+        const { data } = await api('/forwarding/requests', { method: 'GET' });
         console.log('[forwardingService.getForwardingRequests] api() returned data:', data);
         // Backend returns: { ok: true, data: [...], total, page } or { ok: true, items: [...] }
         // We need to return: { ok: boolean, data: ForwardingRequest[] }
@@ -58,7 +59,8 @@ export const forwardingService = {
         reason?: string;
         method?: string;
     }): Promise<{ ok: boolean; data: ForwardingRequest }> {
-        const { data } = await api('/api/forwarding/requests', {
+        // Use BFF endpoint (api() helper uses /api/bff as base, so path should be /forwarding/requests)
+        const { data } = await api('/forwarding/requests', {
             method: 'POST',
             body: JSON.stringify(request),
         });
@@ -69,7 +71,8 @@ export const forwardingService = {
      * Get a specific forwarding request
      */
     async getForwardingRequest(id: number): Promise<{ ok: boolean; data: ForwardingRequest }> {
-        const { data } = await api(`/api/forwarding/requests/${id}`, { method: 'GET' });
+        // Use BFF endpoint (api() helper uses /api/bff as base, so path should be /forwarding/requests/:id)
+        const { data } = await api(`/forwarding/requests/${id}`, { method: 'GET' });
         return data;
     },
 
@@ -77,7 +80,8 @@ export const forwardingService = {
      * Bulk forward multiple mail items
      */
     async bulkForward(ids: number[]): Promise<{ ok: boolean; forwarded: number[]; errors: any[] }> {
-        const { data } = await api('/api/forwarding/requests/bulk', { // Fixed: Correct backend path
+        // Use BFF endpoint (api() helper uses /api/bff as base, so path should be /forwarding/requests/bulk)
+        const { data } = await api('/forwarding/requests/bulk', {
             method: 'POST',
             body: JSON.stringify({ ids }),
         });

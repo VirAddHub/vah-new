@@ -532,12 +532,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     if (!selectedMailForForwarding) return;
 
     try {
-      const token = getToken();
-      const response = await fetch(`${API_BASE}/api/forwarding/requests`, {
+      // Use BFF endpoint which handles CSRF tokens automatically
+      const response = await fetch('/api/bff/forwarding/requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -547,7 +546,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         })
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (result.ok) {
         toast({
           title: "Forwarding Request Created",
           description: "Your mail forwarding request has been submitted successfully.",
@@ -561,7 +562,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         setShowForwardingConfirmation(false);
         setSelectedMailForForwarding(null);
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = result;
 
         // Handle incomplete forwarding address error
         if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {

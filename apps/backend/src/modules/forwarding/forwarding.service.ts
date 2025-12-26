@@ -200,36 +200,10 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                 tag: mailData.tag
             });
 
-            // Send email notification to user about forwarding request creation
-            // Uses Postmark template "mail-forwarded" (ID: 40508790, alias: "mail-forwarded")
-            try {
-                const userResult = await pool.query(
-                    'SELECT email, first_name, last_name FROM "user" WHERE id = $1',
-                    [userId]
-                );
-                if (userResult.rows.length > 0) {
-                    const user = userResult.rows[0];
-                    const { sendMailForwarded } = await import('../../lib/mailer');
-                    const { ENV, emailGuard } = await import('../../env');
-                    
-                    if (emailGuard(ENV.EMAIL_MAIL)) {
-                        const forwardingAddress = `${to.name}\n${to.address1}${to.address2 ? '\n' + to.address2 : ''}\n${to.city}, ${to.postal}\n${to.country}`;
-                        
-                        // Use Postmark template via sendMailForwarded function
-                        await sendMailForwarded({
-                            email: user.email,
-                            firstName: user.first_name,
-                            name: user.first_name || user.last_name,
-                            forwarding_address: forwardingAddress,
-                            forwarded_date: new Date().toLocaleDateString('en-GB'),
-                        });
-                        console.log(`[Forwarding] ✅ Email notification sent to user ${userId} for request ${forwardingRequest.id}`);
-                    }
-                }
-            } catch (emailError) {
-                console.error(`[Forwarding] ❌ Failed to send email notification for request ${forwardingRequest.id}:`, emailError);
-                // Don't fail the forwarding request if email fails
-            }
+            // NOTE: Email notification is NOT sent here when request is created
+            // Email is only sent when admin marks the request as "Dispatched" or "Delivered"
+            // This prevents duplicate emails (request created + dispatched)
+            console.log(`[Forwarding] ✅ Forwarding request ${forwardingRequest.id} created for user ${userId}. Email will be sent when dispatched.`);
 
             return {
                 forwarding_request: forwardingRequest,

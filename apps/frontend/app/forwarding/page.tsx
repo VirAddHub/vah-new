@@ -70,10 +70,10 @@ export default function ForwardingPage() {
                 setMailItems(mailData.items || []);
             }
 
-            // Load forwarding requests
-            const forwardingResponse = await fetch('/api/forwarding/requests', {
+            // Load forwarding requests - use BFF endpoint
+            const forwardingResponse = await fetch('/api/bff/forwarding/requests', {
                 headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Content-Type': 'application/json',
                 },
                 credentials: 'include',
             });
@@ -108,12 +108,11 @@ export default function ForwardingPage() {
         if (!selectedMailForForwarding) return;
 
         try {
-            const token = localStorage.getItem('vah_jwt');
-            const response = await fetch('/api/forwarding/requests', {
+            // Use BFF endpoint which handles CSRF tokens automatically
+            const response = await fetch('/api/bff/forwarding/requests', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -143,7 +142,7 @@ export default function ForwardingPage() {
                 }
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                
+
                 // Handle incomplete forwarding address error
                 if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
                     const missingFields = errorData.fields || [];
@@ -154,7 +153,7 @@ export default function ForwardingPage() {
                         'postal_code': 'Postcode',
                     };
                     const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
-                    
+
                     toast({
                         title: "Incomplete Forwarding Address",
                         description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,

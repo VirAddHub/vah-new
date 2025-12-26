@@ -368,6 +368,76 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
     }
 });
 
+// DELETE /api/admin/forwarding/requests/:id
+// Delete a forwarding request (only for completed/dispatched requests)
+router.delete('/forwarding/requests/:id', requireAdmin, adminForwardingLimiter, async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const adminId = req.user!.id;
+        const pool = getPool();
+
+        if (!id || !Number.isFinite(id)) {
+            return res.status(400).json({ ok: false, error: 'invalid_id' });
+        }
+
+        // Check if request exists and is in a deletable state (dispatched/delivered)
+        const requestResult = await pool.query(`
+            SELECT id, status, user_id, mail_item_id
+            FROM forwarding_request
+            WHERE id = $1
+        `, [id]);
+
+        if (requestResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        const request = requestResult.rows[0];
+        const status = (request.status || '').toLowerCase();
+
+        // Only allow deletion of completed requests (dispatched, delivered, cancelled)
+        if (!['dispatched', 'delivered', 'cancelled', 'completed', 'done'].includes(status)) {
+            return res.status(400).json({
+                ok: false,
+                error: 'cannot_delete',
+                message: 'Only completed forwarding requests can be deleted'
+            });
+        }
+
+        // Delete the forwarding request
+        await pool.query(`
+            DELETE FROM forwarding_request
+            WHERE id = $1
+        `, [id]);
+
+        // Log admin action
+        await pool.query(`
+            INSERT INTO admin_log (admin_user_id, action_type, target_type, target_id, details, created_at)
+            VALUES ($1, 'forwarding_deleted', 'forwarding_request', $2, $3, $4)
+        `, [
+            adminId,
+            id,
+            JSON.stringify({
+                previous_status: request.status,
+                user_id: request.user_id,
+                mail_item_id: request.mail_item_id
+            }),
+            Date.now()
+        ]);
+
+        return res.json({
+            ok: true,
+            message: 'Forwarding request deleted successfully'
+        });
+    } catch (error: any) {
+        console.error('[DELETE /api/admin/forwarding/requests/:id] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: 'database_error',
+            message: error.message
+        });
+    }
+});
+
 // Unlock route is handled by admin-forwarding-locks.ts router
 
 export default router;

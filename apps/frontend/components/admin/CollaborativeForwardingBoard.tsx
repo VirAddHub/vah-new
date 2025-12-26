@@ -7,7 +7,7 @@ import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { useAdminHeartbeat } from "@/contexts/AdminHeartbeatContext";
 import { adminApi } from "@/lib/services/http";
-import { Search, Filter, User, Clock, Lock, CheckCircle } from "lucide-react";
+import { Search, Filter, User, Clock, Lock, CheckCircle, Trash2 } from "lucide-react";
 import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
@@ -54,6 +54,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const [isAnyTransitionInProgress, setIsAnyTransitionInProgress] = useState(false);
+  const [deletingRequest, setDeletingRequest] = useState<number | null>(null);
   const [currentAdmin, setCurrentAdmin] = useState<{ id: number; name: string } | null>(null);
   const [locks, setLocks] = useState<Map<number, AdminLock>>(new Map());
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
@@ -439,6 +440,56 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     }
   };
 
+  // Delete a forwarding request (only for done requests)
+  const deleteRequest = async (requestId: number) => {
+    if (!confirm('Are you sure you want to delete this forwarding request? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingRequest(requestId);
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://vah-api-staging.onrender.com';
+      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      // Remove from local state
+      setRows(prevRows => prevRows.filter(req => req.id !== requestId));
+
+      toast({
+        title: "Request Deleted",
+        description: "Forwarding request has been deleted successfully",
+        durationMs: 3000,
+      });
+
+      // Notify parent component
+      if (onDataUpdate) {
+        const updatedRows = rows.filter(req => req.id !== requestId);
+        onDataUpdate(updatedRows);
+      }
+    } catch (error: any) {
+      console.error('Failed to delete request:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete forwarding request",
+        variant: "destructive",
+        durationMs: 5000,
+      });
+    } finally {
+      setDeletingRequest(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const normalizedStatus = status?.toLowerCase();
 
@@ -471,31 +522,44 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     const lockedByMe = isLockedByMe(request.id);
     const lockInfo = getLockInfo(request.id);
 
+    const isDone = section === 'done';
+    const isDeleting = deletingRequest === request.id;
+
     return (
       <Card
         key={request.id}
         className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' :
-          lockedByMe ? 'border-blue-200 bg-blue-50' :
-            'hover:shadow-md'
+            lockedByMe ? 'border-blue-200 bg-blue-50' :
+              isDone ? 'border-green-100 bg-green-50/30' :
+                'border-border hover:shadow-md hover:border-primary/20'
           }`}
         data-testid="forwarding-card"
         data-status={request.status}
       >
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2">
-                <span className="font-mono text-sm font-medium">{formatFRId(request.id)}</span>
-                <span className="text-sm text-muted-foreground">Mail #{request.mail_item_id}</span>
-                <span className="text-sm text-muted-foreground">User #{request.user_id}</span>
-                <span className="text-sm text-muted-foreground">
-                  {formatDateUK(request.created_at)}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Header with ID and metadata */}
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                  {formatFRId(request.id)}
                 </span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Mail #{request.mail_item_id}</span>
+                  <span>•</span>
+                  <span>User #{request.user_id}</span>
+                  <span>•</span>
+                  <span>{formatDateUK(request.created_at)}</span>
+                </div>
               </div>
-              <div className="text-sm">
-                <div className="font-medium">{request.to_name || 'No name'}</div>
+
+              {/* Recipient info */}
+              <div className="space-y-1 mb-3">
+                <div className="font-medium text-sm text-foreground">
+                  {request.to_name || 'No name'}
+                </div>
                 {request.address1 && (
-                  <div className="text-muted-foreground">
+                  <div className="text-xs text-muted-foreground leading-relaxed">
                     {request.address1}
                     {request.city && `, ${request.city} ${request.postal} ${request.country}`}
                   </div>
@@ -539,19 +603,19 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Actions */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
               {getStatusBadge(request.status)}
-              <div className="flex gap-1">
-                {/* Simple 2-button system - handle all possible status values */}
+              <div className="flex gap-1.5">
+                {/* Action buttons */}
                 {(request.status?.toLowerCase() === 'requested' || request.status?.toLowerCase() === 'request') && (
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => updateRequestStatus(request.id, 'in_progress')}
                     disabled={isDisabled || lockedByOther}
                     className={lockedByOther ? 'opacity-50' : ''}
                   >
-                    {isBusy ? '...' : 'Start Processing'}
+                    {isBusy ? '...' : 'Start'}
                   </Button>
                 )}
                 {(request.status?.toLowerCase() === 'in_progress' || request.status?.toLowerCase() === 'processing' ||
@@ -559,26 +623,35 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                   request.status?.toLowerCase() === 'review') && (
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => updateRequestStatus(request.id, 'dispatched')}
                       disabled={isDisabled || lockedByOther}
-                      className={lockedByOther ? 'opacity-50' : ''}
+                      className={lockedByOther ? 'opacity-50' : 'bg-green-600 hover:bg-green-700 text-white'}
                     >
-                      {isBusy ? '...' : 'Mark Done'}
+                      {isBusy ? '...' : 'Done'}
                     </Button>
                   )}
-                {(request.status?.toLowerCase() === 'dispatched' || request.status?.toLowerCase() === 'delivered' ||
-                  request.status?.toLowerCase() === 'shipped' || request.status?.toLowerCase() === 'completed' ||
-                  request.status?.toLowerCase() === 'complete') && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      disabled
-                    >
-                      Done ✓
-                    </Button>
-                  )}
+
+                {/* Delete button for done requests */}
+                {isDone && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteRequest(request.id);
+                    }}
+                    disabled={isDeleting}
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  >
+                    {isDeleting ? (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 animate-spin" />
+                      </span>
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -654,11 +727,26 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         {/* Done */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">Done</h3>
-            <Badge variant="outline">{done.length}</Badge>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg text-muted-foreground">Done</h3>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                {done.length}
+              </Badge>
+            </div>
+            {done.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Completed requests can be deleted to keep the board clean
+              </p>
+            )}
           </div>
           <div className="space-y-3 min-h-[200px]">
-            {done.map(request => renderRequestCard(request, 'done'))}
+            {done.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                No completed requests
+              </div>
+            ) : (
+              done.map(request => renderRequestCard(request, 'done'))
+            )}
           </div>
         </div>
       </div>

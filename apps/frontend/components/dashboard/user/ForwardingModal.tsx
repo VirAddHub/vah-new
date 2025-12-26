@@ -4,24 +4,24 @@ import { ForwardingConfirmationModal } from '@/components/ForwardingConfirmation
 import type { DashboardUserProfile, MailItem } from './types';
 
 interface ForwardingModalProps {
-  isOpen: boolean;
-  mailItem: MailItem | null;
-  userProfile: DashboardUserProfile | null;
-  onConfirm: (paymentMethod: 'monthly' | 'gocardless') => Promise<void>;
-  onClose: () => void;
+    isOpen: boolean;
+    mailItem: MailItem | null;
+    userProfile: DashboardUserProfile | null;
+    onConfirm: (paymentMethod: 'monthly' | 'gocardless') => Promise<void>;
+    onClose: () => void;
 }
 
 export function ForwardingModal({ isOpen, mailItem, userProfile, onConfirm, onClose }: ForwardingModalProps) {
-  if (!isOpen || !mailItem) return null;
-  return (
-    <ForwardingConfirmationModal
-      isOpen={isOpen}
-      onClose={onClose}
-      mailItem={mailItem}
-      userProfile={userProfile}
-      onConfirm={onConfirm}
-    />
-  );
+    if (!isOpen || !mailItem) return null;
+    return (
+        <ForwardingConfirmationModal
+            isOpen={isOpen}
+            onClose={onClose}
+            mailItem={mailItem}
+            userProfile={userProfile}
+            onConfirm={onConfirm}
+        />
+    );
 }
 
 
