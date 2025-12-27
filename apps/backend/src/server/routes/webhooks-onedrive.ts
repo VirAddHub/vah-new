@@ -488,8 +488,13 @@ router.post('/', async (req: any, res) => {
       return res.status(400).json({ ok: false, error: 'missing_itemId' });
     }
 
-    // Verify user exists
-    const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [finalUserId]);
+    // Verify user exists and get account status
+    const { rows: userRows } = await pool.query(
+      `SELECT id, email, first_name, last_name, plan_status, deleted_at,
+              (SELECT status FROM subscription WHERE user_id = "user".id LIMIT 1) as subscription_status
+       FROM "user" WHERE id = $1`,
+      [finalUserId]
+    );
     if (userRows.length === 0) {
       return res.status(404).json({
         ok: false,
@@ -500,6 +505,11 @@ router.post('/', async (req: any, res) => {
     }
 
     const user = userRows[0];
+    
+    // Check if account is cancelled or deleted
+    const isCancelled = user.plan_status === 'cancelled' || 
+                        user.subscription_status === 'cancelled' || 
+                        user.deleted_at !== null;
     const now = nowMs();
 
     // Priority:
@@ -582,13 +592,28 @@ router.post('/', async (req: any, res) => {
 
     // Send email notification to user about new mail
     try {
-      await sendMailScanned({
-        email: user.email,
-        firstName: user.first_name || "there",
-        subject: `New mail received - ${tagToTitle(tagSlug)}`,
-        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
-      });
-      console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+      if (isCancelled) {
+        // Account is cancelled - send "mail after cancellation" email
+        const { sendMailReceivedAfterCancellation } = await import('../../lib/mailer');
+        const { buildAppUrl } = await import('../../lib/mailer');
+        await sendMailReceivedAfterCancellation({
+          email: user.email,
+          firstName: user.first_name || "there",
+          name: user.first_name || user.last_name,
+          subject: `New mail received - ${tagToTitle(tagSlug)}`,
+          cta_url: buildAppUrl('/pricing'),
+        });
+        console.log('[OneDrive Webhook] Mail after cancellation email sent to:', user.email);
+      } else {
+        // Account is active - send normal "mail scanned" email
+        await sendMailScanned({
+          email: user.email,
+          firstName: user.first_name || "there",
+          subject: `New mail received - ${tagToTitle(tagSlug)}`,
+          cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
+        });
+        console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+      }
     } catch (emailError) {
       console.error('[OneDrive Webhook] Failed to send email notification:', emailError);
       // Don't fail the webhook if email fails

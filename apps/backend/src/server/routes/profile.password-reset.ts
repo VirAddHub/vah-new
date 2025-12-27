@@ -2,7 +2,7 @@ import { Router } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { generateRawToken, hashToken, verifyToken } from '../security/reset-token';
-import { sendTemplateEmail } from '../../lib/mailer';
+import { sendTemplateEmail, sendPasswordChangedConfirmation } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { ENV } from '../../env';
 import { BCRYPT_ROUNDS } from '../../config/auth';
@@ -143,7 +143,27 @@ passwordResetRouter.post('/reset-password', limiter, async (req, res) => {
     [passwordHash, matched.id]
   );
 
-  // Optional: send "password changed" notification with your existing template system
+  // Send password changed confirmation email (non-blocking)
+  try {
+    const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [matched.id]);
+    const user = userResult.rows[0];
+    if (user?.email) {
+      sendPasswordChangedConfirmation({
+        email: user.email,
+        firstName: user.first_name,
+        name: user.name,
+      }).catch((err) => {
+        logger.warn('[profile/password-reset] password_changed_email_failed_nonfatal', {
+          message: err instanceof Error ? err.message : String(err),
+        });
+      });
+    }
+  } catch (emailError) {
+    // Don't fail password reset if email fails
+    logger.warn('[profile/password-reset] password_changed_email_error', {
+      message: emailError instanceof Error ? emailError.message : String(emailError),
+    });
+  }
 
   return res.status(200).json({ ok: true, message: 'Password has been successfully reset.' });
 });

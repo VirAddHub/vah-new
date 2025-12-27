@@ -3,6 +3,8 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { sendSupportRequestReceived, sendSupportRequestClosed } from '../../lib/mailer';
+import { buildAppUrl } from '../../lib/mailer';
 
 const router = Router();
 
@@ -95,7 +97,29 @@ router.post('/tickets', requireAuth, async (req: Request, res: Response) => {
             RETURNING *
         `, [userId, subject, message, 'open', Date.now(), Date.now()]);
 
-        return res.json({ ok: true, data: result.rows[0] });
+        const ticket = result.rows[0];
+
+        // Send confirmation email to user (non-blocking)
+        try {
+            const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [userId]);
+            const user = userResult.rows[0];
+            if (user?.email) {
+                sendSupportRequestReceived({
+                    email: user.email,
+                    firstName: user.first_name,
+                    name: user.name,
+                    ticket_id: String(ticket.id),
+                    cta_url: buildAppUrl('/support'),
+                }).catch((err) => {
+                    console.error('[POST /api/support/tickets] email_send_failed_nonfatal', err);
+                });
+            }
+        } catch (emailError) {
+            // Don't fail ticket creation if email fails
+            console.error('[POST /api/support/tickets] email_error', emailError);
+        }
+
+        return res.json({ ok: true, data: ticket });
     } catch (error: any) {
         console.error('[POST /api/support/tickets] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
@@ -116,9 +140,9 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
     }
 
     try {
-        // Verify ticket belongs to user
+        // Verify ticket belongs to user and get ticket details
         const check = await pool.query(
-            'SELECT id FROM support_ticket WHERE id = $1 AND user_id = $2',
+            'SELECT id, user_id FROM support_ticket WHERE id = $1 AND user_id = $2',
             [ticketId, userId]
         );
 
@@ -130,6 +154,26 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
         await pool.query(`
             UPDATE support_ticket SET status = $1, updated_at = $2 WHERE id = $3
         `, ['closed', Date.now(), ticketId]);
+
+        // Send confirmation email to user (non-blocking)
+        try {
+            const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [userId]);
+            const user = userResult.rows[0];
+            if (user?.email) {
+                sendSupportRequestClosed({
+                    email: user.email,
+                    firstName: user.first_name,
+                    name: user.name,
+                    ticket_id: String(ticketId),
+                    cta_url: buildAppUrl('/support'),
+                }).catch((err) => {
+                    console.error('[POST /api/support/tickets/:id/close] email_send_failed_nonfatal', err);
+                });
+            }
+        } catch (emailError) {
+            // Don't fail ticket closure if email fails
+            console.error('[POST /api/support/tickets/:id/close] email_error', emailError);
+        }
 
         return res.json({ ok: true });
     } catch (error: any) {

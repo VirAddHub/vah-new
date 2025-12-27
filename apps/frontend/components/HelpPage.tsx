@@ -213,32 +213,12 @@ Please note: The address cannot be used for personal post, residential use, reta
     a: (
       <div className="space-y-3">
         <p>
-          You're free to cancel your VirtualAddressHub plan, but because this is a
-          regulated address service we handle cancellation requests manually.
+          To cancel your subscription, go to <strong>Dashboard → Billing → Cancel subscription</strong>.
+          We'll stop future billing and your address will remain active until the end of your current paid period.
         </p>
 
         <p>
-          Just <strong>email us at support@virtualaddresshub.co.uk</strong> with the subject
-          <strong> "Cancellation Request"</strong>, and include:
-        </p>
-
-        <ul className="list-disc ml-6 space-y-1">
-          <li>Your full name</li>
-          <li>Account email</li>
-          <li>Your company name (if applicable)</li>
-          <li>The date you'd like the service to end</li>
-        </ul>
-
-        <p><strong>Once processed:</strong></p>
-        <ul className="list-disc ml-6 space-y-1">
-          <li>Your plan stays active until the end of the billing period</li>
-          <li>We stop accepting new mail after your cancellation date</li>
-          <li>You can still access and download past scans for a limited time</li>
-        </ul>
-
-        <p>
-          If you're unsure or need guidance, email us — we're happy to help before
-          you decide.
+          If you have any issues cancelling, just email <strong>support@virtualaddresshub.co.uk</strong> and we'll help.
         </p>
       </div>
     ),
@@ -436,7 +416,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           'account-payment-method': `You can update your Direct Debit details any time from your dashboard under Settings → Billing. Click Update bank details and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.`,
           'account-invoices': `We generate an invoice for each successful payment. You can view and download your invoices from Dashboard → Billing & Invoices. We also email you a copy of each invoice to the email address on your account.`,
           'account-password-reset': `On the login page, click Forgot your password? and enter the email address linked to your account. We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.`,
-          'account-cancel-subscription': `You're free to cancel your VirtualAddressHub plan, but because this is a regulated address service we handle cancellation requests manually. Just email us at support@virtualaddresshub.co.uk with the subject "Cancellation Request", and include: Your full name, Account email, Your company name (if applicable), The date you'd like the service to end. Once processed: Your plan stays active until the end of the billing period, We stop accepting new mail after your cancellation date, You can still access and download past scans for a limited time. If you're unsure or need guidance, email us — we're happy to help before you decide.`,
+          'account-cancel-subscription': `To cancel your subscription, go to Dashboard → Billing → Cancel subscription. We'll stop future billing and your address will remain active until the end of your current paid period. If you have any issues cancelling, just email support@virtualaddresshub.co.uk and we'll help.`,
           'troubleshooting-mail-delay': `Most mail is scanned and uploaded to your dashboard within one working day of arriving at our office. If it has been more than two working days (Monday to Friday, excluding bank holidays) and you're expecting something important, please contact support with: Your name, Your company name (if applicable), The sender's name (if known). We'll check our internal logs and storage to locate it for you.`,
           'troubleshooting-id-rejected': `There are a few common reasons identity checks fail: The document is blurry, cropped, or partially hidden. The details on the document don't match the details on your account. The document is expired or not fully visible. The proof of address is not in your name or not accepted by our provider. In most cases you can simply try again with a clearer or different document from the same country. If you're unsure what went wrong, contact support and we'll explain what needs to be updated.`,
           'international-visa-residency': `No. You do not need a UK visa or UK residency status to hold a virtual business address with us. However, you are responsible for making sure you meet any legal or tax requirements in your home country and in the UK.`,

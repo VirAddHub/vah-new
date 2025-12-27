@@ -31,6 +31,9 @@ export const Templates = {
     MailForwarded: "mail-forwarded", // pragma: allowlist secret
     MailAfterCancellation: "mail-received-after-cancellation", // pragma: allowlist secret
 
+    // Account management
+    AccountClosed: "account-closed-data-removed", // pragma: allowlist secret - Template ID: 40508752
+
     // Companies House Verification
     // Uses Postmark template alias: ch-verification-nudge
     ChVerificationNudge: "ch-verification-nudge", // pragma: allowlist secret

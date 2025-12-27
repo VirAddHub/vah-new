@@ -49,6 +49,23 @@ router.post("/start", async (req, res) => {
       if (!applicantId) throw new Error("No applicant id from Sumsub");
 
       db.prepare("UPDATE user SET sumsub_applicant_id = ? WHERE id = ?").run(applicantId, user.id);
+
+      // Send KYC submitted email (non-blocking) - only for new applicants
+      try {
+        const { sendKycSubmitted } = require('../src/lib/mailer');
+        const { buildAppUrl } = require('../src/lib/mailer');
+        sendKycSubmitted({
+          email: user.email,
+          firstName: user.first_name,
+          name: user.first_name || user.last_name,
+          cta_url: buildAppUrl('/profile'),
+        }).catch((err) => {
+          console.error('[kyc/start] kyc_submitted_email_failed_nonfatal', err);
+        });
+      } catch (emailError) {
+        // Don't fail KYC start if email fails
+        console.error('[kyc/start] kyc_submitted_email_error', emailError);
+      }
     }
 
     // Access token for Web SDK / Mobile SDK

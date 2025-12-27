@@ -112,7 +112,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   // Track previous filter values to only reset page when filters actually change
   const prevFiltersRef = useRef({ debouncedQ, statusFilter, planFilter, kycFilter });
-  
+
   // Reset page when search changes (after debounce) or when filters change
   // BUT only if the values have actually changed (not on initial mount)
   useEffect(() => {
@@ -124,7 +124,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       prev.kycFilter !== kycFilter;
     
     if (hasChanged) {
-      onPageChange(1);
+    onPageChange(1);
       prevFiltersRef.current = { debouncedQ, statusFilter, planFilter, kycFilter };
     }
   }, [debouncedQ, statusFilter, planFilter, kycFilter, onPageChange]);

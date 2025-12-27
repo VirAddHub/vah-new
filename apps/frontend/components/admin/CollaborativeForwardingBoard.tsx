@@ -277,7 +277,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     return () => {
       mounted = false;
       if (pollInterval) {
-        clearInterval(pollInterval);
+      clearInterval(pollInterval);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -313,7 +313,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         req.to_name.toLowerCase().includes(searchLower) ||
         formatFRId(req.id).toLowerCase().includes(searchLower) ||
         (req.address1 || '').toLowerCase().includes(searchLower)
-      );
+    );
     });
 
     // Simple 3-stage categorization - map all possible status values to 3 stages

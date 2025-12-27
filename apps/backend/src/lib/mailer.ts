@@ -228,6 +228,24 @@ export async function sendPlanCancelled({ email, firstName, name, end_date, cta_
     });
 }
 
+export async function sendPlanPriceChange({ email, firstName, name, planName, oldPrice, newPrice, interval, effectiveDate, cta_url }: { email: string; firstName?: string | null; name?: string | null; planName?: string; oldPrice?: string; newPrice?: string; interval?: string; effectiveDate?: string; cta_url?: string }): Promise<void> {
+    if (!emailGuard(ENV.EMAIL_BILLING)) return;
+    await sendTemplateEmail({
+        to: email,
+        templateAlias: Templates.PlanPriceChange,
+        model: {
+            firstName,
+            name,
+            planName,
+            oldPrice,
+            newPrice,
+            interval,
+            effectiveDate,
+            billingUrl: cta_url || buildAppUrl('/billing'),
+        },
+    });
+}
+
 export async function sendInvoiceSent({ email, firstName, name, invoice_number, amount, cta_url }: { email: string; firstName?: string | null; name?: string | null; invoice_number?: string; amount?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_BILLING)) return;
     await sendTemplateEmail({
@@ -401,7 +419,8 @@ export async function sendMailReceivedAfterCancellation({ email, firstName, name
             firstName,
             name,
             subjectLine: subject || 'Mail received after cancellation',
-            ctaUrl: cta_url || buildAppUrl('/mail'),
+            restartLink: buildAppUrl('/pricing'),
+            ctaUrl: cta_url || buildAppUrl('/pricing'),
         },
     });
 }

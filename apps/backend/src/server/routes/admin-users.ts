@@ -7,6 +7,8 @@ import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { toDateOrNull, nowMs } from '../helpers/time';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
+import { Templates } from '../../lib/postmark-templates';
 
 const router = Router();
 
@@ -621,6 +623,19 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
     }
 
     try {
+        // Fetch user details BEFORE deleting (needed for email)
+        const userResult = await pool.query(`
+            SELECT id, email, first_name, last_name, name
+            FROM "user"
+            WHERE id = $1 AND deleted_at IS NULL
+        `, [userId]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const user = userResult.rows[0];
+
         // Use TimestampUtils for proper timestamp handling
         const nowTimestamp = TimestampUtils.forTableField('user', 'deleted_at');
         const nowBigint = TimestampUtils.forTableField('user', 'updated_at');
@@ -638,6 +653,24 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
             VALUES ($1, $2, $3, $4, $5)
         `, [adminId, 'delete_user', 'user', userId, auditTimestamp]);
+
+        // Send account closed email (non-blocking - don't fail if email fails)
+        try {
+            await sendTemplateEmail({
+                to: user.email,
+                templateAlias: Templates.AccountClosed,
+                templateId: 40508752, // Postmark Template ID
+                model: {
+                    firstName: user.first_name,
+                    name: user.name,
+                    email: user.email,
+                    restartLink: buildAppUrl('/pricing'),
+                },
+            });
+        } catch (emailError: any) {
+            // Log email error but don't fail the deletion
+            console.error('[DELETE /api/admin/users/:id] Failed to send account closed email:', emailError);
+        }
 
         return res.json({ ok: true });
     } catch (error: any) {

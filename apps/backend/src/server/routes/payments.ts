@@ -8,6 +8,7 @@ import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { upsertGcBillingRequestFlow } from '../db/gcBillingRequestFlow';
+import { sendPlanCancelled, buildAppUrl } from '../../lib/mailer';
 
 const router = Router();
 
@@ -104,6 +105,37 @@ router.post('/subscriptions', requireAuth, async (req: Request, res: Response) =
             SET updated_at = $1
             WHERE id = $2
         `, [Date.now(), userId]);
+
+        // Send plan cancelled email if cancelling (non-blocking)
+        if (action === 'cancel') {
+            try {
+                const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [userId]);
+                const user = userResult.rows[0];
+                if (user?.email) {
+                    // Calculate end date (end of current billing period)
+                    const subscriptionResult = await pool.query(
+                        `SELECT period_end FROM subscription WHERE user_id = $1 LIMIT 1`,
+                        [userId]
+                    );
+                    const endDate = subscriptionResult.rows[0]?.period_end
+                        ? new Date(subscriptionResult.rows[0].period_end).toLocaleDateString('en-GB')
+                        : undefined;
+
+                    sendPlanCancelled({
+                        email: user.email,
+                        firstName: user.first_name,
+                        name: user.name,
+                        end_date: endDate,
+                        cta_url: buildAppUrl('/billing'),
+                    }).catch((err) => {
+                        console.error('[POST /api/payments/subscriptions] plan_cancelled_email_failed_nonfatal', err);
+                    });
+                }
+            } catch (emailError) {
+                // Don't fail cancellation if email fails
+                console.error('[POST /api/payments/subscriptions] plan_cancelled_email_error', emailError);
+            }
+        }
 
         // TODO: Also cancel/reactivate the mandate in GoCardless API
 

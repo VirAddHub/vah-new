@@ -367,6 +367,40 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                     [paymentId, inv.id]
                 );
 
+                // Send invoice sent email (non-blocking)
+                try {
+                    const invoiceResult = await pool.query(
+                        `SELECT invoice_number, amount_pence, currency FROM invoices WHERE id = $1`,
+                        [inv.id]
+                    );
+                    const invoice = invoiceResult.rows[0];
+                    const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [inv.user_id]);
+                    const user = userResult.rows[0];
+
+                    if (user?.email && invoice) {
+                        const amount = invoice.amount_pence ? `£${(invoice.amount_pence / 100).toFixed(2)}` : '£0.00';
+                        sendInvoiceSent({
+                            email: user.email,
+                            firstName: user.first_name,
+                            name: user.name,
+                            invoice_number: invoice.invoice_number || `INV-${inv.id}`,
+                            amount,
+                            cta_url: `${process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk'}/billing`,
+                        }).catch((err) => {
+                            logger.warn('[gocardless] invoice_sent_email_failed_nonfatal', {
+                                invoiceId: inv.id,
+                                message: err instanceof Error ? err.message : String(err),
+                            });
+                        });
+                    }
+                } catch (emailError) {
+                    // Don't fail payment processing if email fails
+                    logger.warn('[gocardless] invoice_sent_email_error', {
+                        invoiceId: inv.id,
+                        message: emailError instanceof Error ? emailError.message : String(emailError),
+                    });
+                }
+
                 logger.info('[gocardless] marked invoice paid', { invoiceId: inv.id, userId: inv.user_id, paymentId: redactId(paymentId) });
                 return;
             }
@@ -453,6 +487,40 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
                  WHERE id = $2`,
                 [paymentId, invoiceResult.invoiceId]
             );
+
+            // Send invoice sent email (non-blocking)
+            try {
+                const invoiceResult2 = await pool.query(
+                    `SELECT invoice_number, amount_pence, currency FROM invoices WHERE id = $1`,
+                    [invoiceResult.invoiceId]
+                );
+                const invoice = invoiceResult2.rows[0];
+                const userResult = await pool.query('SELECT email, first_name, name FROM "user" WHERE id = $1', [userId]);
+                const user = userResult.rows[0];
+
+                if (user?.email && invoice) {
+                    const amount = invoice.amount_pence ? `£${(invoice.amount_pence / 100).toFixed(2)}` : '£0.00';
+                    sendInvoiceSent({
+                        email: user.email,
+                        firstName: user.first_name,
+                        name: user.name,
+                        invoice_number: invoice.invoice_number || `INV-${invoiceResult.invoiceId}`,
+                        amount,
+                        cta_url: `${process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk'}/billing`,
+                    }).catch((err) => {
+                        logger.warn('[gocardless] invoice_sent_email_failed_nonfatal_fallback', {
+                            invoiceId: invoiceResult.invoiceId,
+                            message: err instanceof Error ? err.message : String(err),
+                        });
+                    });
+                }
+            } catch (emailError) {
+                // Don't fail payment processing if email fails
+                logger.warn('[gocardless] invoice_sent_email_error_fallback', {
+                    invoiceId: invoiceResult.invoiceId,
+                    message: emailError instanceof Error ? emailError.message : String(emailError),
+                });
+            }
 
             logger.info('[gocardless] marked period invoice paid (fallback)', {
                 userId,

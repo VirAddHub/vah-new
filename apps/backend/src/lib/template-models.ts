@@ -261,7 +261,16 @@ const _modelBuilders: Record<string, ModelBuilder> = {
       first_name,
       name: first_name, // backward compatibility
       subject: a.subjectLine,
+      restart_link: a.restartLink ?? a.ctaUrl ?? '/pricing',
       cta_url: a.ctaUrl,
+    };
+  },
+  [Templates.AccountClosed]: (a) => {
+    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
+    return {
+      first_name,
+      name: first_name, // backward compatibility
+      restart_link: a.restartLink ?? a.ctaUrl ?? a.cta_url ?? '/pricing',
     };
   },
 

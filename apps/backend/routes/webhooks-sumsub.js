@@ -129,6 +129,23 @@ router.post('/', async (req, res) => {
     });
   }
 
+  // Send KYC rejected email if transitioning to rejected
+  const becameRejected = (kycStatus === 'rejected' || reviewAnswer === 'RED') && previousKycStatus !== 'rejected';
+  if (becameRejected) {
+    // Fire-and-forget email send
+    import('../src/lib/mailer').then(({ sendKycRejected }) => {
+      sendKycRejected({
+        email: userRow.email,
+        firstName: userRow.first_name || "there",
+        reason: rejectReason || "Verification was not approved. Please check your documents and try again.",
+      }).catch((err) => {
+        console.error('[SumsubWebhook] Failed to send KYC rejected email:', err);
+      });
+    }).catch((err) => {
+      console.error('[SumsubWebhook] Failed to import mailer for KYC rejected:', err);
+    });
+  }
+
   // Send notification to user
   notify({
     userId: userRow.id,
