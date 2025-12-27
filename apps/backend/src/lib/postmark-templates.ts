@@ -34,12 +34,6 @@ export const Templates = {
     // Account management
     AccountClosed: "account-closed-data-removed", // pragma: allowlist secret - Template ID: 40508752
 
-    // Companies House Verification
-    // Uses Postmark template alias: ch-verification-nudge
-    ChVerificationNudge: "ch-verification-nudge", // pragma: allowlist secret
-    // Uses Postmark template alias: ch-verification-reminder
-    ChVerificationReminder: "ch-verification-reminder", // pragma: allowlist secret
-
     // Quiz / Marketing
     QuizDay0: "quiz-day0", // pragma: allowlist secret - TODO: Create this template in Postmark
 } as const;

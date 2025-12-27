@@ -274,24 +274,6 @@ const _modelBuilders: Record<string, ModelBuilder> = {
     };
   },
 
-  // COMPANIES HOUSE VERIFICATION
-  [Templates.ChVerificationNudge]: (a) => {
-    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
-    return {
-      first_name,
-      name: first_name, // backward compatibility
-      cta_url: a.ctaUrl ?? a.cta_url,
-    };
-  },
-  [Templates.ChVerificationReminder]: (a) => {
-    const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
-    return {
-      first_name,
-      name: first_name, // backward compatibility
-      cta_url: a.ctaUrl ?? a.cta_url,
-    };
-  },
-
   // QUIZ / MARKETING
   [Templates.QuizDay0]: (a) => {
     const first_name = resolveFirstName({ firstName: a.firstName, name: a.name });
