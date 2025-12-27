@@ -6,6 +6,7 @@ import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 
 // Lazy load account components to avoid circular dependencies
@@ -472,10 +473,15 @@ export default function AccountPage() {
         <div className="min-h-screen flex flex-col bg-background">
             <Navigation onNavigate={() => { }} />
             <main id="main-content" role="main" className="flex-1">
-                <div className="max-w-6xl mx-auto p-6 space-y-8">
-                    <div className="flex items-center gap-3">
-                        <User className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold text-foreground">Account</h1>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                            <User className="h-8 w-8 text-primary" />
+                            <h1 className="text-3xl font-bold text-foreground">Account</h1>
+                        </div>
+                        <p className="text-muted-foreground ml-11">
+                            Manage your account settings, billing, and business information
+                        </p>
                     </div>
 
                     {/* Big banner for 500 errors */}
@@ -502,22 +508,28 @@ export default function AccountPage() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Section A - Account & Billing */}
-                        <AccountBillingCard
-                            subscription={data.subscription}
-                            onRefresh={async () => {
-                                await mutateOverview();
-                                await mutateProfile();
-                                await mutateAccount();
-                            }}
-                        />
+                    {/* Account Information Section */}
+                    <section className="space-y-6 mb-8">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Account Information</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Account & Billing */}
+                                <AccountBillingCard
+                                    subscription={data.subscription}
+                                    onRefresh={async () => {
+                                        await mutateOverview();
+                                        await mutateProfile();
+                                        await mutateAccount();
+                                    }}
+                                />
 
-                        {/* Section B - Business Contact */}
-                        <BusinessContactCard
-                            contact={data.contact}
-                            onSave={handleSaveContact}
-                        />
+                                {/* Business Contact */}
+                                <BusinessContactCard
+                                    contact={data.contact}
+                                    onSave={handleSaveContact}
+                                />
+                            </div>
+                        </div>
 
                         {/* Debug: Show what data we have (remove in production) */}
                         {process.env.NODE_ENV === 'development' && (
@@ -527,34 +539,65 @@ export default function AccountPage() {
                                 <p>Debug: contact={JSON.stringify(data.contact)}</p>
                             </div>
                         )}
-                    </div>
+                    </section>
 
-                    {/* Section C - Forwarding Address */}
-                    <ForwardingAddressCard
-                        address={data.forwarding_address || null}
-                        onSave={handleSaveAddress}
-                    />
+                    {/* Addresses Section */}
+                    <section className="space-y-6 mb-8">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Addresses</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Forwarding Address */}
+                                <ForwardingAddressCard
+                                    address={data.forwarding_address || null}
+                                    onSave={handleSaveAddress}
+                                />
 
-                    {/* Business Address (Display Only - Never Delete) */}
-                    {data.business_address && (
-                        <div className="bg-muted/50 p-4 rounded-lg border">
-                            <h3 className="font-medium mb-2">Business Address (Registered Office)</h3>
-                            <pre className="whitespace-pre-wrap text-sm font-mono text-muted-foreground">
-                                {data.business_address.formatted}
-                            </pre>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                This is your registered office address and cannot be edited here.
-                            </p>
+                                {/* Business Address (Display Only) */}
+                                {data.business_address ? (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Business Address</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                This is your registered office address and cannot be edited here.
+                                            </p>
+                                            <div className="p-4 bg-muted/50 rounded-lg border">
+                                                <pre className="whitespace-pre-wrap text-sm font-mono text-foreground">
+                                                    {data.business_address.formatted}
+                                                </pre>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Business Address</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground">
+                                                Your registered office address will appear here once configured.
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </section>
 
-                    {/* Section D - Business Owners (PSC) */}
-                    <OwnersCard
-                        owners={data.owners || []}
-                    />
+                    {/* Business Details Section */}
+                    <section className="space-y-6">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Business Details</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Business Owners */}
+                                <OwnersCard owners={data.owners || []} />
 
-                    {/* Section E - Invoices */}
-                    <InvoicesCard invoices={data.invoices || []} />
+                                {/* Invoices */}
+                                <InvoicesCard invoices={data.invoices || []} />
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </main>
             <Footer />
