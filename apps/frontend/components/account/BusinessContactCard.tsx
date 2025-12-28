@@ -20,7 +20,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const [contact, setContact] = useState<BusinessContactInfo>(initialContact);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // Email change dialog state
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -44,7 +44,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   useEffect(() => {
     setContact(initialContact);
     setHasChanges(false); // Reset changes flag when prop updates
-    
+
     // Clear pending email if the email has been confirmed (email changed in backend)
     if (pendingEmail && initialContact.email && initialContact.email === pendingEmail) {
       setPendingEmail(null);
@@ -105,7 +105,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
         setIsEmailDialogOpen(false);
         setNewEmail('');
         setConfirmEmail('');
-        
+
         // Store pending email for UI display
         setPendingEmail(newEmail);
 
@@ -154,9 +154,9 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
       };
       await onSave(payload);
       setHasChanges(false);
-      
+
       const phoneChanged = contact.phone !== initialContact.phone;
-      
+
       if (phoneChanged) {
         toast({
           title: "Saved",
@@ -186,22 +186,41 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
             <Lock className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Locked for verification</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name" className="flex items-center gap-2">
-                Full legal first name <span className="text-destructive">*</span>
-                <Badge variant="outline" className="text-xs">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Locked
-                </Badge>
-              </Label>
-              <Input
-                id="first_name"
-                value={contact.first_name}
-                disabled
-                placeholder="John"
-                className="bg-muted"
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name" className="flex items-center gap-2">
+                  Full legal first name <span className="text-destructive">*</span>
+                  <Badge variant="outline" className="text-xs">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Locked
+                  </Badge>
+                </Label>
+                <Input
+                  id="first_name"
+                  value={contact.first_name}
+                  disabled
+                  placeholder="John"
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_name" className="flex items-center gap-2">
+                  Full legal last name(s) <span className="text-destructive">*</span>
+                  <Badge variant="outline" className="text-xs">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Locked
+                  </Badge>
+                </Label>
+                <Input
+                  id="last_name"
+                  value={contact.last_name}
+                  disabled
+                  placeholder="Smith"
+                  className="bg-muted"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -217,23 +236,6 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 value={contact.middle_names || ''}
                 disabled
                 placeholder="James"
-                className="bg-muted"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="last_name" className="flex items-center gap-2">
-                Full legal last name(s) <span className="text-destructive">*</span>
-                <Badge variant="outline" className="text-xs">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Locked
-                </Badge>
-              </Label>
-              <Input
-                id="last_name"
-                value={contact.last_name}
-                disabled
-                placeholder="Smith"
                 className="bg-muted"
               />
             </div>
