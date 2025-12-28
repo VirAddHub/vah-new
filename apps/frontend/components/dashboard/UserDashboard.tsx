@@ -43,6 +43,13 @@ import { MailList } from "@/components/dashboard/user/MailList";
 import { MailDetail } from "@/components/dashboard/user/MailDetail";
 import { ForwardingModal } from "@/components/dashboard/user/ForwardingModal";
 import type { MailItem } from "@/components/dashboard/user/types";
+import dynamic from 'next/dynamic';
+
+// Lazy load Sumsub widget to avoid SSR issues
+const SumsubKycWidget = dynamic(
+  () => import('@/app/(dashboard)/account/SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })),
+  { ssr: false }
+);
 
 interface UserDashboardProps {
   onLogout: () => void;
@@ -779,6 +786,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               showIdentitySuccessBanner={showIdentitySuccessBanner}
               onNavigate={onNavigate}
             />
+
+            {/* KYC Verification Widget - Show if not approved */}
+            {(!compliance.isKycApproved || userProfile?.kyc_status === 'pending' || userProfile?.kyc_status === null) && (
+              <Card className="border-primary/20 bg-primary/5 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">Complete Identity Verification</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Verify your identity to fully activate your VirtualAddressHub account and access all features.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <SumsubKycWidget />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Mail Inbox Section */}
             <Card className="border-neutral-200 shadow-sm order-1 md:order-2">

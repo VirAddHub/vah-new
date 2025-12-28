@@ -15,6 +15,7 @@ const BusinessContactCard = dynamic(() => import('@/components/account/BusinessC
 const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(mod => ({ default: mod.ForwardingAddressCard })), { ssr: false });
 const OwnersCard = dynamic(() => import('@/components/account/OwnersCard').then(mod => ({ default: mod.OwnersCard })), { ssr: false });
 const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(mod => ({ default: mod.InvoicesCard })), { ssr: false });
+const SumsubKycWidget = dynamic(() => import('./SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 import { AccountPageData, BusinessContactInfo, Address, BusinessOwner, InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
@@ -582,6 +583,21 @@ export default function AccountPage() {
                                     </Card>
                                 )}
                             </div>
+                        </div>
+                    </section>
+
+                    {/* Identity Verification Section */}
+                    <section className="space-y-6 mb-8">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Identity Verification</h2>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>KYC Verification</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <SumsubKycWidget />
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 
