@@ -7,10 +7,19 @@ type SumsubTokenResponse = {
 };
 
 async function fetchSumsubToken(): Promise<string> {
+  // Debug: Check if cookies are available
+  if (typeof document !== 'undefined') {
+    const cookies = document.cookie;
+    console.log('[SumsubKycWidget] Cookies available:', cookies ? 'Yes' : 'No', cookies);
+  }
+
   const res = await fetch("/api/bff/kyc/sumsub-token", {
     method: "GET",
-    credentials: "include",
+    credentials: "include", // This should send cookies automatically
     cache: "no-store",
+    headers: {
+      // Don't manually set cookies - let browser handle it via credentials: "include"
+    },
   });
 
   const text = await res.text();
