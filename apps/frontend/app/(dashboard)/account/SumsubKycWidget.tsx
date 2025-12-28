@@ -53,9 +53,12 @@ export function SumsubKycWidget() {
         .withConf({
           lang: "en",
         })
-        .on("onError", (error: unknown) => {
+        .on("idCheck.onError", (error: unknown) => {
           console.error("Sumsub onError", error);
           setError("Something went wrong with identity verification. Please try again.");
+        })
+        .on("idCheck.onReady", () => {
+          console.log("Sumsub ready");
         })
         .onMessage((type: string, payload: unknown) => {
           console.log("Sumsub onMessage", type, payload);
