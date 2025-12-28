@@ -13,21 +13,37 @@ async function fetchSumsubToken(): Promise<string> {
     cache: "no-store",
   });
 
+  const text = await res.text();
+
+  let data: any;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
+    console.error("Sumsub token fetch failed", res.status, data);
+    
+    // Handle specific error cases
     if (res.status === 401 || res.status === 403) {
+      const errorMsg = data?.error || data?.details?.message || "Authentication required";
+      if (errorMsg.includes("already") || errorMsg.includes("complete") || errorMsg.includes("approved")) {
+        throw new Error("KYC already complete");
+      }
       throw new Error("Please log in to start verification");
     }
-    throw new Error(errorData.message || `Failed to fetch Sumsub access token (${res.status})`);
-  }
 
-  const data = (await res.json()) as SumsubTokenResponse;
+    // Return detailed error message from backend
+    const errorMsg = data?.error || data?.details?.message || `Failed to fetch Sumsub access token (status ${res.status})`;
+    throw new Error(errorMsg);
+  }
 
   if (!data.token) {
-    throw new Error("No token field in Sumsub token response");
+    throw new Error(data?.error || "No token field in Sumsub token response");
   }
 
-  return data.token;
+  return data.token as string;
 }
 
 export function SumsubKycWidget() {
@@ -35,6 +51,7 @@ export function SumsubKycWidget() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [alreadyComplete, setAlreadyComplete] = useState(false);
 
   const startVerification = useCallback(async () => {
     try {
@@ -80,11 +97,15 @@ export function SumsubKycWidget() {
       setStarted(true);
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to start identity verification. Please try again."
-      );
+      const errorMessage = err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
+      
+      // Check if KYC is already complete
+      if (errorMessage.includes("already complete") || errorMessage.includes("already approved")) {
+        setAlreadyComplete(true);
+        setError(null); // Don't show error for already complete
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -131,6 +152,14 @@ export function SumsubKycWidget() {
         )}
       </div>
 
+      {alreadyComplete && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+            ✓ Identity verification already complete
+          </p>
+        </div>
+      )}
+
       {error && (
         <p className="text-sm text-destructive">
           {error}
@@ -138,10 +167,12 @@ export function SumsubKycWidget() {
       )}
 
       {/* Container for Sumsub WebSDK */}
-      <div
-        id="sumsub-websdk-container"
-        className="mt-2 min-h-[420px] rounded-lg border border-dashed border-border bg-card"
-      />
+      {!alreadyComplete && (
+        <div
+          id="sumsub-websdk-container"
+          className="mt-2 min-h-[420px] rounded-lg border border-dashed border-border bg-card"
+        />
+      )}
     </div>
   );
 }

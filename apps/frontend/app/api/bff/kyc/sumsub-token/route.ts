@@ -11,131 +11,121 @@ export const dynamic = 'force-dynamic';
  * Returns: { token: string }
  */
 export async function GET(req: NextRequest) {
+  const routePath = '/api/bff/kyc/sumsub-token';
+  let backendUrl = '';
+
   try {
+    const cookie = req.headers.get('cookie') || '';
     const backend = getBackendOrigin();
-    const backendUrl = `${backend}/api/kyc/start`;
-
-    // Forward cookies for authentication
-    const cookieHeader = req.headers.get('cookie') || '';
-
-    // If no cookies, return 401 (not authenticated)
-    if (!cookieHeader) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "not_authenticated",
-          message: "Authentication required. Please log in.",
-        },
-        { status: 401 },
-      );
-    }
+    backendUrl = `${backend}/api/kyc/start`;
 
     const backendRes = await fetch(backendUrl, {
       method: 'POST',
       headers: {
-        accept: 'application/json',
+        'Cookie': cookie,
         'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
       },
-      credentials: 'include',
-      cache: 'no-store', // Never cache auth-related requests
+      cache: 'no-store', // Never cache backend requests
     });
 
-    const contentType = backendRes.headers.get("content-type") || "";
+    const status = backendRes.status;
+    const text = await backendRes.text();
+    const textPreview = text.substring(0, 300);
 
-    if (!contentType.includes("application/json")) {
-      const text = await backendRes.text().catch(() => "");
-      console.error(
-        "[bff/kyc/sumsub-token] Expected JSON but got:",
-        text.slice(0, 200),
-      );
+    // Log backend response for debugging
+    console.error(`[BFF kyc/sumsub-token] Backend response: ${status} from ${backendUrl}, body preview: ${textPreview}`);
 
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "invalid_backend_response",
-          message: "KYC service returned unexpected data.",
-        },
-        { status: 502 },
-      );
-    }
-
-    let json: any;
-    try {
-      json = await backendRes.json();
-    } catch (err) {
-      console.error("[bff/kyc/sumsub-token] JSON parse error:", err);
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "invalid_json",
-          message: "KYC service returned invalid JSON.",
-        },
-        { status: 502 },
-      );
-    }
-
-    // If backend returned non-2xx, forward the error
-    if (!backendRes.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: json?.error || "backend_error",
-          message: json?.message || `Backend returned ${backendRes.status}`,
-        },
-        { 
-          status: backendRes.status,
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
+    // Attempt JSON parse only if content looks like JSON
+    let json: any = null;
+    const contentType = backendRes.headers.get('content-type') || '';
+    const looksLikeJson = contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[');
+    
+    if (looksLikeJson && text.trim().length > 0) {
+      try {
+        json = JSON.parse(text);
+      } catch (parseError) {
+        console.error(`[BFF kyc/sumsub-token] JSON parse failed for ${status} response:`, parseError);
+        return NextResponse.json(
+          { 
+            error: 'BACKEND_NON_JSON',
+            status,
+            details: { 
+              code: 'BACKEND_NON_JSON', 
+              body: textPreview 
+            }
           },
+          { status: 502 }
+        );
+      }
+    }
+
+    // If backend status is not 2xx, return backend error with full details
+    if (status < 200 || status >= 300) {
+      return NextResponse.json(
+        { 
+          error: json?.error || json?.message || 'BACKEND_ERROR',
+          status,
+          details: json || { raw: textPreview }
         },
+        { status: status } // Forward the backend status code
       );
     }
 
-    // Extract token from response
-    if (!json.ok || !json.token) {
+    // Backend is 2xx - extract token
+    const token = json?.token;
+
+    if (!token) {
       return NextResponse.json(
         {
-          ok: false,
-          error: json.error || "no_token",
-          message: json.message || "Failed to get Sumsub access token.",
+          error: 'NO_TOKEN',
+          status: 500,
+          details: {
+            message: 'No token returned from backend /api/kyc/start',
+            backendResponse: json || { raw: textPreview }
+          }
         },
-        { 
-          status: backendRes.status,
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-          },
-        },
+        { status: 500 }
       );
     }
 
     // Return just the token as expected by the WebSDK
     return NextResponse.json(
-      { token: json.token }, 
-      { 
+      { token },
+      {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     );
   } catch (error: any) {
+    // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error('[BFF kyc/sumsub-token] Server misconfigured:', error.message);
+      console.error(`[BFF kyc/sumsub-token] Server misconfigured: ${error.message}`);
       return NextResponse.json(
-        { ok: false, error: 'Server misconfigured', details: error.message },
+        { 
+          error: 'SERVER_MISCONFIGURED',
+          status: 500,
+          details: { message: error.message }
+        },
         { status: 500 }
       );
     }
-    console.error("[bff/kyc/sumsub-token] Network error:", error);
+    console.error(`[BFF kyc/sumsub-token] Exception in route ${routePath}:`, error);
+    console.error(`[BFF kyc/sumsub-token] Backend URL was: ${backendUrl}`);
+    console.error(`[BFF kyc/sumsub-token] Error stack:`, error?.stack);
     return NextResponse.json(
-      {
-        ok: false,
-        error: "backend_unreachable",
-        message: "Unable to reach KYC service.",
+      { 
+        error: 'BFF_EXCEPTION',
+        status: 500,
+        details: {
+          message: error?.message,
+          route: routePath
+        }
       },
-      { status: 502 },
+      { status: 500 }
     );
   }
 }
-
