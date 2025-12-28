@@ -19,12 +19,58 @@ export async function GET(req: NextRequest) {
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/kyc/start`;
 
+    // Build headers for backend request
+    const headers = new Headers();
+    headers.set('Cookie', cookie);
+    headers.set('Content-Type', 'application/json');
+
+    // CSRF: Extract token from cookie and add to header
+    // Backend expects X-CSRF-Token header to match vah_csrf_token cookie
+    let csrfToken: string | null = null;
+    if (cookie) {
+      const m = cookie.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
+      if (m?.[1]) {
+        try {
+          csrfToken = decodeURIComponent(m[1]);
+        } catch {
+          csrfToken = m[1];
+        }
+      }
+    }
+
+    // If CSRF token is missing, fetch it first by making a GET request to ensure token cookie is set
+    if (!csrfToken) {
+      // No CSRF token in cookie - make a GET request first to get the token
+      try {
+        const csrfResponse = await fetch(`${backend}/api/auth/whoami`, {
+          method: 'GET',
+          headers: { 'Cookie': cookie },
+          cache: 'no-store',
+        });
+        // Extract CSRF token from Set-Cookie header in response
+        const setCookieHeader = csrfResponse.headers.get('set-cookie');
+        if (setCookieHeader) {
+          const csrfMatch = setCookieHeader.match(/vah_csrf_token=([^;]+)/);
+          if (csrfMatch?.[1]) {
+            csrfToken = decodeURIComponent(csrfMatch[1]);
+            // Also update the cookie string for the POST request
+            const updatedCookie = cookie ? `${cookie}; vah_csrf_token=${csrfToken}` : `vah_csrf_token=${csrfToken}`;
+            headers.set('Cookie', updatedCookie);
+          }
+        }
+      } catch (csrfError) {
+        console.warn(`[${routePath}] Failed to fetch CSRF token, proceeding without it:`, csrfError);
+      }
+    }
+
+    // Add CSRF token to header if we have it
+    if (csrfToken) {
+      headers.set('x-csrf-token', csrfToken);
+    }
+
     const backendRes = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
-        'Cookie': cookie,
-        'Content-Type': 'application/json',
-      },
+      headers,
       cache: 'no-store', // Never cache backend requests
     });
 
