@@ -24,7 +24,7 @@ async function fetchSumsubToken(): Promise<string> {
 
   if (!res.ok) {
     console.error("Sumsub token fetch failed", res.status, data);
-    
+
     // Handle specific error cases
     if (res.status === 401 || res.status === 403) {
       const errorMsg = data?.error || data?.details?.message || "Authentication required";
@@ -98,7 +98,7 @@ export function SumsubKycWidget() {
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
-      
+
       // Check if KYC is already complete
       if (errorMessage.includes("already complete") || errorMessage.includes("already approved")) {
         setAlreadyComplete(true);
