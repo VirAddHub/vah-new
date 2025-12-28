@@ -10,10 +10,15 @@ async function fetchSumsubToken(): Promise<string> {
   const res = await fetch("/api/bff/kyc/sumsub-token", {
     method: "GET",
     credentials: "include",
+    cache: "no-store",
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch Sumsub access token");
+    const errorData = await res.json().catch(() => ({}));
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("Please log in to start verification");
+    }
+    throw new Error(errorData.message || `Failed to fetch Sumsub access token (${res.status})`);
   }
 
   const data = (await res.json()) as SumsubTokenResponse;
