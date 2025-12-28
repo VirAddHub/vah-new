@@ -5,6 +5,34 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic';
 
+// CSRF token names (matching backend middleware)
+const CSRF_COOKIE_NAME = "vah_csrf_token";
+const CSRF_HEADER_NAME = "x-csrf-token";
+
+/**
+ * Parse cookie header string into key-value object
+ * Handles URL-encoded values and multiple cookies
+ */
+function parseCookies(header: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (!header) return result;
+
+  const parts = header.split(";");
+  for (const part of parts) {
+    const [name, ...rest] = part.split("=");
+    if (!name) continue;
+    const key = name.trim();
+    const value = rest.join("=").trim();
+    if (!key) continue;
+    try {
+      result[key] = decodeURIComponent(value);
+    } catch {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 /**
  * GET /api/bff/kyc/sumsub-token
  * Fetches a Sumsub access token for the WebSDK
@@ -15,36 +43,28 @@ export async function GET(req: NextRequest) {
   let backendUrl = '';
 
   try {
-    const cookie = req.headers.get('cookie') || '';
+    // Get raw cookie header from browser request
+    const rawCookieHeader = req.headers.get('cookie') || '';
+    
+    // Parse cookies to extract CSRF token
+    const cookies = parseCookies(rawCookieHeader);
+    const csrfToken = cookies[CSRF_COOKIE_NAME] || '';
+
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/kyc/start`;
 
     // Build headers for backend request
     const headers = new Headers();
-    headers.set('Cookie', cookie);
+    headers.set('Cookie', rawCookieHeader);
     headers.set('Content-Type', 'application/json');
 
-    // CSRF: Extract token from cookie and add to header
-    // Backend expects X-CSRF-Token header to match vah_csrf_token cookie
-    let csrfToken: string | null = null;
-    if (cookie) {
-      const m = cookie.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
-      if (m?.[1]) {
-        try {
-          csrfToken = decodeURIComponent(m[1]);
-        } catch {
-          csrfToken = m[1];
-        }
-      }
-    }
-
-    // If CSRF token is missing, fetch it first by making a GET request to ensure token cookie is set
-    if (!csrfToken) {
-      // No CSRF token in cookie - make a GET request first to get the token
+    // If CSRF token is missing, try to fetch it first
+    let finalCsrfToken = csrfToken;
+    if (!finalCsrfToken) {
       try {
         const csrfResponse = await fetch(`${backend}/api/auth/whoami`, {
           method: 'GET',
-          headers: { 'Cookie': cookie },
+          headers: { 'Cookie': rawCookieHeader },
           cache: 'no-store',
         });
         // Extract CSRF token from Set-Cookie header in response
@@ -52,9 +72,11 @@ export async function GET(req: NextRequest) {
         if (setCookieHeader) {
           const csrfMatch = setCookieHeader.match(/vah_csrf_token=([^;]+)/);
           if (csrfMatch?.[1]) {
-            csrfToken = decodeURIComponent(csrfMatch[1]);
-            // Also update the cookie string for the POST request
-            const updatedCookie = cookie ? `${cookie}; vah_csrf_token=${csrfToken}` : `vah_csrf_token=${csrfToken}`;
+            finalCsrfToken = decodeURIComponent(csrfMatch[1]);
+            // Update cookie header with CSRF token
+            const updatedCookie = rawCookieHeader 
+              ? `${rawCookieHeader}; vah_csrf_token=${finalCsrfToken}` 
+              : `vah_csrf_token=${finalCsrfToken}`;
             headers.set('Cookie', updatedCookie);
           }
         }
@@ -64,8 +86,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Add CSRF token to header if we have it
-    if (csrfToken) {
-      headers.set('x-csrf-token', csrfToken);
+    if (finalCsrfToken) {
+      headers.set(CSRF_HEADER_NAME, finalCsrfToken);
     }
 
     const backendRes = await fetch(backendUrl, {
@@ -85,7 +107,7 @@ export async function GET(req: NextRequest) {
     let json: any = null;
     const contentType = backendRes.headers.get('content-type') || '';
     const looksLikeJson = contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[');
-
+    
     if (looksLikeJson && text.trim().length > 0) {
       try {
         json = JSON.parse(text);
