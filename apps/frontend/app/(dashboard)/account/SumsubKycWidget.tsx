@@ -34,9 +34,14 @@ async function fetchSumsubToken(): Promise<string> {
   if (!res.ok) {
     console.error("Sumsub token fetch failed", res.status, data);
 
+    // Handle "Sumsub not configured" (501)
+    if (res.status === 501 || data?.code === 'SUMSUB_NOT_CONFIGURED' || data?.data?.code === 'SUMSUB_NOT_CONFIGURED') {
+      throw new Error("SUMSUB_NOT_CONFIGURED");
+    }
+
     // Handle specific error cases
     if (res.status === 401 || res.status === 403) {
-      const errorMsg = data?.error || data?.details?.message || "Authentication required";
+      const errorMsg = data?.error || data?.data?.error || data?.details?.message || "Authentication required";
       if (errorMsg.includes("already") || errorMsg.includes("complete") || errorMsg.includes("approved")) {
         throw new Error("KYC already complete");
       }
@@ -44,7 +49,7 @@ async function fetchSumsubToken(): Promise<string> {
     }
 
     // Return detailed error message from backend
-    const errorMsg = data?.error || data?.details?.message || `Failed to fetch Sumsub access token (status ${res.status})`;
+    const errorMsg = data?.error || data?.data?.error || data?.data?.message || data?.details?.message || `Failed to fetch Sumsub access token (status ${res.status})`;
     throw new Error(errorMsg);
   }
 
@@ -61,6 +66,7 @@ export function SumsubKycWidget() {
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [alreadyComplete, setAlreadyComplete] = useState(false);
+  const [notConfigured, setNotConfigured] = useState(false);
 
   const startVerification = useCallback(async () => {
     try {
@@ -108,8 +114,13 @@ export function SumsubKycWidget() {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
 
+      // Check if Sumsub is not configured
+      if (errorMessage === "SUMSUB_NOT_CONFIGURED") {
+        setNotConfigured(true);
+        setError(null); // Don't show error, show info message instead
+      }
       // Check if KYC is already complete
-      if (errorMessage.includes("already complete") || errorMessage.includes("already approved")) {
+      else if (errorMessage.includes("already complete") || errorMessage.includes("already approved")) {
         setAlreadyComplete(true);
         setError(null); // Don't show error for already complete
       } else {
@@ -127,6 +138,7 @@ export function SumsubKycWidget() {
     }
     setStarted(false);
     setError(null);
+    setNotConfigured(false);
   }, []);
 
   return (
@@ -161,6 +173,17 @@ export function SumsubKycWidget() {
         )}
       </div>
 
+      {notConfigured && (
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+            ⚠️ Identity verification is currently unavailable
+          </p>
+          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+            KYC verification will be available once Sumsub is configured. Please contact support if you need assistance.
+          </p>
+        </div>
+      )}
+
       {alreadyComplete && (
         <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
           <p className="text-sm text-green-800 dark:text-green-200 font-medium">
@@ -170,13 +193,15 @@ export function SumsubKycWidget() {
       )}
 
       {error && (
-        <p className="text-sm text-destructive">
-          {error}
-        </p>
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive font-medium">
+            {error}
+          </p>
+        </div>
       )}
 
       {/* Container for Sumsub WebSDK */}
-      {!alreadyComplete && (
+      {!alreadyComplete && !notConfigured && (
         <div
           id="sumsub-websdk-container"
           className="mt-2 min-h-[420px] rounded-lg border border-dashed border-border bg-card"
