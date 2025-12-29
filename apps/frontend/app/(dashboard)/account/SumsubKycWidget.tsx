@@ -151,7 +151,7 @@ export function SumsubKycWidget() {
       </div>
 
       <div className="flex items-center gap-3">
-        {!started && (
+        {!started && !notConfigured && (
           <button
             type="button"
             onClick={startVerification}
