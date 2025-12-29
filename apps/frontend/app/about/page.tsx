@@ -118,7 +118,7 @@ export default function AboutPage() {
                             <ul className="space-y-4 text-lg">
                                 <li className="flex items-start">
                                     <span className="text-primary mr-3">✓</span>
-                                    <span><strong>ICO Registered:</strong> Fully compliant with UK data protection regulations</span>
+                                    <span><strong>ICO Registered:</strong> ZC051808 - Fully compliant with UK data protection regulations</span>
                                 </li>
                                 <li className="flex items-start">
                                     <span className="text-primary mr-3">✓</span>

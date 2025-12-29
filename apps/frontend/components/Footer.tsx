@@ -201,7 +201,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             </div>
                             <div>
                                 <span className="font-medium text-foreground">ICO:</span>{" "}
-                                <span>[INSERT ICO]</span>
+                                <span>ICO Registered: ZC051808</span>
                             </div>
                         </div>
                     </div>

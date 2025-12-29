@@ -22,7 +22,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
             <br />
             <strong>Company number:</strong> [INSERT COMPANY NUMBER]
             <br />
-            <strong>ICO registration number:</strong> [INSERT ICO NUMBER]
+            <strong>ICO registration number:</strong> ICO Registration Number: ZC051808
             <br />
             <strong>HMRC AML supervision number:</strong> [INSERT HMRC AML NUMBER]
             <br />
