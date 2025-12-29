@@ -102,7 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     setAuthInitialized(true);
                     return;
                 }
-                console.log('🔍 AuthContext Init - Making whoami call with token:', token.substring(0, 20) + '...');
+                console.log('🔍 AuthContext Init - Token present:', token ? token.slice(0, 10) + '...' : 'none');
                 const res = await fetch(apiUrl('auth/whoami'), {
                     headers: { Authorization: `Bearer ${token}` },
                     credentials: 'include',

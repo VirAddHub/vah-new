@@ -194,7 +194,7 @@ export const apiClient = {
         const userObj = (resp.ok ? (resp.data as any)?.data?.user : null) as any;
 
         if (resp.ok && token) {
-            console.log('🔑 TOKEN DEBUG - Storing token:', token.substring(0, 50) + '...');
+            console.log('🔑 TOKEN DEBUG - Storing token:', token ? token.slice(0, 10) + '...' : 'none');
             setToken(token);
             console.log('✅ JWT token stored successfully in localStorage');
 
@@ -207,7 +207,7 @@ export const apiClient = {
             // Verify token was stored
             const storedToken = getToken();
             console.log('🔍 TOKEN DEBUG - Verification - stored token exists:', !!storedToken);
-            console.log('🔍 TOKEN DEBUG - Stored token matches:', storedToken === token);
+            console.log('🔍 TOKEN DEBUG - Stored token matches:', storedToken === token ? 'yes' : 'no');
 
             // Sanity check: verify token works with whoami
             try {
