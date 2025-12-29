@@ -8,8 +8,27 @@ const { db } = require('../server/db');
 
 /**
  * POST /api/kyc/start
- * Body: none (uses session user), or { userId } for admin testing
- * Returns: { ok: true, token, applicantId }
+ * 
+ * Start KYC verification process using Sumsub WebSDK.
+ * 
+ * SETUP REQUIRED:
+ * This endpoint requires Sumsub credentials to be configured as environment variables:
+ * - SUMSUB_APP_TOKEN: Your Sumsub application token (required)
+ * - SUMSUB_SECRET_KEY: Your Sumsub secret key (required, or use SUMSUB_APP_SECRET for backward compatibility)
+ * - SUMSUB_LEVEL_NAME: KYC level name (optional, defaults to "basic-kyc")
+ * - SUMSUB_BASE_URL: Sumsub API base URL (optional, defaults to "https://api.sumsub.com")
+ * 
+ * Without these credentials, the endpoint returns 501 "Sumsub not configured".
+ * 
+ * To configure:
+ * 1. Create a Sumsub account at https://sumsub.com
+ * 2. Get your App Token and Secret Key from Sumsub dashboard
+ * 3. Add them as environment variables in Render (or .env for local)
+ * 4. Redeploy the backend service
+ * 
+ * Body: none (uses session user from JWT middleware)
+ * Returns: { ok: true, token: "sumsub_web_sdk_token", applicantId: "..." }
+ * Errors: 501 if not configured, 404 if user not found, 500 on server error
  */
 router.post("/start", async (req, res) => {
   try {
