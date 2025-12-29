@@ -19,15 +19,32 @@ router.post("/start", async (req, res) => {
     const user = db.prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?").get(userId);
     if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
 
-    const levelName = process.env.SUMSUB_LEVEL || "basic-kyc";
-
     // Check if Sumsub credentials are configured
-    if (!process.env.SUMSUB_APP_TOKEN || !process.env.SUMSUB_APP_SECRET) {
-      return res.json({
-        ok: true,
-        token: "dev_token_" + Date.now(),
-        applicantId: "dev_applicant_" + user.id,
-        message: "Development mode - Sumsub credentials not configured"
+    // Support both old (SUMSUB_APP_SECRET) and new (SUMSUB_SECRET_KEY) env var names
+    const appToken = process.env.SUMSUB_APP_TOKEN;
+    const appSecret = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY;
+    const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || "basic-kyc";
+    const baseUrl = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || "https://api.sumsub.com";
+
+    if (!appToken || !appSecret) {
+      console.error('[kyc/start] Sumsub not configured', {
+        hasAppToken: !!appToken,
+        hasAppSecret: !!appSecret,
+        hasLevelName: !!levelName,
+        hasBaseUrl: !!baseUrl,
+      });
+      return res.status(501).json({
+        ok: false,
+        status: 501,
+        error: 'Sumsub not configured',
+        code: 'SUMSUB_NOT_CONFIGURED',
+        message: 'Sumsub credentials are missing. Please configure SUMSUB_APP_TOKEN and SUMSUB_SECRET_KEY (or SUMSUB_APP_SECRET) environment variables.',
+        debug: {
+          hasAppToken: !!appToken,
+          hasAppSecret: !!appSecret,
+          hasLevelName: !!levelName,
+          hasBaseUrl: !!baseUrl,
+        }
       });
     }
 
@@ -69,13 +86,27 @@ router.post("/start", async (req, res) => {
     }
 
     // Access token for Web SDK / Mobile SDK
+    // Use the new SDK endpoint format with POST body
+    const tokenBody = {
+      userId: String(user.id),
+      levelName: levelName,
+      ttlInSecs: 600,
+      applicantIdentifiers: {
+        email: user.email,
+      },
+    };
+
     const tokenResp = await sumsubFetch(
       "POST",
-      `/resources/accessTokens?userId=${encodeURIComponent(String(user.id))}&levelName=${encodeURIComponent(levelName)}`,
-      {}
+      "/resources/accessTokens/sdk",
+      tokenBody
     );
 
-    return res.json({ ok: true, token: tokenResp?.token, applicantId });
+    if (!tokenResp?.token) {
+      throw new Error("No token in Sumsub response");
+    }
+
+    return res.json({ ok: true, token: tokenResp.token, applicantId });
   } catch (e) {
     console.error("[kyc/start]", e);
     return res.status(500).json({ ok: false, error: "server_error" });
