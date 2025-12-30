@@ -95,56 +95,97 @@ export function MailSection({ }: MailSectionProps) {
         }
     };
 
-    const formatDate = (dateStr: string | null, ms: number | null) => {
-        if (ms) {
-            return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const parseDate = (dateStr: string | null, ms: number | null, fallbackMs?: number | null): Date | null => {
+        // Try received_at_ms first
+        if (ms !== null && ms !== undefined) {
+            const msNum = typeof ms === 'string' ? parseInt(ms, 10) : ms;
+            if (!isNaN(msNum) && msNum > 0) {
+                const date = new Date(msNum);
+                if (!isNaN(date.getTime())) return date;
+            }
         }
+        // Try received_date string
         if (dateStr) {
-            return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) return date;
+        }
+        // Fallback to created_at if provided
+        if (fallbackMs !== null && fallbackMs !== undefined) {
+            const msNum = typeof fallbackMs === 'string' ? parseInt(fallbackMs, 10) : fallbackMs;
+            if (!isNaN(msNum) && msNum > 0) {
+                const date = new Date(msNum);
+                if (!isNaN(date.getTime())) return date;
+            }
+        }
+        return null;
+    };
+
+    const formatDate = (dateStr: string | null, ms: number | null, fallbackMs?: number | null) => {
+        const date = parseDate(dateStr, ms, fallbackMs);
+        if (date) {
+            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         }
         return '—';
     };
 
-    const formatDateDDMMYYYY = (dateStr: string | null, ms: number | null) => {
-        if (ms) {
-            return new Date(ms).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-        if (dateStr) {
-            return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const formatDateDDMMYYYY = (dateStr: string | null, ms: number | null, fallbackMs?: number | null) => {
+        const date = parseDate(dateStr, ms, fallbackMs);
+        if (date) {
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
         return '—';
     };
 
     const getDestructionEligibilityDate = (item: MailItem): string => {
-        // Use expires_at if available, otherwise calculate from received_at_ms + 30 days
-        if (item.expires_at) {
-            return formatDateDDMMYYYY(null, item.expires_at);
+        // Use expires_at if available
+        if (item.expires_at !== null && item.expires_at !== undefined) {
+            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
+            if (!isNaN(expiresMs) && expiresMs > 0) {
+                const date = new Date(expiresMs);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }
+            }
         }
-        if (item.received_at_ms) {
-            const eligibilityDate = new Date(item.received_at_ms + (30 * 24 * 60 * 60 * 1000));
+        
+        // Calculate from received date + 30 days
+        const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
+        if (receivedDate) {
+            const eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
             return eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
-        if (item.received_date) {
-            const received = new Date(item.received_date);
-            const eligibilityDate = new Date(received.getTime() + (30 * 24 * 60 * 60 * 1000));
-            return eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
+        
         return '—';
     };
 
     const getDestructionEligibilityStatus = (item: MailItem): { label: string; isEligible: boolean } => {
+        // Use backend's past_30_days calculation if available (most reliable)
+        if (item.past_30_days === true) {
+            return { label: "Eligible for destruction", isEligible: true };
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         let eligibilityDate: Date | null = null;
 
-        if (item.expires_at) {
-            eligibilityDate = new Date(item.expires_at);
-        } else if (item.received_at_ms) {
-            eligibilityDate = new Date(item.received_at_ms + (30 * 24 * 60 * 60 * 1000));
-        } else if (item.received_date) {
-            const received = new Date(item.received_date);
-            eligibilityDate = new Date(received.getTime() + (30 * 24 * 60 * 60 * 1000));
+        // Use expires_at if available
+        if (item.expires_at !== null && item.expires_at !== undefined) {
+            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
+            if (!isNaN(expiresMs) && expiresMs > 0) {
+                const date = new Date(expiresMs);
+                if (!isNaN(date.getTime())) {
+                    eligibilityDate = date;
+                }
+            }
+        }
+        
+        // Calculate from received date + 30 days
+        if (!eligibilityDate) {
+            const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
+            if (receivedDate) {
+                eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            }
         }
 
         if (!eligibilityDate) {
@@ -321,7 +362,7 @@ export function MailSection({ }: MailSectionProps) {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
-                                                {formatDate(item.received_date, item.received_at_ms)}
+                                                {formatDate(item.received_date, item.received_at_ms, item.created_at)}
                                             </TableCell>
                                             <TableCell>
                                                 {isProcessed ? (
@@ -360,7 +401,7 @@ export function MailSection({ }: MailSectionProps) {
                                                     </div>
                                                     <div>
                                                         <div className="text-muted-foreground mb-0.5">Receipt Date:</div>
-                                                        <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms)}</div>
+                                                        <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms, item.created_at)}</div>
                                                     </div>
                                                     <div>
                                                         <div className="text-muted-foreground mb-0.5">Destruction Eligibility Date:</div>
