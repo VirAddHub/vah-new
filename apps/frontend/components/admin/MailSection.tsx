@@ -341,22 +341,41 @@ export function MailSection({ }: MailSectionProps) {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="space-y-1 text-xs">
+                                                <div className="space-y-2 text-xs min-w-[220px]">
                                                     <div>
-                                                        <span className="text-muted-foreground">Eligibility Date:</span>
+                                                        <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
+                                                        <div className="font-medium">#{item.id}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
+                                                        <div className="font-medium">{userName}</div>
+                                                        <div className="text-xs text-muted-foreground">ID: {item.user_id}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-muted-foreground mb-0.5">Mail Description:</div>
+                                                        <div className="font-medium">
+                                                            {item.subject || '—'}{item.sender_name ? ` – ${item.sender_name}` : ''}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-muted-foreground mb-0.5">Receipt Date:</div>
+                                                        <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-muted-foreground mb-0.5">Destruction Eligibility Date:</div>
                                                         <div className="font-medium">{getDestructionEligibilityDate(item)}</div>
                                                     </div>
-                                                    {(() => {
-                                                        const eligibility = getDestructionEligibilityStatus(item);
-                                                        return (
-                                                            <div>
-                                                                <span className="text-muted-foreground">Status:</span>
+                                                    <div>
+                                                        <div className="text-muted-foreground mb-0.5">Physical Destruction Status:</div>
+                                                        {(() => {
+                                                            const eligibility = getDestructionEligibilityStatus(item);
+                                                            return (
                                                                 <div className={eligibility.isEligible ? "font-medium text-amber-600" : "font-medium text-muted-foreground"}>
                                                                     {eligibility.label}
                                                                 </div>
-                                                            </div>
-                                                        );
-                                                    })()}
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
