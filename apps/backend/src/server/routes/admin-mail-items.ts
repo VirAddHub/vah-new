@@ -410,10 +410,12 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     try {
         // Update mail item with destruction date
         // Use NOW() for database-generated timestamp (audit-safe, timezone-safe)
+        // Set destruction_logged = FALSE so cron job can pick it up for Excel logging
         const updateResult = await pool.query(
             `
             UPDATE mail_item
             SET physical_destruction_date = NOW(),
+                destruction_logged = FALSE,
                 updated_at = $1
             WHERE id = $2
             RETURNING id, user_id, physical_destruction_date
