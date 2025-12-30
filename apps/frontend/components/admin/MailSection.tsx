@@ -1,662 +1,304 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import {
-    Filter,
-    Plus,
-    Eye,
-    Edit,
-    Truck,
-    Tag,
-    Trash2,
-    Download,
-    Search,
-    Mail,
-    Package,
-    FileText,
-    Clock,
-    CheckCircle,
-    AlertCircle,
-} from "lucide-react";
-import { apiClient, safe, adminApi } from "../../lib/apiClient";
-import { useApiData } from "../../lib/client-hooks";
+import { Search, Eye, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
+import { apiClient, safe } from "../../lib/apiClient";
 import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
-import { getErrorMessage, getErrorStack } from "../../lib/errors";
-import { invalidateMailCache } from "../../lib/swrCacheUtils";
-
-const logAdminAction = async (action: string, data?: any) => {
-    try {
-        await apiClient.post('/api/audit/admin-action', {
-            action,
-            data,
-            timestamp: new Date().toISOString(),
-            adminId: null // Will be set by backend
-        });
-    } catch {
-        // Logging should never break the UI
-    }
-};
+import { toast } from "@/components/ui/use-toast";
 
 interface MailItem {
     id: number;
-    userId: number;
-    userName: string;
-    sender: string;
-    subject: string;
-    tag: string;
-    status: "received" | "pending" | "processed" | "forwarded";
-    received: string;
-    scanned?: boolean;
-    forwarded?: boolean;
-    trackingNumber?: string;
-    weight?: string;
-    dimensions?: string;
+    user_id: number;
+    user_email: string;
+    first_name: string | null;
+    last_name: string | null;
+    subject: string | null;
+    sender_name: string | null;
+    tag: string | null;
+    status: string;
+    received_date: string | null;
+    received_at_ms: number | null;
+    days_until_deletion: number | null;
+    past_30_days: boolean;
+    physical_destruction_date: string | null;
 }
 
 type MailSectionProps = Record<string, never>;
 
 export function MailSection({ }: MailSectionProps) {
-    const [selectedTab, setSelectedTab] = useState("received");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [tagFilter, setTagFilter] = useState("all");
-    const [selectedItems, setSelectedItems] = useState<number[]>([]);
-    const [offset, setOffset] = useState(0);
-    const [limit] = useState(20);
     const [actionLoading, setActionLoading] = useState(false);
+    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useSimpleDebouncedSearch(300, 0);
 
-    // Use simple debounced search hook (no callback needed with SWR)
-    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm, shouldSearch } = useSimpleDebouncedSearch(300, 0);
-    const isSearching = false; // SWR handles loading state
-
-    // Build query parameters for SWR key
+    // Build query parameters - only show scanned mail
     const mailItemsParams = useMemo(() => ({
-        status: selectedTab === "all" ? "" : selectedTab,
         q: debouncedSearchTerm || "",
-        tag: tagFilter === "all" ? "" : tagFilter,
-        page: String(Math.floor(offset / limit) + 1),
-        page_size: String(limit)
-    }), [selectedTab, debouncedSearchTerm, tagFilter, offset, limit]);
+        limit: '500', // Show more items
+        offset: '0'
+    }), [debouncedSearchTerm]);
 
-    // Use SWR with proper deduplication for mail items
     const {
         data: mailItemsData,
         isLoading: mailItemsLoading,
-        error: mailItemsError,
         mutate: refetchMailItems
     } = useAuthedSWR<{ items: MailItem[]; total: number }>(
         ['/api/admin/mail-items', mailItemsParams],
         {
-            dedupingInterval: 5000, // 5 seconds deduplication
+            dedupingInterval: 5000,
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
-            refreshInterval: 30000, // 30 seconds refresh
+            refreshInterval: 30000,
             refreshWhenHidden: false,
         }
     );
 
-    // Extract data from SWR response
     const mailItems = safe(mailItemsData?.items, []);
-    const hasMore = mailItems.length === limit;
+    const loading = mailItemsLoading || actionLoading;
 
-    // Use SWR for stats with longer refresh interval
-    const {
-        data: statsData,
-        isLoading: statsLoading,
-        error: statsError
-    } = useAuthedSWR<{ total: number; received: number; processed: number; forwarded: number; pending?: number }>(
-        '/api/admin/mail-items/stats',
-        {
-            dedupingInterval: 10000, // 10 seconds deduplication for stats
-            revalidateOnFocus: false,
-            revalidateOnReconnect: false,
-            refreshInterval: 60000, // 1 minute refresh for stats
-            refreshWhenHidden: false,
-        }
-    );
-
-    // Extract stats from SWR response
-    const stats = statsData;
-
-    const filteredItems = mailItems;
-    const loading = mailItemsLoading || statsLoading || actionLoading;
-
-    const handleAddItem = async () => {
-        try {
-            await logAdminAction('admin_add_mail_item');
-            // Open add mail item modal or navigate to add page
-            window.open('/admin/mail/add', '_blank');
-        } catch (error) {
-            await logAdminAction('admin_add_mail_item_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        }
+    const handleViewItem = (itemId: number) => {
+        window.open(`/admin/mail/${itemId}`, '_blank');
     };
 
-    const handleViewItem = async (itemId: number) => {
+    const handleMarkDestroyed = async (itemId: number) => {
+        if (!confirm("Are you sure you want to mark this mail item as physically destroyed? This action will be logged in the audit trail.")) {
+            return;
+        }
+
+        setActionLoading(true);
         try {
-            await logAdminAction('admin_view_mail_item', { itemId });
-            // Try to get scan URL first, fallback to detail page
-            const response = await apiClient.get(`/api/mail-items/${itemId}/scan-url`);
+            const response = await apiClient.post(`/api/admin/mail-items/${itemId}/mark-destroyed`);
             if (response.ok) {
-                const data = response.data as { url?: string };
-                window.open(data.url || `/admin/mail/${itemId}`, '_blank');
+                toast({
+                    title: "Mail item marked as destroyed",
+                    description: "Physical destruction has been logged in the audit trail.",
+                });
+                refetchMailItems();
             } else {
-                window.open(`/admin/mail/${itemId}`, '_blank');
+                throw new Error(response.data?.error || "Failed to mark as destroyed");
             }
-        } catch (error) {
-            await logAdminAction('admin_view_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        }
-    };
-
-    const handleEditItem = async (itemId: number) => {
-        try {
-            await logAdminAction('admin_edit_mail_item', { itemId });
-            window.open(`/admin/mail/${itemId}/edit`, '_blank');
-        } catch (error) {
-            await logAdminAction('admin_edit_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        }
-    };
-
-    const handleProcessItem = async (itemId: number) => {
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_process_mail_item', { itemId });
-            await adminApi.updateMailItem(itemId.toString(), { status: 'processed' });
-            invalidateMailCache(); // Use cache invalidation instead of manual refetch
-        } catch (error) {
-            await logAdminAction('admin_process_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleTagItem = async (itemId: number, tag: string) => {
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_tag_mail_item', { itemId, tag });
-            await adminApi.updateMailItem(itemId.toString(), { tag });
-            invalidateMailCache(); // Use cache invalidation instead of manual refetch
-        } catch (error) {
-            await logAdminAction('admin_tag_mail_item_error', { itemId, tag, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleForwardItem = async (itemId: number) => {
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_forward_mail_item', { itemId });
-            await apiClient.post(`/api/admin/mail-items/${itemId}/forward`);
-            refetchMailItems(); // Refetch current data
-        } catch (error) {
-            await logAdminAction('admin_forward_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleDeleteItem = async (itemId: number) => {
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_delete_mail_item', { itemId });
-            await apiClient.delete(`/api/admin/mail-items/${itemId}`);
-            refetchMailItems(); // Refetch current data
-        } catch (error) {
-            await logAdminAction('admin_delete_mail_item_error', { itemId, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleBulkAction = async (action: string) => {
-        if (selectedItems.length === 0) return;
-
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_bulk_mail_action', { action, itemIds: selectedItems });
-            await apiClient.post(`/api/admin/mail-items/bulk/${action}`, { itemIds: selectedItems });
-            setSelectedItems([]);
-            refetchMailItems(); // Refetch current data
-        } catch (error) {
-            await logAdminAction('admin_bulk_mail_action_error', { action, itemIds: selectedItems, error_message: getErrorMessage(error), stack: getErrorStack(error) });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    // Pagination handlers
-    const handleNextPage = () => {
-        if (hasMore) {
-            setOffset(prev => prev + limit);
-        }
-    };
-
-    const handlePrevPage = () => {
-        if (offset > 0) {
-            setOffset(prev => Math.max(0, prev - limit));
-        }
-    };
-
-    const handleExportMail = async () => {
-        setActionLoading(true);
-        try {
-            await logAdminAction('admin_export_mail', {
-                filters: { statusFilter, tagFilter, searchTerm, tab: selectedTab }
+        } catch (error: any) {
+            toast({
+                title: "Failed to mark as destroyed",
+                description: error?.message || "An error occurred",
+                variant: "destructive",
             });
-
-            const response = await apiClient.get(`/api/admin/mail-items/export?status=${statusFilter}&tag=${tagFilter}&search=${searchTerm}&tab=${selectedTab}`);
-
-            if (!response.ok) {
-                throw new Error('Failed to export mail items');
-            }
-            const blob = new Blob([JSON.stringify(response.data)], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mail-items-export-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        } catch (error) {
-            await logAdminAction('admin_export_mail_error', { error_message: getErrorMessage(error), stack: getErrorStack(error) });
         } finally {
             setActionLoading(false);
         }
     };
 
-    const toggleItemSelection = (itemId: number) => {
-        setSelectedItems(prev =>
-            prev.includes(itemId)
-                ? prev.filter(id => id !== itemId)
-                : [...prev, itemId]
-        );
-    };
-
-    const selectAllItems = () => {
-        setSelectedItems(filteredItems.map((item: MailItem) => item.id));
-    };
-
-    const clearSelection = () => {
-        setSelectedItems([]);
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case "received": return <Mail className="h-4 w-4 text-blue-500" />;
-            case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
-            case "processed": return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case "forwarded": return <Truck className="h-4 w-4 text-purple-500" />;
-            default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    const formatDate = (dateStr: string | null, ms: number | null) => {
+        if (ms) {
+            return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         }
+        if (dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        return '—';
     };
+
+    const getDeletionStatus = (item: MailItem) => {
+        if (item.physical_destruction_date) {
+            return {
+                label: "Destroyed",
+                variant: "default" as const,
+                color: "text-green-600",
+                icon: <CheckCircle className="h-4 w-4" />
+            };
+        }
+        if (item.past_30_days) {
+            const daysPast = item.days_until_deletion ? Math.abs(Math.round(item.days_until_deletion)) : 0;
+            return {
+                label: `Past ${daysPast} days - Destroy now`,
+                variant: "destructive" as const,
+                color: "text-red-600",
+                icon: <AlertTriangle className="h-4 w-4" />
+            };
+        }
+        if (item.days_until_deletion !== null) {
+            const days = Math.round(item.days_until_deletion);
+            if (days <= 7) {
+                return {
+                    label: `${days} days until deletion`,
+                    variant: "secondary" as const,
+                    color: "text-amber-600",
+                    icon: <AlertTriangle className="h-4 w-4" />
+                };
+            }
+            return {
+                label: `${days} days until deletion`,
+                variant: "outline" as const,
+                color: "text-muted-foreground",
+                icon: null
+            };
+        }
+        return {
+            label: "No expiry date",
+            variant: "outline" as const,
+            color: "text-muted-foreground",
+            icon: null
+        };
+    };
+
+    const filteredItems = mailItems.filter((item: MailItem) => {
+        if (!debouncedSearchTerm) return true;
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        return (
+            String(item.id).includes(searchLower) ||
+            (item.subject || '').toLowerCase().includes(searchLower) ||
+            (item.sender_name || '').toLowerCase().includes(searchLower) ||
+            (item.user_email || '').toLowerCase().includes(searchLower) ||
+            ((item.first_name || '') + ' ' + (item.last_name || '')).toLowerCase().includes(searchLower)
+        );
+    });
+
+    const processedCount = filteredItems.filter((item: MailItem) => item.status === 'processed' || item.status === 'forwarded').length;
+    const needsDestructionCount = filteredItems.filter((item: MailItem) => item.past_30_days && !item.physical_destruction_date).length;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Mail Management</h1>
-                    <p className="text-muted-foreground">Process and manage incoming mail and packages</p>
-                    {stats && (
-                        <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>Total: {stats.total || 0}</span>
-                            <span>Received: {stats.received || 0}</span>
-                            <span>Pending: {stats.pending || 0}</span>
-                            <span>Processed: {stats.processed || 0}</span>
-                        </div>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleExportMail}
-                        disabled={loading}
-                    >
-                        <Download className="h-4 w-4" />
-                        Export
-                    </Button>
-                    <Button
-                        className="gap-2"
-                        onClick={handleAddItem}
-                        disabled={loading}
-                    >
-                        <Plus className="h-4 w-4" />
-                        Add Item
-                    </Button>
+                    <h1 className="text-3xl font-bold">Scanned Mail</h1>
+                    <p className="text-muted-foreground">All scanned mail items - track processing and deletion dates</p>
+                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                        <span>Total: {filteredItems.length}</span>
+                        <span>Processed: {processedCount}</span>
+                        <span className="text-red-600">Needs Destruction: {needsDestructionCount}</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Bulk Actions */}
-            {selectedItems.length > 0 && (
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">{selectedItems.length} items selected</span>
-                                <Button variant="ghost" size="sm" onClick={clearSelection}>
-                                    Clear
-                                </Button>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('process')}
-                                    disabled={loading}
-                                >
-                                    <CheckCircle className="h-4 w-4" />
-                                    Process
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('tag')}
-                                    disabled={loading}
-                                >
-                                    <Tag className="h-4 w-4" />
-                                    Tag
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('forward')}
-                                    disabled={loading}
-                                >
-                                    <Truck className="h-4 w-4" />
-                                    Forward
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleBulkAction('delete')}
-                                    disabled={loading}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Filters */}
+            {/* Search */}
             <Card>
-                <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search mail items..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                    disabled={isSearching}
-                                />
-                                {isSearching && (
-                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => refetchMailItems()}
-                                disabled={loading}
-                            >
-                                {loading ? "Refreshing..." : "Refresh"}
-                            </Button>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="received">Received</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="processed">Processed</SelectItem>
-                                    <SelectItem value="forwarded">Forwarded</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={tagFilter} onValueChange={setTagFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Tag" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Tags</SelectItem>
-                                    <SelectItem value="Government">Government</SelectItem>
-                                    <SelectItem value="Financial">Financial</SelectItem>
-                                    <SelectItem value="Logistics">Logistics</SelectItem>
-                                    <SelectItem value="Legal">Legal</SelectItem>
-                                    <SelectItem value="Personal">Personal</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                <CardContent className="p-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by ID, subject, sender, or user..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
                     </div>
                 </CardContent>
             </Card>
 
-            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="received">Received</TabsTrigger>
-                    <TabsTrigger value="pending">Pending</TabsTrigger>
-                    <TabsTrigger value="processed">Processed</TabsTrigger>
-                    <TabsTrigger value="forwarded">Forwarded</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="received" className="space-y-4">
-                    <MailTable
-                        items={filteredItems.filter((item: MailItem) => item.status === "received")}
-                        onView={handleViewItem}
-                        onEdit={handleEditItem}
-                        onProcess={handleProcessItem}
-                        onTag={handleTagItem}
-                        onForward={handleForwardItem}
-                        onDelete={handleDeleteItem}
-                        onSelect={toggleItemSelection}
-                        selectedItems={selectedItems}
-                        loading={loading}
-                    />
-                </TabsContent>
-
-                <TabsContent value="pending" className="space-y-4">
-                    <MailTable
-                        items={filteredItems.filter((item: MailItem) => item.status === "pending")}
-                        onView={handleViewItem}
-                        onEdit={handleEditItem}
-                        onProcess={handleProcessItem}
-                        onTag={handleTagItem}
-                        onForward={handleForwardItem}
-                        onDelete={handleDeleteItem}
-                        onSelect={toggleItemSelection}
-                        selectedItems={selectedItems}
-                        loading={loading}
-                    />
-                </TabsContent>
-
-                <TabsContent value="processed" className="space-y-4">
-                    <MailTable
-                        items={filteredItems.filter((item: MailItem) => item.status === "processed")}
-                        onView={handleViewItem}
-                        onEdit={handleEditItem}
-                        onProcess={handleProcessItem}
-                        onTag={handleTagItem}
-                        onForward={handleForwardItem}
-                        onDelete={handleDeleteItem}
-                        onSelect={toggleItemSelection}
-                        selectedItems={selectedItems}
-                        loading={loading}
-                    />
-                </TabsContent>
-
-                <TabsContent value="forwarded" className="space-y-4">
-                    <MailTable
-                        items={filteredItems.filter((item: MailItem) => item.status === "forwarded")}
-                        onView={handleViewItem}
-                        onEdit={handleEditItem}
-                        onProcess={handleProcessItem}
-                        onTag={handleTagItem}
-                        onForward={handleForwardItem}
-                        onDelete={handleDeleteItem}
-                        onSelect={toggleItemSelection}
-                        selectedItems={selectedItems}
-                        loading={loading}
-                    />
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
-}
-
-// Mail Table Component
-function MailTable({
-    items,
-    onView,
-    onEdit,
-    onProcess,
-    onTag,
-    onForward,
-    onDelete,
-    onSelect,
-    selectedItems,
-    loading
-}: {
-    items: MailItem[];
-    onView: (id: number) => void;
-    onEdit: (id: number) => void;
-    onProcess: (id: number) => void;
-    onTag: (id: number, tag: string) => void;
-    onForward: (id: number) => void;
-    onDelete: (id: number) => void;
-    onSelect: (id: number) => void;
-    selectedItems: number[];
-    loading: boolean;
-}) {
-    const selectAllItems = () => {
-        items.forEach(item => {
-            if (!selectedItems.includes(item.id)) {
-                onSelect(item.id);
-            }
-        });
-    };
-
-    const clearSelection = () => {
-        items.forEach(item => {
-            if (selectedItems.includes(item.id)) {
-                onSelect(item.id);
-            }
-        });
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case "received": return <Mail className="h-4 w-4 text-blue-500" />;
-            case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
-            case "processed": return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case "forwarded": return <Truck className="h-4 w-4 text-purple-500" />;
-            default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
-        }
-    };
-
-    return (
-        <Card>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-12">
-                            <input
-                                type="checkbox"
-                                checked={items.length > 0 && items.every(item => selectedItems.includes(item.id))}
-                                onChange={items.length > 0 && items.every(item => selectedItems.includes(item.id)) ? clearSelection : selectAllItems}
-                                className="rounded"
-                            />
-                        </TableHead>
-                        <TableHead>ID</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Sender</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Tag</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Received</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {items.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                                No mail items found
-                            </TableCell>
-                        </TableRow>
-                    ) : (
-                        items.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedItems.includes(item.id)}
-                                        onChange={() => onSelect(item.id)}
-                                        className="rounded"
-                                    />
-                                </TableCell>
-                                <TableCell>#{item.id}</TableCell>
-                                <TableCell>
-                                    <div>
-                                        <div className="font-medium">{item.userName}</div>
-                                        <div className="text-sm text-muted-foreground">ID: {item.userId}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{item.sender}</TableCell>
-                                <TableCell>{item.subject}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline">{item.tag}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(item.status)}
-                                        <Badge variant="outline" className="capitalize">
-                                            {item.status}
-                                        </Badge>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">{item.received}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => onView(item.id)}>
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" onClick={() => onEdit(item.id)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        {item.status === "received" && (
-                                            <Button size="sm" variant="outline" onClick={() => onProcess(item.id)} disabled={loading}>
-                                                <CheckCircle className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        {item.status === "processed" && (
-                                            <Button size="sm" variant="outline" onClick={() => onForward(item.id)} disabled={loading}>
-                                                <Truck className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        <Button size="sm" variant="outline" onClick={() => onDelete(item.id)} disabled={loading}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
+            {/* Mail Table */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Scanned Mail</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>ID</TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Received</TableHead>
+                                <TableHead>Processed</TableHead>
+                                <TableHead>Deletion Status</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
-        </Card>
+                        </TableHeader>
+                        <TableBody>
+                            {loading && filteredItems.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                        Loading...
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredItems.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                        No scanned mail items found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredItems.map((item) => {
+                                    const deletionStatus = getDeletionStatus(item);
+                                    const userName = item.first_name || item.last_name
+                                        ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
+                                        : item.user_email || `User #${item.user_id}`;
+                                    const isProcessed = item.status === 'processed' || item.status === 'forwarded';
+                                    const canMarkDestroyed = item.past_30_days && !item.physical_destruction_date;
+
+                                    return (
+                                        <TableRow 
+                                            key={item.id}
+                                            className={item.past_30_days && !item.physical_destruction_date ? "bg-red-50" : ""}
+                                        >
+                                            <TableCell className="font-medium">#{item.id}</TableCell>
+                                            <TableCell>
+                                                <div>
+                                                    <div className="font-medium">{userName}</div>
+                                                    <div className="text-xs text-muted-foreground">{item.user_email}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="max-w-md truncate" title={item.subject || '—'}>
+                                                    {item.subject || '—'}
+                                                </div>
+                                                {item.tag && (
+                                                    <Badge variant="outline" className="mt-1 text-xs">{item.tag}</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground">
+                                                {formatDate(item.received_date, item.received_at_ms)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {isProcessed ? (
+                                                    <Badge variant="default" className="bg-green-600">
+                                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                                        Yes
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline">No</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    {deletionStatus.icon}
+                                                    <Badge variant={deletionStatus.variant} className={deletionStatus.color}>
+                                                        {deletionStatus.label}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        onClick={() => handleViewItem(item.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    {canMarkDestroyed && (
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="destructive"
+                                                            onClick={() => handleMarkDestroyed(item.id)}
+                                                            disabled={actionLoading}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
