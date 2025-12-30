@@ -485,9 +485,157 @@ export function MailSection({ }: MailSectionProps) {
                                 })
                     )}
                 </TableBody>
-            </Table>
-                </CardContent>
-        </Card>
+                        </Table>
+                    </Card>
+                </TabsContent>
+
+                {/* All Mail Tab */}
+                <TabsContent value="all" className="mt-4">
+                    <Card>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Subject</TableHead>
+                                    <TableHead>Received</TableHead>
+                                    <TableHead>Processed</TableHead>
+                                    <TableHead>Deletion Status</TableHead>
+                                    <TableHead className="min-w-[250px]">Destruction Eligibility</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading && allItems.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                            Loading...
+                                        </TableCell>
+                                    </TableRow>
+                                ) : allItems.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                            No mail items found
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    allItems.map((item) => {
+                                        const deletionStatus = getDeletionStatus(item);
+                                        const userName = item.first_name || item.last_name
+                                            ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
+                                            : item.user_email || `User #${item.user_id}`;
+                                        const isProcessed = item.status === 'processed' || item.status === 'forwarded';
+                                        const canMarkDestroyed = item.past_30_days && !item.physical_destruction_date;
+
+                                        return (
+                                            <TableRow
+                                                key={item.id}
+                                                className={item.past_30_days && !item.physical_destruction_date ? "bg-red-50/30 border-l-4 border-l-red-500" : ""}
+                                            >
+                                                <TableCell className="font-medium">#{item.id}</TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <div className="font-medium">{userName}</div>
+                                                        <div className="text-xs text-muted-foreground">{item.user_email}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="max-w-md truncate" title={item.subject || '—'}>
+                                                        {item.subject || '—'}
+                                                    </div>
+                                                    {item.tag && (
+                                                        <Badge variant="outline" className="mt-1 text-xs">{item.tag}</Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {formatDate(item.received_date, item.received_at_ms, item.created_at)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {isProcessed ? (
+                                                        <Badge variant="default" className="bg-green-600">
+                                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                                            Yes
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline">No</Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        {deletionStatus.icon}
+                                                        <Badge variant={deletionStatus.variant} className={deletionStatus.color}>
+                                                            {deletionStatus.label}
+                                                        </Badge>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="space-y-2 text-xs min-w-[220px]">
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
+                                                            <div className="font-medium">#{item.id}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
+                                                            <div className="font-medium">{userName}</div>
+                                                            <div className="text-xs text-muted-foreground">ID: {item.user_id}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Mail Description:</div>
+                                                            <div className="font-medium">
+                                                                {item.subject || '—'}{item.sender_name ? ` – ${item.sender_name}` : ''}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Receipt Date:</div>
+                                                            <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms, item.created_at)}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Destruction Eligibility Date:</div>
+                                                            <div className="font-medium">{getDestructionEligibilityDate(item)}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-muted-foreground mb-0.5">Physical Destruction Status:</div>
+                                                            {(() => {
+                                                                const eligibility = getDestructionEligibilityStatus(item);
+                                                                return (
+                                                                    <div className={eligibility.isEligible ? "font-medium text-amber-600" : "font-medium text-muted-foreground"}>
+                                                                        {eligibility.label}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleViewItem(item.id)}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        {canMarkDestroyed && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() => handleMarkDestroyed(item.id)}
+                                                                disabled={actionLoading}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
