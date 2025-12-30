@@ -247,6 +247,18 @@ export function MailSection({ }: MailSectionProps) {
                 </CardContent>
             </Card>
 
+            {/* Helper Note */}
+            <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="pt-6">
+                    <div className="text-sm text-amber-800">
+                        <p className="font-medium mb-1">📋 Physical Destruction Eligibility Information</p>
+                        <p className="text-xs">
+                            These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and retention rules (30-day GDPR retention period). Staff should manually copy these values into the Excel destruction log.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* Mail Table */}
             <Card>
                 <CardHeader>
