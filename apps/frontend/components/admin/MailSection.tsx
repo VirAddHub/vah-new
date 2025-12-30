@@ -274,6 +274,7 @@ export function MailSection({ }: MailSectionProps) {
                                 <TableHead>Received</TableHead>
                                 <TableHead>Processed</TableHead>
                                 <TableHead>Deletion Status</TableHead>
+                                <TableHead>Physical Destruction Eligibility</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
