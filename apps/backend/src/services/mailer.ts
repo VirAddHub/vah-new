@@ -1,5 +1,6 @@
 const postmark = require("postmark");
 import { ENV } from "../env";
+import { buildAppUrl } from "../lib/mailer";
 
 const PM_TOKEN = process.env.POSTMARK_TOKEN || "";
 const DEV_EMAIL_OVERRIDE = process.env.DEV_EMAIL_OVERRIDE || ""; // optional
@@ -219,7 +220,9 @@ export async function sendMailroomExpiryReminder(
         " - Locate this physical mail item in storage for the above user/company",
         " - Confirm the user has the scanned digital copy (uploaded to dashboard)",
         " - Destroy the envelope securely using cross-cut shredder (SOP)",
-        " - Log destruction in admin system: POST /api/admin/mail-items/" + item.id + "/mark-destroyed",
+        " - Log destruction in admin system:",
+        `   → Open: ${buildAppUrl(`/admin/mail/${item.id}`)}`,
+        `   → Click "Mark as Destroyed" button`,
         "",
         "🛡️ COMPLIANCE NOTES:",
         " - 30-day GDPR retention limit reached",
