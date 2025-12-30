@@ -219,7 +219,7 @@ export async function sendMailroomExpiryReminder(
         " - Locate this physical mail item in storage for the above user/company",
         " - Confirm the user has the scanned digital copy (uploaded to dashboard)",
         " - Destroy the envelope securely using cross-cut shredder (SOP)",
-        " - Log destruction in admin system (if applicable)",
+        " - Log destruction in admin system: POST /api/admin/mail-items/" + item.id + "/mark-destroyed",
         "",
         "🛡️ COMPLIANCE NOTES:",
         " - 30-day GDPR retention limit reached",
