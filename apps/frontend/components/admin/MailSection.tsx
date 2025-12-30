@@ -53,9 +53,9 @@ export function MailSection({ }: MailSectionProps) {
         ['/api/admin/mail-items', mailItemsParams],
         {
             dedupingInterval: 5000,
-            revalidateOnFocus: false,
-            revalidateOnReconnect: false,
-            refreshInterval: 30000,
+            revalidateOnFocus: true, // Refresh when tab gets focus
+            revalidateOnReconnect: true, // Refresh when connection restored
+            refreshInterval: 10000, // Refresh every 10 seconds (faster updates)
             refreshWhenHidden: false,
         }
     );
@@ -148,14 +148,14 @@ export function MailSection({ }: MailSectionProps) {
                 }
             }
         }
-        
+
         // Calculate from received date + 30 days
         const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
         if (receivedDate) {
             const eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
             return eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
-        
+
         return '—';
     };
 
@@ -180,7 +180,7 @@ export function MailSection({ }: MailSectionProps) {
                 }
             }
         }
-        
+
         // Calculate from received date + 30 days
         if (!eligibilityDate) {
             const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
