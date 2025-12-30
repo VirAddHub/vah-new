@@ -59,13 +59,23 @@ router.post('/forward', async (req: Request, res: Response) => {
 
         // Get mail item with received date for GDPR check and tag for KYC check
         const result = await pool.query(
-            `SELECT id, user_id, expires_at, received_at_ms, received_date, tag FROM mail_item WHERE id = $1`,
+            `SELECT id, user_id, expires_at, received_at_ms, received_date, tag, physical_destruction_date FROM mail_item WHERE id = $1`,
             [Number(mail_item_id || 0)]
         );
 
         const m = result.rows[0];
         if (!m || m.user_id !== userId) {
             return res.status(404).json({ ok: false, error: 'not_found' });
+        }
+
+        // Check if physical mail has been destroyed
+        if (m.physical_destruction_date) {
+            await auditForward(userId, m.id, 'blocked', 'physical_destroyed');
+            return res.status(403).json({
+                ok: false,
+                error: 'physical_destroyed',
+                message: 'This mail item has been physically destroyed and cannot be forwarded. The digital scan is still available for download.'
+            });
         }
 
         // Check KYC requirement for forwarding (HMRC/Companies House always allowed)
