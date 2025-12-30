@@ -18,6 +18,7 @@ import {
     FileText,
     Settings,
     Package,
+    Mail,
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -39,6 +40,10 @@ const SettingsSection = dynamic(() => import('@/components/admin/SettingsSection
 });
 
 const BlogSection = dynamic(() => import('@/components/admin/BlogSection').then(mod => ({ default: mod.BlogSection })), {
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
+const MailSection = dynamic(() => import('@/components/admin/MailSection').then(mod => ({ default: mod.MailSection })), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
@@ -129,6 +134,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
 
     const menuItems = [
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+        { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
@@ -162,6 +168,8 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                         onRefreshUsers={refetchUsers}
                     />
                 );
+            case "mail":
+                return <MailSection />;
             case "forwarding":
                 return <CollaborativeForwardingBoard />;
             case "plans":
