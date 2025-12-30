@@ -24,6 +24,7 @@ interface MailItem {
     status: string;
     received_date: string | null;
     received_at_ms: number | null;
+    created_at: number | null;
     expires_at: number | null;
     days_until_deletion: number | null;
     past_30_days: boolean;
