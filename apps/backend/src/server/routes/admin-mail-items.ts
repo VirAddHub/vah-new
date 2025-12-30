@@ -110,7 +110,12 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
             WHERE m.deleted = false 
-            AND (m.scanned = true OR m.scan_file_url IS NOT NULL OR f.id IS NOT NULL)
+            AND (
+                -- Include scanned items OR items with files OR items with scan URLs
+                (m.scanned = true OR m.scan_file_url IS NOT NULL OR f.id IS NOT NULL)
+                -- OR include items that have dates (even if not marked scanned) - they might need destruction
+                OR (m.received_at_ms IS NOT NULL OR m.received_date IS NOT NULL OR m.created_at IS NOT NULL)
+            )
             AND (m.received_at_ms IS NOT NULL OR m.received_date IS NOT NULL OR m.created_at IS NOT NULL)
         `;
 
@@ -156,7 +161,9 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
 
             return {
                 ok: true,
-                data: result.rows,
+                items: result.rows,
+                total: total,
+                data: result.rows, // Keep for backward compatibility
                 pagination: {
                     limit: limitNum,
                     offset: offsetNum,
