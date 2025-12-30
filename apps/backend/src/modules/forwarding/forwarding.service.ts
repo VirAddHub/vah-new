@@ -72,7 +72,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                 receivedAtMs = new Date(mailData.received_date).getTime();
             }
 
-            const gdprExpired = receivedAtMs && (now - receivedAtMs) > GDPR_FORWARDING_WINDOW_MS;
+            const gdprExpired = receivedAtMs && (now - receivedAtMs) >= GDPR_FORWARDING_WINDOW_MS;
             if (gdprExpired) {
                 throw new Error('Mail item is older than 30 days and cannot be forwarded due to GDPR compliance');
             }

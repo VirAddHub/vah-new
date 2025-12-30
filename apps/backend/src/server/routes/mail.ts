@@ -101,8 +101,9 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
                 fr.status as forwarding_status,
                 CASE 
                     -- GDPR forwarding window: 30 days (see apps/backend/src/config/gdpr.ts - GDPR_FORWARDING_WINDOW_DAYS)
-                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
-                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
+                    -- Uses >= so items on day 30 are blocked
+                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) >= INTERVAL '30 days' THEN true
+                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) >= INTERVAL '30 days' THEN true
                     ELSE false
                 END as gdpr_expired
             FROM mail_item m
@@ -145,8 +146,9 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
                 f.mime as file_mime,
                 CASE 
                     -- GDPR forwarding window: 30 days (see apps/backend/src/config/gdpr.ts - GDPR_FORWARDING_WINDOW_DAYS)
-                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
-                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
+                    -- Uses >= so items on day 30 are blocked
+                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) >= INTERVAL '30 days' THEN true
+                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) >= INTERVAL '30 days' THEN true
                     ELSE false
                 END as gdpr_expired
             FROM mail_item m

@@ -100,10 +100,11 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                     ELSE NULL
                 END as days_until_deletion,
                 -- Check if past 30 days (same fallback logic)
+                -- Uses >= so items on day 30 are considered past 30 days
                 CASE 
-                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
-                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
-                    WHEN m.created_at IS NOT NULL AND (now() - to_timestamp(m.created_at / 1000)) > INTERVAL '30 days' THEN true
+                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) >= INTERVAL '30 days' THEN true
+                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) >= INTERVAL '30 days' THEN true
+                    WHEN m.created_at IS NOT NULL AND (now() - to_timestamp(m.created_at / 1000)) >= INTERVAL '30 days' THEN true
                     ELSE false
                 END as past_30_days
             FROM mail_item m

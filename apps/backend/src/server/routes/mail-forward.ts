@@ -98,7 +98,7 @@ router.post('/forward', async (req: Request, res: Response) => {
             receivedAtMs = new Date(m.received_date).getTime();
         }
 
-        const gdprExpired = receivedAtMs && (now - receivedAtMs) > GDPR_FORWARDING_WINDOW_MS;
+        const gdprExpired = receivedAtMs && (now - receivedAtMs) >= GDPR_FORWARDING_WINDOW_MS;
 
         // Check storage expiry (legacy)
         const storageExpired = m.expires_at && Date.now() > new Date(m.expires_at).getTime();
