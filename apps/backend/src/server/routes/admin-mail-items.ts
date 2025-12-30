@@ -88,17 +88,21 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 f.size as file_size,
                 f.web_url as file_url,
                 -- Calculate days until/past 30-day expiry
+                -- Use received_at_ms first (most accurate), then received_date, then created_at as fallback
                 CASE 
                     WHEN m.received_at_ms IS NOT NULL THEN
                         EXTRACT(EPOCH FROM (to_timestamp(m.received_at_ms / 1000) + INTERVAL '30 days' - now())) / 86400
                     WHEN m.received_date IS NOT NULL THEN
                         EXTRACT(EPOCH FROM (m.received_date::timestamptz + INTERVAL '30 days' - now())) / 86400
+                    WHEN m.created_at IS NOT NULL THEN
+                        EXTRACT(EPOCH FROM (to_timestamp(m.created_at / 1000) + INTERVAL '30 days' - now())) / 86400
                     ELSE NULL
                 END as days_until_deletion,
-                -- Check if past 30 days
+                -- Check if past 30 days (same fallback logic)
                 CASE 
                     WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) > INTERVAL '30 days' THEN true
                     WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) > INTERVAL '30 days' THEN true
+                    WHEN m.created_at IS NOT NULL AND (now() - to_timestamp(m.created_at / 1000)) > INTERVAL '30 days' THEN true
                     ELSE false
                 END as past_30_days
             FROM mail_item m
