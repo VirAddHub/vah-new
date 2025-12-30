@@ -353,4 +353,93 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
     }
 });
 
+/**
+ * POST /api/admin/mail-items/:id/mark-destroyed
+ * Mark physical mail as destroyed (admin only)
+ * Required for HMRC AML compliance - tracks physical destruction confirmation
+ */
+router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const adminId = req.user!.id;
+    const pool = getPool();
+    const now = new Date();
+
+    if (!id || isNaN(parseInt(id))) {
+        return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    try {
+        // Update mail item with destruction date
+        const updateResult = await pool.query(
+            `
+            UPDATE mail_item
+            SET physical_destruction_date = $1,
+                updated_at = $2
+            WHERE id = $3
+            RETURNING id, user_id
+            `,
+            [now, Date.now(), parseInt(id)]
+        );
+
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
+        }
+
+        // Log admin audit record
+        await pool.query(
+            `
+            INSERT INTO admin_audit (
+                admin_id,
+                action,
+                target_type,
+                target_id,
+                details,
+                created_at
+            )
+            VALUES ($1, 'physical_destruction_confirmed', 'mail_item', $2, $3, $4)
+            `,
+            [
+                adminId,
+                parseInt(id),
+                JSON.stringify({
+                    destroyed_at: now.toISOString(),
+                    method: 'secure_shredding',
+                }),
+                Date.now(),
+            ]
+        );
+
+        // Log in mail_event for additional audit trail
+        await pool.query(
+            `
+            INSERT INTO mail_event (
+                mail_item,
+                actor_user,
+                event_type,
+                details,
+                created_at
+            )
+            VALUES ($1, $2, 'physical_mail_destroyed', $3, $4)
+            `,
+            [
+                parseInt(id),
+                adminId,
+                JSON.stringify({
+                    destroyed_at: now.toISOString(),
+                }),
+                Date.now(),
+            ]
+        );
+
+        return res.json({ ok: true, message: 'Physical destruction confirmed' });
+    } catch (error: any) {
+        console.error('[POST /api/admin/mail-items/:id/mark-destroyed] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: 'failed_to_mark_physical_destruction',
+            message: error.message,
+        });
+    }
+});
+
 export default router;
