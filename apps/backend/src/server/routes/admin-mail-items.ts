@@ -81,6 +81,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 m.file_size,
                 m.scan_file_url,
                 m.physical_destruction_date,
+                m.expires_at,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
