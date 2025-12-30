@@ -329,13 +329,23 @@ export function MailSection({ }: MailSectionProps) {
                 </CardContent>
             </Card>
 
-            {/* Mail Table */}
-        <Card>
-                <CardHeader>
-                    <CardTitle>All Scanned Mail</CardTitle>
-                </CardHeader>
-                <CardContent>
-            <Table>
+            {/* Tabs for Needs Destruction vs All Mail */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="needs-destruction" className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        Needs Destruction ({needsDestructionCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="all" className="flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        All Mail ({allItems.length})
+                    </TabsTrigger>
+                </TabsList>
+
+                {/* Needs Destruction Tab */}
+                <TabsContent value="needs-destruction" className="mt-4">
+                    <Card>
+                        <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>ID</TableHead>
