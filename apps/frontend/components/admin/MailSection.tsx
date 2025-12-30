@@ -163,8 +163,13 @@ export function MailSection({ }: MailSectionProps) {
     const getDestructionEligibilityStatus = (item: MailItem): { label: string; isEligible: boolean } => {
         // If already destroyed, show destroyed status
         if (item.physical_destruction_date) {
-            const destroyedDate = parseDate(item.physical_destruction_date);
-            const destroyedDateStr = destroyedDate 
+            // physical_destruction_date is an ISO string from PostgreSQL TIMESTAMPTZ
+            const destroyedDate = typeof item.physical_destruction_date === 'string' 
+                ? new Date(item.physical_destruction_date)
+                : item.physical_destruction_date 
+                ? new Date(item.physical_destruction_date)
+                : null;
+            const destroyedDateStr = destroyedDate && !isNaN(destroyedDate.getTime())
                 ? destroyedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
                 : '—';
             return { label: `Destroyed on ${destroyedDateStr}`, isEligible: false };
