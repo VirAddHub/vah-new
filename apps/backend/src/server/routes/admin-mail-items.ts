@@ -104,7 +104,9 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.deleted = false AND m.scanned = true
+            WHERE m.deleted = false 
+            AND (m.scanned = true OR m.scan_file_url IS NOT NULL OR f.id IS NOT NULL)
+            AND (m.received_at_ms IS NOT NULL OR m.received_date IS NOT NULL OR m.created_at IS NOT NULL)
         `;
 
             const params: any[] = [];
