@@ -288,6 +288,21 @@ export default function AdminMailDetailPage() {
                           {dateFmt.format(destructionDate!)}
                         </p>
                       </div>
+                      {mailItem.destroyed_by_email && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Marked as destroyed by:{" "}
+                          <span className="font-medium">
+                            {mailItem.destroyed_by_first_name || mailItem.destroyed_by_last_name
+                              ? `${mailItem.destroyed_by_first_name || ''} ${mailItem.destroyed_by_last_name || ''}`.trim()
+                              : mailItem.destroyed_by_email}
+                          </span>
+                          {mailItem.destroyed_by_at && (
+                            <span className="ml-2">
+                              ({new Date(mailItem.destroyed_by_at).toLocaleString('en-GB')})
+                            </span>
+                          )}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">
                         This mail item has been marked as physically destroyed and logged in the audit trail.
                       </p>

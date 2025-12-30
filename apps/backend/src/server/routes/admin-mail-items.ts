@@ -109,7 +109,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.deleted = false 
+            WHERE m.deleted = false
             AND (
                 -- Include scanned items OR items with files OR items with scan URLs
                 (m.scanned = true OR m.scan_file_url IS NOT NULL OR f.id IS NOT NULL)
@@ -210,10 +210,19 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
                 f.name as file_name,
                 f.size as file_size,
                 f.web_url as file_url,
-                f.mime as file_mime
+                f.mime as file_mime,
+                -- Get admin who marked as destroyed
+                admin_user.email as destroyed_by_email,
+                admin_user.first_name as destroyed_by_first_name,
+                admin_user.last_name as destroyed_by_last_name,
+                admin_audit.created_at as destroyed_by_at
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
+            LEFT JOIN admin_audit ON admin_audit.target_type = 'mail_item' 
+                AND admin_audit.target_id = m.id 
+                AND admin_audit.action = 'physical_destruction_confirmed'
+            LEFT JOIN "user" admin_user ON admin_user.id = admin_audit.admin_id
             WHERE m.id = $1
         `, [mailId]);
 
