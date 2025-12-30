@@ -107,3 +107,22 @@ services:
       # Note: DATABASE_URL, POSTMARK_API_KEY, APP_BASE_URL, OPS_ALERT_EMAIL
       # are needed by the BACKEND SERVICE (not the worker). The worker only
       # calls the webhook - it doesn't access the database or send emails directly.
+
+  - type: cron
+    name: mailroom-expiry-reminders
+    rootDir: .
+    env: node
+    # Runs daily at 2 AM UTC: "0 2 * * *" (minute hour day month weekday)
+    # Sends expiry reminder emails to mailroom when mail items reach 30-day GDPR retention limit
+    schedule: "0 2 * * *"
+    buildCommand: |
+      npm ci
+      npm run build
+    runCommand: cd apps/backend && node dist/src/scripts/mailroomExpiryReminders.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20.19.0"
+      - key: NODE_ENV
+        value: production
+      # Note: DATABASE_URL, POSTMARK_API_TOKEN, MAILROOM_EMAIL are required
+      # These should be set in Render Dashboard (shared with backend service)
