@@ -126,3 +126,27 @@ services:
         value: production
       # Note: DATABASE_URL, POSTMARK_API_TOKEN, MAILROOM_EMAIL are required
       # These should be set in Render Dashboard (shared with backend service)
+
+  - type: cron
+    name: log-destruction-to-excel
+    rootDir: .
+    env: node
+    # Runs every 15 minutes to log confirmed destructions to Excel
+    # This cron ONLY logs items that have been manually marked as destroyed by an admin
+    # It does NOT decide what to destroy - human decides, cron records
+    schedule: "*/15 * * * *"
+    buildCommand: |
+      npm ci
+      npm run build
+    runCommand: cd apps/backend && node dist/src/scripts/logDestructionToExcel.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20.19.0"
+      - key: NODE_ENV
+        value: production
+      # DATABASE_URL is needed by this script. Ensure it is set in Render Dashboard.
+      # TODO: Add Microsoft Graph API credentials for Excel writing:
+      # - AZURE_CLIENT_ID
+      # - AZURE_CLIENT_SECRET
+      # - AZURE_TENANT_ID
+      # - ONEDRIVE_DESTRUCTION_LOG_PATH (e.g., "/Scanned_Mail/Destruction_Log.xlsx")
