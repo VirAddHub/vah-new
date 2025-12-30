@@ -403,6 +403,8 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     const adminId = req.user!.id;
     const pool = getPool();
     const now = new Date();
+    // physical_destruction_date is TIMESTAMPTZ, so we need to pass ISO string
+    const nowISO = now.toISOString();
 
     if (!id || isNaN(parseInt(id))) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -418,7 +420,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             WHERE id = $3
             RETURNING id, user_id
             `,
-            [now, Date.now(), parseInt(id)]
+            [nowISO, Date.now(), parseInt(id)]
         );
 
         if (updateResult.rows.length === 0) {
