@@ -6,14 +6,24 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  // Debug logging
+  console.log('[BFF Admin Mail Item Mark Destroyed] Route called', {
+    url: req.url,
+    params,
+    id: params?.id,
+  });
+
   const id = params?.id;
   if (!id || id === "undefined" || id === "null") {
+    console.error('[BFF Admin Mail Item Mark Destroyed] Invalid ID', { id, params });
     return NextResponse.json({ ok: false, error: "invalid_mail_item_id" }, { status: 400 });
   }
 
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
+    
+    console.log('[BFF Admin Mail Item Mark Destroyed] Proxying to backend', { url, id });
 
     // Parse cookies for CSRF token
     let cookieHeader = req.headers.get("cookie") || "";
