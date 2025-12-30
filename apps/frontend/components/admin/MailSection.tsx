@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Search, Eye, Trash2, AlertTriangle, CheckCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Search, Eye, Trash2, AlertTriangle, CheckCircle, AlertCircle } from "lucide-react";
 import { apiClient, safe } from "../../lib/apiClient";
 import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
@@ -260,7 +261,10 @@ export function MailSection({ }: MailSectionProps) {
         };
     };
 
-    const filteredItems: MailItem[] = mailItems.filter((item: MailItem) => {
+    const [activeTab, setActiveTab] = useState<string>("needs-destruction");
+
+    // Filter items by search term
+    const searchFilteredItems: MailItem[] = mailItems.filter((item: MailItem) => {
         if (!debouncedSearchTerm) return true;
         const searchLower = debouncedSearchTerm.toLowerCase();
         return (
@@ -272,8 +276,17 @@ export function MailSection({ }: MailSectionProps) {
         );
     });
 
+    // Separate items into two groups
+    const needsDestructionItems: MailItem[] = searchFilteredItems.filter(
+        (item) => item.past_30_days && !item.physical_destruction_date
+    );
+    const allItems: MailItem[] = searchFilteredItems;
+
+    // Use the appropriate list based on active tab
+    const filteredItems: MailItem[] = activeTab === "needs-destruction" ? needsDestructionItems : allItems;
+
     const processedCount = filteredItems.filter((item) => item.status === 'processed' || item.status === 'forwarded').length;
-    const needsDestructionCount = filteredItems.filter((item) => item.past_30_days && !item.physical_destruction_date).length;
+    const needsDestructionCount = needsDestructionItems.length;
 
     return (
         <div className="space-y-6">
