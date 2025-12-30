@@ -429,7 +429,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         const destroyedAt = updateResult.rows[0].physical_destruction_date;
 
         // Log admin audit record
-        // Use database-generated timestamp for consistency
+        // admin_audit.created_at is TIMESTAMPTZ, so use NOW() for database-generated timestamp
         await pool.query(
             `
             INSERT INTO admin_audit (
@@ -453,7 +453,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         // Log in mail_event for additional audit trail
-        // Use database-generated timestamp for consistency
+        // mail_event.created_at is BIGINT (milliseconds), so use Date.now()
         await pool.query(
             `
             INSERT INTO mail_event (
@@ -463,7 +463,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                 details,
                 created_at
             )
-            VALUES ($1, $2, 'physical_mail_destroyed', $3, NOW())
+            VALUES ($1, $2, 'physical_mail_destroyed', $3, $4)
             `,
             [
                 parseInt(id),
@@ -471,6 +471,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                 JSON.stringify({
                     destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
                 }),
+                Date.now(),
             ]
         );
 
