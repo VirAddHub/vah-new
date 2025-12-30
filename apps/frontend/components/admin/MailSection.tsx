@@ -147,7 +147,7 @@ export function MailSection({ }: MailSectionProps) {
         };
     };
 
-    const filteredItems: MailItem[] = mailItems.filter((item) => {
+    const filteredItems: MailItem[] = mailItems.filter((item: MailItem) => {
         if (!debouncedSearchTerm) return true;
         const searchLower = debouncedSearchTerm.toLowerCase();
         return (
