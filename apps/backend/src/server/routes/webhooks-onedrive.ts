@@ -606,13 +606,13 @@ router.post('/', async (req: any, res) => {
         console.log('[OneDrive Webhook] Mail after cancellation email sent to:', user.email);
       } else {
         // Account is active - send normal "mail scanned" email
-        await sendMailScanned({
-          email: user.email,
-          firstName: user.first_name || "there",
-          subject: `New mail received - ${tagToTitle(tagSlug)}`,
-          cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
-        });
-        console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+      await sendMailScanned({
+        email: user.email,
+        firstName: user.first_name || "there",
+        subject: `New mail received - ${tagToTitle(tagSlug)}`,
+        cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
+      });
+      console.log('[OneDrive Webhook] Email notification sent to:', user.email);
       }
     } catch (emailError) {
       console.error('[OneDrive Webhook] Failed to send email notification:', emailError);

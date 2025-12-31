@@ -52,12 +52,12 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
             }
 
             const mailData = mail.rows[0];
-            
+
             // Check if physical mail has been destroyed
             if (mailData.physical_destruction_date) {
                 throw new Error('This mail item has been physically destroyed and cannot be forwarded. The digital scan is still available for download.');
             }
-            
+
             // Allow forwarding for 'received' status mail items (not just 'Pending')
             if (mailData.status !== 'received' && mailData.status !== 'Pending') {
                 throw new Error('Mail not eligible for forwarding');

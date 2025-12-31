@@ -477,8 +477,8 @@ export default function AccountPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-2">
-                            <User className="h-8 w-8 text-primary" />
-                            <h1 className="text-3xl font-bold text-foreground">Account</h1>
+                        <User className="h-8 w-8 text-primary" />
+                        <h1 className="text-3xl font-bold text-foreground">Account</h1>
                         </div>
                         <p className="text-muted-foreground ml-11">
                             Manage your account settings, billing, and business information
@@ -513,22 +513,22 @@ export default function AccountPage() {
                     <section className="space-y-6 mb-8">
                         <div>
                             <h2 className="text-xl font-semibold text-foreground mb-4">Account Information</h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Account & Billing */}
-                                <AccountBillingCard
-                                    subscription={data.subscription}
-                                    onRefresh={async () => {
-                                        await mutateOverview();
-                                        await mutateProfile();
-                                        await mutateAccount();
-                                    }}
-                                />
+                        <AccountBillingCard
+                            subscription={data.subscription}
+                            onRefresh={async () => {
+                                await mutateOverview();
+                                await mutateProfile();
+                                await mutateAccount();
+                            }}
+                        />
 
                                 {/* Business Contact */}
-                                <BusinessContactCard
-                                    contact={data.contact}
-                                    onSave={handleSaveContact}
-                                />
+                        <BusinessContactCard
+                            contact={data.contact}
+                            onSave={handleSaveContact}
+                        />
                             </div>
                         </div>
 
@@ -548,10 +548,10 @@ export default function AccountPage() {
                             <h2 className="text-xl font-semibold text-foreground mb-4">Addresses</h2>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Forwarding Address */}
-                                <ForwardingAddressCard
-                                    address={data.forwarding_address || null}
-                                    onSave={handleSaveAddress}
-                                />
+                    <ForwardingAddressCard
+                        address={data.forwarding_address || null}
+                        onSave={handleSaveAddress}
+                    />
 
                                 {/* Business Address (Display Only) */}
                                 {data.business_address ? (
@@ -565,8 +565,8 @@ export default function AccountPage() {
                                             </p>
                                             <div className="p-4 bg-muted/50 rounded-lg border">
                                                 <pre className="whitespace-pre-wrap text-sm font-mono text-foreground">
-                                                    {data.business_address.formatted}
-                                                </pre>
+                                {data.business_address.formatted}
+                            </pre>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -610,7 +610,7 @@ export default function AccountPage() {
                                 <OwnersCard owners={data.owners || []} />
 
                                 {/* Invoices */}
-                                <InvoicesCard invoices={data.invoices || []} />
+                    <InvoicesCard invoices={data.invoices || []} />
                             </div>
                         </div>
                     </section>
