@@ -103,6 +103,8 @@
     "npm": ">=10.0.0"
   },
   "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@types/pg": "8.15.5",
     "@vah/shared": "file:../../packages/shared",
     "archiver": "^7.0.1",
