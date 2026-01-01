@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     try {
         const backend = getBackendOrigin();
         const { searchParams } = new URL(req.url);
-        
+
         // Forward query params (from, to) if present
         const queryString = searchParams.toString();
         const url = `${backend}/api/admin/exports/destruction-log${queryString ? `?${queryString}` : ''}`;
@@ -34,11 +34,12 @@ export async function GET(req: NextRequest) {
         if (!r.ok) {
             // Try to parse as JSON error, fallback to text
             const errorText = await r.text().catch(() => r.statusText);
+            console.error('[BFF Admin Exports] Backend error:', r.status, errorText);
             let errorData;
             try {
                 errorData = JSON.parse(errorText);
             } catch {
-                errorData = { ok: false, error: errorText };
+                errorData = { ok: false, error: errorText, status: r.status };
             }
             return NextResponse.json(errorData, {
                 status: r.status,
@@ -69,10 +70,12 @@ export async function GET(req: NextRequest) {
             );
         }
         console.error('[BFF Admin Exports Destruction Log] Error:', error);
+        console.error('[BFF Admin Exports Destruction Log] Error stack:', error instanceof Error ? error.stack : 'No stack');
         return NextResponse.json({
             ok: false,
             error: "Failed to export destruction log",
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error',
+            type: error?.constructor?.name || typeof error
         }, { status: 500 });
     }
 }
