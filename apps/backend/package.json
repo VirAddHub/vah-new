@@ -114,6 +114,7 @@
     "connect-pg-simple": "10.0.0",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
+    "csv-stringify": "^6.6.0",
     "dayjs": "1.11.18",
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "0.44.5",
