@@ -88,66 +88,85 @@ async function appendRowToExcelTable() {
         console.log("[testDestructionLogWrite] Using Drive ID:", DRIVE_ID);
         console.log("[testDestructionLogWrite] Using File Item ID:", FILE_ITEM_ID);
         console.log("[testDestructionLogWrite] Using Table Name:", TABLE_NAME);
-        
+
         // CRITICAL: Initialize workbook mode before any workbook operations
         // Graph needs to open the file as an Excel workbook, not just a file
         // This must be done before any /workbook/* operations
         console.log("[testDestructionLogWrite] Step 1: Initializing workbook...");
-        const initUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`;
-        console.log("[testDestructionLogWrite] Init URL:", initUrl);
         
-        try {
-            const initResponse = await client.api(initUrl).get();
-            console.log("[testDestructionLogWrite] ✅ Workbook initialized successfully");
-            console.log("[testDestructionLogWrite] Worksheets found:", initResponse?.value?.length || 0);
-        } catch (initError: any) {
-            console.error("[testDestructionLogWrite] ❌ Workbook initialization failed!");
-            console.error("[testDestructionLogWrite] Init error message:", initError?.message);
-            console.error("[testDestructionLogWrite] Init error code:", initError?.statusCode || initError?.code);
-            if (initError?.response) {
-                const errorText = await initError.response.text().catch(() => 'Unable to read error');
-                console.error("[testDestructionLogWrite] Init error response:", errorText);
+        // Try multiple initialization approaches for SharePoint/OneDrive compatibility
+        const initUrls = [
+            `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`,
+            `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook`,
+        ];
+        
+        let initSucceeded = false;
+        let lastInitError: any = null;
+        
+        for (const initUrl of initUrls) {
+            console.log("[testDestructionLogWrite] Trying init URL:", initUrl);
+            try {
+                const initResponse = await client.api(initUrl).get();
+                console.log("[testDestructionLogWrite] ✅ Workbook initialized successfully with:", initUrl);
+                if (initResponse?.value) {
+                    console.log("[testDestructionLogWrite] Worksheets found:", initResponse.value.length);
+                }
+                initSucceeded = true;
+                break;
+            } catch (initError: any) {
+                console.error("[testDestructionLogWrite] ⚠️ Init failed with", initUrl);
+                console.error("[testDestructionLogWrite] Error:", initError?.message);
+                lastInitError = initError;
+                // Try next URL
             }
-            throw new Error(`Workbook initialization failed: ${initError?.message || 'Unknown error'}. Cannot proceed with table operations.`);
+        }
+        
+        if (!initSucceeded) {
+            console.error("[testDestructionLogWrite] ❌ All workbook initialization attempts failed!");
+            if (lastInitError?.response) {
+                const errorText = await lastInitError.response.text().catch(() => 'Unable to read error');
+                console.error("[testDestructionLogWrite] Last error response:", errorText);
+            }
+            throw new Error(`Workbook initialization failed: ${lastInitError?.message || 'Unknown error'}. Cannot proceed with table operations.`);
         }
 
         // Step 2: List tables to verify the table exists
         console.log("[testDestructionLogWrite] Step 2: Verifying table exists...");
         const tablesUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables`;
         console.log("[testDestructionLogWrite] Tables URL:", tablesUrl);
-        
+
         try {
             const tablesResponse = await client.api(tablesUrl).get();
             const tables = tablesResponse?.value || [];
             console.log("[testDestructionLogWrite] ✅ Found", tables.length, "table(s)");
             const tableNames = tables.map((t: any) => t.name);
             console.log("[testDestructionLogWrite] Table names:", tableNames);
-            
+
             if (!tableNames.includes(TABLE_NAME)) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-            
+
             const targetTable = tables.find((t: any) => t.name === TABLE_NAME);
             if (!targetTable) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-            
+
             const tableId = targetTable.id;
             console.log("[testDestructionLogWrite] Target table ID:", tableId);
             console.log("[testDestructionLogWrite] Target table name:", targetTable.name);
-            
+
             // Step 3: Append row to Excel table using TABLE ID (not name)
             console.log("[testDestructionLogWrite] Step 3: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
             console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
-            
+
             // CRITICAL: Use table ID, not table name for the append operation
             const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
             console.log("[testDestructionLogWrite] Append URL:", appendUrl);
-            
+
             const response = await client
                 .api(appendUrl)
                 .post(rowData);
-            
+
             console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
             console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
 
