@@ -305,6 +305,14 @@ export function MailSection({ }: MailSectionProps) {
                         <span className="text-red-600">Needs Destruction: {needsDestructionCount}</span>
                 </div>
                 </div>
+                <Button
+                    onClick={handleExportDestructionLog}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                >
+                    <Download className="h-4 w-4" />
+                    Export Destruction Log
+                </Button>
             </div>
 
             {/* Search */}
