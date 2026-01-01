@@ -160,41 +160,85 @@ async function appendRowToExcelTable() {
             console.log("[testDestructionLogWrite] Target table name:", targetTable.name);
             console.log("[testDestructionLogWrite] Target table worksheet:", targetTable.worksheet?.id || 'N/A');
             
-            // Step 4: Append row to Excel table using TABLE ID (not name)
-            console.log("[testDestructionLogWrite] Step 4: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
-            console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
+            // Step 4: Get table column metadata to ensure exact column count match
+            console.log("[testDestructionLogWrite] Step 4: Getting table column metadata...");
+            const columnsUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/columns`;
+            console.log("[testDestructionLogWrite] Columns URL:", columnsUrl);
             
-            // Try both API paths: with and without worksheet
-            let response: any = null;
-            let lastError: any = null;
-            
-            // Option 1: Direct table path (preferred)
-            const appendUrl1 = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
-            console.log("[testDestructionLogWrite] Trying append URL (direct):", appendUrl1);
-            
+            let columnMetadata: any[] = [];
             try {
-                response = await client.api(appendUrl1).post(rowData);
-                console.log("[testDestructionLogWrite] ✅ Success with direct table path!");
-            } catch (err1: any) {
-                console.error("[testDestructionLogWrite] ❌ Direct path failed:", err1?.message);
-                lastError = err1;
+                const columnsResponse = await client.api(columnsUrl).get();
+                columnMetadata = columnsResponse?.value || [];
+                console.log("[testDestructionLogWrite] ✅ Found", columnMetadata.length, "column(s)");
                 
-                // Option 2: Worksheet-based path (fallback)
-                if (worksheetId) {
-                    const appendUrl2 = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets/${worksheetId}/tables/${tableId}/rows/add`;
-                    console.log("[testDestructionLogWrite] Trying append URL (worksheet-based):", appendUrl2);
-                    try {
-                        response = await client.api(appendUrl2).post(rowData);
-                        console.log("[testDestructionLogWrite] ✅ Success with worksheet-based path!");
-                    } catch (err2: any) {
-                        console.error("[testDestructionLogWrite] ❌ Worksheet-based path also failed:", err2?.message);
-                        lastError = err2;
-                        throw err2;
-                    }
-                } else {
-                    throw err1;
+                // Log column details (as requested)
+                const columnInfo = columnMetadata.map((c: any) => ({
+                    name: c.name,
+                    index: c.index,
+                    hasFormula: !!c.formula,
+                    formula: c.formula || null
+                }));
+                console.log("[testDestructionLogWrite] Column metadata:", JSON.stringify(columnInfo, null, 2));
+            } catch (columnsError: any) {
+                console.error("[testDestructionLogWrite] ❌ Failed to get column metadata:", columnsError?.message);
+                throw new Error(`Failed to get table columns: ${columnsError?.message || 'Unknown error'}. Cannot determine column count.`);
+            }
+            
+            // Step 5: Build row array dynamically to match exact column count
+            console.log("[testDestructionLogWrite] Step 5: Building row array to match table structure...");
+            const expectedColumnCount = columnMetadata.length;
+            console.log("[testDestructionLogWrite] Expected column count:", expectedColumnCount);
+            
+            // Prepare our test data (10 values for 10 columns)
+            const testRowData = [
+                todayFormatted, // Column A: Physical Destruction Date
+                12345, // Column B: Mail Item ID
+                "Test Customer (ID: 999)", // Column C: Customer Name / ID
+                "Test Mail Subject – Test Sender", // Column D: Mail Description
+                receiptDateFormatted, // Column E: Receipt Date
+                eligibilityDateFormatted, // Column F: Eligibility Date
+                "Cross-cut shredder", // Column G: Destruction Method
+                "Test Admin", // Column H: Staff Name
+                "TA", // Column I: Staff Signature / Initials
+                "Automated test entry", // Column J: Notes
+            ];
+            
+            // Build row array with exact column count
+            const rowArray: any[] = new Array(expectedColumnCount).fill(null);
+            
+            // Fill row array with our data (up to the length we have)
+            for (let i = 0; i < Math.min(testRowData.length, expectedColumnCount); i++) {
+                rowArray[i] = testRowData[i];
+            }
+            
+            // For formula columns, ensure they're null (not undefined)
+            for (let i = 0; i < columnMetadata.length; i++) {
+                if (columnMetadata[i].formula && (rowArray[i] === undefined || rowArray[i] === null)) {
+                    rowArray[i] = null; // Explicit null for formula columns
                 }
             }
+            
+            console.log("[testDestructionLogWrite] Final row array length:", rowArray.length);
+            console.log("[testDestructionLogWrite] Final row array:", JSON.stringify(rowArray, null, 2));
+            
+            if (rowArray.length !== expectedColumnCount) {
+                throw new Error(`Row array length (${rowArray.length}) does not match expected column count (${expectedColumnCount})`);
+            }
+            
+            const finalRowData = {
+                values: [rowArray]
+            };
+            
+            // Step 6: Append row to Excel table using TABLE ID (not name)
+            console.log("[testDestructionLogWrite] Step 6: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
+            
+            // CRITICAL: Use table ID, not table name for the append operation
+            const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
+            console.log("[testDestructionLogWrite] Append URL:", appendUrl);
+            
+            const response = await client
+                .api(appendUrl)
+                .post(finalRowData);
 
             console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
             console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
