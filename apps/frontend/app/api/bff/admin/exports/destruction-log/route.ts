@@ -15,6 +15,9 @@ export async function GET(req: NextRequest) {
         const queryString = searchParams.toString();
         const url = `${backend}/api/admin/exports/destruction-log${queryString ? `?${queryString}` : ''}`;
 
+        console.log('[BFF Admin Exports] Fetching from:', url);
+        console.log('[BFF Admin Exports] Has cookies:', !!req.headers.get('cookie'));
+
         const r = await fetch(url, {
             method: "GET",
             headers: {
@@ -25,6 +28,8 @@ export async function GET(req: NextRequest) {
             cache: "no-store",
             credentials: "include"
         });
+
+        console.log('[BFF Admin Exports] Backend response status:', r.status);
 
         if (!r.ok) {
             // Try to parse as JSON error, fallback to text
