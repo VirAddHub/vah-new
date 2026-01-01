@@ -139,6 +139,9 @@ async function appendRowToExcelTable() {
         const tablesUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables`;
         console.log("[testDestructionLogWrite] Tables URL:", tablesUrl);
 
+        // Declare columnMetadata outside try block so it's accessible in catch
+        let columnMetadata: any[] = [];
+
         try {
             const tablesResponse = await client.api(tablesUrl).get();
             const tables = tablesResponse?.value || [];
@@ -164,8 +167,6 @@ async function appendRowToExcelTable() {
             console.log("[testDestructionLogWrite] Step 4: Getting table column metadata...");
             const columnsUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/columns`;
             console.log("[testDestructionLogWrite] Columns URL:", columnsUrl);
-
-            let columnMetadata: any[] = [];
             try {
                 const columnsResponse = await client.api(columnsUrl).get();
                 columnMetadata = columnsResponse?.value || [];
