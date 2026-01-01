@@ -67,22 +67,8 @@ async function appendRowToExcelTable() {
         const eligibilityDate = new Date(receiptDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days after receipt
         const eligibilityDateFormatted = eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        const rowData = {
-            values: [
-                [
-                    todayFormatted, // Column A: Column1 (Physical Destruction Date)
-                    12345, // Column B: Mail Item ID
-                    "Test Customer (ID: 999)", // Column C: Customer Name / ID
-                    "Test Mail Subject – Test Sender", // Column D: Mail Description
-                    receiptDateFormatted, // Column E: Receipt Date (DD/MM/YYYY)
-                    eligibilityDateFormatted, // Column F: Eligibility Date (DD/MM/YYYY)
-                    "Cross-cut shredder", // Column G: Destruction Method
-                    "Test Admin", // Column H: Staff Name
-                    "TA", // Column I: Staff Signature / Initials
-                    "Automated test entry", // Column J: Notes
-                ],
-            ],
-        };
+        // Row data will be built dynamically after we get table column metadata
+        // This ensures exact column count match
 
         console.log("[testDestructionLogWrite] Authenticating to Microsoft Graph...");
         console.log("[testDestructionLogWrite] Using Drive ID:", DRIVE_ID);
