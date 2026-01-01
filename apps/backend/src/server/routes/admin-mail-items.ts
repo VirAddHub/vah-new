@@ -511,7 +511,8 @@ router.post('/mail-items/test-excel-write', requireAdmin, async (_req: Request, 
       ok: false,
       error: 'test_failed',
       message: error?.message || 'Failed to run Excel write test',
-      details: error?.stack
+      details: error?.stack,
+      columnInfo: error?.details || null // Include column metadata if available
     });
   }
 });

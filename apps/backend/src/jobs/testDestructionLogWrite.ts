@@ -269,11 +269,33 @@ async function appendRowToExcelTable() {
             console.error("[testDestructionLogWrite] ❌ Table verification/append failed!");
             console.error("[testDestructionLogWrite] Error message:", tablesError?.message);
             console.error("[testDestructionLogWrite] Error code:", tablesError?.statusCode || tablesError?.code);
+            
+            // Include column metadata in error for debugging
+            const errorDetails: any = {
+                message: tablesError?.message || 'Unknown error',
+                code: tablesError?.statusCode || tablesError?.code,
+            };
+            
+            // Add column info if we have it
+            if (columnMetadata && columnMetadata.length > 0) {
+                errorDetails.columnCount = columnMetadata.length;
+                errorDetails.columns = columnMetadata.map((c: any) => ({
+                    name: c.name,
+                    index: c.index,
+                    hasFormula: !!c.formula
+                }));
+            }
+            
             if (tablesError?.response) {
                 const errorText = await tablesError.response.text().catch(() => 'Unable to read error');
                 console.error("[testDestructionLogWrite] Error response:", errorText);
+                errorDetails.graphError = errorText;
             }
-            throw new Error(`Table operation failed: ${tablesError?.message || 'Unknown error'}`);
+            
+            const errorMessage = `Table operation failed: ${tablesError?.message || 'Unknown error'}`;
+            const enhancedError = new Error(errorMessage) as any;
+            enhancedError.details = errorDetails;
+            throw enhancedError;
         }
     } catch (error: any) {
         console.error("[testDestructionLogWrite] ❌ Error:", error);
