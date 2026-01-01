@@ -18,15 +18,23 @@ const AZURE_TENANT_ID = process.env.AZURE_TENANT_ID;
 const AZURE_CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const AZURE_CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
-if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
-    console.error("Missing required environment variables:");
-    console.error("  AZURE_TENANT_ID:", !!AZURE_TENANT_ID);
-    console.error("  AZURE_CLIENT_ID:", !!AZURE_CLIENT_ID);
-    console.error("  AZURE_CLIENT_SECRET:", !!AZURE_CLIENT_SECRET);
-    process.exit(1);
+// Only exit if called directly (not when imported as a module)
+if (require.main === module) {
+    if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
+        console.error("Missing required environment variables:");
+        console.error("  AZURE_TENANT_ID:", !!AZURE_TENANT_ID);
+        console.error("  AZURE_CLIENT_ID:", !!AZURE_CLIENT_ID);
+        console.error("  AZURE_CLIENT_SECRET:", !!AZURE_CLIENT_SECRET);
+        process.exit(1);
+    }
 }
 
 async function appendRowToExcelTable() {
+    // Check environment variables at runtime (when called as a function)
+    if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
+        throw new Error("Missing required environment variables: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET");
+    }
+
     try {
         // Authenticate using client credentials (application permissions)
         const credential = new ClientSecretCredential(
@@ -69,11 +77,18 @@ async function appendRowToExcelTable() {
 
         console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
         console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
+        
+        return {
+            success: true,
+            message: "Row appended to Excel table successfully",
+            response
+        };
     } catch (error: any) {
         console.error("[testDestructionLogWrite] ❌ Error:", error);
         if (error.response) {
+            const errorText = await error.response.text().catch(() => 'Unable to read error response');
             console.error("[testDestructionLogWrite] Response status:", error.response.status);
-            console.error("[testDestructionLogWrite] Response body:", await error.response.text());
+            console.error("[testDestructionLogWrite] Response body:", errorText);
         }
         throw error;
     }

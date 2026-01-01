@@ -488,4 +488,32 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     }
 });
 
+/**
+ * POST /api/admin/mail-items/test-excel-write
+ * Test endpoint to verify Excel destruction log write functionality
+ * This endpoint runs the test script that appends a row to the Excel table
+ */
+router.post('/test-excel-write', requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    // Dynamically import the test script function
+    const { appendRowToExcelTable } = await import('../../jobs/testDestructionLogWrite');
+    
+    const result = await appendRowToExcelTable();
+    
+    return res.json({
+      ok: true,
+      message: 'Test Excel write completed successfully',
+      result
+    });
+  } catch (error: any) {
+    console.error('[POST /api/admin/mail-items/test-excel-write] error:', error);
+    return res.status(500).json({
+      ok: false,
+      error: 'test_failed',
+      message: error?.message || 'Failed to run Excel write test',
+      details: error?.stack
+    });
+  }
+});
+
 export default router;
