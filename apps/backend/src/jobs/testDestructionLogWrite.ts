@@ -49,6 +49,19 @@ async function appendRowToExcelTable() {
 
         const client = Client.initWithMiddleware({ authProvider });
 
+        // CRITICAL: Initialize workbook mode before any workbook operations
+        // Graph needs to open the file as an Excel workbook, not just a file
+        console.log("[testDestructionLogWrite] Initializing workbook...");
+        try {
+            await client
+                .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`)
+                .get();
+            console.log("[testDestructionLogWrite] ✅ Workbook initialized");
+        } catch (initError: any) {
+            console.error("[testDestructionLogWrite] ⚠️ Workbook initialization warning:", initError?.message);
+            // Continue anyway - sometimes this works even if init fails
+        }
+
         // Build the row data to match the actual Excel table structure:
         // Column A: Column1 (likely destruction date or index)
         // Column B: Mail Item ID
@@ -66,7 +79,7 @@ async function appendRowToExcelTable() {
         const receiptDateFormatted = receiptDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const eligibilityDate = new Date(receiptDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days after receipt
         const eligibilityDateFormatted = eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        
+
         const rowData = {
             values: [
                 [
@@ -85,6 +98,21 @@ async function appendRowToExcelTable() {
         };
 
         console.log("[testDestructionLogWrite] Authenticating to Microsoft Graph...");
+        
+        // CRITICAL: Initialize workbook mode before any workbook operations
+        // Graph needs to open the file as an Excel workbook, not just a file
+        // This must be done before any /workbook/* operations
+        console.log("[testDestructionLogWrite] Initializing workbook...");
+        try {
+            await client
+                .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`)
+                .get();
+            console.log("[testDestructionLogWrite] ✅ Workbook initialized");
+        } catch (initError: any) {
+            console.error("[testDestructionLogWrite] ⚠️ Workbook initialization warning:", initError?.message);
+            // Continue anyway - sometimes this works even if init fails, but it's better to have it
+        }
+
         console.log("[testDestructionLogWrite] Appending row to table:", TABLE_NAME);
         console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
 
@@ -96,7 +124,7 @@ async function appendRowToExcelTable() {
 
         console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
         console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
-        
+
         return {
             success: true,
             message: "Row appended to Excel table successfully",
