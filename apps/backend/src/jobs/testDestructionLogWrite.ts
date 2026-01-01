@@ -49,18 +49,30 @@ async function appendRowToExcelTable() {
 
         const client = Client.initWithMiddleware({ authProvider });
 
-        // Build the row data
-        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        // Build the row data to match the Excel table structure
+        // Based on buildExcelRow() in logDestructionToExcel.ts:
+        // 1. mailItemId, 2. customerName, 3. customerId, 4. mailDescription,
+        // 5. receiptDate, 6. destructionEligibilityDate, 7. physicalDestructionDate,
+        // 8. method, 9. staffMember
+        const today = new Date();
+        const todayFormatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const receiptDate = new Date(today.getTime() - (35 * 24 * 60 * 60 * 1000)); // 35 days ago
+        const receiptDateFormatted = receiptDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const eligibilityDate = new Date(receiptDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days after receipt
+        const eligibilityDateFormatted = eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
         const rowData = {
             values: [
                 [
-                    today, // destruction_date
-                    "MAIL-12345", // mail_item_id
+                    12345, // mailItemId (number)
+                    "Test Customer", // customerName
+                    999, // customerId (number)
+                    "Test Mail Subject – Test Sender", // mailDescription
+                    receiptDateFormatted, // receiptDate (DD/MM/YYYY)
+                    eligibilityDateFormatted, // destructionEligibilityDate (DD/MM/YYYY)
+                    todayFormatted, // physicalDestructionDate (DD/MM/YYYY)
                     "Cross-cut shredder", // method
-                    "System", // authorised_by
-                    "Automated Job", // performed_by
-                    "GDPR + HMRC AML", // retention_basis
-                    "Automated test entry", // notes
+                    "Test Admin", // staffMember
                 ],
             ],
         };
