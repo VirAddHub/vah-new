@@ -98,28 +98,65 @@ async function appendRowToExcelTable() {
         };
 
         console.log("[testDestructionLogWrite] Authenticating to Microsoft Graph...");
+        console.log("[testDestructionLogWrite] Using Drive ID:", DRIVE_ID);
+        console.log("[testDestructionLogWrite] Using File Item ID:", FILE_ITEM_ID);
+        console.log("[testDestructionLogWrite] Using Table Name:", TABLE_NAME);
         
         // CRITICAL: Initialize workbook mode before any workbook operations
         // Graph needs to open the file as an Excel workbook, not just a file
         // This must be done before any /workbook/* operations
-        console.log("[testDestructionLogWrite] Initializing workbook...");
+        console.log("[testDestructionLogWrite] Step 1: Initializing workbook...");
+        const initUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`;
+        console.log("[testDestructionLogWrite] Init URL:", initUrl);
+        
         try {
-            await client
-                .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`)
-                .get();
-            console.log("[testDestructionLogWrite] ✅ Workbook initialized");
+            const initResponse = await client.api(initUrl).get();
+            console.log("[testDestructionLogWrite] ✅ Workbook initialized successfully");
+            console.log("[testDestructionLogWrite] Worksheets found:", initResponse?.value?.length || 0);
         } catch (initError: any) {
-            console.error("[testDestructionLogWrite] ⚠️ Workbook initialization warning:", initError?.message);
-            // Continue anyway - sometimes this works even if init fails, but it's better to have it
+            console.error("[testDestructionLogWrite] ❌ Workbook initialization failed!");
+            console.error("[testDestructionLogWrite] Init error message:", initError?.message);
+            console.error("[testDestructionLogWrite] Init error code:", initError?.statusCode || initError?.code);
+            if (initError?.response) {
+                const errorText = await initError.response.text().catch(() => 'Unable to read error');
+                console.error("[testDestructionLogWrite] Init error response:", errorText);
+            }
+            throw new Error(`Workbook initialization failed: ${initError?.message || 'Unknown error'}. Cannot proceed with table operations.`);
         }
 
-        console.log("[testDestructionLogWrite] Appending row to table:", TABLE_NAME);
-        console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
+        // Step 2: List tables to verify the table exists
+        console.log("[testDestructionLogWrite] Step 2: Verifying table exists...");
+        const tablesUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables`;
+        console.log("[testDestructionLogWrite] Tables URL:", tablesUrl);
+        
+        try {
+            const tablesResponse = await client.api(tablesUrl).get();
+            const tables = tablesResponse?.value || [];
+            console.log("[testDestructionLogWrite] ✅ Found", tables.length, "table(s)");
+            const tableNames = tables.map((t: any) => t.name);
+            console.log("[testDestructionLogWrite] Table names:", tableNames);
+            
+            if (!tableNames.includes(TABLE_NAME)) {
+                throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
+            }
+            
+            const targetTable = tables.find((t: any) => t.name === TABLE_NAME);
+            console.log("[testDestructionLogWrite] Target table ID:", targetTable?.id);
+        } catch (tablesError: any) {
+            console.error("[testDestructionLogWrite] ❌ Table verification failed!");
+            console.error("[testDestructionLogWrite] Tables error:", tablesError?.message);
+            throw new Error(`Table verification failed: ${tablesError?.message || 'Unknown error'}`);
+        }
 
-        // Append row to Excel table
-        // API endpoint: /drives/{drive-id}/items/{item-id}/workbook/tables/{table-name}/rows/add
+        // Step 3: Append row to Excel table
+        console.log("[testDestructionLogWrite] Step 3: Appending row to table:", TABLE_NAME);
+        console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
+        
+        const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${TABLE_NAME}/rows/add`;
+        console.log("[testDestructionLogWrite] Append URL:", appendUrl);
+        
         const response = await client
-            .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${TABLE_NAME}/rows/add`)
+            .api(appendUrl)
             .post(rowData);
 
         console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
