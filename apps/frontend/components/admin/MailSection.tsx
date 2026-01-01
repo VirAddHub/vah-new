@@ -530,7 +530,7 @@ export function MailSection({ }: MailSectionProps) {
                                         return (
                                             <TableRow
                                                 key={item.id}
-                                                className={item.past_30_days && !item.physical_destruction_date ? "bg-red-50/30 border-l-4 border-l-red-500" : ""}
+                                                className=""
                                             >
                                                 <TableCell className="font-medium">#{item.id}</TableCell>
                                                 <TableCell>
