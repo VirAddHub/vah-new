@@ -128,32 +128,44 @@ async function appendRowToExcelTable() {
             }
             
             const targetTable = tables.find((t: any) => t.name === TABLE_NAME);
-            console.log("[testDestructionLogWrite] Target table ID:", targetTable?.id);
+            if (!targetTable) {
+                throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
+            }
+            
+            const tableId = targetTable.id;
+            console.log("[testDestructionLogWrite] Target table ID:", tableId);
+            console.log("[testDestructionLogWrite] Target table name:", targetTable.name);
+            
+            // Step 3: Append row to Excel table using TABLE ID (not name)
+            console.log("[testDestructionLogWrite] Step 3: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
+            console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
+            
+            // CRITICAL: Use table ID, not table name for the append operation
+            const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
+            console.log("[testDestructionLogWrite] Append URL:", appendUrl);
+            
+            const response = await client
+                .api(appendUrl)
+                .post(rowData);
+            
+            console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
+            console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
+
+            return {
+                success: true,
+                message: "Row appended to Excel table successfully",
+                response
+            };
         } catch (tablesError: any) {
-            console.error("[testDestructionLogWrite] ❌ Table verification failed!");
-            console.error("[testDestructionLogWrite] Tables error:", tablesError?.message);
-            throw new Error(`Table verification failed: ${tablesError?.message || 'Unknown error'}`);
+            console.error("[testDestructionLogWrite] ❌ Table verification/append failed!");
+            console.error("[testDestructionLogWrite] Error message:", tablesError?.message);
+            console.error("[testDestructionLogWrite] Error code:", tablesError?.statusCode || tablesError?.code);
+            if (tablesError?.response) {
+                const errorText = await tablesError.response.text().catch(() => 'Unable to read error');
+                console.error("[testDestructionLogWrite] Error response:", errorText);
+            }
+            throw new Error(`Table operation failed: ${tablesError?.message || 'Unknown error'}`);
         }
-
-        // Step 3: Append row to Excel table
-        console.log("[testDestructionLogWrite] Step 3: Appending row to table:", TABLE_NAME);
-        console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
-        
-        const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${TABLE_NAME}/rows/add`;
-        console.log("[testDestructionLogWrite] Append URL:", appendUrl);
-        
-        const response = await client
-            .api(appendUrl)
-            .post(rowData);
-
-        console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
-        console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
-
-        return {
-            success: true,
-            message: "Row appended to Excel table successfully",
-            response
-        };
     } catch (error: any) {
         console.error("[testDestructionLogWrite] ❌ Error:", error);
         if (error.response) {
