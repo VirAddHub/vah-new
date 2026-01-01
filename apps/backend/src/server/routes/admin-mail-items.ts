@@ -493,7 +493,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
  * Test endpoint to verify Excel destruction log write functionality
  * This endpoint runs the test script that appends a row to the Excel table
  */
-router.post('/test-excel-write', requireAdmin, async (_req: Request, res: Response) => {
+router.post('/mail-items/test-excel-write', requireAdmin, async (_req: Request, res: Response) => {
   try {
     // Dynamically import the test script function
     const { appendRowToExcelTable } = await import('../../jobs/testDestructionLogWrite');
