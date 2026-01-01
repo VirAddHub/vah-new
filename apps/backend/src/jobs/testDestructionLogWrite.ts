@@ -49,19 +49,6 @@ async function appendRowToExcelTable() {
 
         const client = Client.initWithMiddleware({ authProvider });
 
-        // CRITICAL: Initialize workbook mode before any workbook operations
-        // Graph needs to open the file as an Excel workbook, not just a file
-        console.log("[testDestructionLogWrite] Initializing workbook...");
-        try {
-            await client
-                .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`)
-                .get();
-            console.log("[testDestructionLogWrite] ✅ Workbook initialized");
-        } catch (initError: any) {
-            console.error("[testDestructionLogWrite] ⚠️ Workbook initialization warning:", initError?.message);
-            // Continue anyway - sometimes this works even if init fails
-        }
-
         // Build the row data to match the actual Excel table structure:
         // Column A: Column1 (likely destruction date or index)
         // Column B: Mail Item ID
