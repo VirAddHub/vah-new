@@ -416,7 +416,10 @@ export function MailSection({ }: MailSectionProps) {
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                                     {deletionStatus.icon}
-                                                    <Badge variant={deletionStatus.variant} className={deletionStatus.color}>
+                                                    <Badge 
+                                                        variant={deletionStatus.variant === "destructive" ? "outline" : deletionStatus.variant} 
+                                                        className={deletionStatus.variant === "destructive" ? "border-0 bg-transparent " + deletionStatus.color : deletionStatus.color}
+                                                    >
                                                         {deletionStatus.label}
                                         </Badge>
                                     </div>
@@ -563,7 +566,10 @@ export function MailSection({ }: MailSectionProps) {
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         {deletionStatus.icon}
-                                                        <Badge variant={deletionStatus.variant} className={deletionStatus.color}>
+                                                        <Badge 
+                                                            variant={deletionStatus.variant === "destructive" ? "outline" : deletionStatus.variant} 
+                                                            className={deletionStatus.variant === "destructive" ? "border-0 bg-transparent " + deletionStatus.color : deletionStatus.color}
+                                                        >
                                                             {deletionStatus.label}
                                                         </Badge>
                                                     </div>
