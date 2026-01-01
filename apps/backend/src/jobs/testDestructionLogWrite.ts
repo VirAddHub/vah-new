@@ -79,16 +79,16 @@ async function appendRowToExcelTable() {
         // Graph needs to open the file as an Excel workbook, not just a file
         // This must be done before any /workbook/* operations
         console.log("[testDestructionLogWrite] Step 1: Initializing workbook...");
-        
+
         // Try multiple initialization approaches for SharePoint/OneDrive compatibility
         const initUrls = [
             `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`,
             `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook`,
         ];
-        
+
         let initSucceeded = false;
         let lastInitError: any = null;
-        
+
         for (const initUrl of initUrls) {
             console.log("[testDestructionLogWrite] Trying init URL:", initUrl);
             try {
@@ -106,7 +106,7 @@ async function appendRowToExcelTable() {
                 // Try next URL
             }
         }
-        
+
         if (!initSucceeded) {
             console.error("[testDestructionLogWrite] ❌ All workbook initialization attempts failed!");
             if (lastInitError?.response) {
@@ -138,39 +138,39 @@ async function appendRowToExcelTable() {
         console.log("[testDestructionLogWrite] Step 3: Verifying table exists...");
         const tablesUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables`;
         console.log("[testDestructionLogWrite] Tables URL:", tablesUrl);
-        
+
         try {
             const tablesResponse = await client.api(tablesUrl).get();
             const tables = tablesResponse?.value || [];
             console.log("[testDestructionLogWrite] ✅ Found", tables.length, "table(s)");
             const tableNames = tables.map((t: any) => t.name);
             console.log("[testDestructionLogWrite] Table names:", tableNames);
-            
+
             if (!tableNames.includes(TABLE_NAME)) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-            
+
             const targetTable = tables.find((t: any) => t.name === TABLE_NAME);
             if (!targetTable) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-            
+
             const tableId = targetTable.id;
             console.log("[testDestructionLogWrite] Target table ID:", tableId);
             console.log("[testDestructionLogWrite] Target table name:", targetTable.name);
             console.log("[testDestructionLogWrite] Target table worksheet:", targetTable.worksheet?.id || 'N/A');
-            
+
             // Step 4: Get table column metadata to ensure exact column count match
             console.log("[testDestructionLogWrite] Step 4: Getting table column metadata...");
             const columnsUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/columns`;
             console.log("[testDestructionLogWrite] Columns URL:", columnsUrl);
-            
+
             let columnMetadata: any[] = [];
             try {
                 const columnsResponse = await client.api(columnsUrl).get();
                 columnMetadata = columnsResponse?.value || [];
                 console.log("[testDestructionLogWrite] ✅ Found", columnMetadata.length, "column(s)");
-                
+
                 // Log column details (as requested)
                 const columnInfo = columnMetadata.map((c: any) => ({
                     name: c.name,
@@ -183,12 +183,12 @@ async function appendRowToExcelTable() {
                 console.error("[testDestructionLogWrite] ❌ Failed to get column metadata:", columnsError?.message);
                 throw new Error(`Failed to get table columns: ${columnsError?.message || 'Unknown error'}. Cannot determine column count.`);
             }
-            
+
             // Step 5: Build row array dynamically to match exact column count
             console.log("[testDestructionLogWrite] Step 5: Building row array to match table structure...");
             const expectedColumnCount = columnMetadata.length;
             console.log("[testDestructionLogWrite] Expected column count:", expectedColumnCount);
-            
+
             // Prepare our test data (10 values for 10 columns)
             const testRowData = [
                 todayFormatted, // Column A: Physical Destruction Date
@@ -202,33 +202,33 @@ async function appendRowToExcelTable() {
                 "TA", // Column I: Staff Signature / Initials
                 "Automated test entry", // Column J: Notes
             ];
-            
+
             // Build row array with exact column count
             const rowArray: any[] = new Array(expectedColumnCount).fill(null);
-            
+
             // Fill row array with our data (up to the length we have)
             for (let i = 0; i < Math.min(testRowData.length, expectedColumnCount); i++) {
                 rowArray[i] = testRowData[i];
             }
-            
+
             // For formula columns, ensure they're null (not undefined)
             for (let i = 0; i < columnMetadata.length; i++) {
                 if (columnMetadata[i].formula && (rowArray[i] === undefined || rowArray[i] === null)) {
                     rowArray[i] = null; // Explicit null for formula columns
                 }
             }
-            
+
             console.log("[testDestructionLogWrite] Final row array length:", rowArray.length);
             console.log("[testDestructionLogWrite] Final row array:", JSON.stringify(rowArray, null, 2));
-            
+
             if (rowArray.length !== expectedColumnCount) {
                 throw new Error(`Row array length (${rowArray.length}) does not match expected column count (${expectedColumnCount})`);
             }
-            
+
             const finalRowData = {
                 values: [rowArray]
             };
-            
+
             // Step 6: Append row to Excel table using TABLE ID (not name)
             console.log("[testDestructionLogWrite] Step 6: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
             
@@ -236,9 +236,26 @@ async function appendRowToExcelTable() {
             const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
             console.log("[testDestructionLogWrite] Append URL:", appendUrl);
             
-            const response = await client
-                .api(appendUrl)
-                .post(finalRowData);
+            // First, try with all nulls to test if column count is the issue
+            console.log("[testDestructionLogWrite] Testing with all nulls first...");
+            const testNullRowData = {
+                values: [new Array(expectedColumnCount).fill(null)]
+            };
+            
+            let response: any = null;
+            try {
+                response = await client.api(appendUrl).post(testNullRowData);
+                console.log("[testDestructionLogWrite] ✅ Test with nulls succeeded! Column count is correct.");
+                console.log("[testDestructionLogWrite] Now trying with actual data...");
+                // If nulls work, try with actual data
+                response = await client.api(appendUrl).post(finalRowData);
+            } catch (nullTestError: any) {
+                console.error("[testDestructionLogWrite] ❌ Test with nulls also failed!");
+                console.error("[testDestructionLogWrite] This suggests table state issue (filters/sorts) or permissions");
+                console.error("[testDestructionLogWrite] Error:", nullTestError?.message);
+                // Try with actual data anyway
+                response = await client.api(appendUrl).post(finalRowData);
+            }
 
             console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
             console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
