@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Search, Eye, Trash2, AlertTriangle, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, Eye, Trash2, AlertTriangle, CheckCircle, AlertCircle, Download } from "lucide-react";
 import { apiClient, safe } from "../../lib/apiClient";
 import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
@@ -96,6 +96,11 @@ export function MailSection({ }: MailSectionProps) {
         } finally {
             setActionLoading(false);
         }
+    };
+
+    const handleExportDestructionLog = () => {
+        // Simple download - browser handles it automatically
+        window.location.href = '/api/bff/admin/exports/destruction-log';
     };
 
     const parseDate = (dateStr: string | null, ms: number | null, fallbackMs?: number | null): Date | null => {
