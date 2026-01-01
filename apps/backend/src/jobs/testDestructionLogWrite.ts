@@ -130,42 +130,85 @@ async function appendRowToExcelTable() {
             throw new Error(`Workbook initialization failed: ${lastInitError?.message || 'Unknown error'}. Cannot proceed with table operations.`);
         }
 
-        // Step 2: List tables to verify the table exists
-        console.log("[testDestructionLogWrite] Step 2: Verifying table exists...");
+        // Step 2: Get worksheets first (needed for some operations)
+        console.log("[testDestructionLogWrite] Step 2: Getting worksheets...");
+        let worksheetId: string | null = null;
+        try {
+            const worksheetsResponse = await client
+                .api(`/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets`)
+                .get();
+            const worksheets = worksheetsResponse?.value || [];
+            console.log("[testDestructionLogWrite] ✅ Found", worksheets.length, "worksheet(s)");
+            if (worksheets.length > 0) {
+                worksheetId = worksheets[0].id; // Use first worksheet
+                console.log("[testDestructionLogWrite] Using worksheet ID:", worksheetId, "Name:", worksheets[0].name);
+            }
+        } catch (wsError: any) {
+            console.error("[testDestructionLogWrite] ⚠️ Failed to get worksheets:", wsError?.message);
+            // Continue anyway
+        }
+
+        // Step 3: List tables to verify the table exists
+        console.log("[testDestructionLogWrite] Step 3: Verifying table exists...");
         const tablesUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables`;
         console.log("[testDestructionLogWrite] Tables URL:", tablesUrl);
-
+        
         try {
             const tablesResponse = await client.api(tablesUrl).get();
             const tables = tablesResponse?.value || [];
             console.log("[testDestructionLogWrite] ✅ Found", tables.length, "table(s)");
             const tableNames = tables.map((t: any) => t.name);
             console.log("[testDestructionLogWrite] Table names:", tableNames);
-
+            
             if (!tableNames.includes(TABLE_NAME)) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-
+            
             const targetTable = tables.find((t: any) => t.name === TABLE_NAME);
             if (!targetTable) {
                 throw new Error(`Table "${TABLE_NAME}" not found. Available tables: ${tableNames.join(', ')}`);
             }
-
+            
             const tableId = targetTable.id;
             console.log("[testDestructionLogWrite] Target table ID:", tableId);
             console.log("[testDestructionLogWrite] Target table name:", targetTable.name);
-
-            // Step 3: Append row to Excel table using TABLE ID (not name)
-            console.log("[testDestructionLogWrite] Step 3: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
+            console.log("[testDestructionLogWrite] Target table worksheet:", targetTable.worksheet?.id || 'N/A');
+            
+            // Step 4: Append row to Excel table using TABLE ID (not name)
+            console.log("[testDestructionLogWrite] Step 4: Appending row to table:", TABLE_NAME, "(ID:", tableId, ")");
             console.log("[testDestructionLogWrite] Row data:", JSON.stringify(rowData, null, 2));
-
-            // CRITICAL: Use table ID, not table name for the append operation
-            const appendUrl = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
-            console.log("[testDestructionLogWrite] Append URL:", appendUrl);
-
-            const response = await client
-                .api(appendUrl)
-                .post(rowData);
+            
+            // Try both API paths: with and without worksheet
+            let response: any = null;
+            let lastError: any = null;
+            
+            // Option 1: Direct table path (preferred)
+            const appendUrl1 = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/tables/${tableId}/rows/add`;
+            console.log("[testDestructionLogWrite] Trying append URL (direct):", appendUrl1);
+            
+            try {
+                response = await client.api(appendUrl1).post(rowData);
+                console.log("[testDestructionLogWrite] ✅ Success with direct table path!");
+            } catch (err1: any) {
+                console.error("[testDestructionLogWrite] ❌ Direct path failed:", err1?.message);
+                lastError = err1;
+                
+                // Option 2: Worksheet-based path (fallback)
+                if (worksheetId) {
+                    const appendUrl2 = `/drives/${DRIVE_ID}/items/${FILE_ITEM_ID}/workbook/worksheets/${worksheetId}/tables/${tableId}/rows/add`;
+                    console.log("[testDestructionLogWrite] Trying append URL (worksheet-based):", appendUrl2);
+                    try {
+                        response = await client.api(appendUrl2).post(rowData);
+                        console.log("[testDestructionLogWrite] ✅ Success with worksheet-based path!");
+                    } catch (err2: any) {
+                        console.error("[testDestructionLogWrite] ❌ Worksheet-based path also failed:", err2?.message);
+                        lastError = err2;
+                        throw err2;
+                    }
+                } else {
+                    throw err1;
+                }
+            }
 
             console.log("[testDestructionLogWrite] ✅ Success! Row appended to Excel table");
             console.log("[testDestructionLogWrite] Response:", JSON.stringify(response, null, 2));
