@@ -49,11 +49,17 @@ async function appendRowToExcelTable() {
 
         const client = Client.initWithMiddleware({ authProvider });
 
-        // Build the row data to match the Excel table structure
-        // Based on buildExcelRow() in logDestructionToExcel.ts:
-        // 1. mailItemId, 2. customerName, 3. customerId, 4. mailDescription,
-        // 5. receiptDate, 6. destructionEligibilityDate, 7. physicalDestructionDate,
-        // 8. method, 9. staffMember
+        // Build the row data to match the actual Excel table structure:
+        // Column A: Column1 (likely destruction date or index)
+        // Column B: Mail Item ID
+        // Column C: Customer Name / ID
+        // Column D: Mail Description
+        // Column E: Receipt Date
+        // Column F: Eligibility Date
+        // Column G: Destruction Method
+        // Column H: Staff Name
+        // Column I: Staff Signature / Initials
+        // Column J: Notes
         const today = new Date();
         const todayFormatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const receiptDate = new Date(today.getTime() - (35 * 24 * 60 * 60 * 1000)); // 35 days ago
@@ -64,15 +70,16 @@ async function appendRowToExcelTable() {
         const rowData = {
             values: [
                 [
-                    12345, // mailItemId (number)
-                    "Test Customer", // customerName
-                    999, // customerId (number)
-                    "Test Mail Subject – Test Sender", // mailDescription
-                    receiptDateFormatted, // receiptDate (DD/MM/YYYY)
-                    eligibilityDateFormatted, // destructionEligibilityDate (DD/MM/YYYY)
-                    todayFormatted, // physicalDestructionDate (DD/MM/YYYY)
-                    "Cross-cut shredder", // method
-                    "Test Admin", // staffMember
+                    todayFormatted, // Column A: Column1 (Physical Destruction Date)
+                    12345, // Column B: Mail Item ID
+                    "Test Customer (ID: 999)", // Column C: Customer Name / ID
+                    "Test Mail Subject – Test Sender", // Column D: Mail Description
+                    receiptDateFormatted, // Column E: Receipt Date (DD/MM/YYYY)
+                    eligibilityDateFormatted, // Column F: Eligibility Date (DD/MM/YYYY)
+                    "Cross-cut shredder", // Column G: Destruction Method
+                    "Test Admin", // Column H: Staff Name
+                    "TA", // Column I: Staff Signature / Initials
+                    "Automated test entry", // Column J: Notes
                 ],
             ],
         };

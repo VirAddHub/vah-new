@@ -91,35 +91,42 @@ function formatDestructionDate(destructionDate: string): string {
 
 /**
  * Build Excel row data for destruction log
+ * Matches the actual Excel table structure:
+ * Column A: Column1 (Physical Destruction Date)
+ * Column B: Mail Item ID
+ * Column C: Customer Name / ID
+ * Column D: Mail Description
+ * Column E: Receipt Date
+ * Column F: Eligibility Date
+ * Column G: Destruction Method
+ * Column H: Staff Name
+ * Column I: Staff Signature / Initials
+ * Column J: Notes
  */
-function buildExcelRow(item: DestructionItem): {
-    mailItemId: number;
-    customerName: string;
-    customerId: number;
-    mailDescription: string;
-    receiptDate: string;
-    destructionEligibilityDate: string;
-    physicalDestructionDate: string;
-    method: string;
-    staffMember: string;
-} {
+function buildExcelRow(item: DestructionItem): string[] {
     const customerName = item.user_name || item.company_name || item.user_email || `User #${item.user_id}`;
+    const customerNameWithId = `${customerName} (ID: ${item.user_id})`;
     const mailDescription = item.subject 
         ? `${item.subject}${item.sender_name ? ` – ${item.sender_name}` : ''}`
         : "—";
     const staffMember = item.destroyed_by_name || item.destroyed_by_email || "Unknown";
+    // Extract initials from staff name (first letter of first and last name)
+    const staffInitials = staffMember !== "Unknown" && staffMember.includes(" ")
+        ? staffMember.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+        : staffMember !== "Unknown" ? staffMember.substring(0, 2).toUpperCase() : "—";
 
-    return {
-        mailItemId: item.id,
-        customerName,
-        customerId: item.user_id,
-        mailDescription,
-        receiptDate: formatReceiptDate(item),
-        destructionEligibilityDate: getDestructionEligibilityDate(item),
-        physicalDestructionDate: formatDestructionDate(item.physical_destruction_date),
-        method: "Cross-cut shredder", // SOP method
-        staffMember,
-    };
+    return [
+        formatDestructionDate(item.physical_destruction_date), // Column A: Physical Destruction Date
+        String(item.id), // Column B: Mail Item ID
+        customerNameWithId, // Column C: Customer Name / ID
+        mailDescription, // Column D: Mail Description
+        formatReceiptDate(item), // Column E: Receipt Date
+        getDestructionEligibilityDate(item), // Column F: Eligibility Date
+        "Cross-cut shredder", // Column G: Destruction Method
+        staffMember, // Column H: Staff Name
+        staffInitials, // Column I: Staff Signature / Initials
+        "GDPR + HMRC AML compliance", // Column J: Notes
+    ];
 }
 
 /**
