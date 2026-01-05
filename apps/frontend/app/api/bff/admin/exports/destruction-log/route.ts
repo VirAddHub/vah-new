@@ -15,15 +15,27 @@ export async function GET(req: NextRequest) {
         const queryString = searchParams.toString();
         const url = `${backend}/api/admin/exports/destruction-log${queryString ? `?${queryString}` : ''}`;
 
+        // Extract and forward authentication
+        const cookie = req.headers.get("cookie") || "";
+        const authHeader = req.headers.get("authorization");
+
+        const headers: HeadersInit = {
+            Accept: "text/csv",
+        };
+
+        // Forward cookies (primary auth method for session-based auth)
+        if (cookie) {
+            headers["Cookie"] = cookie;
+        }
+
+        // Forward Authorization header if present (for JWT/token auth)
+        if (authHeader) {
+            headers["Authorization"] = authHeader;
+        }
+
         const r = await fetch(url, {
             method: "GET",
-            headers: {
-                Accept: "text/csv",
-                Cookie: req.headers.get("cookie") ?? "",
-                ...(req.headers.get("authorization") && {
-                    Authorization: req.headers.get("authorization")!,
-                }),
-            },
+            headers,
             credentials: "include",
             cache: "no-store",
         });
