@@ -407,82 +407,125 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
+    const mailItemId = parseInt(id);
+
     try {
-        // Update mail item with destruction date
-        // Use NOW() for database-generated timestamp (audit-safe, timezone-safe)
-        // Set destruction_logged = FALSE so cron job can pick it up for Excel logging
-        const updateResult = await pool.query(
+        // Step 1: Fetch the mail item first to verify it exists and log current state
+        const fetchResult = await pool.query(
             `
-            UPDATE mail_item
-            SET physical_destruction_date = NOW(),
-                destruction_logged = FALSE,
-                updated_at = $1
-            WHERE id = $2
-            RETURNING id, user_id, physical_destruction_date
+            SELECT id, deleted, status, physical_destruction_date
+            FROM mail_item
+            WHERE id = $1
             `,
-            [Date.now(), parseInt(id)]
+            [mailItemId]
         );
 
-        if (updateResult.rows.length === 0) {
+        if (fetchResult.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
+        }
+
+        const mailItem = fetchResult.rows[0];
+        
+        // Log current state for debugging
+        console.log('[MARK DESTROYED] Current mail item state:', {
+            id: mailItem.id,
+            deleted: mailItem.deleted,
+            status: mailItem.status,
+            already_destroyed: !!mailItem.physical_destruction_date
+        });
+
+        // Step 2: Update mail item with destruction date (defensive - only update existing columns)
+        let updateResult;
+        try {
+            updateResult = await pool.query(
+                `
+                UPDATE mail_item
+                SET physical_destruction_date = NOW(),
+                    destruction_logged = FALSE,
+                    updated_at = $1
+                WHERE id = $2
+                RETURNING id, user_id, physical_destruction_date
+                `,
+                [Date.now(), mailItemId]
+            );
+
+            if (updateResult.rows.length === 0) {
+                console.error('[MARK DESTROYED FAILED] Update returned no rows', { mailItemId });
+                return res.status(400).json({ ok: false, error: 'invalid_mail_state' });
+            }
+        } catch (updateError: any) {
+            console.error('[MARK DESTROYED FAILED] Update error:', updateError);
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'invalid_mail_state',
+                message: updateError.message 
+            });
         }
 
         // Get the database-generated timestamp for audit logs
         const destroyedAt = updateResult.rows[0].physical_destruction_date;
 
-        // Log admin audit record
-        // admin_audit.created_at is TIMESTAMPTZ, so use NOW() for database-generated timestamp
-        await pool.query(
-            `
-            INSERT INTO admin_audit (
-                admin_id,
-                action,
-                target_type,
-                target_id,
-                details,
-                created_at
-            )
-            VALUES ($1, 'physical_destruction_confirmed', 'mail_item', $2, $3, NOW())
-            `,
-            [
-                adminId,
-                parseInt(id),
-                JSON.stringify({
-                    destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
-                    method: 'secure_shredding',
-                }),
-            ]
-        );
+        // Step 3: Log admin audit record (defensive - continue even if this fails)
+        try {
+            await pool.query(
+                `
+                INSERT INTO admin_audit (
+                    admin_id,
+                    action,
+                    target_type,
+                    target_id,
+                    details,
+                    created_at
+                )
+                VALUES ($1, 'physical_destruction_confirmed', 'mail_item', $2, $3, NOW())
+                `,
+                [
+                    adminId,
+                    mailItemId,
+                    JSON.stringify({
+                        destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
+                        method: 'secure_shredding',
+                    }),
+                ]
+            );
+        } catch (auditError: any) {
+            // Log but don't fail - audit is secondary to the main update
+            console.warn('[MARK DESTROYED] Audit log failed (non-fatal):', auditError.message);
+        }
 
-        // Log in mail_event for additional audit trail
-        // mail_event.created_at is BIGINT (milliseconds), so use Date.now()
-        await pool.query(
-            `
-            INSERT INTO mail_event (
-                mail_item,
-                actor_user,
-                event_type,
-                details,
-                created_at
-            )
-            VALUES ($1, $2, 'physical_mail_destroyed', $3, $4)
-            `,
-            [
-                parseInt(id),
-                adminId,
-                JSON.stringify({
-                    destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
-                }),
-                Date.now(),
-            ]
-        );
+        // Step 4: Log in mail_event (defensive - continue even if this fails)
+        try {
+            await pool.query(
+                `
+                INSERT INTO mail_event (
+                    mail_item,
+                    actor_user,
+                    event_type,
+                    details,
+                    created_at
+                )
+                VALUES ($1, $2, 'physical_mail_destroyed', $3, $4)
+                `,
+                [
+                    mailItemId,
+                    adminId,
+                    JSON.stringify({
+                        destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
+                    }),
+                    Date.now(),
+                ]
+            );
+        } catch (eventError: any) {
+            // Log but don't fail - event log is secondary to the main update
+            console.warn('[MARK DESTROYED] Event log failed (non-fatal):', eventError.message);
+        }
 
         return res.json({ ok: true, message: 'Physical destruction confirmed' });
     } catch (error: any) {
-        console.error('[POST /api/admin/mail-items/:id/mark-destroyed] error:', error);
-        return res.status(500).json({
+        console.error('[MARK DESTROYED FAILED] Fatal error:', error);
+        return res.status(400).json({
             ok: false,
-            error: 'failed_to_mark_physical_destruction',
+            error: 'invalid_mail_state',
             message: error.message,
         });
     }
