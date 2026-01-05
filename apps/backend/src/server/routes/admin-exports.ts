@@ -144,16 +144,50 @@ router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Re
         // Transform rows for CSV
         const csvRows = rows.map((row: any) => {
             const customerNameWithId = `${row.customer_name} (ID: ${row.user_id})`;
-            const receiptDate = formatDate(
-                row.received_at_ms 
-                    ? new Date(row.received_at_ms).toISOString()
-                    : row.received_date || (row.created_at ? new Date(row.created_at).toISOString() : null)
-            );
+            
+            // Format receipt date - handle milliseconds, date strings, and null
+            let receiptDate = '';
+            if (row.received_at_ms) {
+                try {
+                    receiptDate = formatDate(new Date(row.received_at_ms).toISOString());
+                } catch {
+                    receiptDate = '';
+                }
+            } else if (row.received_date) {
+                receiptDate = formatDate(row.received_date);
+            } else if (row.created_at) {
+                try {
+                    // created_at might be milliseconds (number) or a date string
+                    const createdDate = typeof row.created_at === 'number' 
+                        ? new Date(row.created_at).toISOString()
+                        : row.created_at;
+                    receiptDate = formatDate(createdDate);
+                } catch {
+                    receiptDate = '';
+                }
+            }
+            
             const eligibilityDate = getDestructionEligibilityDate({
                 received_at_ms: row.received_at_ms,
                 received_date: row.received_date,
                 created_at: row.created_at
             });
+
+            // Format recorded_at - handle TIMESTAMPTZ from database
+            let recordedAt = '';
+            if (row.recorded_at) {
+                try {
+                    // If it's already a string, use it directly; if it's a Date object, convert to ISO
+                    const recordedDate = row.recorded_at instanceof Date 
+                        ? row.recorded_at.toISOString()
+                        : typeof row.recorded_at === 'string'
+                        ? row.recorded_at
+                        : new Date(row.recorded_at).toISOString();
+                    recordedAt = formatDate(recordedDate);
+                } catch {
+                    recordedAt = '';
+                }
+            }
 
             return {
                 'Mail Item ID': String(row.mail_item_id),
@@ -165,7 +199,7 @@ router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Re
                 'Staff Name': row.staff_name || 'Unknown',
                 'Staff Signature / Initials': row.staff_signature || '—',
                 'Notes': 'GDPR + HMRC AML compliance',
-                'Recorded At': formatDate(row.recorded_at)
+                'Recorded At': recordedAt
             };
         });
 

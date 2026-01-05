@@ -432,16 +432,17 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             status: mailItem.status
         });
 
-        // Step 3: Update ONLY deleted = true (safe, existing column)
+        // Step 3: Set physical_destruction_date (do NOT set deleted=true - physical destruction is separate from soft deletion)
         try {
             const updateResult = await pool.query(
                 `
                 UPDATE mail_item
-                SET deleted = true
-                WHERE id = $1
-                RETURNING id
+                SET physical_destruction_date = NOW(),
+                    updated_at = $1
+                WHERE id = $2
+                RETURNING id, physical_destruction_date
                 `,
-                [mailItemId]
+                [Date.now(), mailItemId]
             );
 
             if (updateResult.rows.length === 0) {
