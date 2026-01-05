@@ -400,7 +400,6 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
  */
 router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request, res: Response) => {
     const { id } = req.params;
-    const adminId = req.user!.id;
     const pool = getPool();
 
     if (!id || isNaN(parseInt(id))) {
@@ -410,10 +409,10 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     const mailItemId = parseInt(id);
 
     try {
-        // Step 1: Fetch the mail item first to verify it exists and log current state
+        // Step 1: Fetch the mail item first to verify it exists
         const fetchResult = await pool.query(
             `
-            SELECT id, deleted, status, physical_destruction_date
+            SELECT id, deleted, status
             FROM mail_item
             WHERE id = $1
             `,
@@ -426,27 +425,23 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         const mailItem = fetchResult.rows[0];
         
-        // Log current state for debugging
+        // Step 2: Log current state for debugging
         console.log('[MARK DESTROYED] Current mail item state:', {
             id: mailItem.id,
             deleted: mailItem.deleted,
-            status: mailItem.status,
-            already_destroyed: !!mailItem.physical_destruction_date
+            status: mailItem.status
         });
 
-        // Step 2: Update mail item with destruction date (defensive - only update existing columns)
-        let updateResult;
+        // Step 3: Update ONLY deleted = true (safe, existing column)
         try {
-            updateResult = await pool.query(
+            const updateResult = await pool.query(
                 `
                 UPDATE mail_item
-                SET physical_destruction_date = NOW(),
-                    destruction_logged = FALSE,
-                    updated_at = $1
-                WHERE id = $2
-                RETURNING id, user_id, physical_destruction_date
+                SET deleted = true
+                WHERE id = $1
+                RETURNING id
                 `,
-                [Date.now(), mailItemId]
+                [mailItemId]
             );
 
             if (updateResult.rows.length === 0) {
@@ -454,75 +449,18 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                 return res.status(400).json({ ok: false, error: 'invalid_mail_state' });
             }
         } catch (updateError: any) {
-            console.error('[MARK DESTROYED FAILED] Update error:', updateError);
-            return res.status(400).json({ 
-                ok: false, 
+            console.error('[MARK DESTROYED FAILED]', updateError);
+            return res.status(400).json({
+                ok: false,
                 error: 'invalid_mail_state',
-                message: updateError.message 
+                message: updateError.message
             });
         }
 
-        // Get the database-generated timestamp for audit logs
-        const destroyedAt = updateResult.rows[0].physical_destruction_date;
-
-        // Step 3: Log admin audit record (defensive - continue even if this fails)
-        try {
-            await pool.query(
-                `
-                INSERT INTO admin_audit (
-                    admin_id,
-                    action,
-                    target_type,
-                    target_id,
-                    details,
-                    created_at
-                )
-                VALUES ($1, 'physical_destruction_confirmed', 'mail_item', $2, $3, NOW())
-                `,
-                [
-                    adminId,
-                    mailItemId,
-                    JSON.stringify({
-                        destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
-                        method: 'secure_shredding',
-                    }),
-                ]
-            );
-        } catch (auditError: any) {
-            // Log but don't fail - audit is secondary to the main update
-            console.warn('[MARK DESTROYED] Audit log failed (non-fatal):', auditError.message);
-        }
-
-        // Step 4: Log in mail_event (defensive - continue even if this fails)
-        try {
-            await pool.query(
-                `
-                INSERT INTO mail_event (
-                    mail_item,
-                    actor_user,
-                    event_type,
-                    details,
-                    created_at
-                )
-                VALUES ($1, $2, 'physical_mail_destroyed', $3, $4)
-                `,
-                [
-                    mailItemId,
-                    adminId,
-                    JSON.stringify({
-                        destroyed_at: destroyedAt ? new Date(destroyedAt).toISOString() : new Date().toISOString(),
-                    }),
-                    Date.now(),
-                ]
-            );
-        } catch (eventError: any) {
-            // Log but don't fail - event log is secondary to the main update
-            console.warn('[MARK DESTROYED] Event log failed (non-fatal):', eventError.message);
-        }
-
-        return res.json({ ok: true, message: 'Physical destruction confirmed' });
+        // Step 4: Return success
+        return res.json({ ok: true });
     } catch (error: any) {
-        console.error('[MARK DESTROYED FAILED] Fatal error:', error);
+        console.error('[MARK DESTROYED FAILED]', error);
         return res.status(400).json({
             ok: false,
             error: 'invalid_mail_state',
@@ -537,27 +475,27 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
  * This endpoint runs the test script that appends a row to the Excel table
  */
 router.post('/mail-items/test-excel-write', requireAdmin, async (_req: Request, res: Response) => {
-  try {
-    // Dynamically import the test script function
-    const { appendRowToExcelTable } = await import('../../jobs/testDestructionLogWrite');
-    
-    const result = await appendRowToExcelTable();
-    
-    return res.json({
-      ok: true,
-      message: 'Test Excel write completed successfully',
-      result
-    });
-  } catch (error: any) {
-    console.error('[POST /api/admin/mail-items/test-excel-write] error:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'test_failed',
-      message: error?.message || 'Failed to run Excel write test',
-      details: error?.stack,
-      columnInfo: error?.details || null // Include column metadata if available
-    });
-  }
+    try {
+        // Dynamically import the test script function
+        const { appendRowToExcelTable } = await import('../../jobs/testDestructionLogWrite');
+
+        const result = await appendRowToExcelTable();
+
+        return res.json({
+            ok: true,
+            message: 'Test Excel write completed successfully',
+            result
+        });
+    } catch (error: any) {
+        console.error('[POST /api/admin/mail-items/test-excel-write] error:', error);
+        return res.status(500).json({
+            ok: false,
+            error: 'test_failed',
+            message: error?.message || 'Failed to run Excel write test',
+            details: error?.stack,
+            columnInfo: error?.details || null // Include column metadata if available
+        });
+    }
 });
 
 export default router;
