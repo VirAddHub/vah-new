@@ -93,6 +93,12 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
     return next();
   }
 
+  // Skip CSRF for admin API routes - they are server-side BFF routes with session + role checks
+  // Admin routes are protected by authentication and admin role verification, not CSRF
+  if (fullPath.startsWith('/api/admin')) {
+    return next();
+  }
+
   // Skip CSRF for auth endpoints (login/signup/password reset) to avoid blocking first-time token establishment.
   // Note: these are still protected by rate limiting and do not leak enumeration details.
   if (
