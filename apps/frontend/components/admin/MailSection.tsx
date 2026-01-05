@@ -75,8 +75,10 @@ export function MailSection({ }: MailSectionProps) {
 
         setActionLoading(true);
         try {
-            // Use BFF route to ensure CSRF token is forwarded correctly
-            const response = await apiClient.post(`/api/bff/admin/mail-items/${itemId}/mark-destroyed`);
+            // Use BFF route - credentials are included automatically via apiClient
+            const response = await apiClient.post(`/api/bff/admin/mail-items/${itemId}/mark-destroyed`, undefined, {
+                credentials: 'include'
+            });
             if (response.ok) {
                 toast({
                     title: "Mail item marked as destroyed",

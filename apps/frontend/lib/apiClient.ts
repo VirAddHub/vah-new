@@ -64,7 +64,7 @@ async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> 
             : {}),
     };
 
-    const res = await fetch(url, { credentials: 'include', ...init, headers, body: j(init.body) });
+    const res = await fetch(url, { ...init, credentials: 'include', headers, body: j(init.body) });
     const text = await res.text();
 
     let data: any;
