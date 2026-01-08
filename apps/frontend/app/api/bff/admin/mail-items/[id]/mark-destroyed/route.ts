@@ -21,107 +21,90 @@ export async function POST(
     );
   }
 
-  // Step 2: HARD REQUIRE admin authentication (MANDATORY - no fallbacks)
-  // Read cookies from both req.cookies (Next.js API) and req.headers (fallback)
+  // Step 2: Check for authentication (cookies OR JWT token)
+  // Backend accepts both, so we'll forward whatever is available
   const cookieHeader = req.headers.get("cookie") || "";
+  const authHeader = req.headers.get("authorization") || "";
   
   // Try Next.js cookie API first
   const sessionCookie = req.cookies.get('vah_session');
   const roleCookie = req.cookies.get('vah_role');
   const userCookie = req.cookies.get('vah_user');
 
-  // Fallback: Parse from cookie header if Next.js API didn't work
-  let sessionToken = sessionCookie?.value || '';
-  let role = (roleCookie?.value || 'user') as 'user' | 'admin';
-  let user = null;
-
-  if (!sessionToken && cookieHeader) {
-    // Parse cookies manually from header string
-    const cookies: Record<string, string> = {};
-    cookieHeader.split(';').forEach(cookie => {
-      const [key, value] = cookie.trim().split('=');
-      if (key && value) {
-        cookies[key] = decodeURIComponent(value);
-      }
-    });
-    
-    sessionToken = cookies['vah_session'] || '';
-    role = (cookies['vah_role'] || 'user') as 'user' | 'admin';
-    const userStr = cookies['vah_user'] || '';
-    if (userStr) {
-      try {
-        user = JSON.parse(userStr);
-      } catch {
-        user = null;
-      }
-    }
-  } else if (userCookie?.value) {
-    try {
-      user = JSON.parse(userCookie.value);
-    } catch {
-      user = null;
-    }
-  }
-
-  const isAuthenticated = Boolean(sessionToken && sessionToken.length > 10);
-
-  console.log("[BFF Admin Mail Item Mark Destroyed] Session check", {
+  // Check if we have either cookies OR JWT token
+  const hasCookies = !!(sessionCookie || cookieHeader);
+  const hasJWT = !!(authHeader && authHeader.startsWith('Bearer '));
+  
+  console.log("[BFF Admin Mail Item Mark Destroyed] Auth check", {
+    hasCookies,
+    hasJWT,
     hasSessionCookie: !!sessionCookie,
     hasRoleCookie: !!roleCookie,
     hasCookieHeader: !!cookieHeader,
-    role,
-    isAuthenticated,
-    tokenLength: sessionToken.length,
+    hasAuthHeader: !!authHeader,
     cookieHeaderLength: cookieHeader.length
   });
 
-  // Step 3: Validate admin authentication and role (MANDATORY - reject if not admin)
-  if (!isAuthenticated || !sessionToken) {
-    console.error("[BFF Admin Mail Item Mark Destroyed] No valid session token", { 
-      isAuthenticated,
-      tokenLength: sessionToken.length,
-      hasCookieHeader: !!cookieHeader,
-      cookieHeaderLength: cookieHeader.length,
-      cookieHeaderPreview: cookieHeader ? cookieHeader.substring(0, 100) : 'empty',
-      allRequestHeaders: Object.fromEntries(req.headers.entries())
+  // Step 3: Require at least one form of authentication
+  if (!hasCookies && !hasJWT) {
+    console.error("[BFF Admin Mail Item Mark Destroyed] No authentication found", { 
+      hasCookies,
+      hasJWT,
+      cookieHeaderPreview: cookieHeader ? cookieHeader.substring(0, 50) : 'empty'
     });
     return NextResponse.json(
       { 
         ok: false, 
         error: "admin_authentication_required",
-        message: "Admin session not found. Please log out and log back in, then try again."
+        message: "Authentication required. Please log in and try again."
       },
       { status: 403 }
     );
   }
 
-  if (role !== "admin") {
-    console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
-      role,
-      hasRoleCookie: !!roleCookie,
-      roleCookieValue: roleCookie?.value
-    });
-    return NextResponse.json(
-      { 
-        ok: false, 
-        error: "admin_authorization_required",
-        message: "Admin role required. Only administrators can mark mail as destroyed."
-      },
-      { status: 403 }
-    );
+  // If we have cookies, validate role (for cookie-based auth)
+  // If we only have JWT, let backend validate (backend's requireAdmin middleware will check)
+  if (hasCookies) {
+    let role = (roleCookie?.value || 'user') as 'user' | 'admin';
+    
+    // Parse from cookie header if Next.js API didn't work
+    if (!roleCookie && cookieHeader) {
+      const cookies: Record<string, string> = {};
+      cookieHeader.split(';').forEach(cookie => {
+        const [key, value] = cookie.trim().split('=');
+        if (key && value) {
+          cookies[key] = decodeURIComponent(value);
+        }
+      });
+      role = (cookies['vah_role'] || 'user') as 'user' | 'admin';
+    }
+    
+    if (role !== "admin") {
+      console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
+        role,
+        hasRoleCookie: !!roleCookie
+      });
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: "admin_authorization_required",
+          message: "Admin role required. Only administrators can mark mail as destroyed."
+        },
+        { status: 403 }
+      );
+    }
   }
 
-  console.log("[BFF Admin Mail Item Mark Destroyed] Admin authenticated", {
-    role,
-    hasUser: !!user,
-    userId: (user as any)?.id
+  console.log("[BFF Admin Mail Item Mark Destroyed] Authentication found, forwarding to backend", {
+    hasCookies,
+    hasJWT
   });
 
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
 
-    // Step 4: Extract and forward ALL cookies (preserve admin session)
+    // Step 4: Forward authentication to backend (cookies OR JWT token)
     // Use the cookie header we already read (or rebuild from req.cookies if needed)
     let cookieString = cookieHeader;
     
@@ -133,15 +116,13 @@ export async function POST(
       if (userCookie) cookieParts.push(`vah_user=${encodeURIComponent(userCookie.value)}`);
       cookieString = cookieParts.join('; ');
     }
-    
-    const authHeader = req.headers.get("authorization");
 
     const headers: HeadersInit = {
       Accept: "application/json",
       "Content-Type": "application/json",
     };
 
-    // CRITICAL: Forward cookies to preserve admin identity
+    // CRITICAL: Forward cookies if available
     if (cookieString) {
       headers["Cookie"] = cookieString;
       console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding cookies to backend", {
@@ -149,26 +130,30 @@ export async function POST(
         hasSession: cookieString.includes('vah_session'),
         hasRole: cookieString.includes('vah_role')
       });
-    } else {
-      // If no cookies, we cannot proceed (should not happen after validation above)
-      console.error("[BFF Admin Mail Item Mark Destroyed] No cookies to forward", {
+    }
+
+    // CRITICAL: Forward Authorization header if available (JWT token)
+    // Backend's requireAdmin middleware will validate the token and admin status
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
+      console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding Authorization header to backend");
+    }
+
+    // At least one form of auth must be forwarded
+    if (!cookieString && !authHeader) {
+      console.error("[BFF Admin Mail Item Mark Destroyed] No authentication to forward", {
         hasCookieHeader: !!cookieHeader,
         hasSessionCookie: !!sessionCookie,
-        hasRoleCookie: !!roleCookie
+        hasAuthHeader: !!authHeader
       });
       return NextResponse.json(
         { 
           ok: false, 
-          error: "session_cookies_missing",
-          message: "Session cookies not found. Please refresh and try again."
+          error: "authentication_missing",
+          message: "No authentication found. Please log in and try again."
         },
         { status: 403 }
       );
-    }
-
-    // Forward Authorization header if present (for JWT/token auth)
-    if (authHeader) {
-      headers["Authorization"] = authHeader;
     }
 
     const r = await fetch(url, {
