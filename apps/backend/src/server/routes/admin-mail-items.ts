@@ -638,10 +638,11 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             await client.query('BEGIN');
 
             // 8a: Create admin_audit record
+            // Note: created_at is TIMESTAMPTZ, so we use NOW() or convert Date.now() to timestamp
             await client.query(
                 `
                 INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                VALUES ($1, $2, $3, $4, $5, NOW())
                 `,
                 [
                     adminId,
@@ -652,8 +653,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                         receipt_date: receiptDate.toISOString().split('T')[0],
                         eligibility_date: eligibilityDate.toISOString().split('T')[0],
                         retention_days: RETENTION_DAYS
-                    }),
-                    Date.now()
+                    })
                 ]
             );
 
