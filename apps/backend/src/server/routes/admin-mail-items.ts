@@ -779,12 +779,25 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         }
 
         // Return 500 for unexpected errors
+        console.error('[MARK DESTROYED FAILED] Full error details:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            constraint: error.constraint,
+            detail: error.detail,
+            hint: error.hint,
+            mailItemId,
+            adminId
+        });
+        
         return res.status(500).json({
             ok: false,
             error: 'destruction_logging_failed',
             message: error.message || 'Failed to log destruction',
             code: error.code,
-            constraint: error.constraint
+            constraint: error.constraint,
+            detail: error.detail,
+            hint: error.hint
         });
     }
 });
