@@ -79,24 +79,48 @@ export function MailSection({ }: MailSectionProps) {
             const response = await apiClient.post(`/api/bff/admin/mail-items/${itemId}/mark-destroyed`, undefined, {
                 credentials: 'include'
             });
-            if (response.ok && response.data?.ok) {
+            
+            // apiClient returns { ok: boolean, data?: any, message?: string, status?: number }
+            // On success: { ok: true, data: { ok: true } }
+            // On HTTP error (4xx/5xx): { ok: false, message: string, status: number }
+            // On JSON error response: { ok: false, data: { ok: false, error: string, message: string } }
+            
+            const isSuccess = response.ok && (response.data?.ok === true || (response as any).ok === true);
+            
+            if (isSuccess) {
                 toast({
                     title: "Mail item marked as destroyed",
                     description: "Physical destruction has been logged in the audit trail.",
                 });
                 refetchMailItems();
             } else {
-                const errorData = response.data as { error?: string; message?: string };
-                const errorMessage = errorData?.message || errorData?.error || "Failed to mark as destroyed";
-                console.error('[Mark Destroyed] Backend error:', errorData);
+                // Extract error message from various possible response structures
+                const errorData = response.data as { error?: string; message?: string } | undefined;
+                const errorMessage = errorData?.message 
+                    || errorData?.error 
+                    || (response as any).message 
+                    || `Failed to mark as destroyed (status: ${(response as any).status || 'unknown'})`;
+                console.error('[Mark Destroyed] Backend error:', {
+                    response,
+                    errorData,
+                    status: (response as any).status,
+                    fullResponse: JSON.stringify(response, null, 2)
+                });
                 throw new Error(errorMessage);
             }
         } catch (error: any) {
+            // Handle both apiClient errors and fetch errors
             const errorMessage = error?.response?.data?.message 
                 || error?.response?.data?.error 
+                || error?.data?.message
+                || error?.data?.error
                 || error?.message 
                 || "An error occurred";
-            console.error('[Mark Destroyed] Error:', error?.response?.data || error);
+            console.error('[Mark Destroyed] Error:', {
+                error,
+                responseData: error?.response?.data,
+                data: error?.data
+            });
             toast({
                 title: "Failed to mark as destroyed",
                 description: errorMessage,
