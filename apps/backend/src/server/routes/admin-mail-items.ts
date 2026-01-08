@@ -428,6 +428,8 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     const RETENTION_DAYS = 30; // GDPR retention period
 
     try {
+        console.log('[MARK DESTROYED] Starting destruction request', { mailItemId, adminUserId: req.user?.id });
+        
         // Step 1: Fetch mail item with all required data
         const fetchResult = await pool.query(
             `
@@ -473,19 +475,31 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         // Step 2: Calculate receipt_date and eligibility_date
         let receiptDate: Date | null = null;
         if (mailItem.received_at_ms) {
-            receiptDate = new Date(mailItem.received_at_ms);
+            // received_at_ms is BIGINT (milliseconds since epoch)
+            // PostgreSQL may return it as string for large numbers, so parse it
+            const ms = typeof mailItem.received_at_ms === 'string' 
+                ? parseInt(mailItem.received_at_ms, 10) 
+                : mailItem.received_at_ms;
+            receiptDate = new Date(ms);
         } else if (mailItem.received_date) {
+            // received_date is TEXT (YYYY-MM-DD format)
             receiptDate = new Date(mailItem.received_date);
         } else if (mailItem.created_at) {
-            receiptDate = new Date(mailItem.created_at);
+            // created_at is BIGINT (milliseconds since epoch)
+            const ms = typeof mailItem.created_at === 'string' 
+                ? parseInt(mailItem.created_at, 10) 
+                : mailItem.created_at;
+            receiptDate = new Date(ms);
         }
 
         if (!receiptDate || isNaN(receiptDate.getTime())) {
             console.error('[MARK DESTROYED] Rejected: Missing receipt date', { 
                 mailItemId, 
                 received_at_ms: mailItem.received_at_ms,
+                received_at_ms_type: typeof mailItem.received_at_ms,
                 received_date: mailItem.received_date,
-                created_at: mailItem.created_at
+                created_at: mailItem.created_at,
+                created_at_type: typeof mailItem.created_at
             });
             return res.status(400).json({ 
                 ok: false, 
@@ -756,7 +770,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         // Handle foreign key violations
         if (error.code === '23503') {
-            return res.status(400).json({
+        return res.status(400).json({
                 ok: false,
                 error: 'invalid_reference',
                 message: 'Invalid reference to related record',

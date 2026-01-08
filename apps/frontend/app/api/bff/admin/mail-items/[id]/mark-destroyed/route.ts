@@ -115,6 +115,15 @@ export async function POST(
         status: r.status
       };
     }
+    
+    // Log backend response for debugging (especially errors)
+    if (!r.ok || !data.ok) {
+      console.error("[BFF Admin Mail Item Mark Destroyed] Backend returned error", {
+        status: r.status,
+        backendResponse: data,
+        responseText: text.substring(0, 500) // Log first 500 chars
+      });
+    }
 
     return NextResponse.json(data, {
       status: r.status,
