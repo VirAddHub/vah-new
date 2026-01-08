@@ -5,16 +5,17 @@
  * This cron job logs confirmed physical destruction events to Excel.
  * 
  * CRITICAL COMPLIANCE RULES:
- * - This script does NOT decide what to destroy
- * - This script only logs items that have been manually marked as destroyed by an admin
- * - Human clicks "Destroy" → Backend marks destroyed → This script logs to Excel
+ * - This script reads from destruction_log table (compliance-safe source of truth)
+ * - Only logs items with destruction_status = 'completed'
+ * - All data is pre-validated and compliance-ready
+ * - Idempotency: Uses destruction_log table which has UNIQUE constraint on mail_item_id
  * 
  * Flow:
  * 1. Admin clicks "Mark as Destroyed" button
- * 2. Backend sets physical_destruction_date = NOW(), destruction_logged = FALSE
- * 3. This cron finds items where physical_destruction_date IS NOT NULL AND destruction_logged = FALSE
+ * 2. Backend validates eligibility, creates destruction_log record, sets physical_destruction_date
+ * 3. This cron finds items in destruction_log where excel_logged = FALSE (or similar flag)
  * 4. For each item, append row to Excel destruction log
- * 5. Mark destruction_logged = TRUE (idempotency)
+ * 5. Mark excel_logged = TRUE (idempotency)
  * 
  * This script should be run every 5-15 minutes (or daily if volume is low).
  * 
@@ -26,106 +27,73 @@
 import { getPool } from "../lib/db";
 import { nowMs } from "../lib/time";
 
-interface DestructionItem {
-    id: number;
+interface DestructionLogItem {
+    mail_item_id: number;
     user_id: number;
-    user_name: string | null;
-    user_email: string | null;
-    company_name: string | null;
+    user_display_name: string;
+    receipt_date: string; // ISO date string
+    eligibility_date: string; // ISO date string
+    recorded_at: Date | string; // TIMESTAMPTZ
+    actor_type: string;
+    action_source: string;
+    staff_name: string;
+    staff_initials: string;
+    notes: string;
+    destruction_method: string;
     subject: string | null;
     sender_name: string | null;
-    tag: string | null;
-    received_at_ms: number | null;
-    received_date: string | null;
-    physical_destruction_date: string; // ISO timestamp
-    destroyed_by_admin_id: number | null;
-    destroyed_by_name: string | null;
-    destroyed_by_email: string | null;
 }
 
 /**
- * Calculate destruction eligibility date (30 days from receipt)
+ * Format date for Excel (DD/MM/YYYY)
  */
-function getDestructionEligibilityDate(item: DestructionItem): string {
-    let receivedDate: Date | null = null;
-
-    if (item.received_at_ms) {
-        receivedDate = new Date(item.received_at_ms);
-    } else if (item.received_date) {
-        receivedDate = new Date(item.received_date);
-    }
-
-    if (!receivedDate || isNaN(receivedDate.getTime())) {
-        return "—";
-    }
-
-    const eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-    return eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-/**
- * Format receipt date for Excel
- */
-function formatReceiptDate(item: DestructionItem): string {
-    if (item.received_at_ms) {
-        const date = new Date(item.received_at_ms);
+function formatDateForExcel(dateString: string | Date): string {
+    try {
+        const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+        if (isNaN(date.getTime())) {
+            return "N/A";
+        }
         return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+        return "N/A";
     }
-    if (item.received_date) {
-        const date = new Date(item.received_date);
-        return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-    return "—";
 }
 
 /**
- * Format destruction date for Excel
+ * Clean text to fix encoding issues
  */
-function formatDestructionDate(destructionDate: string): string {
-    const date = new Date(destructionDate);
-    if (isNaN(date.getTime())) {
-        return "—";
-    }
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function cleanText(text: string | null): string {
+    if (!text) return "N/A";
+    return text
+        .replace(/‚Äì/g, '–')  // Fix broken en-dash
+        .replace(/‚Äî/g, '—')  // Fix broken em-dash
+        .replace(/â€™/g, "'")  // Fix broken apostrophe
+        .replace(/â€œ/g, '"')  // Fix broken opening quote
+        .replace(/â€/g, '"')   // Fix broken closing quote
+        .replace(/â€"/g, '—')  // Fix broken em-dash variant
+        .replace(/â€"/g, '–'); // Fix broken en-dash variant
 }
 
 /**
  * Build Excel row data for destruction log
- * Matches the actual Excel table structure:
- * Column A: Column1 (Physical Destruction Date)
- * Column B: Mail Item ID
- * Column C: Customer Name / ID
- * Column D: Mail Description
- * Column E: Receipt Date
- * Column F: Eligibility Date
- * Column G: Destruction Method
- * Column H: Staff Name
- * Column I: Staff Signature / Initials
- * Column J: Notes
+ * Matches the actual Excel table structure with compliance-safe data
  */
-function buildExcelRow(item: DestructionItem): string[] {
-    const customerName = item.user_name || item.company_name || item.user_email || `User #${item.user_id}`;
-    const customerNameWithId = `${customerName} (ID: ${item.user_id})`;
-    const mailDescription = item.subject 
+function buildExcelRow(item: DestructionLogItem): string[] {
+    const mailDescription = item.subject
         ? `${item.subject}${item.sender_name ? ` – ${item.sender_name}` : ''}`
-        : "—";
-    const staffMember = item.destroyed_by_name || item.destroyed_by_email || "Unknown";
-    // Extract initials from staff name (first letter of first and last name)
-    const staffInitials = staffMember !== "Unknown" && staffMember.includes(" ")
-        ? staffMember.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
-        : staffMember !== "Unknown" ? staffMember.substring(0, 2).toUpperCase() : "—";
+        : (item.sender_name || 'N/A');
 
     return [
-        formatDestructionDate(item.physical_destruction_date), // Column A: Physical Destruction Date
-        String(item.id), // Column B: Mail Item ID
-        customerNameWithId, // Column C: Customer Name / ID
-        mailDescription, // Column D: Mail Description
-        formatReceiptDate(item), // Column E: Receipt Date
-        getDestructionEligibilityDate(item), // Column F: Eligibility Date
-        "Cross-cut shredder", // Column G: Destruction Method
-        staffMember, // Column H: Staff Name
-        staffInitials, // Column I: Staff Signature / Initials
-        "GDPR + HMRC AML compliance", // Column J: Notes
+        formatDateForExcel(item.recorded_at), // Column A: Physical Destruction Date (recorded_at)
+        String(item.mail_item_id), // Column B: Mail Item ID
+        cleanText(item.user_display_name), // Column C: Customer Name (no ID suffix - cleaner)
+        cleanText(mailDescription), // Column D: Mail Description
+        formatDateForExcel(item.receipt_date), // Column E: Receipt Date
+        formatDateForExcel(item.eligibility_date), // Column F: Eligibility Date
+        cleanText(item.destruction_method || 'Cross-cut shredder'), // Column G: Destruction Method
+        cleanText(item.staff_name), // Column H: Staff Name (never "Unknown")
+        cleanText(item.staff_initials), // Column I: Staff Signature / Initials
+        cleanText(item.notes), // Column J: Notes (factual, system-generated)
     ];
 }
 
@@ -144,9 +112,9 @@ async function appendToExcel(row: ReturnType<typeof buildExcelRow>): Promise<voi
     // Example using Graph API:
     // await graphClient.api('/me/drive/root:/Scanned_Mail/Destruction_Log.xlsx:/workbook/worksheets/Sheet1/tables/Table1/rows/add')
     //   .post({ values: [[row.mailItemId, row.customerName, ...]] });
-    
+
     console.log('[logDestructionToExcel] Would append to Excel:', JSON.stringify(row, null, 2));
-    
+
     // For now, just log - replace with actual implementation
     // This is a placeholder to show the structure
 }
@@ -158,35 +126,35 @@ async function run() {
     console.log(`[logDestructionToExcel] Starting at ${new Date(now).toISOString()}`);
 
     try {
-        // Find items that have been destroyed but not yet logged to Excel
-        // CRITICAL: Only items that were manually marked as destroyed by an admin
-        const { rows: items } = await pool.query<DestructionItem>(
+        // Find items from destruction_log that need to be logged to Excel
+        // CRITICAL: Only items with destruction_status = 'completed' and not yet logged to Excel
+        // Note: We use mail_item.destruction_logged flag for idempotency
+        // GUARD: All records must have valid staff attribution (no "Unknown")
+        const { rows: items } = await pool.query<DestructionLogItem>(
             `
             SELECT
-                m.id,
-                m.user_id,
-                COALESCE(u.first_name || ' ' || u.last_name, u.first_name, u.last_name, NULL) AS user_name,
-                u.email AS user_email,
-                u.company_name,
+                dl.mail_item_id,
+                dl.user_id,
+                dl.user_display_name,
+                dl.receipt_date,
+                dl.eligibility_date,
+                dl.recorded_at,
+                dl.actor_type,
+                dl.action_source,
+                dl.staff_name,
+                dl.staff_initials,
+                dl.notes,
+                dl.destruction_method,
                 m.subject,
-                m.sender_name,
-                m.tag,
-                m.received_at_ms,
-                m.received_date,
-                m.physical_destruction_date::text AS physical_destruction_date,
-                admin_audit.admin_id AS destroyed_by_admin_id,
-                COALESCE(admin_user.first_name || ' ' || admin_user.last_name, admin_user.first_name, admin_user.last_name, admin_user.email, NULL) AS destroyed_by_name,
-                admin_user.email AS destroyed_by_email
-            FROM mail_item m
-            JOIN "user" u ON u.id = m.user_id
-            LEFT JOIN admin_audit ON admin_audit.target_type = 'mail_item' 
-                AND admin_audit.target_id = m.id 
-                AND admin_audit.action = 'physical_destruction_confirmed'
-            LEFT JOIN "user" admin_user ON admin_user.id = admin_audit.admin_id
-            WHERE m.physical_destruction_date IS NOT NULL
+                m.sender_name
+            FROM destruction_log dl
+            JOIN mail_item m ON m.id = dl.mail_item_id
+            WHERE dl.destruction_status = 'completed'
                 AND (m.destruction_logged IS NULL OR m.destruction_logged = FALSE)
                 AND (m.deleted IS NULL OR m.deleted = false)
-            ORDER BY m.physical_destruction_date ASC
+                AND dl.staff_name != 'Unknown'  -- Guard: Never export "Unknown" records
+                AND dl.staff_initials != 'UN'    -- Guard: Never export "UN" records
+            ORDER BY dl.recorded_at ASC
             `,
             []
         );
@@ -203,7 +171,7 @@ async function run() {
 
         for (const item of items) {
             try {
-                // Build Excel row
+                // Build Excel row (all data is already compliance-ready from destruction_log table)
                 const row = buildExcelRow(item);
 
                 // Append to Excel (TODO: implement actual Excel writing)
@@ -217,14 +185,14 @@ async function run() {
                         updated_at = $1
                     WHERE id = $2
                     `,
-                    [now, item.id]
+                    [now, item.mail_item_id]
                 );
 
                 successCount++;
-                console.log(`[logDestructionToExcel] Successfully logged mail item #${item.id} to Excel`);
+                console.log(`[logDestructionToExcel] Successfully logged mail item #${item.mail_item_id} to Excel`);
             } catch (error: any) {
                 errorCount++;
-                console.error(`[logDestructionToExcel] Failed to log mail item #${item.id}:`, error);
+                console.error(`[logDestructionToExcel] Failed to log mail item #${item.mail_item_id}:`, error);
                 // Continue processing other items - don't fail entire batch
             }
         }

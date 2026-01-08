@@ -397,24 +397,58 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
  * POST /api/admin/mail-items/:id/mark-destroyed
  * Mark physical mail as destroyed (admin only)
  * Required for HMRC AML compliance - tracks physical destruction confirmation
+ * 
+ * COMPLIANCE REQUIREMENTS:
+ * - Validates eligibility_date has passed before allowing destruction
+ * - Creates admin_audit record for audit trail
+ * - Creates destruction_log record with all required compliance fields
+ * - Prevents duplicate destruction records (UNIQUE constraint on mail_item_id)
  */
 router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request, res: Response) => {
     const { id } = req.params;
     const pool = getPool();
+    const adminUser = (req as any).user;
 
     if (!id || isNaN(parseInt(id))) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
+    // HARD REQUIREMENT: Admin authentication is mandatory - no fallbacks allowed
+    if (!adminUser || !adminUser.id) {
+        console.error('[MARK DESTROYED] Rejected: No admin user in request context');
+        return res.status(403).json({ 
+            ok: false, 
+            error: 'admin_authentication_required',
+            message: 'Admin authentication required to destroy mail'
+        });
+    }
+
     const mailItemId = parseInt(id);
+    const adminId = adminUser.id;
+    const RETENTION_DAYS = 30; // GDPR retention period
 
     try {
-        // Step 1: Fetch the mail item first to verify it exists
+        // Step 1: Fetch mail item with all required data
         const fetchResult = await pool.query(
             `
-            SELECT id, deleted, status
-            FROM mail_item
-            WHERE id = $1
+            SELECT 
+                m.id,
+                m.user_id,
+                m.received_at_ms,
+                m.received_date,
+                m.created_at,
+                m.deleted,
+                m.status,
+                m.subject,
+                m.sender_name,
+                u.first_name AS user_first_name,
+                u.last_name AS user_last_name,
+                u.email AS user_email,
+                u.company_name,
+                u.is_admin AS user_is_admin
+            FROM mail_item m
+            JOIN "user" u ON u.id = m.user_id
+            WHERE m.id = $1
             `,
             [mailItemId]
         );
@@ -424,48 +458,255 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         }
 
         const mailItem = fetchResult.rows[0];
-        
-        // Step 2: Log current state for debugging
-        console.log('[MARK DESTROYED] Current mail item state:', {
-            id: mailItem.id,
-            deleted: mailItem.deleted,
-            status: mailItem.status
-        });
 
-        // Step 3: Set physical_destruction_date (do NOT set deleted=true - physical destruction is separate from soft deletion)
+        // Prevent destroying mail for internal staff accounts
+        if (mailItem.user_is_admin) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'invalid_destruction_target',
+                message: 'Cannot destroy mail for internal staff accounts'
+            });
+        }
+
+        // Step 2: Calculate receipt_date and eligibility_date
+        let receiptDate: Date | null = null;
+        if (mailItem.received_at_ms) {
+            receiptDate = new Date(mailItem.received_at_ms);
+        } else if (mailItem.received_date) {
+            receiptDate = new Date(mailItem.received_date);
+        } else if (mailItem.created_at) {
+            receiptDate = new Date(mailItem.created_at);
+        }
+
+        if (!receiptDate || isNaN(receiptDate.getTime())) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'missing_receipt_date',
+                message: 'Mail item must have a receipt date to be destroyed'
+            });
+        }
+
+        // Calculate eligibility date (receipt_date + retention_days)
+        const eligibilityDate = new Date(receiptDate);
+        eligibilityDate.setDate(eligibilityDate.getDate() + RETENTION_DAYS);
+
+        // Step 3: Validate eligibility_date has passed
+        const now = new Date();
+        if (eligibilityDate > now) {
+            const daysRemaining = Math.ceil((eligibilityDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'not_eligible_for_destruction',
+                message: `Mail is not eligible for destruction yet. Eligibility date: ${eligibilityDate.toISOString().split('T')[0]} (${daysRemaining} days remaining)`
+            });
+        }
+
+        // Step 4: Check if already destroyed (prevent duplicates)
+        const existingDestruction = await pool.query(
+            `SELECT id FROM destruction_log WHERE mail_item_id = $1`,
+            [mailItemId]
+        );
+
+        if (existingDestruction.rows.length > 0) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'already_destroyed',
+                message: 'This mail item has already been logged as destroyed'
+            });
+        }
+
+        // Step 5: Get admin user details for staff attribution (MANDATORY - no fallbacks)
+        const adminResult = await pool.query(
+            `
+            SELECT 
+                id,
+                first_name,
+                last_name,
+                email,
+                is_admin
+            FROM "user"
+            WHERE id = $1 AND is_admin = TRUE
+            `,
+            [adminId]
+        );
+
+        if (adminResult.rows.length === 0) {
+            console.error('[MARK DESTROYED] Rejected: Admin user not found or not authorized', { adminId });
+            return res.status(403).json({ 
+                ok: false, 
+                error: 'admin_authentication_required',
+                message: 'Admin authentication required to destroy mail'
+            });
+        }
+
+        const admin = adminResult.rows[0];
+
+        // VALIDATION: Admin must have identifiable name - NO FALLBACKS TO "Unknown"
+        if (!admin.first_name && !admin.last_name && !admin.email) {
+            console.error('[MARK DESTROYED] Rejected: Admin user has no identifiable name', { adminId, admin });
+            return res.status(500).json({ 
+                ok: false, 
+                error: 'admin_identity_incomplete',
+                message: 'Admin user account is missing required identity information. Cannot proceed with destruction logging.'
+            });
+        }
+
+        // Build staff name - explicit validation, no fallbacks
+        let staffName: string;
+        if (admin.first_name && admin.last_name) {
+            staffName = `${admin.first_name} ${admin.last_name}`;
+        } else if (admin.first_name) {
+            staffName = admin.first_name;
+        } else if (admin.last_name) {
+            staffName = admin.last_name;
+        } else if (admin.email) {
+            // Use email as last resort, but extract name part if possible
+            const emailName = admin.email.split('@')[0];
+            staffName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+        } else {
+            // This should never happen due to check above, but TypeScript needs it
+            throw new Error('Admin identity validation failed: no name or email available');
+        }
+
+        // Build staff initials - explicit validation, no fallbacks
+        let staffInitials: string;
+        if (admin.first_name && admin.last_name) {
+            staffInitials = `${admin.first_name[0]}${admin.last_name[0]}`.toUpperCase();
+        } else if (admin.first_name) {
+            staffInitials = admin.first_name.substring(0, 2).toUpperCase().padEnd(2, admin.first_name[0]);
+        } else if (admin.last_name) {
+            staffInitials = admin.last_name.substring(0, 2).toUpperCase().padEnd(2, admin.last_name[0]);
+        } else if (admin.email) {
+            const emailPrefix = admin.email.split('@')[0];
+            staffInitials = emailPrefix.substring(0, 2).toUpperCase().padEnd(2, emailPrefix[0]);
+        } else {
+            // This should never happen due to check above
+            throw new Error('Admin identity validation failed: cannot derive initials');
+        }
+
+        // GUARD: Ensure we never write "Unknown" or "UN"
+        if (staffName.toLowerCase().includes('unknown') || staffInitials === 'UN') {
+            console.error('[MARK DESTROYED] Rejected: Staff attribution would be "Unknown"', { adminId, staffName, staffInitials });
+            return res.status(500).json({ 
+                ok: false, 
+                error: 'staff_attribution_invalid',
+                message: 'Cannot determine staff identity for destruction logging. Admin account must have name or email.'
+            });
+        }
+
+        // Step 6: Generate user display name (never show internal staff)
+        const userDisplayName = mailItem.company_name 
+            || (mailItem.user_first_name && mailItem.user_last_name 
+                ? `${mailItem.user_first_name} ${mailItem.user_last_name}`
+                : mailItem.user_first_name || mailItem.user_last_name || mailItem.user_email || `User #${mailItem.user_id}`);
+
+        // Step 7: Generate factual notes explaining WHY destruction occurred
+        const notes = `30-day retention period expired with no forwarding request. Eligibility date: ${eligibilityDate.toISOString().split('T')[0]}`;
+
+        // Step 8: Begin transaction for atomic operations
+        await pool.query('BEGIN');
+
         try {
-            const updateResult = await pool.query(
+            // 8a: Create admin_audit record
+            await pool.query(
+                `
+                INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                `,
+                [
+                    adminId,
+                    'physical_destruction_confirmed',
+                    'mail_item',
+                    mailItemId,
+                    JSON.stringify({
+                        receipt_date: receiptDate.toISOString().split('T')[0],
+                        eligibility_date: eligibilityDate.toISOString().split('T')[0],
+                        retention_days: RETENTION_DAYS
+                    }),
+                    Date.now()
+                ]
+            );
+
+            // 8b: Create destruction_log record with actor attribution
+            await pool.query(
+                `
+                INSERT INTO destruction_log (
+                    mail_item_id,
+                    user_id,
+                    user_display_name,
+                    receipt_date,
+                    eligibility_date,
+                    recorded_at,
+                    destruction_status,
+                    actor_type,
+                    action_source,
+                    staff_user_id,
+                    staff_name,
+                    staff_initials,
+                    notes,
+                    destruction_method
+                ) VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9, $10, $11, $12, $13)
+                `,
+                [
+                    mailItemId,
+                    mailItem.user_id,
+                    userDisplayName,
+                    receiptDate.toISOString().split('T')[0],
+                    eligibilityDate.toISOString().split('T')[0],
+                    'completed',
+                    'admin', // actor_type: manual admin action
+                    'admin_ui', // action_source: from admin dashboard
+                    adminId, // staff_user_id: authenticated admin
+                    staffName,
+                    staffInitials,
+                    notes,
+                    'Cross-cut shredder'
+                ]
+            );
+
+            // 8c: Update mail_item with physical_destruction_date
+            await pool.query(
                 `
                 UPDATE mail_item
                 SET physical_destruction_date = NOW(),
+                    destruction_logged = TRUE,
                     updated_at = $1
                 WHERE id = $2
-                RETURNING id, physical_destruction_date
                 `,
                 [Date.now(), mailItemId]
             );
 
-            if (updateResult.rows.length === 0) {
-                console.error('[MARK DESTROYED FAILED] Update returned no rows', { mailItemId });
-                return res.status(400).json({ ok: false, error: 'invalid_mail_state' });
-            }
-        } catch (updateError: any) {
-            console.error('[MARK DESTROYED FAILED]', updateError);
+            // Commit transaction
+            await pool.query('COMMIT');
+
+            console.log('[MARK DESTROYED] Successfully logged destruction', {
+                mailItemId,
+                adminId,
+                staffName,
+                eligibilityDate: eligibilityDate.toISOString().split('T')[0]
+            });
+
+            return res.json({ ok: true });
+        } catch (txError: any) {
+            await pool.query('ROLLBACK');
+            throw txError;
+        }
+    } catch (error: any) {
+        console.error('[MARK DESTROYED FAILED]', error);
+        
+        // Handle unique constraint violation (duplicate)
+        if (error.code === '23505' && error.constraint === 'unique_mail_item_destruction') {
             return res.status(400).json({
                 ok: false,
-                error: 'invalid_mail_state',
-                message: updateError.message
+                error: 'already_destroyed',
+                message: 'This mail item has already been logged as destroyed'
             });
         }
 
-        // Step 4: Return success
-        return res.json({ ok: true });
-    } catch (error: any) {
-        console.error('[MARK DESTROYED FAILED]', error);
-        return res.status(400).json({
+        return res.status(500).json({
             ok: false,
-            error: 'invalid_mail_state',
-            message: error.message,
+            error: 'destruction_logging_failed',
+            message: error.message || 'Failed to log destruction'
         });
     }
 });

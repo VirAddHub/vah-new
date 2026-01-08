@@ -31,10 +31,10 @@ router.use(requireAdmin);
 /**
  * Format date for CSV (DD/MM/YYYY)
  */
-function formatDate(dateString: string | null): string {
+function formatDate(dateString: string | null | Date): string {
     if (!dateString) return '';
     try {
-        const date = new Date(dateString);
+        const date = dateString instanceof Date ? dateString : new Date(dateString);
         if (isNaN(date.getTime())) return '';
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -46,33 +46,6 @@ function formatDate(dateString: string | null): string {
 }
 
 /**
- * Calculate destruction eligibility date (30 days from receipt)
- */
-function getDestructionEligibilityDate(item: {
-    received_at_ms: number | null;
-    received_date: string | null;
-    created_at: number | null;
-}): string {
-    let receivedDate: Date | null = null;
-
-    if (item.received_at_ms) {
-        receivedDate = new Date(item.received_at_ms);
-    } else if (item.received_date) {
-        receivedDate = new Date(item.received_date);
-    } else if (item.created_at) {
-        receivedDate = new Date(item.created_at);
-    }
-
-    if (!receivedDate || isNaN(receivedDate.getTime())) {
-        return '';
-    }
-
-    const eligibilityDate = new Date(receivedDate);
-    eligibilityDate.setDate(eligibilityDate.getDate() + 30);
-    return formatDate(eligibilityDate.toISOString());
-}
-
-/**
  * GET /api/admin/exports/destruction-log
  * Export destruction log as CSV (admin only)
  * 
@@ -80,7 +53,10 @@ function getDestructionEligibilityDate(item: {
  *   - from: optional date filter (YYYY-MM-DD)
  *   - to: optional date filter (YYYY-MM-DD)
  * 
- * Returns: CSV file download
+ * Returns: CSV file download (UTF-8 encoded)
+ * 
+ * COMPLIANCE: Uses destruction_log table with all required fields.
+ * Character encoding is explicitly UTF-8 to prevent Windows-1252 fallback issues.
  */
 router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Request, res: Response) => {
     try {
@@ -90,146 +66,125 @@ router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Re
         // Build query with optional date filters
         let dateFilter = '';
         const params: any[] = [];
-        
+
         if (from || to) {
             const conditions: string[] = [];
             if (from) {
                 params.push(from);
-                conditions.push(`m.physical_destruction_date >= $${params.length}::date`);
+                conditions.push(`dl.recorded_at >= $${params.length}::date`);
             }
             if (to) {
                 params.push(to);
-                conditions.push(`m.physical_destruction_date <= $${params.length}::date`);
+                conditions.push(`dl.recorded_at <= $${params.length}::date + INTERVAL '1 day'`);
             }
             if (conditions.length > 0) {
                 dateFilter = `AND ${conditions.join(' AND ')}`;
             }
         }
 
+        // Query from destruction_log table (compliance-safe source of truth)
         const query = `
             SELECT
-                m.id AS mail_item_id,
-                COALESCE(u.first_name || ' ' || u.last_name, u.first_name, u.last_name, u.email, 'Unknown') AS customer_name,
-                u.id AS user_id,
-                COALESCE(m.subject, '') || CASE WHEN m.sender_name IS NOT NULL THEN ' – ' || m.sender_name ELSE '' END AS mail_description,
-                m.received_at_ms,
-                m.received_date,
-                m.created_at,
-                m.physical_destruction_date,
-                COALESCE(admin_user.first_name || ' ' || admin_user.last_name, admin_user.first_name, admin_user.last_name, admin_user.email, 'Unknown') AS staff_name,
-                CASE 
-                    WHEN admin_user.first_name IS NOT NULL AND admin_user.last_name IS NOT NULL THEN
-                        UPPER(SUBSTRING(admin_user.first_name, 1, 1) || SUBSTRING(admin_user.last_name, 1, 1))
-                    WHEN admin_user.first_name IS NOT NULL THEN
-                        UPPER(SUBSTRING(admin_user.first_name, 1, 2))
-                    WHEN admin_user.email IS NOT NULL THEN
-                        UPPER(SUBSTRING(admin_user.email, 1, 2))
-                    ELSE '—'
-                END AS staff_signature,
-                m.physical_destruction_date AS recorded_at
-            FROM mail_item m
-            JOIN "user" u ON u.id = m.user_id
-            LEFT JOIN admin_audit ON admin_audit.target_type = 'mail_item' 
-                AND admin_audit.target_id = m.id 
-                AND admin_audit.action = 'physical_destruction_confirmed'
-            LEFT JOIN "user" admin_user ON admin_user.id = admin_audit.admin_id
-            WHERE m.physical_destruction_date IS NOT NULL
+                dl.mail_item_id,
+                dl.user_id,
+                dl.user_display_name,
+                dl.receipt_date,
+                dl.eligibility_date,
+                dl.recorded_at,
+                dl.actor_type,
+                dl.action_source,
+                dl.staff_name,
+                dl.staff_initials,
+                dl.notes,
+                dl.destruction_method,
+                dl.destruction_status,
+                m.subject,
+                m.sender_name
+            FROM destruction_log dl
+            JOIN mail_item m ON m.id = dl.mail_item_id
+            WHERE dl.destruction_status = 'completed'
                 AND (m.deleted IS NULL OR m.deleted = false)
                 ${dateFilter}
-            ORDER BY m.physical_destruction_date ASC
+            ORDER BY dl.recorded_at ASC
         `;
 
         const { rows } = await pool.query(query, params);
 
-        // Transform rows for CSV
+        // Transform rows for CSV with proper encoding handling
         const csvRows = rows.map((row: any) => {
-            const customerNameWithId = `${row.customer_name} (ID: ${row.user_id})`;
-            
-            // Format receipt date - handle milliseconds, date strings, and null
-            let receiptDate = '';
-            if (row.received_at_ms) {
-                try {
-                    receiptDate = formatDate(new Date(row.received_at_ms).toISOString());
-                } catch {
-                    receiptDate = '';
-                }
-            } else if (row.received_date) {
-                receiptDate = formatDate(row.received_date);
-            } else if (row.created_at) {
-                try {
-                    // created_at might be milliseconds (number) or a date string
-                    const createdDate = typeof row.created_at === 'number' 
-                        ? new Date(row.created_at).toISOString()
-                        : row.created_at;
-                    receiptDate = formatDate(createdDate);
-                } catch {
-                    receiptDate = '';
-                }
-            }
-            
-            const eligibilityDate = getDestructionEligibilityDate({
-                received_at_ms: row.received_at_ms,
-                received_date: row.received_date,
-                created_at: row.created_at
-            });
+            // Format dates (DD/MM/YYYY)
+            const receiptDate = row.receipt_date ? formatDate(row.receipt_date) : '';
+            const eligibilityDate = row.eligibility_date ? formatDate(row.eligibility_date) : '';
+            const recordedAt = row.recorded_at ? formatDate(row.recorded_at instanceof Date ? row.recorded_at.toISOString() : row.recorded_at) : '';
 
-            // Format recorded_at - handle TIMESTAMPTZ from database
-            let recordedAt = '';
-            if (row.recorded_at) {
-                try {
-                    // If it's already a string, use it directly; if it's a Date object, convert to ISO
-                    const recordedDate = row.recorded_at instanceof Date 
-                        ? row.recorded_at.toISOString()
-                        : typeof row.recorded_at === 'string'
-                        ? row.recorded_at
-                        : new Date(row.recorded_at).toISOString();
-                    recordedAt = formatDate(recordedDate);
-                } catch {
-                    recordedAt = '';
-                }
-            }
+            // Build mail description
+            const mailDescription = row.subject
+                ? `${row.subject}${row.sender_name ? ` – ${row.sender_name}` : ''}`
+                : (row.sender_name || 'N/A');
+
+            // Clean up any broken characters (fix encoding issues)
+            const cleanText = (text: string | null): string => {
+                if (!text) return 'N/A';
+                return text
+                    .replace(/‚Äì/g, '–')  // Fix broken en-dash
+                    .replace(/‚Äî/g, '—')  // Fix broken em-dash
+                    .replace(/â€™/g, "'")  // Fix broken apostrophe
+                    .replace(/â€œ/g, '"')  // Fix broken opening quote
+                    .replace(/â€/g, '"')   // Fix broken closing quote
+                    .replace(/â€"/g, '—')  // Fix broken em-dash variant
+                    .replace(/â€"/g, '–'); // Fix broken en-dash variant
+            };
 
             return {
                 'Mail Item ID': String(row.mail_item_id),
-                'Customer Name / ID': customerNameWithId,
-                'Mail Description': row.mail_description || '—',
+                'User ID': String(row.user_id),
+                'Customer Name': cleanText(row.user_display_name),
+                'Mail Description': cleanText(mailDescription),
                 'Receipt Date': receiptDate,
                 'Eligibility Date': eligibilityDate,
-                'Destruction Method': 'Cross-cut shredder',
-                'Staff Name': row.staff_name || 'Unknown',
-                'Staff Signature / Initials': row.staff_signature || '—',
-                'Notes': 'GDPR + HMRC AML compliance',
+                'Destruction Method': cleanText(row.destruction_method || 'Cross-cut shredder'),
+                'Actor Type': cleanText(row.actor_type || 'admin'),
+                'Action Source': cleanText(row.action_source || 'admin_ui'),
+                'Staff Name': cleanText(row.staff_name),
+                'Staff Signature / Initials': cleanText(row.staff_initials),
+                'Notes': cleanText(row.notes),
                 'Recorded At': recordedAt
             };
         });
 
-        // Generate CSV
+        // Generate CSV with explicit UTF-8 encoding
         const csv = stringify(csvRows, {
             header: true,
             columns: [
                 'Mail Item ID',
-                'Customer Name / ID',
+                'User ID',
+                'Customer Name',
                 'Mail Description',
                 'Receipt Date',
                 'Eligibility Date',
                 'Destruction Method',
+                'Actor Type',
+                'Action Source',
                 'Staff Name',
                 'Staff Signature / Initials',
                 'Notes',
                 'Recorded At'
-            ]
+            ],
+            bom: true, // Add UTF-8 BOM for Excel compatibility
+            encoding: 'utf8'
         });
 
-        // Set response headers for CSV download
-        const filename = from || to 
+        // Set response headers for CSV download with explicit UTF-8
+        const filename = from || to
             ? `destruction-log-${from || 'all'}-${to || 'all'}.csv`
             : `destruction-log-${new Date().toISOString().split('T')[0]}.csv`;
 
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
-        return res.send(csv);
+        // Send with explicit UTF-8 encoding
+        return res.send(Buffer.from(csv, 'utf8'));
     } catch (error: any) {
         console.error('[GET /api/admin/exports/destruction-log] error:', error);
         return res.status(500).json({
