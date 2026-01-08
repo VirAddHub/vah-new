@@ -454,6 +454,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         if (fetchResult.rows.length === 0) {
+            console.error('[MARK DESTROYED] Mail item not found', { mailItemId });
             return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
         }
 
@@ -461,6 +462,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         // Prevent destroying mail for internal staff accounts
         if (mailItem.user_is_admin) {
+            console.error('[MARK DESTROYED] Rejected: Cannot destroy mail for internal staff', { mailItemId, userId: mailItem.user_id });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'invalid_destruction_target',
@@ -479,6 +481,12 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         }
 
         if (!receiptDate || isNaN(receiptDate.getTime())) {
+            console.error('[MARK DESTROYED] Rejected: Missing receipt date', { 
+                mailItemId, 
+                received_at_ms: mailItem.received_at_ms,
+                received_date: mailItem.received_date,
+                created_at: mailItem.created_at
+            });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'missing_receipt_date',
@@ -494,6 +502,12 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         const now = new Date();
         if (eligibilityDate > now) {
             const daysRemaining = Math.ceil((eligibilityDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            console.error('[MARK DESTROYED] Rejected: Not eligible yet', { 
+                mailItemId,
+                receiptDate: receiptDate.toISOString().split('T')[0],
+                eligibilityDate: eligibilityDate.toISOString().split('T')[0],
+                daysRemaining
+            });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'not_eligible_for_destruction',
@@ -508,6 +522,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         if (existingDestruction.rows.length > 0) {
+            console.error('[MARK DESTROYED] Rejected: Already destroyed', { mailItemId, existingId: existingDestruction.rows[0].id });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'already_destroyed',
@@ -604,11 +619,12 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         const notes = `30-day retention period expired with no forwarding request. Eligibility date: ${eligibilityDate.toISOString().split('T')[0]}`;
 
         // Step 8: Begin transaction for atomic operations
-        await pool.query('BEGIN');
-
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
+
             // 8a: Create admin_audit record
-            await pool.query(
+            await client.query(
                 `
                 INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
                 VALUES ($1, $2, $3, $4, $5, $6)
@@ -628,7 +644,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             );
 
             // 8b: Create destruction_log record with actor attribution
-            await pool.query(
+            await client.query(
                 `
                 INSERT INTO destruction_log (
                     mail_item_id,
@@ -665,7 +681,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             );
 
             // 8c: Update mail_item with physical_destruction_date
-            await pool.query(
+            await client.query(
                 `
                 UPDATE mail_item
                 SET physical_destruction_date = NOW(),
@@ -677,7 +693,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             );
 
             // Commit transaction
-            await pool.query('COMMIT');
+            await client.query('COMMIT');
 
             console.log('[MARK DESTROYED] Successfully logged destruction', {
                 mailItemId,
@@ -688,8 +704,15 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
             return res.json({ ok: true });
         } catch (txError: any) {
-            await pool.query('ROLLBACK');
+            console.error('[MARK DESTROYED] Transaction error, rolling back:', txError);
+            try {
+                await client.query('ROLLBACK');
+            } catch (rollbackError: any) {
+                console.error('[MARK DESTROYED] Rollback failed:', rollbackError);
+            }
             throw txError;
+        } finally {
+            client.release();
         }
     } catch (error: any) {
         console.error('[MARK DESTROYED FAILED]', error);
@@ -703,10 +726,51 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             });
         }
 
+        // Handle CHECK constraint violations (e.g., "Unknown" staff_name)
+        if (error.code === '23514') {
+            const constraintName = error.constraint || '';
+            if (constraintName.includes('staff_name') || constraintName.includes('staff_initials')) {
+                return res.status(400).json({
+                    ok: false,
+                    error: 'invalid_staff_attribution',
+                    message: 'Invalid staff attribution. Staff name and initials cannot be "Unknown" or "UN".',
+                    details: error.message
+                });
+            }
+            if (constraintName.includes('admin_action_requires_staff_user')) {
+                return res.status(400).json({
+                    ok: false,
+                    error: 'invalid_actor_type',
+                    message: 'Admin actions must have staff_user_id. System actions must have staff_user_id = NULL.',
+                    details: error.message
+                });
+            }
+            return res.status(400).json({
+                ok: false,
+                error: 'constraint_violation',
+                message: 'Database constraint violation',
+                details: error.message,
+                constraint: constraintName
+            });
+        }
+
+        // Handle foreign key violations
+        if (error.code === '23503') {
+            return res.status(400).json({
+                ok: false,
+                error: 'invalid_reference',
+                message: 'Invalid reference to related record',
+                details: error.message
+            });
+        }
+
+        // Return 500 for unexpected errors
         return res.status(500).json({
             ok: false,
             error: 'destruction_logging_failed',
-            message: error.message || 'Failed to log destruction'
+            message: error.message || 'Failed to log destruction',
+            code: error.code,
+            constraint: error.constraint
         });
     }
 });

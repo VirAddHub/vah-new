@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
 import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
+import { getSessionFromCookies } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ export async function POST(
 
   console.log("[BFF Admin Mail Item Mark Destroyed] called", { id });
 
+  // Step 1: Validate mail item ID
   if (!id || id === "undefined" || id === "null") {
     return NextResponse.json(
       { ok: false, error: "invalid_mail_item_id" },
@@ -20,11 +22,62 @@ export async function POST(
     );
   }
 
+  // Step 2: HARD REQUIRE admin authentication (MANDATORY - no fallbacks)
+  let session;
+  try {
+    session = getSessionFromCookies();
+  } catch (error) {
+    console.error("[BFF Admin Mail Item Mark Destroyed] Failed to read session", error);
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: "admin_authentication_required",
+        message: "Admin authentication required. Please log in as an admin."
+      },
+      { status: 403 }
+    );
+  }
+
+  // Step 3: Validate admin role (MANDATORY - reject if not admin)
+  if (!session.authenticated || !session.token) {
+    console.error("[BFF Admin Mail Item Mark Destroyed] No session token", { 
+      authenticated: session.authenticated,
+      hasToken: !!session.token 
+    });
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: "admin_authentication_required",
+        message: "Admin session not found. Please log in as an admin."
+      },
+      { status: 403 }
+    );
+  }
+
+  if (session.role !== "admin") {
+    console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
+      role: session.role 
+    });
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: "admin_authorization_required",
+        message: "Admin role required. Only administrators can mark mail as destroyed."
+      },
+      { status: 403 }
+    );
+  }
+
+  console.log("[BFF Admin Mail Item Mark Destroyed] Admin authenticated", {
+    role: session.role,
+    hasUser: !!session.user
+  });
+
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
 
-    // Extract and forward authentication
+    // Step 4: Extract and forward ALL cookies (preserve admin session)
     const cookie = req.headers.get("cookie") || "";
     const authHeader = req.headers.get("authorization");
 
@@ -33,9 +86,20 @@ export async function POST(
       "Content-Type": "application/json",
     };
 
-    // Forward cookies (primary auth method for session-based auth)
+    // CRITICAL: Forward cookies to preserve admin identity
     if (cookie) {
       headers["Cookie"] = cookie;
+    } else {
+      // If no cookies, we cannot proceed (should not happen after validation above)
+      console.error("[BFF Admin Mail Item Mark Destroyed] No cookies to forward");
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: "session_cookies_missing",
+          message: "Session cookies not found. Please refresh and try again."
+        },
+        { status: 403 }
+      );
     }
 
     // Forward Authorization header if present (for JWT/token auth)
@@ -50,8 +114,25 @@ export async function POST(
       cache: "no-store",
     });
 
+    // Handle response - try to parse as JSON, fallback to error object
+    let data;
     const text = await r.text();
-    const data = text ? JSON.parse(text) : { ok: r.ok };
+    try {
+      data = text ? JSON.parse(text) : { ok: r.ok };
+    } catch (parseError) {
+      // If JSON parsing fails, return error object with the raw text
+      console.error("[BFF Admin Mail Item Mark Destroyed] Failed to parse response", {
+        status: r.status,
+        text: text.substring(0, 200), // Log first 200 chars
+        error: parseError
+      });
+      data = {
+        ok: false,
+        error: "invalid_response",
+        message: text || r.statusText || "Unknown error",
+        status: r.status
+      };
+    }
 
     return NextResponse.json(data, {
       status: r.status,
