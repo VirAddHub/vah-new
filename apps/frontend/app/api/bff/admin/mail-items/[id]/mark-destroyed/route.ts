@@ -79,13 +79,17 @@ export async function POST(
   if (!isAuthenticated || !sessionToken) {
     console.error("[BFF Admin Mail Item Mark Destroyed] No valid session token", { 
       isAuthenticated,
-      tokenLength: sessionToken.length 
+      tokenLength: sessionToken.length,
+      hasCookieHeader: !!cookieHeader,
+      cookieHeaderLength: cookieHeader.length,
+      cookieHeaderPreview: cookieHeader ? cookieHeader.substring(0, 100) : 'empty',
+      allRequestHeaders: Object.fromEntries(req.headers.entries())
     });
     return NextResponse.json(
       { 
         ok: false, 
         error: "admin_authentication_required",
-        message: "Admin session not found. Please log in as an admin."
+        message: "Admin session not found. Please log out and log back in, then try again."
       },
       { status: 403 }
     );
@@ -94,7 +98,8 @@ export async function POST(
   if (role !== "admin") {
     console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
       role,
-      hasRoleCookie: !!roleCookie
+      hasRoleCookie: !!roleCookie,
+      roleCookieValue: roleCookie?.value
     });
     return NextResponse.json(
       { 

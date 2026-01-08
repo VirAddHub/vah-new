@@ -80,13 +80,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Backend is 2xx and JSON parsed successfully
+    // CRITICAL: Forward Set-Cookie headers from backend to browser
+    // This ensures HttpOnly cookies (vah_session, vah_role, vah_user) are set
+    const responseHeaders = new Headers({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    });
+
+    // Forward all Set-Cookie headers from backend
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      console.log(`[BFF auth/login] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
+      setCookieHeaders.forEach(cookie => {
+        responseHeaders.append('Set-Cookie', cookie);
+      });
+    } else {
+      // Also check for single Set-Cookie header (some backends use this)
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) {
+        console.log(`[BFF auth/login] Forwarding Set-Cookie header to browser`);
+        responseHeaders.set('Set-Cookie', setCookie);
+      } else {
+        console.warn(`[BFF auth/login] No Set-Cookie headers from backend - cookies may not be set`);
+      }
+    }
+
     return NextResponse.json(json ?? { ok: true, data: {} }, {
       status: 200,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
+      headers: responseHeaders,
     });
   } catch (error: any) {
     // Handle backend origin configuration errors
