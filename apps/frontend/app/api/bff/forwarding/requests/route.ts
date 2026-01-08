@@ -14,9 +14,21 @@ export async function GET(request: NextRequest) {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
     backendBase = backend;
+    
+    // Build headers for backend request
+    const headers: HeadersInit = {
+      'Cookie': cookie,
+      'Content-Type': 'application/json'
+    };
+    
+    // Forward Authorization header if present (for JWT token auth)
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
 
     const response = await fetch(`${backend}/api/forwarding/requests`, {
-      headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },
+      headers,
     });
 
     const raw = await response.text();
@@ -65,11 +77,24 @@ export async function POST(request: NextRequest) {
     backendBase = backend;
 
     const body = await request.text();
+    
+    console.log(`[${routePath}] POST request received`, {
+      hasCookie: !!cookie,
+      cookieLength: cookie.length,
+      hasAuthHeader: !!(request.headers.get('authorization') || request.headers.get('Authorization')),
+      bodyLength: body.length
+    });
 
     // Build headers for backend request
     const headers = new Headers();
     headers.set('Cookie', cookie);
     headers.set('Content-Type', 'application/json');
+    
+    // Forward Authorization header if present (for JWT token auth)
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (authHeader) {
+      headers.set('Authorization', authHeader);
+    }
 
     // CSRF: Extract token from cookie and add to header
     // Backend expects X-CSRF-Token header to match vah_csrf_token cookie
@@ -114,6 +139,12 @@ export async function POST(request: NextRequest) {
       headers.set('x-csrf-token', csrfToken);
     }
 
+    console.log(`[${routePath}] Forwarding to backend`, {
+      hasCookies: !!headers.get('Cookie'),
+      hasAuth: !!headers.get('Authorization'),
+      hasCsrf: !!headers.get('x-csrf-token')
+    });
+
     const response = await fetch(`${backend}/api/forwarding/requests`, {
       method: 'POST',
       headers,
@@ -121,6 +152,13 @@ export async function POST(request: NextRequest) {
     });
 
     const raw = await response.text();
+    
+    if (!response.ok) {
+      console.error(`[${routePath}] Backend returned error`, {
+        status: response.status,
+        responseText: raw.substring(0, 500)
+      });
+    }
     let data: any;
     try {
       data = JSON.parse(raw);
