@@ -21,90 +21,38 @@ export async function POST(
     );
   }
 
-  // Step 2: Check for authentication (cookies OR JWT token)
-  // Backend accepts both, so we'll forward whatever is available
-  const cookieHeader = req.headers.get("cookie") || "";
-  const authHeader = req.headers.get("authorization") || "";
+  // Step 2: Extract authentication headers to forward to backend
+  // Backend's requireAdmin middleware will validate admin status
+  // We don't validate here - just forward everything and let backend handle it
   
-  // Try Next.js cookie API first
+  // Read headers case-insensitively (some clients send lowercase headers)
+  const cookieHeader = req.headers.get("cookie") || req.headers.get("Cookie") || "";
+  let authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+  
+  // Try Next.js cookie API to rebuild cookie string if needed
   const sessionCookie = req.cookies.get('vah_session');
   const roleCookie = req.cookies.get('vah_role');
   const userCookie = req.cookies.get('vah_user');
 
-  // Check if we have either cookies OR JWT token
-  const hasCookies = !!(sessionCookie || cookieHeader);
-  const hasJWT = !!(authHeader && authHeader.startsWith('Bearer '));
+  // Log all headers for debugging (but don't log sensitive values)
+  const allHeaders = Object.fromEntries(req.headers.entries());
+  const headerKeys = Object.keys(allHeaders);
   
-  console.log("[BFF Admin Mail Item Mark Destroyed] Auth check", {
-    hasCookies,
-    hasJWT,
-    hasSessionCookie: !!sessionCookie,
-    hasRoleCookie: !!roleCookie,
+  console.log("[BFF Admin Mail Item Mark Destroyed] Request received", {
     hasCookieHeader: !!cookieHeader,
     hasAuthHeader: !!authHeader,
-    cookieHeaderLength: cookieHeader.length
-  });
-
-  // Step 3: Require at least one form of authentication
-  if (!hasCookies && !hasJWT) {
-    console.error("[BFF Admin Mail Item Mark Destroyed] No authentication found", { 
-      hasCookies,
-      hasJWT,
-      cookieHeaderPreview: cookieHeader ? cookieHeader.substring(0, 50) : 'empty'
-    });
-    return NextResponse.json(
-      { 
-        ok: false, 
-        error: "admin_authentication_required",
-        message: "Authentication required. Please log in and try again."
-      },
-      { status: 403 }
-    );
-  }
-
-  // If we have cookies, validate role (for cookie-based auth)
-  // If we only have JWT, let backend validate (backend's requireAdmin middleware will check)
-  if (hasCookies) {
-    let role = (roleCookie?.value || 'user') as 'user' | 'admin';
-    
-    // Parse from cookie header if Next.js API didn't work
-    if (!roleCookie && cookieHeader) {
-      const cookies: Record<string, string> = {};
-      cookieHeader.split(';').forEach(cookie => {
-        const [key, value] = cookie.trim().split('=');
-        if (key && value) {
-          cookies[key] = decodeURIComponent(value);
-        }
-      });
-      role = (cookies['vah_role'] || 'user') as 'user' | 'admin';
-    }
-    
-    if (role !== "admin") {
-      console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
-        role,
-        hasRoleCookie: !!roleCookie
-      });
-      return NextResponse.json(
-        { 
-          ok: false, 
-          error: "admin_authorization_required",
-          message: "Admin role required. Only administrators can mark mail as destroyed."
-        },
-        { status: 403 }
-      );
-    }
-  }
-
-  console.log("[BFF Admin Mail Item Mark Destroyed] Authentication found, forwarding to backend", {
-    hasCookies,
-    hasJWT
+    hasSessionCookie: !!sessionCookie,
+    cookieHeaderLength: cookieHeader.length,
+    authHeaderLength: authHeader.length,
+    headerKeys: headerKeys.filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('cookie')),
+    allHeaderKeys: headerKeys
   });
 
   try {
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
 
-    // Step 4: Forward authentication to backend (cookies OR JWT token)
+    // Step 3: Forward authentication to backend (cookies AND/OR JWT token)
     // Use the cookie header we already read (or rebuild from req.cookies if needed)
     let cookieString = cookieHeader;
     
@@ -122,39 +70,24 @@ export async function POST(
       "Content-Type": "application/json",
     };
 
-    // CRITICAL: Forward cookies if available
+    // Forward cookies if available
     if (cookieString) {
       headers["Cookie"] = cookieString;
-      console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding cookies to backend", {
-        cookieLength: cookieString.length,
-        hasSession: cookieString.includes('vah_session'),
-        hasRole: cookieString.includes('vah_role')
-      });
     }
 
-    // CRITICAL: Forward Authorization header if available (JWT token)
-    // Backend's requireAdmin middleware will validate the token and admin status
+    // Forward Authorization header if available (JWT token)
+    // Backend's requireAdmin middleware will validate admin status
     if (authHeader) {
       headers["Authorization"] = authHeader;
-      console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding Authorization header to backend");
     }
 
-    // At least one form of auth must be forwarded
-    if (!cookieString && !authHeader) {
-      console.error("[BFF Admin Mail Item Mark Destroyed] No authentication to forward", {
-        hasCookieHeader: !!cookieHeader,
-        hasSessionCookie: !!sessionCookie,
-        hasAuthHeader: !!authHeader
-      });
-      return NextResponse.json(
-        { 
-          ok: false, 
-          error: "authentication_missing",
-          message: "No authentication found. Please log in and try again."
-        },
-        { status: 403 }
-      );
-    }
+    // Log what we're forwarding
+    console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding to backend", {
+      hasCookies: !!cookieString,
+      hasAuth: !!authHeader,
+      cookieLength: cookieString?.length || 0,
+      authHeaderLength: authHeader?.length || 0
+    });
 
     const r = await fetch(url, {
       method: "POST",
