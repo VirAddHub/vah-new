@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
 import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
-import { getSessionFromCookies } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,26 +22,38 @@ export async function POST(
   }
 
   // Step 2: HARD REQUIRE admin authentication (MANDATORY - no fallbacks)
-  let session;
-  try {
-    session = getSessionFromCookies();
-  } catch (error) {
-    console.error("[BFF Admin Mail Item Mark Destroyed] Failed to read session", error);
-    return NextResponse.json(
-      { 
-        ok: false, 
-        error: "admin_authentication_required",
-        message: "Admin authentication required. Please log in as an admin."
-      },
-      { status: 403 }
-    );
+  // Read cookies directly from NextRequest (more reliable in API routes)
+  const sessionCookie = req.cookies.get('vah_session');
+  const roleCookie = req.cookies.get('vah_role');
+  const userCookie = req.cookies.get('vah_user');
+
+  const sessionToken = sessionCookie?.value || '';
+  const role = (roleCookie?.value || 'user') as 'user' | 'admin';
+  
+  let user = null;
+  if (userCookie?.value) {
+    try {
+      user = JSON.parse(userCookie.value);
+    } catch {
+      user = null;
+    }
   }
 
-  // Step 3: Validate admin role (MANDATORY - reject if not admin)
-  if (!session.authenticated || !session.token) {
-    console.error("[BFF Admin Mail Item Mark Destroyed] No session token", { 
-      authenticated: session.authenticated,
-      hasToken: !!session.token 
+  const isAuthenticated = Boolean(sessionToken && sessionToken.length > 10);
+
+  console.log("[BFF Admin Mail Item Mark Destroyed] Session check", {
+    hasSessionCookie: !!sessionCookie,
+    hasRoleCookie: !!roleCookie,
+    role,
+    isAuthenticated,
+    tokenLength: sessionToken.length
+  });
+
+  // Step 3: Validate admin authentication and role (MANDATORY - reject if not admin)
+  if (!isAuthenticated || !sessionToken) {
+    console.error("[BFF Admin Mail Item Mark Destroyed] No valid session token", { 
+      isAuthenticated,
+      tokenLength: sessionToken.length 
     });
     return NextResponse.json(
       { 
@@ -54,9 +65,10 @@ export async function POST(
     );
   }
 
-  if (session.role !== "admin") {
+  if (role !== "admin") {
     console.error("[BFF Admin Mail Item Mark Destroyed] Non-admin attempted destruction", { 
-      role: session.role 
+      role,
+      hasRoleCookie: !!roleCookie
     });
     return NextResponse.json(
       { 
@@ -69,8 +81,9 @@ export async function POST(
   }
 
   console.log("[BFF Admin Mail Item Mark Destroyed] Admin authenticated", {
-    role: session.role,
-    hasUser: !!session.user
+    role,
+    hasUser: !!user,
+    userId: (user as any)?.id
   });
 
   try {
