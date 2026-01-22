@@ -366,17 +366,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* FINAL CTA IMAGE SECTION */}
             <section className="w-full bg-white pb-8 md:pb-20">
                 <div className="safe-pad mx-auto w-full max-w-[1280px] px-5 md:px-20">
-                    <div className="overflow-hidden rounded-[20px] bg-[#014D3F] md:rounded-[30px]">
-                        <div className="flex flex-col items-center gap-6 p-6 md:flex-row md:gap-10 md:p-0">
-                            {/* Image hidden on mobile */}
-                            <div className="hidden h-auto w-[857px] md:block">
+                    {/* Desktop: 1280x589 container with overflow hidden */}
+                    <div className="relative overflow-hidden rounded-[20px] bg-[#014D3F] md:h-[589px] md:rounded-[30px]">
+                        {/* Content frame positioned to allow illustration to bleed */}
+                        <div className="relative flex flex-col items-center gap-6 p-6 md:absolute md:-left-[77px] md:-top-[114px] md:flex-row md:gap-10 md:p-0">
+                            {/* Illustration (857x817 on desktop, hidden on mobile) */}
+                            <div className="hidden md:block md:h-[817px] md:w-[857px]">
                                 <img
                                     src="/figma/cta-illustration.png"
                                     alt="London illustration"
                                     className="h-full w-full object-cover"
                                 />
                             </div>
-                            <div className="w-full pb-4 md:w-[409px] md:pb-0 md:pr-10">
+                            {/* Text content (409px wide on desktop) */}
+                            <div className="w-full md:w-[409px]">
                                 <h2 className="text-2xl font-medium leading-[1.2] text-white md:text-[44px]">
                                     Get your London Business Address Today
                                 </h2>
