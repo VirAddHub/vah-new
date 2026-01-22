@@ -6,21 +6,21 @@ const steps = [
         n: '1',
         title: 'Verify Your Account',
         description: 'Verify your account by completing the required identity checks for regulated address services.',
-        iconSrc: '/figma/how-step-1.png',
+        iconSrc: '/figma/how-icon-1.svg',
     },
     {
         k: 'use',
         n: '2',
         title: 'Use Your London Address',
         description: 'Use your London address for Companies House, HMRC, and everyday business correspondence.',
-        iconSrc: '/figma/how-step-2.png',
+        iconSrc: '/figma/how-icon-2.svg',
     },
     {
         k: 'handle',
         n: '3',
         title: 'We Handle Your Mail',
         description: 'We receive, log, and scan your mail and make it available the same business day through your secure dashboard.',
-        iconSrc: '/figma/how-step-3.png',
+        iconSrc: '/figma/how-icon-3.svg',
     },
 ];
 
@@ -56,8 +56,7 @@ export default function HowItWorks() {
                                     {s.n}
                                 </div>
                                 <div className="mt-8 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#FCFBF8]">
-                                    {/* fallback: lucide icons weren't identical; these are left as placeholders */}
-                                    <div className="h-[32px] w-[32px] rounded bg-[#024E40]" />
+                                    <img src={s.iconSrc} alt="" aria-hidden="true" className="h-[42px] w-[42px]" />
                                 </div>
                                 <div className="mt-8 text-[22px] font-medium text-[#1A1A1A]">{s.title}</div>
                                 <div className="mt-3 max-w-[280px] text-[14px] leading-[1.6] text-[#666666]">{s.description}</div>
