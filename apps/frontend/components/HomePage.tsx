@@ -135,149 +135,287 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
+            {/* WHAT'S INCLUDED */}
+            <section
+                className="w-full py-12 md:py-16 bg-white"
+                aria-label="What's Included"
+            >
+                <div className="safe-pad mx-auto max-w-screen-xl">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        {/* Left Section - Big Ben Illustration */}
+                        <div className="order-2 lg:order-1 flex items-center justify-center">
+                            <div className="relative w-full max-w-md">
+                                <img
+                                    src="/images/whats-included.png"
+                                    alt="Big Ben illustration"
+                                    className="w-full h-auto"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Right Section - What's Included List */}
+                        <div className="order-1 lg:order-2">
+                            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
+                                What's Included
+                            </h2>
+                            
+                            <div className="space-y-6">
+                                {[
+                                    {
+                                        title: "Registered Office And Director's Service Address",
+                                        description: "Use our Central London address for Companies House and HMRC filings."
+                                    },
+                                    {
+                                        title: "Professional Business Address",
+                                        description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts."
+                                    },
+                                    {
+                                        title: "Same Day Mail Scanning And Instant Alerts",
+                                        description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard."
+                                    },
+                                    {
+                                        title: "Secure Online Dashboard",
+                                        description: "View, download, and organise your mail in one place with full visibility and control."
+                                    },
+                                    {
+                                        title: "UK Based Support",
+                                        description: "Support provided during standard business hours."
+                                    },
+                                    {
+                                        title: "Privacy Protection",
+                                        description: "Keep your home address off public records and business documents."
+                                    }
+                                ].map((item, index) => (
+                                    <div key={index} className="flex gap-4">
+                                        <div className="flex-shrink-0 mt-1">
+                                            <div className="w-2 h-2 rounded-full bg-[#0d4a3d]"></div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-bold text-foreground text-base md:text-lg mb-1">
+                                                {item.title}
+                                            </h3>
+                                            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* PRICING */}
             <section
                 id="pricing"
-                className="py-8 md:py-12 bg-muted/30"
+                className="py-12 md:py-16 bg-white"
                 aria-label="Pricing"
             >
-                <div className="safe-pad mx-auto max-w-4xl">
-                    <div className="text-center mb-8">
-                        <h2 className="mt-4 text-2xl font-semibold sm:text-3xl tracking-tight">
-                            One Simple Plan. No Extras.
+                <div className="safe-pad mx-auto max-w-6xl">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+                            One Simple Plan
                         </h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base leading-snug">
-                            Everything you need — one price.
+                        <p className="text-base md:text-lg text-muted-foreground">
+                            One simple plan with everything included. Switch billing frequency anytime.
                         </p>
                     </div>
 
-                    {/* Billing Toggle */}
-                    <div className="mb-6 flex justify-center">
-                        <div className="inline-flex items-center rounded-xl border border-border bg-card p-1 shadow-sm overflow-visible relative">
-                            <RadioGroup
-                                defaultValue={billing}
-                                className="grid grid-cols-2"
-                                onValueChange={(v) =>
-                                    setBilling(
-                                        v === "annual" ? "annual" : "monthly",
-                                    )
-                                }
-                            >
-                                <div className="has-[[data-state=checked]]:bg-primary has-[[data-state=checked]]:text-primary-foreground rounded-lg transition-all">
-                                    <RadioGroupItem
-                                        id="billing-monthly"
-                                        value="monthly"
-                                        className="peer sr-only"
-                                    />
-                                    <Label
-                                        htmlFor="billing-monthly"
-                                        className="peer-data-[state=checked]:text-primary-foreground peer-data-[state=unchecked]:text-muted-foreground px-6 py-3 font-semibold text-sm cursor-pointer inline-flex items-center transition-colors"
-                                    >
-                                        Monthly
-                                    </Label>
-                                </div>
-                                <div className="has-[[data-state=checked]]:bg-primary has-[[data-state=checked]]:text-primary-foreground rounded-lg transition-all relative overflow-visible">
-                                    <RadioGroupItem
-                                        id="billing-annual"
-                                        value="annual"
-                                        className="peer sr-only"
-                                    />
-                                    <Label
-                                        htmlFor="billing-annual"
-                                        className="peer-data-[state=checked]:text-primary-foreground peer-data-[state=unchecked]:text-muted-foreground px-6 py-3 font-semibold text-sm cursor-pointer inline-flex items-center gap-2 transition-colors"
-                                    >
-                                        Annual
-                                    </Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                    </div>
-
-                    {/* Pricing Card */}
-                    <div className="relative">
-                        {/* Most Popular badge - only show for monthly */}
-                        {!isAnnual && (
-                            <div className="pointer-events-none absolute -top-4 right-8 z-10">
-                                <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
-                                    Everything Included
+                    {/* Two Pricing Cards Side by Side */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                        {/* Monthly Plan Card */}
+                        <div className="relative rounded-2xl bg-[#0d4a3d] p-8 text-white">
+                            {/* Monthly Tag */}
+                            <div className="absolute top-6 right-6">
+                                <span className="inline-flex items-center rounded-full bg-[#0d4a3d] border-2 border-white/30 px-4 py-1.5 text-sm font-semibold text-white">
+                                    Monthly
                                 </span>
                             </div>
-                        )}
 
-                        <div className="rounded-2xl bg-card p-6 shadow-lg border border-border max-w-md mx-auto">
-                            <div className="text-center">
-                                <h3 className="text-base font-semibold mb-4 tracking-tight">
-                                    All-In-One Plan
-                                </h3>
-
-                                <div className="mb-4">
-                                    <div className="flex items-baseline justify-center gap-2 mb-2">
-                                        <span className="tracking-tight text-[28px] sm:text-[32px] font-semibold text-foreground">
-                                            {priceLabel}
-                                        </span>
-                                        <span className="text-body sm:text-body-lg text-muted-foreground">
-                                            {priceSuffix}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-foreground mb-1 leading-snug">
-                                        {subCopy}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground leading-snug">
-                                        {fineCopy}
-                                    </p>
+                            {/* Price */}
+                            <div className="mb-8 mt-4">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl md:text-6xl font-bold">£{monthlyPrice}</span>
+                                    <span className="text-xl md:text-2xl text-white/90">/month</span>
                                 </div>
+                            </div>
 
-                                {/* Features List - Compact */}
-                                <div className="space-y-2 mb-6 text-left">
+                            {/* Features Section */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold mb-4">Include with every plan</h3>
+                                <div className="space-y-3">
                                     {[
-                                        "Registered Office, Director's Service & Business Address — all in one",
-                                        "Unlimited same-day mail scanning on business days",
-                                        "Free UK forwarding for HMRC & Companies House letters (on request)",
-                                        "Secure digital dashboard to view, download and organise mail",
-                                        "UK-based human support during business hours",
-                                        "No setup fees, no minimum term, cancel any time"
+                                        "Registered Office address",
+                                        "Director's Service Address",
+                                        "Professional business address",
+                                        "Unlimited same day mail scanning",
+                                        "Secure online dashboard",
+                                        "UK based support"
                                     ].map((feature, index) => (
-                                        <div key={index} className="flex items-start gap-2">
-                                            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center mt-0.5">
+                                        <div key={index} className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
                                                 <svg
                                                     viewBox="0 0 24 24"
-                                                    className="h-2.5 w-2.5 text-primary"
+                                                    className="h-3 w-3 text-white"
                                                     fill="none"
                                                     stroke="currentColor"
-                                                    strokeWidth="2"
+                                                    strokeWidth="3"
                                                 >
                                                     <path d="M20 6L9 17l-5-5" />
                                                 </svg>
                                             </div>
-                                            <span className="text-xs text-foreground leading-relaxed sm:leading-snug">
-                                                {feature}
-                                            </span>
+                                            <span className="text-sm md:text-base text-white/95">{feature}</span>
                                         </div>
                                     ))}
                                 </div>
+                            </div>
 
-                                <Button
-                                    onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                                    size="lg"
-                                    className="w-full tracking-tight text-base font-semibold rounded-lg !h-14"
-                                >
-                                    {isAnnual ? `Get My London Address – £${annualPrice}/year` : `Get My London Address – £9.97/month`}
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-
-                                <p className="mt-4 text-xs text-muted-foreground text-center">
-                                    Instant signup · No hidden fees
-                                </p>
-
-                                <div className="mt-6 pt-4 border-t border-border">
-                                    <p className="text-xs font-semibold text-foreground mb-2">How forwarding works:</p>
-                                    <div className="space-y-1 text-xs text-muted-foreground">
-                                        <p>• HMRC & Companies House mail — forwarding is free within the UK</p>
-                                        <p>• Other UK letters — £2 per item (postage + handling)</p>
-                                        <p>• Letters only — we don’t accept parcels</p>
+                            {/* Mail Forwarding Rules */}
+                            <div className="mb-8">
+                                <h3 className="text-lg font-semibold mb-4">Mail Forwarding rules</h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="h-3 w-3 text-white"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="3"
+                                            >
+                                                <path d="M20 6L9 17l-5-5" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm md:text-base text-white/95">
+                                            HMRC and Companies House letters forwarded free within the UK on request.
+                                        </span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="h-3 w-3 text-white"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="3"
+                                            >
+                                                <path d="M20 6L9 17l-5-5" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm md:text-base text-white/95">
+                                            Other UK letters forwarded at £2 per item.
+                                        </span>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* CTA Button */}
+                            <Button
+                                onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                className="w-full bg-[#34D399] hover:bg-[#10b981] text-white font-bold rounded-xl py-6 text-base md:text-lg !h-auto"
+                            >
+                                Sign Up
+                            </Button>
+                        </div>
+
+                        {/* Annual Plan Card */}
+                        <div className="relative rounded-2xl bg-white border-2 border-[#0d4a3d] p-8 text-foreground">
+                            {/* Annual Tag */}
+                            <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
+                                <span className="inline-flex items-center rounded-full bg-[#0d4a3d] px-4 py-1.5 text-sm font-semibold text-white">
+                                    Annual
+                                </span>
+                                <span className="text-sm font-semibold text-orange-500">
+                                    20% Save
+                                </span>
+                            </div>
+
+                            {/* Price */}
+                            <div className="mb-8 mt-4">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl md:text-6xl font-bold text-foreground">£{annualPrice}</span>
+                                    <span className="text-xl md:text-2xl text-muted-foreground">/year</span>
+                                </div>
+                            </div>
+
+                            {/* Features Section */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold mb-4 text-foreground">Include with every plan</h3>
+                                <div className="space-y-3">
+                                    {[
+                                        "Registered Office address",
+                                        "Director's Service Address",
+                                        "Professional business address",
+                                        "Unlimited same day mail scanning",
+                                        "Secure online dashboard",
+                                        "UK based support"
+                                    ].map((feature, index) => (
+                                        <div key={index} className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    className="h-3 w-3 text-white"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                >
+                                                    <path d="M20 6L9 17l-5-5" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-sm md:text-base text-foreground">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Mail Forwarding Rules */}
+                            <div className="mb-8">
+                                <h3 className="text-lg font-semibold mb-4 text-foreground">Mail Forwarding rules</h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="h-3 w-3 text-white"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="3"
+                                            >
+                                                <path d="M20 6L9 17l-5-5" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm md:text-base text-foreground">
+                                            HMRC and Companies House letters forwarded free within the UK on request.
+                                        </span>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="h-3 w-3 text-white"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="3"
+                                            >
+                                                <path d="M20 6L9 17l-5-5" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-sm md:text-base text-foreground">
+                                            Other UK letters forwarded at £2 per item.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* CTA Button */}
+                            <Button
+                                onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
+                                variant="outline"
+                                className="w-full bg-white border-2 border-[#0d4a3d] text-[#0d4a3d] hover:bg-[#0d4a3d] hover:text-white font-bold rounded-xl py-6 text-base md:text-lg !h-auto"
+                            >
+                                Sign Up
+                            </Button>
                         </div>
                     </div>
                 </div>
