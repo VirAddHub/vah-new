@@ -74,55 +74,62 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <main id="main-content" role="main" className="bg-background text-foreground">
             {/* HERO */}
             <section
-                className="relative overflow-hidden"
+                className="relative overflow-hidden bg-[#0d4a3d] text-white"
                 aria-label="Hero"
             >
-                <div className="absolute right-[-8rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-primary/20 to-primary/40 blur-3xl opacity-40" />
-                <div className="safe-pad mx-auto max-w-screen-xl pt-12 sm:pt-16 pb-10">
-                    {/* Single semantic H1 (responsive typography) */}
-                    <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
-                        <div className="lg:col-span-7">
-                            <div className="text-xs font-semibold text-muted-foreground tracking-wide">
-                                Privacy-first • London-based
-                            </div>
-                            <h1 className="mt-3 lg:mt-4 text-[clamp(2.25rem,9vw,3.25rem)] lg:text-6xl leading-[1.05] font-bold tracking-tight text-primary">
-                                An Affordable, All-Inclusive London Business Address
+                <div className="safe-pad mx-auto max-w-screen-xl pt-12 sm:pt-16 pb-16">
+                    <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
+                        {/* Left Section - Text Content */}
+                        <div className="order-2 lg:order-1">
+                            <h1 className="text-[clamp(2rem,5vw,3.5rem)] lg:text-5xl leading-[1.1] font-bold tracking-tight text-white">
+                                A Credible London Business Address Without The Cost Of An Office.
                             </h1>
-                            <p className="mt-3 max-w-2xl text-pretty text-sm text-muted-foreground sm:text-base lg:text-xl leading-relaxed">
-                                Secure a Central London business address for just £9.97/month.
-                            </p>
-                            <p className="mt-4 text-sm lg:text-base text-muted-foreground max-w-2xl leading-relaxed">
-                                Everything is included — from unlimited same-day mail scanning to free UK forwarding of HMRC and Companies House letters — helping you meet the latest Companies House requirements, protect your privacy, and present a professional image without overpaying.
-                            </p>
-                            <p className="mt-4 text-sm lg:text-base text-muted-foreground max-w-2xl leading-relaxed">
-                                For one simple monthly price, you get:
-                            </p>
-                            <ul className="mt-2 space-y-2 pl-5 list-disc text-sm lg:text-base text-muted-foreground max-w-2xl leading-relaxed">
-                                <li>Registered Office & Director’s Service Address (Companies House & HMRC)</li>
-                                <li>Total privacy — keep your home address off the public record</li>
-                                <li>Reliable service — unlimited same-day mail scanning and free UK forwarding for HMRC and Companies House letters</li>
-                            </ul>
-                            <div className="mt-5 lg:mt-6">
+                            
+                            <div className="mt-6 space-y-4 text-base lg:text-lg leading-relaxed text-white/95">
+                                <p>
+                                    Run your business professionally without exposing your home address.
+                                </p>
+                                <p>
+                                    Use one trusted London address as your Registered Office, Director's Service Address, and professional business address.
+                                </p>
+                                <p>
+                                    Suitable for Companies House, HMRC, and everyday business use.
+                                </p>
+                                <p>
+                                    Everything you need is included in one simple service.
+                                </p>
+                            </div>
+
+                            <div className="mt-8">
+                                <p className="text-2xl lg:text-3xl font-bold text-white mb-1">
+                                    £9.97 per month
+                                </p>
+                                <p className="text-sm lg:text-base text-white/80">
+                                    with one clear plan
+                                </p>
+                            </div>
+
+                            <div className="mt-8">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
                                     size="lg"
-                                    className="tt-min w-full lg:w-auto lg:px-8 rounded-xl lg:rounded-[16px] btn-primary text-primary-foreground tracking-tight !h-12 lg:!h-14 text-base"
+                                    className="bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold rounded-xl px-8 !h-14 text-base shadow-lg transition-all hover:scale-105"
                                 >
-                                    {ctaText}
-                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                    Get Your London Address
+                                    <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
-                                <p className="mt-2 text-xs text-muted-foreground text-center lg:text-left">
-                                    Instant signup · Cancel anytime · Letters only (no parcels)
-                                </p>
                             </div>
                         </div>
 
-                        {/* Desktop-only preview card (keeps mobile layout clean) */}
-                        <div className="hidden lg:block lg:col-span-5">
-                            <MailboxPreviewCard
-                                showPriceBadge={true}
-                                price={`${priceLabel}${priceSuffix}`}
-                            />
+                        {/* Right Section - London Image */}
+                        <div className="order-1 lg:order-2">
+                            <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[500px] rounded-2xl overflow-hidden">
+                                <img
+                                    src="/images/london_skyline.png"
+                                    alt="London architecture and cityscape"
+                                    className="w-full h-full object-cover rounded-2xl"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
