@@ -13,7 +13,7 @@ import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { MailboxPreviewCard } from "./MailboxPreviewCard";
 import HowItWorks from "./HowItWorks";
-import Preview from "./Preview";
+import { Footer } from "./Footer";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -71,65 +71,53 @@ export function HomePage({ onNavigate }: HomePageProps) {
         });
 
     return (
-        <main id="main-content" role="main" className="bg-background text-foreground">
+        <main
+            id="main-content"
+            role="main"
+            className="bg-white text-[#1A1A1A]"
+            style={{ fontFamily: "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" }}
+        >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#0d4a3d] text-white"
+                className="relative overflow-hidden bg-[#024E40] text-white"
                 aria-label="Hero"
             >
-                <div className="safe-pad mx-auto max-w-screen-xl pt-12 sm:pt-16 pb-16">
-                    <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
-                        {/* Left Section - Text Content */}
-                        <div className="order-2 lg:order-1">
-                            <h1 className="text-[clamp(2rem,5vw,3.5rem)] lg:text-5xl leading-[1.1] font-bold tracking-tight text-white">
-                                A Credible London Business Address Without The Cost Of An Office.
+                <div className="mx-auto w-full max-w-[1280px] px-20 py-10">
+                    {/* Top row is handled by Navigation component; hero content below */}
+                    <div className="flex items-center gap-[98px]">
+                        <div className="w-[600px]">
+                            <h1 className="text-[54px] leading-[1.1] font-medium text-white">
+                                A credible London business address without the cost of an office.
                             </h1>
-                            
-                            <div className="mt-6 space-y-4 text-base lg:text-lg leading-relaxed text-white/95">
-                                <p>
-                                    Run your business professionally without exposing your home address.
-                                </p>
-                                <p>
-                                    Use one trusted London address as your Registered Office, Director's Service Address, and professional business address.
-                                </p>
-                                <p>
-                                    Suitable for Companies House, HMRC, and everyday business use.
-                                </p>
-                                <p>
-                                    Everything you need is included in one simple service.
-                                </p>
+
+                            <div className="mt-5 space-y-2 text-[14px] leading-[1.6] text-white/90">
+                                <p>Run your business professionally without exposing your home address.</p>
+                                <p>Use one trusted London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
+                                <p>Suitable for Companies House, HMRC, and everyday business use.</p>
+                                <p>Everything you need is included in one simple service.</p>
                             </div>
 
-                            <div className="mt-8">
-                                <p className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                                    £9.97 per month
-                                </p>
-                                <p className="text-sm lg:text-base text-white/80">
-                                    with one clear plan
-                                </p>
+                            <div className="mt-6">
+                                <div className="text-[18px] font-medium text-white">£9.99 per month</div>
+                                <div className="text-[14px] text-white/80">with one clear plan</div>
                             </div>
 
-                            <div className="mt-8">
+                            <div className="mt-5">
                                 <Button
-                                    onClick={() => handleNavClick?.("signup", { initialBilling: billing })}
-                                    size="lg"
-                                    className="bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold rounded-xl px-8 !h-14 text-base shadow-lg transition-all hover:scale-105"
+                                    onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                    className="h-[57px] w-[294px] rounded-[33px] bg-[#40C46C] px-4 text-[16px] font-medium text-[#024E40] hover:bg-[#40C46C]/90"
                                 >
                                     Get Your London Address
-                                    <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                             </div>
                         </div>
 
-                        {/* Right Section - London Image */}
-                        <div className="order-1 lg:order-2">
-                            <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[500px] rounded-2xl overflow-hidden">
-                                <img
-                                    src="/images/london_skyline.png"
-                                    alt="London architecture and cityscape"
-                                    className="w-full h-full object-cover rounded-2xl"
-                                />
-                            </div>
+                        <div className="h-[540px] w-[582px] overflow-hidden rounded-[30px]">
+                            <img
+                                src="/figma/hero-photo.png"
+                                alt="London street scene"
+                                className="h-full w-full object-cover"
+                            />
                         </div>
                     </div>
                 </div>
@@ -137,69 +125,62 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
             {/* WHAT'S INCLUDED */}
             <section
-                className="w-full py-12 md:py-16 bg-white"
+                className="w-full bg-white py-[100px]"
                 aria-label="What's Included"
             >
-                <div className="safe-pad mx-auto max-w-screen-xl">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                        {/* Left Section - Big Ben Illustration */}
-                        <div className="order-2 lg:order-1 flex items-center justify-center">
-                            <div className="relative w-full max-w-md">
-                                <img
-                                    src="/images/whats-included.png"
-                                    alt="Big Ben illustration"
-                                    className="w-full h-auto"
-                                />
-                            </div>
+                <div className="mx-auto w-full max-w-[1280px] px-[100px]">
+                    <div className="flex items-end gap-[62px]">
+                        <div className="h-[721px] w-[650px]">
+                            <img
+                                src="/figma/whats-included-illustration.png"
+                                alt="What's included illustration"
+                                className="h-full w-full object-cover"
+                            />
                         </div>
 
-                        {/* Right Section - What's Included List */}
-                        <div className="order-1 lg:order-2">
-                            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-                                What's Included
-                            </h2>
-                            
-                            <div className="space-y-6">
-                                {[
-                                    {
-                                        title: "Registered Office And Director's Service Address",
-                                        description: "Use our Central London address for Companies House and HMRC filings."
-                                    },
-                                    {
-                                        title: "Professional Business Address",
-                                        description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts."
-                                    },
-                                    {
-                                        title: "Same Day Mail Scanning And Instant Alerts",
-                                        description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard."
-                                    },
-                                    {
-                                        title: "Secure Online Dashboard",
-                                        description: "View, download, and organise your mail in one place with full visibility and control."
-                                    },
-                                    {
-                                        title: "UK Based Support",
-                                        description: "Support provided during standard business hours."
-                                    },
-                                    {
-                                        title: "Privacy Protection",
-                                        description: "Keep your home address off public records and business documents."
-                                    }
-                                ].map((item, index) => (
-                                    <div key={index} className="flex gap-4">
-                                        <div className="flex-shrink-0 mt-1">
-                                            <div className="w-2 h-2 rounded-full bg-[#0d4a3d]"></div>
+                        <div className="w-[528px]">
+                            <h2 className="text-[44px] font-medium leading-[1.136] text-[#1A1A1A]">What&apos;s Included</h2>
+
+                            <div className="mt-10 flex gap-[17px]">
+                                {/* left rail (dots + line) - simplified to match spacing */}
+                                <div className="relative w-[20px]">
+                                    <div className="absolute left-[9px] top-[6px] h-[559px] w-px bg-[#024E40]/40" />
+                                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                                        <div
+                                            key={i}
+                                            className="absolute left-[4px] h-[12px] w-[12px] rounded-full bg-[#024E40]"
+                                            style={{ top: 10 + i * 104 }}
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className="w-[490px] space-y-6">
+                                    {[
+                                        {
+                                            title: "Registered Office And Director's Service Address",
+                                            description: "Use our Central London address for Companies House and HMRC filings.",
+                                        },
+                                        {
+                                            title: "Professional Business Address",
+                                            description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts.",
+                                        },
+                                        {
+                                            title: "Same Day Mail Scanning And Instant Alerts",
+                                            description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard.",
+                                        },
+                                        {
+                                            title: "Secure Online Dashboard",
+                                            description: "View, download, and organise your mail in one place with full visibility and control.",
+                                        },
+                                        { title: "UK Based Support", description: "Support provided during standard business hours." },
+                                        { title: "Privacy Protection", description: "Keep your home address off public records and business documents." },
+                                    ].map((item) => (
+                                        <div key={item.title}>
+                                            <div className="text-[18px] font-medium text-[#1A1A1A]">{item.title}</div>
+                                            <div className="mt-1 text-[16px] leading-[1.4] text-[#666666]">{item.description}</div>
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-bold text-foreground text-base md:text-lg mb-1">
-                                                {item.title}
-                                            </h3>
-                                            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -209,213 +190,62 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PRICING */}
             <section
                 id="pricing"
-                className="py-12 md:py-16 bg-white"
+                className="bg-white py-[100px]"
                 aria-label="Pricing"
             >
-                <div className="safe-pad mx-auto max-w-6xl">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                            One Simple Plan
-                        </h2>
-                        <p className="text-base md:text-lg text-muted-foreground">
+                <div className="mx-auto w-full max-w-[1076px] px-[182px]">
+                    <div className="text-center">
+                        <h2 className="text-[44px] font-medium leading-[1.1] text-[#1A1A1A]">One Simple Plan</h2>
+                        <p className="mt-4 text-[18px] leading-[1.4] text-[#666666]">
                             One simple plan with everything included. Switch billing frequency anytime.
                         </p>
                     </div>
 
-                    {/* Two Pricing Cards Side by Side */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-                        {/* Monthly Plan Card */}
-                        <div className="relative rounded-2xl bg-[#0d4a3d] p-8 text-white">
-                            {/* Monthly Tag */}
-                            <div className="absolute top-6 right-6">
-                                <span className="inline-flex items-center rounded-full bg-[#0d4a3d] border-2 border-white/30 px-4 py-1.5 text-sm font-semibold text-white">
-                                    Monthly
-                                </span>
-                            </div>
-
-                            {/* Price */}
-                            <div className="mb-8 mt-4">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl md:text-6xl font-bold">£{monthlyPrice}</span>
-                                    <span className="text-xl md:text-2xl text-white/90">/month</span>
-                                </div>
-                            </div>
-
-                            {/* Features Section */}
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold mb-4">Include with every plan</h3>
-                                <div className="space-y-3">
-                                    {[
-                                        "Registered Office address",
-                                        "Director's Service Address",
-                                        "Professional business address",
-                                        "Unlimited same day mail scanning",
-                                        "Secure online dashboard",
-                                        "UK based support"
-                                    ].map((feature, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    className="h-3 w-3 text-white"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
-                                                >
-                                                    <path d="M20 6L9 17l-5-5" />
-                                                </svg>
-                                            </div>
-                                            <span className="text-sm md:text-base text-white/95">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Mail Forwarding Rules */}
-                            <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Mail Forwarding rules</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                className="h-3 w-3 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="3"
-                                            >
-                                                <path d="M20 6L9 17l-5-5" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm md:text-base text-white/95">
-                                            HMRC and Companies House letters forwarded free within the UK on request.
-                                        </span>
+                    <div className="mt-12 flex items-center gap-8">
+                        {/* Monthly card (dark) */}
+                        <div className="h-[748px] w-[522px] rounded-[30px] bg-[#014D3F] p-[34px] shadow-[0px_2px_20px_rgba(0,0,0,0.2)]">
+                            {/* content simplified: we keep dynamic prices but match layout */}
+                            <div className="flex h-full flex-col justify-between">
+                                <div>
+                                    <div className="flex justify-end">
+                                        <div className="rounded-full bg-[#075748] px-6 py-2 text-[14px] font-medium text-white">Monthly</div>
                                     </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                className="h-3 w-3 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="3"
-                                            >
-                                                <path d="M20 6L9 17l-5-5" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm md:text-base text-white/95">
-                                            Other UK letters forwarded at £2 per item.
-                                        </span>
+                                    <div className="mt-10 text-white">
+                                        <div className="text-[44px] font-medium">£{monthlyPrice}<span className="text-[18px] font-normal opacity-80">/month</span></div>
+                                        <div className="mt-4 text-[16px] font-medium opacity-90">Include with every plan</div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* CTA Button */}
-                            <Button
-                                onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                className="w-full bg-[#34D399] hover:bg-[#10b981] text-white font-bold rounded-xl py-6 text-base md:text-lg !h-auto"
-                            >
-                                Sign Up
-                            </Button>
+                                <Button
+                                    onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                    className="h-[62px] w-full rounded-[30px] bg-[#40C46C] text-[16px] font-medium text-[#024E40] hover:bg-[#40C46C]/90"
+                                >
+                                    Sign Up
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* Annual Plan Card */}
-                        <div className="relative rounded-2xl bg-white border-2 border-[#0d4a3d] p-8 text-foreground">
-                            {/* Annual Tag */}
-                            <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
-                                <span className="inline-flex items-center rounded-full bg-[#0d4a3d] px-4 py-1.5 text-sm font-semibold text-white">
-                                    Annual
-                                </span>
-                                <span className="text-sm font-semibold text-orange-500">
-                                    20% Save
-                                </span>
-                            </div>
-
-                            {/* Price */}
-                            <div className="mb-8 mt-4">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl md:text-6xl font-bold text-foreground">£{annualPrice}</span>
-                                    <span className="text-xl md:text-2xl text-muted-foreground">/year</span>
-                                </div>
-                            </div>
-
-                            {/* Features Section */}
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold mb-4 text-foreground">Include with every plan</h3>
-                                <div className="space-y-3">
-                                    {[
-                                        "Registered Office address",
-                                        "Director's Service Address",
-                                        "Professional business address",
-                                        "Unlimited same day mail scanning",
-                                        "Secure online dashboard",
-                                        "UK based support"
-                                    ].map((feature, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    className="h-3 w-3 text-white"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
-                                                >
-                                                    <path d="M20 6L9 17l-5-5" />
-                                                </svg>
-                                            </div>
-                                            <span className="text-sm md:text-base text-foreground">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Mail Forwarding Rules */}
-                            <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4 text-foreground">Mail Forwarding rules</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                className="h-3 w-3 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="3"
-                                            >
-                                                <path d="M20 6L9 17l-5-5" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm md:text-base text-foreground">
-                                            HMRC and Companies House letters forwarded free within the UK on request.
-                                        </span>
+                        {/* Annual card (light) */}
+                        <div className="h-[748px] w-[522px] rounded-[30px] bg-white p-[34px] shadow-[0px_2px_20px_rgba(0,0,0,0.1)]">
+                            <div className="flex h-full flex-col justify-between">
+                                <div>
+                                    <div className="flex justify-end">
+                                        <div className="rounded-full bg-[#075748] px-6 py-2 text-[14px] font-medium text-white">Annual</div>
                                     </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#16a34a] flex items-center justify-center mt-0.5">
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                className="h-3 w-3 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="3"
-                                            >
-                                                <path d="M20 6L9 17l-5-5" />
-                                            </svg>
-                                        </div>
-                                        <span className="text-sm md:text-base text-foreground">
-                                            Other UK letters forwarded at £2 per item.
-                                        </span>
+                                    <div className="mt-10 text-[#1A1A1A]">
+                                        <div className="text-[44px] font-medium">£{annualPrice}<span className="text-[18px] font-normal text-[#666666]">/year</span></div>
+                                        <div className="mt-4 text-[16px] font-medium text-[#666666]">Include with every plan</div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* CTA Button */}
-                            <Button
-                                onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
-                                variant="outline"
-                                className="w-full bg-white border-2 border-[#0d4a3d] text-[#0d4a3d] hover:bg-[#0d4a3d] hover:text-white font-bold rounded-xl py-6 text-base md:text-lg !h-auto"
-                            >
-                                Sign Up
-                            </Button>
+                                <Button
+                                    onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
+                                    variant="outline"
+                                    className="h-[62px] w-full rounded-[30px] border border-[#024E40] text-[16px] font-medium text-[#024E40] hover:bg-[#024E40] hover:text-white"
+                                >
+                                    Sign Up
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -424,8 +254,70 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* HOW IT WORKS */}
             <HowItWorks />
 
-            {/* PREVIEW SECTION */}
-            <Preview onNavigate={handleNavClick} />
+            {/* BUILT FOR MODERN UK BUSINESSES (black section) */}
+            <section className="w-full bg-black">
+                <div className="mx-auto w-full max-w-[1280px] px-20 py-20">
+                    <div className="flex items-center gap-[187px]">
+                        <div className="w-[433px]">
+                            <h2 className="text-[44px] font-medium leading-[1.1] text-white">
+                                Built for Modern UK Businesses
+                            </h2>
+                            <p className="mt-5 text-[14px] leading-[1.6] text-white/60">
+                                Designed for founders who want a professional London presence without renting office space or publishing their home address.
+                            </p>
+                        </div>
+
+                        <div className="h-[212px] w-px bg-[#E5E7EB]" />
+
+                        <div className="w-[433px] space-y-3">
+                            {[
+                                "One Clear Service.",
+                                "One Predictable Price.",
+                                "Secure Mail Handling You Can Rely On.",
+                            ].map((t) => (
+                                <div key={t} className="rounded-[10px] bg-[#F9F9F9] px-6 py-6 text-[14px] text-[#1A1A1A]">
+                                    {t}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* FINAL CTA IMAGE SECTION */}
+            <section className="w-full bg-white">
+                <div className="mx-auto w-full max-w-[1280px] px-20 pb-20">
+                    <div className="overflow-hidden rounded-[30px] bg-[#014D3F]">
+                        <div className="flex items-center gap-10">
+                            <div className="w-[857px]">
+                                <img
+                                    src="/figma/cta-illustration.png"
+                                    alt="London illustration"
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
+                            <div className="w-[409px] pr-10">
+                                <h2 className="text-[44px] font-medium leading-[1.2] text-white">
+                                    Get your London Business Address Today
+                                </h2>
+                                <p className="mt-3 text-[16px] leading-[1.4] text-white/80">
+                                    Everything included for £9.99 per month.
+                                </p>
+                                <div className="mt-6">
+                                    <Button
+                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                        className="h-[48px] w-[268px] rounded-[30px] bg-[#40C46C] text-[16px] font-medium text-[#024E40] hover:bg-[#40C46C]/90"
+                                    >
+                                        Schedule London Address
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <Footer onNavigate={onNavigate} />
 
         </main>
     );

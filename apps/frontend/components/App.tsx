@@ -42,6 +42,18 @@ export function App() {
     document.head.appendChild(link);
   }, []);
 
+  // Figma landing page uses Poppins
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap';
+    link.as = 'style';
+    link.onload = function () {
+      (this as any).rel = 'stylesheet';
+    };
+    document.head.appendChild(link);
+  }, []);
+
   const handleNavigate = (page: string, data?: any) => {
     if (page === 'signup' && data) {
       setSignupData(data);

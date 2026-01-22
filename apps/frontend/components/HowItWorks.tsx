@@ -1,81 +1,68 @@
 'use client';
 
-import { User, MapPin, Mail } from 'lucide-react';
-
 const steps = [
     {
         k: 'verify',
+        n: '1',
         title: 'Verify Your Account',
         description: 'Verify your account by completing the required identity checks for regulated address services.',
-        icon: User
+        iconSrc: '/figma/how-step-1.png',
     },
     {
         k: 'use',
+        n: '2',
         title: 'Use Your London Address',
         description: 'Use your London address for Companies House, HMRC, and everyday business correspondence.',
-        icon: MapPin
+        iconSrc: '/figma/how-step-2.png',
     },
     {
         k: 'handle',
+        n: '3',
         title: 'We Handle Your Mail',
         description: 'We receive, log, and scan your mail and make it available the same business day through your secure dashboard.',
-        icon: Mail
-    }
+        iconSrc: '/figma/how-step-3.png',
+    },
 ];
 
 export default function HowItWorks() {
     return (
-        <section className="w-full py-12 md:py-16 bg-white">
-            <div className="safe-pad mx-auto max-w-6xl">
-                <header className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+        <section className="w-full bg-white py-[100px]">
+            <div className="mx-auto w-full max-w-[1196px] px-[118px]" style={{ fontFamily: "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" }}>
+                <header className="text-center mb-[60px]">
+                    <h2 className="text-[44px] font-medium leading-[1.1] text-[#1A1A1A]">
                         How It Works
                     </h2>
-                    <p className="text-base md:text-lg text-muted-foreground">
+                    <p className="mt-4 text-[16px] leading-[1.4] text-[#666666]">
                         Three steps to a professional London address
                     </p>
                 </header>
 
-                {/* Three steps with connecting lines */}
-                <div className="relative">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-                        {steps.map((step, index) => {
-                            const Icon = step.icon;
-                            return (
-                                <div key={step.k} className="relative flex flex-col items-center">
-                                    {/* Number Circle */}
-                                    <div className="relative z-10 mb-4">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0d4a3d]">
-                                            <span className="font-bold text-white text-lg">{index + 1}</span>
-                                        </div>
-                                    </div>
+                <div className="relative mx-auto h-[426px] w-[1196px]">
+                    {/* dotted connector svg from Figma */}
+                    <img
+                        src="/figma/how-it-works-connector.svg"
+                        alt=""
+                        className="absolute left-[187px] top-[97px] h-[157px] w-[824px]"
+                        aria-hidden="true"
+                    />
 
-                                    {/* Icon Circle */}
-                                    <div className="relative z-10 mb-6">
-                                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border-2 border-gray-400">
-                                            <Icon className="h-10 w-10 text-gray-700" />
-                                        </div>
-                                    </div>
+                    <div className="absolute left-0 top-[24px] h-[402px] w-[370px] rounded-[20px] bg-[#FCFBF8]" />
+                    <div className="absolute left-[826px] top-[34px] h-[391px] w-[370px] rounded-[20px] bg-[#FCFBF8]" />
 
-                                    {/* Connecting Dotted Line (only between steps) */}
-                                    {index < steps.length - 1 && (
-                                        <div className="hidden md:block absolute top-[60px] left-[50%] w-full h-0 border-t-2 border-dotted border-[#0d4a3d] z-0" 
-                                             style={{ width: 'calc(100% - 80px)', left: 'calc(50% + 40px)' }}>
-                                        </div>
-                                    )}
-
-                                    {/* Content */}
-                                    <div className="text-center max-w-xs">
-                                        <h3 className="text-xl font-bold text-foreground mb-3">
-                                            {step.title}
-                                        </h3>
-                                        <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                                            {step.description}
-                                        </p>
-                                    </div>
+                    <div className="absolute left-[5px] top-0 flex items-center gap-[42px]">
+                        {steps.map((s) => (
+                            <div key={s.k} className="flex w-[370px] flex-col items-center text-center">
+                                <div className="h-[40px] w-[40px] rounded-full bg-[#024E40] flex items-center justify-center text-white text-[18px] font-medium">
+                                    {s.n}
                                 </div>
-                            );
-                        })}
+                                <div className="mt-8 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#FCFBF8]">
+                                    {/* fallback: lucide icons weren't identical; these are left as placeholders */}
+                                    <div className="h-[32px] w-[32px] rounded bg-[#024E40]" />
+                                </div>
+                                <div className="mt-8 text-[22px] font-medium text-[#1A1A1A]">{s.title}</div>
+                                <div className="mt-3 max-w-[280px] text-[14px] leading-[1.6] text-[#666666]">{s.description}</div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
