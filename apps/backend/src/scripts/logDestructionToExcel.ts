@@ -52,7 +52,7 @@ function formatDateForExcel(dateString: string | Date): string {
         const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
         if (isNaN(date.getTime())) {
             return "N/A";
-        }
+    }
         return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch {
         return "N/A";

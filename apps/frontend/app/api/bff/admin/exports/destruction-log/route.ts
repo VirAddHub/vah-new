@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     try {
         const backend = getBackendOrigin();
         const { searchParams } = new URL(req.url);
-        
+
         // Forward query params (from, to) if present
         const queryString = searchParams.toString();
         const url = `${backend}/api/admin/exports/destruction-log${queryString ? `?${queryString}` : ''}`;

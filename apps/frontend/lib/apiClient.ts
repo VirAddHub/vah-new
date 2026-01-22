@@ -47,11 +47,11 @@ const j = (v: any) =>
 async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> {
     // BFF routes are on the same origin (frontend), so use relative path
     // Backend routes need API_BASE prefix
-    const url = path.startsWith('http') 
-        ? path 
+    const url = path.startsWith('http')
+        ? path
         : path.startsWith('/api/bff')
-        ? path  // BFF routes are relative to frontend origin
-        : `${API_BASE}${path}`;
+            ? path  // BFF routes are relative to frontend origin
+            : `${API_BASE}${path}`;
     const isForm = init.body instanceof FormData;
     const token = getToken();
 

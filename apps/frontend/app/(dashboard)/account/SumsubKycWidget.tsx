@@ -97,10 +97,37 @@ export function SumsubKycWidget() {
         .on("idCheck.onReady", () => {
           console.log("Sumsub ready");
         })
-        .onMessage((type: string, payload: unknown) => {
+        .onMessage((type: string, payload: any) => {
           console.log("Sumsub onMessage", type, payload);
-          // You can react to messages here, e.g. when verification is completed
-          // type === "onApplicantApproved" etc.
+
+          // Handle completion events - prevent redirect to home page
+          if (type === 'idCheck.applicantStatus') {
+            const reviewStatus = payload?.reviewStatus;
+            const reviewResult = payload?.reviewResult;
+
+            if (reviewStatus === 'completed' || reviewStatus === 'approved' || reviewResult === 'green') {
+              console.log('[SumsubKycWidget] Verification completed/approved');
+              setAlreadyComplete(true);
+              setStarted(false);
+
+              // Refresh the page to update KYC status (but stay on account page)
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            }
+          }
+
+          // Handle legacy event types
+          if (type === 'onApplicantApproved' || type === 'onApplicantSubmitted') {
+            console.log('[SumsubKycWidget] Applicant approved/submitted');
+            setAlreadyComplete(true);
+            setStarted(false);
+
+            // Refresh the page to update KYC status (but stay on account page)
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
         })
         .build();
 
