@@ -1,13 +1,6 @@
 "use client";
 
 import React from "react";
-
-import {
-    Mail,
-    MessageCircle,
-    Clock,
-    MapPin,
-} from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 
 interface FooterProps {
@@ -19,12 +12,6 @@ type NavItem = {
     page?: string;
     href?: string;
     external?: boolean;
-};
-
-type ContactItem = {
-    icon: React.ElementType;
-    label: string;
-    href: string;
 };
 
 export function Footer({ onNavigate }: FooterProps) {
@@ -45,31 +32,18 @@ export function Footer({ onNavigate }: FooterProps) {
     };
 
     const linkBtnClass =
-        "block w-full text-left text-sm md:text-base leading-relaxed font-medium text-muted-foreground hover:text-primary hover:translate-x-0.5 transition-all p-1 rounded hover:bg-primary/5";
+        "block w-full text-left text-sm md:text-base leading-relaxed font-medium text-white/90 hover:text-white transition-colors";
 
     const navigation: NavItem[] = [
-        { label: "Pricing", page: "pricing" },
+        { label: "Price", page: "pricing" },
         { label: "Blog", page: "blog" },
-        { label: "Help", page: "help" },
+        { label: "Help Center", page: "help" },
     ];
 
     const legal: NavItem[] = [
         { label: "Privacy Policy", page: "privacy" },
-        { label: "Terms of Service", page: "terms" },
-        { label: "KYC Policy", page: "kyc" },
-    ];
-
-    const contacts: ContactItem[] = [
-        {
-            icon: Mail,
-            label: "Contact Form",
-            href: "#contact-form",
-        },
-        {
-            icon: MessageCircle,
-            label: "WhatsApp Support",
-            href: "#whatsapp",
-        },
+        { label: "Terms & Service", page: "terms" },
+        { label: "KYC policy", page: "kyc" },
     ];
 
     const QuickLink = ({ item }: { item: NavItem }) =>
@@ -83,82 +57,57 @@ export function Footer({ onNavigate }: FooterProps) {
                 {item.label}
             </button>
         ) : (
-            <span className="block text-sm md:text-base leading-relaxed text-muted-foreground p-1">
+            <span className="block text-sm md:text-base leading-relaxed text-white/90">
                 {item.label}
             </span>
         );
 
-    const ContactTile = ({ c }: { c: ContactItem }) => {
-        const Icon = c.icon;
-
-        const handleContactClick = (e: React.MouseEvent) => {
-            e.preventDefault();
-            if (c.href === "#contact-form") {
-                // Navigate to contact form page
-                if (onNavigate) {
-                    onNavigate("contact");
-                }
-            } else if (c.href === "#whatsapp") {
-                // Open WhatsApp (you can customize this with your WhatsApp number)
-                window.open("https://wa.me/447000000000", "_blank", "noopener,noreferrer");
-            }
-        };
-
-        return (
-            <button
-                onClick={handleContactClick}
-                className="block w-full text-left text-sm font-medium text-muted-foreground hover:text-primary hover:translate-x-0.5 transition-all p-1 rounded hover:bg-primary/5"
-            >
-                <div className="flex items-center gap-2">
-                    <Icon className="h-3 w-3 text-primary flex-shrink-0" />
-                    <span className="truncate leading-tight">{c.label}</span>
-                </div>
-            </button>
-        );
-    };
-
     return (
-        <footer className="bg-background border-t border-border/50">
-            <div className="mx-auto max-w-7xl px-6 py-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    {/* Company Info */}
-                    <div>
-                        <div className="mb-2">
+        <footer className="bg-[#0d4a3d] text-white">
+            <div className="safe-pad mx-auto max-w-screen-xl py-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+                    {/* Company Information */}
+                    <div className="lg:col-span-1">
+                        <div className="mb-4">
                             <VAHLogo onNavigate={onNavigate} size="lg" />
                         </div>
-                        <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-prose mb-2">
+                        <p className="text-sm md:text-base text-white/90 leading-relaxed mb-6">
                             Professional virtual address for UK business. Fully compliant.
                         </p>
-                        <div className="space-y-0.5">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
-                                <span>London, UK</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Clock className="h-3 w-3 text-primary flex-shrink-0" />
-                                <span>Mon–Fri, 9AM–6PM</span>
-                            </div>
+                        
+                        {/* Location */}
+                        <div className="mb-6">
+                            <h3 className="text-sm md:text-base font-semibold text-white mb-3">Location</h3>
+                            <p className="text-sm md:text-base text-white/90">London, UK</p>
                         </div>
-                    </div>
 
-                    {/* Contact & Support */}
-                    <div>
-                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
-                            Contact & Support
-                        </h3>
-                        <div className="space-y-0.5">
-                            {contacts.map((c) => (
-                                <ContactTile key={c.label} c={c} />
-                            ))}
+                        {/* Regulatory Info */}
+                        <div>
+                            <h3 className="text-sm md:text-base font-semibold text-white mb-3">Regulatory Info</h3>
+                            <div className="space-y-2 text-xs md:text-sm text-white/90 leading-relaxed">
+                                <div>
+                                    <span className="font-medium">Company :</span> London Business Address Ltd
+                                </div>
+                                <div>
+                                    <span className="font-medium">Company No :</span> 12345678
+                                </div>
+                                <div>
+                                    <span className="font-medium">VAT :</span> GB123456789
+                                </div>
+                                <div>
+                                    <span className="font-medium">HMRC AML :</span> XRML00000123456
+                                </div>
+                                <div>
+                                    <span className="font-medium">ICO :</span> ZA123456
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* Navigation */}
                     <div>
-                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
-                            Navigation
-                        </h3>
-                        <div className="space-y-0.5">
+                        <h3 className="text-sm md:text-base font-semibold text-white mb-4">Navigation</h3>
+                        <div className="space-y-2">
                             {navigation.map((item) => (
                                 <QuickLink key={item.label} item={item} />
                             ))}
@@ -167,52 +116,38 @@ export function Footer({ onNavigate }: FooterProps) {
 
                     {/* Legal & Compliance */}
                     <div>
-                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
-                            Legal & Compliance
-                        </h3>
-                        <div className="space-y-0.5">
+                        <h3 className="text-sm md:text-base font-semibold text-white mb-4">Legal & Compliance</h3>
+                        <div className="space-y-2">
                             {legal.map((item) => (
                                 <QuickLink key={item.label} item={item} />
                             ))}
                         </div>
                     </div>
 
-                    {/* Regulatory Info - Dedicated Section */}
+                    {/* Contact Us */}
                     <div>
-                        <h3 className="mb-2 text-sm lg:text-base leading-tight font-semibold text-primary">
-                            Regulatory Info
-                        </h3>
-                        <div className="space-y-1 text-xs text-muted-foreground leading-tight">
+                        <h3 className="text-sm md:text-base font-semibold text-white mb-4">Contact Us</h3>
+                        <div className="space-y-3 text-sm md:text-base text-white/90">
                             <div>
-                                <span className="font-medium text-foreground">Company:</span>{" "}
-                                <span>VirtualAddress<span className="text-primary">Hub</span> Ltd</span>
+                                <p>(888) 555-3766</p>
                             </div>
                             <div>
-                                <span className="font-medium text-foreground">Co. No:</span>{" "}
-                                <span>[INSERT NUMBER]</span>
+                                <p>virtualaddress@gmail.com</p>
                             </div>
-                            <div>
-                                <span className="font-medium text-foreground">VAT:</span>{" "}
-                                <span>[INSERT VAT]</span>
-                            </div>
-                            <div>
-                                <span className="font-medium text-foreground">HMRC AML:</span>{" "}
-                                <span>[INSERT AML]</span>
-                            </div>
-                            <div>
-                                <span className="font-medium text-foreground">ICO:</span>{" "}
-                                <span>ICO Registered: ZC051808</span>
-                            </div>
+                        </div>
+
+                        {/* Business Hours */}
+                        <div className="mt-6">
+                            <h3 className="text-sm md:text-base font-semibold text-white mb-3">Business Hours</h3>
+                            <p className="text-sm md:text-base text-white/90">Mon - Fri : 8:00 AM - 6:00 PM</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Bottom bar */}
-                <div className="pt-4 mt-4 border-t border-border/50">
-                    <div className="flex flex-wrap gap-4 justify-between items-center text-xs text-muted-foreground">
-                        <div>
-                            &copy; {new Date().getFullYear()} VirtualAddressHub. All rights reserved.
-                        </div>
+                {/* Copyright */}
+                <div className="pt-8 mt-8 border-t border-white/20">
+                    <div className="text-center text-sm text-white/80">
+                        © 2026 VirtualAddress.UK. All rights reserved.
                     </div>
                 </div>
             </div>

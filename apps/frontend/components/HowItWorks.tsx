@@ -1,80 +1,83 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { User, MapPin, Mail } from 'lucide-react';
 
 const steps = [
     {
         k: 'verify',
-        title: 'Verify your account',
-        points: [
-            'Create your account and upload your ID and proof of address (KYC/AML).',
-            'We review your details and approve your account in line with HMRC and Companies House requirements.',
-            'Companies House now requires identity verification for directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.',
-            'Once approved, your Central London address appears in your dashboard, ready to use.'
-        ]
+        title: 'Verify Your Account',
+        description: 'Verify your account by completing the required identity checks for regulated address services.',
+        icon: User
     },
     {
         k: 'use',
-        title: 'Use your address everywhere',
-        points: [
-            'Update Companies House (Registered Office & Director\'s Service Address).',
-            'Use the same address with HMRC, banks, payment providers, clients and other professional contacts.',
-            'It\'s a real Central London address — never a P.O. Box.'
-        ]
+        title: 'Use Your London Address',
+        description: 'Use your London address for Companies House, HMRC, and everyday business correspondence.',
+        icon: MapPin
     },
     {
         k: 'handle',
-        title: 'We handle your mail',
-        points: [
-            'Incoming letters are logged and scanned on the same business day to your dashboard.',
-            'HMRC & Companies House letters can be forwarded across the UK for free on request.',
-            'Other UK letters are forwarded for £2 per item, which covers postage and admin.',
-            'Letters only — no parcels. Everything handled in line with UK data protection and AML rules.'
-        ]
+        title: 'We Handle Your Mail',
+        description: 'We receive, log, and scan your mail and make it available the same business day through your secure dashboard.',
+        icon: Mail
     }
 ];
 
 export default function HowItWorks() {
     return (
-        <section className="w-full py-8">
-            <div className="mx-auto max-w-6xl px-6">
-                <header className="mx-auto max-w-3xl text-center mb-8">
-                    <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
-                        How it works — clear, compliant, no surprises
+        <section className="w-full py-12 md:py-16 bg-white">
+            <div className="safe-pad mx-auto max-w-6xl">
+                <header className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+                        How It Works
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
-                        Verification first. Address issued next. Then professional mail handling.
+                    <p className="text-base md:text-lg text-muted-foreground">
+                        Three steps to a professional London address
                     </p>
                 </header>
 
-                {/* horizontal layout */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    {steps.map((s, i) => (
-                        <div key={s.k} className="relative">
-                            {/* number badge */}
-                            <div className="absolute -top-3 left-4 z-10">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent bg-accent shadow-sm">
-                                    <span className="font-bold text-white text-sm">{i + 1}</span>
-                                </div>
-                            </div>
+                {/* Three steps with connecting lines */}
+                <div className="relative">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+                        {steps.map((step, index) => {
+                            const Icon = step.icon;
+                            return (
+                                <div key={step.k} className="relative flex flex-col items-center">
+                                    {/* Number Circle */}
+                                    <div className="relative z-10 mb-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0d4a3d]">
+                                            <span className="font-bold text-white text-lg">{index + 1}</span>
+                                        </div>
+                                    </div>
 
-                            <div className="rounded-xl border border-border bg-card shadow-sm h-full">
-                                <div className="p-4 pt-6">
-                                    <h3 className="text-base font-semibold mb-3">{s.title}</h3>
-                                    <ul className="space-y-2">
-                                        {s.points.map((p) => (
-                                            <li key={p} className="flex gap-2 text-sm text-muted-foreground">
-                                                <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                                                <span className="leading-relaxed">{p}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    {/* Icon Circle */}
+                                    <div className="relative z-10 mb-6">
+                                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border-2 border-gray-400">
+                                            <Icon className="h-10 w-10 text-gray-700" />
+                                        </div>
+                                    </div>
+
+                                    {/* Connecting Dotted Line (only between steps) */}
+                                    {index < steps.length - 1 && (
+                                        <div className="hidden md:block absolute top-[60px] left-[50%] w-full h-0 border-t-2 border-dotted border-[#0d4a3d] z-0" 
+                                             style={{ width: 'calc(100% - 80px)', left: 'calc(50% + 40px)' }}>
+                                        </div>
+                                    )}
+
+                                    {/* Content */}
+                                    <div className="text-center max-w-xs">
+                                        <h3 className="text-xl font-bold text-foreground mb-3">
+                                            {step.title}
+                                        </h3>
+                                        <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                                            {step.description}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                            );
+                        })}
+                    </div>
                 </div>
-
             </div>
         </section>
     );
