@@ -76,7 +76,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <div className="mt-4 md:mt-5">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-sm font-medium text-[#024E40] hover:bg-[#40C46C]/90 md:h-[57px] md:w-[294px] md:text-[16px]"
+                                    className="h-[48px] w-[90%] rounded-[33px] bg-[#40C46C] px-4 text-sm font-medium text-[#024E40] hover:bg-[#40C46C]/90 md:h-[57px] md:w-[294px] md:text-[16px]"
                                 >
                                     Get Your London Address
                                 </Button>
@@ -172,9 +172,35 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </p>
                     </div>
 
+                    {/* Mobile: Toggle between plans */}
+                    <div className="mt-6 flex justify-center md:hidden">
+                        <div className="inline-flex rounded-full bg-gray-100 p-1">
+                            <button
+                                onClick={() => setBilling("monthly")}
+                                className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                                    billing === "monthly"
+                                        ? "bg-[#014D3F] text-white"
+                                        : "text-gray-600"
+                                }`}
+                            >
+                                Monthly
+                            </button>
+                            <button
+                                onClick={() => setBilling("annual")}
+                                className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                                    billing === "annual"
+                                        ? "bg-[#014D3F] text-white"
+                                        : "text-gray-600"
+                                }`}
+                            >
+                                Annual
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="mt-8 flex flex-col items-center gap-6 md:mt-12 md:flex-row md:gap-[32px]">
                         {/* Monthly card (Figma: dark) */}
-                        <div className="w-full rounded-[20px] bg-[#014D3F] p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] md:h-[748px] md:w-[522px] md:rounded-[30px] md:p-[34px]">
+                        <div className={`w-full rounded-[20px] bg-[#014D3F] p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] md:h-[748px] md:w-[522px] md:rounded-[30px] md:p-[34px] ${billing !== "monthly" ? "hidden md:flex" : ""}`}>
                             <div className="flex h-full flex-col">
                                 <div className="flex items-center justify-end">
                                     <div className="rounded-[44px] bg-[#075748] px-4 py-1 text-sm font-semibold text-white md:px-6 md:py-2 md:text-[16px]">
@@ -234,7 +260,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </div>
 
                         {/* Annual card (Figma: light) */}
-                        <div className="w-full rounded-[20px] bg-white p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] md:h-[748px] md:w-[522px] md:rounded-[30px] md:p-[34px]">
+                        <div className={`w-full rounded-[20px] bg-white p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] md:h-[748px] md:w-[522px] md:rounded-[30px] md:p-[34px] ${billing !== "annual" ? "hidden md:flex" : ""}`}>
                             <div className="flex h-full flex-col">
                                 <div className="flex items-center justify-end">
                                     <div className="rounded-[44px] bg-[#075748] px-4 py-1 text-sm font-semibold text-white md:px-6 md:py-2 md:text-[16px]">
@@ -342,7 +368,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto w-full max-w-[1280px] px-5 md:px-20">
                     <div className="overflow-hidden rounded-[20px] bg-[#014D3F] md:rounded-[30px]">
                         <div className="flex flex-col items-center gap-6 p-6 md:flex-row md:gap-10 md:p-0">
-                            <div className="h-[250px] w-full md:h-auto md:w-[857px]">
+                            {/* Image hidden on mobile */}
+                            <div className="hidden h-auto w-[857px] md:block">
                                 <img
                                     src="/figma/cta-illustration.png"
                                     alt="London illustration"

@@ -64,12 +64,13 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer className="bg-[#0d4a3d] text-white">
-            <div className="safe-pad mx-auto max-w-screen-xl py-12">
+            {/* Desktop Footer */}
+            <div className="safe-pad mx-auto hidden max-w-screen-xl py-12 md:block">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                     {/* Company Information */}
                     <div className="lg:col-span-1">
                         <div className="mb-4">
-                            <VAHLogo onNavigate={onNavigate} size="lg" />
+                            <VAHLogo onNavigate={onNavigate} size="xl" />
                         </div>
                         <p className="text-sm md:text-base text-white/90 leading-relaxed mb-6">
                             Professional virtual address for UK business. Fully compliant.
@@ -149,6 +150,39 @@ export function Footer({ onNavigate }: FooterProps) {
                     <div className="text-center text-sm text-white/80">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </div>
+                </div>
+            </div>
+
+            {/* Mobile Compact Footer */}
+            <div className="safe-pad mx-auto block px-5 py-8 md:hidden">
+                <div className="mb-6 flex justify-center">
+                    <VAHLogo onNavigate={onNavigate} size="xl" />
+                </div>
+
+                {/* Quick Links */}
+                <div className="mb-6 flex flex-wrap justify-center gap-4 text-sm">
+                    {[...navigation, ...legal].map((item) => (
+                        <button
+                            key={item.label}
+                            onClick={() =>
+                                handleNavClick(item.page, item.href, item.external)
+                            }
+                            className="text-white/90 hover:text-white"
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Contact */}
+                <div className="mb-6 text-center text-sm text-white/80">
+                    <p>virtualaddress@gmail.com</p>
+                    <p className="mt-1">(888) 555-3766</p>
+                </div>
+
+                {/* Copyright */}
+                <div className="border-t border-white/20 pt-6 text-center text-xs text-white/70">
+                    © 2026 VirtualAddress.UK. All rights reserved.
                 </div>
             </div>
         </footer>
