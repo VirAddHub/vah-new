@@ -42,6 +42,7 @@ import { DashboardSummary } from "@/components/dashboard/user/DashboardSummary";
 import { MailList } from "@/components/dashboard/user/MailList";
 import { MailDetail } from "@/components/dashboard/user/MailDetail";
 import { ForwardingModal } from "@/components/dashboard/user/ForwardingModal";
+import { RightPanel } from "@/components/dashboard/user/RightPanel";
 import type { MailItem } from "@/components/dashboard/user/types";
 import dynamic from 'next/dynamic';
 
@@ -114,6 +115,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const [isCertBusy, setIsCertBusy] = useState(false);
   const [showForwardingConfirmation, setShowForwardingConfirmation] = useState(false);
   const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
+  // Right panel state
+  const [rightPanelView, setRightPanelView] = useState<'mail-detail' | 'forwarding' | 'account' | null>(null);
+  const [forwardingRequests, setForwardingRequests] = useState<any[]>([]);
+  const [forwardingRequestsLoading, setForwardingRequestsLoading] = useState(false);
   // When identity is complete, we only show the success banner for the first 3 dashboard sessions.
   // Default to hidden to avoid a flash before local/session storage gating runs.
   const [showIdentitySuccessBanner, setShowIdentitySuccessBanner] = useState(false);
@@ -283,11 +288,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [refreshMail]);
 
-  // Open handler - opens PDF modal and marks as read
+  // Open handler - opens mail detail in right panel and marks as read
   const onOpen = useCallback(async (item: MailItem) => {
     try {
-      // Route into the detail view (PDF opens from the "View" action)
+      // Show mail detail in right panel
       setSelectedMailDetail(item);
+      setRightPanelView('mail-detail');
       setSelectedMailForPDF(item);
       setShowPDFModal(false);
 
@@ -564,6 +570,11 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         // Refresh mail items to update status
         refreshMail();
+        
+        // Refresh forwarding requests if forwarding panel is open
+        if (rightPanelView === 'forwarding') {
+          loadForwardingRequests();
+        }
 
         // Close modal
         setShowForwardingConfirmation(false);
@@ -689,6 +700,46 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     }
   }, [(userProfile as any)?.id, compliance.canUseRegisteredOfficeAddress]);
 
+  // Load forwarding requests
+  const loadForwardingRequests = useCallback(async () => {
+    setForwardingRequestsLoading(true);
+    try {
+      const response = await fetch('/api/bff/forwarding/requests', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setForwardingRequests(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading forwarding requests:', error);
+    } finally {
+      setForwardingRequestsLoading(false);
+    }
+  }, []);
+
+  // Load forwarding requests when forwarding view is opened
+  useEffect(() => {
+    if (rightPanelView === 'forwarding') {
+      loadForwardingRequests();
+    }
+  }, [rightPanelView, loadForwardingRequests]);
+
+  // Handle navigation - show in right panel instead of navigating
+  const handleNavigate = useCallback((page: string, data?: any) => {
+    if (page === 'forwarding') {
+      setRightPanelView('forwarding');
+    } else if (page === 'account' || page === 'settings' || page === 'profile' || page === 'billing') {
+      setRightPanelView('account');
+    } else {
+      // For other pages, use the original navigation
+      onNavigate(page, data);
+    }
+  }, [onNavigate]);
+
   const handleRequestForwarding = (mailItem?: MailItem) => {
     console.log('[UI] handleRequestForwarding called', { mailItem: mailItem?.id, hasMailItem: !!mailItem });
 
@@ -765,7 +816,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
-        onNavigate={onNavigate}
+        onNavigate={handleNavigate}
         onLogout={onLogout}
         userName={getUserName()}
         userEmail={userProfile?.email}
@@ -774,8 +825,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       {/* Main Content */}
       <main className="safe-pad mx-auto max-w-screen-xl py-8">
 
-        {/* Two Column Layout: Main content + Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+        {/* Two Column Layout: Main content + Right Panel/Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8">
 
           {/* Left Column - Main Content */}
           <div className="flex flex-col gap-6">
@@ -784,7 +835,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               userProfile={userProfile}
               compliance={compliance}
               showIdentitySuccessBanner={showIdentitySuccessBanner}
-              onNavigate={onNavigate}
+              onNavigate={handleNavigate}
             />
 
             {/* KYC Verification Widget - Show if not approved */}
@@ -872,46 +923,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {/* Mail detail view (match screenshot - light) */}
-                {selectedMailDetail ? (
-                  <MailDetail
-                    item={selectedMailDetail}
-                    onBack={() => {
-                      setSelectedMailDetail(null);
-                      setForwardInlineNotice(null);
-                      onGoBack?.();
-                    }}
-                    onView={() => {
-                      setSelectedMailForPDF(selectedMailDetail);
-                      setShowPDFModal(true);
-                    }}
-                    onDownload={() => onDownload(selectedMailDetail)}
-                    onForward={() => handleRequestForwarding(selectedMailDetail)}
-                    forwardInlineNotice={forwardInlineNotice}
-                    onDismissForwardNotice={() => setForwardInlineNotice(null)}
-                    miniViewerLoading={miniViewerLoading}
-                    miniViewerUrl={miniViewerUrl}
-                    miniViewerError={miniViewerError}
-                    mailTypeIcon={mailTypeIcon}
-                    mailStatusMeta={mailStatusMeta}
-                    formatTime={formatTime}
-                  />
-                ) : (
-                  <MailList
-                    mailItems={mailItems}
-                    mailError={mailError ?? null}
-                    mailLoading={mailLoading}
-                    selectedMail={selectedMail}
-                    isAllSelected={isAllSelected}
-                    isSomeSelected={isSomeSelected}
-                    toggleSelectAll={toggleSelectAll}
-                    refreshMail={refreshMail}
-                    onOpen={onOpen}
-                    onDownload={onDownload}
-                    onForward={handleRequestForwarding}
-                    formatScannedDate={formatScannedDate}
-                  />
-                )}
+                {/* Mail list - always visible on left */}
+                <MailList
+                  mailItems={mailItems}
+                  mailError={mailError ?? null}
+                  mailLoading={mailLoading}
+                  selectedMail={selectedMail}
+                  isAllSelected={isAllSelected}
+                  isSomeSelected={isSomeSelected}
+                  toggleSelectAll={toggleSelectAll}
+                  refreshMail={refreshMail}
+                  onOpen={onOpen}
+                  onDownload={onDownload}
+                  onForward={handleRequestForwarding}
+                  formatScannedDate={formatScannedDate}
+                />
               </CardContent>
             </Card>
 
@@ -991,57 +1017,96 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
           </div>
 
-          {/* Right Column - Virtual Address Sidebar (desktop only) */}
-          <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start">
-            <Card className="border-neutral-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="text-[11px] font-semibold text-neutral-500 tracking-wider">
-                  ADDRESSES
-                </div>
-                <CardTitle className="text-xl font-semibold text-neutral-900">
-                  Your Business Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Company + address */}
-                <div className="space-y-1">
-                  <div className="text-sm font-semibold text-neutral-900">
-                    {(userProfile as any)?.company_name || "Your Company"}
+          {/* Right Column - Right Panel or Sidebar */}
+          <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start lg:w-[600px]">
+            {rightPanelView ? (
+              <RightPanel
+                view={rightPanelView}
+                onClose={() => {
+                  setRightPanelView(null);
+                  setSelectedMailDetail(null);
+                  setForwardInlineNotice(null);
+                }}
+                selectedMailDetail={selectedMailDetail}
+                onMailView={() => {
+                  if (selectedMailDetail) {
+                    setSelectedMailForPDF(selectedMailDetail);
+                    setShowPDFModal(true);
+                  }
+                }}
+                onMailDownload={() => {
+                  if (selectedMailDetail) {
+                    onDownload(selectedMailDetail);
+                  }
+                }}
+                onMailForward={() => {
+                  if (selectedMailDetail) {
+                    handleRequestForwarding(selectedMailDetail);
+                  }
+                }}
+                forwardInlineNotice={forwardInlineNotice}
+                onDismissForwardNotice={() => setForwardInlineNotice(null)}
+                miniViewerLoading={miniViewerLoading}
+                miniViewerUrl={miniViewerUrl}
+                miniViewerError={miniViewerError}
+                mailTypeIcon={mailTypeIcon}
+                mailStatusMeta={mailStatusMeta}
+                formatTime={formatTime}
+                forwardingRequests={forwardingRequests}
+                onRequestForwarding={handleRequestForwarding}
+                userProfile={userProfile}
+              />
+            ) : (
+              <Card className="border-neutral-200 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="text-[11px] font-semibold text-neutral-500 tracking-wider">
+                    ADDRESSES
                   </div>
-                  <div className="text-sm font-semibold text-neutral-900">
-                    {businessAddressLine1}
+                  <CardTitle className="text-xl font-semibold text-neutral-900">
+                    Your Business Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Company + address */}
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-neutral-900">
+                      {(userProfile as any)?.company_name || "Your Company"}
+                    </div>
+                    <div className="text-sm font-semibold text-neutral-900">
+                      {businessAddressLine1}
+                    </div>
+                    <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
+                    <div className="text-xs text-neutral-500">
+                      {businessAddressLine3}
+                    </div>
+                    <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
                   </div>
-                  <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
-                  <div className="text-xs text-neutral-500">
-                    {businessAddressLine3}
-                  </div>
-                  <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
-                </div>
 
-                {/* Primary action */}
-                <div className="space-y-2">
-                  {/* Letter of Certification: single action (generate if needed, then download) */}
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={handleDownloadCertification}
-                    disabled={!canUseAddress || isCertBusy}
-                  >
-                    {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
-                  </Button>
-                  <p className="text-xs text-neutral-500 leading-relaxed">
-                    Use this letter for banks, payment providers, and professional contacts.
-                  </p>
-                </div>
-
-                {/* Locked state message */}
-                {!canUseAddress && (
-                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
-                    Available once identity verification (KYC) is complete.
+                  {/* Primary action */}
+                  <div className="space-y-2">
+                    {/* Letter of Certification: single action (generate if needed, then download) */}
+                    <Button
+                      type="button"
+                      className="w-full"
+                      onClick={handleDownloadCertification}
+                      disabled={!canUseAddress || isCertBusy}
+                    >
+                      {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
+                    </Button>
+                    <p className="text-xs text-neutral-500 leading-relaxed">
+                      Use this letter for banks, payment providers, and professional contacts.
+                    </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {/* Locked state message */}
+                  {!canUseAddress && (
+                    <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+                      Available once identity verification (KYC) is complete.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </aside>
 
         </div>
@@ -1054,7 +1119,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             Need help? Visit our{" "}
             <button onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')} className="text-primary hover:underline">Help Center</button>
             {" "}or{" "}
-            <button onClick={() => onNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>.
+            <button onClick={() => handleNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>.
           </p>
         </div>
       </div>
@@ -1079,6 +1144,46 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           setSelectedMailForForwarding(null);
         }}
       />
+
+      {/* Mobile Right Panel Overlay */}
+      {rightPanelView && (
+        <RightPanel
+          view={rightPanelView}
+          onClose={() => {
+            setRightPanelView(null);
+            setSelectedMailDetail(null);
+            setForwardInlineNotice(null);
+          }}
+          selectedMailDetail={selectedMailDetail}
+          onMailView={() => {
+            if (selectedMailDetail) {
+              setSelectedMailForPDF(selectedMailDetail);
+              setShowPDFModal(true);
+            }
+          }}
+          onMailDownload={() => {
+            if (selectedMailDetail) {
+              onDownload(selectedMailDetail);
+            }
+          }}
+          onMailForward={() => {
+            if (selectedMailDetail) {
+              handleRequestForwarding(selectedMailDetail);
+            }
+          }}
+          forwardInlineNotice={forwardInlineNotice}
+          onDismissForwardNotice={() => setForwardInlineNotice(null)}
+          miniViewerLoading={miniViewerLoading}
+          miniViewerUrl={miniViewerUrl}
+          miniViewerError={miniViewerError}
+          mailTypeIcon={mailTypeIcon}
+          mailStatusMeta={mailStatusMeta}
+          formatTime={formatTime}
+          forwardingRequests={forwardingRequests}
+          onRequestForwarding={handleRequestForwarding}
+          userProfile={userProfile}
+        />
+      )}
 
     </div>
   );

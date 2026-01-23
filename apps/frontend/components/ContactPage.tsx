@@ -145,9 +145,9 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="flex-1">
                         <div className="bg-[#F9F9F9] rounded-[30px] p-[34px]">
                             <form onSubmit={handleSubmit} className="flex flex-col gap-[20px]">
-                                {errorMsg && (
+                                    {errorMsg && (
                                     <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
-                                        {errorMsg}
+                                            {errorMsg}
                                         </div>
                                     )}
 
@@ -310,7 +310,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             <button
                                 onClick={() => window.open("https://wa.me/447000000000", "_blank")}
                                 className="w-[214px] h-[48px] rounded-[36px] border border-[#40C46C] bg-transparent text-[#40C46C] text-[16px] font-medium leading-[1.4] hover:bg-[#40C46C] hover:text-white transition-colors"
-                            >
+                                        >
                                 Chat on whatsapp
                             </button>
                                     </div>

@@ -47,6 +47,8 @@ export default function DashboardClient() {
 
     const handleNavigate = (page: string) => {
         // Handle navigation to different pages
+        // Note: forwarding, account, settings, profile, billing are handled by UserDashboard's right panel
+        // and won't navigate away from the dashboard
         switch (page) {
             case 'home':
                 router.push('/');
@@ -58,23 +60,15 @@ export default function DashboardClient() {
                 router.push('/business-owners');
                 break;
             case 'forwarding':
-                router.push('/forwarding');
-                break;
             case 'billing':
-                router.push('/account');
+            case 'settings':
+            case 'account':
+            case 'profile':
+                // These are handled by UserDashboard's right panel - no navigation needed
                 break;
             case 'contact':
             case 'support':
                 router.push('/contact');
-                break;
-            case 'settings':
-                router.push('/account');
-                break;
-            case 'account':
-                router.push('/account');
-                break;
-            case 'profile':
-                router.push('/account');
                 break;
             default:
                 console.log('Navigate to:', page);

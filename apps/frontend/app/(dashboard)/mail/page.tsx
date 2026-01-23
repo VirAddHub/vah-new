@@ -4,10 +4,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, X, Download, Eye, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { MailItem } from '@/components/dashboard/user/types';
 
@@ -15,6 +16,7 @@ export default function MailInboxPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'inbox' | 'archived' | 'tags'>('inbox');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedMailId, setSelectedMailId] = useState<string | number | null>(null);
 
     // Fetch mail items
     const { data: mailData, error: mailError, isLoading: mailLoading } = useSWR(
@@ -107,10 +109,24 @@ export default function MailInboxPage() {
         return item.sender_name || item.subject || 'Unknown Sender';
     };
 
-    // Handle mail item click
+    // Handle mail item click - show details on right instead of navigating
     const handleMailClick = useCallback((item: MailItem) => {
-        router.push(`/mail/${item.id}`);
-    }, [router]);
+        setSelectedMailId(item.id);
+    }, []);
+
+    // Get selected mail item
+    const selectedMail = useMemo(() => {
+        if (!selectedMailId) return null;
+        return filteredItems.find((item: MailItem) => item.id === selectedMailId) || null;
+    }, [selectedMailId, filteredItems]);
+
+    // Fetch mail item details if selected
+    const { data: mailDetailData } = useSWR(
+        selectedMailId ? `/api/bff/mail-items/${selectedMailId}` : null,
+        swrFetcher
+    );
+
+    const mailDetails = mailDetailData?.ok ? mailDetailData.data : null;
 
     return (
         <div className="w-full mx-auto max-w-[1200px] px-6" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
