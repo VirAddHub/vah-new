@@ -232,7 +232,7 @@ export default function ForwardingPage() {
     }
 
     return (
-        <div className="w-full h-[calc(100vh-8rem)] flex flex-col" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+        <div className="w-full h-[calc(100vh-8rem)] flex flex-col" style={{ fontFamily: "var(--font-poppins), Poppins, sans-serif" }}>
             {/* Header */}
             <div className="mb-6 pt-2 px-6">
                 <h1 className="text-2xl font-semibold text-[#1A1A1A] mb-1">Forwarding Requests</h1>
