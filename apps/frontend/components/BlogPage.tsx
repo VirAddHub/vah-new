@@ -2,14 +2,7 @@
 
 import { useMemo, useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 type BlogPost = {
@@ -102,31 +95,39 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
         }))
     }), [blogPosts]);
 
-    // Always show the first post as featured (latest) and others in the grid
-    const featuredPost = useMemo(
-        () => blogPosts[0] ?? null,
-        [blogPosts],
-    );
-
     const gridPosts = useMemo(() => {
-        if (!featuredPost) return [];
-        return blogPosts.filter((p) => p.id !== featuredPost.id);
-    }, [blogPosts, featuredPost]);
+        return blogPosts;
+    }, [blogPosts]);
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Editorial Header */}
-            <div className="relative bg-gradient-to-b from-muted/30 to-background py-12 lg:py-16">
-                <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl mb-6 text-primary">
-                            Virtual Business Address & UK Compliance Blog
+            {/* Hero Section */}
+            <div className="bg-white py-[100px] px-20">
+                <div className="max-w-[1280px] mx-auto">
+                    <div className="flex flex-col items-center gap-[18px] mb-12">
+                        <h1 className="text-[54px] font-medium text-[#161B1A] leading-[1.2] text-center" style={{ fontFamily: 'Poppins' }}>
+                            Insights & Resources for Modern Businesses
                         </h1>
-                        <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                            Expert insights on virtual business addresses, UK company formation,
-                            HMRC compliance, and mail forwarding services. Stay informed with
-                            the latest industry updates and best practices for your business.
+                        <p className="text-lg text-[#666666] leading-[1.4] text-center max-w-[746px]" style={{ fontFamily: 'Poppins' }}>
+                            Expert advice, industry insights, and success stories to help you grow your business
                         </p>
+                    </div>
+                    {/* Search Bar */}
+                    <div className="flex justify-center">
+                        <div className="flex items-center gap-[65px] bg-[#F9F9F9] rounded-[87px] px-[34px] py-[14px] w-full max-w-[858px]">
+                            <input
+                                type="text"
+                                placeholder="Search for activities, restaurants, coupons"
+                                className="flex-1 bg-transparent border-none outline-none text-base text-[#ADADAD] placeholder:text-[#ADADAD]"
+                                style={{ fontFamily: 'Poppins' }}
+                            />
+                            <div className="w-12 h-12 bg-[#40C46C] rounded-[40px] flex items-center justify-center cursor-pointer">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 14L11.1 11.1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -156,118 +157,59 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 </div>
             )}
 
-            <div className="container mx-auto px-4 py-14">
-                {/* Featured Post */}
-                {!loading && !error && featuredPost ? (
-                    <Card className="mb-16 overflow-hidden shadow-sm border border-border bg-card">
-                        <div className="grid grid-cols-1 lg:grid-cols-2">
-                            <div className="relative h-72 lg:h-auto">
-                                <ImageWithFallback
-                                    src={featuredPost.imageUrl}
-                                    alt={featuredPost.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
-                                    Featured
-                                </Badge>
-                            </div>
-                            <div className="p-8 lg:p-10 flex flex-col justify-center">
-                                <Badge
-                                    variant="secondary"
-                                    className="w-fit mb-3 px-3 py-1 text-xs"
+            <div className="bg-white py-[100px] px-20">
+                <div className="max-w-[1280px] mx-auto">
+                    {/* Blog Posts Grid */}
+                    {!loading && !error && gridPosts.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center">
+                            {gridPosts.map((post) => (
+                                <div
+                                    key={post.id}
+                                    className="flex flex-col gap-[14px] w-full max-w-[395px] cursor-pointer"
+                                    onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
                                 >
-                                    {featuredPost.category}
-                                </Badge>
-                                <h2 className="font-serif text-2xl lg:text-3xl tracking-tight mb-4 text-foreground leading-tight">
-                                    {featuredPost.title}
-                                </h2>
-                                <p className="text-base text-muted-foreground mb-6 leading-relaxed">
-                                    {featuredPost.excerpt}
-                                </p>
-                                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-6">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4" />
-                                        {
-                                            featuredPost.dateLong /* placeholder label */
-                                        }
+                                    {/* Image */}
+                                    <div className="relative w-full h-[238px] rounded-[20px] overflow-hidden">
+                                        <ImageWithFallback
+                                            src={post.imageUrl}
+                                            alt={post.title}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
-                                        {featuredPost.readTime}
+                                    {/* Content */}
+                                    <div className="flex flex-col gap-[10px]">
+                                        {/* Category Tags */}
+                                        <div className="flex items-center gap-2">
+                                            <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
+                                                <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                                    {post.category || 'Success Stories'}
+                                                </span>
+                                            </div>
+                                            <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
+                                                <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                                    {post.category || 'Success Stories'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {/* Title */}
+                                        <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2" style={{ fontFamily: 'Poppins' }}>
+                                            {post.title}
+                                        </h3>
+                                        {/* Description */}
+                                        <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3" style={{ fontFamily: 'Poppins' }}>
+                                            {post.excerpt}
+                                        </p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    className="w-fit px-6 py-2"
-                                    aria-label={`Read article: ${featuredPost.title}`}
-                                    onClick={() => onNavigate?.('blog-post', { slug: featuredPost.slug })}
-                                >
-                                    Read Article
-                                    <ArrowRight className="h-4 w-4 ml-2" />
-                                </Button>
-                            </div>
+                            ))}
                         </div>
-                    </Card>
-                ) : (
-                    <div className="text-center text-muted-foreground mb-16">
-                        No posts found.
-                    </div>
-                )}
-
-                {/* Blog Posts Grid */}
-                {!loading && !error && gridPosts.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-                        {gridPosts.map((post) => (
-                            <Card
-                                key={post.id}
-                                className="overflow-hidden hover:shadow-md transition-all duration-300 border border-border bg-card"
-                            >
-                                <div className="relative h-48">
-                                    <ImageWithFallback
-                                        src={post.imageUrl}
-                                        alt={post.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                                <CardHeader className="p-6">
-                                    <Badge
-                                        variant="secondary"
-                                        className="w-fit mb-2 px-3 py-1 text-[11px]"
-                                    >
-                                        {post.category}
-                                    </Badge>
-                                    <CardTitle className="font-serif text-lg leading-tight line-clamp-2">
-                                        {post.title}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="px-6 pb-6">
-                                    <p className="text-sm text-muted-foreground mb-5 line-clamp-3 leading-relaxed">
-                                        {post.excerpt}
-                                    </p>
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-5">
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="h-3.5 w-3.5" />
-                                            {post.dateShort /* placeholder label */}
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="h-3.5 w-3.5" />
-                                            {post.readTime}
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full"
-                                        aria-label={`Read article: ${post.title}`}
-                                        onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
-                                    >
-                                        Read More
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
+                    )}
+                    {!loading && !error && gridPosts.length === 0 && (
+                        <div className="text-center text-[#666666]">
+                            No posts found.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Structured Data for SEO */}
