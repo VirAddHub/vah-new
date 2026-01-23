@@ -127,6 +127,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Get Started - £9.99/month
                                 </Button>
