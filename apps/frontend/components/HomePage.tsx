@@ -51,32 +51,32 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-20"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-16"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                         <div className="max-w-[540px]">
-                            <h1 className="text-5xl lg:text-[54px] font-medium leading-[1.15] text-white">
+                            <h1 className="text-5xl lg:text-[50px] font-medium leading-[1.15] lg:leading-[1.12] text-white">
                                 <span className="block">A Credible Central London</span>
                                 <span className="block">Business Address</span>
                                 <span className="block">Without The Cost Of</span>
                                 <span className="block">An Office.</span>
                             </h1>
 
-                            <div className="mt-6 text-sm leading-[1.7] text-white/90 sm:text-base">
+                            <div className="mt-6 lg:mt-5 text-sm leading-[1.7] text-white/90 sm:text-base">
                                 <p>Run your business professionally without exposing your home address.</p>
                                 <p className="mt-2">Use one trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
                                 <p className="mt-2">Suitable for Companies House, HMRC, and everyday business use.</p>
                                 <p className="mt-2">Everything you need is included in one simple service.</p>
                             </div>
 
-                            <div className="mt-6">
+                            <div className="mt-6 lg:mt-5">
                                 <div className="text-lg font-medium text-white">£9.99 per month</div>
                                 <div className="text-sm text-white/80">with one clear plan</div>
                             </div>
 
-                            <div className="mt-8">
+                            <div className="mt-8 lg:mt-6">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
