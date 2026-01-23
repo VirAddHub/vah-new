@@ -64,13 +64,13 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="bg-[#024E40] text-white"
+            className="bg-[#0b4d3c] py-16 text-white"
             style={{
                 fontFamily:
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
             }}
         >
-            <div className="safe-pad mx-auto w-full max-w-[1440px] px-6 py-10 sm:px-8 sm:py-12 lg:px-16 lg:py-16">
+            <div className="mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
                     <div className="mb-3 sm:mb-4">
@@ -95,22 +95,22 @@ export function Footer({ onNavigate }: FooterProps) {
 
                 {/* Desktop Footer (≥ 1024px) */}
                 <div className="hidden lg:block">
-                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-4 xl:gap-12">
+                    <div className="grid gap-8 md:grid-cols-4">
                         {/* Company Information */}
                         <div className="lg:col-span-1">
-                            <div className="mb-4">
+                            <div className="mb-3">
                                 <VAHLogo
                                     onNavigate={onNavigate}
                                     size="xl"
                                     imgClassName="brightness-0 invert"
                                 />
                             </div>
-                            <p className="mb-6 text-sm leading-relaxed text-white/90">
+                            <p className="mb-4 text-sm leading-relaxed text-white/90">
                                 Professional virtual address for UK business. Fully compliant.
                             </p>
 
                             {/* Location */}
-                            <div className="mb-6">
+                            <div className="mb-4">
                                 <h3 className="mb-3 text-sm font-semibold text-white">Location</h3>
                                 <p className="text-sm text-white/90">London, UK</p>
                             </div>
@@ -118,7 +118,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             {/* Regulatory Info */}
                             <div>
                                 <h3 className="mb-3 text-sm font-semibold text-white">Regulatory Info</h3>
-                                <div className="space-y-2 text-xs leading-relaxed text-white/90">
+                                <div className="space-y-2 text-sm leading-relaxed text-white/90">
                                     <div>
                                         <span className="font-medium">Company:</span> London Business Address Ltd
                                     </div>
@@ -140,7 +140,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-4 text-sm font-semibold text-white">Navigation</h3>
+                            <h3 className="mb-3 text-sm font-semibold text-white">Navigation</h3>
                             <div className="space-y-2">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -150,7 +150,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-4 text-sm font-semibold text-white">Legal & Compliance</h3>
+                            <h3 className="mb-3 text-sm font-semibold text-white">Legal & Compliance</h3>
                             <div className="space-y-2">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -160,8 +160,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-4 text-sm font-semibold text-white">Contact Us</h3>
-                            <div className="space-y-3 text-sm text-white/90">
+                            <h3 className="mb-3 text-sm font-semibold text-white">Contact Us</h3>
+                            <div className="space-y-2 text-sm text-white/90">
                                 <div>
                                     <p>0808 155 3766</p>
                                 </div>
@@ -171,7 +171,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             </div>
 
                             {/* Business Hours */}
-                            <div className="mt-6">
+                            <div className="mt-4">
                                 <h3 className="mb-3 text-sm font-semibold text-white">Business Hours</h3>
                                 <p className="text-sm text-white/90">Mon - Fri: 8:00 AM - 6:00 PM</p>
                             </div>
@@ -179,8 +179,8 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright for Desktop */}
-                    <div className="mt-8 overflow-hidden rounded-[16px] bg-[#014D3F] py-4">
-                        <div className="text-center text-sm text-white/80">
+                    <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/60">
+                        <div>
                             © 2026 VirtualAddress.UK. All rights reserved.
                         </div>
                     </div>
