@@ -174,8 +174,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <button
                                 onClick={() => setBilling("monthly")}
                                 className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${billing === "monthly"
-                                        ? "bg-[#014D3F] text-white"
-                                        : "text-gray-600"
+                                    ? "bg-[#014D3F] text-white"
+                                    : "text-gray-600"
                                     }`}
                             >
                                 Monthly
@@ -183,8 +183,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <button
                                 onClick={() => setBilling("annual")}
                                 className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${billing === "annual"
-                                        ? "bg-[#014D3F] text-white"
-                                        : "text-gray-600"
+                                    ? "bg-[#014D3F] text-white"
+                                    : "text-gray-600"
                                     }`}
                             >
                                 Annual
@@ -377,29 +377,32 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="py-32 bg-white">
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-3xl bg-[#0b4d3c] p-12 md:p-20">
-                        <div className="absolute inset-y-0 left-0 w-[45%] opacity-15 pointer-events-none">
+                        {/* London landmarks illustration on left */}
+                        <div className="absolute inset-y-0 left-0 w-[50%] opacity-20 pointer-events-none">
                             <img
                                 src="/figma/cta-illustration.png"
                                 alt=""
                                 className="h-full w-full object-cover object-left"
                             />
                         </div>
-                        <div className="relative grid gap-12 md:grid-cols-2 items-center">
-                            <div className="max-w-xl">
-                                <h2 className="text-4xl md:text-5xl font-semibold text-white">
-                                    Get your London Business Address Today
+                        {/* Content on right */}
+                        <div className="relative flex items-center justify-end min-h-[400px]">
+                            <div className="w-full md:w-[50%] md:pl-12">
+                                <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
+                                    <span className="block">Get your London</span>
+                                    <span className="block text-5xl md:text-6xl font-bold">Business Address</span>
+                                    <span className="block">Today</span>
                                 </h2>
-                                <p className="mt-4 text-white/80">
-                                    Everything included for £9.99 per month.
+                                <p className="mt-4 text-white/90 text-lg">
+                                    Everything included for <span className="font-semibold">£9.99</span> per month.
                                 </p>
                                 <button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="mt-8 rounded-full bg-green-400 px-8 py-4 font-medium text-green-900"
+                                    className="mt-8 rounded-full bg-[#40C46C] px-8 py-4 font-medium text-white hover:bg-[#40C46C]/90 transition-colors"
                                 >
                                     Schedule London Address
                                 </button>
                             </div>
-                            <div className="hidden md:block" aria-hidden="true" />
                         </div>
                     </div>
                 </div>
