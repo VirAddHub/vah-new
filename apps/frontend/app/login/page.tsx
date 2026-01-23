@@ -117,10 +117,10 @@ export default function LoginPage() {
                 document.cookie = `vah_session=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
             }
 
-            // Redirect to dashboard
+            // Redirect to account overview (or admin dashboard for admins)
             const user = data.data?.user || data.user;
             const isAdmin = user?.is_admin || user?.role === 'admin';
-            window.location.href = isAdmin ? '/admin/dashboard' : '/dashboard';
+            window.location.href = isAdmin ? '/admin/dashboard' : '/account/overview';
 
         } catch (err: any) {
             console.error('Login error:', err);

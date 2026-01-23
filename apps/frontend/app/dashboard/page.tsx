@@ -1,3 +1,15 @@
-import dynamic from "next/dynamic";
+'use client';
 
-export default dynamic(() => import("./DashboardClient"), { ssr: false });
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function DashboardPage() {
+    const router = useRouter();
+
+    // Redirect to account overview (main page)
+    useEffect(() => {
+        router.replace('/account/overview');
+    }, [router]);
+
+    return null;
+}

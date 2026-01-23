@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Navigation } from '@/components/Navigation';
 import { Building2, FileText, Landmark, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,45 +110,24 @@ export default function MailInboxPage() {
         router.push(`/mail/${item.id}`);
     }, [router]);
 
-    // Handle logout
-    const handleLogout = () => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
-        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        router.push('/login');
-    };
 
     return (
-        <div className="min-h-screen bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            <Navigation onNavigate={() => {}} />
-            <main className="max-w-[1280px] mx-auto px-[80px] py-[40px]">
+        <div className="w-full">
                 {/* Header */}
-                <div className="flex flex-col gap-[20px] mb-[60px]">
-                    <div className="flex items-center justify-between gap-[232px]">
+                <div className="flex flex-col gap-[20px] mb-[40px]">
+                    <div className="flex items-center justify-between">
                         <h1 className="text-[28px] font-medium leading-[1.2] text-[#101828]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                             Mail Inbox
                         </h1>
-                        <div className="flex items-center gap-[14px]">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-[56px] w-[100px] rounded-[4px] bg-[#40C46C] text-[#161B1A] hover:bg-[#40C46C]/90"
-                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                            >
-                                <Settings className="h-5 w-5 mr-2" />
-                                Setting
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleLogout}
-                                className="h-[56px] w-[138px] rounded-[38px] bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
-                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                            >
-                                Log out
-                            </Button>
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-[56px] w-[100px] rounded-[4px] bg-[#40C46C] text-[#161B1A] hover:bg-[#40C46C]/90"
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <Settings className="h-5 w-5 mr-2" />
+                            Setting
+                        </Button>
                     </div>
                     <div className="w-full h-[1px] bg-[#ECECEC]"></div>
                 </div>
@@ -287,7 +265,6 @@ export default function MailInboxPage() {
                         </div>
                     </div>
                 </div>
-            </main>
         </div>
     );
 }

@@ -3,13 +3,13 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-    LayoutDashboard, 
     Mail, 
     Truck, 
     CreditCard, 
     MapPin, 
     ShieldCheck, 
     HelpCircle,
+    LayoutDashboard,
     Menu,
     X
 } from 'lucide-react';
@@ -30,7 +30,6 @@ interface NavSection {
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Mail Inbox', href: '/mail', icon: Mail },
     { label: 'Forwarding', href: '/forwarding', icon: Truck },
 ];
@@ -69,18 +68,15 @@ export function DashboardSidebar() {
     }, [pathname, isMobile]);
 
     const isActive = (href: string) => {
-        if (href === '/dashboard') {
-            return pathname === '/dashboard';
-        }
         if (href === '/account/overview') {
-            return pathname === '/account/overview' || pathname === '/account';
+            return pathname === '/account/overview' || pathname === '/account' || pathname === '/dashboard';
         }
         return pathname === href || pathname?.startsWith(href + '/');
     };
 
     const SidebarContent = () => (
         <nav 
-            className="w-[240px] flex-shrink-0 bg-white border-r border-[#E5E7EB] h-screen fixed left-0 top-16 flex flex-col z-30"
+            className="w-[240px] flex-shrink-0 bg-white border-r border-[#E5E7EB] h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col z-30"
             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
         >
             <div className="flex-1 overflow-y-auto p-4 pt-6">
@@ -155,9 +151,9 @@ export function DashboardSidebar() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsOpen(true)}
-                    className="lg:hidden fixed top-20 left-4 z-50 bg-white border border-[#E5E7EB] rounded-lg shadow-sm"
+                    className="lg:hidden fixed top-20 left-4 z-50 bg-white border border-[#E5E7EB] rounded-lg shadow-sm h-10 w-10"
                 >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="h-5 w-5 text-[#1A1A1A]" />
                 </Button>
 
                 {/* Mobile Sidebar Overlay */}

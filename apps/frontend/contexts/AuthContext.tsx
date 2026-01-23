@@ -219,9 +219,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     userId: apiUser.user_id
                 });
 
-                // ✅ CRITICAL: Redirect to dashboard after successful login
-                console.log('User is authenticated. Redirecting to /dashboard');
-                window.location.href = '/dashboard';
+                // ✅ CRITICAL: Redirect to account overview after successful login
+                console.log('User is authenticated. Redirecting to /account/overview');
+                window.location.href = '/account/overview';
             } else {
                 const errorMessage = ('message' in response && typeof response.message === 'string')
                     ? response.message
