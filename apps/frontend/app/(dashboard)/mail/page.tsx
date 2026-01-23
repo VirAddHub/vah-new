@@ -183,7 +183,7 @@ export default function MailInboxPage() {
             </Tabs>
 
             {/* Mail List - Soft card-style rows */}
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {mailLoading ? (
                     <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                         Loading mail...
@@ -208,27 +208,27 @@ export default function MailInboxPage() {
                                 key={item.id}
                                 onClick={() => handleMailClick(item)}
                                 className={cn(
-                                    "flex items-center justify-between rounded-lg border border-[#E5E7EB] px-4 py-3",
+                                    "flex items-center justify-between rounded-lg border border-[#E5E7EB] px-6 py-4",
                                     "bg-white hover:bg-[#F9F9F9] hover:border-[#40C46C]/30 cursor-pointer transition-all",
                                     "hover:shadow-sm"
                                 )}
                             >
-                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <div className="flex items-center gap-5 flex-1 min-w-0">
                                     <div className="flex-shrink-0">
                                         <Icon className={cn(
-                                            "h-5 w-5",
+                                            "h-6 w-6",
                                             isRead ? 'text-[#666666]' : 'text-[#024E40]'
                                         )} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className={cn(
-                                            "text-sm leading-5 truncate",
+                                            "text-base leading-6 truncate",
                                             isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
                                         )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                             {senderName}
                                         </p>
                                         {item.subject && item.subject !== senderName && (
-                                            <p className="text-xs text-[#666666] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            <p className="text-sm text-[#666666] mt-1 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                 {item.subject}
                                             </p>
                                         )}
@@ -236,11 +236,11 @@ export default function MailInboxPage() {
                                 </div>
                                 <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                                     {item.tag && (
-                                        <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-[#F9F9F9] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        <span className="px-3 py-1 text-sm font-medium rounded-md bg-[#F9F9F9] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                             {item.tag}
                                         </span>
                                     )}
-                                    <span className="text-xs text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                         {date}
                                     </span>
                                 </div>

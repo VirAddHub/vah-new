@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "./ui/button";
-import { Menu, X, Home, Mail, User, HelpCircle } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
 
@@ -26,14 +26,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
         pathname.startsWith('/billing')
     ));
 
-    // Dashboard navigation items
-    const dashboardNavItems = [
-        { label: 'Dashboard', href: '/dashboard', icon: <Home className="h-4 w-4" /> },
-        { label: 'Mail', href: '/mail', icon: <Mail className="h-4 w-4" /> },
-        { label: 'Account', href: '/account', icon: <User className="h-4 w-4" /> },
-        { label: 'Help', href: '/help', icon: <HelpCircle className="h-4 w-4" /> },
-    ];
-
     // Public site navigation items
     const publicNavItems = [
         { label: 'Pricing', page: 'pricing' },
@@ -41,7 +33,16 @@ export function Navigation({ onNavigate }: NavigationProps) {
         { label: 'Help Center', page: 'help', href: '/help' },
     ];
 
-    const navItems = isDashboard ? dashboardNavItems : publicNavItems;
+    const navItems = publicNavItems;
+
+    // Handle logout
+    const handleLogout = () => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        window.location.href = '/login';
+    };
 
     // Debug: Log pathname and isDashboard (remove in production)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -78,29 +79,14 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 />
 
                 {/* Desktop Navigation */}
-                <nav
-                    aria-label="Main navigation"
-                    className={cn(
-                        "hidden md:flex gap-6 text-sm lg:text-base leading-tight text-muted-foreground"
-                    )}
-                >
-                    {isDashboard ? (
-                        // Dashboard navigation with icons
-                        navItems.map((item: any) => (
-                            <Link
-                                key={item.label}
-                                href={item.href}
-                                className={`flex items-center gap-2 hover:text-foreground transition-colors font-medium ${
-                                    pathname === item.href ? 'text-foreground' : ''
-                                }`}
-                            >
-                                {item.icon}
-                                {item.label}
-                            </Link>
-                        ))
-                    ) : (
-                        // Public site navigation
-                        navItems.map((item: any) => (
+                {!isDashboard && (
+                    <nav
+                        aria-label="Main navigation"
+                        className={cn(
+                            "hidden md:flex gap-6 text-sm lg:text-base leading-tight text-muted-foreground"
+                        )}
+                    >
+                        {navItems.map((item: any) => (
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page, item.href)}
@@ -108,33 +94,44 @@ export function Navigation({ onNavigate }: NavigationProps) {
                             >
                                 {item.label}
                             </button>
-                        ))
-                    )}
-                </nav>
-
-                {/* Auth Buttons - Only show on public pages */}
-                {!isDashboard && (
-                    <div className="hidden md:flex items-center gap-3">
-                        <button
-                            onClick={() => handleNavClick('signup')}
-                            className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
-                        >
-                            Sign up
-                        </button>
-                        <button
-                            onClick={() => handleNavClick('login')}
-                            className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
-                        >
-                            Login
-                        </button>
-                        <Button
-                            onClick={() => handleNavClick('signup')}
-                            className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
-                        >
-                            Get started
-                        </Button>
-                    </div>
+                        ))}
+                    </nav>
                 )}
+
+                {/* Auth Buttons / Sign Out */}
+                <div className="hidden md:flex items-center gap-3">
+                    {isDashboard ? (
+                        <Button
+                            onClick={handleLogout}
+                            variant="ghost"
+                            className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Sign out
+                        </Button>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => handleNavClick('signup')}
+                                className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
+                            >
+                                Sign up
+                            </button>
+                            <button
+                                onClick={() => handleNavClick('login')}
+                                className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
+                            >
+                                Login
+                            </button>
+                            <Button
+                                onClick={() => handleNavClick('signup')}
+                                className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                            >
+                                Get started
+                            </Button>
+                        </>
+                    )}
+                </div>
 
                 {/* Mobile menu button */}
                 <div className="md:hidden">
@@ -153,22 +150,15 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 <div className="md:hidden border-t border-border/50 bg-background">
                     <div className="safe-pad pt-3 pb-5 space-y-1.5">
                         {isDashboard ? (
-                            // Dashboard mobile navigation with icons
-                            navItems.map((item: any) => (
-                                <Link
-                                    key={item.label}
-                                    href={item.href}
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className={`tt-min flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left text-sm font-medium transition-all ${
-                                        pathname === item.href
-                                            ? 'text-foreground bg-muted'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-background'
-                                    }`}
-                                >
-                                    {item.icon}
-                                    {item.label}
-                                </Link>
-                            ))
+                            // Dashboard mobile - just sign out
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                className="tt-min flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left text-sm font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-background"
+                            >
+                                <LogOut className="h-4 w-4" />
+                                Sign out
+                            </Button>
                         ) : (
                             // Public site mobile navigation
                             <>
