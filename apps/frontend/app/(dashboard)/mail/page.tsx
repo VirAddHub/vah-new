@@ -4,9 +4,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import type { MailItem } from '@/components/dashboard/user/types';
 
 export default function MailInboxPage() {
@@ -110,161 +112,143 @@ export default function MailInboxPage() {
         router.push(`/mail/${item.id}`);
     }, [router]);
 
-
     return (
-        <div className="w-full">
-                {/* Header */}
-                <div className="flex flex-col gap-[20px] mb-[40px]">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-[28px] font-medium leading-[1.2] text-[#101828]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Mail Inbox
-                        </h1>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-[56px] w-[100px] rounded-[4px] bg-[#40C46C] text-[#161B1A] hover:bg-[#40C46C]/90"
+        <div className="w-full mx-auto max-w-[1200px] px-6" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            {/* Header - Title + Count inline, Actions grouped on right */}
+            <div className="flex items-center justify-between mb-6 pt-2">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-semibold text-[#1A1A1A]">Inbox</h1>
+                    <span className="text-sm text-[#666666]">({inboxCount})</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {/* Search Input */}
+                    <div className="relative w-[300px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666666]" />
+                        <Input
+                            type="text"
+                            placeholder="Search mail..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#40C46C]"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                        >
-                            <Settings className="h-5 w-5 mr-2" />
-                            Setting
-                        </Button>
+                        />
                     </div>
-                    <div className="w-full h-[1px] bg-[#ECECEC]"></div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 px-3 rounded-md hover:bg-[#F9F9F9]"
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                    </Button>
                 </div>
+            </div>
 
-                {/* Main Content */}
-                <div className="flex flex-col gap-[30px]">
-                    {/* Top Section: Inbox Count + Search */}
-                    <div className="flex items-center justify-between gap-[640px]">
-                        <div className="flex flex-col gap-[20px]">
-                            <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                Inbox ({inboxCount})
-                            </h2>
-                        </div>
-                        <div className="flex-1 max-w-[1206px]">
-                            <div className="relative">
-                                <Input
-                                    type="text"
-                                    placeholder="Search mail by sender, subject, tag, or date..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full h-auto px-[20px] py-[20px] rounded-[48px] bg-[#F9F9F9] border-0 text-[16px] font-normal leading-[1.5] text-[rgba(26,26,26,0.5)] placeholder:text-[rgba(26,26,26,0.5)] focus:outline-none focus:ring-0"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                />
-                            </div>
-                        </div>
+            {/* Horizontal Tabs - Replaces the sidebar */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'inbox' | 'archived' | 'tags')} className="mb-6">
+                <TabsList className="bg-transparent border-b border-[#E5E7EB] rounded-none p-0 h-auto">
+                    <TabsTrigger
+                        value="inbox"
+                        className={cn(
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "text-[#666666] hover:text-[#1A1A1A]"
+                        )}
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        Inbox ({inboxCount})
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="archived"
+                        className={cn(
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "text-[#666666] hover:text-[#1A1A1A]"
+                        )}
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        Archived ({archivedCount})
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="tags"
+                        className={cn(
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "text-[#666666] hover:text-[#1A1A1A]"
+                        )}
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        Tags ({tagsCount})
+                    </TabsTrigger>
+                </TabsList>
+            </Tabs>
+
+            {/* Mail List - Soft card-style rows */}
+            <div className="space-y-2">
+                {mailLoading ? (
+                    <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        Loading mail...
                     </div>
-
-                    {/* Sidebar + Mail List */}
-                    <div className="flex gap-[17px] items-start">
-                        {/* Sidebar */}
-                        <div className="flex flex-col gap-0 w-[90px] flex-shrink-0">
-                            {/* Inbox (13) - Active */}
-                            <div className="flex flex-col gap-[8px]">
-                                <button
-                                    onClick={() => setActiveTab('inbox')}
-                                    className={`text-[18px] leading-[1.11] text-left ${
-                                        activeTab === 'inbox' ? 'font-semibold text-[#024E40]' : 'font-normal text-[#666666]'
-                                    }`}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                >
-                                    Inbox ({inboxCount})
-                                </button>
-                                {activeTab === 'inbox' && (
-                                    <div className="w-full h-[2px] bg-[#5AE094]"></div>
-                                )}
-                            </div>
-
-                            {/* Archived (7) */}
-                            <div className="flex flex-col gap-[8px] mt-[34px]">
-                                <button
-                                    onClick={() => setActiveTab('archived')}
-                                    className={`text-[18px] leading-[1.11] text-left ${
-                                        activeTab === 'archived' ? 'font-semibold text-[#024E40]' : 'font-normal text-[#666666]'
-                                    }`}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                >
-                                    Archived ({archivedCount})
-                                </button>
-                                {activeTab === 'archived' && (
-                                    <div className="w-full h-[2px] bg-[#5AE094]"></div>
-                                )}
-                            </div>
-
-                            {/* Tags (20) */}
-                            <div className="flex flex-col gap-[8px] mt-[34px]">
-                                <button
-                                    onClick={() => setActiveTab('tags')}
-                                    className={`text-[18px] leading-[1.11] text-left ${
-                                        activeTab === 'tags' ? 'font-semibold text-[#024E40]' : 'font-normal text-[#6A7282]'
-                                    }`}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                >
-                                    Tags ({tagsCount})
-                                </button>
-                                {activeTab === 'tags' && (
-                                    <div className="w-full h-[2px] bg-[#5AE094]"></div>
-                                )}
-                            </div>
-
-                            {/* Divider */}
-                            <div className="w-full h-[2px] bg-[#E5E7EB] mt-[40px]"></div>
-                        </div>
-
-                        {/* Mail List */}
-                        <div className="flex-1 flex flex-col gap-0">
-                            {mailLoading ? (
-                                <div className="py-12 text-center text-[16px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Loading mail...
-                                </div>
-                            ) : mailError ? (
-                                <div className="py-12 text-center text-[16px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Failed to load mail. Please try again.
-                                </div>
-                            ) : filteredItems.length === 0 ? (
-                                <div className="py-12 text-center text-[16px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    No mail items found.
-                                </div>
-                            ) : (
-                                filteredItems.map((item, index) => {
-                                    const Icon = getMailIcon(item);
-                                    const senderName = getSenderName(item);
-                                    const date = formatDate(item.received_date || item.created_at);
-                                    const isRead = item.is_read ?? true;
-                                    
-                                    return (
-                                        <div key={item.id}>
-                                            <button
-                                                onClick={() => handleMailClick(item)}
-                                                className="w-full flex items-center gap-[8px] px-[16px] py-[10px] bg-[#F9F9F9] hover:bg-[#F0F0F0] transition-colors"
-                                            >
-                                                {/* Icon */}
-                                                <div className="w-[16px] h-[60px] flex items-center justify-center flex-shrink-0">
-                                                    <Icon className={`w-4 h-4 ${isRead ? 'text-[#666666]' : 'text-[#1A1A1A]'}`} />
-                                                </div>
-
-                                                {/* Sender Name and Date */}
-                                                <div className="flex flex-col gap-[4px] flex-1 min-w-0">
-                                                    <div className={`text-[16px] leading-[1.4] truncate ${
-                                                        isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
-                                                    }`} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                        {senderName}
-                                                    </div>
-                                                    <div className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                        {date}
-                                                    </div>
-                                                </div>
-                                            </button>
-                                            {index < filteredItems.length - 1 && (
-                                                <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
-                                            )}
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
+                ) : mailError ? (
+                    <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        Failed to load mail. Please try again.
                     </div>
-                </div>
+                ) : filteredItems.length === 0 ? (
+                    <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        No mail items found.
+                    </div>
+                ) : (
+                    filteredItems.map((item) => {
+                        const Icon = getMailIcon(item);
+                        const senderName = getSenderName(item);
+                        const date = formatDate(item.received_date || item.created_at);
+                        const isRead = item.is_read ?? true;
+                        
+                        return (
+                            <div
+                                key={item.id}
+                                onClick={() => handleMailClick(item)}
+                                className={cn(
+                                    "flex items-center justify-between rounded-lg border border-[#E5E7EB] px-4 py-3",
+                                    "bg-white hover:bg-[#F9F9F9] hover:border-[#40C46C]/30 cursor-pointer transition-all",
+                                    "hover:shadow-sm"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    <div className="flex-shrink-0">
+                                        <Icon className={cn(
+                                            "h-5 w-5",
+                                            isRead ? 'text-[#666666]' : 'text-[#024E40]'
+                                        )} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={cn(
+                                            "text-sm leading-5 truncate",
+                                            isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
+                                        )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            {senderName}
+                                        </p>
+                                        {item.subject && item.subject !== senderName && (
+                                            <p className="text-xs text-[#666666] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                {item.subject}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                    {item.tag && (
+                                        <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-[#F9F9F9] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            {item.tag}
+                                        </span>
+                                    )}
+                                    <span className="text-xs text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        {date}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
         </div>
     );
 }

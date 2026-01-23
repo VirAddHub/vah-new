@@ -19,9 +19,9 @@ export default function DashboardLayout({
                 <main 
                     id="main-content" 
                     role="main" 
-                    className="flex-1 overflow-y-auto lg:ml-[240px]"
+                    className="flex-1 overflow-y-auto lg:ml-[220px]"
                 >
-                    <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-20 py-8 lg:py-20">
+                    <div className="w-full py-6">
                         {children}
                     </div>
                 </main>
