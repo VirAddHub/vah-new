@@ -51,7 +51,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-12"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-8"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -64,19 +64,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <span className="block">An Office.</span>
                             </h1>
 
-                            <div className="mt-6 lg:mt-5 text-sm leading-[1.7] text-white/90 sm:text-base">
+                            <div className="mt-5 lg:mt-4 text-sm leading-[1.7] text-white/90 sm:text-base">
                                 <p>Run your business professionally without exposing your home address.</p>
                                 <p className="mt-2">Use one trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
                                 <p className="mt-2">Suitable for Companies House, HMRC, and everyday business use.</p>
                                 <p className="mt-2">Everything you need is included in one simple service.</p>
                             </div>
 
-                            <div className="mt-6 lg:mt-5">
+                            <div className="mt-5 lg:mt-4">
                                 <div className="text-lg font-medium text-white">£9.99 per month</div>
                                 <div className="text-sm text-white/80">with one clear plan</div>
                             </div>
 
-                            <div className="mt-8 lg:mt-6">
+                            <div className="mt-6 lg:mt-5">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
