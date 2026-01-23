@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
     Mail, 
@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useDashboardView } from '@/contexts/DashboardViewContext';
 
 interface NavItem {
     label: string;
@@ -44,6 +45,8 @@ const accountNavItems: NavItem[] = [
 
 export function DashboardSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const { activeView, setActiveView } = useDashboardView();
     const [isOpen, setIsOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -74,6 +77,21 @@ export function DashboardSidebar() {
         return pathname === href || pathname?.startsWith(href + '/');
     };
 
+    // Handle Mail/Forwarding clicks - use state instead of navigation
+    const handleMainNavClick = (view: 'mail' | 'forwarding') => {
+        setActiveView(view);
+        // Navigate to main dashboard with view param
+        router.push('/dashboard?view=' + view);
+        if (isMobile) {
+            setIsOpen(false);
+        }
+    };
+
+    // Check if mail or forwarding is active based on view state
+    // Use context activeView for main nav items, pathname for account items
+    const isMailActive = activeView === 'mail' || pathname === '/mail';
+    const isForwardingActive = activeView === 'forwarding' || pathname === '/forwarding';
+
     const SidebarContent = () => (
         <nav 
             className="w-[220px] flex-shrink-0 bg-white border-r border-[#E5E7EB] h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col z-30"
@@ -83,27 +101,34 @@ export function DashboardSidebar() {
                 {/* Main Navigation */}
                 <div className="mb-6">
                     <div className="flex flex-col gap-2">
-                        {mainNavItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.href);
-                            
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
-                                        active
-                                            ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
-                                            : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
-                                    )}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                >
-                                    <Icon className={cn("w-5 h-5", active ? "text-[#024E40]" : "text-[#666666]")} />
-                                    {item.label}
-                                </Link>
-                            );
-                        })}
+                        {/* Mail Inbox - Use state instead of Link */}
+                        <button
+                            onClick={() => handleMainNavClick('mail')}
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                isMailActive
+                                    ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                    : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                            )}
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <Mail className={cn("w-5 h-5", isMailActive ? "text-[#024E40]" : "text-[#666666]")} />
+                            Mail Inbox
+                        </button>
+                        {/* Forwarding - Use state instead of Link */}
+                        <button
+                            onClick={() => handleMainNavClick('forwarding')}
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                isForwardingActive
+                                    ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                    : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                            )}
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <Truck className={cn("w-5 h-5", isForwardingActive ? "text-[#024E40]" : "text-[#666666]")} />
+                            Forwarding
+                        </button>
                     </div>
                 </div>
 
@@ -180,28 +205,40 @@ export function DashboardSidebar() {
                                     {/* Main Navigation */}
                                     <div className="mb-6">
                                         <div className="flex flex-col gap-2">
-                                            {mainNavItems.map((item) => {
-                                                const Icon = item.icon;
-                                                const active = isActive(item.href);
-                                                
-                                                return (
-                                                    <Link
-                                                        key={item.href}
-                                                        href={item.href}
-                                                        onClick={() => setIsOpen(false)}
-                                                        className={cn(
-                                                            "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
-                                                            active
-                                                                ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
-                                                                : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
-                                                        )}
-                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                                    >
-                                                        <Icon className={cn("w-5 h-5", active ? "text-[#024E40]" : "text-[#666666]")} />
-                                                        {item.label}
-                                                    </Link>
-                                                );
-                                            })}
+                                            {/* Mail Inbox - Use state instead of Link */}
+                                            <button
+                                                onClick={() => {
+                                                    handleMainNavClick('mail');
+                                                    setIsOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                                    isMailActive
+                                                        ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                                        : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                                )}
+                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                            >
+                                                <Mail className={cn("w-5 h-5", isMailActive ? "text-[#024E40]" : "text-[#666666]")} />
+                                                Mail Inbox
+                                            </button>
+                                            {/* Forwarding - Use state instead of Link */}
+                                            <button
+                                                onClick={() => {
+                                                    handleMainNavClick('forwarding');
+                                                    setIsOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                                    isForwardingActive
+                                                        ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                                        : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                                )}
+                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                            >
+                                                <Truck className={cn("w-5 h-5", isForwardingActive ? "text-[#024E40]" : "text-[#666666]")} />
+                                                Forwarding
+                                            </button>
                                         </div>
                                     </div>
 

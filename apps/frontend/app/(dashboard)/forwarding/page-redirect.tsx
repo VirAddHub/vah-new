@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function DashboardPage() {
+// This page redirects /forwarding to /dashboard?view=forwarding
+export default function ForwardingRedirectPage() {
     const router = useRouter();
 
-    // Redirect to account overview (main page)
     useEffect(() => {
-        router.replace('/account/overview');
+        router.replace('/dashboard?view=forwarding');
     }, [router]);
 
     return null;

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Download, Eye, FileText, Truck, X, ArrowLeft } from 'lucide-react';
+import { Download, FileText, Truck, X, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { MailItem } from './types';
 
 type StatusMeta = { label: string; badgeClass: string };
@@ -20,7 +20,7 @@ interface MailDetailProps {
   miniViewerError: string | null;
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
-  formatTime: (d?: string) => string;
+  formatTime: (d?: string | number) => string;
 }
 
 export function MailDetail({
@@ -38,78 +38,88 @@ export function MailDetail({
   mailStatusMeta,
   formatTime,
 }: MailDetailProps) {
-  const Icon = mailTypeIcon(item);
   const title = item.sender_name || item.tag || 'Mail';
   const subtitle = item.subject || 'Mail item';
-  const status = mailStatusMeta(item);
+  
+  // Format date for display
+  const formatScannedDate = () => {
+    const dateToUse = item.scanned_at || item.created_at || item.received_date;
+    if (!dateToUse) return null;
+    const date = typeof dateToUse === 'number' ? new Date(dateToUse) : new Date(dateToUse);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const displayDate = formatScannedDate() || formatTime(item.received_date || item.created_at);
 
   return (
-    <div className="bg-white">
-      <div className="px-4 sm:px-6 pt-4 pb-6">
+    <div className="bg-white w-full">
+      <div className="flex flex-col gap-[30px]">
+        {/* Back to Inbox button */}
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
+          className="inline-flex items-center gap-2 text-[#4A5565] hover:text-[#101828] transition-colors text-sm font-normal"
+          style={{ fontFamily: 'Poppins, sans-serif' }}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to inbox
+          Back to Inbox
         </button>
 
-        <div className="mt-5 flex items-start gap-4">
-          <div className="pt-1">
-            <Icon className="h-7 w-7 text-neutral-900" />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-900 truncate">{title}</h2>
-              {!item.is_read && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+        {/* Main content */}
+        <div className="flex flex-col gap-10">
+          {/* Title and date section */}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2 
+                className="text-2xl font-semibold text-[#101828]"
+                style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+              >
+                {title}
+              </h2>
+              <p 
+                className="text-base text-[#666666]"
+                style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+              >
+                {displayDate}
+              </p>
             </div>
-            <p className="mt-2 text-lg text-neutral-500 truncate">{subtitle}</p>
-            <div className="mt-3 flex items-center gap-4">
-              <Badge className={`rounded-full px-4 py-1 text-base font-medium ${status.badgeClass}`}>
-                {status.label}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="border-t border-neutral-200" />
-
-      {/* Actions + preview + details (match screenshot layout) */}
-      <div className="px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
-          {/* Left column: actions then preview */}
-          <div>
-            <div className="flex items-center justify-between sm:justify-start sm:gap-24 max-w-2xl">
-              <button
+            {/* Action buttons */}
+            <div className="flex items-center gap-[10px] flex-wrap">
+              <Button
                 type="button"
                 onClick={onView}
-                className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                variant="outline"
+                className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+                style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
               >
-                <Eye className="h-6 w-6" />
-                <span className="text-sm font-medium">View</span>
-              </button>
-
-              <button
+                View Scan
+              </Button>
+              
+              <Button
                 type="button"
                 onClick={onDownload}
-                className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                variant="outline"
+                className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+                style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
               >
-                <Download className="h-6 w-6" />
-                <span className="text-sm font-medium">Download</span>
-              </button>
-
-              <div className="relative flex flex-col items-center">
-                <button
+                Download PDF
+              </Button>
+              
+              <div className="relative">
+                <Button
                   type="button"
                   onClick={onForward}
-                  className="flex flex-col items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+                  variant="outline"
+                  className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+                  style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
                 >
-                  <Truck className="h-6 w-6" />
-                  <span className="text-sm font-medium">Forward</span>
-                </button>
+                  Request Forwarding
+                </Button>
 
                 {forwardInlineNotice && (
                   <div
@@ -133,69 +143,82 @@ export function MailDetail({
                 )}
               </div>
             </div>
+          </div>
 
-            <button
-              type="button"
-              onClick={onView}
-              className="mt-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200/70 transition-colors min-h-[420px] flex items-center justify-center w-full overflow-hidden relative"
-            >
-              {/* Mini viewer (real PDF preview) */}
-              {miniViewerLoading ? (
-                <div className="text-center px-6">
-                  <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
-                  <div className="mt-4 text-base font-medium text-neutral-800">Loading preview…</div>
-                  <div className="mt-2 text-sm text-neutral-500">Fetching your scanned document</div>
+          {/* Preview area */}
+          <button
+            type="button"
+            onClick={onView}
+            className="rounded-[30px] bg-[#F9F9F9] min-h-[596px] flex flex-col items-center justify-center p-8 relative overflow-hidden hover:bg-[#F0F0F0] transition-colors cursor-pointer"
+          >
+            {miniViewerLoading ? (
+              <div className="text-center px-6">
+                <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
+                <div 
+                  className="mt-4 text-base font-medium text-[#161B1A]"
+                  style={{ fontFamily: 'Poppins, sans-serif' }}
+                >
+                  Loading preview…
                 </div>
-              ) : miniViewerUrl ? (
-                <>
-                  <object data={miniViewerUrl} type="application/pdf" className="absolute inset-0 w-full h-full pointer-events-none">
+                <div 
+                  className="mt-2 text-sm text-[#666666]"
+                  style={{ fontFamily: 'Poppins, sans-serif' }}
+                >
+                  Fetching your scanned document
+                </div>
+              </div>
+            ) : miniViewerUrl ? (
+              <>
+                {/* PDF Preview */}
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <object 
+                    data={miniViewerUrl} 
+                    type="application/pdf" 
+                    className="w-full h-full pointer-events-none"
+                  >
                     <iframe
-                      title="Mini PDF preview"
+                      title="Mail Scan Preview"
                       src={miniViewerUrl}
-                      className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                      className="w-full h-full border-0 pointer-events-none"
                     />
                   </object>
-                  {/* soft overlay so it still looks like a preview tile */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/0 to-white/25 pointer-events-none" />
-                  <div className="absolute bottom-6 left-0 right-0 text-center px-6 pointer-events-none">
-                    <div className="text-base font-medium text-neutral-800">Document preview</div>
-                    <div className="mt-1 text-sm text-neutral-500">Tap “View” to open full document</div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center px-6">
-                  <FileText className="h-10 w-10 mx-auto text-neutral-500" />
-                  <div className="mt-4 text-base font-medium text-neutral-800">Document preview</div>
-                  <div className="mt-2 text-sm text-neutral-500">
-                    {miniViewerError ? 'Preview unavailable — tap “View” to open full document' : 'Tap “View” to open full document'}
-                  </div>
                 </div>
-              )}
-            </button>
-          </div>
-
-          {/* Right column: details */}
-          <div>
-            <div className="text-base font-medium text-neutral-900">Details</div>
-            <div className="mt-4 space-y-4">
-              {[
-                { label: 'From', value: item.sender_name || '—' },
-                { label: 'Subject', value: item.subject || '—' },
-                {
-                  label: 'Status',
-                  value: (
-                    <Badge className={`rounded-full px-4 py-1 text-sm font-medium ${status.badgeClass}`}>{status.label}</Badge>
-                  ),
-                },
-                { label: 'Received', value: formatTime(item.received_date || item.created_at) },
-              ].map((r) => (
-                <div key={r.label} className="flex items-start justify-between gap-6">
-                  <div className="text-base text-neutral-500">{r.label}:</div>
-                  <div className="text-base font-medium text-neutral-900 text-right break-words max-w-[70%]">{r.value}</div>
+                {/* Gradient overlay for better text visibility */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F9F9F9]/80 pointer-events-none" />
+                {/* Text overlay */}
+                <div className="relative z-10 flex flex-col gap-[9px] items-center pointer-events-none mt-auto mb-8">
+                  <h3 
+                    className="text-2xl font-semibold text-[#161B1A] text-center"
+                    style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+                  >
+                    Mail Scan Preview
+                  </h3>
+                  <p 
+                    className="text-lg text-[#666666] text-center"
+                    style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+                  >
+                    {subtitle}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </>
+            ) : (
+              <div className="text-center px-6">
+                <FileText className="h-10 w-10 mx-auto text-[#666666]" />
+                <div 
+                  className="mt-4 text-2xl font-semibold text-[#161B1A]"
+                  style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+                >
+                  Mail Scan Preview
+                </div>
+                <div 
+                  className="mt-2 text-lg text-[#666666]"
+                  style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
+                >
+                  {miniViewerError ? 'Preview unavailable — click "View Scan" to open full document' : subtitle}
+                </div>
+              </div>
+            )}
+          </button>
         </div>
       </div>
     </div>

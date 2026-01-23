@@ -84,7 +84,7 @@ export function RightPanel({
           
           <CardContent className="p-0">
             {view === 'mail-detail' && selectedMailDetail && (
-              <div className="p-4 lg:p-6">
+              <div className="p-6 lg:p-8">
                 <MailDetail
                   item={selectedMailDetail}
                   onBack={onClose}
