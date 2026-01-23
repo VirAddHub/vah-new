@@ -5,9 +5,11 @@ import {
   CreditCard,
   ShieldCheck,
   HelpCircle,
+  Plus,
+  Minus,
 } from "lucide-react";
 
-import { useMemo, ReactNode } from "react";
+import { useMemo, ReactNode, useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -375,6 +377,9 @@ interface HelpPageProps {
 }
 
 export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
+  const [activeCategory, setActiveCategory] = useState<CategoryName>("Understanding Your Virtual Address");
+  const [openItems, setOpenItems] = useState<Set<string>>(new Set());
+
   // Group FAQs by category for rendering
   const grouped = useMemo(() => {
     const map = new Map<CategoryName, FAQ[]>();
@@ -383,14 +388,11 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       arr.push(f);
       map.set(f.category, arr);
     });
-    // Keep a stable, sensible order
+    // Keep a stable, sensible order matching Figma
     const order: CategoryName[] = [
       "Understanding Your Virtual Address",
       "Mail Handling & Management",
       "Pricing & Billing",
-      "Managing your account",
-      "Mail & troubleshooting",
-      "International customers",
       "Compliance & Security",
       "Who We Support",
       "Getting Started",
@@ -399,6 +401,35 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       .filter((k) => map.has(k))
       .map((k) => ({ category: k, items: map.get(k)! }));
   }, []);
+
+  // Get categories for sidebar (matching Figma order)
+  const sidebarCategories = useMemo(() => {
+    return [
+      "Understanding Your Virtual Address",
+      "Mail Handling & Management",
+      "Pricing & Billing",
+      "Compliance & Security",
+      "Who We Support",
+      "Getting Started",
+    ] as CategoryName[];
+  }, []);
+
+  // Get FAQs for active category
+  const activeFAQs = useMemo(() => {
+    return grouped.find(g => g.category === activeCategory)?.items || [];
+  }, [grouped, activeCategory]);
+
+  const toggleItem = (id: string) => {
+    setOpenItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // JSON-LD for FAQ rich results
   const faqJsonLd = useMemo(() => {
@@ -439,116 +470,108 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-background relative z-0">
-      <div className="max-w-5xl mx-auto px-6 py-12 space-y-12 relative z-0">
-        {/* JSON-LD for SEO */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqJsonLd),
-          }}
-        />
+    <div className="w-full bg-white relative z-0">
+      {/* JSON-LD for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd),
+        }}
+      />
 
-        {/* Hero */}
-        <section className="text-center space-y-4">
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl text-primary">
-            Help Centre & FAQs
+      <div className="max-w-[1280px] mx-auto px-20 py-[80px]">
+        {/* Hero Section */}
+        <div className="flex flex-col items-center gap-[10px] mb-20">
+          <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.1] text-center" style={{ fontFamily: 'Poppins' }}>
+            Got questions? We've got answers.
           </h1>
-          <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-            Fast answers. Friendly support. Everything you need to
-            know about VirtualAddressHub — all in one place.
+          <p className="text-base text-[#666666] leading-[1.4] text-center max-w-full" style={{ fontFamily: 'Poppins' }}>
+            Establish your business presence with a prestigious London address. Powered by our professional office near Tower Bridge.
           </p>
-        </section>
+        </div>
 
-        {/* Trust Highlights */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
-          <div className="space-y-2">
-            <ShieldCheck className="mx-auto text-gray-600 w-6 h-6" />
-            <p className="text-sm font-medium">
-              HMRC AML supervised
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Meets UK TCSP / KYC obligations
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Mail className="mx-auto text-gray-600 w-6 h-6" />
-            <p className="text-sm font-medium">
-              Unlimited mail scanning
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Same working day (Mon–Fri)
-            </p>
-          </div>
-          <div className="space-y-2">
-            <CreditCard className="mx-auto text-gray-600 w-6 h-6" />
-            <p className="text-sm font-medium">
-              £9.99 flat monthly plan
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Transparent forwarding
-            </p>
-          </div>
-        </section>
-
-        {/* Grouped FAQs */}
-        <section className="space-y-10">
-          {grouped.map(({ category, items }) => (
-            <div key={category} className="space-y-4">
-              <h2 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-semibold tracking-tight text-gray-900">
-                {category}
-              </h2>
-              <Accordion type="multiple" className="space-y-2">
-                {items.map((f) => (
-                  <AccordionItem
-                    key={f.id}
-                    value={f.id}
-                    className="border border-border rounded-xl bg-card"
-                  >
-                    <AccordionTrigger className="text-left px-4">
-                      <span className="leading-tight">{f.q}</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 text-sm text-muted-foreground">
-                      {typeof f.a === 'string' ? (
-                        <div className="whitespace-pre-line">{f.a}</div>
-                      ) : (
-                        f.a
+        {/* Two Column Layout */}
+        <div className="flex gap-[55px] items-start">
+          {/* Left Sidebar - Category Navigation */}
+          <div className="w-[417px] flex-shrink-0">
+            <div className="bg-white border border-[#E5E7EB] rounded-[10px] p-6">
+              <div className="flex flex-col gap-6">
+                {sidebarCategories.map((category) => {
+                  const isActive = category === activeCategory;
+                  return (
+                    <div key={category}>
+                      <button
+                        onClick={() => setActiveCategory(category)}
+                        className={`w-full text-left text-lg leading-[1.2] transition-colors ${
+                          isActive 
+                            ? 'text-[#1A1A1A] font-medium' 
+                            : 'text-[#666666] font-normal'
+                        }`}
+                        style={{ fontFamily: 'Poppins' }}
+                      >
+                        {category}
+                      </button>
+                      {category !== sidebarCategories[sidebarCategories.length - 1] && (
+                        <div className="mt-6 h-px w-full bg-[#E5E7EB]" />
                       )}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-
-          {/* No results fallback (should never hit) */}
-          {grouped.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <HelpCircle className="w-6 h-6 mx-auto mb-2" />
-              Nothing here yet. Check back soon.
-            </div>
-          )}
-        </section>
-
-        {/* Contact CTA */}
-        <section className="text-center space-y-3 pt-4">
-          <h3 className="text-lg font-semibold text-primary">
-            Still need help?
-          </h3>
-          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-            Message us via WhatsApp or email. We reply promptly
-            during UK working hours.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              variant="primary"
-              className="bg-primary text-white hover:bg-primary/90"
-              onClick={() => onNavigate?.("contact")}
-            >
-              Contact Support
-            </Button>
           </div>
-        </section>
+
+          {/* Right Column - FAQ Accordions */}
+          <div className="flex-1">
+            <div className="flex flex-col gap-10">
+              <div className="flex flex-col gap-5">
+                <h2 className="text-2xl font-medium text-[#1A1A1A] leading-[1.2]" style={{ fontFamily: 'Poppins' }}>
+                  {activeCategory}
+                </h2>
+                <div className="flex flex-col gap-4">
+                  {activeFAQs.map((f) => {
+                    const isOpen = openItems.has(f.id);
+                    return (
+                      <div
+                        key={f.id}
+                        className={`border border-[#E5E7EB] rounded-[10px] overflow-hidden transition-colors ${
+                          isOpen ? 'bg-[#F9F9F9]' : 'bg-white'
+                        }`}
+                      >
+                        <button
+                          onClick={() => toggleItem(f.id)}
+                          className="w-full flex items-center justify-between p-[18px] text-left"
+                        >
+                          <span className="text-base font-normal text-[#666666] leading-[1.4] uppercase flex-1" style={{ fontFamily: 'Poppins' }}>
+                            {f.q}
+                          </span>
+                          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 ml-4">
+                            {isOpen ? (
+                              <Minus className="w-4 h-4 text-[#1A1A1A]" />
+                            ) : (
+                              <Plus className="w-4 h-4 text-[#1A1A1A]" />
+                            )}
+                          </div>
+                        </button>
+                        {isOpen && (
+                          <div className="px-[18px] pb-[18px]">
+                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'Poppins' }}>
+                              {typeof f.a === 'string' ? (
+                                <div className="whitespace-pre-line">{f.a}</div>
+                              ) : (
+                                f.a
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
