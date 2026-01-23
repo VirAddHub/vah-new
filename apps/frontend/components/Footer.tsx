@@ -64,7 +64,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="bg-[#0b4d3c] py-16 text-white"
+            className="bg-[#0b4d3c] py-10 text-white"
             style={{
                 fontFamily:
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
@@ -95,7 +95,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                 {/* Desktop Footer (≥ 1024px) */}
                 <div className="hidden lg:block">
-                    <div className="grid gap-8 md:grid-cols-4">
+                    <div className="grid gap-6 md:grid-cols-4">
                         {/* Company Information */}
                         <div className="lg:col-span-1">
                             <div className="mb-2">
@@ -141,7 +141,7 @@ export function Footer({ onNavigate }: FooterProps) {
                         {/* Navigation */}
                         <div>
                             <h3 className="mb-3 text-sm font-semibold text-white">Navigation</h3>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -151,7 +151,7 @@ export function Footer({ onNavigate }: FooterProps) {
                         {/* Legal & Compliance */}
                         <div>
                             <h3 className="mb-3 text-sm font-semibold text-white">Legal & Compliance</h3>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -161,7 +161,7 @@ export function Footer({ onNavigate }: FooterProps) {
                         {/* Contact Us */}
                         <div>
                             <h3 className="mb-3 text-sm font-semibold text-white">Contact Us</h3>
-                            <div className="space-y-2 text-sm text-white/90">
+                            <div className="space-y-1.5 text-sm text-white/90">
                                 <div>
                                     <p>0808 155 3766</p>
                                 </div>
@@ -179,7 +179,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright for Desktop */}
-                    <div className="mt-8 border-t border-white/10 pt-4 text-center text-sm text-white/60">
+                    <div className="mt-6 border-t border-white/10 pt-3 text-center text-sm text-white/60">
                         <div>
                             © 2026 VirtualAddress.UK. All rights reserved.
                         </div>

@@ -51,24 +51,24 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white pt-36 pb-28 md:pt-44"
+                className="relative overflow-hidden bg-[#024E40] text-white py-24 lg:py-28"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
                     <div className="grid lg:grid-cols-2 gap-20 items-center">
                         <div className="max-w-xl">
-                            <h1 className="text-5xl lg:text-6xl font-semibold leading-tight text-white">
+                            <h1 className="text-5xl lg:text-[54px] font-medium leading-[1.1] text-white">
                                 <span className="block">A Credible London</span>
                                 <span className="block">Business Address</span>
                                 <span className="block">Without The Cost Of</span>
                                 <span className="block">An Office.</span>
                             </h1>
 
-                            <div className="mt-4 space-y-2 text-sm leading-[1.6] text-white/90 sm:text-base">
+                            <div className="mt-6 text-sm leading-[1.7] text-white/90 sm:text-base">
                                 <p>Run your business professionally without exposing your home address.</p>
-                                <p>Use one trusted London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
-                                <p>Suitable for Companies House, HMRC, and everyday business use.</p>
-                                <p>Everything you need is included in one simple service.</p>
+                                <p className="mt-2">Use one trusted London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
+                                <p className="mt-2">Suitable for Companies House, HMRC, and everyday business use.</p>
+                                <p className="mt-2">Everything you need is included in one simple service.</p>
                             </div>
 
                             <div className="mt-6">
@@ -76,7 +76,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="text-sm text-white/80">with one clear plan</div>
                             </div>
 
-                            <div className="mt-6">
+                            <div className="mt-8">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
@@ -91,7 +91,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <img
                                     src="/figma/hero-photo.png"
                                     alt="London street scene"
-                                    className="w-full h-auto rounded-3xl object-cover"
+                                    className="w-full max-h-[420px] lg:max-h-[480px] rounded-3xl object-cover"
                                 />
                             </div>
                         </div>
@@ -101,16 +101,16 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
             {/* WHAT'S INCLUDED */}
             <section
-                className="w-full bg-white py-16 sm:py-20 lg:py-28"
+                className="w-full bg-white py-24"
                 aria-label="What's Included"
             >
                 <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
-                    <div className="flex flex-col items-start gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-end lg:gap-[62px]">
-                        <div className="h-auto w-full lg:h-[721px] lg:w-[650px]">
+                    <div className="flex flex-col items-start gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-center lg:gap-[62px]">
+                        <div className="w-full lg:w-[650px]">
                             <img
                                 src="/figma/whats-included-illustration.png"
                                 alt="What's included illustration"
-                                className="h-full w-full object-contain"
+                                className="w-full max-h-[500px] object-contain"
                             />
                         </div>
 
@@ -118,7 +118,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <h2 className="text-2xl font-medium leading-[1.136] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">What&apos;s Included</h2>
 
                             <div className="mt-4 sm:mt-6 lg:mt-10">
-                                <ul className="space-y-6 max-w-xl">
+                                <ul className="space-y-4 max-w-xl">
                                     {[
                                         {
                                             title: "Registered Office And Director's Service Address",
@@ -157,7 +157,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PRICING */}
             <section
                 id="pricing"
-                className="bg-white py-32"
+                className="bg-white py-24"
                 aria-label="Pricing"
             >
                 <div className="mx-auto max-w-6xl px-6">
@@ -194,7 +194,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     <div className="mt-8 grid gap-12 md:grid-cols-2">
                         {/* Monthly card */}
-                        <div className={`w-full rounded-3xl bg-[#014D3F] p-10 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] ${billing !== "monthly" ? "hidden md:flex" : "flex"} flex-col h-full`}>
+                        <div className={`w-full rounded-3xl bg-[#014D3F] p-8 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] ${billing !== "monthly" ? "hidden md:flex" : "flex"} flex-col h-full`}>
                             <div className="flex items-center justify-end">
                                 <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-base">
                                     Monthly
@@ -207,7 +207,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                             <div>
                                 <div className="text-sm font-medium text-white sm:text-base lg:text-lg">Include with every plan</div>
-                                <div className="mt-4 space-y-4">
+                                <div className="mt-3 space-y-3">
                                     {[
                                         "Registered Office address",
                                         "Director's Service Address",
@@ -229,11 +229,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
                             </div>
 
-                            <div className="my-8 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
+                            <div className="my-6 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
 
                             <div>
                                 <div className="text-sm font-medium text-white sm:text-base lg:text-lg">Mail Forwarding rules</div>
-                                <div className="mt-4 space-y-4">
+                                <div className="mt-3 space-y-3">
                                     {[
                                         "HMRC and Companies House letters forwarded free within the UK on request.",
                                         "Other UK letters forwarded at £2 per item.",
@@ -262,7 +262,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </div>
 
                         {/* Annual card */}
-                        <div className={`w-full rounded-3xl bg-white p-10 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] ${billing !== "annual" ? "hidden md:flex" : "flex"} flex-col h-full`}>
+                        <div className={`w-full rounded-3xl bg-white p-8 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] ${billing !== "annual" ? "hidden md:flex" : "flex"} flex-col h-full`}>
                             <div className="flex items-center justify-end">
                                 <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-base">
                                     Annual
@@ -278,7 +278,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                             <div>
                                 <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-lg">Include with every plan</div>
-                                <div className="mt-4 space-y-4">
+                                <div className="mt-3 space-y-3">
                                     {[
                                         "Registered Office address",
                                         "Director's Service Address",
@@ -300,11 +300,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
                             </div>
 
-                            <div className="my-8 h-px w-full bg-[#E5E7EB]" style={{ opacity: 0.86 }} />
+                            <div className="my-6 h-px w-full bg-[#E5E7EB]" style={{ opacity: 0.86 }} />
 
                             <div>
                                 <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-lg">Mail Forwarding rules</div>
-                                <div className="mt-4 space-y-4">
+                                <div className="mt-3 space-y-3">
                                     {[
                                         "HMRC and Companies House letters forwarded free within the UK on request.",
                                         "Other UK letters forwarded at £2 per item.",
@@ -340,10 +340,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <HowItWorks />
 
             {/* BUILT FOR MODERN UK BUSINESSES */}
-            <section className="w-full bg-white py-16 sm:py-20 lg:py-28">
+            <section className="w-full bg-white py-24">
                 <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
                     <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-stretch lg:gap-[120px]">
-                        <div className="w-full lg:h-[186px] lg:w-[433px]">
+                        <div className="w-full lg:w-[433px]">
                             <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">
                                 Built for Modern UK Businesses
                             </h2>
@@ -354,7 +354,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="hidden w-px self-stretch bg-[#E5E7EB] lg:block" />
 
-                        <div className="w-full space-y-2 sm:space-y-[10px] lg:w-[433px]">
+                        <div className="w-full space-y-1.5 sm:space-y-2 lg:w-[433px]">
                             {[
                                 { t: "One clear service.", icon: "/figma/builtfor-icon-1.svg" },
                                 { t: "One predictable price.", icon: "/figma/builtfor-icon-2.svg" },
@@ -362,7 +362,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             ].map((x) => (
                                 <div
                                     key={x.t}
-                                    className="flex h-[56px] items-center gap-2 rounded-[10px] bg-[#F9F9F9] px-4 sm:h-[64px] sm:gap-3 sm:px-5 lg:h-[72px] lg:gap-[14px] lg:px-[24px]"
+                                    className="flex min-h-[56px] items-center gap-2 rounded-[10px] bg-[#F9F9F9] px-4 sm:min-h-[64px] sm:gap-3 sm:px-5 lg:min-h-[72px] lg:gap-[14px] lg:px-[24px]"
                                 >
                                     <img src={x.icon} alt="" aria-hidden="true" className="h-5 w-5 flex-shrink-0 sm:h-6 sm:w-6" />
                                     <div className="text-xs font-normal leading-[1.1] text-[#666666] sm:text-sm md:text-base lg:text-base">{x.t}</div>
@@ -374,7 +374,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </section>
 
             {/* FINAL CTA IMAGE SECTION */}
-            <section className="py-32 bg-white">
+            <section className="py-24 bg-white">
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-3xl bg-[#0b4d3c] p-12 md:p-20">
                         {/* London landmarks illustration on left */}
@@ -382,11 +382,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <img
                                 src="/figma/cta-illustration.png"
                                 alt=""
-                                className="h-full w-full object-cover object-left"
+                                className="h-full w-full max-h-[500px] object-cover object-left"
                             />
                         </div>
                         {/* Content on right */}
-                        <div className="relative flex items-center justify-end min-h-[400px]">
+                        <div className="relative flex items-center justify-end">
                             <div className="w-full md:w-[50%] md:pl-12">
                                 <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
                                     <span className="block">Get your London</span>

@@ -23,7 +23,7 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-white py-16 sm:py-20 lg:py-28">
+        <section className="w-full bg-white py-24">
             <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
                     <h2 className="mb-2 text-2xl font-medium text-[#1A1A1A] sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
