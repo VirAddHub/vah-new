@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-white relative z-0" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="w-full bg-white relative z-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"
@@ -482,10 +482,10 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       <div className="max-w-[1280px] mx-auto px-20 py-[80px]">
         {/* Hero Section */}
         <div className="flex flex-col items-center gap-[10px] mb-20">
-          <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.1] text-center" style={{ fontFamily: 'Poppins' }}>
+          <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.1] text-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
             Got questions? We've got answers.
           </h1>
-          <p className="text-base text-[#666666] leading-[1.4] text-center max-w-full" style={{ fontFamily: 'Poppins' }}>
+          <p className="text-base text-[#666666] leading-[1.4] text-center max-w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
             Establish your business presence with a prestigious London address. Powered by our professional office near Tower Bridge.
           </p>
         </div>
@@ -507,7 +507,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                             ? 'text-[#1A1A1A] font-medium' 
                             : 'text-[#666666] font-normal'
                         }`}
-                        style={{ fontFamily: 'Poppins' }}
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                       >
                         {category}
                       </button>
@@ -525,7 +525,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           <div className="flex-1">
             <div className="flex flex-col gap-10">
               <div className="flex flex-col gap-5">
-                <h2 className="text-2xl font-medium text-[#1A1A1A] leading-[1.2]" style={{ fontFamily: 'Poppins' }}>
+                <h2 className="text-2xl font-medium text-[#1A1A1A] leading-[1.2]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                   {activeCategory}
                 </h2>
                 <div className="flex flex-col gap-4">
@@ -542,7 +542,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                           onClick={() => toggleItem(f.id)}
                           className="w-full flex items-center justify-between p-[18px] text-left"
                         >
-                          <span className="text-base font-normal text-[#666666] leading-[1.4] uppercase flex-1" style={{ fontFamily: 'Poppins' }}>
+                          <span className="text-base font-normal text-[#666666] leading-[1.4] uppercase flex-1" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                             {f.q}
                           </span>
                           <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 ml-4">
@@ -555,11 +555,11 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                         </button>
                         {isOpen && (
                           <div className="px-[18px] pb-[18px]">
-                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                               {typeof f.a === 'string' ? (
-                                <div className="whitespace-pre-line" style={{ fontFamily: 'Poppins, sans-serif' }}>{f.a}</div>
+                                <div className="whitespace-pre-line" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>{f.a}</div>
                               ) : (
-                                <div style={{ fontFamily: 'Poppins, sans-serif' }}>{f.a}</div>
+                                <div style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>{f.a}</div>
                               )}
                             </div>
                           </div>

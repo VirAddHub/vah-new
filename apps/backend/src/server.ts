@@ -214,6 +214,15 @@ app.use(cors({
             return cb(null, true);
         }
 
+        // Allow Vercel preview deployment URLs (pattern: https://vah-new-frontend-*-*.vercel.app)
+        // These include preview deployments with hashes and project identifiers
+        if (/^https:\/\/vah-new-frontend-.*\.vercel\.app$/.test(origin)) {
+            return cb(null, true);
+        }
+        if (/^https:\/\/vah-frontend-final-.*\.vercel\.app$/.test(origin)) {
+            return cb(null, true);
+        }
+
         // Reject all other origins with explicit error
         logger.warn('[cors] blocked_origin', { origin });
         return cb(new Error(`CORS policy: Origin ${origin} not allowed`), false);

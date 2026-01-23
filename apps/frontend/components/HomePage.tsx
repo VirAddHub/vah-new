@@ -47,7 +47,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             id="main-content"
             role="main"
             className="bg-white text-[#1A1A1A]"
-            style={{ fontFamily: "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" }}
+            style={{ fontFamily: "var(--font-poppins), Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" }}
         >
             {/* HERO */}
             <section
@@ -424,17 +424,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             {/* Content on right */}
                             <div className="flex flex-col gap-6 w-full md:w-auto md:max-w-[409px]">
                                 <div className="flex flex-col gap-3">
-                                    <h2 className="text-3xl md:text-[44px] font-medium text-white leading-[1.2]" style={{ fontFamily: 'Poppins' }}>
+                                    <h2 className="text-3xl md:text-[44px] font-medium text-white leading-[1.2]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                         Get your London Business Address Today
                                     </h2>
-                                    <p className="text-base text-white/80 leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                    <p className="text-base text-white/80 leading-[1.4]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                         Everything included for <span className="text-[#40C46C]">£9.99</span> per month.
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="rounded-[30px] bg-[#40C46C] px-[10px] py-[10px] w-[268px] h-[48px] flex items-center justify-center text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 transition-colors uppercase tracking-wide"
-                                    style={{ fontFamily: 'Poppins', lineHeight: '1.2' }}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif', lineHeight: '1.2' }}
                                 >
                                     Schedule London Address
                                 </button>
