@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-white relative z-0">
+    <div className="w-full bg-white relative z-0" style={{ fontFamily: 'Poppins, sans-serif' }}>
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"
@@ -555,11 +555,11 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                         </button>
                         {isOpen && (
                           <div className="px-[18px] pb-[18px]">
-                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'Poppins' }}>
+                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'Poppins, sans-serif' }}>
                               {typeof f.a === 'string' ? (
-                                <div className="whitespace-pre-line">{f.a}</div>
+                                <div className="whitespace-pre-line" style={{ fontFamily: 'Poppins, sans-serif' }}>{f.a}</div>
                               ) : (
-                                f.a
+                                <div style={{ fontFamily: 'Poppins, sans-serif' }}>{f.a}</div>
                               )}
                             </div>
                           </div>
