@@ -1,27 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR, { mutate as globalMutate } from 'swr';
-import { swrFetcher } from '@/services/http';
-import { Navigation } from '@/components/Navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
-
-// Lazy load account components to avoid circular dependencies
-const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(mod => ({ default: mod.AccountBillingCard })), { ssr: false });
-const BusinessContactCard = dynamic(() => import('@/components/account/BusinessContactCard').then(mod => ({ default: mod.BusinessContactCard })), { ssr: false });
-const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(mod => ({ default: mod.ForwardingAddressCard })), { ssr: false });
-const OwnersCard = dynamic(() => import('@/components/account/OwnersCard').then(mod => ({ default: mod.OwnersCard })), { ssr: false });
-const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(mod => ({ default: mod.InvoicesCard })), { ssr: false });
-const SumsubKycWidget = dynamic(() => import('./SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
-import { AccountPageData, BusinessContactInfo, Address, BusinessOwner, InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
-import { toast } from '@/hooks/use-toast';
-import { User } from 'lucide-react';
-import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 
 export default function AccountPage() {
     const router = useRouter();
+
+    // Redirect to overview page
+    useEffect(() => {
+        router.replace('/account/overview');
+    }, [router]);
+
+    return null;
 
     // Fetch account data from existing APIs
     const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: AccountPageData }>('/api/bff/account', swrFetcher);
