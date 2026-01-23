@@ -53,6 +53,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section
                 className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-0"
                 aria-label="Hero"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12 lg:pt-8 lg:pb-4">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-12 items-center">
