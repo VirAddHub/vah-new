@@ -58,7 +58,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="grid lg:grid-cols-2 gap-20 items-center">
                         <div className="max-w-xl">
                             <h1 className="text-5xl lg:text-[54px] font-medium leading-[1.1] text-white">
-                                <span className="block">A Credible London</span>
+                                <span className="block">A Credible Central London</span>
                                 <span className="block">Business Address</span>
                                 <span className="block">Without The Cost Of</span>
                                 <span className="block">An Office.</span>
@@ -66,7 +66,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                             <div className="mt-6 text-sm leading-[1.7] text-white/90 sm:text-base">
                                 <p>Run your business professionally without exposing your home address.</p>
-                                <p className="mt-2">Use one trusted London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
+                                <p className="mt-2">Use one trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
                                 <p className="mt-2">Suitable for Companies House, HMRC, and everyday business use.</p>
                                 <p className="mt-2">Everything you need is included in one simple service.</p>
                             </div>
@@ -81,7 +81,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
                                 >
-                                    Get your London Address
+                                    Get your Central London Address
                                 </Button>
                             </div>
                         </div>
@@ -90,7 +90,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <div className="relative max-w-[520px] mx-auto lg:mx-0">
                                 <img
                                     src="/figma/hero-photo.png"
-                                    alt="London street scene"
+                                    alt="Central London street scene"
                                     className="w-full max-h-[420px] lg:max-h-[480px] rounded-3xl object-cover"
                                 />
                             </div>
@@ -174,8 +174,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <button
                                 onClick={() => setBilling("monthly")}
                                 className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${billing === "monthly"
-                                        ? "bg-[#014D3F] text-white"
-                                        : "text-gray-600 hover:text-gray-900"
+                                    ? "bg-[#014D3F] text-white"
+                                    : "text-gray-600 hover:text-gray-900"
                                     }`}
                             >
                                 Monthly
@@ -183,8 +183,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <button
                                 onClick={() => setBilling("annual")}
                                 className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${billing === "annual"
-                                        ? "bg-[#014D3F] text-white"
-                                        : "text-gray-600 hover:text-gray-900"
+                                    ? "bg-[#014D3F] text-white"
+                                    : "text-gray-600 hover:text-gray-900"
                                     }`}
                             >
                                 Annual
@@ -336,7 +336,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Built for Modern UK Businesses
                             </h2>
                             <p className="mt-3 text-xs leading-[1.4] text-[#666666] sm:mt-4 sm:text-sm md:text-base lg:mt-5 lg:text-base">
-                                Designed for founders who want a professional London presence without renting office space or publishing their home address.
+                                Designed for founders who want a professional Central London presence without renting office space or publishing their home address.
                             </p>
                         </div>
 
@@ -377,7 +377,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="relative flex items-center justify-end">
                             <div className="w-full md:w-[50%] md:pl-12">
                                 <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
-                                    <span className="block">Get your London</span>
+                                    <span className="block">Get your Central London</span>
                                     <span className="block text-5xl md:text-6xl font-bold">Business Address</span>
                                     <span className="block">Today</span>
                                 </h2>
@@ -388,7 +388,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="mt-8 rounded-full bg-[#40C46C] px-8 py-4 font-medium text-white hover:bg-[#40C46C]/90 transition-colors"
                                 >
-                                    Schedule London Address
+                                    Schedule Central London Address
                                 </button>
                             </div>
                         </div>

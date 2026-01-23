@@ -9,8 +9,8 @@ const steps = [
     },
     {
         k: 'use',
-        title: 'Use Your London Address',
-        description: 'Use your London address for Companies House, HMRC, and everyday business correspondence.',
+        title: 'Use Your Central London Address',
+        description: 'Use your Central London address for Companies House, HMRC, and everyday business correspondence.',
         icon: '/figma/how-icon-2.svg',
     },
     {
@@ -30,7 +30,7 @@ export default function HowItWorks() {
                         How It Works
                     </h2>
                     <p className="text-xs text-[#666666] sm:text-sm md:text-base lg:text-[18px] lg:leading-[1.4]">
-                        Three steps to a professional London address
+                        Three steps to a professional Central London address
                     </p>
                 </header>
 
