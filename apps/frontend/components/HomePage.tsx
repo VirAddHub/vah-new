@@ -57,31 +57,78 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
                         <div className="max-w-[540px]">
-                            <h1 className="text-5xl lg:text-[50px] font-medium leading-[1.15] lg:leading-[1.12] text-white">
-                                <span className="block">A Credible Central London</span>
-                                <span className="block">Business Address</span>
-                                <span className="block">Without The Cost Of</span>
-                                <span className="block">An Office.</span>
+                            <h1 className="text-5xl lg:text-[50px] font-bold leading-[1.15] lg:leading-[1.12] text-white">
+                                Your Credible Central London Business Address
                             </h1>
 
-                            <div className="mt-4 lg:mt-3 text-sm leading-[1.7] text-white/90 sm:text-base">
-                                <p>Run your business professionally without exposing your home address.</p>
-                                <p className="mt-2">Use one trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
-                                <p className="mt-2">Suitable for Companies House, HMRC, and everyday business use.</p>
-                                <p className="mt-2">Everything you need is included in one simple service.</p>
-                            </div>
-
-                            <div className="mt-4 lg:mt-3">
-                                <div className="text-lg font-medium text-white">£9.99 per month</div>
-                                <div className="text-sm text-white/80">with one clear plan</div>
-                            </div>
+                            <h2 className="mt-4 lg:mt-3 text-2xl lg:text-3xl font-medium text-white/95">
+                                Without the cost of an office
+                            </h2>
 
                             <div className="mt-5 lg:mt-4">
+                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
+                                    Run your business professionally without exposing your home address.
+                                </p>
+                            </div>
+
+                            <div className="mt-5 lg:mt-4 text-sm leading-[1.7] text-white/90 sm:text-base">
+                                <ul className="space-y-3">
+                                    <li className="flex items-start gap-3">
+                                        <img
+                                            src="/figma/check-16.svg"
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
+                                        />
+                                        <span>Use your trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <img
+                                            src="/figma/check-16.svg"
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
+                                        />
+                                        <span>Suitable for Companies House, HMRC, and everyday business use</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <img
+                                            src="/figma/check-16.svg"
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
+                                        />
+                                        <span>Everything you need included in one simple service</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="mt-6 lg:mt-5">
+                                <div className="text-2xl lg:text-3xl font-bold text-white">£9.99/month</div>
+                                <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. No hidden fees.</div>
+                            </div>
+
+                            <div className="mt-6 lg:mt-5 flex flex-wrap gap-4 text-xs sm:text-sm text-white/85">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-white">✓</span>
+                                    <span>Instant setup</span>
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-white">✓</span>
+                                    <span>Mail forwarding included</span>
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-white">✓</span>
+                                    <span>Cancel anytime</span>
+                                </span>
+                            </div>
+
+                            <div className="mt-6 lg:mt-5">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
                                 >
-                                    Get your Central London Address
+                                    Get Started - £9.99/month
                                 </Button>
                             </div>
                         </div>
