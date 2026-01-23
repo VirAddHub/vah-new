@@ -411,27 +411,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* FINAL CTA IMAGE SECTION */}
             <section className="py-24 bg-white">
                 <div className="mx-auto max-w-7xl px-8">
-                    <div className="relative overflow-hidden rounded-3xl bg-[#0b4d3c] p-12 md:p-20">
-                        {/* London landmarks illustration on left */}
-                        <div className="absolute inset-y-0 left-0 w-[50%] opacity-60 pointer-events-none">
-                            <img
-                                src="/figma/cta-illustration.png"
-                                alt=""
-                                className="h-full w-full object-contain object-left"
-                            />
-                        </div>
-                        {/* Content on right */}
-                        <div className="relative flex items-center justify-end">
-                            <div className="w-full md:w-[50%] md:pl-12">
-                                <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-                                    Get your London Business Address Today
-                                </h2>
-                                <p className="mt-4 text-white/90 text-lg">
-                                    Everything included for <span className="font-semibold">£9.99</span> per month.
-                                </p>
+                    <div className="relative overflow-hidden rounded-[30px] bg-[#014D3F] p-12 md:p-16 lg:p-20">
+                        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px]">
+                            {/* London landmarks illustration on left */}
+                            <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0">
+                                <img
+                                    src="/figma/cta-illustration.png"
+                                    alt="London landmarks: London Eye, Big Ben, Tower Bridge"
+                                    className="w-full max-w-[857px] h-auto object-contain"
+                                />
+                            </div>
+                            {/* Content on right */}
+                            <div className="flex flex-col gap-6 w-full md:w-auto md:max-w-[409px]">
+                                <div className="flex flex-col gap-3">
+                                    <h2 className="text-3xl md:text-[44px] font-medium text-white leading-[1.2]" style={{ fontFamily: 'Poppins' }}>
+                                        Get your London Business Address Today
+                                    </h2>
+                                    <p className="text-base text-white/80 leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                        Everything included for <span className="text-[#40C46C]">£9.99</span> per month.
+                                    </p>
+                                </div>
                                 <button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="mt-8 rounded-full bg-[#40C46C] px-8 py-4 font-medium text-white hover:bg-[#40C46C]/90 transition-colors"
+                                    className="rounded-[30px] bg-[#40C46C] px-[10px] py-[10px] w-[268px] h-[48px] flex items-center justify-center text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 transition-colors uppercase tracking-wide"
+                                    style={{ fontFamily: 'Poppins', lineHeight: '1.2' }}
                                 >
                                     Schedule London Address
                                 </button>
