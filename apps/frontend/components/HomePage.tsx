@@ -51,23 +51,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-6"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-4"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
                         <div className="max-w-[540px]">
                             <h1 className="text-5xl lg:text-[50px] font-bold leading-[1.15] lg:leading-[1.12] text-white">
-                                Your Credible Central London Business Address
+                                Your Credible Central London Address
                             </h1>
 
                             <h2 className="mt-4 lg:mt-3 text-2xl lg:text-3xl font-medium text-white/95">
-                                Without the cost of an office
+                                Without the Cost of an Office
                             </h2>
 
                             <div className="mt-5 lg:mt-4">
                                 <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
-                                    Run your business professionally without exposing your home address.
+                                    Run your business professionally without exposing your <strong>home address</strong>.
                                 </p>
                             </div>
 
@@ -80,7 +80,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             aria-hidden="true"
                                             className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
                                         />
-                                        <span>Use your trusted Central London address as your Registered Office, Director&apos;s Service Address, and professional business address</span>
+                                        <span>Use your trusted <strong>Central London address</strong> as your <strong>Registered Office</strong>, <strong>Director&apos;s Service Address</strong>, and professional business address</span>
                                     </li>
                                     <li className="flex items-start gap-3">
                                         <img
@@ -89,7 +89,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             aria-hidden="true"
                                             className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
                                         />
-                                        <span>Suitable for Companies House, HMRC, and everyday business use</span>
+                                        <span>Suitable for <strong>Companies House</strong>, <strong>HMRC</strong>, and everyday business use</span>
                                     </li>
                                     <li className="flex items-start gap-3">
                                         <img
@@ -98,28 +98,28 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             aria-hidden="true"
                                             className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
                                         />
-                                        <span>Everything you need included in one simple service</span>
+                                        <span>Everything you need included in <strong>one simple service</strong></span>
                                     </li>
                                 </ul>
                             </div>
 
                             <div className="mt-6 lg:mt-5">
                                 <div className="text-2xl lg:text-3xl font-bold text-white">£9.99/month</div>
-                                <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. No hidden fees.</div>
+                                <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. <strong>No hidden fees</strong>.</div>
                             </div>
 
                             <div className="mt-6 lg:mt-5 flex flex-wrap gap-4 text-xs sm:text-sm text-white/85">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-white">✓</span>
-                                    <span>Instant setup</span>
+                                    <span><strong>Instant setup</strong></span>
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-white">✓</span>
-                                    <span>Mail forwarding included</span>
+                                    <span><strong>Mail forwarding included</strong></span>
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-white">✓</span>
-                                    <span>Cancel anytime</span>
+                                    <span><strong>Cancel anytime</strong></span>
                                 </span>
                             </div>
 
