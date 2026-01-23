@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -310,6 +310,7 @@ export default function ForwardingPage() {
                             ))}
                         </>
                     )}
+                    </div>
                 </div>
 
                 {/* Right Column - Request Details */}
