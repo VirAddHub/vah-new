@@ -3,19 +3,19 @@
 const steps = [
     {
         k: 'verify',
-        title: 'Verify your account',
+        title: 'Verify Your Account',
         description: 'Verify your account by completing the required identity checks for regulated address services.',
         icon: '/figma/how-icon-1.svg',
     },
     {
         k: 'use',
-        title: 'Use your London address',
+        title: 'Use Your London Address',
         description: 'Use your London address for Companies House, HMRC, and everyday business correspondence.',
         icon: '/figma/how-icon-2.svg',
     },
     {
         k: 'handle',
-        title: 'We handle your mail',
+        title: 'We Handle Your Mail',
         description: 'We receive, log, and scan your mail and make it available the same business day through your secure dashboard.',
         icon: '/figma/how-icon-3.svg',
     }
@@ -34,45 +34,37 @@ export default function HowItWorks() {
                     </p>
                 </header>
 
-                {/* Three overlapping cards with background rectangles */}
-                <div className="flex flex-col items-center gap-6 sm:gap-8 md:flex-row md:justify-center md:gap-[30px] lg:gap-[42px]">
-                    {steps.map((step, index) => (
-                        <div
-                            key={step.k}
-                            className="relative w-full max-w-sm md:max-w-none"
-                            style={{ zIndex: 10 - index }}
-                        >
-                            {/* Cream background card */}
-                            <div className="absolute inset-0 rounded-[15px] bg-[#FCFBF8] sm:rounded-[20px]" />
+                <div className="relative">
+                    {/* Connector line (desktop only) */}
+                    <img
+                        src="/figma/how-it-works-connector.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-1/2 top-[14px] hidden w-[827px] -translate-x-1/2 md:block"
+                    />
 
-                            {/* Foreground card content */}
-                            <div className="relative flex flex-col items-center px-5 py-8 sm:px-6 sm:py-10 md:w-[280px] md:px-0 lg:w-[368px] lg:py-12">
-                                {/* Number circle */}
-                                <div className="mb-8 flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[#024E40] p-[2px] sm:mb-12 sm:h-[55px] sm:w-[55px] lg:mb-[74px] lg:h-[60px] lg:w-[60px]">
-                                    <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#024E40] px-[14px] py-[7px] sm:h-[48px] sm:w-[48px] lg:h-[52px] lg:w-[52px] lg:px-[17px] lg:py-[9px]">
-                                        <span className="text-center text-[22px] font-normal leading-[1.1] text-white sm:text-[24px] lg:text-[28px]" style={{ fontFamily: 'Potta One, ui-sans-serif' }}>
-                                            {index + 1}
-                                        </span>
-                                    </div>
+                    <div className="grid gap-8 text-center sm:gap-10 md:grid-cols-3 md:gap-12">
+                        {steps.map((step, index) => (
+                            <div key={step.k} className="relative z-10 flex flex-col items-center">
+                                <div className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#024E40] text-xs font-semibold text-white sm:h-[32px] sm:w-[32px] sm:text-sm">
+                                    {index + 1}
                                 </div>
-
-                                {/* Icon */}
-                                <div className="mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#F9F9F9] sm:mb-8 sm:h-20 sm:w-20 lg:mb-[42px] lg:h-24 lg:w-24">
-                                    <img src={step.icon} alt="" className="h-[32px] w-[32px] sm:h-[36px] sm:w-[36px] lg:h-[42px] lg:w-[42px]" />
+                                <div className="mt-4 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#F9F9F9] sm:h-[72px] sm:w-[72px] lg:h-[80px] lg:w-[80px]">
+                                    <img
+                                        src={step.icon}
+                                        alt=""
+                                        className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px] lg:h-[38px] lg:w-[38px]"
+                                    />
                                 </div>
-
-                                {/* Title + Description */}
-                                <div className="w-full space-y-2 text-center sm:space-y-[10px] md:w-[280px] lg:w-[368px]">
-                                    <h3 className="text-lg font-medium uppercase leading-[1.1] text-[#1A1A1A] sm:text-xl md:text-[22px] lg:text-[24px]">
-                                        {step.title}
-                                    </h3>
-                                    <p className="text-xs leading-[1.4] text-[#666666] sm:text-sm md:text-base lg:text-[16px]">
-                                        {step.description}
-                                    </p>
-                                </div>
+                                <h3 className="mt-4 text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-[18px]">
+                                    {step.title}
+                                </h3>
+                                <p className="mt-2 text-xs leading-[1.4] text-[#666666] sm:text-sm lg:text-[16px]">
+                                    {step.description}
+                                </p>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

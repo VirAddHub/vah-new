@@ -35,7 +35,7 @@ export function Footer({ onNavigate }: FooterProps) {
         "block w-full text-left text-xs sm:text-sm md:text-base leading-relaxed font-medium text-white/90 hover:text-white transition-colors";
 
     const navigation: NavItem[] = [
-        { label: "Price", page: "pricing" },
+        { label: "Pricing", page: "pricing" },
         { label: "Blog", page: "blog" },
         { label: "Help Center", page: "help" },
     ];
@@ -63,12 +63,22 @@ export function Footer({ onNavigate }: FooterProps) {
         );
 
     return (
-        <footer className="bg-[#075748] text-white">
-            <div className="safe-pad mx-auto w-full max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-10 lg:py-12">
+        <footer
+            className="bg-[#024E40] text-white"
+            style={{
+                fontFamily:
+                    "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
+            }}
+        >
+            <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-10 lg:px-20 lg:py-12">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
                     <div className="mb-3 sm:mb-4">
-                        <VAHLogo onNavigate={onNavigate} size="xl" />
+                        <VAHLogo
+                            onNavigate={onNavigate}
+                            size="xl"
+                            imgClassName="brightness-0 invert"
+                        />
                     </div>
                     <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 text-xs sm:gap-x-4 sm:gap-y-2 sm:text-sm">
                         {navigation.map((item) => (
@@ -89,7 +99,11 @@ export function Footer({ onNavigate }: FooterProps) {
                         {/* Company Information */}
                         <div className="lg:col-span-1">
                             <div className="mb-4">
-                                <VAHLogo onNavigate={onNavigate} size="xl" />
+                                <VAHLogo
+                                    onNavigate={onNavigate}
+                                    size="xl"
+                                    imgClassName="brightness-0 invert"
+                                />
                             </div>
                             <p className="mb-6 text-sm leading-relaxed text-white/90">
                                 Professional virtual address for UK business. Fully compliant.
@@ -149,7 +163,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             <h3 className="mb-4 text-sm font-semibold text-white">Contact Us</h3>
                             <div className="space-y-3 text-sm text-white/90">
                                 <div>
-                                    <p>(888) 555-3766</p>
+                                    <p>0808 155 3766</p>
                                 </div>
                                 <div>
                                     <p>virtualaddress@gmail.com</p>
@@ -165,7 +179,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright for Desktop */}
-                    <div className="mt-8 border-t border-white/20 pt-8">
+                    <div className="mt-8 overflow-hidden rounded-[16px] bg-[#014D3F] py-4">
                         <div className="text-center text-sm text-white/80">
                             © 2026 VirtualAddress.UK. All rights reserved.
                         </div>

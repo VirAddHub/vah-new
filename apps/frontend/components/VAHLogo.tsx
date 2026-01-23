@@ -36,6 +36,7 @@ interface VAHLogoProps extends VariantProps<typeof logoVariants> {
     initials?: string;
     fullName?: string;
     className?: string;
+    imgClassName?: string;
     onNavigate?: (page: string) => void;
 }
 
@@ -46,6 +47,7 @@ export function VAHLogo({
     initials = "VAH",
     fullName = "VirtualAddressHub",
     className,
+    imgClassName,
     onNavigate,
 }: VAHLogoProps) {
     useEffect(() => {
@@ -86,7 +88,10 @@ export function VAHLogo({
                 alt={fullName}
                 width={logoDimensions.width}
                 height={logoDimensions.height}
-                className="h-auto transition-opacity duration-200 group-hover:opacity-90"
+                className={cn(
+                    "h-auto transition-opacity duration-200 group-hover:opacity-90",
+                    imgClassName
+                )}
                 style={{ maxWidth: '100%', height: 'auto' }}
             />
         </div>

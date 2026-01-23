@@ -57,8 +57,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-10 lg:px-20">
                     <div className="flex flex-col items-center gap-6 sm:gap-8 lg:flex-row lg:items-center lg:gap-[98px]">
                         <div className="w-full lg:w-[600px]">
-                            <h1 className="text-2xl font-medium leading-[1.1] text-white sm:text-3xl md:text-4xl lg:text-[54px]">
-                                A credible London business address without the cost of an office.
+                            <h1 className="text-2xl font-semibold leading-[1.08] text-white sm:text-3xl md:text-4xl lg:text-[54px]">
+                                <span className="block">A Credible London</span>
+                                <span className="block">Business Address</span>
+                                <span className="block">Without The Cost Of</span>
+                                <span className="block">An Office.</span>
                             </h1>
 
                             <div className="mt-3 space-y-1.5 text-xs leading-[1.6] text-white/90 sm:mt-4 sm:space-y-2 sm:text-sm md:text-base lg:mt-5">
@@ -78,12 +81,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[44px] w-full rounded-[33px] bg-[#40C46C] px-4 text-sm font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:h-[48px] sm:w-[85%] sm:text-base md:w-[75%] lg:h-[57px] lg:w-[294px] lg:text-[16px]"
                                 >
-                                    Get Your London Address
+                                    Get your London Address
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="h-[250px] w-full overflow-hidden rounded-[20px] sm:h-[350px] md:h-[450px] lg:h-[540px] lg:w-[582px] lg:rounded-[30px]">
+                        <div className="h-[250px] w-full overflow-hidden rounded-[20px] border border-white/10 shadow-[0px_12px_30px_rgba(0,0,0,0.25)] sm:h-[350px] md:h-[450px] lg:h-[540px] lg:w-[582px] lg:rounded-[28px]">
                             <img
                                 src="/figma/hero-photo.png"
                                 alt="London street scene"
@@ -105,52 +108,44 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <img
                                 src="/figma/whats-included-illustration.png"
                                 alt="What's included illustration"
-                                className="h-full w-full object-contain lg:object-cover"
+                                className="h-full w-full object-contain"
                             />
                         </div>
 
                         <div className="w-full lg:w-[528px]">
                             <h2 className="text-2xl font-medium leading-[1.136] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">What&apos;s Included</h2>
 
-                            <div className="mt-4 flex gap-2 sm:mt-6 sm:gap-3 lg:mt-10 lg:gap-[17px]">
-                                {/* left rail (dots + line) */}
-                                <div className="relative w-[12px] sm:w-[15px] lg:w-[20px]">
-                                    <div className="absolute left-[5px] top-[5px] h-[480px] w-px bg-[#024E40]/40 sm:left-[6px] sm:h-[520px] lg:left-[9px] lg:top-[6px] lg:h-[559px]" />
-                                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="absolute left-[2px] h-[8px] w-[8px] rounded-full bg-[#024E40] sm:left-[3px] sm:h-[10px] sm:w-[10px] lg:left-[4px] lg:h-[12px] lg:w-[12px]"
-                                            style={{ top: 6 + i * 85 }}
-                                        />
-                                    ))}
-                                </div>
-
-                                <div className="flex-1 space-y-3 sm:space-y-4 lg:w-[490px] lg:space-y-6">
-                                    {[
-                                        {
-                                            title: "Registered Office And Director's Service Address",
-                                            description: "Use our Central London address for Companies House and HMRC filings.",
-                                        },
-                                        {
-                                            title: "Professional Business Address",
-                                            description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts.",
-                                        },
-                                        {
-                                            title: "Same Day Mail Scanning And Instant Alerts",
-                                            description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard.",
-                                        },
-                                        {
-                                            title: "Secure Online Dashboard",
-                                            description: "View, download, and organise your mail in one place with full visibility and control.",
-                                        },
-                                        { title: "UK Based Support", description: "Support provided during standard business hours." },
-                                        { title: "Privacy Protection", description: "Keep your home address off public records and business documents." },
-                                    ].map((item) => (
-                                        <div key={item.title}>
-                                            <div className="text-sm font-medium text-[#1A1A1A] sm:text-base md:text-lg lg:text-[18px]">{item.title}</div>
-                                            <div className="mt-0.5 text-xs leading-[1.4] text-[#666666] sm:mt-1 sm:text-sm md:text-base lg:text-[16px]">{item.description}</div>
-                                        </div>
-                                    ))}
+                            <div className="mt-4 sm:mt-6 lg:mt-10">
+                                <div className="relative pl-[26px] sm:pl-[30px] lg:pl-[36px]">
+                                    <div className="pointer-events-none absolute left-[7px] top-[6px] bottom-[6px] w-px bg-[#024E40]/30 sm:left-[8px] lg:left-[10px]" />
+                                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                                        {[
+                                            {
+                                                title: "Registered Office And Director's Service Address",
+                                                description: "Use our Central London address for Companies House and HMRC filings.",
+                                            },
+                                            {
+                                                title: "Professional Business Address",
+                                                description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts.",
+                                            },
+                                            {
+                                                title: "Same Day Mail Scanning And Instant Alerts",
+                                                description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard.",
+                                            },
+                                            {
+                                                title: "Secure Online Dashboard",
+                                                description: "View, download, and organise your mail in one place with full visibility and control.",
+                                            },
+                                            { title: "UK Based Support", description: "Support provided during standard business hours." },
+                                            { title: "Privacy Protection", description: "Keep your home address off public records and business documents." },
+                                        ].map((item) => (
+                                            <div key={item.title} className="relative">
+                                                <span className="absolute left-[3px] top-[6px] h-[8px] w-[8px] rounded-full bg-[#024E40] sm:left-[3px] sm:h-[10px] sm:w-[10px] lg:left-[4px] lg:top-[7px] lg:h-[12px] lg:w-[12px]" />
+                                                <div className="text-sm font-medium text-[#1A1A1A] sm:text-base md:text-lg lg:text-[18px]">{item.title}</div>
+                                                <div className="mt-0.5 text-xs leading-[1.4] text-[#666666] sm:mt-1 sm:text-sm md:text-base lg:text-[16px]">{item.description}</div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -209,7 +204,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
 
                                 <div className="mt-3 text-2xl font-semibold leading-[1.2] text-white sm:mt-4 sm:text-3xl lg:mt-6 lg:text-[38px]">
-                                    £{Number(monthlyPrice).toFixed(2)}/month
+                                    £{Number(monthlyPrice).toFixed(2)} / month
                                 </div>
 
                                 <div className="mt-4 sm:mt-6 lg:mt-8">
@@ -270,7 +265,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                                 <div className="mt-3 flex items-center justify-between sm:mt-4 lg:mt-6">
                                     <div className="text-2xl font-semibold leading-[1.2] text-[#1A1A1A] sm:text-3xl lg:text-[38px]">
-                                        £{Number(annualPrice).toFixed(2)}/year
+                                        £{Number(annualPrice).toFixed(2)} / year
                                     </div>
                                     <div className="text-xs font-medium text-[#FF6900] sm:text-sm lg:text-[16px]">20% Save</div>
                                 </div>
@@ -367,19 +362,16 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="w-full bg-white pb-6 sm:pb-8 md:pb-12 lg:pb-20">
                 <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-12 lg:px-20">
                     {/* Container with responsive height */}
-                    <div className="relative overflow-hidden rounded-[20px] bg-[#014D3F] lg:h-[589px] lg:rounded-[30px]">
-                        {/* Content frame */}
-                        <div className="relative flex flex-col items-center gap-4 p-5 sm:gap-6 sm:p-6 md:p-8 lg:absolute lg:-left-[77px] lg:-top-[114px] lg:flex-row lg:gap-10 lg:p-0">
-                            {/* Illustration (hidden on mobile/tablet) */}
-                            <div className="hidden lg:block lg:h-[817px] lg:w-[857px]">
+                    <div className="overflow-hidden rounded-[20px] bg-[#014D3F] shadow-[0px_16px_36px_rgba(0,0,0,0.18)] lg:min-h-[589px] lg:rounded-[30px]">
+                        <div className="flex flex-col items-center gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-12 lg:px-12 lg:py-10">
+                            <div className="w-full lg:w-[640px]">
                                 <img
                                     src="/figma/cta-illustration.png"
                                     alt="London illustration"
-                                    className="h-full w-full object-cover"
+                                    className="h-auto w-full object-contain lg:h-[480px]"
                                 />
                             </div>
-                            {/* Text content */}
-                            <div className="w-full lg:w-[409px]">
+                            <div className="w-full lg:max-w-[360px]">
                                 <h2 className="text-xl font-medium leading-[1.2] text-white sm:text-2xl md:text-3xl lg:text-[44px]">
                                     Get your London Business Address Today
                                 </h2>
