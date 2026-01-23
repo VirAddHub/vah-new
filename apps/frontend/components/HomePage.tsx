@@ -413,20 +413,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-3xl bg-[#0b4d3c] p-12 md:p-20">
                         {/* London landmarks illustration on left */}
-                        <div className="absolute inset-y-0 left-0 w-[50%] opacity-20 pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 w-[50%] opacity-60 pointer-events-none">
                             <img
                                 src="/figma/cta-illustration.png"
                                 alt=""
-                                className="h-full w-full max-h-[500px] object-cover object-left"
+                                className="h-full w-full object-contain object-left"
                             />
                         </div>
                         {/* Content on right */}
                         <div className="relative flex items-center justify-end">
                             <div className="w-full md:w-[50%] md:pl-12">
-                                <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
-                                    <span className="block">Get your Central London</span>
-                                    <span className="block text-5xl md:text-6xl font-bold">Business Address</span>
-                                    <span className="block">Today</span>
+                                <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                                    Get your London Business Address Today
                                 </h2>
                                 <p className="mt-4 text-white/90 text-lg">
                                     Everything included for <span className="font-semibold">£9.99</span> per month.
@@ -435,7 +433,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="mt-8 rounded-full bg-[#40C46C] px-8 py-4 font-medium text-white hover:bg-[#40C46C]/90 transition-colors"
                                 >
-                                    Schedule Central London Address
+                                    Schedule London Address
                                 </button>
                             </div>
                         </div>
