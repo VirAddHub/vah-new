@@ -33,21 +33,21 @@ export default function MailInboxPage() {
 
     // Filter mail items based on active tab
     const filteredItems = useMemo(() => {
-        let items = mailItems;
+        let items: MailItem[] = mailItems;
 
         // Filter by tab
         if (activeTab === 'archived') {
-            items = items.filter(item => item.deleted);
+            items = items.filter((item: MailItem) => item.deleted);
         } else if (activeTab === 'inbox') {
-            items = items.filter(item => !item.deleted);
+            items = items.filter((item: MailItem) => !item.deleted);
         } else if (activeTab === 'tags') {
-            items = items.filter(item => item.tag && !item.deleted);
+            items = items.filter((item: MailItem) => item.tag && !item.deleted);
         }
 
         // Apply search filter
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            items = items.filter(item =>
+            items = items.filter((item: MailItem) =>
                 item.subject?.toLowerCase().includes(query) ||
                 item.sender_name?.toLowerCase().includes(query) ||
                 item.tag?.toLowerCase().includes(query) ||
@@ -61,7 +61,7 @@ export default function MailInboxPage() {
     // Get unique tags
     const availableTags = useMemo(() => {
         const tags = new Set<string>();
-        mailItems.forEach(item => {
+        mailItems.forEach((item: MailItem) => {
             if (item.tag && !item.deleted) {
                 tags.add(item.tag);
             }
@@ -70,8 +70,8 @@ export default function MailInboxPage() {
     }, [mailItems]);
 
     // Counts
-    const inboxCount = mailItems.filter(item => !item.deleted).length;
-    const archivedCount = mailItems.filter(item => item.deleted).length;
+    const inboxCount = mailItems.filter((item: MailItem) => !item.deleted).length;
+    const archivedCount = mailItems.filter((item: MailItem) => item.deleted).length;
     const tagsCount = availableTags.length;
 
     // Format date
