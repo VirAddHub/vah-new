@@ -1,14 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import MailInboxPage from './mail/page-content';
 
-export default function DashboardIndex() {
-    const router = useRouter();
-
-    useEffect(() => {
-        router.replace('/account');
-    }, [router]);
-
-    return null;
+export default function DashboardPage() {
+    return <MailInboxPage />;
 }
