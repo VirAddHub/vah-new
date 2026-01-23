@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
 import { clearToken } from '@/lib/token-manager';
 
-function ConfirmEmailContent() {
+export default function ConfirmEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -203,26 +203,6 @@ function ConfirmEmailContent() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-export default function ConfirmEmailPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
-              <CardTitle>Loading...</CardTitle>
-              <CardDescription>Please wait while we load the verification page.</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      }
-    >
-      <ConfirmEmailContent />
-    </Suspense>
   );
 }
 

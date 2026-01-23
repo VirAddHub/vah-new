@@ -4,11 +4,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardIndex() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.replace('/account');
-  }, [router]);
+    const router = useRouter();
 
-  return null;
+    useEffect(() => {
+        router.replace('/account');
+    }, [router]);
+
+    return null;
 }
