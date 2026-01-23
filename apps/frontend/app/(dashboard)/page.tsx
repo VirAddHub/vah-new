@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
 import dynamic from 'next/dynamic';
 
+
 // Dynamically import the page components with proper SSR disabled
 const MailInboxPage = dynamic(() => import('./mail/page-content'), {
     ssr: false,
