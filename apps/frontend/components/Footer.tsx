@@ -64,7 +64,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="bg-[#0b4d3c] py-10 text-white"
+            className="bg-[#0b4d3c] py-6 lg:py-8 text-white"
             style={{
                 fontFamily:
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
@@ -73,7 +73,7 @@ export function Footer({ onNavigate }: FooterProps) {
             <div className="mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
-                    <div className="mb-3 sm:mb-4">
+                    <div className="mb-2 sm:mb-3">
                         <VAHLogo
                             onNavigate={onNavigate}
                             size="xl"
@@ -88,14 +88,14 @@ export function Footer({ onNavigate }: FooterProps) {
                             <QuickLink key={item.label} item={item} />
                         ))}
                     </div>
-                    <p className="mt-3 text-[10px] text-white/80 sm:mt-4 sm:text-xs">
+                    <p className="mt-2 text-[10px] text-white/80 sm:mt-3 sm:text-xs">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </p>
                 </div>
 
                 {/* Desktop Footer (≥ 1024px) */}
                 <div className="hidden lg:block">
-                    <div className="grid gap-6 md:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-4">
                         {/* Company Information */}
                         <div className="lg:col-span-1">
                             <div className="mb-2">
@@ -105,20 +105,20 @@ export function Footer({ onNavigate }: FooterProps) {
                                     imgClassName="brightness-0 invert"
                                 />
                             </div>
-                            <p className="mb-4 text-sm leading-relaxed text-white/90">
+                            <p className="mb-3 text-sm leading-relaxed text-white/90">
                                 Professional virtual address for UK business. Fully compliant.
                             </p>
 
                             {/* Location */}
-                            <div className="mb-4">
-                                <h3 className="mb-3 text-sm font-semibold text-white">Location</h3>
+                            <div className="mb-3">
+                                <h3 className="mb-2 text-sm font-semibold text-white">Location</h3>
                                 <p className="text-sm text-white/90">London, UK</p>
                             </div>
 
                             {/* Regulatory Info */}
                             <div>
-                                <h3 className="mb-3 text-sm font-semibold text-white">Regulatory Info</h3>
-                                <div className="space-y-1.5 text-sm leading-snug text-white/85">
+                                <h3 className="mb-2 text-sm font-semibold text-white">Regulatory Info</h3>
+                                <div className="space-y-1 text-sm leading-snug text-white/85">
                                     <div>
                                         <span className="font-medium">Company:</span> London Business Address Ltd
                                     </div>
@@ -140,8 +140,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-3 text-sm font-semibold text-white">Navigation</h3>
-                            <div className="space-y-1.5">
+                            <h3 className="mb-2 text-sm font-semibold text-white">Navigation</h3>
+                            <div className="space-y-1">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -150,8 +150,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-3 text-sm font-semibold text-white">Legal & Compliance</h3>
-                            <div className="space-y-1.5">
+                            <h3 className="mb-2 text-sm font-semibold text-white">Legal & Compliance</h3>
+                            <div className="space-y-1">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -160,8 +160,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-3 text-sm font-semibold text-white">Contact Us</h3>
-                            <div className="space-y-1.5 text-sm text-white/90">
+                            <h3 className="mb-2 text-sm font-semibold text-white">Contact Us</h3>
+                            <div className="space-y-1 text-sm text-white/90">
                                 <div>
                                     <p>0808 155 3766</p>
                                 </div>
@@ -171,15 +171,15 @@ export function Footer({ onNavigate }: FooterProps) {
                             </div>
 
                             {/* Business Hours */}
-                            <div className="mt-4">
-                                <h3 className="mb-3 text-sm font-semibold text-white">Business Hours</h3>
+                            <div className="mt-3">
+                                <h3 className="mb-2 text-sm font-semibold text-white">Business Hours</h3>
                                 <p className="text-sm text-white/90">Mon - Fri: 8:00 AM - 6:00 PM</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Copyright for Desktop */}
-                    <div className="mt-6 border-t border-white/10 pt-3 text-center text-sm text-white/60">
+                    <div className="mt-4 border-t border-white/10 pt-2 text-center text-sm text-white/60">
                         <div>
                             © 2026 VirtualAddress.UK. All rights reserved.
                         </div>

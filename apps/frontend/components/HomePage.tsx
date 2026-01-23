@@ -51,28 +51,28 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-2"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-0"
                 aria-label="Hero"
             >
-                <div className="mx-auto max-w-7xl px-8 lg:px-12">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
+                <div className="mx-auto max-w-7xl px-8 lg:px-12 lg:pt-8 lg:pb-4">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-12 items-center">
                         <div className="max-w-[540px]">
                             <h1 className="text-5xl lg:text-[50px] font-bold leading-[1.15] lg:leading-[1.12] text-white">
                                 Your Credible Central London Address
                             </h1>
 
-                            <h2 className="mt-3 lg:mt-2 text-2xl lg:text-3xl font-medium text-white/95">
+                            <h2 className="mt-3 lg:mt-1.5 text-2xl lg:text-3xl font-medium text-white/95">
                                 Without the Cost of an Office
                             </h2>
 
-                            <div className="mt-4 lg:mt-3">
+                            <div className="mt-4 lg:mt-2">
                                 <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
                                     Run your business professionally without exposing your <strong>home address</strong>.
                                 </p>
                             </div>
 
-                            <div className="mt-4 lg:mt-3 text-sm leading-[1.7] text-white/90 sm:text-base">
-                                <ul className="space-y-2.5">
+                            <div className="mt-4 lg:mt-2.5 text-sm leading-[1.7] text-white/90 sm:text-base">
+                                <ul className="space-y-2">
                                     <li className="flex items-start gap-3">
                                         <img
                                             src="/figma/check-16.svg"
@@ -103,12 +103,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </ul>
                             </div>
 
-                            <div className="mt-5 lg:mt-4">
+                            <div className="mt-5 lg:mt-3">
                                 <div className="text-2xl lg:text-3xl font-bold text-white">£9.99/month</div>
                                 <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. <strong>No hidden fees</strong>.</div>
                             </div>
 
-                            <div className="mt-5 lg:mt-4 flex flex-wrap gap-4 text-xs sm:text-sm text-white/85">
+                            <div className="mt-5 lg:mt-3 flex flex-wrap gap-3 text-xs sm:text-sm text-white/85">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-white">✓</span>
                                     <span><strong>Instant setup</strong></span>
@@ -123,7 +123,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </div>
 
-                            <div className="mt-5 lg:mt-4">
+                            <div className="mt-5 lg:mt-3">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
@@ -204,19 +204,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PRICING */}
             <section
                 id="pricing"
-                className="bg-white py-12 lg:py-14"
+                className="bg-white py-8 lg:py-10"
                 aria-label="Pricing"
             >
                 <div className="mx-auto max-w-6xl px-6">
                     <div className="text-center">
                         <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">One Simple Plan</h2>
-                        <p className="mt-2 text-sm leading-[1.4] text-[#666666] sm:mt-3 sm:text-base md:text-lg lg:mt-4 lg:text-base">
+                        <p className="mt-1.5 text-sm leading-[1.4] text-[#666666] sm:mt-2 sm:text-base md:text-lg lg:mt-3 lg:text-base">
                             One simple plan with everything included. Switch billing frequency anytime.
                         </p>
                     </div>
 
                     {/* Toggle for Monthly/Annual */}
-                    <div className="mt-6 flex justify-center mb-8">
+                    <div className="mt-4 flex justify-center mb-6">
                         <div className="inline-flex rounded-full bg-gray-100 p-1 border border-gray-200">
                             <button
                                 onClick={() => setBilling("monthly")}
@@ -242,14 +242,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="flex justify-center">
                         {/* Single card that switches based on toggle */}
                         {billing === "monthly" ? (
-                            <div className="w-full max-w-[420px] rounded-3xl bg-[#014D3F] p-6 lg:p-7 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] flex flex-col">
+                            <div className="w-full max-w-[420px] rounded-3xl bg-[#014D3F] p-5 lg:p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] flex flex-col">
                                 <div className="text-2xl font-semibold leading-[1.2] text-white sm:text-3xl lg:text-4xl">
                                     £{Number(monthlyPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-white/70">/ month</span>
                                 </div>
 
-                                <div className="mt-5">
+                                <div className="mt-4">
                                     <div className="text-xs font-normal text-white/70 sm:text-sm">Include with every plan</div>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "Registered Office address",
                                             "Director's Service Address",
@@ -271,11 +271,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
                                 </div>
 
-                                <div className="my-5 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
+                                <div className="my-4 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
 
                                 <div>
                                     <div className="text-xs font-normal text-white/70 sm:text-sm">Mail Forwarding rules</div>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "HMRC and Companies House letters forwarded free within the UK on request.",
                                             "Other UK letters forwarded at £2 per item.",
@@ -293,7 +293,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
                                 </div>
 
-                                <div className="mt-6">
+                                <div className="mt-5">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                         className="h-[44px] w-full rounded-[30px] bg-[#40C46C] text-sm font-medium text-[#014D3F] hover:bg-[#40C46C]/90"
@@ -303,7 +303,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-[420px] rounded-3xl bg-white p-6 lg:p-7 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] flex flex-col border border-gray-100">
+                            <div className="w-full max-w-[420px] rounded-3xl bg-white p-5 lg:p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] flex flex-col border border-gray-100">
                                 <div className="flex items-center justify-between">
                                     <div className="text-2xl font-semibold leading-[1.2] text-[#1A1A1A] sm:text-3xl lg:text-4xl">
                                         £{Number(annualPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-gray-500">/ year</span>
@@ -311,9 +311,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <div className="text-xs font-medium text-[#FF6900] bg-[#FF6900]/10 px-2 py-1 rounded-full">20% Save</div>
                                 </div>
 
-                                <div className="mt-5">
+                                <div className="mt-4">
                                     <div className="text-xs font-normal text-gray-500 sm:text-sm">Include with every plan</div>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "Registered Office address",
                                             "Director's Service Address",
@@ -335,11 +335,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
                                 </div>
 
-                                <div className="my-5 h-px w-full bg-[#E5E7EB]" style={{ opacity: 0.86 }} />
+                                <div className="my-4 h-px w-full bg-[#E5E7EB]" style={{ opacity: 0.86 }} />
 
                                 <div>
                                     <div className="text-xs font-normal text-gray-500 sm:text-sm">Mail Forwarding rules</div>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "HMRC and Companies House letters forwarded free within the UK on request.",
                                             "Other UK letters forwarded at £2 per item.",
@@ -357,7 +357,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
                                 </div>
 
-                                <div className="mt-6">
+                                <div className="mt-5">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
                                         className="h-[44px] w-full rounded-[30px] bg-[#40C46C] text-sm font-medium text-[#014D3F] hover:bg-[#40C46C]/90"
