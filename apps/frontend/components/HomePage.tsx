@@ -51,7 +51,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-16"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-12"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
