@@ -54,9 +54,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 className="relative overflow-hidden bg-[#024E40] text-white"
                 aria-label="Hero"
             >
-                <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-10 lg:px-20">
-                    <div className="flex flex-col items-center gap-6 sm:gap-8 lg:flex-row lg:items-center lg:gap-[98px]">
-                        <div className="w-full lg:w-[600px]">
+                <div className="safe-pad mx-auto w-full max-w-[1440px] px-6 py-12 sm:px-8 sm:py-16 lg:px-16 lg:py-28">
+                    <div className="flex flex-col items-center gap-6 sm:gap-10 lg:flex-row lg:items-center lg:gap-[96px]">
+                        <div className="w-full lg:w-[640px]">
                             <h1 className="text-2xl font-semibold leading-[1.08] text-white sm:text-3xl md:text-4xl lg:text-[54px]">
                                 <span className="block">A Credible London</span>
                                 <span className="block">Business Address</span>
@@ -99,10 +99,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
             {/* WHAT'S INCLUDED */}
             <section
-                className="w-full bg-white py-8 sm:py-12 md:py-16 lg:py-[100px]"
+                className="w-full bg-white py-16 sm:py-20 lg:py-28"
                 aria-label="What's Included"
             >
-                <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-12 lg:px-[100px]">
+                <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
                     <div className="flex flex-col items-start gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-end lg:gap-[62px]">
                         <div className="h-auto w-full lg:h-[721px] lg:w-[650px]">
                             <img
@@ -156,10 +156,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* PRICING */}
             <section
                 id="pricing"
-                className="bg-white py-8 sm:py-12 md:py-16 lg:py-[100px]"
+                className="bg-white py-16 sm:py-20 lg:py-28"
                 aria-label="Pricing"
             >
-                <div className="safe-pad mx-auto w-full max-w-[1440px] px-4 sm:px-6 md:px-12 lg:px-[182px]">
+                <div className="safe-pad mx-auto w-full max-w-[1360px] px-6 sm:px-8 lg:px-16">
                     <div className="text-center">
                         <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">One Simple Plan</h2>
                         <p className="mt-2 text-sm leading-[1.4] text-[#666666] sm:mt-3 sm:text-base md:text-lg lg:mt-4 lg:text-[18px]">
@@ -325,9 +325,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <HowItWorks />
 
             {/* BUILT FOR MODERN UK BUSINESSES */}
-            <section className="w-full bg-white py-8 sm:py-12 md:py-16 lg:py-20">
-                <div className="safe-pad mx-auto w-full max-w-[1440px] px-4 sm:px-6 md:px-12 lg:px-20">
-                    <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-center lg:gap-[207px]">
+            <section className="w-full bg-white py-16 sm:py-20 lg:py-28">
+                <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
+                    <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-stretch lg:gap-[120px]">
                         <div className="w-full lg:h-[186px] lg:w-[433px]">
                             <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">
                                 Built for Modern UK Businesses
@@ -337,7 +337,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </p>
                         </div>
 
-                        <div className="hidden h-[212px] w-px bg-[#E5E7EB] lg:block" />
+                        <div className="hidden w-px self-stretch bg-[#E5E7EB] lg:block" />
 
                         <div className="w-full space-y-2 sm:space-y-[10px] lg:w-[433px]">
                             {[
@@ -359,19 +359,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </section>
 
             {/* FINAL CTA IMAGE SECTION */}
-            <section className="w-full bg-white pb-6 sm:pb-8 md:pb-12 lg:pb-20">
-                <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-12 lg:px-20">
+            <section className="w-full bg-white py-16 sm:py-20 lg:py-28">
+                <div className="safe-pad mx-auto w-full max-w-[1440px] px-6 sm:px-8 lg:px-16">
                     {/* Container with responsive height */}
-                    <div className="overflow-hidden rounded-[20px] bg-[#014D3F] shadow-[0px_16px_36px_rgba(0,0,0,0.18)] lg:min-h-[589px] lg:rounded-[30px]">
-                        <div className="flex flex-col items-center gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-12 lg:px-12 lg:py-10">
-                            <div className="w-full lg:w-[640px]">
+                    <div className="overflow-hidden rounded-[20px] bg-[#014D3F] shadow-[0px_16px_36px_rgba(0,0,0,0.18)] lg:rounded-[30px]">
+                        <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-12 lg:px-16 lg:py-12">
+                            <div className="relative h-[220px] sm:h-[280px] lg:h-[360px]">
                                 <img
                                     src="/figma/cta-illustration.png"
                                     alt="London illustration"
-                                    className="h-auto w-full object-contain lg:h-[480px]"
+                                    className="absolute inset-0 h-full w-full object-contain object-left"
                                 />
                             </div>
-                            <div className="w-full lg:max-w-[360px]">
+                            <div className="flex w-full flex-col justify-center">
                                 <h2 className="text-xl font-medium leading-[1.2] text-white sm:text-2xl md:text-3xl lg:text-[44px]">
                                     Get your London Business Address Today
                                 </h2>

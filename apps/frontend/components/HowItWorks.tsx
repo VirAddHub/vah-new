@@ -23,8 +23,8 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-white py-8 sm:py-12 md:py-16 lg:py-[100px]">
-            <div className="safe-pad mx-auto w-full max-w-[1196px] px-4 sm:px-6 md:px-12 lg:px-[118px]">
+        <section className="w-full bg-white py-16 sm:py-20 lg:py-28">
+            <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
                     <h2 className="mb-2 text-2xl font-medium text-[#1A1A1A] sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
                         How It Works
@@ -40,7 +40,7 @@ export default function HowItWorks() {
                         src="/figma/how-it-works-connector.svg"
                         alt=""
                         aria-hidden="true"
-                        className="pointer-events-none absolute left-1/2 top-[14px] hidden w-[827px] -translate-x-1/2 md:block"
+                        className="pointer-events-none absolute left-1/2 top-[16px] hidden w-full max-w-[900px] -translate-x-1/2 md:block"
                     />
 
                     <div className="grid gap-8 text-center sm:gap-10 md:grid-cols-3 md:gap-12">

@@ -82,7 +82,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     : undefined
             }
         >
-            <div className="safe-pad mx-auto flex max-w-[1280px] items-center justify-between py-5 px-4 sm:px-6 md:px-12 lg:px-20">
+            <div className="safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 sm:px-8 lg:px-16">
                 {/* Brand Name */}
                 <VAHLogo
                     onNavigate={onNavigate}

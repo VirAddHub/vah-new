@@ -70,7 +70,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
             }}
         >
-            <div className="safe-pad mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-10 lg:px-20 lg:py-12">
+            <div className="safe-pad mx-auto w-full max-w-[1440px] px-6 py-10 sm:px-8 sm:py-12 lg:px-16 lg:py-16">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
                     <div className="mb-3 sm:mb-4">
