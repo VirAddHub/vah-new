@@ -42,7 +42,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
     ];
 
     const navItems = isDashboard ? dashboardNavItems : publicNavItems;
-    const isMarketing = !isDashboard;
 
     // Debug: Log pathname and isDashboard (remove in production)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -68,34 +67,21 @@ export function Navigation({ onNavigate }: NavigationProps) {
     return (
         <header
             className={cn(
-                "sticky top-0 z-30",
-                isMarketing
-                    ? "bg-[#024E40]"
-                    : "bg-background/80 backdrop-blur border-b border-border/50"
+                "sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50"
             )}
-            style={
-                isMarketing
-                    ? {
-                        fontFamily:
-                            "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
-                    }
-                    : undefined
-            }
         >
             <div className="safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 sm:px-8 lg:px-16">
                 {/* Brand Name */}
                 <VAHLogo
                     onNavigate={onNavigate}
                     size={isDashboard ? "md" : "lg"}
-                    imgClassName={isMarketing ? "brightness-0 invert" : undefined}
                 />
 
                 {/* Desktop Navigation */}
                 <nav
                     aria-label="Main navigation"
                     className={cn(
-                        "hidden md:flex gap-6 text-sm lg:text-base leading-tight",
-                        isMarketing ? "text-white/80" : "text-muted-foreground"
+                        "hidden md:flex gap-6 text-sm lg:text-base leading-tight text-muted-foreground"
                     )}
                 >
                     {isDashboard ? (
@@ -118,12 +104,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page, item.href)}
-                                className={cn(
-                                    "font-medium transition-colors",
-                                    isMarketing
-                                        ? "hover:text-white"
-                                        : "hover:text-foreground"
-                                )}
+                                className="font-medium transition-colors hover:text-foreground"
                             >
                                 {item.label}
                             </button>
@@ -136,34 +117,19 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     <div className="hidden md:flex items-center gap-3">
                         <button
                             onClick={() => handleNavClick('signup')}
-                            className={cn(
-                                "text-sm lg:text-base leading-[1.2] font-medium transition-colors",
-                                isMarketing
-                                    ? "text-white/80 hover:text-white"
-                                    : "text-muted-foreground hover:text-foreground"
-                            )}
+                            className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
                         >
                             Sign up
                         </button>
                         <button
                             onClick={() => handleNavClick('login')}
-                            className={cn(
-                                "text-sm lg:text-base leading-[1.2] font-medium transition-colors",
-                                isMarketing
-                                    ? "text-white/80 hover:text-white"
-                                    : "text-muted-foreground hover:text-foreground"
-                            )}
+                            className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
                         >
                             Login
                         </button>
                         <Button
                             onClick={() => handleNavClick('signup')}
-                            className={cn(
-                                "rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200",
-                                isMarketing
-                                    ? "bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
-                                    : ""
-                            )}
+                            className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
                         >
                             Get started
                         </Button>
@@ -175,10 +141,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     <Button
                         variant="ghost"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={cn(
-                            "tt-min p-2",
-                            isMarketing ? "text-white hover:bg-white/10" : ""
-                        )}
+                        className="tt-min p-2"
                     >
                         {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                     </Button>
@@ -187,14 +150,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
             {/* Mobile menu */}
             {isMenuOpen && (
-                <div
-                    className={cn(
-                        "md:hidden border-t",
-                        isMarketing
-                            ? "border-white/10 bg-[#024E40]"
-                            : "border-border/50 bg-background"
-                    )}
-                >
+                <div className="md:hidden border-t border-border/50 bg-background">
                     <div className="safe-pad pt-3 pb-5 space-y-1.5">
                         {isDashboard ? (
                             // Dashboard mobile navigation with icons
@@ -220,12 +176,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                                     <button
                                         key={item.label}
                                         onClick={() => handleNavClick(item.page, item.href)}
-                                        className={cn(
-                                            "tt-min block w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition-all",
-                                            isMarketing
-                                                ? "text-white/80 hover:text-white hover:bg-white/10"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-background"
-                                        )}
+                                        className="tt-min block w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-background"
                                     >
                                         {item.label}
                                     </button>
@@ -233,34 +184,19 @@ export function Navigation({ onNavigate }: NavigationProps) {
                                 <div className="pt-4 space-y-3">
                                     <button
                                         onClick={() => handleNavClick('signup')}
-                                        className={cn(
-                                            "tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center",
-                                            isMarketing
-                                                ? "text-white/80 hover:text-white"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        )}
+                                        className="tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center text-muted-foreground hover:text-foreground"
                                     >
                                         Sign up
                                     </button>
                                     <button
                                         onClick={() => handleNavClick('login')}
-                                        className={cn(
-                                            "tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center",
-                                            isMarketing
-                                                ? "text-white/80 hover:text-white"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        )}
+                                        className="tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center text-muted-foreground hover:text-foreground"
                                     >
                                         Login
                                     </button>
                                     <Button
                                         onClick={() => handleNavClick('signup')}
-                                        className={cn(
-                                            "tt-min w-full rounded-full font-medium transition-all duration-200",
-                                            isMarketing
-                                                ? "bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
-                                                : ""
-                                        )}
+                                        className="tt-min w-full rounded-full font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
                                     >
                                         Get started
                                     </Button>
