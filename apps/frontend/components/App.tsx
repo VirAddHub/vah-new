@@ -168,6 +168,9 @@ export function App() {
     }
   };
 
+  // Check if current page is a dashboard page
+  const isDashboardPage = ['dashboard', 'billing', 'account', 'kyc', 'profile', 'settings', 'admin'].includes(currentPage);
+
   return (
     <ThemeProvider>
       {/* SEO Schema Markup */}
@@ -182,7 +185,7 @@ export function App() {
         <main className="flex-1">
           {renderPage()}
         </main>
-        <Footer onNavigate={navigate} />
+        {!isDashboardPage && <Footer onNavigate={navigate} />}
       </div>
     </ThemeProvider>
   );

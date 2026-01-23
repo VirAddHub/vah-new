@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 
@@ -443,7 +442,6 @@ export default function AccountPage() {
                         </div>
                     </div>
                 </main>
-                <Footer />
             </div>
         );
     }
@@ -465,7 +463,6 @@ export default function AccountPage() {
                         </div>
                     </div>
                 </main>
-                <Footer />
             </div>
         );
     }
@@ -616,7 +613,6 @@ export default function AccountPage() {
                     </section>
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }
