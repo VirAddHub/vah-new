@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SubscriptionSummary } from '@/lib/account/types';
 import dynamic from 'next/dynamic';
 
 const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(mod => ({ default: mod.AccountBillingCard })), { ssr: false });
@@ -19,17 +20,20 @@ export default function AccountBillingPage() {
     const invoicesRaw = invoicesData?.data?.items || [];
 
     // Build subscription summary
-    const subscription = useMemo(() => {
+    const subscription = useMemo<SubscriptionSummary>(() => {
         const pricePence = o?.current_price_pence;
         const priceLabel = pricePence && pricePence > 0
             ? `£${(pricePence / 100).toFixed(2)}`
             : 'Price not available';
 
+        const billingPeriod: 'monthly' | 'annual' = (o?.cadence === 'yearly' || o?.cadence === 'annual' || o?.cadence === 'year') ? 'annual' : 'monthly';
+        const status: 'active' | 'cancelled' | 'past_due' | 'unknown' = o?.status === 'active' ? 'active' : o?.status === 'cancelled' ? 'cancelled' : o?.status === 'past_due' ? 'past_due' : 'unknown';
+
         return {
             plan_name: o?.plan || 'Digital Mailbox Plan',
             price_label: priceLabel,
-            billing_period: (o?.cadence === 'yearly' || o?.cadence === 'annual' || o?.cadence === 'year') ? 'annual' : 'monthly',
-            status: o?.status === 'active' ? 'active' : o?.status === 'cancelled' ? 'cancelled' : o?.status === 'past_due' ? 'past_due' : 'unknown'
+            billing_period: billingPeriod,
+            status: status
         };
     }, [o]);
 
