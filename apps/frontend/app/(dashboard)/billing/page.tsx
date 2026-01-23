@@ -1,20 +1,28 @@
-import { redirect } from "next/navigation";
+'use client';
 
-type SearchParams = Record<string, string | string[] | undefined>;
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function BillingPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(searchParams || {})) {
-    if (Array.isArray(v)) {
-      for (const item of v) qs.append(k, item);
-    } else if (typeof v === "string" && v.length) {
+function BillingRedirect() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Array.from(searchParams.entries())) {
       qs.set(k, v);
     }
-  }
-  const suffix = qs.toString();
-  redirect(suffix ? `/account?${suffix}` : "/account");
+    const suffix = qs.toString();
+    router.replace(suffix ? `/account?${suffix}` : "/account");
+  }, [router, searchParams]);
+
+  return null;
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={null}>
+      <BillingRedirect />
+    </Suspense>
+  );
 }
