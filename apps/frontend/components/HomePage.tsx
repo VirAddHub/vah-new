@@ -51,13 +51,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-24 lg:py-28"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-20"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
-                    <div className="grid lg:grid-cols-2 gap-20 items-center">
-                        <div className="max-w-xl">
-                            <h1 className="text-5xl lg:text-[54px] font-medium leading-[1.1] text-white">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <div className="max-w-[540px]">
+                            <h1 className="text-5xl lg:text-[54px] font-medium leading-[1.15] text-white">
                                 <span className="block">A Credible Central London</span>
                                 <span className="block">Business Address</span>
                                 <span className="block">Without The Cost Of</span>
@@ -86,12 +86,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         </div>
 
-                        <div className="w-full">
-                            <div className="relative max-w-[520px] mx-auto lg:mx-0">
+                        <div className="w-full flex items-center">
+                            <div className="relative w-full max-w-[520px] mx-auto lg:mx-0">
                                 <img
                                     src="/figma/hero-photo.png"
                                     alt="Central London street scene"
-                                    className="w-full max-h-[420px] lg:max-h-[480px] rounded-3xl object-cover"
+                                    className="w-full h-auto max-h-[400px] lg:max-h-[440px] rounded-3xl object-cover"
                                 />
                             </div>
                         </div>
