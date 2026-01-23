@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
 import dynamic from 'next/dynamic';
@@ -21,7 +21,7 @@ const AccountOverviewPage = dynamic(() => import('./account/overview/page'), {
     loading: () => <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#40C46C]"></div></div>
 });
 
-function DashboardContent() {
+export default function DashboardPage() {
     const { activeView, setActiveView } = useDashboardView();
     const searchParams = useSearchParams();
 
@@ -45,14 +45,4 @@ function DashboardContent() {
         // Default to account overview if no view is set
         return <AccountOverviewPage />;
     }
-}
-
-export default function DashboardPage() {
-    // Provider is already in layout.tsx, so we don't need it here
-    // Wrap in Suspense to handle useSearchParams properly
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#40C46C]"></div></div>}>
-            <DashboardContent />
-        </Suspense>
-    );
 }
