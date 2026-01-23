@@ -118,13 +118,13 @@ export default function MailInboxPage() {
 
     // Handle mail item click - show details on right instead of navigating
     const handleMailClick = useCallback((item: MailItem) => {
-        setSelectedMailId(item.id);
+        setSelectedMailId(String(item.id));
     }, []);
 
     // Get selected mail item
     const selectedMail = useMemo(() => {
         if (!selectedMailId) return null;
-        return filteredItems.find((item: MailItem) => item.id === selectedMailId) || null;
+        return filteredItems.find((item: MailItem) => String(item.id) === selectedMailId) || null;
     }, [selectedMailId, filteredItems]);
 
     // Fetch mail item details if selected
@@ -255,7 +255,7 @@ export default function MailInboxPage() {
                             const senderName = getSenderName(item);
                             const date = formatDate(item.received_date || item.created_at);
                             const isRead = item.is_read ?? true;
-                            const isSelected = selectedMailId === item.id;
+                            const isSelected = selectedMailId === String(item.id);
                             
                             return (
                                 <div
