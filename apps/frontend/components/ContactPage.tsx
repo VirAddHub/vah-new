@@ -1,25 +1,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import {
-    Mail,
-    Phone,
-    Clock,
-    Send,
-    CheckCircle,
-    Loader2,
-} from "lucide-react";
+import { Send, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "./ui/card";
-
-import { Badge } from "./ui/badge";
 import { apiClient } from "@/lib/apiClient";
 import { isEmail, validateRequired } from "@/lib/validators";
 import { useAsync } from "@/hooks/useAsync";
@@ -34,13 +17,7 @@ type InquiryType =
     | "technical"
     | "billing";
 
-// Removed old API_BASE config - now using unified api client
-
 export default function ContactPage({ onNavigate }: ContactPageProps) {
-    // Support information state
-    const [supportInfo, setSupportInfo] = useState<any>(null);
-    const [loadingSupport, setLoadingSupport] = useState(true);
-
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -52,6 +29,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     });
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Use async hook for form submission
     const { run: submitForm, loading: isSubmitting, error: submitError } = useAsync(async (data: typeof formData) => {
@@ -67,32 +45,11 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         return res.data;
     });
 
-    // Load support information
-    useEffect(() => {
-        const loadSupportInfo = async () => {
-            try {
-                setLoadingSupport(true);
-                const res = await apiClient.get("/api/support/info");
-                if (res.ok) {
-                    setSupportInfo(res.data);
-                } else {
-                    setErrorMsg(res.error || 'Unable to load support info.');
-                }
-            } catch (err: any) {
-                setErrorMsg(err?.message ?? 'Unable to load support info.');
-            } finally {
-                setLoadingSupport(false);
-            }
-        };
-
-        loadSupportInfo();
-    }, []);
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErrorMsg(null);
 
-        // Client-side validation using centralized validators
+        // Client-side validation
         try {
             validateRequired("Name", formData.name);
             validateRequired("Email", formData.email);
@@ -125,52 +82,44 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     function handleInputChange(
-        e: React.ChangeEvent<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-        >,
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
+    const inquiryTypeLabels: Record<InquiryType, string> = {
+        general: "General Inquire",
+        pricing: "Pricing Question",
+        technical: "Technical Support",
+        billing: "Billing Question",
+    };
+
     // Success screen
     if (isSubmitted) {
         return (
-            <div className="min-h-screen bg-background py-16">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center">
-                        <div className="flex justify-center mb-6">
-                            <CheckCircle className="h-16 w-16 text-primary" />
-                        </div>
-                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-3 text-primary">
+            <div className="min-h-screen bg-white py-16 flex items-center justify-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <div className="max-w-2xl mx-auto px-4 text-center">
+                    <h1 className="text-[54px] font-medium text-[#1A1A1A] mb-4">
                             Message sent — thank you!
                         </h1>
-                        <p className="text-lg text-muted-foreground">
-                            We've received your enquiry.
-                        </p>
-
-                        {/* Response time indicator */}
-                        <div className="mt-4 flex justify-center">
-                            <Badge variant="outline" className="flex items-center gap-2 px-3 py-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                We'll reply within 24 hours
-                            </Badge>
-                        </div>
-
-                        <div className="mt-8">
+                    <p className="text-[18px] text-[#666666] mb-8">
+                        We've received your enquiry. We'll reply within 24 hours.
+                    </p>
+                    <div className="flex gap-4 justify-center">
                             <Button
                                 onClick={() => onNavigate?.("home")}
-                                className="mr-4"
+                            className="bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90 rounded-[30px] px-6"
                             >
                                 Return Home
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => setIsSubmitted(false)}
+                            className="rounded-[30px] px-6"
                             >
                                 Send Another Message
                             </Button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -178,116 +127,27 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     return (
-        <div className="min-h-screen bg-background py-16">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">
+        <div className="w-full bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="max-w-[1440px] mx-auto px-[220px] py-[80px]">
+                {/* Hero Section */}
+                <div className="flex flex-col items-center gap-[16px] mb-[48px]">
+                    <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.33] text-center">
                         Get in touch
                     </h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                        Have questions about our virtual address service?
-                        We're here to help.
+                    <p className="text-[18px] font-normal text-[#666666] leading-[1.2] text-center max-w-[1004px]">
+                        Have questions about our virtual address service? We're here to help.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Contact Information */}
-                    <div className="lg:col-span-1">
-                        <Card className="h-fit">
-                            <CardHeader>
-                                <CardTitle className="text-primary">
-                                    Contact options
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex items-start gap-3">
-                                    <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                    <div>
-                                        <h4 className="font-medium mb-1">
-                                            Business hours
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Monday–Friday
-                                            <br />
-                                            9:00–18:00 UK time
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-3">
-                                    <Phone className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                    <div>
-                                        <h4 className="font-medium mb-1 text-primary">
-                                            WhatsApp support
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Dedicated WhatsApp Business line
-                                        </p>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="mt-2"
-                                            onClick={() =>
-                                                window.open(
-                                                    "https://wa.me/447000000000",
-                                                    "_blank",
-                                                )
-                                            }
-                                        >
-                                            Chat on WhatsApp
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-3">
-                                    <Mail className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                    <div>
-                                        <h4 className="font-medium mb-1 text-primary">
-                                            Email
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            support@virtualaddresshub.co.uk
-                                        </p>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="px-0"
-                                            onClick={() =>
-                                            (window.location.href =
-                                                "mailto:support@virtualaddresshub.co.uk")
-                                            }
-                                        >
-                                            Send an email →
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Contact Form */}
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-primary">
-                                    Send us a message
-                                </CardTitle>
-                                {/* ⬇️ UPDATED: align copy with "as soon as possible" promise */}
-                                <p className="text-muted-foreground">
-                                    Fill out the form and we'll reply as soon as
-                                    possible.
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <form
-                                    onSubmit={handleSubmit}
-                                    className="space-y-6"
-                                    noValidate
-                                >
-                                    {errorMsg && (
-                                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                                            {errorMsg}
+                {/* Main Content - Form and Contact Cards */}
+                <div className="flex gap-[24px] items-start">
+                    {/* Left Column - Contact Form */}
+                    <div className="flex-1">
+                        <div className="bg-[#F9F9F9] rounded-[30px] p-[34px]">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-[20px]">
+                                {errorMsg && (
+                                    <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                        {errorMsg}
                                         </div>
                                     )}
 
@@ -303,165 +163,177 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         aria-hidden="true"
                                     />
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label
-                                                htmlFor="name"
-                                                className="block text-sm font-medium mb-2"
-                                            >
-                                                Full name *
+                                {/* Name Field */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="name" className="text-[18px] font-medium text-[#1A1A1A] leading-[1.4]">
+                                        Name
                                             </label>
-                                            <Input
+                                    <input
                                                 id="name"
                                                 name="name"
                                                 type="text"
                                                 required
                                                 value={formData.name}
                                                 onChange={handleInputChange}
-                                                placeholder="John Smith"
-                                                autoComplete="name"
+                                        placeholder="Name"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
                                             />
                                         </div>
-                                        <div>
-                                            <label
-                                                htmlFor="email"
-                                                className="block text-sm font-medium mb-2"
-                                            >
-                                                Email address *
+
+                                {/* Email Field */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="email" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4]">
+                                        Email
                                             </label>
-                                            <Input
+                                    <input
                                                 id="email"
                                                 name="email"
                                                 type="email"
                                                 required
                                                 value={formData.email}
                                                 onChange={handleInputChange}
-                                                placeholder="john@company.com"
-                                                autoComplete="email"
+                                        placeholder="Typ email"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
                                             />
-                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label
-                                                htmlFor="company"
-                                                className="block text-sm font-medium mb-2"
-                                            >
+                                {/* Company Name Field */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="company" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
                                                 Company name
                                             </label>
-                                            <Input
+                                    <input
                                                 id="company"
                                                 name="company"
                                                 type="text"
                                                 value={formData.company}
                                                 onChange={handleInputChange}
-                                                placeholder="Your Company Ltd"
-                                                autoComplete="organization"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label
-                                                htmlFor="inquiryType"
-                                                className="block text-sm font-medium mb-2"
-                                            >
-                                                Inquiry type
-                                            </label>
-                                            <select
-                                                id="inquiryType"
-                                                name="inquiryType"
-                                                value={formData.inquiryType}
-                                                onChange={handleInputChange}
-                                                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                                            >
-                                                <option value="general">
-                                                    General inquiry
-                                                </option>
-                                                <option value="pricing">
-                                                    Pricing question
-                                                </option>
-                                                <option value="technical">
-                                                    Technical support
-                                                </option>
-                                                <option value="billing">
-                                                    Billing question
-                                                </option>
-                                            </select>
-                                        </div>
+                                        placeholder="Company name"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
+                                    />
                                     </div>
 
-                                    <div>
-                                        <label
-                                            htmlFor="subject"
-                                            className="block text-sm font-medium mb-2"
-                                        >
-                                            Subject *
+                                {/* Subject Field */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="subject" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
+                                        Subject
                                         </label>
-                                        <Input
+                                    <input
                                             id="subject"
                                             name="subject"
                                             type="text"
                                             required
                                             value={formData.subject}
                                             onChange={handleInputChange}
-                                            placeholder="How can we help you?"
+                                        placeholder="How can we help you"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label
-                                            htmlFor="message"
-                                            className="block text-sm font-medium mb-2"
+                                {/* Inquire Type Dropdown */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="inquiryType" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
+                                        Inquire type
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            id="inquiryType"
+                                            name="inquiryType"
+                                            value={formData.inquiryType}
+                                            onChange={handleInputChange}
+                                            className="w-full px-[16px] py-[12px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C] appearance-none pr-[40px]"
                                         >
-                                            Message *
+                                            <option value="general">General Inquire</option>
+                                            <option value="pricing">Pricing Question</option>
+                                            <option value="technical">Technical Support</option>
+                                            <option value="billing">Billing Question</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-[16px] top-1/2 -translate-y-1/2 w-4 h-4 text-[#979797] pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                {/* Description/Message Field */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label htmlFor="message" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4]">
+                                        Description
                                         </label>
-                                        <Textarea
+                                    <textarea
                                             id="message"
                                             name="message"
                                             required
                                             rows={6}
                                             value={formData.message}
                                             onChange={handleInputChange}
-                                            placeholder="Please describe your inquiry in detail..."
-                                            className="resize-none"
+                                        placeholder="Please discrib you inqure in details..."
+                                        className="w-full px-[20px] py-[18px] rounded-[20px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C] resize-none"
                                         />
                                     </div>
 
-                                    <div className="flex items-center gap-4">
-                                        <Button
+                                {/* Submit Button */}
+                                <button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="flex items-center gap-2"
+                                    className="w-full py-[10px] px-[10px] rounded-[30px] bg-[#40C46C] text-[#024E40] text-[16px] font-medium leading-[1.4] uppercase hover:bg-[#40C46C]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
                                             {isSubmitting ? (
                                                 <>
                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                    Sending…
+                                            Sending...
                                                 </>
                                             ) : (
-                                                <>
-                                                    <Send className="h-4 w-4" />
-                                                    Send message
-                                                </>
-                                            )}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => onNavigate?.("home")}
-                                            className="bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
-                                        >
-                                            Back to Home
-                                        </Button>
+                                        'Send Inquiry'
+                                    )}
+                                </button>
+
+                                {/* Privacy Text */}
+                                <p className="text-[16px] font-normal text-[#666666] leading-[1.4] text-center">
+                                    Your information is private and never shared with third parties.
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* Right Column - Contact Cards */}
+                    <div className="w-[488px] flex-shrink-0 flex flex-col gap-[24px]">
+                        {/* WhatsApp Support Card */}
+                        <div className="bg-[#F9F9F9] rounded-[20px] p-[26px_34px] flex flex-col items-end gap-[38px]">
+                            <div className="w-full flex flex-col gap-[14px]">
+                                <div className="flex flex-col gap-[7px]">
+                                    <h3 className="text-[16px] font-medium text-[#1A1A1A] leading-[1.2]">
+                                        WhatsApp Support
+                                    </h3>
+                                    <p className="text-[16px] font-normal text-[#666666] leading-[1.4]">
+                                        Dedicated WhatsApp Business line
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => window.open("https://wa.me/447000000000", "_blank")}
+                                className="w-[214px] h-[48px] rounded-[36px] border border-[#40C46C] bg-transparent text-[#40C46C] text-[16px] font-medium leading-[1.4] hover:bg-[#40C46C] hover:text-white transition-colors"
+                            >
+                                Chat on whatsapp
+                            </button>
                                     </div>
 
-                                    <p className="text-xs text-muted-foreground">
-                                        * Required fields. Your information is
-                                        private and never shared with third parties.
+                        {/* Email Card */}
+                        <div className="bg-[#F9F9F9] rounded-[20px] p-[26px_34px] flex flex-col items-end gap-[38px]">
+                            <div className="w-full flex flex-col gap-[14px]">
+                                <div className="flex flex-col gap-[7px]">
+                                    <h3 className="text-[16px] font-medium text-[#1A1A1A] leading-[1.2]">
+                                        Email
+                                    </h3>
+                                    <p className="text-[16px] font-normal text-[#666666] leading-[1.4]">
+                                        support@virtualaddresshub.co.uk
                                     </p>
-                                </form>
-                            </CardContent>
-                        </Card>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
+                                className="w-[214px] h-[48px] rounded-[36px] border border-[#40C46C] bg-transparent text-[#40C46C] text-[16px] font-medium leading-[1.4] hover:bg-[#40C46C] hover:text-white transition-colors"
+                            >
+                                Send an email
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
