@@ -82,7 +82,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                     : undefined
             }
         >
-            <div className="safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 sm:px-8 lg:px-16">
+            <div className="safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 sm:px-8 lg:px-16">
                 {/* Brand Name */}
                 <VAHLogo
                     onNavigate={onNavigate}
@@ -94,7 +94,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 <nav
                     aria-label="Main navigation"
                     className={cn(
-                        "hidden md:flex gap-6 text-sm lg:text-base leading-[1.2]",
+                        "hidden md:flex gap-6 text-sm lg:text-base leading-tight",
                         isMarketing ? "text-white/80" : "text-muted-foreground"
                     )}
                 >
@@ -133,7 +133,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
 
                 {/* Auth Buttons - Only show on public pages */}
                 {!isDashboard && (
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-3">
                         <button
                             onClick={() => handleNavClick('signup')}
                             className={cn(
@@ -195,7 +195,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                             : "border-border/50 bg-background"
                     )}
                 >
-                    <div className="safe-pad pt-4 pb-6 space-y-2">
+                    <div className="safe-pad pt-3 pb-5 space-y-1.5">
                         {isDashboard ? (
                             // Dashboard mobile navigation with icons
                             navItems.map((item: any) => (

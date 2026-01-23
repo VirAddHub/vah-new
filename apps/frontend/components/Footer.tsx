@@ -98,7 +98,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     <div className="grid gap-8 md:grid-cols-4">
                         {/* Company Information */}
                         <div className="lg:col-span-1">
-                            <div className="mb-3">
+                            <div className="mb-2">
                                 <VAHLogo
                                     onNavigate={onNavigate}
                                     size="xl"
@@ -118,7 +118,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             {/* Regulatory Info */}
                             <div>
                                 <h3 className="mb-3 text-sm font-semibold text-white">Regulatory Info</h3>
-                                <div className="space-y-2 text-sm leading-relaxed text-white/90">
+                                <div className="space-y-1.5 text-sm leading-snug text-white/85">
                                     <div>
                                         <span className="font-medium">Company:</span> London Business Address Ltd
                                     </div>
@@ -179,7 +179,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright for Desktop */}
-                    <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/60">
+                    <div className="mt-8 border-t border-white/10 pt-4 text-center text-sm text-white/60">
                         <div>
                             © 2026 VirtualAddress.UK. All rights reserved.
                         </div>

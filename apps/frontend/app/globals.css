@@ -83,25 +83,7 @@ iframe {
     overflow-wrap: anywhere;
 }
 
-/* Responsive grid that stacks on mobile */
-.grid-resp {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
-    /* mobile first */
-}
-
-@media (min-width: 640px) {
-    .grid-resp {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    .grid-resp {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
+/* Grid utilities removed - use Tailwind grid classes in components */
 
 /* Avoid fixed heights; let content grow */
 .card {
@@ -344,14 +326,7 @@ iframe {
         --radius-xl: 1.25rem;
         --radius-2xl: 1.5rem;
 
-        /* fluid typography - scales with viewport */
-        --fs-body: clamp(0.95rem, 1vw + 0.6rem, 1.05rem);
-        --fs-h1: clamp(1.75rem, 4vw + 0.5rem, 3rem);
-        --fs-h2: clamp(1.5rem, 3vw + 0.5rem, 2.25rem);
-        --fs-h3: clamp(1.25rem, 2.5vw + 0.5rem, 1.75rem);
-        --fs-h4: clamp(1.125rem, 2vw + 0.25rem, 1.25rem);
-        --fs-h5: clamp(1rem, 1.5vw + 0.25rem, 1.125rem);
-        --fs-h6: clamp(0.875rem, 1vw + 0.25rem, 1rem);
+        /* Fluid typography variables removed - components use Tailwind scale */
 
         /* shadows (quiet) */
         --shadow-xs: 0 1px 2px rgba(2, 6, 23, .04);
@@ -436,132 +411,9 @@ iframe {
         /* ~150% as specified */
     }
 
-    /* Ensure white background and dark text on mobile - overrides dark mode and all other styles */
-    @media (max-width: 1023px) {
-
-        html,
-        html.dark,
-        body,
-        body>div,
-        body>div>div,
-        #__next,
-        #__next>div {
-            background-color: #ffffff !important;
-            --background: 0 0% 100% !important;
-            --foreground: 220 10% 15% !important;
-            color: #212325 !important;
-        }
-
-        main,
-        main>*,
-        main>*>*,
-        .bg-background,
-        .bg-card,
-        .bg-slate-900,
-        .bg-neutral-900,
-        .bg-gray-900,
-        .bg-slate-800,
-        .bg-neutral-800,
-        [class*="bg-background"],
-        [class*="bg-card"] {
-            background-color: #ffffff !important;
-        }
-
-        /* Ensure all text is dark on mobile */
-        body,
-        p,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        span:not(.text-primary),
-        .text-foreground,
-        .text-muted-foreground,
-        .text-neutral-600,
-        .text-neutral-700,
-        .text-gray-600,
-        .text-gray-700 {
-            color: #212325 !important;
-        }
-
-        /* Keep links and primary colored text */
-        a:not(.text-white):not(.text-primary-foreground),
-        .text-primary {
-            color: hsl(var(--primary)) !important;
-        }
-
-        /* Override any backdrop or overlay backgrounds */
-        .backdrop-blur-md,
-        .backdrop-blur-sm {
-            background-color: rgba(255, 255, 255, 0.95) !important;
-        }
-    }
-
-    h1 {
-        font-size: var(--fs-h1);
-        line-height: 1.1;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
-    h2 {
-        font-size: var(--fs-h2);
-        line-height: 1.2;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
-    h3 {
-        font-size: var(--fs-h3);
-        line-height: 1.3;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
-    h4 {
-        font-size: var(--fs-h4);
-        line-height: 1.4;
-        font-weight: 500;
-        letter-spacing: 0;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
-    h5 {
-        font-size: var(--fs-h5);
-        line-height: 1.5;
-        font-weight: 500;
-        letter-spacing: 0;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
-    h6 {
-        font-size: var(--fs-h6);
-        line-height: 1.5;
-        font-weight: 500;
-        letter-spacing: 0;
-        word-wrap: break-word;
-        color: hsl(var(--primary));
-    }
-
+    /* Typography defaults - components control their own sizing */
+    /* Headings inherit from Tailwind utilities in components */
     /* Body text uses Inter via font-sans */
-
-    p {
-        font-size: var(--fs-body);
-        line-height: 1.6;
-        font-weight: 400;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
 
     small {
         font-size: 0.75rem;
@@ -735,103 +587,7 @@ iframe {
         word-break: break-all;
     }
 
-    /* Responsive container utilities */
-    .container-responsive {
-        max-width: 100%;
-        margin-left: auto;
-        margin-right: auto;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
-    @media (min-width: 640px) {
-        .container-responsive {
-            max-width: 640px;
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-        }
-    }
-
-    @media (min-width: 768px) {
-        .container-responsive {
-            max-width: 768px;
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .container-responsive {
-            max-width: 1024px;
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
-    }
-
-    @media (min-width: 1280px) {
-        .container-responsive {
-            max-width: 1280px;
-        }
-    }
-
-    @media (min-width: 1536px) {
-        .container-responsive {
-            max-width: 1536px;
-        }
-    }
-
-    /* Responsive grid utilities */
-    .grid-responsive-1 {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-    }
-
-    .grid-responsive-2 {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 640px) {
-        .grid-responsive-2 {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .grid-responsive-3 {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 640px) {
-        .grid-responsive-3 {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .grid-responsive-3 {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .grid-responsive-4 {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 640px) {
-        .grid-responsive-4 {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .grid-responsive-4 {
-            grid-template-columns: repeat(4, 1fr);
-        }
-    }
+    /* Container and grid utilities removed - use Tailwind classes in components */
 
     /* Safe area utilities for mobile notches */
     .safe-top {
@@ -895,10 +651,6 @@ iframe {
 
     .section-alt {
         background-color: hsl(var(--section-alt));
-    }
-
-    .container-modern {
-        @apply max-w-7xl mx-auto px-4;
     }
 
     .text-gradient {
@@ -966,39 +718,13 @@ iframe {
 }
 
 /* ========================================
-   MOBILE-FIRST TYPE SCALE & UTILITIES
+   PROSE UTILITIES (for long-form content only)
    ======================================== */
 
-/* Mobile-first type scale using clamp */
-:root {
-    --va-h1: clamp(1.625rem, 2.5vw + 1.1rem, 2.5rem);
-    --va-h2: clamp(1.375rem, 2vw + 1rem, 2rem);
-    --va-h3: clamp(1.125rem, 1.6vw + 0.95rem, 1.5rem);
-    --va-body: clamp(0.975rem, 0.5vw + 0.9rem, 1.0625rem);
-    --va-lead: clamp(1.05rem, 1vw + 0.95rem, 1.2rem);
-}
-
-/* Readability: measure + line-height */
+/* Prose utilities for blog/content pages only */
 .prose-mobile {
     max-width: 65ch;
     line-height: 1.65;
-    font-size: var(--va-body);
-}
-
-/* Headings scale without hard-coded px */
-.prose-mobile h1 {
-    font-size: var(--va-h1);
-    line-height: 1.15;
-}
-
-.prose-mobile h2 {
-    font-size: var(--va-h2);
-    line-height: 1.2;
-}
-
-.prose-mobile h3 {
-    font-size: var(--va-h3);
-    line-height: 1.25;
 }
 
 /* Touch target + spacing helpers */

@@ -115,7 +115,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </div>
 
                         <div className="w-full lg:w-[528px]">
-                            <h2 className="text-2xl font-medium leading-[1.136] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">What&apos;s Included</h2>
+                            <h2 className="text-2xl font-medium leading-[1.136] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">What&apos;s Included</h2>
 
                             <div className="mt-4 sm:mt-6 lg:mt-10">
                                 <ul className="space-y-6 max-w-xl">
@@ -162,8 +162,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
             >
                 <div className="mx-auto max-w-6xl px-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">One Simple Plan</h2>
-                        <p className="mt-2 text-sm leading-[1.4] text-[#666666] sm:mt-3 sm:text-base md:text-lg lg:mt-4 lg:text-[18px]">
+                        <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">One Simple Plan</h2>
+                        <p className="mt-2 text-sm leading-[1.4] text-[#666666] sm:mt-3 sm:text-base md:text-lg lg:mt-4 lg:text-base">
                             One simple plan with everything included. Switch billing frequency anytime.
                         </p>
                     </div>
@@ -173,21 +173,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="inline-flex rounded-full bg-gray-100 p-1">
                             <button
                                 onClick={() => setBilling("monthly")}
-                                className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${
-                                    billing === "monthly"
+                                className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${billing === "monthly"
                                         ? "bg-[#014D3F] text-white"
                                         : "text-gray-600"
-                                }`}
+                                    }`}
                             >
                                 Monthly
                             </button>
                             <button
                                 onClick={() => setBilling("annual")}
-                                className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${
-                                    billing === "annual"
+                                className={`rounded-full px-4 py-2 text-xs font-medium transition-colors sm:px-6 sm:text-sm ${billing === "annual"
                                         ? "bg-[#014D3F] text-white"
                                         : "text-gray-600"
-                                }`}
+                                    }`}
                             >
                                 Annual
                             </button>
@@ -196,57 +194,67 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                     <div className="mt-8 grid gap-12 md:grid-cols-2">
                         {/* Monthly card */}
-                        <div className={`w-full rounded-3xl bg-[#014D3F] p-10 max-h-[680px] overflow-hidden shadow-[0px_2px_20px_rgba(0,0,0,0.2)] ${billing !== "monthly" ? "hidden md:flex" : "flex"} flex-col h-full`}>
-                                <div className="flex items-center justify-end">
-                                    <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-[16px]">
-                                        Monthly
-                                    </div>
+                        <div className={`w-full rounded-3xl bg-[#014D3F] p-10 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] ${billing !== "monthly" ? "hidden md:flex" : "flex"} flex-col h-full`}>
+                            <div className="flex items-center justify-end">
+                                <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-base">
+                                    Monthly
                                 </div>
+                            </div>
 
-                            <div className="mt-6 mb-6 text-2xl font-semibold leading-[1.2] text-white sm:text-3xl lg:text-[38px]">
+                            <div className="mt-6 mb-6 text-2xl font-semibold leading-[1.2] text-white sm:text-3xl lg:text-4xl">
                                 £{Number(monthlyPrice).toFixed(2)} / month
                             </div>
 
                             <div>
-                                <div className="text-sm font-medium text-white sm:text-base lg:text-[18px]">Include with every plan</div>
+                                <div className="text-sm font-medium text-white sm:text-base lg:text-lg">Include with every plan</div>
                                 <div className="mt-4 space-y-4">
-                                        {[
-                                            "Registered Office address",
-                                            "Director's Service Address",
-                                            "Professional business address",
-                                            "Unlimited same day mail scanning",
-                                            "Secure online dashboard",
-                                            "UK based support",
-                                        ].map((t) => (
-                                            <div key={t} className="flex items-center gap-3">
-                                                <img src="/figma/check-16.svg" alt="" aria-hidden="true" className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                <div className="text-xs leading-[1.2] text-white/80 sm:text-sm lg:text-[16px]">{t}</div>
-                                            </div>
-                                        ))}
+                                    {[
+                                        "Registered Office address",
+                                        "Director's Service Address",
+                                        "Professional business address",
+                                        "Unlimited same day mail scanning",
+                                        "Secure online dashboard",
+                                        "UK based support",
+                                    ].map((t) => (
+                                        <div key={t} className="flex items-center gap-3">
+                                            <img
+                                                src="/figma/check-16.svg"
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="h-4 w-4 flex-shrink-0"
+                                            />
+                                            <div className="text-xs leading-[1.2] text-white/80 sm:text-sm lg:text-base">{t}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
                             <div className="my-8 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
 
                             <div>
-                                <div className="text-sm font-medium text-white sm:text-base lg:text-[18px]">Mail Forwarding rules</div>
+                                <div className="text-sm font-medium text-white sm:text-base lg:text-lg">Mail Forwarding rules</div>
                                 <div className="mt-4 space-y-4">
-                                        {[
-                                            "HMRC and Companies House letters forwarded free within the UK on request.",
-                                            "Other UK letters forwarded at £2 per item.",
-                                        ].map((t) => (
-                                            <div key={t} className="flex items-start gap-3">
-                                                <img src="/figma/check-20.svg" alt="" aria-hidden="true" className="mt-[2px] h-4 w-4 sm:h-5 sm:w-5" />
-                                                <div className="text-xs leading-[1.4] text-white/80 sm:text-sm lg:text-[16px]">{t}</div>
-                                            </div>
-                                        ))}
+                                    {[
+                                        "HMRC and Companies House letters forwarded free within the UK on request.",
+                                        "Other UK letters forwarded at £2 per item.",
+                                    ].map((t) => (
+                                        <div key={t} className="flex items-start gap-3">
+                                            <img
+                                                src="/figma/check-16.svg"
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="h-4 w-4 flex-shrink-0"
+                                            />
+                                            <div className="text-xs leading-[1.4] text-white/80 sm:text-sm lg:text-base">{t}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
                             <div className="mt-auto pt-6">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="h-[40px] w-full rounded-[30px] bg-[#40C46C] text-xs font-medium text-[#014D3F] hover:bg-[#40C46C]/90 sm:h-[44px] sm:text-sm lg:h-[48px] lg:text-[16px]"
+                                    className="h-[40px] w-full rounded-[30px] bg-[#40C46C] text-xs font-medium text-[#014D3F] hover:bg-[#40C46C]/90 sm:h-[44px] sm:text-sm lg:h-[48px] lg:text-base"
                                 >
                                     Sign Up
                                 </Button>
@@ -254,53 +262,63 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </div>
 
                         {/* Annual card */}
-                        <div className={`w-full rounded-3xl bg-white p-10 max-h-[680px] overflow-hidden shadow-[0px_2px_20px_rgba(0,0,0,0.1)] ${billing !== "annual" ? "hidden md:flex" : "flex"} flex-col h-full`}>
-                                <div className="flex items-center justify-end">
-                                    <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-[16px]">
-                                        Annual
-                                    </div>
+                        <div className={`w-full rounded-3xl bg-white p-10 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] ${billing !== "annual" ? "hidden md:flex" : "flex"} flex-col h-full`}>
+                            <div className="flex items-center justify-end">
+                                <div className="rounded-[44px] bg-[#075748] px-3 py-1 text-xs font-semibold text-white sm:px-4 sm:text-sm lg:px-6 lg:py-2 lg:text-base">
+                                    Annual
                                 </div>
+                            </div>
 
                             <div className="mt-6 mb-6 flex items-center justify-between">
-                                <div className="text-2xl font-semibold leading-[1.2] text-[#1A1A1A] sm:text-3xl lg:text-[38px]">
+                                <div className="text-2xl font-semibold leading-[1.2] text-[#1A1A1A] sm:text-3xl lg:text-4xl">
                                     £{Number(annualPrice).toFixed(2)} / year
                                 </div>
-                                <div className="text-xs font-medium text-[#FF6900] sm:text-sm lg:text-[16px]">20% Save</div>
+                                <div className="text-xs font-medium text-[#FF6900] sm:text-sm lg:text-base">20% Save</div>
                             </div>
 
                             <div>
-                                <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-[18px]">Include with every plan</div>
+                                <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-lg">Include with every plan</div>
                                 <div className="mt-4 space-y-4">
-                                        {[
-                                            "Registered Office address",
-                                            "Director's Service Address",
-                                            "Professional business address",
-                                            "Unlimited same day mail scanning",
-                                            "Secure online dashboard",
-                                            "UK based support",
-                                        ].map((t) => (
-                                            <div key={t} className="flex items-center gap-3">
-                                                <img src="/figma/check-16.svg" alt="" aria-hidden="true" className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                <div className="text-xs leading-[1.2] text-[#666666] sm:text-sm lg:text-[16px]">{t}</div>
-                                            </div>
-                                        ))}
+                                    {[
+                                        "Registered Office address",
+                                        "Director's Service Address",
+                                        "Professional business address",
+                                        "Unlimited same day mail scanning",
+                                        "Secure online dashboard",
+                                        "UK based support",
+                                    ].map((t) => (
+                                        <div key={t} className="flex items-center gap-3">
+                                            <img
+                                                src="/figma/check-16.svg"
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="h-4 w-4 flex-shrink-0"
+                                            />
+                                            <div className="text-xs leading-[1.2] text-[#666666] sm:text-sm lg:text-base">{t}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
                             <div className="my-8 h-px w-full bg-[#E5E7EB]" style={{ opacity: 0.86 }} />
 
                             <div>
-                                <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-[18px]">Mail Forwarding rules</div>
+                                <div className="text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-lg">Mail Forwarding rules</div>
                                 <div className="mt-4 space-y-4">
-                                        {[
-                                            "HMRC and Companies House letters forwarded free within the UK on request.",
-                                            "Other UK letters forwarded at £2 per item.",
-                                        ].map((t) => (
-                                            <div key={t} className="flex items-start gap-3">
-                                                <img src="/figma/check-20.svg" alt="" aria-hidden="true" className="mt-[2px] h-4 w-4 sm:h-5 sm:w-5" />
-                                                <div className="text-xs leading-[1.4] text-[#666666] sm:text-sm lg:text-[16px]">{t}</div>
-                                            </div>
-                                        ))}
+                                    {[
+                                        "HMRC and Companies House letters forwarded free within the UK on request.",
+                                        "Other UK letters forwarded at £2 per item.",
+                                    ].map((t) => (
+                                        <div key={t} className="flex items-start gap-3">
+                                            <img
+                                                src="/figma/check-16.svg"
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="h-4 w-4 flex-shrink-0"
+                                            />
+                                            <div className="text-xs leading-[1.4] text-[#666666] sm:text-sm lg:text-base">{t}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -308,7 +326,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
                                     variant="outline"
-                                    className="h-[40px] w-full rounded-[30px] border border-[#014D3F] bg-white text-xs font-medium text-[#014D3F] hover:bg-[#014D3F] hover:text-white sm:h-[44px] sm:text-sm lg:h-[48px] lg:text-[16px]"
+                                    className="h-[40px] w-full rounded-[30px] border border-[#014D3F] bg-white text-xs font-medium text-[#014D3F] hover:bg-[#014D3F] hover:text-white sm:h-[44px] sm:text-sm lg:h-[48px] lg:text-base"
                                 >
                                     Sign Up
                                 </Button>
@@ -326,10 +344,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
                     <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-stretch lg:gap-[120px]">
                         <div className="w-full lg:h-[186px] lg:w-[433px]">
-                            <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-[44px]">
+                            <h2 className="text-2xl font-medium leading-[1.1] text-[#1A1A1A] sm:text-3xl md:text-4xl lg:text-4xl">
                                 Built for Modern UK Businesses
                             </h2>
-                            <p className="mt-3 text-xs leading-[1.4] text-[#666666] sm:mt-4 sm:text-sm md:text-base lg:mt-5 lg:text-[16px]">
+                            <p className="mt-3 text-xs leading-[1.4] text-[#666666] sm:mt-4 sm:text-sm md:text-base lg:mt-5 lg:text-base">
                                 Designed for founders who want a professional London presence without renting office space or publishing their home address.
                             </p>
                         </div>
@@ -347,7 +365,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     className="flex h-[56px] items-center gap-2 rounded-[10px] bg-[#F9F9F9] px-4 sm:h-[64px] sm:gap-3 sm:px-5 lg:h-[72px] lg:gap-[14px] lg:px-[24px]"
                                 >
                                     <img src={x.icon} alt="" aria-hidden="true" className="h-5 w-5 flex-shrink-0 sm:h-6 sm:w-6" />
-                                    <div className="text-xs font-normal leading-[1.1] text-[#666666] sm:text-sm md:text-base lg:text-[16px]">{x.t}</div>
+                                    <div className="text-xs font-normal leading-[1.1] text-[#666666] sm:text-sm md:text-base lg:text-base">{x.t}</div>
                                 </div>
                             ))}
                         </div>
@@ -359,7 +377,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="py-32 bg-white">
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-3xl bg-[#0b4d3c] p-12 md:p-20">
-                        <div className="absolute inset-y-0 left-0 w-1/2 opacity-20 pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 w-[45%] opacity-15 pointer-events-none">
                             <img
                                 src="/figma/cta-illustration.png"
                                 alt=""
