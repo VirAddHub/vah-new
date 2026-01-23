@@ -174,144 +174,122 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
     }
   };
 
+  const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'No name';
+  const initials = `${contact.first_name?.[0] || ''}${contact.last_name?.[0] || ''}`.toUpperCase() || '?';
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Business Contact</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Locked section - Name fields */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Lock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Locked for verification</span>
+    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-[408px] h-[490px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      <CardContent className="p-[28px] h-full flex flex-col">
+        <div className="flex flex-col gap-[31px] flex-1">
+          {/* Header */}
+          <div className="flex items-center gap-[57px]">
+            <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              Business Contact
+            </h3>
+            <div className="w-[12px] h-[12px] border border-[#E5E7EB] rounded-[8px]"></div>
           </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name" className="flex items-center gap-2">
-                  Full legal first name <span className="text-destructive">*</span>
-                  <Badge variant="outline" className="text-xs">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Locked
-                  </Badge>
-                </Label>
-                <Input
-                  id="first_name"
-                  value={contact.first_name}
-                  disabled
-                  placeholder="John"
-                  className="bg-muted"
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="last_name" className="flex items-center gap-2">
-                  Full legal last name(s) <span className="text-destructive">*</span>
-                  <Badge variant="outline" className="text-xs">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Locked
-                  </Badge>
-                </Label>
-                <Input
-                  id="last_name"
-                  value={contact.last_name}
-                  disabled
-                  placeholder="Smith"
-                  className="bg-muted"
+          {/* Avatar and Name/Email */}
+          <div className="flex flex-col items-center gap-[14px]">
+            <div className="w-[54px] h-[54px] rounded-full bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center overflow-hidden">
+              {contact.email ? (
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff&size=54`}
+                  alt={fullName}
+                  className="w-full h-full object-cover"
                 />
-              </div>
+              ) : (
+                <span className="text-[20px] font-semibold text-[#666666]">{initials}</span>
+              )}
             </div>
+            <div className="flex flex-col gap-[4px] items-center">
+              <p className="text-[16px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                {fullName}
+              </p>
+              <p className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                {contact.email || 'No email'}
+              </p>
+            </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="middle_names" className="flex items-center gap-2">
-                Middle names
-                <Badge variant="outline" className="text-xs">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Locked
-                </Badge>
+          {/* Form Fields */}
+          <div className="flex flex-col gap-[10px]">
+            {/* Name Field */}
+            <div className="flex flex-col gap-[10px]">
+              <Label htmlFor="name" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                Name
               </Label>
               <Input
-                id="middle_names"
-                value={contact.middle_names || ''}
+                id="name"
+                value={fullName}
                 disabled
-                placeholder="James"
-                className="bg-muted"
+                className="h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
               />
             </div>
-          </div>
-          <div className="bg-muted/50 border border-muted rounded-lg p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">
-              These details are locked after verification. If you need to change them, contact support.
-            </p>
-            <a
-              href="mailto:support@virtualaddresshub.co.uk?subject=Request to change verified name"
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-            >
-              <Mail className="h-3 w-3" />
-              Contact support
-            </a>
-          </div>
-        </div>
 
-        {/* Editable section - Phone and Email */}
-        <div className="space-y-4 pt-4 border-t">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Contact telephone number</Label>
+            {/* Email Field */}
+            <div className="flex flex-col gap-[10px]">
+              <Label htmlFor="email" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                Email
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="email"
+                  value={contact.email || ''}
+                  disabled
+                  className="flex-1 h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
+                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenEmailDialog}
+                  className="text-[12px] text-[#40C46C] hover:text-[#40C46C]/80"
+                >
+                  Edit
+                </Button>
+              </div>
+              {pendingEmail && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  <p className="text-xs text-blue-800">
+                    Pending: <strong>{pendingEmail}</strong> (confirmation required)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Number Field */}
+            <div className="flex flex-col gap-[10px]">
+              <Label htmlFor="phone" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                Number
+              </Label>
               <Input
                 id="phone"
                 type="tel"
                 value={contact.phone || ''}
                 onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder="+44 20 1234 5678"
+                placeholder="+088 5642 2356"
+                className="h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 bg-muted rounded-md border border-input text-sm">
-                  {contact.email || 'No email set'}
-                </div>
+            {/* Save Button */}
+            {hasChanges && (
+              <div className="flex justify-end pt-2">
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenEmailDialog}
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="bg-[#40C46C] text-white hover:bg-[#40C46C]/90"
+                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                 >
-                  Change email
+                  {isSaving ? 'Saving...' : 'Save changes'}
                 </Button>
               </div>
-              {pendingEmail && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
-                  <p className="text-xs text-blue-800 dark:text-blue-200">
-                    Pending: <strong>{pendingEmail}</strong> (confirmation required)
-                  </p>
-                  <a
-                    href="/account/confirm-email"
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
-                  >
-                    Resend confirmation email
-                  </a>
-                </div>
-              )}
-              {!pendingEmail && (
-                <p className="text-xs text-muted-foreground">
-                  Changing your email requires verification. We'll send a confirmation link to your new email address.
-                </p>
-              )}
-            </div>
+            )}
           </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save changes'}
-          </Button>
         </div>
       </CardContent>
 

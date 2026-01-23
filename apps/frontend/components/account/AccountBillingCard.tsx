@@ -199,84 +199,120 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Account & Billing</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Plan Summary */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground">{subscription.plan_name}</p>
-              <p className="text-sm text-muted-foreground">
-                {subscription.price_label} / {subscription.billing_period}
-              </p>
-            </div>
-            {getStatusBadge()}
-          </div>
-        </div>
+  // Get next billing date from overview
+  const nextBillingDate = overview?.data?.next_billing_date || overview?.data?.period_end;
+  let nextBillingLabel = 'N/A';
+  if (nextBillingDate) {
+    try {
+      const date = typeof nextBillingDate === 'string' 
+        ? new Date(nextBillingDate + 'T00:00:00Z')
+        : new Date(nextBillingDate);
+      if (!isNaN(date.getTime())) {
+        nextBillingLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    } catch (e) {
+      // Keep 'N/A'
+    }
+  }
 
-        {/* Mandate Status */}
-        {hasMandate && (
-          <div className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4 text-green-600" />
-            <span className="text-muted-foreground">
-              Direct Debit {mandateStatus === 'active' ? 'active' : 'pending'}
+  return (
+    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-[408px] h-[208px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      <CardContent className="p-[28px] h-full flex flex-col">
+        <div className="flex flex-col gap-[14px] flex-1">
+          {/* Header */}
+          <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            Account & billing
+          </h3>
+
+          {/* Plan */}
+          <div className="flex items-center justify-between gap-[58px]">
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              Plan
+            </span>
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              {subscription.price_label}/{subscription.billing_period === 'annual' ? 'year' : 'month'}
             </span>
           </div>
-        )}
+          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
 
-        {/* Actions */}
-        <div className="space-y-3">
-          {(subscription.status === 'cancelled' || subscription.status === 'past_due') && (
-            <Button
-              onClick={handleReactivate}
-              disabled={isLoading === 'reactivate'}
-              className="flex items-center gap-2"
-            >
-              {isLoading === 'reactivate' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
+          {/* Status */}
+          <div className="flex items-center justify-between gap-[58px]">
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              Status
+            </span>
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              {subscription.status === 'active' ? 'Active' : subscription.status === 'cancelled' ? 'Cancelled' : subscription.status === 'past_due' ? 'Past due' : 'Unknown'}
+            </span>
+          </div>
+          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+
+          {/* Next billing */}
+          <div className="flex items-center justify-between gap-[58px]">
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              Next billing
+            </span>
+            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              {nextBillingLabel}
+            </span>
+          </div>
+
+          {/* Actions (hidden by default, show only when needed) */}
+          {(subscription.status === 'cancelled' || subscription.status === 'past_due' || hasMandate) && (
+            <div className="pt-4 border-t space-y-3">
+              {(subscription.status === 'cancelled' || subscription.status === 'past_due') && (
+                <Button
+                  onClick={handleReactivate}
+                  disabled={isLoading === 'reactivate'}
+                  className="w-full bg-[#40C46C] text-white hover:bg-[#40C46C]/90"
+                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                >
+                  {isLoading === 'reactivate' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Reactivating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reactivate subscription
+                    </>
+                  )}
+                </Button>
               )}
-              Reactivate subscription
-            </Button>
-          )}
-          {hasMandate && (
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                onClick={handleUpdateBank}
-                disabled={isLoading === 'update-bank'}
-                className="flex items-center gap-2"
-              >
-                {isLoading === 'update-bank' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CreditCard className="h-4 w-4" />
-                )}
-                Update bank details
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleReauthorise}
-                disabled={isLoading === 'reauthorise'}
-                className="flex items-center gap-2"
-              >
-                {isLoading === 'reauthorise' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Shield className="h-4 w-4" />
-                )}
-                Re-authorise Direct Debit
-              </Button>
+              {hasMandate && (
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleUpdateBank}
+                    disabled={isLoading === 'update-bank'}
+                    className="flex-1"
+                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                  >
+                    {isLoading === 'update-bank' ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 mr-2" />
+                    )}
+                    Update bank
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleReauthorise}
+                    disabled={isLoading === 'reauthorise'}
+                    className="flex-1"
+                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                  >
+                    {isLoading === 'reauthorise' ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Shield className="h-4 w-4 mr-2" />
+                    )}
+                    Re-authorise
+                  </Button>
+                </div>
+              )}
             </div>
           )}
-          <div className="text-sm text-muted-foreground">
-            <p>Billing address is managed by GoCardless</p>
-          </div>
         </div>
       </CardContent>
     </Card>

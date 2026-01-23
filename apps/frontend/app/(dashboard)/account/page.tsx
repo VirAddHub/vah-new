@@ -468,19 +468,14 @@ export default function AccountPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
             <Navigation onNavigate={() => { }} />
             <main id="main-content" role="main" className="flex-1">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                        <User className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold text-foreground">Account</h1>
-                        </div>
-                        <p className="text-muted-foreground ml-11">
-                            Manage your account settings, billing, and business information
-                        </p>
-                    </div>
+                <div className="max-w-[1440px] mx-auto px-[80px] py-[80px]">
+                    {/* My Account Heading */}
+                    <h1 className="text-[54px] font-medium leading-[1.2] text-[#1A1A1A] mb-[34px]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        My Account
+                    </h1>
 
                     {/* Big banner for 500 errors */}
                     {hasError && errorPayloads.length > 0 && (
@@ -506,12 +501,133 @@ export default function AccountPage() {
                         </div>
                     )}
 
-                    {/* Account Information Section */}
-                    <section className="space-y-6 mb-8">
-                        <div>
-                            <h2 className="text-xl font-semibold text-foreground mb-4">Account Information</h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Account & Billing */}
+                    {/* Main Two-Column Layout */}
+                    <div className="flex gap-[27px] items-start mb-[24px]">
+                        {/* Left Column - Invoice Section (845px) */}
+                        <div className="w-[845px] h-[490px] flex-shrink-0">
+                            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white h-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <CardContent className="p-[28px] h-full flex flex-col">
+                                    <div className="flex flex-col gap-[34px] flex-1 overflow-hidden">
+                                        {/* Business Owner (PSC) Section */}
+                                        <div className="flex flex-col gap-[8px]">
+                                            <h3 className="text-[18px] font-medium leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                Business Owner (PSC)
+                                            </h3>
+                                            <div className="w-[234px] h-[2px] bg-[#E5E7EB]"></div>
+                                        </div>
+
+                                        {/* Invoice Section */}
+                                        <div className="flex flex-col gap-[13px]">
+                                            <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                Invoice
+                                            </h3>
+                                            <div className="w-[557px] h-[2px] bg-[#5AE094]"></div>
+                                            
+                                            {/* Invoice Table */}
+                                            <div className="flex flex-col gap-[13px] flex-1 overflow-y-auto">
+                                                {/* Table Header */}
+                                                <div className="flex items-center gap-[20px] text-[12px] font-medium leading-[1.45] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                    <div className="w-[144px] flex-shrink-0">Invoice No</div>
+                                                    <div className="w-[144px] flex-shrink-0">Description</div>
+                                                    <div className="w-[144px] flex-shrink-0">Total</div>
+                                                    <div className="w-[144px] flex-shrink-0">Status</div>
+                                                    <div className="w-[110px] flex-shrink-0">Activities</div>
+                                                </div>
+                                                
+                                                {/* Divider */}
+                                                <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+                                                
+                                                {/* Invoice Rows */}
+                                                {data.invoices.length === 0 ? (
+                                                    <div className="py-8 text-center text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                        No invoices yet
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col gap-0">
+                                                        {data.invoices.map((invoice, index) => (
+                                                            <div key={invoice.invoice_no}>
+                                                                <div className="flex items-center gap-[20px] py-2">
+                                                                    <div className="w-[144px] flex-shrink-0 text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                        {invoice.invoice_no}
+                                                                    </div>
+                                                                    <div className="w-[144px] flex-shrink-0 text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                        {invoice.description}
+                                                                    </div>
+                                                                    <div className="w-[144px] flex-shrink-0 text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                        {invoice.total_label}
+                                                                    </div>
+                                                                    <div className="w-[144px] flex-shrink-0">
+                                                                        <div className="inline-flex items-center justify-center px-[2.5px] py-[2.5px] rounded-[23px] bg-[#E7F6EF] border border-[#E5E7EB]">
+                                                                            <span className="text-[10px] font-normal leading-[1.4] text-[#666666] px-[3.76px]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                                {invoice.status === 'paid' ? 'Paid' : invoice.status === 'not_paid' ? 'Not Paid' : invoice.status}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="w-[110px] flex-shrink-0">
+                                                                        {invoice.download_url && (
+                                                                            <button
+                                                                                onClick={async () => {
+                                                                                    const url = invoice.download_url!;
+                                                                                    try {
+                                                                                        const response = await fetch(url, {
+                                                                                            method: 'GET',
+                                                                                            credentials: 'include',
+                                                                                        });
+                                                                                        if (!response.ok) {
+                                                                                            alert(`Failed to download invoice: ${response.statusText}`);
+                                                                                            return;
+                                                                                        }
+                                                                                        if (response.headers.get('content-type')?.includes('application/pdf')) {
+                                                                                            const blob = await response.blob();
+                                                                                            const blobUrl = URL.createObjectURL(blob);
+                                                                                            const link = document.createElement('a');
+                                                                                            link.href = blobUrl;
+                                                                                            link.download = `invoice-${invoice.invoice_no}.pdf`;
+                                                                                            document.body.appendChild(link);
+                                                                                            link.click();
+                                                                                            URL.revokeObjectURL(blobUrl);
+                                                                                            if (link.parentNode === document.body) {
+                                                                                                document.body.removeChild(link);
+                                                                                            }
+                                                                                        } else {
+                                                                                            window.open(url, '_blank');
+                                                                                        }
+                                                                                    } catch (error: any) {
+                                                                                        alert(`Failed to download invoice: ${error?.message || 'Unknown error'}`);
+                                                                                    }
+                                                                                }}
+                                                                                className="inline-flex items-center justify-center px-[2.5px] py-[2.5px] rounded-[26px] bg-[#E7F6EF] border border-[#E5E7EB] hover:bg-[#D4F0E0] transition-colors cursor-pointer"
+                                                                            >
+                                                                                <span className="text-[10px] font-normal leading-[1.4] text-[#666666] px-[3.76px]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                                    Download PDF
+                                                                                </span>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                {index < data.invoices.length - 1 && (
+                                                                    <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Right Column - Business Contact + Account & Billing (408px) */}
+                        <div className="w-[408px] flex-shrink-0 flex flex-col gap-[24px] items-start">
+                            {/* Business Contact Card */}
+                            <BusinessContactCard
+                                contact={data.contact}
+                                onSave={handleSaveContact}
+                            />
+
+                            {/* Account & Billing Card */}
                         <AccountBillingCard
                             subscription={data.subscription}
                             onRefresh={async () => {
@@ -520,14 +636,46 @@ export default function AccountPage() {
                                 await mutateAccount();
                             }}
                         />
+                        </div>
+                    </div>
 
-                                {/* Business Contact */}
-                        <BusinessContactCard
-                            contact={data.contact}
-                            onSave={handleSaveContact}
+                    {/* Address Section */}
+                    <div className="mb-[24px]">
+                        <ForwardingAddressCard
+                            address={data.forwarding_address || null}
+                            businessAddress={data.business_address || null}
+                            onSave={handleSaveAddress}
                         />
                             </div>
-                        </div>
+
+                    {/* KYC Verification Section */}
+                    <div className="mb-[24px]">
+                        <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <CardContent className="p-[28px]">
+                                <div className="flex flex-col gap-[36px]">
+                                    <div className="flex flex-col gap-[5px]">
+                                        <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            KYC Verification
+                                        </h3>
+                                        <p className="text-[16px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            Upload government-issued ID to verify your identity and activate your VirtualAddress account.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col gap-[10px] p-[120px] border border-dashed border-[#E5E7EB] rounded-[10px] bg-[#F9F9F9]">
+                                        <p className="text-[16px] font-semibold leading-[1.4] text-[#1A1A1A] text-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            Mail Scan Preview
+                                        </p>
+                                        <p className="text-[16px] font-normal leading-[1.4] text-[#666666] text-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            Corporation Tax Notice
+                                        </p>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <SumsubKycWidget />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
                         {/* Debug: Show what data we have (remove in production) */}
                         {process.env.NODE_ENV === 'development' && (
@@ -537,80 +685,6 @@ export default function AccountPage() {
                                 <p>Debug: contact={JSON.stringify(data.contact)}</p>
                             </div>
                         )}
-                    </section>
-
-                    {/* Addresses Section */}
-                    <section className="space-y-6 mb-8">
-                        <div>
-                            <h2 className="text-xl font-semibold text-foreground mb-4">Addresses</h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Forwarding Address */}
-                    <ForwardingAddressCard
-                        address={data.forwarding_address || null}
-                        onSave={handleSaveAddress}
-                    />
-
-                                {/* Business Address (Display Only) */}
-                                {data.business_address ? (
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Business Address</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground mb-4">
-                                                This is your registered office address and cannot be edited here.
-                                            </p>
-                                            <div className="p-4 bg-muted/50 rounded-lg border">
-                                                <pre className="whitespace-pre-wrap text-sm font-mono text-foreground">
-                                {data.business_address.formatted}
-                            </pre>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Business Address</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground">
-                                                Your registered office address will appear here once configured.
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Identity Verification Section */}
-                    <section className="space-y-6 mb-8">
-                        <div>
-                            <h2 className="text-xl font-semibold text-foreground mb-4">Identity Verification</h2>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>KYC Verification</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <SumsubKycWidget />
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </section>
-
-                    {/* Business Details Section */}
-                    <section className="space-y-6">
-                        <div>
-                            <h2 className="text-xl font-semibold text-foreground mb-4">Business Details</h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Business Owners */}
-                                <OwnersCard owners={data.owners || []} />
-
-                                {/* Invoices */}
-                    <InvoicesCard invoices={data.invoices || []} />
-                            </div>
-                        </div>
-                    </section>
                 </div>
             </main>
         </div>
