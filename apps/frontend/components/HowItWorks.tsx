@@ -36,12 +36,20 @@ export default function HowItWorks() {
 
                 <div className="relative">
                     {/* Connector line (desktop only) */}
-                    <img
-                        src="/figma/how-it-works-connector.svg"
-                        alt=""
+                    <svg
                         aria-hidden="true"
-                        className="pointer-events-none absolute left-1/2 top-[16px] hidden w-full max-w-[900px] -translate-x-1/2 md:block"
-                    />
+                        className="pointer-events-none absolute inset-0 hidden h-full w-full text-[#024E40] md:block"
+                        viewBox="0 0 1000 200"
+                        preserveAspectRatio="none"
+                    >
+                        <path
+                            d="M 166 80 C 320 10 380 10 500 80 C 620 150 680 150 834 80"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeDasharray="2 8"
+                        />
+                    </svg>
 
                     <div className="grid gap-8 text-center sm:gap-10 md:grid-cols-3 md:gap-12">
                         {steps.map((step, index) => (

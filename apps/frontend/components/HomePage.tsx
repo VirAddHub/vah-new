@@ -54,44 +54,46 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 className="relative overflow-hidden bg-[#024E40] text-white"
                 aria-label="Hero"
             >
-                <div className="safe-pad mx-auto w-full max-w-[1440px] px-6 py-12 sm:px-8 sm:py-16 lg:px-16 lg:py-28">
-                    <div className="flex flex-col items-center gap-6 sm:gap-10 lg:flex-row lg:items-center lg:gap-[96px]">
-                        <div className="w-full lg:w-[640px]">
-                            <h1 className="text-2xl font-semibold leading-[1.08] text-white sm:text-3xl md:text-4xl lg:text-[54px]">
+                <div className="safe-pad mx-auto w-full max-w-7xl px-8 pt-32 pb-24 md:pt-40 md:pb-28 lg:px-12">
+                    <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+                        <div className="max-w-xl">
+                            <h1 className="text-5xl font-semibold leading-[1.05] text-white lg:text-6xl">
                                 <span className="block">A Credible London</span>
                                 <span className="block">Business Address</span>
                                 <span className="block">Without The Cost Of</span>
                                 <span className="block">An Office.</span>
                             </h1>
 
-                            <div className="mt-3 space-y-1.5 text-xs leading-[1.6] text-white/90 sm:mt-4 sm:space-y-2 sm:text-sm md:text-base lg:mt-5">
+                            <div className="mt-4 space-y-2 text-sm leading-[1.6] text-white/90 sm:text-base">
                                 <p>Run your business professionally without exposing your home address.</p>
                                 <p>Use one trusted London address as your Registered Office, Director&apos;s Service Address, and professional business address.</p>
                                 <p>Suitable for Companies House, HMRC, and everyday business use.</p>
                                 <p>Everything you need is included in one simple service.</p>
                             </div>
 
-                            <div className="mt-4 sm:mt-5 lg:mt-6">
-                                <div className="text-base font-medium text-white sm:text-lg lg:text-[18px]">£9.99 per month</div>
-                                <div className="text-xs text-white/80 sm:text-sm lg:text-[14px]">with one clear plan</div>
+                            <div className="mt-6">
+                                <div className="text-lg font-medium text-white">£9.99 per month</div>
+                                <div className="text-sm text-white/80">with one clear plan</div>
                             </div>
 
-                            <div className="mt-4 sm:mt-5">
+                            <div className="mt-6">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="h-[44px] w-full rounded-[33px] bg-[#40C46C] px-4 text-sm font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:h-[48px] sm:w-[85%] sm:text-base md:w-[75%] lg:h-[57px] lg:w-[294px] lg:text-[16px]"
+                                    className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
                                 >
                                     Get your London Address
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="h-[250px] w-full overflow-hidden rounded-[20px] border border-white/10 shadow-[0px_12px_30px_rgba(0,0,0,0.25)] sm:h-[350px] md:h-[450px] lg:h-[540px] lg:w-[582px] lg:rounded-[28px]">
-                            <img
-                                src="/figma/hero-photo.png"
-                                alt="London street scene"
-                                className="h-full w-full object-cover"
-                            />
+                        <div className="w-full">
+                            <div className="relative mx-auto max-w-[520px] overflow-hidden rounded-3xl aspect-[582/540] lg:mx-0">
+                                <img
+                                    src="/figma/hero-photo.png"
+                                    alt="London street scene"
+                                    className="w-full h-auto rounded-3xl object-cover"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -364,11 +366,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     {/* Container with responsive height */}
                     <div className="overflow-hidden rounded-[20px] bg-[#014D3F] shadow-[0px_16px_36px_rgba(0,0,0,0.18)] lg:rounded-[30px]">
                         <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-12 lg:px-16 lg:py-12">
-                            <div className="relative h-[220px] sm:h-[280px] lg:h-[360px]">
+                            <div className="relative h-[220px] overflow-hidden sm:h-[280px] lg:h-[360px]">
                                 <img
                                     src="/figma/cta-illustration.png"
                                     alt="London illustration"
-                                    className="absolute inset-0 h-full w-full object-contain object-left"
+                                    className="absolute inset-0 h-full w-[120%] max-w-none object-cover object-left"
                                 />
                             </div>
                             <div className="flex w-full flex-col justify-center">
