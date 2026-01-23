@@ -51,7 +51,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-4"
+                className="relative overflow-hidden bg-[#024E40] text-white py-16 lg:py-2"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -61,18 +61,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Your Credible Central London Address
                             </h1>
 
-                            <h2 className="mt-4 lg:mt-3 text-2xl lg:text-3xl font-medium text-white/95">
+                            <h2 className="mt-3 lg:mt-2 text-2xl lg:text-3xl font-medium text-white/95">
                                 Without the Cost of an Office
                             </h2>
 
-                            <div className="mt-5 lg:mt-4">
+                            <div className="mt-4 lg:mt-3">
                                 <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
                                     Run your business professionally without exposing your <strong>home address</strong>.
                                 </p>
                             </div>
 
-                            <div className="mt-5 lg:mt-4 text-sm leading-[1.7] text-white/90 sm:text-base">
-                                <ul className="space-y-3">
+                            <div className="mt-4 lg:mt-3 text-sm leading-[1.7] text-white/90 sm:text-base">
+                                <ul className="space-y-2.5">
                                     <li className="flex items-start gap-3">
                                         <img
                                             src="/figma/check-16.svg"
@@ -103,12 +103,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </ul>
                             </div>
 
-                            <div className="mt-6 lg:mt-5">
+                            <div className="mt-5 lg:mt-4">
                                 <div className="text-2xl lg:text-3xl font-bold text-white">£9.99/month</div>
                                 <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. <strong>No hidden fees</strong>.</div>
                             </div>
 
-                            <div className="mt-6 lg:mt-5 flex flex-wrap gap-4 text-xs sm:text-sm text-white/85">
+                            <div className="mt-5 lg:mt-4 flex flex-wrap gap-4 text-xs sm:text-sm text-white/85">
                                 <span className="flex items-center gap-1.5">
                                     <span className="text-white">✓</span>
                                     <span><strong>Instant setup</strong></span>
@@ -123,7 +123,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span>
                             </div>
 
-                            <div className="mt-6 lg:mt-5">
+                            <div className="mt-5 lg:mt-4">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
