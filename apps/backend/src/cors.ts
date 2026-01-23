@@ -24,8 +24,11 @@ function isAllowed(origin: string | undefined): boolean {
     if (origins.includes(origin)) return true;
 
     // Allow Vercel preview URLs for both old and new frontend names
-    if (/^https:\/\/vah-frontend-final-[\w-]+\.vercel\.app$/.test(origin)) return true;
-    if (/^https:\/\/vah-new-frontend-[\w-]+\.vercel\.app$/.test(origin)) return true;
+    // Pattern matches: https://vah-frontend-final-*-*.vercel.app or https://vah-new-frontend-*-*.vercel.app
+    // This includes preview deployments with hashes and project identifiers like:
+    // vah-new-frontend-75d6-8ee8zumws-vahs-projects-3a042d54.vercel.app
+    if (/^https:\/\/vah-frontend-final-.*\.vercel\.app$/.test(origin)) return true;
+    if (/^https:\/\/vah-new-frontend-.*\.vercel\.app$/.test(origin)) return true;
 
     return false;
 }
