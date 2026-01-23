@@ -9,7 +9,6 @@ import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDashboardView } from '@/contexts/DashboardViewContext';
 
 interface MailItem {
     id: string;
@@ -38,7 +37,6 @@ interface ForwardingRequest {
 export default function ForwardingPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { setActiveView } = useDashboardView();
     const [mailItems, setMailItems] = useState<MailItem[]>([]);
     const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,11 +44,6 @@ export default function ForwardingPage() {
     const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
-
-    // Set the active view when this component mounts
-    useEffect(() => {
-        setActiveView('forwarding');
-    }, [setActiveView]);
 
     useEffect(() => {
         // Check authentication
@@ -427,78 +420,6 @@ export default function ForwardingPage() {
                     }}
                     mailItem={selectedMailForForwarding}
                     onSubmit={handleForwardingSubmit}
-                />
-            )}
-        </div>
-    );
-}
-
-                                            {selectedRequest.address1}
-                                            <br />
-                                            {selectedRequest.city}, {selectedRequest.postal}
-                                            <br />
-                                            {selectedRequest.country}
-                                        </p>
-                                    </div>
-
-                                    {selectedRequest.tracking_number && (
-                                        <div>
-                                            <h4 className="text-sm font-medium text-[#666666] mb-1">Tracking Number</h4>
-                                            <p className="text-base text-[#1A1A1A] font-mono">{selectedRequest.tracking_number}</p>
-                                        </div>
-                                    )}
-
-                                    {selectedRequest.courier && (
-                                        <div>
-                                            <h4 className="text-sm font-medium text-[#666666] mb-1">Courier</h4>
-                                            <p className="text-base text-[#1A1A1A]">{selectedRequest.courier}</p>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <h4 className="text-sm font-medium text-[#666666] mb-1">Request Date</h4>
-                                        <p className="text-base text-[#1A1A1A]">{formatDate(selectedRequest.created_at)}</p>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="text-sm font-medium text-[#666666] mb-1">Mail Item ID</h4>
-                                        <p className="text-base text-[#1A1A1A]">#{selectedRequest.mail_item_id}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <Card className="border border-[#E5E7EB]">
-                                <CardContent className="py-12">
-                                    <div className="text-center">
-                                        <Mail className="h-12 w-12 text-[#666666] mx-auto mb-4 opacity-50" />
-                                        <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">Select a request</h3>
-                                        <p className="text-sm text-[#666666]">
-                                            Click on a forwarding request from the list to view its details.
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Forwarding Request Modal */}
-            {showForwardingModal && selectedMailForForwarding && (
-                <ForwardingRequestModal
-                    isOpen={showForwardingModal}
-                    onClose={() => {
-                        setShowForwardingModal(false);
-                        setSelectedMailForForwarding(null);
-                    }}
-                    mailItem={selectedMailForForwarding}
-                    onSubmit={handleForwardingSubmit}
-                />
-            )}
-        </div>
-    );
-}
-
                 />
             )}
         </div>
