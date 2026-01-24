@@ -31,7 +31,7 @@ export function Footer({ onNavigate }: FooterProps) {
     };
 
     const linkBtnClass =
-        "block w-full text-left text-xs sm:text-sm leading-relaxed font-medium text-white/90 hover:text-white transition-colors";
+        "block w-full text-left text-sm leading-tight font-medium text-white/90 hover:text-white transition-colors";
 
     const navigation: NavItem[] = [
         { label: "Pricing", page: "pricing" },
@@ -63,7 +63,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="bg-[#0b4d3c] py-6 text-white"
+            className="bg-[#0b4d3c] py-8 lg:py-10 text-white"
             style={{
                 fontFamily:
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
@@ -72,7 +72,7 @@ export function Footer({ onNavigate }: FooterProps) {
             <div className="mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
-                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs sm:gap-x-4 sm:gap-y-1.5 sm:text-sm">
+                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm">
                         {navigation.map((item) => (
                             <QuickLink key={item.label} item={item} />
                         ))}
@@ -80,53 +80,29 @@ export function Footer({ onNavigate }: FooterProps) {
                             <QuickLink key={item.label} item={item} />
                         ))}
                     </div>
-                    <p className="mt-2 text-[10px] text-white/80 sm:mt-2 sm:text-xs">
+                    <p className="mt-2 text-sm text-white/80">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </p>
                 </div>
 
                 {/* Desktop Footer (≥ 1024px) */}
                 <div className="hidden lg:block">
-                    <div className="grid gap-6 md:grid-cols-4">
-                        {/* Company Information */}
-                        <div className="lg:col-span-1">
-                            <p className="mb-2 text-xs leading-relaxed text-white/90">
-                                Professional virtual address for UK business. Fully compliant.
+                    {/* Main Footer Grid */}
+                    <div className="grid grid-cols-4 gap-8">
+                        {/* Company Information - Left Column */}
+                        <div>
+                            <p className="mb-1.5 text-sm leading-tight text-white/90">
+                                Professional virtual address for UK business.
                             </p>
-
-                            {/* Location */}
-                            <div className="mb-2">
-                                <h3 className="mb-1 text-xs font-semibold text-white">Location</h3>
-                                <p className="text-xs text-white/90">London, UK</p>
-                            </div>
-
-                            {/* Regulatory Info */}
-                            <div>
-                                <h3 className="mb-1 text-xs font-semibold text-white">Regulatory Info</h3>
-                                <div className="space-y-0.5 text-xs leading-snug text-white/85">
-                                    <div>
-                                        <span className="font-medium">Company:</span> London Business Address Ltd
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">Company No:</span> 12345678
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">VAT:</span> GB123456789
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">HMRC AML:</span> XRML00000123456
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">ICO:</span> ZA123456
-                                    </div>
-                                </div>
-                            </div>
+                            <p className="text-sm leading-tight text-white/90">
+                                London, UK
+                            </p>
                         </div>
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-1.5 text-xs font-semibold text-white">Navigation</h3>
-                            <div className="space-y-0.5">
+                            <h3 className="mb-2 text-sm font-semibold text-white">Navigation</h3>
+                            <div className="space-y-1">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -135,8 +111,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-1.5 text-xs font-semibold text-white">Legal & Compliance</h3>
-                            <div className="space-y-0.5">
+                            <h3 className="mb-2 text-sm font-semibold text-white">Legal & Compliance</h3>
+                            <div className="space-y-1">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -145,12 +121,12 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-1.5 text-xs font-semibold text-white">Contact Us</h3>
+                            <h3 className="mb-2 text-sm font-semibold text-white">Contact Us</h3>
                             <div className="space-y-2">
                                 {/* WhatsApp Support Button */}
                                 <button
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank", "noopener,noreferrer")}
-                                    className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-md bg-[#40C46C] text-white text-xs font-medium hover:bg-[#40C46C]/90 transition-colors"
+                                    className="flex items-center justify-start gap-1.5 h-10 px-3 rounded-md bg-[#40C46C] text-white text-sm font-medium hover:bg-[#40C46C]/90 transition-colors"
                                 >
                                     <svg
                                         width="14"
@@ -167,7 +143,7 @@ export function Footer({ onNavigate }: FooterProps) {
                                 {/* Contact Us Link */}
                                 <button
                                     onClick={() => handleNavClick('contact')}
-                                    className="block w-full text-left text-xs font-medium text-white/90 hover:text-white transition-colors"
+                                    className="block text-left text-sm font-medium text-white/90 hover:text-white transition-colors"
                                 >
                                     Contact us
                                 </button>
@@ -175,11 +151,20 @@ export function Footer({ onNavigate }: FooterProps) {
                         </div>
                     </div>
 
-                    {/* Copyright for Desktop */}
-                    <div className="mt-3 border-t border-white/10 pt-2 text-center text-xs text-white/60">
-                        <div>
-                            © 2026 VirtualAddress.UK. All rights reserved.
+                    {/* Regulatory Info - Secondary Row */}
+                    <div className="mt-6 pt-4 border-t border-white/10">
+                        <div className="text-xs text-white/70 leading-tight">
+                            <span className="font-medium">Company:</span> London Business Address Ltd • 
+                            <span className="font-medium"> Company No:</span> 12345678 • 
+                            <span className="font-medium"> VAT:</span> GB123456789 • 
+                            <span className="font-medium"> HMRC AML:</span> XRML00000123456 • 
+                            <span className="font-medium"> ICO:</span> ZA123456
                         </div>
+                    </div>
+
+                    {/* Copyright */}
+                    <div className="mt-4 pt-3 border-t border-white/10 text-center text-sm text-white/60">
+                        © 2026 VirtualAddress.UK. All rights reserved.
                     </div>
                 </div>
             </div>
