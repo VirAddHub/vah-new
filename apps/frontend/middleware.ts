@@ -22,6 +22,11 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  // Redirect /dashboard to /mail (mail inbox is the default dashboard view)
+  if (pathname === '/dashboard' || pathname === '/dashboard/') {
+    return NextResponse.redirect(new URL('/mail', request.url));
+  }
+
   // Protected routes that require authentication
   // Exceptions: public routes (no auth required)
   const isPublicAccountRoute = pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');

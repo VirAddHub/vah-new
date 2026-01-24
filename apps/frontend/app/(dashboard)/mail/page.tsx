@@ -1,15 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import MailInboxPage from './page-content';
 
-// This page redirects /mail to /dashboard?view=mail
-export default function MailRedirectPage() {
-    const router = useRouter();
-
-    useEffect(() => {
-        router.replace('/dashboard?view=mail');
-    }, [router]);
-
-    return null;
+// Mail inbox is the default dashboard view
+export default function MailPage() {
+    return <MailInboxPage />;
 }
