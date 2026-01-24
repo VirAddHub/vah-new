@@ -4,16 +4,20 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
 import { MailDetail } from '@/components/dashboard/user/MailDetail';
 import PDFViewerModal from '@/components/PDFViewerModal';
 import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
+import { TagDot, getTagColor } from '@/components/dashboard/user/TagDot';
 import type { MailItem } from '@/components/dashboard/user/types';
 
 export default function MailInboxPage() {
@@ -21,6 +25,13 @@ export default function MailInboxPage() {
     const { setActiveView } = useDashboardView();
     const [activeTab, setActiveTab] = useState<'inbox' | 'archived' | 'tags'>('inbox');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null); // Filter inbox by tag
+    const [collapsedTags, setCollapsedTags] = useState<Set<string>>(new Set()); // Collapsed tag groups
+    const [showManageTagsModal, setShowManageTagsModal] = useState(false);
+    const [manageTagAction, setManageTagAction] = useState<'rename' | 'merge' | null>(null);
+    const [selectedTagForManage, setSelectedTagForManage] = useState<string | null>(null);
+    const [newTagName, setNewTagName] = useState('');
+    const [mergeTargetTag, setMergeTargetTag] = useState<string | null>(null);
 
     // Set the active view when this component mounts
     useEffect(() => {
@@ -65,8 +76,13 @@ export default function MailInboxPage() {
             items = items.filter((item: MailItem) => item.deleted);
         } else if (activeTab === 'inbox') {
             items = items.filter((item: MailItem) => !item.deleted);
+            // Apply tag filter if selected
+            if (selectedTagFilter) {
+                items = items.filter((item: MailItem) => item.tag === selectedTagFilter);
+            }
         } else if (activeTab === 'tags') {
-            items = items.filter((item: MailItem) => item.tag && !item.deleted);
+            // Show all non-deleted items (tagged and untagged) in Tags tab
+            items = items.filter((item: MailItem) => !item.deleted);
         }
 
         // Apply search filter
@@ -81,7 +97,150 @@ export default function MailInboxPage() {
         }
 
         return items;
-    }, [mailItems, activeTab, searchQuery]);
+    }, [mailItems, activeTab, searchQuery, selectedTagFilter]);
+
+    // Tag mapping: slug -> display label
+    const tagMeta: Record<string, { label: string }> = {
+        hmrc: { label: "HMRC" },
+        companies_house: { label: "Companies House" },
+        bank: { label: "BANK" },
+        insurance: { label: "Insurance" },
+        utilities: { label: "Utilities" },
+        other: { label: "Other" },
+    };
+
+    // Get tag display label
+    const getTagLabel = useCallback((tag: string | null | undefined): string => {
+        if (!tag || tag === 'untagged') return "Untagged";
+        return tagMeta[tag]?.label || tag.toUpperCase().replace(/_/g, ' ');
+    }, []);
+
+    // Handle tag header click - filter inbox
+    const handleTagHeaderClick = useCallback((tag: string) => {
+        // Filter inbox by tag
+        setSelectedTagFilter(tag);
+        setActiveTab('inbox');
+    }, []);
+
+    // Handle collapse toggle - separate from header click
+    const handleCollapseToggle = useCallback((tag: string, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent triggering header click
+        toggleTagCollapse(tag);
+    }, [toggleTagCollapse]);
+
+    // Clear tag filter
+    const clearTagFilter = useCallback(() => {
+        setSelectedTagFilter(null);
+    }, []);
+
+    // Toggle tag group collapse
+    const toggleTagCollapse = useCallback((tag: string) => {
+        setCollapsedTags(prev => {
+            const next = new Set(prev);
+            if (next.has(tag)) {
+                next.delete(tag);
+            } else {
+                next.add(tag);
+            }
+            return next;
+        });
+    }, []);
+
+    // Handle tag rename
+    const handleTagRename = useCallback(async () => {
+        if (!selectedTagForManage || !newTagName.trim()) return;
+
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
+            const oldTag = selectedTagForManage;
+            const newTag = newTagName.trim().toLowerCase().replace(/\s+/g, '_');
+
+            // Get all items with this tag
+            const itemsToUpdate = mailItems.filter(item => item.tag === oldTag && !item.deleted);
+            
+            // Update each item
+            const updatePromises = itemsToUpdate.map(item =>
+                fetch(`/api/bff/mail-items/${item.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ tag: newTag }),
+                })
+            );
+
+            await Promise.all(updatePromises);
+            
+            toast({
+                title: "Tag Renamed",
+                description: `Tag "${oldTag}" has been renamed to "${newTag}".`,
+                durationMs: 3000,
+            });
+
+            setShowManageTagsModal(false);
+            setSelectedTagForManage(null);
+            setNewTagName('');
+            // SWR will auto-refetch
+        } catch (error) {
+            console.error('Error renaming tag:', error);
+            toast({
+                title: "Rename Failed",
+                description: "Failed to rename tag. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+        }
+    }, [selectedTagForManage, newTagName, mailItems, toast]);
+
+    // Handle tag merge
+    const handleTagMerge = useCallback(async () => {
+        if (!selectedTagForManage || !mergeTargetTag) return;
+
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
+            const sourceTag = selectedTagForManage;
+            const targetTag = mergeTargetTag;
+
+            // Get all items with source tag
+            const itemsToUpdate = mailItems.filter(item => item.tag === sourceTag && !item.deleted);
+            
+            // Update each item to target tag
+            const updatePromises = itemsToUpdate.map(item =>
+                fetch(`/api/bff/mail-items/${item.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ tag: targetTag }),
+                })
+            );
+
+            await Promise.all(updatePromises);
+            
+            toast({
+                title: "Tags Merged",
+                description: `Tag "${sourceTag}" has been merged into "${targetTag}".`,
+                durationMs: 3000,
+            });
+
+            setShowManageTagsModal(false);
+            setSelectedTagForManage(null);
+            setMergeTargetTag(null);
+            // SWR will auto-refetch
+        } catch (error) {
+            console.error('Error merging tags:', error);
+            toast({
+                title: "Merge Failed",
+                description: "Failed to merge tags. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+        }
+    }, [selectedTagForManage, mergeTargetTag, mailItems, toast]);
 
     // Get unique tags
     const availableTags = useMemo(() => {
@@ -93,6 +252,33 @@ export default function MailInboxPage() {
         });
         return Array.from(tags).sort();
     }, [mailItems]);
+
+    // Group items by tag for Tags tab
+    const groupedByTag = useMemo(() => {
+        if (activeTab !== 'tags') return null;
+        
+        const groups: Record<string, MailItem[]> = {};
+        filteredItems.forEach((item: MailItem) => {
+            const tag = item.tag || 'untagged';
+            if (!groups[tag]) {
+                groups[tag] = [];
+            }
+            groups[tag].push(item);
+        });
+        
+        // Sort tags: tagged items first (alphabetically), then untagged
+        const sortedTags = Object.keys(groups).sort((a, b) => {
+            if (a === 'untagged') return 1;
+            if (b === 'untagged') return -1;
+            return a.localeCompare(b);
+        });
+        
+        return sortedTags.map(tag => ({
+            tag,
+            items: groups[tag],
+            count: groups[tag].length
+        }));
+    }, [filteredItems, activeTab]);
 
     // Counts
     const inboxCount = mailItems.filter((item: MailItem) => !item.deleted).length;
@@ -452,8 +638,34 @@ export default function MailInboxPage() {
                 </div>
             </div>
 
+            {/* Tag Filter Indicator */}
+            {selectedTagFilter && activeTab === 'inbox' && (
+                <div className="mb-4 flex items-center gap-2">
+                    <span className="text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        Filtered by:
+                    </span>
+                    <TagDot tag={selectedTagFilter} label={getTagLabel(selectedTagFilter)} />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearTagFilter}
+                        className="h-7 px-2 text-xs text-[#666666] hover:text-[#1A1A1A]"
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        <X className="h-3 w-3 mr-1" />
+                        Clear filter
+                    </Button>
+                </div>
+            )}
+
             {/* Horizontal Tabs - Replaces the sidebar */}
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'inbox' | 'archived' | 'tags')} className="mb-6">
+            <Tabs value={activeTab} onValueChange={(v) => {
+                setActiveTab(v as 'inbox' | 'archived' | 'tags');
+                // Clear tag filter when switching tabs
+                if (v !== 'inbox') {
+                    setSelectedTagFilter(null);
+                }
+            }} className="mb-6">
                 <TabsList className="bg-transparent border-b border-[#E5E7EB] rounded-none p-0 h-auto">
                     <TabsTrigger
                         value="inbox"
@@ -523,7 +735,116 @@ export default function MailInboxPage() {
                         <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                             No mail items found.
                         </div>
+                    ) : activeTab === 'tags' && groupedByTag && groupedByTag.length > 0 ? (
+                        /* Grouped Tags View */
+                        <div className="space-y-8">
+                            {/* Manage Tags Button */}
+                            <div className="flex justify-end">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setShowManageTagsModal(true);
+                                        setManageTagAction(null);
+                                    }}
+                                    className="h-9 px-3 rounded-md"
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    <Tag className="h-4 w-4 mr-2" />
+                                    Manage Tags
+                                </Button>
+                            </div>
+                            {groupedByTag.map(({ tag, items, count }) => {
+                                const isCollapsed = collapsedTags.has(tag);
+                                const colorClass = getTagColor(tag);
+                                
+                                return (
+                                <div key={tag} className="space-y-4">
+                                    {/* Tag Header - Clickable to filter inbox, collapsible */}
+                                    <div className="sticky top-0 z-10 bg-white pb-2 border-b border-[#E5E7EB]">
+                                        <div className="flex items-center gap-2 -mx-2 px-2 py-1">
+                                            <button
+                                                onClick={(e) => handleCollapseToggle(tag, e)}
+                                                className="flex-shrink-0 p-1 hover:bg-[#F9F9F9] rounded transition-colors"
+                                                aria-label={isCollapsed ? "Expand" : "Collapse"}
+                                            >
+                                                {isCollapsed ? (
+                                                    <ChevronRight className="h-4 w-4 text-[#666666]" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4 text-[#666666]" />
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => handleTagHeaderClick(tag)}
+                                                className="flex-1 flex items-center gap-2 hover:bg-[#F9F9F9] -mx-1 px-1 py-1 rounded transition-colors group text-left"
+                                            >
+                                                <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
+                                                <h2 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                    {getTagLabel(tag)}
+                                                    <span className="text-sm font-normal text-[#666666]">({count})</span>
+                                                </h2>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* Mail Items for this Tag - Collapsible */}
+                                    {!isCollapsed && (
+                                        <div className="space-y-3">
+                                            {items.map((item) => {
+                                            const Icon = getMailIcon(item);
+                                            const senderName = getSenderName(item);
+                                            const date = formatDate(item.received_date || item.created_at);
+                                            const isRead = item.is_read ?? true;
+                                            
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => handleMailClick(item)}
+                                                    className={cn(
+                                                        "flex items-center justify-between rounded-lg border px-6 py-4",
+                                                        "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
+                                                        "border-[#E5E7EB] hover:border-[#40C46C]/30 hover:shadow-sm"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                                                        <div className="flex-shrink-0">
+                                                            <Icon className={cn(
+                                                                "h-6 w-6",
+                                                                isRead ? 'text-[#666666]' : 'text-[#024E40]'
+                                                            )} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={cn(
+                                                                "text-base leading-6 truncate",
+                                                                isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
+                                                            )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                {senderName}
+                                                            </p>
+                                                            {item.subject && item.subject !== senderName && (
+                                                                <p className="text-sm text-[#666666] mt-1 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                    {item.subject}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                                        {item.tag && (
+                                                            <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                        )}
+                                                        <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                            {date}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                            })}
+                        </div>
                     ) : (
+                        /* Flat List View (Inbox/Archived) */
                         filteredItems.map((item) => {
                             const Icon = getMailIcon(item);
                             const senderName = getSenderName(item);
@@ -563,9 +884,7 @@ export default function MailInboxPage() {
                                     </div>
                                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                                         {item.tag && (
-                                            <span className="px-3 py-1 text-sm font-medium rounded-md bg-[#F9F9F9] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                {item.tag}
-                                            </span>
+                                            <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
                                         )}
                                         <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                             {date}
@@ -589,7 +908,7 @@ export default function MailInboxPage() {
                     mailItemId={selectedMailForPDF.id ? Number(selectedMailForPDF.id) : null}
                     mailItemSubject={selectedMailForPDF.subject || 'Mail Preview'}
                 />
-            )}
+                                        )}
 
             {/* Forwarding Request Modal */}
             {showForwardingModal && selectedMailForForwarding && (
@@ -603,6 +922,154 @@ export default function MailInboxPage() {
                     onSubmit={handleForwardingSubmit}
                 />
             )}
+
+            {/* Manage Tags Modal */}
+            <Dialog open={showManageTagsModal} onOpenChange={setShowManageTagsModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            Manage Tags
+                        </DialogTitle>
+                    </DialogHeader>
+                    
+                    {!manageTagAction ? (
+                        /* Action Selection */
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    Select Tag
+                                </Label>
+                                <Select
+                                    value={selectedTagForManage || ''}
+                                    onValueChange={(value) => setSelectedTagForManage(value)}
+                                >
+                                    <SelectTrigger style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        <SelectValue placeholder="Choose a tag to manage" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableTags.map(tag => (
+                                            <SelectItem key={tag} value={tag}>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
+                                                    {getTagLabel(tag)}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            
+                            {selectedTagForManage && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={() => {
+                                            setManageTagAction('rename');
+                                            setNewTagName(selectedTagForManage);
+                                        }}
+                                        className="flex-1"
+                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                    >
+                                        Rename Tag
+                                    </Button>
+                                    <Button
+                                        onClick={() => setManageTagAction('merge')}
+                                        variant="outline"
+                                        className="flex-1"
+                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                    >
+                                        Merge Tag
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    ) : manageTagAction === 'rename' ? (
+                        /* Rename Tag */
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    New Tag Name
+                                </Label>
+                                <Input
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    placeholder="Enter new tag name"
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setManageTagAction(null);
+                                        setNewTagName('');
+                                    }}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleTagRename}
+                                    disabled={!newTagName.trim()}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Rename
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    ) : (
+                        /* Merge Tag */
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    Merge into Tag
+                                </Label>
+                                <Select
+                                    value={mergeTargetTag || ''}
+                                    onValueChange={(value) => setMergeTargetTag(value)}
+                                >
+                                    <SelectTrigger style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        <SelectValue placeholder="Choose target tag" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableTags
+                                            .filter(tag => tag !== selectedTagForManage)
+                                            .map(tag => (
+                                                <SelectItem key={tag} value={tag}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
+                                                        {getTagLabel(tag)}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    All items with "{getTagLabel(selectedTagForManage)}" will be moved to the selected tag.
+                                </p>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setManageTagAction(null);
+                                        setMergeTargetTag(null);
+                                    }}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleTagMerge}
+                                    disabled={!mergeTargetTag}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Merge
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
