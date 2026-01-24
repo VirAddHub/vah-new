@@ -77,6 +77,19 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
     method: "standard"
   });
 
+  // 🔍 STEP 4: Log forwarding check in modal
+  React.useEffect(() => {
+    if (isOpen) {
+      console.log("🔴 FORWARDING CHECK (Modal):", {
+        forwardingAddress: forwardingAddress,
+        forwardingAddressType: typeof forwardingAddress,
+        forwardingAddressLength: forwardingAddress?.length,
+        hasAddress: !!forwardingAddress,
+        mailItem: mailItem?.id,
+      });
+    }
+  }, [isOpen, forwardingAddress, mailItem]);
+
   // Parse forwarding address when it changes
   React.useEffect(() => {
     if (forwardingAddress) {

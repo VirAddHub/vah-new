@@ -62,6 +62,17 @@ export default function MailInboxPage() {
         }
     );
 
+    // Fetch profile for forwarding address
+    const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
+    const profile = profileData?.data;
+
+    // 🔍 STEP 3: Log frontend profile fetch (mail page)
+    if (profileData) {
+        console.log("🟣 PROFILE FROM API (Mail Page):", profile);
+        console.log("🟣 forwarding_address:", profile?.forwarding_address);
+        console.log("🟣 forwardingAddress:", profile?.forwardingAddress);
+    }
+
     const mailItems = useMemo(() => {
         if (!mailData?.ok) return [];
         return Array.isArray(mailData.items) ? mailData.items : [];
@@ -967,6 +978,7 @@ export default function MailInboxPage() {
                         setSelectedMailForForwarding(null);
                     }}
                     mailItem={selectedMailForForwarding}
+                    forwardingAddress={profile?.forwarding_address}
                     onSubmit={handleForwardingSubmit}
                 />
             )}

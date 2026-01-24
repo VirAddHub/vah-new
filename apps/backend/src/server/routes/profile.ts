@@ -172,6 +172,13 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
 
         const user = result.rows[0];
 
+        // 🔍 STEP 1: Log DB value
+        console.log("🟢 PROFILE DB ROW:", {
+            userId: user.id,
+            forwarding_address: user.forwarding_address,
+            rawUser: user,
+        });
+
         // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
         const compliance = computeIdentityCompliance(user);
@@ -180,14 +187,26 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         // True if user declared they are NOT the sole controller
         const controllersVerificationRequired = user.is_sole_controller === false;
 
-        return res.json({
+        // 🔍 STEP 2: Log API response shape
+        const response = {
             ok: true,
             data: {
                 ...user,
                 compliance,
                 controllers_verification_required: controllersVerificationRequired,
             }
+        };
+
+        console.log("🟦 PROFILE API RESPONSE:", {
+            ok: response.ok,
+            data: {
+                id: response.data.id,
+                email: response.data.email,
+                forwarding_address: response.data.forwarding_address,
+            }
         });
+
+        return res.json(response);
     } catch (error: any) {
         logger.error('[GET /api/profile] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

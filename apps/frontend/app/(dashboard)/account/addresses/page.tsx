@@ -25,6 +25,13 @@ export default function AccountAddressesPage() {
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
 
+    // 🔍 STEP 3: Log frontend profile fetch
+    if (profileData) {
+        console.log("🟣 PROFILE FROM API:", profile);
+        console.log("🟣 forwarding_address:", profile?.forwarding_address);
+        console.log("🟣 forwardingAddress:", profile?.forwardingAddress);
+    }
+
     // Build addresses
     const addresses = useMemo(() => {
         // Business address (Registered Office)
@@ -45,6 +52,16 @@ export default function AccountAddressesPage() {
         const forwardingAddress = profile?.forwarding_address || user?.forwarding_address
             ? { formatted: profile?.forwarding_address || user?.forwarding_address || '' }
             : null;
+
+        // 🔍 STEP 4: Log forwarding check
+        console.log("🔴 FORWARDING CHECK:", {
+            forwarding_address: profile?.forwarding_address,
+            forwardingAddress: profile?.forwardingAddress,
+            user_forwarding_address: user?.forwarding_address,
+            forwardingAddressFormatted: forwardingAddress?.formatted,
+            profile,
+            user,
+        });
 
         return {
             businessAddress,
