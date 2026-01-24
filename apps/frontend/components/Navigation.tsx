@@ -9,10 +9,10 @@ import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
-    onNavigate: (page: string) => void;
+    onNavigate?: (page: string) => void;
 }
 
-export function Navigation({ onNavigate }: NavigationProps) {
+export function Navigation({ onNavigate }: NavigationProps = {}) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
 
@@ -59,8 +59,11 @@ export function Navigation({ onNavigate }: NavigationProps) {
             window.location.href = '/login';
         } else if (page === 'signup') {
             window.location.href = '/signup';
-        } else {
+        } else if (onNavigate) {
             onNavigate(page);
+        } else {
+            // Fallback: use window.location if onNavigate not provided
+            window.location.href = `/${page}`;
         }
         setIsMenuOpen(false);
     };

@@ -10,7 +10,7 @@ export default function DashboardLayout({
     return (
         <DashboardViewProvider>
             <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                <Navigation onNavigate={() => {}} />
+                <Navigation />
                 <div className="flex flex-1 pt-16">
                     {/* Sidebar - Fixed on desktop, overlay on mobile */}
                     <DashboardSidebar />

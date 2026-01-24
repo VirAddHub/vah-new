@@ -3,6 +3,9 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+// Force dynamic rendering - this page uses useSearchParams and redirects
+export const dynamic = 'force-dynamic';
+
 export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
