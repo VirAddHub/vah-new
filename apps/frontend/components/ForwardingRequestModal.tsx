@@ -92,26 +92,23 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
 
   // Parse forwarding address when it changes
   React.useEffect(() => {
-    if (forwardingAddress) {
-      const addressLines = forwardingAddress.split('\n');
-      const name = addressLines[0] || '';
-      const address1 = addressLines[1] || '';
-      const address2 = addressLines[2] || '';
-      const cityPostal = addressLines[addressLines.length - 2] || '';
-      const country = addressLines[addressLines.length - 1] || 'GB';
+    if (!forwardingAddress) return;
 
-      const [city, postal] = cityPostal.split(',').map(s => s.trim());
+    const lines = forwardingAddress.split("\n").map(l => l.trim());
 
-      setFormData(prev => ({
-        ...prev,
-        to_name: name,
-        address1,
-        address2,
-        city: city || '',
-        postal: postal || '',
-        country
-      }));
-    }
+    const postcodeMatch = forwardingAddress.match(
+      /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/i
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      to_name: lines[0] || prev.to_name,
+      address1: lines[1] || prev.address1,
+      address2: lines[2] || "",
+      city: "London",
+      postal: postcodeMatch?.[0] || "",
+      country: "GB", // Using "GB" to match Select component values
+    }));
   }, [forwardingAddress]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
