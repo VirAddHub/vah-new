@@ -88,10 +88,10 @@ export function Footer({ onNavigate }: FooterProps) {
                 {/* Desktop Footer (≥ 1024px) */}
                 <div className="hidden lg:block">
                     {/* Main Footer Grid */}
-                    <div className="grid grid-cols-4 gap-8">
+                    <div className="grid grid-cols-4 gap-6">
                         {/* Company Information - Left Column */}
                         <div>
-                            <p className="mb-1.5 text-sm leading-tight text-white/90">
+                            <p className="mb-1 text-sm leading-tight text-white/90">
                                 Professional virtual address for UK business.
                             </p>
                             <p className="text-sm leading-tight text-white/90">
@@ -101,8 +101,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-2 text-sm font-semibold text-white">Navigation</h3>
-                            <div className="space-y-1">
+                            <h3 className="mb-1.5 text-sm font-semibold text-white">Navigation</h3>
+                            <div className="space-y-0.5">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -111,8 +111,8 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-2 text-sm font-semibold text-white">Legal & Compliance</h3>
-                            <div className="space-y-1">
+                            <h3 className="mb-1.5 text-sm font-semibold text-white">Legal & Compliance</h3>
+                            <div className="space-y-0.5">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
                                 ))}
@@ -121,12 +121,12 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-2 text-sm font-semibold text-white">Contact Us</h3>
-                            <div className="space-y-2">
+                            <h3 className="mb-1.5 text-sm font-semibold text-white">Contact Us</h3>
+                            <div className="space-y-1.5">
                                 {/* WhatsApp Support Button */}
                                 <button
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank", "noopener,noreferrer")}
-                                    className="flex items-center justify-start gap-1.5 h-10 px-3 rounded-md bg-[#40C46C] text-white text-sm font-medium hover:bg-[#40C46C]/90 transition-colors"
+                                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#40C46C] text-white text-sm font-medium hover:bg-[#40C46C]/90 transition-colors"
                                 >
                                     <svg
                                         width="14"
@@ -152,7 +152,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Regulatory Info - Secondary Row */}
-                    <div className="mt-6 pt-4 border-t border-white/10">
+                    <div className="mt-5 pt-3 border-t border-white/10">
                         <div className="text-xs text-white/70 leading-tight">
                             <span className="font-medium">Company:</span> London Business Address Ltd • 
                             <span className="font-medium"> Company No:</span> 12345678 • 
@@ -163,7 +163,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright */}
-                    <div className="mt-4 pt-3 border-t border-white/10 text-center text-sm text-white/60">
+                    <div className="mt-3 pt-2 border-t border-white/10 text-center text-sm text-white/60">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </div>
                 </div>
