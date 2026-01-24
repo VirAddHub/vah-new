@@ -122,12 +122,6 @@ export default function MailInboxPage() {
         setActiveTab('inbox');
     }, []);
 
-    // Handle collapse toggle - separate from header click
-    const handleCollapseToggle = useCallback((tag: string, event: React.MouseEvent) => {
-        event.stopPropagation(); // Prevent triggering header click
-        toggleTagCollapse(tag);
-    }, [toggleTagCollapse]);
-
     // Clear tag filter
     const clearTagFilter = useCallback(() => {
         setSelectedTagFilter(null);
@@ -146,6 +140,12 @@ export default function MailInboxPage() {
         });
     }, []);
 
+    // Handle collapse toggle - separate from header click
+    const handleCollapseToggle = useCallback((tag: string, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent triggering header click
+        toggleTagCollapse(tag);
+    }, [toggleTagCollapse]);
+
     // Handle tag rename
     const handleTagRename = useCallback(async () => {
         if (!selectedTagForManage || !newTagName.trim()) return;
@@ -156,10 +156,10 @@ export default function MailInboxPage() {
             const newTag = newTagName.trim().toLowerCase().replace(/\s+/g, '_');
 
             // Get all items with this tag
-            const itemsToUpdate = mailItems.filter(item => item.tag === oldTag && !item.deleted);
+            const itemsToUpdate = mailItems.filter((item: MailItem) => item.tag === oldTag && !item.deleted);
             
             // Update each item
-            const updatePromises = itemsToUpdate.map(item =>
+            const updatePromises = itemsToUpdate.map((item: MailItem) =>
                 fetch(`/api/bff/mail-items/${item.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -204,10 +204,10 @@ export default function MailInboxPage() {
             const targetTag = mergeTargetTag;
 
             // Get all items with source tag
-            const itemsToUpdate = mailItems.filter(item => item.tag === sourceTag && !item.deleted);
+            const itemsToUpdate = mailItems.filter((item: MailItem) => item.tag === sourceTag && !item.deleted);
             
             // Update each item to target tag
-            const updatePromises = itemsToUpdate.map(item =>
+            const updatePromises = itemsToUpdate.map((item: MailItem) =>
                 fetch(`/api/bff/mail-items/${item.id}`, {
                     method: 'PATCH',
                     headers: {
