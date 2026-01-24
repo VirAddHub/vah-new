@@ -18,6 +18,7 @@ interface MailDetailProps {
   miniViewerLoading: boolean;
   miniViewerUrl: string | null;
   miniViewerError: string | null;
+  isDownloading?: boolean;
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
@@ -34,6 +35,7 @@ export function MailDetail({
   miniViewerLoading,
   miniViewerUrl,
   miniViewerError,
+  isDownloading = false,
   mailTypeIcon,
   mailStatusMeta,
   formatTime,
@@ -77,11 +79,12 @@ export function MailDetail({
           <Button
             type="button"
             onClick={onDownload}
+            disabled={isDownloading}
             variant="outline"
-            className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+            className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
           >
-            Download PDF
+            {isDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
 
           <div className="relative">
