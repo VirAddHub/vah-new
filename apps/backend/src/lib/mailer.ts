@@ -424,3 +424,62 @@ export async function sendMailReceivedAfterCancellation({ email, firstName, name
         },
     });
 }
+
+// Companies House verification emails
+export async function sendChVerificationNudge({ email, first_name }: { email: string; first_name?: string }): Promise<void> {
+    if (!emailGuard(ENV.EMAIL_KYC)) return;
+    const firstName = first_name || 'there';
+    const dashboardUrl = buildAppUrl('/account/verification');
+    
+    // Use a generic KYC template or send a simple email
+    // TODO: Create dedicated CH verification nudge template in Postmark
+    const client = getClient();
+    if (!client) return;
+    
+    try {
+        await client.sendEmail({
+            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+            To: email,
+            Subject: 'Complete Your Companies House Verification',
+            HtmlBody: `
+                <p>Hi ${firstName},</p>
+                <p>Don't forget to complete your Companies House verification to unlock all features of your virtual address service.</p>
+                <p><a href="${dashboardUrl}">Complete Verification</a></p>
+                <p>Thank you,<br>The VirtualAddressHub Team</p>
+            `,
+            MessageStream: ENV.POSTMARK_STREAM,
+            ReplyTo: ENV.EMAIL_REPLY_TO,
+        });
+    } catch (error) {
+        console.error('[mailer] Failed to send CH verification nudge:', error);
+    }
+}
+
+export async function sendChVerificationReminder({ email, first_name }: { email: string; first_name?: string }): Promise<void> {
+    if (!emailGuard(ENV.EMAIL_KYC)) return;
+    const firstName = first_name || 'there';
+    const dashboardUrl = buildAppUrl('/account/verification');
+    
+    // Use a generic KYC template or send a simple email
+    // TODO: Create dedicated CH verification reminder template in Postmark
+    const client = getClient();
+    if (!client) return;
+    
+    try {
+        await client.sendEmail({
+            From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+            To: email,
+            Subject: 'Reminder: Complete Your Companies House Verification',
+            HtmlBody: `
+                <p>Hi ${firstName},</p>
+                <p>This is a reminder that you still need to complete your Companies House verification to access all features of your virtual address service.</p>
+                <p><a href="${dashboardUrl}">Complete Verification Now</a></p>
+                <p>Thank you,<br>The VirtualAddressHub Team</p>
+            `,
+            MessageStream: ENV.POSTMARK_STREAM,
+            ReplyTo: ENV.EMAIL_REPLY_TO,
+        });
+    } catch (error) {
+        console.error('[mailer] Failed to send CH verification reminder:', error);
+    }
+}
