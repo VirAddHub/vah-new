@@ -1,5 +1,3 @@
-'use client';
-
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { Navigation } from '@/components/Navigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
