@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { VAHLogo } from "./VAHLogo";
 
 interface FooterProps {
     onNavigate?: (page: string) => void;
@@ -31,7 +32,7 @@ export function Footer({ onNavigate }: FooterProps) {
     };
 
     const linkBtnClass =
-        "block w-full text-left text-sm leading-tight font-medium text-white/90 hover:text-white transition-colors";
+        "block w-full text-left text-sm leading-tight font-medium text-neutral-700 hover:text-neutral-900 transition-colors";
 
     const navigation: NavItem[] = [
         { label: "Pricing", page: "pricing" },
@@ -63,7 +64,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="bg-[#0b4d3c] py-8 lg:py-10 text-white"
+            className="py-8 lg:py-10 text-neutral-700"
             style={{
                 fontFamily:
                     "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
@@ -72,6 +73,13 @@ export function Footer({ onNavigate }: FooterProps) {
             <div className="mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
+                    <div className="mb-4">
+                        <VAHLogo
+                            onNavigate={onNavigate}
+                            size="lg"
+                            imgClassName="brightness-0"
+                        />
+                    </div>
                     <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm">
                         {navigation.map((item) => (
                             <QuickLink key={item.label} item={item} />
@@ -80,7 +88,7 @@ export function Footer({ onNavigate }: FooterProps) {
                             <QuickLink key={item.label} item={item} />
                         ))}
                     </div>
-                    <p className="mt-2 text-sm text-white/80">
+                    <p className="mt-2 text-sm text-neutral-600">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </p>
                 </div>
@@ -91,17 +99,24 @@ export function Footer({ onNavigate }: FooterProps) {
                     <div className="grid grid-cols-4 gap-6">
                         {/* Company Information - Left Column */}
                         <div>
-                            <p className="mb-1 text-sm leading-tight text-white/90">
+                            <div className="mb-3">
+                                <VAHLogo
+                                    onNavigate={onNavigate}
+                                    size="lg"
+                                    imgClassName="brightness-0"
+                                />
+                            </div>
+                            <p className="mb-1 text-sm leading-tight text-neutral-700">
                                 Professional virtual address for UK business.
                             </p>
-                            <p className="text-sm leading-tight text-white/90">
+                            <p className="text-sm leading-tight text-neutral-700">
                                 London, UK
                             </p>
                         </div>
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-white">Navigation</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Navigation</h3>
                             <div className="space-y-0.5">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -111,7 +126,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-white">Legal & Compliance</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Legal & Compliance</h3>
                             <div className="space-y-0.5">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -121,7 +136,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-white">Contact Us</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Contact Us</h3>
                             <div className="space-y-1.5">
                                 {/* WhatsApp Support Button */}
                                 <button
@@ -143,7 +158,7 @@ export function Footer({ onNavigate }: FooterProps) {
                                 {/* Contact Us Link */}
                                 <button
                                     onClick={() => handleNavClick('contact')}
-                                    className="block text-left text-sm font-medium text-white/90 hover:text-white transition-colors"
+                                    className="block text-left text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
                                 >
                                     Contact us
                                 </button>
@@ -152,8 +167,8 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Regulatory Info - Secondary Row */}
-                    <div className="mt-5 pt-3 border-t border-white/10">
-                        <div className="text-xs text-white/70 leading-tight">
+                    <div className="mt-5 pt-3 border-t border-neutral-200">
+                        <div className="text-xs text-neutral-600 leading-tight">
                             <span className="font-medium">Company:</span> London Business Address Ltd • 
                             <span className="font-medium"> Company No:</span> 12345678 • 
                             <span className="font-medium"> VAT:</span> GB123456789 • 
@@ -163,7 +178,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     </div>
 
                     {/* Copyright */}
-                    <div className="mt-3 pt-2 border-t border-white/10 text-center text-sm text-white/60">
+                    <div className="mt-3 pt-2 border-t border-neutral-200 text-center text-sm text-neutral-600">
                         © 2026 VirtualAddress.UK. All rights reserved.
                     </div>
                 </div>
