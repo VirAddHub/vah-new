@@ -14,9 +14,9 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Explicitly set output mode for Vercel deployment (NOT static export)
-  // This prevents Next.js from trying to run 'next export' logic
-  output: 'standalone',
+  // Note: Do NOT set output: 'standalone' for Vercel deployments
+  // Vercel automatically handles Next.js builds - standalone is only for self-hosting
+  // Removing output setting lets Vercel use its optimized build process
   
   // Performance optimizations
   compress: true,
