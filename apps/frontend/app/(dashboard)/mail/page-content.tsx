@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
-import { RightPanel } from '@/components/dashboard/user/RightPanel';
+import { MailDetail } from '@/components/dashboard/user/MailDetail';
 import PDFViewerModal from '@/components/PDFViewerModal';
+import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
 import type { MailItem } from '@/components/dashboard/user/types';
 
@@ -26,8 +27,7 @@ export default function MailInboxPage() {
         setActiveView('mail');
     }, [setActiveView]);
     
-    // Right panel state
-    const [rightPanelView, setRightPanelView] = useState<'mail-detail' | 'forwarding' | 'account' | null>(null);
+    // Mail detail state - in-place replacement view
     const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
     const [showPDFModal, setShowPDFModal] = useState(false);
     const [selectedMailForPDF, setSelectedMailForPDF] = useState<MailItem | null>(null);
@@ -35,6 +35,9 @@ export default function MailInboxPage() {
     const [miniViewerLoading, setMiniViewerLoading] = useState(false);
     const [miniViewerError, setMiniViewerError] = useState<string | null>(null);
     const [forwardInlineNotice, setForwardInlineNotice] = useState<string | null>(null);
+    const [showForwardingModal, setShowForwardingModal] = useState(false);
+    const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
+    const [scrollPosition, setScrollPosition] = useState(0);
     const { toast } = useToast();
 
     // Fetch mail items
@@ -128,13 +131,25 @@ export default function MailInboxPage() {
         return item.sender_name || item.subject || 'Unknown Sender';
     };
 
-    // Handle mail item click - open in right panel
+    // Handle mail item click - open in-place (replace list view)
     const handleMailClick = useCallback((item: MailItem) => {
+        // Save scroll position before opening detail
+        setScrollPosition(window.scrollY);
         setSelectedMailDetail(item);
-        setRightPanelView('mail-detail');
         setSelectedMailForPDF(item);
         setShowPDFModal(false);
+        // Scroll to top when opening detail
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
+
+    // Handle back button - return to inbox list
+    const handleBack = useCallback(() => {
+        setSelectedMailDetail(null);
+        // Restore scroll position after a brief delay to ensure DOM update
+        setTimeout(() => {
+            window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+        }, 100);
+    }, [scrollPosition]);
 
     // Mark mail as read
     const markAsRead = useCallback(async (item: MailItem) => {
@@ -196,7 +211,7 @@ export default function MailInboxPage() {
         }
     }, [selectedMailDetail, toast]);
 
-    // Forward handler
+    // Forward handler - open forwarding modal
     const handleForward = useCallback(() => {
         if (!selectedMailDetail) return;
         
@@ -213,9 +228,88 @@ export default function MailInboxPage() {
             }
         }
         
-        // Open forwarding in right panel
-        setRightPanelView('forwarding');
+        // Open forwarding modal
+        setSelectedMailForForwarding(selectedMailDetail);
+        setShowForwardingModal(true);
+        setForwardInlineNotice(null);
     }, [selectedMailDetail]);
+
+    // Handle forwarding form submission
+    const handleForwardingSubmit = useCallback(async (data: any) => {
+        if (!selectedMailForForwarding) return;
+
+        try {
+            const response = await fetch('/api/bff/forwarding/requests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    mail_item_id: selectedMailForForwarding.id,
+                    ...data
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.ok) {
+                    toast({
+                        title: "Forwarding Request Created",
+                        description: "Your request will be reviewed by our team.",
+                        durationMs: 5000,
+                    });
+                    setShowForwardingModal(false);
+                    setSelectedMailForForwarding(null);
+                    // Refresh mail list
+                    // SWR will automatically refetch
+                } else {
+                    toast({
+                        title: "Forwarding Request Failed",
+                        description: result.error || 'Unknown error',
+                        variant: "destructive",
+                        durationMs: 5000,
+                    });
+                }
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                
+                // Handle incomplete forwarding address error
+                if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
+                    const missingFields = errorData.fields || [];
+                    const fieldLabels: Record<string, string> = {
+                        'name': 'Full Name',
+                        'address_line_1': 'Address Line 1',
+                        'city': 'City',
+                        'postal_code': 'Postcode',
+                    };
+                    const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
+
+                    toast({
+                        title: "Incomplete Forwarding Address",
+                        description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,
+                        variant: "destructive",
+                        durationMs: 6000,
+                    });
+                } else {
+                    toast({
+                        title: "Request Failed",
+                        description: errorData.message || errorData.error || "Failed to create forwarding request. Please try again.",
+                        variant: "destructive",
+                        durationMs: 5000,
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error creating forwarding request:', error);
+            toast({
+                title: "Request Error",
+                description: "Error creating forwarding request. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+        }
+    }, [selectedMailForForwarding, toast]);
 
     // Auto-mark as read when opened
     useEffect(() => {
@@ -394,13 +488,29 @@ export default function MailInboxPage() {
                 </TabsList>
             </Tabs>
 
-            {/* Split-pane layout: List on left, RightPanel on right */}
-            <div className="flex gap-6">
-                {/* Left: Mail List */}
-                <div className={cn(
-                    "flex-1 space-y-3",
-                    rightPanelView === 'mail-detail' ? "lg:w-2/3" : "w-full"
-                )}>
+            {/* In-place replacement: Show list OR detail, not both */}
+            {selectedMailDetail ? (
+                /* Mail Detail View - replaces the list */
+                <div className="w-full">
+                    <MailDetail
+                        item={selectedMailDetail}
+                        onBack={handleBack}
+                        onView={handleView}
+                        onDownload={handleDownload}
+                        onForward={handleForward}
+                        forwardInlineNotice={forwardInlineNotice}
+                        onDismissForwardNotice={() => setForwardInlineNotice(null)}
+                        miniViewerLoading={miniViewerLoading}
+                        miniViewerUrl={miniViewerUrl}
+                        miniViewerError={miniViewerError}
+                        mailTypeIcon={mailTypeIcon}
+                        mailStatusMeta={mailStatusMeta}
+                        formatTime={formatTime}
+                    />
+                </div>
+            ) : (
+                /* Mail List View */
+                <div className="w-full space-y-3">
                     {mailLoading ? (
                         <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                             Loading mail...
@@ -419,7 +529,6 @@ export default function MailInboxPage() {
                             const senderName = getSenderName(item);
                             const date = formatDate(item.received_date || item.created_at);
                             const isRead = item.is_read ?? true;
-                            const isSelected = selectedMailDetail?.id === item.id;
                             
                             return (
                                 <div
@@ -428,9 +537,7 @@ export default function MailInboxPage() {
                                     className={cn(
                                         "flex items-center justify-between rounded-lg border px-6 py-4",
                                         "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
-                                        isSelected 
-                                            ? "border-[#40C46C] bg-[#F0FDF4]" 
-                                            : "border-[#E5E7EB] hover:border-[#40C46C]/30 hover:shadow-sm"
+                                        "border-[#E5E7EB] hover:border-[#40C46C]/30 hover:shadow-sm"
                                     )}
                                 >
                                     <div className="flex items-center gap-5 flex-1 min-w-0">
@@ -469,28 +576,7 @@ export default function MailInboxPage() {
                         })
                     )}
                 </div>
-
-                {/* Right: RightPanel with MailDetail */}
-                <RightPanel
-                    view={rightPanelView}
-                    onClose={() => {
-                        setRightPanelView(null);
-                        setSelectedMailDetail(null);
-                    }}
-                    selectedMailDetail={selectedMailDetail}
-                    onMailView={handleView}
-                    onMailDownload={handleDownload}
-                    onMailForward={handleForward}
-                    forwardInlineNotice={forwardInlineNotice}
-                    onDismissForwardNotice={() => setForwardInlineNotice(null)}
-                    miniViewerLoading={miniViewerLoading}
-                    miniViewerUrl={miniViewerUrl}
-                    miniViewerError={miniViewerError}
-                    mailTypeIcon={mailTypeIcon}
-                    mailStatusMeta={mailStatusMeta}
-                    formatTime={formatTime}
-                />
-            </div>
+            )}
 
             {/* PDF Viewer Modal */}
             {showPDFModal && selectedMailForPDF && (
@@ -502,6 +588,19 @@ export default function MailInboxPage() {
                     }}
                     mailItemId={selectedMailForPDF.id ? Number(selectedMailForPDF.id) : null}
                     mailItemSubject={selectedMailForPDF.subject || 'Mail Preview'}
+                />
+            )}
+
+            {/* Forwarding Request Modal */}
+            {showForwardingModal && selectedMailForForwarding && (
+                <ForwardingRequestModal
+                    isOpen={showForwardingModal}
+                    onClose={() => {
+                        setShowForwardingModal(false);
+                        setSelectedMailForForwarding(null);
+                    }}
+                    mailItem={selectedMailForForwarding}
+                    onSubmit={handleForwardingSubmit}
                 />
             )}
         </div>
