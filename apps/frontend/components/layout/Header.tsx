@@ -16,7 +16,6 @@ export function Header({ onNavigate }: HeaderProps) {
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
         { label: 'Help', page: 'help', href: '/help' },
-        { label: 'Sign Up', page: 'signup' },
     ];
 
     const handleNavClick = (page: string, href?: string) => {

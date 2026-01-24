@@ -130,7 +130,7 @@ export default function AccountOverviewPage() {
                         <Button
                             onClick={() => router.push('/account/billing')}
                             variant="outline"
-                            className="border-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/10"
+                            className="border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             View Billing
@@ -194,7 +194,7 @@ export default function AccountOverviewPage() {
                         {accountSummary.kycStatus !== 'verified' && (
                             <Button
                                 onClick={() => router.push('/account/verification')}
-                                className="bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                                className="bg-[#206039] text-[#024E40] hover:bg-[#206039]/90"
                                 style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                             >
                                 Complete Verification
@@ -218,7 +218,7 @@ export default function AccountOverviewPage() {
                         <Button
                             onClick={() => router.push('/account/addresses')}
                             variant="outline"
-                            className="border-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/10"
+                            className="border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             Manage Addresses

@@ -77,7 +77,6 @@ export function Footer({ onNavigate }: FooterProps) {
                         <VAHLogo
                             onNavigate={onNavigate}
                             size="lg"
-                            imgClassName="brightness-0"
                         />
                     </div>
                     <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm">
@@ -103,20 +102,19 @@ export function Footer({ onNavigate }: FooterProps) {
                                 <VAHLogo
                                     onNavigate={onNavigate}
                                     size="lg"
-                                    imgClassName="brightness-0"
                                 />
                             </div>
                             <p className="mb-1 text-sm leading-tight text-neutral-700">
                                 Professional virtual address for UK business.
                             </p>
                             <p className="text-sm leading-tight text-neutral-700">
-                                London, UK
+                                Central London, UK
                             </p>
                         </div>
 
                         {/* Navigation */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Navigation</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-[#206039]">Navigation</h3>
                             <div className="space-y-0.5">
                                 {navigation.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -126,7 +124,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Legal & Compliance */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Legal & Compliance</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-[#206039]">Legal & Compliance</h3>
                             <div className="space-y-0.5">
                                 {legal.map((item) => (
                                     <QuickLink key={item.label} item={item} />
@@ -136,12 +134,12 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact Us */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-neutral-900">Contact Us</h3>
+                            <h3 className="mb-1.5 text-sm font-semibold text-[#206039]">Contact Us</h3>
                             <div className="space-y-1.5">
                                 {/* WhatsApp Support Button */}
                                 <button
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank", "noopener,noreferrer")}
-                                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#40C46C] text-white text-sm font-medium hover:bg-[#40C46C]/90 transition-colors"
+                                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#206039] text-white text-sm font-medium hover:bg-[#206039]/90 transition-colors"
                                 >
                                     <svg
                                         width="14"
@@ -169,10 +167,7 @@ export function Footer({ onNavigate }: FooterProps) {
                     {/* Regulatory Info - Secondary Row */}
                     <div className="mt-5 pt-3 border-t border-neutral-200">
                         <div className="text-xs text-neutral-600 leading-tight">
-                            <span className="font-medium">Company:</span> London Business Address Ltd • 
-                            <span className="font-medium"> Company No:</span> 12345678 • 
-                            <span className="font-medium"> VAT:</span> GB123456789 • 
-                            <span className="font-medium"> HMRC AML:</span> XRML00000123456 • 
+                            <span className="font-medium">HMRC AML:</span> XRML00000123456 • 
                             <span className="font-medium"> ICO:</span> ZA123456
                         </div>
                     </div>

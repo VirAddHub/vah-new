@@ -680,7 +680,7 @@ export default function MailInboxPage() {
                             placeholder="Search mail..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#40C46C]"
+                            className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#206039]"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         />
                     </div>
@@ -728,7 +728,7 @@ export default function MailInboxPage() {
                     <TabsTrigger
                         value="inbox"
                         className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
                             "text-[#666666] hover:text-[#1A1A1A]"
                         )}
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -738,7 +738,7 @@ export default function MailInboxPage() {
                     <TabsTrigger
                         value="archived"
                         className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
                             "text-[#666666] hover:text-[#1A1A1A]"
                         )}
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -748,7 +748,7 @@ export default function MailInboxPage() {
                     <TabsTrigger
                         value="tags"
                         className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
+                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
                             "text-[#666666] hover:text-[#1A1A1A]"
                         )}
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -861,7 +861,7 @@ export default function MailInboxPage() {
                                                     className={cn(
                                                         "flex items-center justify-between rounded-lg border px-6 py-4",
                                                         "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
-                                                        "border-[#E5E7EB] hover:border-[#40C46C]/30 hover:shadow-sm"
+                                                        "border-[#E5E7EB] hover:border-[#206039]/30 hover:shadow-sm"
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-5 flex-1 min-w-0">
@@ -917,7 +917,7 @@ export default function MailInboxPage() {
                                     className={cn(
                                         "flex items-center justify-between rounded-lg border px-6 py-4",
                                         "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
-                                        "border-[#E5E7EB] hover:border-[#40C46C]/30 hover:shadow-sm"
+                                        "border-[#E5E7EB] hover:border-[#206039]/30 hover:shadow-sm"
                                     )}
                                 >
                                     <div className="flex items-center gap-5 flex-1 min-w-0">

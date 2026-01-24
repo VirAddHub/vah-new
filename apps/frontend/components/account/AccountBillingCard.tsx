@@ -263,7 +263,7 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
                 <Button
                   onClick={handleReactivate}
                   disabled={isLoading === 'reactivate'}
-                  className="w-full bg-[#40C46C] text-white hover:bg-[#40C46C]/90"
+                  className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
                   style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                 >
                   {isLoading === 'reactivate' ? (

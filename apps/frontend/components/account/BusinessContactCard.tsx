@@ -246,7 +246,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                   variant="ghost"
                   size="sm"
                   onClick={handleOpenEmailDialog}
-                  className="text-[12px] text-[#40C46C] hover:text-[#40C46C]/80"
+                  className="text-[12px] text-[#206039] hover:text-[#206039]/80"
                 >
                   Edit
                 </Button>
@@ -282,7 +282,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-[#40C46C] text-white hover:bg-[#40C46C]/90"
+                  className="bg-[#206039] text-white hover:bg-[#206039]/90"
                   style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                 >
                   {isSaving ? 'Saving...' : 'Save changes'}

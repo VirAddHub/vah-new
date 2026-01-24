@@ -127,7 +127,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <div className="mt-5 lg:mt-3">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="h-[48px] w-full rounded-[33px] bg-[#40C46C] px-4 text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
+                                    className="h-[48px] w-full rounded-[33px] bg-[#206039] px-4 text-base font-medium text-[#024E40] hover:bg-[#206039]/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
                                     style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Get Started - £9.99/month
@@ -273,7 +273,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
                                 </div>
 
-                                <div className="my-4 h-px w-full bg-[#40C46C]" style={{ opacity: 0.86 }} />
+                                <div className="my-4 h-px w-full bg-[#206039]" style={{ opacity: 0.86 }} />
 
                                 <div>
                                     <div className="text-xs font-normal text-white/70 sm:text-sm">Mail Forwarding rules</div>
@@ -298,7 +298,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="mt-5">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        className="h-[44px] w-full rounded-[30px] bg-[#40C46C] text-sm font-medium text-[#014D3F] hover:bg-[#40C46C]/90"
+                                        className="h-[44px] w-full rounded-[30px] bg-[#206039] text-sm font-medium text-[#014D3F] hover:bg-[#206039]/90"
                                     >
                                         Sign Up
                                     </Button>
@@ -362,7 +362,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="mt-5">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
-                                        className="h-[44px] w-full rounded-[30px] bg-[#40C46C] text-sm font-medium text-[#014D3F] hover:bg-[#40C46C]/90"
+                                        className="h-[44px] w-full rounded-[30px] bg-[#206039] text-sm font-medium text-[#014D3F] hover:bg-[#206039]/90"
                                     >
                                         Sign Up
                                     </Button>
@@ -430,12 +430,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Get your London Business Address Today
                                     </h2>
                                     <p className="text-base text-white/80 leading-[1.4]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                        Everything included for <span className="text-[#40C46C]">£9.99</span> per month.
+                                        Everything included for <span className="text-[#206039]">£9.99</span> per month.
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="rounded-[30px] bg-[#40C46C] px-[10px] py-[10px] w-[268px] h-[48px] flex items-center justify-center text-base font-medium text-[#024E40] hover:bg-[#40C46C]/90 transition-colors uppercase tracking-wide"
+                                    className="rounded-[30px] bg-[#206039] px-[10px] py-[10px] w-[268px] h-[48px] flex items-center justify-center text-base font-medium text-[#024E40] hover:bg-[#206039]/90 transition-colors uppercase tracking-wide"
                                     style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif', lineHeight: '1.2' }}
                                 >
                                     Schedule London Address

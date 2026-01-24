@@ -273,8 +273,8 @@ export default function ForwardingPage() {
                                     key={request.id} 
                                     onClick={() => setSelectedRequest(request)}
                                     className={cn(
-                                        "border border-[#E5E7EB] hover:border-[#40C46C]/30 transition-colors cursor-pointer",
-                                        selectedRequest?.id === request.id && "border-[#40C46C] bg-[#F0FDF4]"
+                                        "border border-[#E5E7EB] hover:border-[#206039]/30 transition-colors cursor-pointer",
+                                        selectedRequest?.id === request.id && "border-[#206039] bg-[#F0FDF4]"
                                     )}
                                 >
                                     <CardContent className="p-4">

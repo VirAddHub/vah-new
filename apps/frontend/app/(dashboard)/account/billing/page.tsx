@@ -118,14 +118,14 @@ export default function AccountBillingPage() {
                 <TabsList className="mb-6 bg-transparent border-b border-[#E5E7EB] rounded-none p-0 h-auto">
                     <TabsTrigger
                         value="payment"
-                        className="px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium"
+                        className="px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium"
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                     >
                         Payment Details
                     </TabsTrigger>
                     <TabsTrigger
                         value="invoices"
-                        className="px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#40C46C] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium"
+                        className="px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium"
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                     >
                         Invoices

@@ -104,7 +104,7 @@ export function DashboardSidebar() {
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
                                 isMailActive
-                                    ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                    ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
                                     : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
                             )}
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -134,7 +134,7 @@ export function DashboardSidebar() {
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
                                         active
-                                            ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                            ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
                                             : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
                                     )}
                                     style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -197,7 +197,7 @@ export function DashboardSidebar() {
                                                 className={cn(
                                                     "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
                                                     isMailActive
-                                                        ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                                        ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
                                                         : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
                                                 )}
                                                 style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
@@ -228,7 +228,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
                                                             active
-                                                                ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#40C46C]"
+                                                                ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
                                                                 : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
                                                         )}
                                                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}

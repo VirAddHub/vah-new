@@ -331,11 +331,11 @@ export default async function BlogPostPage({
                     Get your London Business Address Today
                   </h2>
                   <p className="mt-[12px] text-[16px] leading-[1.4] text-white/80">
-                    Everything included for <span className="text-[#40C46C] font-normal">£9.99</span> per month.
+                    Everything included for <span className="text-[#206039] font-normal">£9.99</span> per month.
                   </p>
                   <Link
                     href="/signup"
-                    className="mt-[24px] w-[268px] h-[48px] rounded-[30px] bg-[#40C46C] px-[10px] py-[10px] text-[16px] font-medium text-[#024E40] hover:bg-[#40C46C]/90 transition-colors uppercase flex items-center justify-center"
+                    className="mt-[24px] w-[268px] h-[48px] rounded-[30px] bg-[#206039] px-[10px] py-[10px] text-[16px] font-medium text-[#024E40] hover:bg-[#206039]/90 transition-colors uppercase flex items-center justify-center"
                   >
                     Schedule London Address
                   </Link>

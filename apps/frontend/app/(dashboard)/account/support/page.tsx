@@ -41,7 +41,7 @@ export default function AccountSupportPage() {
                         </div>
                         <Button
                             onClick={() => window.location.href = 'mailto:support@virtualaddresshub.co.uk'}
-                            className="w-full bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                            className="w-full bg-[#206039] text-[#024E40] hover:bg-[#206039]/90"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             Send Email
@@ -73,7 +73,7 @@ export default function AccountSupportPage() {
                         <Button
                             onClick={() => window.location.href = 'tel:08081553766'}
                             variant="outline"
-                            className="w-full border-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/10"
+                            className="w-full border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             Call Now
@@ -98,7 +98,7 @@ export default function AccountSupportPage() {
                     <Button
                         onClick={() => window.location.href = '/help'}
                         variant="outline"
-                        className="border-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/10"
+                        className="border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                     >
                         Visit Help Center

@@ -268,7 +268,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                 ))}
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-fit mt-2 text-[12px] text-[#40C46C] hover:text-[#40C46C]/80" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                    <Button variant="ghost" size="sm" className="w-fit mt-2 text-[12px] text-[#206039] hover:text-[#206039]/80" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
@@ -379,7 +379,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                 </p>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-fit mt-2 text-[12px] text-[#40C46C] hover:text-[#40C46C]/80" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                    <Button variant="ghost" size="sm" className="w-fit mt-2 text-[12px] text-[#206039] hover:text-[#206039]/80" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                       <Plus className="h-3 w-3 mr-1" />
                       Add address
                     </Button>

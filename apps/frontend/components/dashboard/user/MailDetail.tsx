@@ -70,7 +70,7 @@ export function MailDetail({
             type="button"
             onClick={onView}
             variant="outline"
-            className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+            className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
             style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
           >
             View Scan
@@ -81,7 +81,7 @@ export function MailDetail({
             onClick={onDownload}
             disabled={isDownloading}
             variant="outline"
-            className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
           >
             {isDownloading ? 'Downloading...' : 'Download PDF'}
@@ -92,7 +92,7 @@ export function MailDetail({
               type="button"
               onClick={onForward}
               variant="outline"
-              className="h-12 px-[10px] rounded-[30px] border-[#40C46C] bg-white text-[#161B1A] hover:bg-[#40C46C]/10 font-medium text-base"
+              className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
               style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
             >
               Request Forwarding

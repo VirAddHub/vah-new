@@ -109,7 +109,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="flex gap-4 justify-center">
                             <Button
                                 onClick={() => onNavigate?.("home")}
-                            className="bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90 rounded-[30px] px-6"
+                            className="bg-[#206039] text-[#024E40] hover:bg-[#206039]/90 rounded-[30px] px-6"
                             >
                                 Return Home
                             </Button>
@@ -176,7 +176,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                                 value={formData.name}
                                                 onChange={handleInputChange}
                                         placeholder="Name"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
                                             />
                                         </div>
 
@@ -193,7 +193,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                                 value={formData.email}
                                                 onChange={handleInputChange}
                                         placeholder="Typ email"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
                                             />
                                     </div>
 
@@ -209,7 +209,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                                 value={formData.company}
                                                 onChange={handleInputChange}
                                         placeholder="Company name"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
                                     />
                                     </div>
 
@@ -226,7 +226,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             value={formData.subject}
                                             onChange={handleInputChange}
                                         placeholder="How can we help you"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C]"
+                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
                                         />
                                     </div>
 
@@ -241,7 +241,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             name="inquiryType"
                                             value={formData.inquiryType}
                                             onChange={handleInputChange}
-                                            className="w-full px-[16px] py-[12px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C] appearance-none pr-[40px]"
+                                            className="w-full px-[16px] py-[12px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] appearance-none pr-[40px]"
                                         >
                                             <option value="general">General Inquire</option>
                                             <option value="pricing">Pricing Question</option>
@@ -265,7 +265,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             value={formData.message}
                                             onChange={handleInputChange}
                                         placeholder="Please discrib you inqure in details..."
-                                        className="w-full px-[20px] py-[18px] rounded-[20px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#40C46C] resize-none"
+                                        className="w-full px-[20px] py-[18px] rounded-[20px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] resize-none"
                                         />
                                     </div>
 
@@ -273,7 +273,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <button
                                             type="submit"
                                             disabled={isSubmitting}
-                                    className="w-full py-[10px] px-[10px] rounded-[30px] bg-[#40C46C] text-[#024E40] text-[16px] font-medium leading-[1.4] uppercase hover:bg-[#40C46C]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full py-[10px] px-[10px] rounded-[30px] bg-[#206039] text-[#024E40] text-[16px] font-medium leading-[1.4] uppercase hover:bg-[#206039]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
                                             {isSubmitting ? (
                                                 <>
@@ -309,7 +309,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             </div>
                             <button
                                 onClick={() => window.open("https://wa.me/447000000000", "_blank")}
-                                className="w-[214px] h-[48px] rounded-[36px] border border-[#40C46C] bg-transparent text-[#40C46C] text-[16px] font-medium leading-[1.4] hover:bg-[#40C46C] hover:text-white transition-colors"
+                                className="w-[214px] h-[48px] rounded-[36px] border border-[#206039] bg-transparent text-[#206039] text-[16px] font-medium leading-[1.4] hover:bg-[#206039] hover:text-white transition-colors"
                                         >
                                 Chat on whatsapp
                             </button>
@@ -329,7 +329,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             </div>
                             <button
                                 onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
-                                className="w-[214px] h-[48px] rounded-[36px] border border-[#40C46C] bg-transparent text-[#40C46C] text-[16px] font-medium leading-[1.4] hover:bg-[#40C46C] hover:text-white transition-colors"
+                                className="w-[214px] h-[48px] rounded-[36px] border border-[#206039] bg-transparent text-[#206039] text-[16px] font-medium leading-[1.4] hover:bg-[#206039] hover:text-white transition-colors"
                             >
                                 Send an email
                             </button>

@@ -115,12 +115,6 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                     ) : (
                         <>
                             <button
-                                onClick={() => handleNavClick('signup')}
-                                className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
-                            >
-                                Sign up
-                            </button>
-                            <button
                                 onClick={() => handleNavClick('login')}
                                 className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
                             >
@@ -128,7 +122,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                             </button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                                className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#206039] text-white hover:bg-[#206039]/90"
                             >
                                 Get started
                             </Button>
@@ -176,12 +170,6 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 ))}
                                 <div className="pt-4 space-y-3">
                                     <button
-                                        onClick={() => handleNavClick('signup')}
-                                        className="tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center text-muted-foreground hover:text-foreground"
-                                    >
-                                        Sign up
-                                    </button>
-                                    <button
                                         onClick={() => handleNavClick('login')}
                                         className="tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center text-muted-foreground hover:text-foreground"
                                     >
@@ -189,7 +177,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                     </button>
                                     <Button
                                         onClick={() => handleNavClick('signup')}
-                                        className="tt-min w-full rounded-full font-medium transition-all duration-200 bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                                        className="tt-min w-full rounded-full font-medium transition-all duration-200 bg-[#206039] text-[#024E40] hover:bg-[#206039]/90"
                                     >
                                         Get started
                                     </Button>

@@ -169,7 +169,8 @@ export function App() {
   };
 
   // Check if current page is a dashboard page
-  const isDashboardPage = ['dashboard', 'billing', 'account', 'kyc', 'profile', 'settings', 'admin'].includes(currentPage);
+  // Note: 'kyc' and 'kyc-policy' both render KYCPolicyPage (legal/compliance), not dashboard
+  const isDashboardPage = ['dashboard', 'billing', 'account', 'profile', 'settings', 'admin'].includes(currentPage);
 
   return (
     <ThemeProvider>
