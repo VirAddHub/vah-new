@@ -303,9 +303,14 @@ router.post('/from-onedrive', async (req, res) => {
 
     const tagTitle = tagToTitle(payload.sourceSlug);
     const dateFromName = tryParseDateFromFilename(payload.fileName);
-    const dateForSubject = dateFromName || new Date(receivedAtMs);
-    const subject = `${tagTitle} letter — ${formatUkDateShort(dateForSubject)}`;
+    // Date is stored in received_date, not included in subject
+    const subject = `${tagTitle} letter`;
     const senderName = tagTitle;
+    
+    // Use date from filename if available, otherwise use receivedAtMs
+    const finalReceivedDate = dateFromName 
+      ? dateFromName.toISOString().split('T')[0]
+      : new Date(receivedAtMs).toISOString().split('T')[0];
 
     // Check if locked columns exist (migration 042 may not have run)
     const hasLockedColumns = await pool.query(`
@@ -349,7 +354,7 @@ router.post('/from-onedrive', async (req, res) => {
           payload.userId,                     // $2: user_id
           subject,                            // $3: subject
           senderName,                         // $4: sender_name
-          new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
+          finalReceivedDate,                  // $5: received_date (from filename or receivedAtMs)
           null,                               // $6: scan_file_url - set to null initially, will be updated after file move
           0,                                  // $7: file_size (not provided in payload)
           true,                               // $8: scanned (true for OneDrive files)
@@ -400,7 +405,7 @@ router.post('/from-onedrive', async (req, res) => {
           payload.userId,                     // $2: user_id
           subject,                            // $3: subject
           senderName,                         // $4: sender_name
-          new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date
+          finalReceivedDate,                  // $5: received_date (from filename or receivedAtMs)
           null,                               // $6: scan_file_url - set to null initially, will be updated after file move
           0,                                  // $7: file_size (not provided in payload)
           true,                               // $8: scanned (true for OneDrive files)
