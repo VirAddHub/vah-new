@@ -1,3 +1,5 @@
+const path = require('path');
+
 // Optional bundle analyzer - only load if available and ANALYZE is enabled
 let withBundleAnalyzer = (config) => config;
 try {
@@ -12,6 +14,10 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Explicitly set output mode for Vercel deployment (NOT static export)
+  // This prevents Next.js from trying to run 'next export' logic
+  output: 'standalone',
+  
   // Performance optimizations
   compress: true,
   poweredByHeader: false,
@@ -47,6 +53,8 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // Turborepo monorepo support
+    outputFileTracingRoot: path.join(__dirname, '../../'),
     turbo: {
       rules: {
         '*.svg': {
