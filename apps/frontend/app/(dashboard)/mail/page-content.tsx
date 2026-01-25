@@ -331,6 +331,15 @@ export default function MailInboxPage() {
 
     // Handle tag update for a mail item
     const handleTagUpdate = useCallback(async (item: MailItem, newTag: string | null) => {
+        // Normalize both values for comparison (null vs undefined vs empty string)
+        const currentTag = item.tag || null;
+        const normalizedNewTag = newTag || null;
+        
+        // Skip API call if tag hasn't changed
+        if (currentTag === normalizedNewTag) {
+            return;
+        }
+
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}`, {
                 method: 'PATCH',
@@ -338,18 +347,23 @@ export default function MailInboxPage() {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ tag: newTag || null }),
+                body: JSON.stringify({ tag: normalizedNewTag }),
             });
+
+            const data = await response.json();
 
             if (response.ok) {
                 // SWR will auto-refetch
                 toast({
                     title: "Tag Updated",
-                    description: newTag ? `Tag set to "${getTagLabel(newTag)}"` : "Tag removed",
+                    description: normalizedNewTag ? `Tag set to "${getTagLabel(normalizedNewTag)}"` : "Tag removed",
                     durationMs: 2000,
                 });
+            } else if (data.error === 'no_changes') {
+                // Silently ignore "no_changes" - tag is already set to this value
+                return;
             } else {
-                throw new Error('Failed to update tag');
+                throw new Error(data.error || 'Failed to update tag');
             }
         } catch (error) {
             console.error('Error updating tag:', error);
