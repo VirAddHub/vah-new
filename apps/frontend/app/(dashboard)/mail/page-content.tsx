@@ -1077,12 +1077,11 @@ export default function MailInboxPage() {
                                     </div>
                                     
                                     {/* Right: Tag Selector + Archive + Date */}
-                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                         {/* Tag Selector - Always Visible */}
                                         <Select
                                             value={item.tag || 'untagged'}
                                             onValueChange={(value) => handleTagUpdate(item, value === 'untagged' ? null : value)}
-                                            onClick={(e) => e.stopPropagation()}
                                         >
                                             <SelectTrigger className="h-9 w-[140px] text-sm border-[#E5E7EB] bg-white hover:bg-[#F9F9F9]">
                                                 <SelectValue>
