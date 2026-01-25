@@ -169,12 +169,12 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
 
 /**
  * PATCH /api/mail-items/:id
- * Update mail item (user can update is_read and subject)
+ * Update mail item (user can update is_read, subject, and tag)
  */
 router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(req.params.id);
-    const { is_read, subject } = req.body;
+    const { is_read, subject, tag } = req.body;
     const pool = getPool();
 
     if (!mailId) {
@@ -182,9 +182,9 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
     }
 
     try {
-        // Verify ownership
+        // Verify ownership and get current values
         const check = await pool.query(
-            'SELECT id FROM mail_item WHERE id = $1 AND user_id = $2',
+            'SELECT id, tag FROM mail_item WHERE id = $1 AND user_id = $2',
             [mailId, userId]
         );
 
@@ -192,7 +192,10 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
 
-        // Allow updating is_read, subject, and updated_at
+        const currentTag = check.rows[0].tag || null;
+        const normalizedNewTag = (tag === null || tag === undefined || tag === '') ? null : String(tag).trim() || null;
+
+        // Allow updating is_read, subject, tag, and updated_at
         const updates: string[] = [];
         const values: any[] = [];
         let paramIndex = 1;
@@ -207,13 +210,37 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
             values.push(subject);
         }
 
+        // Handle tag update - only if it's actually different
+        if (tag !== undefined) {
+            // Check if tag value actually changed
+            if (currentTag === normalizedNewTag) {
+                // Tag is already set to this value - this is not an error, just no change needed
+                // But we still need to check if other fields changed
+                if (typeof is_read !== 'boolean' && typeof subject !== 'string') {
+                    return res.status(400).json({ 
+                        ok: false, 
+                        error: 'no_changes',
+                        message: 'Tag is already set to this value'
+                    });
+                }
+                // Continue with other updates if any
+            } else {
+                updates.push(`tag = $${paramIndex++}`);
+                values.push(normalizedNewTag);
+            }
+        }
+
         updates.push(`updated_at = $${paramIndex++}`);
         values.push(Date.now());
 
         values.push(mailId);
 
         if (updates.length === 1) { // Only updated_at
-            return res.status(400).json({ ok: false, error: 'no_changes' });
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'no_changes',
+                message: 'No fields were provided to update'
+            });
         }
 
         const result = await pool.query(

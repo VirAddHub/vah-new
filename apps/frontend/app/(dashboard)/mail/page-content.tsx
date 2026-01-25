@@ -360,7 +360,12 @@ export default function MailInboxPage() {
                     durationMs: 2000,
                 });
             } else if (data.error === 'no_changes') {
-                // Silently ignore "no_changes" - tag is already set to this value
+                // Tag is already set to this value - show a friendly info message
+                toast({
+                    title: "No Change Needed",
+                    description: data.message || "Tag is already set to this value",
+                    durationMs: 2000,
+                });
                 return;
             } else {
                 throw new Error(data.error || 'Failed to update tag');
