@@ -751,27 +751,29 @@ export default function MailInboxPage() {
     }, [forwardInlineNotice]);
 
     return (
-        <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Page Header - Title + Count + Search */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-semibold text-[#1A1A1A]">Mail Inbox</h1>
+        <div className="w-full -mx-4 md:mx-0 px-4 md:px-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            {/* Page Header - Mobile-first: compact on mobile, full on desktop */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-6 gap-3 md:gap-0">
+                {/* Title - Mobile: "Mail (count)", Desktop: "Mail Inbox (count)" */}
+                <div className="flex items-center gap-2 md:gap-3">
+                    <h1 className="text-xl md:text-3xl font-semibold text-[#1A1A1A]">
+                        <span className="md:hidden">Mail</span>
+                        <span className="hidden md:inline">Mail Inbox</span>
+                    </h1>
                     <span className="text-sm text-[#666666]">({inboxCount})</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Search Input */}
-                    <div className="relative w-[300px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666666]" />
-                        <Input
-                            type="text"
-                            placeholder="Search mail..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#206039]"
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                        />
-                    </div>
+                {/* Search Input - Full width on mobile, fixed width on desktop */}
+                <div className="relative w-full md:w-[300px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666666]" />
+                    <Input
+                        type="text"
+                        placeholder="Search mail..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#206039]"
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    />
                 </div>
             </div>
 
@@ -795,68 +797,96 @@ export default function MailInboxPage() {
                 </div>
             )}
 
-            {/* Horizontal Tabs - Replaces the sidebar */}
+            {/* Horizontal Tabs - Sticky segmented control on mobile, regular tabs on desktop */}
             <Tabs value={activeTab} onValueChange={(v) => {
                 setActiveTab(v as 'inbox' | 'archived' | 'tags');
                 // Clear tag filter when switching tabs
                 if (v !== 'inbox') {
                     setSelectedTagFilter(null);
                 }
-            }} className="mb-6">
-                <TabsList className="bg-transparent border-b border-[#E5E7EB] rounded-none p-0 h-auto">
-                    <TabsTrigger
-                        value="inbox"
-                        className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
-                            "text-[#666666] hover:text-[#1A1A1A]"
-                        )}
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                    >
-                        Inbox ({inboxCount})
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="archived"
-                        className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
-                            "text-[#666666] hover:text-[#1A1A1A]"
-                        )}
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                    >
-                        Archived ({archivedCount})
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="tags"
-                        className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] data-[state=active]:bg-transparent",
-                            "text-[#666666] hover:text-[#1A1A1A]"
-                        )}
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                    >
-                        Tags ({tagsCount})
-                    </TabsTrigger>
-                </TabsList>
+            }} className="mb-4 md:mb-6">
+                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-2 md:pb-0 border-b border-[#E5E7EB] md:border-b">
+                    <TabsList className={cn(
+                        "bg-transparent border-b-0 rounded-none p-0 h-auto",
+                        "md:border-b md:border-[#E5E7EB]"
+                    )}>
+                        <TabsTrigger
+                            value="inbox"
+                            className={cn(
+                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
+                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "transition-all"
+                            )}
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <span className="md:hidden">Inbox</span>
+                            <span className="hidden md:inline">Inbox ({inboxCount})</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="archived"
+                            className={cn(
+                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
+                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "transition-all"
+                            )}
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <span className="md:hidden">Archived</span>
+                            <span className="hidden md:inline">Archived ({archivedCount})</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="tags"
+                            className={cn(
+                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
+                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "transition-all"
+                            )}
+                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        >
+                            <span className="md:hidden">Tags</span>
+                            <span className="hidden md:inline">Tags ({tagsCount})</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
             </Tabs>
 
             {/* In-place replacement: Show list OR detail, not both */}
             {selectedMailDetail ? (
-                /* Mail Detail View - replaces the list */
-                <div className="w-full">
-                    <MailDetail
-                        item={selectedMailDetail}
-                        onBack={handleBack}
-                        onView={handleView}
-                        onDownload={handleDownload}
-                        onForward={handleForward}
-                        forwardInlineNotice={forwardInlineNotice}
-                        onDismissForwardNotice={() => setForwardInlineNotice(null)}
-                        miniViewerLoading={miniViewerLoading}
-                        miniViewerUrl={miniViewerUrl}
-                        miniViewerError={miniViewerError}
-                        isDownloading={isDownloading}
-                        mailTypeIcon={mailTypeIcon}
-                        mailStatusMeta={mailStatusMeta}
-                        formatTime={formatTime}
-                    />
+                /* Mail Detail View - Full-screen on mobile, in-place on desktop */
+                <div className="w-full md:relative fixed inset-0 md:inset-auto bg-white md:bg-transparent z-50 md:z-auto overflow-y-auto md:overflow-visible md:static">
+                    <div className="p-4 md:p-0 max-w-full md:max-w-none">
+                        <MailDetail
+                            item={selectedMailDetail}
+                            onBack={handleBack}
+                            onView={handleView}
+                            onDownload={handleDownload}
+                            onForward={handleForward}
+                            onArchive={async () => {
+                                const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
+                                await handleArchive(selectedMailDetail, fakeEvent);
+                                // Navigate back to list after archiving
+                                handleBack();
+                            }}
+                            forwardInlineNotice={forwardInlineNotice}
+                            onDismissForwardNotice={() => setForwardInlineNotice(null)}
+                            miniViewerLoading={miniViewerLoading}
+                            miniViewerUrl={miniViewerUrl}
+                            miniViewerError={miniViewerError}
+                            isDownloading={isDownloading}
+                            mailTypeIcon={mailTypeIcon}
+                            mailStatusMeta={mailStatusMeta}
+                            formatTime={formatTime}
+                        />
+                    </div>
                 </div>
             ) : (
                 /* Mail List View */
@@ -876,8 +906,8 @@ export default function MailInboxPage() {
                     ) : activeTab === 'tags' && groupedByTag && groupedByTag.length > 0 ? (
                         /* Grouped Tags View */
                         <div className="space-y-8">
-                            {/* Manage Tags Button */}
-                            <div className="flex justify-end">
+                            {/* Manage Tags Button - Hidden on mobile */}
+                            <div className="hidden md:flex justify-end">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -936,17 +966,42 @@ export default function MailInboxPage() {
                                             return (
                                                 <div
                                                     key={item.id}
+                                                    onClick={() => handleMailClick(item)}
                                                     className={cn(
-                                                        "flex items-center gap-4 rounded-lg border px-6 py-4",
-                                                        "bg-white hover:bg-[#F9F9F9] transition-all",
-                                                        "border-[#E5E7EB] hover:border-[#206039]/30"
+                                                        "flex items-center gap-3 md:gap-4 rounded-lg border px-4 md:px-6 py-3 md:py-4",
+                                                        "bg-white hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-all",
+                                                        "border-[#E5E7EB] hover:border-[#206039]/30",
+                                                        "cursor-pointer min-h-[48px] md:min-h-0"
                                                     )}
                                                 >
-                                                    {/* Left: Icon + Mail Info */}
-                                                    <div 
-                                                        onClick={() => handleMailClick(item)}
-                                                        className="flex items-center gap-5 flex-1 min-w-0 cursor-pointer"
-                                                    >
+                                                    {/* Mobile: Icon + Sender/Tag + Date only */}
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
+                                                        <div className="flex-shrink-0">
+                                                            <Icon className={cn(
+                                                                "h-5 w-5",
+                                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
+                                                            )} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className={cn(
+                                                                    "text-base leading-5 truncate",
+                                                                    isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
+                                                                )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                    {senderName}
+                                                                </p>
+                                                                {item.tag && (
+                                                                    <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-xs text-[#999999] whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                            {date}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Desktop: Full layout with actions */}
+                                                    <div className="hidden md:flex items-center gap-5 flex-1 min-w-0">
                                                         <div className="flex-shrink-0">
                                                             <Icon className={cn(
                                                                 "h-6 w-6",
@@ -968,17 +1023,14 @@ export default function MailInboxPage() {
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* Right: Tag Selector + Archive + Date */}
-                                                    <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                                        {/* Tag Selector - Always Visible, Creatable */}
+                                                    {/* Desktop: Tag Selector + Archive + Date */}
+                                                    <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                         <CreatableTagSelect
                                                             value={item.tag ?? null}
                                                             availableTags={availableTags}
                                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                                             getTagLabel={getTagLabel}
                                                         />
-                                                        
-                                                        {/* Archive Button - Always Visible */}
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -989,8 +1041,6 @@ export default function MailInboxPage() {
                                                             <Archive className="h-4 w-4 mr-1.5" />
                                                             Archive
                                                         </Button>
-                                                        
-                                                        {/* Date */}
                                                         <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                             {date}
                                                         </span>
@@ -1005,7 +1055,7 @@ export default function MailInboxPage() {
                             })}
                         </div>
                     ) : (
-                        /* Flat List View (Inbox/Archived) */
+                        /* Flat List View (Inbox/Archived) - Mobile-first design */
                         filteredItems.map((item) => {
                             const Icon = getMailIcon(item);
                             const senderName = getSenderName(item);
@@ -1015,17 +1065,42 @@ export default function MailInboxPage() {
                             return (
                                 <div
                                     key={item.id}
+                                    onClick={() => handleMailClick(item)}
                                     className={cn(
-                                        "flex items-center gap-4 rounded-lg border px-6 py-4",
-                                        "bg-white hover:bg-[#F9F9F9] transition-all",
-                                        "border-[#E5E7EB] hover:border-[#206039]/30"
+                                        "flex items-center gap-3 md:gap-4 rounded-lg border px-4 md:px-6 py-3 md:py-4",
+                                        "bg-white hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-all",
+                                        "border-[#E5E7EB] hover:border-[#206039]/30",
+                                        "cursor-pointer min-h-[48px] md:min-h-0"
                                     )}
                                 >
-                                    {/* Left: Icon + Mail Info */}
-                                    <div 
-                                        onClick={() => handleMailClick(item)}
-                                        className="flex items-center gap-5 flex-1 min-w-0 cursor-pointer"
-                                    >
+                                    {/* Mobile: Icon + Sender/Tag + Date only */}
+                                    <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
+                                        <div className="flex-shrink-0">
+                                            <Icon className={cn(
+                                                "h-5 w-5",
+                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
+                                            )} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className={cn(
+                                                    "text-base leading-5 truncate",
+                                                    isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
+                                                )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                    {senderName}
+                                                </p>
+                                                {item.tag && (
+                                                    <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="text-xs text-[#999999] whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                            {date}
+                                        </span>
+                                    </div>
+
+                                    {/* Desktop: Full layout with actions */}
+                                    <div className="hidden md:flex items-center gap-5 flex-1 min-w-0">
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
                                                 "h-6 w-6",
@@ -1047,9 +1122,9 @@ export default function MailInboxPage() {
                                         </div>
                                     </div>
                                     
-                                    {/* Right: Tag Selector + Archive + Date */}
-                                    <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                        {/* Tag Selector - Always Visible, Creatable */}
+                                    {/* Desktop: Tag Selector + Archive + Date */}
+                                    <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                        {/* Tag Selector */}
                                         <CreatableTagSelect
                                             value={item.tag ?? null}
                                             availableTags={availableTags}
@@ -1057,7 +1132,7 @@ export default function MailInboxPage() {
                                             getTagLabel={getTagLabel}
                                         />
                                         
-                                        {/* Archive Button - Always Visible */}
+                                        {/* Archive Button */}
                                         <Button
                                             variant="ghost"
                                             size="sm"

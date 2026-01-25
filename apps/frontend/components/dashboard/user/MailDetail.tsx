@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText, X, ArrowLeft } from 'lucide-react';
+import { FileText, X, ArrowLeft, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { MailItem } from './types';
 
@@ -13,6 +13,7 @@ interface MailDetailProps {
   onView: () => void;
   onDownload: () => void;
   onForward: () => void;
+  onArchive?: () => void;
   forwardInlineNotice: string | null;
   onDismissForwardNotice: () => void;
   miniViewerLoading: boolean;
@@ -30,6 +31,7 @@ export function MailDetail({
   onView,
   onDownload,
   onForward,
+  onArchive,
   forwardInlineNotice,
   onDismissForwardNotice,
   miniViewerLoading,
@@ -86,6 +88,19 @@ export function MailDetail({
           >
             {isDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
+
+          {onArchive && (
+            <Button
+              type="button"
+              onClick={onArchive}
+              variant="outline"
+              className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
+              style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              Archive
+            </Button>
+          )}
 
           <div className="relative">
             <Button

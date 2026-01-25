@@ -74,12 +74,17 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                 "sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50"
             )}
         >
-            <div className="safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 sm:px-8 lg:px-16">
-                {/* Brand Name */}
-                <VAHLogo
-                    onNavigate={onNavigate}
-                    size={isDashboard ? "md" : "lg"}
-                />
+            <div className={cn(
+                "safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 sm:px-8 lg:px-16",
+                isDashboard ? "py-2.5 md:py-4" : "py-4"
+            )}>
+                {/* Brand Name - Hidden on mobile in dashboard */}
+                <div className={cn(isDashboard && "hidden md:block")}>
+                    <VAHLogo
+                        onNavigate={onNavigate}
+                        size={isDashboard ? "md" : "lg"}
+                    />
+                </div>
 
                 {/* Desktop Navigation */}
                 {!isDashboard && (

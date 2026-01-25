@@ -11,7 +11,7 @@ export default function DashboardLayout({
         <DashboardViewProvider>
             <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                 <Navigation />
-                <div className="flex flex-1 pt-16">
+                <div className="flex flex-1 pt-10 md:pt-16">
                     {/* Sidebar - Fixed on desktop, overlay on mobile */}
                     <DashboardSidebar />
                     
@@ -21,7 +21,7 @@ export default function DashboardLayout({
                         role="main" 
                         className="flex-1 overflow-y-auto lg:ml-[220px]"
                     >
-                        <div className="w-full py-6">
+                        <div className="w-full py-3 md:py-6 px-4 md:px-0">
                             {children}
                         </div>
                     </main>
