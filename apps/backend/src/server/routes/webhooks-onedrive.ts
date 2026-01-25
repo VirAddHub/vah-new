@@ -594,7 +594,7 @@ router.post('/', async (req: any, res) => {
       await sendMailScanned({
         email: user.email,
         firstName: user.first_name || "there",
-        subject: `New mail received - ${tagToTitle(tagSlug)}`,
+        subject: `New mail received`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
       console.log('[OneDrive Webhook] Email notification sent to:', user.email);
