@@ -92,17 +92,16 @@ const parseDateTolerant = (s?: string): string | null => {
   return null;
 };
 
-// Extract userID, date, and tag from filename
-// Supports: user4_10-10-2024_companieshouse.pdf (UK format)
-//           user4_2024-10-10_hmrc.pdf (ISO format)
-//           user4_10_10_2024_barclays.pdf (underscores)
+// Extract userID and date from filename (tags are manual-only, not extracted)
+// Supports: user4_10-10-2024.pdf (UK format)
+//           user4_2024-10-10.pdf (ISO format)
+//           user4_10_10_2024.pdf (underscores)
 type FilenameData = {
   userId: number;
   dateIso: string | null;  // null if no date found in filename (no "today" fallback)
-  tag: string;
 } | null;
 
-// Robust filename parser that expects tag at the end
+// Robust filename parser - extracts userId and date only (no tag extraction)
 const extractFromFilename = (name: string): FilenameData => {
   const n = name.toLowerCase().replace(/\s+/g, "");
   const base = n.replace(/\.pdf$/, "");
@@ -127,22 +126,11 @@ const extractFromFilename = (name: string): FilenameData => {
     dateIso = `${yyyy}-${mm}-${dd}`;
   }
 
-  // 3) Extract tag = last token after last _ or - (ignore any middle bits)
-  const parts = base.split(/[_\-]/).filter(Boolean);
-  const last = parts[parts.length - 1];
-  const tagRaw = last?.replace(/\.pdf$/, "") || null;
-
-  // If tagRaw is just a date (4 digits), treat as no tag
-  const isDateOnly = tagRaw ? /^\d{4}$/.test(tagRaw) : false;
-  const finalTagRaw = isDateOnly ? null : tagRaw;
-
-  // 4) Normalize tag
-  const tag = normaliseTag(finalTagRaw);
+  // Note: Tag extraction removed - tags are manual-only
 
   return {
     userId,
     dateIso: dateIso || null,  // No "today" fallback - let webhook use ingest time instead
-    tag
   };
 };
 
@@ -296,7 +284,7 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime); // Note: Not used for received_at_ms (uses ingest time instead)
     const event = pick(body.event) ?? 'created';
 
-    // Tag: Use provided tag, or auto-detect from filename/sender/subject
+    // Tag: Only use explicit tag from webhook payload, no auto-detection
     const providedTag = pick(body.tag);
     const sender = pick(body.sender);
     const subject = pick(body.subject);
@@ -306,17 +294,15 @@ router.post('/', async (req: any, res) => {
     const cleanPath = (path && path.includes('↳')) ? '/' : path;
     const cleanItemId = (itemId && itemId.includes('↳')) ? `placeholder_${Date.now()}` : itemId;
 
-    // Extract userId, date, and tag from filename
+    // Extract userId and date from filename (but NOT tag - manual tagging only)
     const filenameData = extractFromFilename(cleanName);
 
-    // Determine final values with priority: webhook payload > filename extraction > fallback
+    // Determine final values with priority: webhook payload > filename extraction
     const finalUserId = userId || filenameData?.userId || null;
-    // Get raw tag (may be uppercase or mixed case)
-    const rawTag = providedTag || filenameData?.tag || detectTag(cleanName, sender, subject);
-    // Normalize to lowercase slug
-    const tagSlug = normaliseTag(rawTag);
-    // Generate human-readable subject from tag
-    const initialSubject = tagToTitle(tagSlug);
+    // Tag: Only use explicit tag from webhook, normalize if provided, otherwise null
+    const tagSlug = providedTag ? normaliseTag(providedTag) : null;
+    // Generate subject from provided subject or use default (no tag-based subject)
+    const initialSubject = subject || 'Mail received';
     const receivedDate = filenameData?.dateIso || null;
 
     console.log('[OneDrive Webhook] Processing details:', {
@@ -327,13 +313,12 @@ router.post('/', async (req: any, res) => {
       originalPath: path,
       cleanPath,
       providedTag,
-      rawTag,
       finalTag: tagSlug,
       initialSubject,
       receivedDate,
       sender,
       subject,
-      tagSource: providedTag ? 'zapier' : (filenameData?.tag ? 'filename' : 'auto-detected')
+      tagSource: providedTag ? 'explicit' : 'none'
     });
 
     // Validation
@@ -376,8 +361,8 @@ router.post('/', async (req: any, res) => {
             const genericName = `onedrive_file_${Date.now()}.pdf`;
             const idempotencyKey = `onedrive_${itemId || `placeholder_${Date.now()}`}`;
             // Use default tag and subject
-            const defaultTagSlug = 'other';
-            const defaultSubject = tagToTitle(defaultTagSlug);
+            const defaultTagSlug = null; // No auto-tagging - tag must be set manually
+            const defaultSubject = subject || 'Mail received';
 
             // Insert mail item
             const result = await pool.query(
@@ -426,7 +411,7 @@ router.post('/', async (req: any, res) => {
               await sendMailScanned({
                 email: user.email,
                 firstName: user.first_name || "there",
-                subject: `New mail received - ${tagToTitle(defaultTagSlug)}`,
+                subject: `New mail received`,
                 cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
               });
               console.log('[OneDrive Webhook] Email notification sent to:', user.email);
@@ -600,7 +585,7 @@ router.post('/', async (req: any, res) => {
           email: user.email,
           firstName: user.first_name || "there",
           name: user.first_name || user.last_name,
-          subject: `New mail received - ${tagToTitle(tagSlug)}`,
+          subject: `New mail received`,
           cta_url: buildAppUrl('/pricing'),
         });
         console.log('[OneDrive Webhook] Mail after cancellation email sent to:', user.email);

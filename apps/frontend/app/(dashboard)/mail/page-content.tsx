@@ -886,9 +886,7 @@ export default function MailInboxPage() {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                                        {item.tag && (
-                                                            <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                                        )}
+                                                        <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
                                                         <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                             {date}
                                                         </span>
@@ -942,9 +940,7 @@ export default function MailInboxPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                        {item.tag && (
-                                            <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                        )}
+                                        <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
                                         <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                             {date}
                                         </span>

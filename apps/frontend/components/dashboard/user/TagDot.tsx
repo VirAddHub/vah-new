@@ -35,19 +35,24 @@ interface TagDotProps {
 /**
  * TagDot component - displays a tag with a small colored dot
  * Calm, Outlook/Linear/Notion-style design
+ * Shows "Untagged" with muted color for null tags
  */
 export function TagDot({ tag, label, className, showDot = true }: TagDotProps) {
-  if (!tag) return null;
-
-  const colorClass = getTagColor(tag);
-  const displayLabel = label || tag;
+  // Show "Untagged" for null/undefined tags
+  const isUntagged = !tag;
+  const displayLabel = label || (isUntagged ? 'Untagged' : tag);
+  // Use muted gray color for untagged items
+  const colorClass = isUntagged ? 'bg-gray-300' : getTagColor(tag);
 
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
       {showDot && (
         <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
       )}
-      <span className="text-sm text-[#666666] font-normal" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      <span className={cn(
+        "text-sm font-normal",
+        isUntagged ? "text-[#999999]" : "text-[#666666]"
+      )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
         {displayLabel}
       </span>
     </div>
