@@ -139,7 +139,7 @@ export function Footer({ onNavigate }: FooterProps) {
                                 {/* WhatsApp Support Button */}
                                 <button
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank", "noopener,noreferrer")}
-                                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#206039] text-white text-sm font-medium hover:bg-[#206039]/90 transition-colors"
+                                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-[#206039] text-white text-sm font-medium hover:bg-[#206039]/90 transition-colors border-0 outline-none ring-0 focus:outline-none focus:ring-0"
                                 >
                                     <svg
                                         width="14"
