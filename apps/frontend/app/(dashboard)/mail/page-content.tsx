@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +19,7 @@ import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
 import { TagDot, getTagColor } from '@/components/dashboard/user/TagDot';
 import type { MailItem } from '@/components/dashboard/user/types';
+import { VAHLogo } from '@/components/VAHLogo';
 
 export default function MailInboxPage() {
     const router = useRouter();
@@ -327,6 +328,82 @@ export default function MailInboxPage() {
     const getSenderName = (item: MailItem) => {
         return item.sender_name || item.subject || 'Unknown Sender';
     };
+
+    // Handle tag update for a mail item
+    const handleTagUpdate = useCallback(async (item: MailItem, newTag: string | null) => {
+        try {
+            const response = await fetch(`/api/bff/mail-items/${item.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ tag: newTag || null }),
+            });
+
+            if (response.ok) {
+                // SWR will auto-refetch
+                toast({
+                    title: "Tag Updated",
+                    description: newTag ? `Tag set to "${getTagLabel(newTag)}"` : "Tag removed",
+                    durationMs: 2000,
+                });
+            } else {
+                throw new Error('Failed to update tag');
+            }
+        } catch (error) {
+            console.error('Error updating tag:', error);
+            toast({
+                title: "Update Failed",
+                description: "Failed to update tag. Please try again.",
+                variant: "destructive",
+                durationMs: 3000,
+            });
+        }
+    }, [toast, getTagLabel]);
+
+    // Handle archive mail item
+    const handleArchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent opening mail detail
+        
+        try {
+            const response = await fetch(`/api/bff/mail-items/${item.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Mail Archived",
+                    description: "Mail item has been moved to archive",
+                    durationMs: 2000,
+                });
+                // SWR will auto-refetch
+            } else {
+                throw new Error('Failed to archive mail');
+            }
+        } catch (error) {
+            console.error('Error archiving mail:', error);
+            toast({
+                title: "Archive Failed",
+                description: "Failed to archive mail. Please try again.",
+                variant: "destructive",
+                durationMs: 3000,
+            });
+        }
+    }, [toast]);
+
+    // Handle logout
+    const handleLogout = useCallback(() => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        window.location.href = '/login';
+    }, []);
 
     // Handle mail item click - open in-place (replace list view)
     const handleMailClick = useCallback((item: MailItem) => {
@@ -664,10 +741,27 @@ export default function MailInboxPage() {
 
     return (
         <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Header - Title + Count inline, Actions grouped on right */}
-            <div className="flex items-center justify-between mb-6 pt-2">
+            {/* Top Header Bar - Logo and Sign Out */}
+            <div className="bg-white border-b border-[#E5E7EB] px-6 py-4 mb-6">
+                <div className="flex items-center justify-between">
+                    <VAHLogo size="md" showText={true} />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleLogout}
+                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                    </Button>
+                </div>
+            </div>
+
+            {/* Page Header - Title + Count + Search */}
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-semibold text-[#1A1A1A]">Mail Inbox</h1>
+                    <h1 className="text-3xl font-semibold text-[#1A1A1A]">Mail Inbox</h1>
                     <span className="text-sm text-[#666666]">({inboxCount})</span>
                 </div>
 
@@ -684,15 +778,6 @@ export default function MailInboxPage() {
                             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         />
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-3 rounded-md hover:bg-[#F9F9F9]"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                    >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                    </Button>
                 </div>
             </div>
 
@@ -857,37 +942,86 @@ export default function MailInboxPage() {
                                             return (
                                                 <div
                                                     key={item.id}
-                                                    onClick={() => handleMailClick(item)}
                                                     className={cn(
-                                                        "flex items-center justify-between rounded-lg border px-6 py-4",
-                                                        "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
-                                                        "border-[#E5E7EB] hover:border-[#206039]/30 hover:shadow-sm"
+                                                        "flex items-center gap-4 rounded-lg border px-6 py-4",
+                                                        "bg-white hover:bg-[#F9F9F9] transition-all",
+                                                        "border-[#E5E7EB] hover:border-[#206039]/30"
                                                     )}
                                                 >
-                                                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                                                    {/* Left: Icon + Mail Info */}
+                                                    <div 
+                                                        onClick={() => handleMailClick(item)}
+                                                        className="flex items-center gap-5 flex-1 min-w-0 cursor-pointer"
+                                                    >
                                                         <div className="flex-shrink-0">
                                                             <Icon className={cn(
                                                                 "h-6 w-6",
-                                                                isRead ? 'text-[#666666]' : 'text-[#024E40]'
+                                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
                                                             )} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className={cn(
-                                                                "text-base leading-6 truncate",
-                                                                isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
+                                                                "text-lg leading-6 truncate",
+                                                                isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
                                                             )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                                 {senderName}
                                                             </p>
                                                             {item.subject && item.subject !== senderName && (
-                                                                <p className="text-sm text-[#666666] mt-1 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                <p className="text-sm text-[#999999] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                                     {item.subject}
                                                                 </p>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                                        <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                                        <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                    
+                                                    {/* Right: Tag Selector + Archive + Date */}
+                                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                                        {/* Tag Selector - Always Visible */}
+                                                        <Select
+                                                            value={item.tag || 'untagged'}
+                                                            onValueChange={(value) => handleTagUpdate(item, value === 'untagged' ? null : value)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <SelectTrigger className="h-9 w-[140px] text-sm border-[#E5E7EB] bg-white hover:bg-[#F9F9F9]">
+                                                                <SelectValue>
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <div className={cn('h-2 w-2 rounded-full flex-shrink-0', getTagColor(item.tag))} />
+                                                                        <span>{getTagLabel(item.tag)}</span>
+                                                                    </div>
+                                                                </SelectValue>
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="untagged">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <div className="h-2 w-2 rounded-full bg-gray-300" />
+                                                                        <span>Untagged</span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                                {availableTags.map((tag) => (
+                                                                    <SelectItem key={tag} value={tag}>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
+                                                                            <span>{getTagLabel(tag)}</span>
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        
+                                                        {/* Archive Button - Always Visible */}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => handleArchive(item, e)}
+                                                            className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                                        >
+                                                            <Archive className="h-4 w-4 mr-1.5" />
+                                                            Archive
+                                                        </Button>
+                                                        
+                                                        {/* Date */}
+                                                        <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                             {date}
                                                         </span>
                                                     </div>
@@ -911,37 +1045,86 @@ export default function MailInboxPage() {
                             return (
                                 <div
                                     key={item.id}
-                                    onClick={() => handleMailClick(item)}
                                     className={cn(
-                                        "flex items-center justify-between rounded-lg border px-6 py-4",
-                                        "bg-white hover:bg-[#F9F9F9] cursor-pointer transition-all",
-                                        "border-[#E5E7EB] hover:border-[#206039]/30 hover:shadow-sm"
+                                        "flex items-center gap-4 rounded-lg border px-6 py-4",
+                                        "bg-white hover:bg-[#F9F9F9] transition-all",
+                                        "border-[#E5E7EB] hover:border-[#206039]/30"
                                     )}
                                 >
-                                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                                    {/* Left: Icon + Mail Info */}
+                                    <div 
+                                        onClick={() => handleMailClick(item)}
+                                        className="flex items-center gap-5 flex-1 min-w-0 cursor-pointer"
+                                    >
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
                                                 "h-6 w-6",
-                                                isRead ? 'text-[#666666]' : 'text-[#024E40]'
+                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
                                             )} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className={cn(
-                                                "text-base leading-6 truncate",
-                                                isRead ? 'font-normal text-[#666666]' : 'font-medium text-[#1A1A1A]'
+                                                "text-lg leading-6 truncate",
+                                                isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
                                             )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                 {senderName}
                                             </p>
                                             {item.subject && item.subject !== senderName && (
-                                                <p className="text-sm text-[#666666] mt-1 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                <p className="text-sm text-[#999999] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                     {item.subject}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                        <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                        <span className="text-sm text-[#666666] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    
+                                    {/* Right: Tag Selector + Archive + Date */}
+                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                        {/* Tag Selector - Always Visible */}
+                                        <Select
+                                            value={item.tag || 'untagged'}
+                                            onValueChange={(value) => handleTagUpdate(item, value === 'untagged' ? null : value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <SelectTrigger className="h-9 w-[140px] text-sm border-[#E5E7EB] bg-white hover:bg-[#F9F9F9]">
+                                                <SelectValue>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className={cn('h-2 w-2 rounded-full flex-shrink-0', getTagColor(item.tag))} />
+                                                        <span>{getTagLabel(item.tag)}</span>
+                                                    </div>
+                                                </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="untagged">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="h-2 w-2 rounded-full bg-gray-300" />
+                                                        <span>Untagged</span>
+                                                    </div>
+                                                </SelectItem>
+                                                {availableTags.map((tag) => (
+                                                    <SelectItem key={tag} value={tag}>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
+                                                            <span>{getTagLabel(tag)}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        
+                                        {/* Archive Button - Always Visible */}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => handleArchive(item, e)}
+                                            className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                        >
+                                            <Archive className="h-4 w-4 mr-1.5" />
+                                            Archive
+                                        </Button>
+                                        
+                                        {/* Date */}
+                                        <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                             {date}
                                         </span>
                                     </div>

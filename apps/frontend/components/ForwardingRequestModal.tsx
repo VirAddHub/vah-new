@@ -59,8 +59,6 @@ interface ForwardingRequestData {
   state?: string;
   postal: string;
   country: string;
-  reason?: string;
-  method?: string;
 }
 
 export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAddress, onSubmit }: ForwardingRequestModalProps) {
@@ -72,9 +70,7 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
     city: "",
     state: "",
     postal: "",
-    country: "GB",
-    reason: "",
-    method: "standard"
+    country: "GB"
   });
 
   // 🔍 STEP 4: Log forwarding check in modal
@@ -175,32 +171,17 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="to_name">Recipient Name *</Label>
-                <Input
-                  id="to_name"
-                  value={formData.to_name}
-                  onChange={(e) => handleChange("to_name", e.target.value)}
-                  placeholder="Full name"
-                  required
-                  disabled
-                  className="bg-gray-50"
-                />
-              </div>
-              <div>
-                <Label htmlFor="method">Delivery Method</Label>
-                <Select value={formData.method} onValueChange={(value) => handleChange("method", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="express">Express</SelectItem>
-                    <SelectItem value="overnight">Overnight</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="to_name">Recipient Name *</Label>
+              <Input
+                id="to_name"
+                value={formData.to_name}
+                onChange={(e) => handleChange("to_name", e.target.value)}
+                placeholder="Full name"
+                required
+                disabled
+                className="bg-gray-50"
+              />
             </div>
 
             <div>
@@ -291,28 +272,24 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="reason">Reason for Forwarding</Label>
-              <Textarea
-                id="reason"
-                value={formData.reason}
-                onChange={(e) => handleChange("reason", e.target.value)}
-                placeholder="Optional: Why do you need this mail forwarded?"
-                rows={3}
-              />
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-sm text-blue-900 mb-2">Pricing Information</h4>
-              <p className="text-sm text-blue-800">
-                • <strong>Standard mail:</strong> £2.00 per item
-              </p>
-              <p className="text-sm text-blue-800">
-                • <strong>Official mail (HMRC, Companies House):</strong> Free
-              </p>
-              <p className="text-sm text-blue-800">
-                • Payment will be processed after admin review
-              </p>
+            <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+              <div>
+                <h4 className="font-semibold text-sm text-blue-900 mb-2">Forwarding Pricing</h4>
+                <p className="text-sm text-blue-800 mb-1">
+                  <strong>HMRC & Companies House mail:</strong> Free forwarding
+                </p>
+                <p className="text-sm text-blue-800">
+                  <strong>All other mail:</strong> £2.00 per item
+                </p>
+              </div>
+              <div className="border-t border-blue-200 pt-3">
+                <h5 className="font-medium text-xs text-blue-900 mb-2 uppercase tracking-wide">How billing works</h5>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• If the item is tagged <strong>HMRC</strong> or <strong>Companies House</strong>, it is forwarded free of charge</li>
+                  <li>• Any other forwarded mail is automatically added to your monthly invoice at £2.00 per item</li>
+                  <li>• Charges are processed automatically — no manual approval required</li>
+                </ul>
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
