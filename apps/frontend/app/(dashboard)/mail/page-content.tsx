@@ -953,7 +953,7 @@ export default function MailInboxPage() {
                                                     <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                         {/* Tag Selector - Always Visible, Creatable */}
                                                         <CreatableTagSelect
-                                                            value={item.tag}
+                                                            value={item.tag ?? null}
                                                             availableTags={availableTags}
                                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                                             getTagLabel={getTagLabel}
@@ -1032,7 +1032,7 @@ export default function MailInboxPage() {
                                     <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                         {/* Tag Selector - Always Visible, Creatable */}
                                         <CreatableTagSelect
-                                            value={item.tag}
+                                            value={item.tag ?? null}
                                             availableTags={availableTags}
                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                             getTagLabel={getTagLabel}
