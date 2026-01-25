@@ -47,88 +47,53 @@ export function HomePage({ onNavigate }: HomePageProps) {
             id="main-content"
             role="main"
             className="bg-white text-[#1A1A1A]"
-            style={{ fontFamily: "var(--font-poppins), Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif" }}
         >
             {/* HERO */}
             <section
                 className="relative overflow-hidden bg-[#024E40] text-white py-11 lg:py-0"
                 aria-label="Hero"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12 lg:pt-6 lg:pb-3">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-12 items-center">
                         <div className="max-w-[540px]">
                             <h1 className="text-4xl lg:text-[44px] font-bold leading-[1.1] lg:leading-[1.08] text-white">
-                                Your Credible Central London Address
+                                Your Central London Address
                             </h1>
 
                             <h2 className="mt-2 lg:mt-1 text-2xl lg:text-3xl font-medium text-white/95">
-                                Without the Cost of an Office
+                                A compliant alternative to a physical office
                             </h2>
 
                             <div className="mt-4 lg:mt-2">
                                 <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
-                                    Run your business professionally without exposing your <strong>home address</strong>.
+                                    Use a trusted Central London address as your Registered Office, Director&apos;s Service Address, and official business address without using your home address.
                                 </p>
                             </div>
 
-                            <div className="mt-4 lg:mt-2.5 text-sm leading-[1.7] text-white/90 sm:text-base">
-                                <ul className="space-y-2">
-                                    <li className="flex items-start gap-3">
-                                        <img
-                                            src="/figma/check-16.svg"
-                                            alt=""
-                                            aria-hidden="true"
-                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
-                                        />
-                                        <span>Use your trusted <strong>Central London address</strong> as your <strong>Registered Office</strong>, <strong>Director&apos;s Service Address</strong>, and professional business address</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <img
-                                            src="/figma/check-16.svg"
-                                            alt=""
-                                            aria-hidden="true"
-                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
-                                        />
-                                        <span>Suitable for <strong>Companies House</strong>, <strong>HMRC</strong>, and everyday business use</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <img
-                                            src="/figma/check-16.svg"
-                                            alt=""
-                                            aria-hidden="true"
-                                            className="h-4 w-4 flex-shrink-0 mt-0.5 brightness-0 invert"
-                                        />
-                                        <span>Everything you need included in <strong>one simple service</strong></span>
-                                    </li>
-                                </ul>
+                            <div className="mt-4 lg:mt-2.5">
+                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-white">
+                                    Suitable for Companies House, HMRC, and everyday business correspondence.
+                                </p>
                             </div>
 
                             <div className="mt-4 lg:mt-2.5">
-                                <div className="text-2xl lg:text-3xl font-bold text-white">£9.99/month</div>
-                                <div className="mt-1 text-sm lg:text-base text-white/90">One address. One price. <strong>No hidden fees</strong>.</div>
+                                <p className="text-sm lg:text-base text-white/90 mb-2">
+                                    Simple pricing. No surprises.
+                                </p>
+                                <p className="text-sm lg:text-base text-white/90">
+                                    Fully compliant with UK Companies House and HMRC requirements.
+                                </p>
                             </div>
 
-                            <div className="mt-5 lg:mt-3 flex flex-wrap gap-3 text-xs sm:text-sm text-white/85">
-                                <span className="flex items-center gap-1.5">
-                                    <span className="text-white">✓</span>
-                                    <span><strong>Instant setup</strong></span>
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="text-white">✓</span>
-                                    <span><strong>Mail forwarding included</strong></span>
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="text-white">✓</span>
-                                    <span><strong>Cancel anytime</strong></span>
-                                </span>
+                            <div className="mt-4 lg:mt-2.5">
+                                <div className="text-2xl lg:text-3xl font-bold text-white">£9.99 per month</div>
+                                <div className="mt-1 text-sm lg:text-base text-white/90">One address. One plan.</div>
                             </div>
 
                             <div className="mt-5 lg:mt-3">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     className="h-[48px] w-full rounded-[33px] bg-white px-4 text-base font-medium text-[#024E40] hover:bg-white/90 sm:w-[85%] lg:h-[57px] lg:w-[294px] border-0 outline-none ring-0 focus:outline-none focus:ring-0"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Get Started - £9.99/month
                                 </Button>

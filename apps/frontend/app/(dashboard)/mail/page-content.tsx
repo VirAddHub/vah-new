@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, LogOut } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +19,7 @@ import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
 import { TagDot, getTagColor } from '@/components/dashboard/user/TagDot';
 import type { MailItem } from '@/components/dashboard/user/types';
-import { VAHLogo } from '@/components/VAHLogo';
+import { CreatableTagSelect } from '@/components/dashboard/user/CreatableTagSelect';
 
 export default function MailInboxPage() {
     const router = useRouter();
@@ -396,14 +396,6 @@ export default function MailInboxPage() {
         }
     }, [toast]);
 
-    // Handle logout
-    const handleLogout = useCallback(() => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
-        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login';
-    }, []);
 
     // Handle mail item click - open in-place (replace list view)
     const handleMailClick = useCallback((item: MailItem) => {
@@ -741,23 +733,6 @@ export default function MailInboxPage() {
 
     return (
         <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Top Header Bar - Logo and Sign Out */}
-            <div className="bg-white border-b border-[#E5E7EB] px-6 py-4 mb-6">
-                <div className="flex items-center justify-between">
-                    <VAHLogo size="md" showText={true} />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleLogout}
-                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                    >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign out
-                    </Button>
-                </div>
-            </div>
-
             {/* Page Header - Title + Count + Search */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -976,36 +951,13 @@ export default function MailInboxPage() {
                                                     
                                                     {/* Right: Tag Selector + Archive + Date */}
                                                     <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                                        {/* Tag Selector - Always Visible */}
-                                                        <Select
-                                                            value={item.tag || 'untagged'}
-                                                            onValueChange={(value) => handleTagUpdate(item, value === 'untagged' ? null : value)}
-                                                        >
-                                                            <SelectTrigger className="h-9 w-[140px] text-sm border-[#E5E7EB] bg-white hover:bg-[#F9F9F9]">
-                                                                <SelectValue>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <div className={cn('h-2 w-2 rounded-full flex-shrink-0', getTagColor(item.tag))} />
-                                                                        <span>{getTagLabel(item.tag)}</span>
-                                                                    </div>
-                                                                </SelectValue>
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="untagged">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <div className="h-2 w-2 rounded-full bg-gray-300" />
-                                                                        <span>Untagged</span>
-                                                                    </div>
-                                                                </SelectItem>
-                                                                {availableTags.map((tag) => (
-                                                                    <SelectItem key={tag} value={tag}>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
-                                                                            <span>{getTagLabel(tag)}</span>
-                                                                        </div>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        {/* Tag Selector - Always Visible, Creatable */}
+                                                        <CreatableTagSelect
+                                                            value={item.tag}
+                                                            availableTags={availableTags}
+                                                            onValueChange={(newTag) => handleTagUpdate(item, newTag)}
+                                                            getTagLabel={getTagLabel}
+                                                        />
                                                         
                                                         {/* Archive Button - Always Visible */}
                                                         <Button
@@ -1078,36 +1030,13 @@ export default function MailInboxPage() {
                                     
                                     {/* Right: Tag Selector + Archive + Date */}
                                     <div className="flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                        {/* Tag Selector - Always Visible */}
-                                        <Select
-                                            value={item.tag || 'untagged'}
-                                            onValueChange={(value) => handleTagUpdate(item, value === 'untagged' ? null : value)}
-                                        >
-                                            <SelectTrigger className="h-9 w-[140px] text-sm border-[#E5E7EB] bg-white hover:bg-[#F9F9F9]">
-                                                <SelectValue>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className={cn('h-2 w-2 rounded-full flex-shrink-0', getTagColor(item.tag))} />
-                                                        <span>{getTagLabel(item.tag)}</span>
-                                                    </div>
-                                                </SelectValue>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="untagged">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className="h-2 w-2 rounded-full bg-gray-300" />
-                                                        <span>Untagged</span>
-                                                    </div>
-                                                </SelectItem>
-                                                {availableTags.map((tag) => (
-                                                    <SelectItem key={tag} value={tag}>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
-                                                            <span>{getTagLabel(tag)}</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        {/* Tag Selector - Always Visible, Creatable */}
+                                        <CreatableTagSelect
+                                            value={item.tag}
+                                            availableTags={availableTags}
+                                            onValueChange={(newTag) => handleTagUpdate(item, newTag)}
+                                            getTagLabel={getTagLabel}
+                                        />
                                         
                                         {/* Archive Button - Always Visible */}
                                         <Button

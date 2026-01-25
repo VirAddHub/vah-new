@@ -133,24 +133,19 @@ export function ForwardingConfirmationModal({
 
                     {/* Pricing Information */}
                     <div className="space-y-4">
-                        <h4 className="font-medium text-sm">Pricing & Payment</h4>
+                        <h4 className="font-medium text-sm">Forwarding cost</h4>
 
                         {isGovernmentMail ? (
-                            <Alert>
-                                <CheckCircle className="h-4 w-4" />
-                                <AlertDescription>
-                                    <strong>Free Forwarding:</strong> This appears to be official mail (HMRC, Companies House, etc.) and will be forwarded at no charge using your forwarding address from your profile.
-                                </AlertDescription>
-                            </Alert>
+                            <div className="bg-primary-50 p-4 rounded-lg">
+                                <p className="text-sm text-foreground">
+                                    <strong>HMRC & Companies House:</strong> <span className="text-primary-700 font-medium">Free</span>
+                                </p>
+                            </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="p-4 border rounded-lg">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="font-medium">Forwarding Fee</span>
-                                        <span className="text-lg font-bold">£2.00</span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        This fee covers processing, packaging, and postage for your mail item.
+                                <div className="bg-primary-50 p-4 rounded-lg">
+                                    <p className="text-sm text-foreground">
+                                        <strong>All other mail:</strong> <span className="text-primary-700 font-medium">£2 per item</span> (added to your monthly invoice)
                                     </p>
                                 </div>
 

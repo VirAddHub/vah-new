@@ -161,12 +161,12 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-sm text-blue-700 mb-2">Forwarding Address (from Profile)</h4>
-              <div className="text-sm text-blue-600 whitespace-pre-line">
+            <div className="p-3 bg-primary-50 rounded-lg">
+              <h4 className="font-medium text-sm text-primary-700 mb-2">Forwarding Address (from Profile)</h4>
+              <div className="text-sm text-primary-800 whitespace-pre-line">
                 {forwardingAddress || "No forwarding address configured. Please add one in Profile settings."}
               </div>
-              <p className="text-xs text-blue-500 mt-1">
+              <p className="text-xs text-primary-600 mt-1">
                 This address will be used automatically. To change it, update your Profile settings.
               </p>
             </div>
@@ -272,23 +272,15 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
               </div>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-              <div>
-                <h4 className="font-semibold text-sm text-blue-900 mb-2">Forwarding Pricing</h4>
-                <p className="text-sm text-blue-800 mb-1">
-                  <strong>HMRC & Companies House mail:</strong> Free forwarding
+            <div className="bg-primary-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-sm text-foreground mb-3">Forwarding cost</h4>
+              <div className="space-y-2 text-sm text-foreground">
+                <p>
+                  <strong>HMRC & Companies House:</strong> <span className="text-primary-700 font-medium">Free</span>
                 </p>
-                <p className="text-sm text-blue-800">
-                  <strong>All other mail:</strong> £2.00 per item
+                <p>
+                  <strong>All other mail:</strong> <span className="text-primary-700 font-medium">£2 per item</span> (added to your monthly invoice)
                 </p>
-              </div>
-              <div className="border-t border-blue-200 pt-3">
-                <h5 className="font-medium text-xs text-blue-900 mb-2 uppercase tracking-wide">How billing works</h5>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• If the item is tagged <strong>HMRC</strong> or <strong>Companies House</strong>, it is forwarded free of charge</li>
-                  <li>• Any other forwarded mail is automatically added to your monthly invoice at £2.00 per item</li>
-                  <li>• Charges are processed automatically — no manual approval required</li>
-                </ul>
               </div>
             </div>
 
