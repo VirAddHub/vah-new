@@ -1,15 +1,22 @@
 "use client";
 
+import { BlogPage as BlogPageComponent } from '@/components/BlogPage';
+import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
+import { FooterWithNav } from '@/components/layout/FooterWithNav';
+import { createNavigationHandler } from '@/lib/navigation-handler';
+import { useRouter } from 'next/navigation';
+
 export default function BlogPage() {
+  const router = useRouter();
+  const handleNavigate = createNavigationHandler(router);
+  
   return (
-    <main id="main-content" role="main" className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-semibold">Blog debug page</h1>
-        <p className="text-sm text-neutral-600">
-          If you can see this without an error, the problem is in the real blog
-          UI (header/footer/posts), not the route or backend.
-        </p>
-          </div>
+    <div className="min-h-screen flex flex-col relative bg-white">
+      <HeaderWithNav />
+      <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
+        <BlogPageComponent onNavigate={handleNavigate} />
       </main>
+      <FooterWithNav />
+    </div>
   );
 }
