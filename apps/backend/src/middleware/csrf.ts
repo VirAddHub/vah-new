@@ -34,7 +34,7 @@ function generateCsrfToken(): string {
  * Get or create CSRF token for the current session
  * Sets cookie if not present, returns existing token if present
  */
-function getOrCreateCsrfToken(req: Request, res: Response): string {
+export function getOrCreateCsrfToken(req: Request, res: Response): string {
   const existingToken = req.cookies?.[CSRF_TOKEN_COOKIE_NAME];
 
   if (existingToken && typeof existingToken === 'string' && existingToken.length === 64) {

@@ -239,8 +239,15 @@ app.use(cors({
 app.use(cookieParser());
 
 // CSRF protection - ensure token cookie is set for all requests
-import { ensureCsrfToken, requireCsrfToken } from './middleware/csrf';
+import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
 app.use('/api', ensureCsrfToken);
+
+// CSRF token endpoint - allows clients to fetch CSRF token
+// Must be before requireCsrfToken middleware so GET requests are not blocked
+app.get('/api/csrf', (req: Request, res: Response) => {
+    const token = getOrCreateCsrfToken(req, res);
+    res.json({ csrfToken: token });
+});
 
 // compression
 app.use(compression());

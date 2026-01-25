@@ -111,6 +111,26 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const backend = getBackendOrigin();
 
+    // Fetch CSRF token before making PATCH request
+    const csrfResponse = await fetch(`${backend}/api/csrf`, {
+      method: 'GET',
+      headers: {
+        'Cookie': cookie,
+      },
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    let csrfToken: string | null = null;
+    if (csrfResponse.ok) {
+      try {
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrfToken || null;
+      } catch (e) {
+        console.error('[BFF profile PATCH] Failed to parse CSRF token response:', e);
+      }
+    }
+
     // If email or phone is being updated, use the contact endpoint (email requires verification)
     if (body.email !== undefined || body.phone !== undefined) {
       const contactResponse = await fetch(`${backend}/api/profile/contact`, {
@@ -118,6 +138,7 @@ export async function PATCH(request: NextRequest) {
         headers: {
           'Cookie': cookie,
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         },
         body: JSON.stringify({
           email: body.email,
@@ -150,6 +171,7 @@ export async function PATCH(request: NextRequest) {
       headers: {
         'Cookie': cookie,
         'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
       body: JSON.stringify(body),
       cache: 'no-store', // Never cache backend requests
