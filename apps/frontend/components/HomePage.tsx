@@ -271,7 +271,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="mt-5">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        className="h-[44px] w-full rounded-[30px] bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium"
+                                        className="h-[44px] w-full rounded-[30px] bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-medium"
                                     >
                                         Sign Up
                                     </Button>
@@ -389,18 +389,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-[30px] bg-background p-12 md:p-16 lg:p-20">
                         <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px]">
-                            {/* London landmarks illustration on left - decorative only */}
+                            {/* London landmarks illustration on left - decorative only, no text or buttons */}
                             <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0 pointer-events-none select-none cursor-default">
                                 <Image
-                                    src="/figma/cta-illustration.png"
+                                    src="/figma/cta-illustration-clean.png"
                                     alt=""
                                     width={857}
                                     height={600}
-                                    className="w-full max-w-[857px] h-auto object-contain"
+                                    className="w-full max-w-[857px] h-auto object-contain opacity-95"
                                     aria-hidden="true"
                                 />
                             </div>
-                            {/* Content on right */}
+                            {/* Content on right - ONLY CTA */}
                             <div className="flex flex-col gap-6 w-full md:w-auto md:max-w-[409px]">
                                 <div className="flex flex-col gap-3">
                                     <h2 className="text-3xl md:text-[44px] font-medium text-foreground leading-[1.2]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>

@@ -38,7 +38,7 @@ export default function HowItWorks() {
                     {/* Connector line (desktop only) */}
                     <svg
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 hidden h-full w-full text-primary md:block"
+                        className="pointer-events-none absolute inset-0 hidden h-full w-full text-primary md:block -translate-y-2"
                         viewBox="0 0 1000 200"
                         preserveAspectRatio="none"
                     >
