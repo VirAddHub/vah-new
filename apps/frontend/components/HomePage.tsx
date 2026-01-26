@@ -385,44 +385,44 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </section>
 
             {/* FINAL CTA IMAGE SECTION */}
-            <section className="py-24 bg-background">
-                <div className="mx-auto max-w-7xl px-8">
-                    <div className="relative overflow-hidden rounded-[30px] bg-background p-12 md:p-16 lg:p-20">
-                        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px]">
+            <section className="py-20 bg-background">
+                <div className="mx-auto max-w-7xl px-8 lg:px-20 pb-20">
+                    <div className="relative overflow-hidden rounded-[30px] bg-[#014D3F]">
+                        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px] p-12 md:p-16 lg:p-20">
                             {/* London landmarks illustration on left - decorative only, no text or buttons */}
                             <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0 pointer-events-none select-none cursor-default">
                                 <Image
                                     src="/figma/cta-illustration-clean.png"
                                     alt=""
                                     width={857}
-                                    height={600}
-                                    className="w-full max-w-[857px] h-auto object-contain opacity-95"
+                                    height={817}
+                                    className="w-full max-w-[857px] h-auto object-contain"
                                     aria-hidden="true"
                                 />
                             </div>
                             {/* Content on right - ONLY CTA */}
                             <div className="flex flex-col gap-6 w-full md:w-auto md:max-w-[409px]">
                                 <div className="flex flex-col gap-3">
-                                    <h2 className="text-3xl md:text-[44px] font-medium text-foreground leading-[1.2]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    <h2 
+                                        className="text-3xl md:text-[44px] font-medium text-white leading-[1.2]" 
+                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                    >
                                         Get your London Business Address Today
                                     </h2>
-                                    <p className="text-base text-foreground leading-[1.4]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                        Everything included for <span className="text-primary">£9.99</span> per month.
-                                    </p>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <Button
-                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        variant="primary"
-                                        className="rounded-[30px] w-[268px] h-[48px] text-base font-medium uppercase tracking-wide"
-                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif', lineHeight: '1.2' }}
+                                    <p 
+                                        className="text-base text-white/80 leading-[1.4]" 
+                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                     >
-                                        Get My London Address
-                                    </Button>
-                                    <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                        ICO registered · HMRC AML supervised · Cancel anytime
+                                        Everything included for <span className="text-white">£9.99</span> per month.
                                     </p>
                                 </div>
+                                <Button
+                                    onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                    className="rounded-[30px] w-[268px] h-[48px] text-base font-medium uppercase tracking-wide bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif', lineHeight: '1.2' }}
+                                >
+                                    Schedule London Address
+                                </Button>
                             </div>
                         </div>
                     </div>

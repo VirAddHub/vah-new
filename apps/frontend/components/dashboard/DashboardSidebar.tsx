@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
+import { CertificateDownload } from './CertificateDownload';
 
 interface NavItem {
     label: string;
@@ -147,6 +148,9 @@ export function DashboardSidebar() {
                     </div>
                 </div>
             </div>
+            
+            {/* Certificate Download - Bottom Left */}
+            <CertificateDownload />
         </nav>
     );
 
@@ -172,7 +176,7 @@ export function DashboardSidebar() {
                             onClick={() => setIsOpen(false)}
                         />
                         <div className="fixed left-0 top-0 h-full z-50 lg:hidden w-[280px]">
-                            <div className="relative h-full bg-white shadow-xl">
+                            <div className="relative h-full bg-white shadow-xl flex flex-col">
                                 <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
                                     <h2 className="text-lg font-medium text-[#1A1A1A]">Menu</h2>
                                     <Button
@@ -240,6 +244,11 @@ export function DashboardSidebar() {
                                             })}
                                         </div>
                                     </div>
+                                </div>
+                                
+                                {/* Certificate Download - Mobile (Fixed at bottom) */}
+                                <div className="border-t border-[#E5E7EB]">
+                                    <CertificateDownload />
                                 </div>
                             </div>
                         </div>
