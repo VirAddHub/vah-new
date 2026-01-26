@@ -139,7 +139,8 @@ export function MobileNavigation({
     { id: 'home', label: 'Home', icon: '🏠' },
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'blog', label: 'Blog', icon: '📝' },
-    { id: 'help', label: 'Help', icon: '❓' },
+    // Standardized to "Help Centre" for consistency across all pages
+    { id: 'help', label: 'Help Centre', icon: '❓' },
     { id: 'profile', label: 'Profile', icon: '👤' }
   ];
 

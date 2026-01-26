@@ -38,7 +38,7 @@ export function DashboardHeader({ onNavigate, onLogout, userName, userEmail }: D
               type="button"
             >
               <HelpCircle className="h-4 w-4" />
-              Help
+              Help Centre
             </button>
           </nav>
 

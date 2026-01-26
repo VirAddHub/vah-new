@@ -34,10 +34,11 @@ export function Footer({ onNavigate }: FooterProps) {
     const linkBtnClass =
         "block w-full text-left text-sm leading-tight font-medium text-neutral-700 hover:text-neutral-900 transition-colors";
 
+    // Standardized to "Help Centre" for consistency across all pages
     const navigation: NavItem[] = [
         { label: "Pricing", page: "pricing" },
         { label: "Blog", page: "blog" },
-        { label: "Help Center", page: "help" },
+        { label: "Help Centre", page: "help" },
     ];
 
     const legal: NavItem[] = [

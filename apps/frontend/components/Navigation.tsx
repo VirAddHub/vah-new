@@ -27,10 +27,11 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     ));
 
     // Public site navigation items
+    // Standardized to "Help Centre" for consistency across all pages
     const publicNavItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'Help Center', page: 'help', href: '/help' },
+        { label: 'Help Centre', page: 'help', href: '/help' },
     ];
 
     const navItems = publicNavItems;

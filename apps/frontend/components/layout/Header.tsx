@@ -12,10 +12,11 @@ interface HeaderProps {
 export function Header({ onNavigate }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // Standardized to "Help Centre" for consistency across all pages
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'Help', page: 'help', href: '/help' },
+        { label: 'Help Centre', page: 'help', href: '/help' },
     ];
 
     const handleNavClick = (page: string, href?: string) => {

@@ -1117,7 +1117,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         <div className="text-center py-6 space-y-2">
           <p className="text-sm text-muted-foreground">
             Need help? Visit our{" "}
-            <button onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')} className="text-primary hover:underline">Help Center</button>
+            {/* Standardized to "Help Centre" for consistency across all pages */}
+            <button onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')} className="text-primary hover:underline">Help Centre</button>
             {" "}or{" "}
             <button onClick={() => handleNavigate('dashboard-support')} className="text-primary hover:underline">Contact Support</button>.
           </p>
