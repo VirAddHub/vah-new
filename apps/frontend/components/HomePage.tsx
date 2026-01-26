@@ -51,50 +51,51 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO */}
             <section
-                className="relative overflow-hidden bg-primary text-primary-foreground py-11 lg:py-8"
+                className="relative overflow-hidden bg-background py-11 lg:py-8 border-b border-border"
                 aria-label="Hero"
             >
                 <div className="mx-auto max-w-7xl px-8 lg:px-12 lg:pt-4 lg:pb-2">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-12 items-center">
                         <div className="max-w-[540px]">
-                            <h1 className="text-4xl lg:text-[44px] font-bold leading-[1.1] lg:leading-[1.08] text-primary-foreground">
+                            <h1 className="text-4xl lg:text-[44px] font-bold leading-[1.1] lg:leading-[1.08] text-foreground">
                                 Your Central London Address
                             </h1>
 
-                            <h2 className="mt-2 lg:mt-1 text-2xl lg:text-3xl font-medium text-primary-foreground/95">
+                            <h2 className="mt-2 lg:mt-1 text-2xl lg:text-3xl font-medium text-muted-foreground">
                                 A compliant alternative to a physical office
                             </h2>
 
                             <div className="mt-4 lg:mt-2">
-                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-primary-foreground">
+                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-muted-foreground">
                                     Use a trusted Central London address as your Registered Office, Director&apos;s Service Address, and official business address without using your home address.
                                 </p>
                             </div>
 
                             <div className="mt-4 lg:mt-2.5">
-                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-primary-foreground">
+                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-muted-foreground">
                                     Suitable for Companies House, HMRC, and everyday business correspondence.
                                 </p>
                             </div>
 
                             <div className="mt-4 lg:mt-2.5">
-                                <p className="text-sm lg:text-base text-primary-foreground/90 mb-2">
+                                <p className="text-sm lg:text-base text-muted-foreground mb-2">
                                     Simple pricing. No surprises.
                                 </p>
-                                <p className="text-sm lg:text-base text-primary-foreground/90">
+                                <p className="text-sm lg:text-base text-muted-foreground">
                                     Fully compliant with UK Companies House and HMRC requirements.
                                 </p>
                             </div>
 
                             <div className="mt-4 lg:mt-2.5">
-                                <div className="text-2xl lg:text-3xl font-bold text-primary-foreground">£9.99 per month</div>
-                                <div className="mt-1 text-sm lg:text-base text-primary-foreground/90">One address. One plan.</div>
+                                <div className="text-2xl lg:text-3xl font-bold text-primary font-semibold">£9.99 per month</div>
+                                <div className="mt-1 text-sm lg:text-base text-muted-foreground">One address. One plan.</div>
                             </div>
 
                             <div className="mt-5 lg:mt-3">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="h-[48px] w-full rounded-[33px] bg-primary-foreground px-4 text-base font-medium text-primary hover:bg-primary-foreground/90 sm:w-[85%] lg:h-[57px] lg:w-[294px]"
+                                    variant="primary"
+                                    className="h-[48px] w-full rounded-[33px] px-4 text-base font-medium sm:w-[85%] lg:h-[57px] lg:w-[294px]"
                                 >
                                     Get Started - £9.99/month
                                 </Button>
@@ -388,14 +389,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div className="mx-auto max-w-7xl px-8">
                     <div className="relative overflow-hidden rounded-[30px] bg-background p-12 md:p-16 lg:p-20">
                         <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px]">
-                            {/* London landmarks illustration on left */}
-                            <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0">
+                            {/* London landmarks illustration on left - decorative only */}
+                            <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0 pointer-events-none select-none cursor-default">
                                 <Image
                                     src="/figma/cta-illustration.png"
                                     alt=""
                                     width={857}
                                     height={600}
                                     className="w-full max-w-[857px] h-auto object-contain"
+                                    aria-hidden="true"
                                 />
                             </div>
                             {/* Content on right */}
