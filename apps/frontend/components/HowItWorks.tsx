@@ -23,13 +23,13 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-white py-24">
+        <section className="w-full bg-background py-24">
             <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
-                    <h2 className="mb-2 text-2xl font-medium text-[#1A1A1A] sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
+                    <h2 className="mb-2 text-2xl font-medium text-foreground sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
                         How It Works
                     </h2>
-                    <p className="text-xs text-[#666666] sm:text-sm md:text-base lg:text-[18px] lg:leading-[1.4]">
+                    <p className="text-xs text-muted-foreground sm:text-sm md:text-base lg:text-[18px] lg:leading-[1.4]">
                         Three steps to a professional Central London address
                     </p>
                 </header>
@@ -38,7 +38,7 @@ export default function HowItWorks() {
                     {/* Connector line (desktop only) */}
                     <svg
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 hidden h-full w-full text-[#024E40] md:block"
+                        className="pointer-events-none absolute inset-0 hidden h-full w-full text-primary md:block"
                         viewBox="0 0 1000 200"
                         preserveAspectRatio="none"
                     >
@@ -54,20 +54,21 @@ export default function HowItWorks() {
                     <div className="grid gap-8 text-center sm:gap-10 md:grid-cols-3 md:gap-12">
                         {steps.map((step, index) => (
                             <div key={step.k} className="relative z-10 flex flex-col items-center">
-                                <div className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#024E40] text-xs font-semibold text-white sm:h-[32px] sm:w-[32px] sm:text-sm">
+                                <div className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground sm:h-[32px] sm:w-[32px] sm:text-sm">
                                     {index + 1}
                                 </div>
-                                <div className="mt-4 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#F9F9F9] sm:h-[72px] sm:w-[72px] lg:h-[80px] lg:w-[80px]">
+                                <div className="mt-4 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-muted sm:h-[72px] sm:w-[72px] lg:h-[80px] lg:w-[80px]">
                                     <img
                                         src={step.icon}
                                         alt=""
+                                        aria-hidden="true"
                                         className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px] lg:h-[38px] lg:w-[38px]"
                                     />
                                 </div>
-                                <h3 className="mt-4 text-sm font-medium text-[#1A1A1A] sm:text-base lg:text-[18px]">
+                                <h3 className="mt-4 text-sm font-medium text-foreground sm:text-base lg:text-[18px]">
                                     {step.title}
                                 </h3>
-                                <p className="mt-2 text-xs leading-[1.4] text-[#666666] sm:text-sm lg:text-[16px]">
+                                <p className="mt-2 text-xs leading-[1.4] text-muted-foreground sm:text-sm lg:text-[16px]">
                                     {step.description}
                                 </p>
                             </div>

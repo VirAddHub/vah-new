@@ -11,7 +11,7 @@ export default function BlogPage() {
   const handleNavigate = createNavigationHandler(router);
   
   return (
-    <div className="min-h-screen flex flex-col relative bg-white">
+    <div className="min-h-screen flex flex-col relative bg-[#F6F6F7]">
       <HeaderWithNav />
       <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
         <BlogPageComponent onNavigate={handleNavigate} />

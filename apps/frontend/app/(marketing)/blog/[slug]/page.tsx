@@ -160,7 +160,7 @@ export default async function BlogPostPage({
   const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+    <div className="min-h-screen flex flex-col relative bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
       <HeaderWithNav />
       <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
         {/* Main Content Area */}

@@ -53,10 +53,6 @@ body {
     overflow-x: hidden;
 }
 
-*:focus {
-    outline: none;
-}
-
 *:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
@@ -133,9 +129,9 @@ iframe {
     /* LIGHT THEME (HSL triples) - Premium Clean Design */
     :root,
     html {
-        /* Premium white surfaces */
-        --background: 0 0% 100%;
-        /* Pure white for crisp, professional look */
+        /* Premium light gray background */
+        --background: 0 0% 97%;
+        /* #F6F6F7 - Light gray for modern look */
         --foreground: 220 10% 15%;
         /* Darker text for better contrast on white */
 
@@ -153,7 +149,7 @@ iframe {
         /* Dual-tone color system */
         --color-primary: #20603A;
         --color-accent: #166534;
-        --color-background: #FFFFFF;
+        --color-background: #F6F6F7;
         --color-foreground: #212325;
         --color-muted: #6B7280;
 
@@ -569,10 +565,6 @@ iframe {
     }
 
     /* Additional responsive utilities */
-    .text-balance {
-        text-wrap: balance;
-    }
-
     .text-pretty {
         text-wrap: pretty;
     }
@@ -657,10 +649,6 @@ iframe {
         @apply bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent;
     }
 
-    .text-balance {
-        text-wrap: balance;
-    }
-
     .shadow-modern-lg {
         box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
@@ -675,46 +663,6 @@ iframe {
         background-color: hsl(var(--section-alt));
     }
 
-    /* Card base */
-    .card {
-        background-color: hsl(var(--card));
-        border: 1px solid hsl(var(--border));
-        border-radius: var(--radius-lg);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Button utilities (if you use class-based buttons anywhere) */
-    .btn-primary {
-        background: hsl(var(--primary));
-        color: hsl(var(--primary-foreground));
-        border: none;
-        border-radius: var(--radius);
-        transition: background-color .15s ease;
-    }
-
-    .btn-primary:hover {
-        background: hsl(var(--primary-hover));
-    }
-
-    .btn-secondary {
-        background: hsl(var(--secondary));
-        color: hsl(var(--secondary-foreground));
-        border: 1px solid hsl(var(--border));
-        border-radius: var(--radius);
-        transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
-    }
-
-    .btn-secondary:hover {
-        background: hsl(var(--accent));
-        border-color: hsl(var(--accent-hover));
-        transform: translateY(-1px);
-    }
 }
 
 /* ========================================

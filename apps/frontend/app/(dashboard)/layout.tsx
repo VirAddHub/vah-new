@@ -9,7 +9,7 @@ export default function DashboardLayout({
 }) {
     return (
         <DashboardViewProvider>
-            <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="min-h-screen flex flex-col bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                 <Navigation />
                 <div className="flex flex-1 pt-10 md:pt-16">
                     {/* Sidebar - Fixed on desktop, overlay on mobile */}

@@ -132,7 +132,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+        <div className="min-h-screen bg-[#F6F6F7]">
             {/* Back Button */}
             <div className="absolute top-6 left-6 z-10">
                 <Button

@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-white relative z-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+    <div className="w-full bg-[#F6F6F7] relative z-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"

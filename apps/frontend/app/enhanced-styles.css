@@ -3,7 +3,7 @@
   /* Dual-tone color system */
   --color-primary: #20603A;
   --color-accent: #166534;
-  --color-background: #FFFFFF;
+  --color-background: #F6F6F7;
   --color-foreground: #212325;
   --color-muted: #6B7280;
 
@@ -22,7 +22,7 @@
   --accent-hover: 145 50% 20%;
 
   /* Background - Clean & Modern */
-  --background: 0 0% 100%;
+  --background: 0 0% 97%;
   --foreground: 220 15% 15%;
 
   /* Muted - Subtle Grays */
