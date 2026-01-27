@@ -52,7 +52,6 @@ export function MailDetail({
           type="button"
           onClick={onBack}
           className="inline-flex items-center gap-2 text-[#4A5565] hover:text-[#101828] transition-colors text-sm font-normal w-fit"
-          style={{ fontFamily: 'Poppins, sans-serif' }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Inbox
@@ -146,13 +145,11 @@ export function MailDetail({
               <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
               <div 
                 className="mt-4 text-base font-medium text-[#161B1A]"
-                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 Loading preview…
               </div>
               <div 
                 className="mt-2 text-sm text-[#666666]"
-                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 Fetching your scanned document
               </div>
@@ -178,13 +175,11 @@ export function MailDetail({
               <FileText className="h-10 w-10 mx-auto text-[#666666]" />
               <div 
                 className="mt-4 text-lg font-medium text-[#161B1A]"
-                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 {miniViewerError ? 'Preview unavailable' : 'No preview available'}
               </div>
               <div 
                 className="mt-2 text-sm text-[#666666]"
-                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 {miniViewerError ? 'Click "View Scan" to open full document' : 'Click "View Scan" to view the document'}
               </div>

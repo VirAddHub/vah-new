@@ -67,8 +67,7 @@ export function Footer({ onNavigate }: FooterProps) {
         <footer
             className="py-8 lg:py-10 text-neutral-700"
             style={{
-                fontFamily:
-                    "Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
+                fontFamily: 'Inter, sans-serif',
             }}
         >
             <div className="mx-auto max-w-7xl px-8">

@@ -39,71 +39,104 @@ export const spacing = {
 
 /**
  * TYPOGRAPHY SCALE
- * Clear hierarchy with restrained sizing
+ * 
+ * Single font family: Inter
+ * Hierarchy via weight, size, spacing, line-height only
+ * 
+ * Principles:
+ * - Headings: Semibold (600), tight tracking, confident
+ * - Body: Regular (400), relaxed leading, calm
+ * - Labels: Medium (500), subtle, clear
+ * - Vertical rhythm: Consistent spacing between elements
  */
 export const typography = {
-  // Display - Hero headlines only
+  // Display - Hero headlines, landing pages
   display: {
     size: '3.5rem', // 56px
     lineHeight: '1.1',
     weight: '600',
-    letterSpacing: '-0.02em',
+    letterSpacing: '-0.025em',
+    family: 'Inter, sans-serif',
   },
   // H1 - Page titles
   h1: {
     size: '2.25rem', // 36px
     lineHeight: '1.2',
     weight: '600',
-    letterSpacing: '-0.01em',
+    letterSpacing: '-0.02em',
+    family: 'Inter, sans-serif',
   },
   // H2 - Section headers
   h2: {
     size: '1.875rem', // 30px
     lineHeight: '1.3',
     weight: '600',
-    letterSpacing: '-0.01em',
+    letterSpacing: '-0.015em',
+    family: 'Inter, sans-serif',
   },
   // H3 - Subsection headers
   h3: {
     size: '1.5rem', // 24px
     lineHeight: '1.4',
     weight: '600',
-    letterSpacing: '0',
+    letterSpacing: '-0.01em',
+    family: 'Inter, sans-serif',
   },
-  // H4 - Card titles
+  // H4 - Card titles, smaller headings
   h4: {
     size: '1.25rem', // 20px
     lineHeight: '1.4',
     weight: '600',
+    letterSpacing: '-0.005em',
+    family: 'Inter, sans-serif',
+  },
+  // H5 - Smallest headings
+  h5: {
+    size: '1.125rem', // 18px
+    lineHeight: '1.5',
+    weight: '600',
     letterSpacing: '0',
+    family: 'Inter, sans-serif',
   },
   // Body Large - Hero subtext, important descriptions
   bodyLg: {
     size: '1.125rem', // 18px
-    lineHeight: '1.6',
+    lineHeight: '1.7',
     weight: '400',
     letterSpacing: '0',
+    family: 'Inter, sans-serif',
   },
-  // Body - Default text
+  // Body - Default text (most common)
   body: {
     size: '1rem', // 16px
     lineHeight: '1.6',
     weight: '400',
     letterSpacing: '0',
+    family: 'Inter, sans-serif',
   },
-  // Body Small - Secondary text
+  // Body Small - Secondary text, captions
   bodySm: {
     size: '0.875rem', // 14px
     lineHeight: '1.5',
     weight: '400',
     letterSpacing: '0',
+    family: 'Inter, sans-serif',
   },
-  // Caption - Metadata, timestamps
+  // Label - Form labels, UI labels
+  label: {
+    size: '0.875rem', // 14px
+    lineHeight: '1.4',
+    weight: '500',
+    letterSpacing: '0',
+    family: 'Inter, sans-serif',
+  },
+  // Caption - Metadata, timestamps, tiny text
   caption: {
     size: '0.75rem', // 12px
     lineHeight: '1.4',
     weight: '400',
     letterSpacing: '0.01em',
+    family: 'Inter, sans-serif',
   },
 } as const;
 

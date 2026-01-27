@@ -52,7 +52,7 @@ export function TagDot({ tag, label, className, showDot = true }: TagDotProps) {
       <span className={cn(
         "text-sm font-normal",
         isUntagged ? "text-[#999999]" : "text-[#666666]"
-      )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      )}>
         {displayLabel}
       </span>
     </div>

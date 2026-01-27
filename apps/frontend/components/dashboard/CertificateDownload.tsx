@@ -83,7 +83,6 @@ export function CertificateDownload() {
                             onClick={handleDownloadCertification}
                             disabled={isCertBusy}
                             className="w-full bg-[#206039] text-white hover:bg-[#206039]/90 text-sm font-medium py-2.5"
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             {isCertBusy ? (
                                 <>
