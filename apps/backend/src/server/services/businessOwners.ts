@@ -7,9 +7,6 @@ import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 
-// Import Sumsub (CommonJS module)
-const { sumsubFetch } = require('../../lib/sumsub');
-
 /**
  * Create business owner and send verification invite
  */
@@ -216,6 +213,9 @@ export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
     accessToken: string;
 }> {
     const pool = getPool();
+    
+    // Dynamic import of CommonJS module
+    const { sumsubFetch } = await import('../../lib/sumsub');
     
     // Get owner details
     const ownerResult = await pool.query(
