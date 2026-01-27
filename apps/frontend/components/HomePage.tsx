@@ -49,37 +49,57 @@ export function HomePage({ onNavigate }: HomePageProps) {
             role="main"
             className="bg-background text-foreground"
         >
-            {/* HERO - Premium, calm, spacious */}
-            <section className="relative bg-white border-b border-neutral-200">
+            {/* HERO - Premium, calm, spacious with subtle depth */}
+            <section className="relative bg-gradient-to-b from-white to-neutral-50 border-b border-neutral-200">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16 lg:py-24">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                         {/* Content */}
                         <div className="max-w-xl">
                             <h1 className="text-4xl lg:text-5xl font-semibold leading-tight text-neutral-900 tracking-tight">
-                                Your Central London Address
+                                Your <span className="relative inline-block">
+                                    Central London
+                                    <span className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-full" aria-hidden="true"></span>
+                                </span> Address
                             </h1>
 
-                            <p className="mt-6 text-lg lg:text-xl text-neutral-600 leading-relaxed">
+                            <p className="mt-6 text-lg lg:text-xl text-neutral-600/90 leading-relaxed">
                                 A compliant alternative to a physical office
                             </p>
 
-                            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-                                Use a trusted Central London address as your Registered Office, Director's Service Address, and official business address without using your home address.
-                            </p>
+                            {/* Address Use Pills */}
+                            <div className="mt-6 flex flex-wrap gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/5 text-sm text-neutral-700">
+                                    <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Company
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/5 text-sm text-neutral-700">
+                                    <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Director
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/5 text-sm text-neutral-700">
+                                    <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Business
+                                </span>
+                            </div>
 
-                            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-                                Suitable for Companies House, HMRC, and everyday business correspondence.
-                            </p>
-
-                            {/* Pricing */}
-                            <div className="mt-8 pt-8 border-t border-neutral-200">
+                            {/* Pricing Card */}
+                            <div className="mt-10 p-6 bg-white border border-neutral-200 rounded-2xl shadow-sm">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-semibold text-neutral-900">£9.99</span>
-                                    <span className="text-lg text-neutral-600">per month</span>
+                                    <span className="text-5xl font-semibold text-neutral-900">£9.99</span>
+                                    <span className="text-lg text-neutral-500">/ month</span>
                                 </div>
-                                <p className="mt-2 text-sm text-neutral-500">
-                                    One address. One plan. No surprises.
-                                </p>
+                                <div className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+                                    <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Everything included</span>
+                                </div>
                             </div>
 
                             {/* CTA */}
@@ -87,11 +107,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     size="lg"
-                                    className="h-12 px-8 rounded-lg text-base font-medium"
+                                    className="h-12 px-8 rounded-xl text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90"
                                 >
                                     Get Started
                                 </Button>
-                                <p className="mt-3 text-sm text-neutral-500">
+                                <p className="mt-4 text-sm text-neutral-500/80">
                                     Fully compliant with UK Companies House and HMRC requirements
                                 </p>
                             </div>
