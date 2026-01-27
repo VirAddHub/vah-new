@@ -10,7 +10,8 @@ import {
     HelpCircle,
     LayoutDashboard,
     Menu,
-    X
+    X,
+    type LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -31,7 +32,7 @@ import { CertificateDownload } from './CertificateDownload';
 interface NavItem {
     label: string;
     href: string;
-    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+    icon: LucideIcon;
     badge?: string;
 }
 
