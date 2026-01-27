@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Home, LayoutDashboard, FileText, HelpCircle, User } from 'lucide-react';
 
 interface TouchGestureProps {
   children: React.ReactNode;
@@ -136,31 +137,35 @@ export function MobileNavigation({
   onNavigate: (page: string) => void; 
 }) {
   const navItems = [
-    { id: 'home', label: 'Home', icon: '🏠' },
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'blog', label: 'Blog', icon: '📝' },
-    // Standardized to "Help Centre" for consistency across all pages
-    { id: 'help', label: 'Help Centre', icon: '❓' },
-    { id: 'profile', label: 'Profile', icon: '👤' }
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'blog', label: 'Blog', icon: FileText },
+    { id: 'help', label: 'Help Centre', icon: HelpCircle },
+    { id: 'profile', label: 'Profile', icon: User }
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-neutral-200 md:hidden">
       <div className="flex items-center justify-around py-2">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
-              currentPage === item.id
-                ? 'text-primary bg-primary/10'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span className="text-lg">{item.icon}</span>
-            <span className="text-xs font-medium">{item.label}</span>
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage === item.id;
+          
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={`flex flex-col items-center gap-1 py-2 px-3 transition-colors ${
+                isActive
+                  ? 'text-primary'
+                  : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              <Icon className="h-5 w-5" strokeWidth={2} />
+              <span className="text-xs font-medium">{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

@@ -9,10 +9,19 @@ interface HeaderProps {
     onNavigate?: (page: string) => void;
 }
 
+/**
+ * Premium Navigation Header
+ * 
+ * Design principles:
+ * - Minimal, clean, precise
+ * - Subtle backdrop blur for depth
+ * - Consistent spacing (16px/24px)
+ * - Restrained hover states
+ * - No visual noise
+ */
 export function Header({ onNavigate }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Standardized to "Help Centre" for consistency across all pages
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
@@ -20,7 +29,6 @@ export function Header({ onNavigate }: HeaderProps) {
     ];
 
     const handleNavClick = (page: string, href?: string) => {
-        // Scroll to top before navigation
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
         if (href) {
@@ -36,75 +44,81 @@ export function Header({ onNavigate }: HeaderProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50">
-            <div className="safe-pad mx-auto max-w-screen-xl py-4 flex items-center justify-between">
-                {/* Brand Name */}
-                <VAHLogo onNavigate={onNavigate} size="lg" />
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    {/* Logo */}
+                    <VAHLogo onNavigate={onNavigate} size="lg" />
 
-                {/* Desktop Navigation */}
-                <nav aria-label="Main navigation" className="hidden md:flex gap-8 text-sm lg:text-base leading-[1.2] text-muted-foreground">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.label}
-                            onClick={() => handleNavClick(item.page, (item as any).href)}
-                            className="hover:text-foreground transition-colors font-medium"
-                        >
-                            {item.label}
-                        </button>
-                    ))}
-                </nav>
-
-                {/* Auth Buttons */}
-                <div className="hidden md:flex items-center gap-3">
-                    <button
-                        onClick={() => handleNavClick('login')}
-                        className="text-sm lg:text-base leading-[1.2] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Log in
-                    </button>
-                    <Button
-                        onClick={() => handleNavClick('signup')}
-                        className="rounded-md px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200"
-                    >
-                        Get started
-                    </Button>
-                </div>
-
-                {/* Mobile menu button */}
-                <div className="md:hidden">
-                    <Button
-                        variant="ghost"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2"
-                    >
-                        {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </Button>
-                </div>
-            </div>
-
-            {/* Mobile menu */}
-            {isMenuOpen && (
-                <div className="md:hidden border-t border-border/50 bg-background">
-                    <div className="safe-pad pt-4 pb-6 space-y-2">
+                    {/* Desktop Navigation */}
+                    <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page, (item as any).href)}
-                                className="tt-min block px-4 py-3 rounded-lg w-full text-left text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background transition-all"
+                                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                             >
                                 {item.label}
                             </button>
                         ))}
-                        <div className="pt-4 space-y-3">
+                    </nav>
+
+                    {/* Desktop Auth */}
+                    <div className="hidden md:flex items-center gap-4">
+                        <button
+                            onClick={() => handleNavClick('login')}
+                            className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                        >
+                            Log in
+                        </button>
+                        <Button
+                            onClick={() => handleNavClick('signup')}
+                            size="sm"
+                            className="rounded-lg px-4 h-9"
+                        >
+                            Get started
+                        </Button>
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="md:hidden p-2 -mr-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                    >
+                        {isMenuOpen ? (
+                            <X className="h-5 w-5" strokeWidth={2} />
+                        ) : (
+                            <Menu className="h-5 w-5" strokeWidth={2} />
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="md:hidden border-t border-neutral-200 bg-white">
+                    <div className="px-6 py-6 space-y-1">
+                        {navItems.map((item) => (
+                            <button
+                                key={item.label}
+                                onClick={() => handleNavClick(item.page, (item as any).href)}
+                                className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                        
+                        <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
                             <button
                                 onClick={() => handleNavClick('login')}
-                                className="tt-min w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-center"
+                                className="block w-full text-center px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                             >
                                 Log in
                             </button>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="tt-min w-full rounded-md font-medium transition-all duration-200"
+                                className="w-full rounded-lg h-10"
                             >
                                 Get started
                             </Button>

@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-[#F6F6F7] relative z-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+    <div className="w-full bg-white relative z-0">
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"
@@ -479,96 +479,87 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         }}
       />
 
-      <div className="max-w-[1280px] mx-auto px-20 py-[80px]">
-        {/* Hero Section */}
-        <div className="flex flex-col items-center gap-[10px] mb-20">
-          <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.1] text-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-24">
+        {/* Hero Section - Clean, spacious */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight tracking-tight">
             Got questions? We've got answers.
           </h1>
-          <p className="text-base text-[#666666] leading-[1.4] text-center max-w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+          <p className="mt-4 text-lg text-neutral-600 leading-relaxed max-w-2xl mx-auto">
             Establish your business presence with a prestigious London address. Powered by our professional office near Tower Bridge.
           </p>
         </div>
 
         {/* Two Column Layout */}
-        <div className="flex gap-[55px] items-start">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start">
           {/* Left Sidebar - Category Navigation */}
-          <div className="w-[417px] flex-shrink-0">
-            <div className="bg-white border border-[#E5E7EB] rounded-[10px] p-6">
-              <div className="flex flex-col gap-6">
+          <div className="lg:sticky lg:top-24">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+              <nav className="space-y-1">
                 {sidebarCategories.map((category) => {
                   const isActive = category === activeCategory;
                   return (
-                    <div key={category}>
-                      <button
-                        onClick={() => setActiveCategory(category)}
-                        className={`w-full text-left text-lg leading-[1.2] transition-colors ${
-                          isActive 
-                            ? 'text-[#1A1A1A] font-medium' 
-                            : 'text-[#666666] font-normal'
-                        }`}
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                      >
-                        {category}
-                      </button>
-                      {category !== sidebarCategories[sidebarCategories.length - 1] && (
-                        <div className="mt-6 h-px w-full bg-[#E5E7EB]" />
-                      )}
-                    </div>
+                    <button
+                      key={category}
+                      onClick={() => setActiveCategory(category)}
+                      className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isActive 
+                          ? 'bg-white text-neutral-900 shadow-sm' 
+                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                      }`}
+                    >
+                      {category}
+                    </button>
                   );
                 })}
-              </div>
+              </nav>
             </div>
           </div>
 
           {/* Right Column - FAQ Accordions */}
-          <div className="flex-1">
-            <div className="flex flex-col gap-10">
-              <div className="flex flex-col gap-5">
-                <h2 className="text-2xl font-medium text-[#1A1A1A] leading-[1.2]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                  {activeCategory}
-                </h2>
-                <div className="flex flex-col gap-4">
-                  {activeFAQs.map((f) => {
-                    const isOpen = openItems.has(f.id);
-                    return (
-                      <div
-                        key={f.id}
-                        className={`border border-[#E5E7EB] rounded-[10px] overflow-hidden transition-colors ${
-                          isOpen ? 'bg-[#F9F9F9]' : 'bg-white'
-                        }`}
-                      >
-                        <button
-                          onClick={() => toggleItem(f.id)}
-                          className="w-full flex items-center justify-between p-[18px] text-left"
-                        >
-                          <span className="text-base font-normal text-[#666666] leading-[1.4] uppercase flex-1" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            {f.q}
-                          </span>
-                          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 ml-4">
-                            {isOpen ? (
-                              <Minus className="w-4 h-4 text-[#1A1A1A]" />
-                            ) : (
-                              <Plus className="w-4 h-4 text-[#1A1A1A]" />
-                            )}
-                          </div>
-                        </button>
-                        {isOpen && (
-                          <div className="px-[18px] pb-[18px]">
-                            <div className="pt-0 text-base text-[#666666] leading-[1.64]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                              {typeof f.a === 'string' ? (
-                                <div className="whitespace-pre-line" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>{f.a}</div>
-                              ) : (
-                                <div style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>{f.a}</div>
-                              )}
-                            </div>
-                          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-neutral-900 mb-6">
+              {activeCategory}
+            </h2>
+            <div className="space-y-3">
+              {activeFAQs.map((f) => {
+                const isOpen = openItems.has(f.id);
+                return (
+                  <div
+                    key={f.id}
+                    className={`border border-neutral-200 rounded-lg overflow-hidden transition-colors ${
+                      isOpen ? 'bg-neutral-50' : 'bg-white'
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggleItem(f.id)}
+                      className="w-full flex items-center justify-between p-4 lg:p-5 text-left group"
+                    >
+                      <span className="text-sm lg:text-base font-medium text-neutral-900 leading-snug flex-1 pr-4">
+                        {f.q}
+                      </span>
+                      <div className="flex-shrink-0">
+                        {isOpen ? (
+                          <Minus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
+                        ) : (
+                          <Plus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 lg:px-5 pb-4 lg:pb-5">
+                        <div className="text-sm lg:text-base text-neutral-600 leading-relaxed">
+                          {typeof f.a === 'string' ? (
+                            <div className="whitespace-pre-line">{f.a}</div>
+                          ) : (
+                            <div>{f.a}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

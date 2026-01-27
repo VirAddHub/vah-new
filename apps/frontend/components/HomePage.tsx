@@ -49,126 +49,129 @@ export function HomePage({ onNavigate }: HomePageProps) {
             role="main"
             className="bg-background text-foreground"
         >
-            {/* HERO */}
-            <section
-                className="relative overflow-hidden bg-background py-11 lg:py-8 border-b border-border"
-                aria-label="Hero"
-            >
-                <div className="mx-auto max-w-7xl px-8 lg:px-12 lg:pt-4 lg:pb-2">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-12 items-center">
-                        <div className="max-w-[540px]">
-                            <h1 className="text-4xl lg:text-[44px] font-bold leading-[1.1] lg:leading-[1.08] text-foreground">
+            {/* HERO - Premium, calm, spacious */}
+            <section className="relative bg-white border-b border-neutral-200">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16 lg:py-24">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        {/* Content */}
+                        <div className="max-w-xl">
+                            <h1 className="text-4xl lg:text-5xl font-semibold leading-tight text-neutral-900 tracking-tight">
                                 Your Central London Address
                             </h1>
 
-                            <h2 className="mt-2 lg:mt-1 text-2xl lg:text-3xl font-medium text-muted-foreground">
+                            <p className="mt-6 text-lg lg:text-xl text-neutral-600 leading-relaxed">
                                 A compliant alternative to a physical office
-                            </h2>
+                            </p>
 
-                            <div className="mt-4 lg:mt-2">
-                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-muted-foreground">
-                                    Use a trusted Central London address as your Registered Office, Director&apos;s Service Address, and official business address without using your home address.
+                            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+                                Use a trusted Central London address as your Registered Office, Director's Service Address, and official business address without using your home address.
+                            </p>
+
+                            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+                                Suitable for Companies House, HMRC, and everyday business correspondence.
+                            </p>
+
+                            {/* Pricing */}
+                            <div className="mt-8 pt-8 border-t border-neutral-200">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-4xl font-semibold text-neutral-900">£9.99</span>
+                                    <span className="text-lg text-neutral-600">per month</span>
+                                </div>
+                                <p className="mt-2 text-sm text-neutral-500">
+                                    One address. One plan. No surprises.
                                 </p>
                             </div>
 
-                            <div className="mt-4 lg:mt-2.5">
-                                <p className="text-base lg:text-lg leading-[1.6] font-medium text-muted-foreground">
-                                    Suitable for Companies House, HMRC, and everyday business correspondence.
-                                </p>
-                            </div>
-
-                            <div className="mt-4 lg:mt-2.5">
-                                <p className="text-sm lg:text-base text-muted-foreground mb-2">
-                                    Simple pricing. No surprises.
-                                </p>
-                                <p className="text-sm lg:text-base text-muted-foreground">
-                                    Fully compliant with UK Companies House and HMRC requirements.
-                                </p>
-                            </div>
-
-                            <div className="mt-4 lg:mt-2.5">
-                                <div className="text-2xl lg:text-3xl font-bold text-primary font-semibold">£9.99 per month</div>
-                                <div className="mt-1 text-sm lg:text-base text-muted-foreground">One address. One plan.</div>
-                            </div>
-
-                            <div className="mt-5 lg:mt-3">
+                            {/* CTA */}
+                            <div className="mt-8">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    variant="primary"
-                                    className="h-[48px] w-full rounded-[33px] px-4 text-base font-medium sm:w-[85%] lg:h-[57px] lg:w-[294px]"
+                                    size="lg"
+                                    className="h-12 px-8 rounded-lg text-base font-medium"
                                 >
-                                    Get Started - £9.99/month
+                                    Get Started
                                 </Button>
+                                <p className="mt-3 text-sm text-neutral-500">
+                                    Fully compliant with UK Companies House and HMRC requirements
+                                </p>
                             </div>
                         </div>
 
-                        <div className="w-full flex items-center">
-                            <div className="relative w-full max-w-[520px] mx-auto lg:mx-0">
-                                <Image
-                                    src="/figma/hero-photo.png"
-                                    alt="Central London street scene"
-                                    width={520}
-                                    height={400}
-                                    className="w-full h-auto max-h-[360px] lg:max-h-[400px] rounded-3xl object-cover"
-                                    priority
-                                />
-                            </div>
+                        {/* Image */}
+                        <div className="relative flex items-center justify-center lg:justify-end">
+                            <Image
+                                src="/figma/hero-photo.png"
+                                alt=""
+                                width={520}
+                                height={400}
+                                priority
+                                className="w-full max-w-[520px] h-auto rounded-2xl"
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* WHAT'S INCLUDED */}
-            <section
-                className="w-full bg-background py-24"
-                aria-label="What's Included"
-            >
-                <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
-                    <div className="flex flex-col items-start gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-center lg:gap-[62px]">
-                        <div className="w-full lg:w-[650px]">
+            {/* WHAT'S INCLUDED - Clean, spacious, premium */}
+            <section className="bg-neutral-50 py-16 lg:py-24">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        {/* Illustration */}
+                        <div className="order-2 lg:order-1">
                             <img
                                 src="/figma/whats-included-illustration.png"
                                 alt=""
                                 aria-hidden="true"
-                                className="w-full max-h-[500px] object-contain"
+                                className="w-full max-w-[600px] mx-auto"
                             />
                         </div>
 
-                        <div className="w-full lg:w-[528px]">
-                            <h2 className="text-2xl font-medium leading-[1.136] text-foreground sm:text-3xl md:text-4xl lg:text-4xl">What&apos;s Included</h2>
+                        {/* Content */}
+                        <div className="order-1 lg:order-2">
+                            <h2 className="text-3xl lg:text-4xl font-semibold text-neutral-900 tracking-tight">
+                                What's Included
+                            </h2>
 
-                            <div className="mt-4 sm:mt-6 lg:mt-10">
-                                <ul className="space-y-4 max-w-xl">
-                                    {[
-                                        {
-                                            title: "Registered Office And Director's Service Address",
-                                            description: "Use our Central London address for Companies House and HMRC filings.",
-                                        },
-                                        {
-                                            title: "Professional Business Address",
-                                            description: "Use the same address on invoices, websites, contracts, and correspondence with clients and professional contacts.",
-                                        },
-                                        {
-                                            title: "Same Day Mail Scanning And Instant Alerts",
-                                            description: "Letters are scanned the day they arrive and uploaded to your secure online dashboard.",
-                                        },
-                                        {
-                                            title: "Secure Online Dashboard",
-                                            description: "View, download, and organise your mail in one place with full visibility and control.",
-                                        },
-                                        { title: "UK Based Support", description: "Support provided during standard business hours." },
-                                        { title: "Privacy Protection", description: "Keep your home address off public records and business documents." },
-                                    ].map((item) => (
-                                        <li key={item.title} className="flex items-start gap-3">
-                                            <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-primary" />
-                                            <div>
-                                                <p className="font-medium leading-snug text-foreground">{item.title}</p>
-                                                <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                            <ul className="mt-8 space-y-6">
+                                {[
+                                    {
+                                        title: "Registered Office And Director's Service Address",
+                                        description: "Use our Central London address for Companies House and HMRC filings.",
+                                    },
+                                    {
+                                        title: "Professional Business Address",
+                                        description: "Use the same address on invoices, websites, contracts, and correspondence.",
+                                    },
+                                    {
+                                        title: "Same Day Mail Scanning And Instant Alerts",
+                                        description: "Letters are scanned the day they arrive and uploaded to your secure dashboard.",
+                                    },
+                                    {
+                                        title: "Secure Online Dashboard",
+                                        description: "View, download, and organise your mail in one place with full control.",
+                                    },
+                                    {
+                                        title: "UK Based Support",
+                                        description: "Support provided during standard business hours.",
+                                    },
+                                    {
+                                        title: "Privacy Protection",
+                                        description: "Keep your home address off public records and business documents.",
+                                    },
+                                ].map((item) => (
+                                    <li key={item.title} className="flex items-start gap-3">
+                                        <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                        <div>
+                                            <p className="font-medium text-neutral-900 leading-snug">
+                                                {item.title}
+                                            </p>
+                                            <p className="mt-1 text-sm text-neutral-600 leading-relaxed">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -384,44 +387,24 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA IMAGE SECTION */}
-            <section className="py-20 bg-background">
-                <div className="mx-auto max-w-7xl px-8 lg:px-20 pb-20">
-                    <div className="relative overflow-hidden rounded-[30px] bg-[#014D3F]">
-                        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-[40px] p-12 md:p-16 lg:p-20">
-                            {/* London landmarks illustration on left - decorative only, no text or buttons */}
-                            <div className="relative w-full md:w-auto flex items-center justify-center flex-shrink-0 pointer-events-none select-none cursor-default">
-                                <Image
-                                    src="/figma/cta-illustration-clean.png"
-                                    alt=""
-                                    width={857}
-                                    height={817}
-                                    className="w-full max-w-[857px] h-auto object-contain"
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            {/* Content on right - ONLY CTA */}
-                            <div className="flex flex-col gap-6 w-full md:w-auto md:max-w-[409px]">
-                                <div className="flex flex-col gap-3">
-                                    <h2 
-                                        className="text-3xl md:text-[44px] font-medium text-white leading-[1.2]" 
-                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                    >
-                                        Get your London Business Address Today
-                                    </h2>
-                                    <p 
-                                        className="text-base text-white/80 leading-[1.4]" 
-                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                    >
-                                        Everything included for <span className="text-white">£9.99</span> per month.
-                                    </p>
-                                </div>
+            {/* FINAL CTA - Premium, restrained, clear */}
+            <section className="py-16 lg:py-24 bg-white">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="relative overflow-hidden rounded-2xl bg-primary p-12 lg:p-16">
+                        <div className="max-w-2xl">
+                            <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
+                                Get your London Business Address Today
+                            </h2>
+                            <p className="mt-4 text-lg text-white/90">
+                                Everything included for £9.99 per month.
+                            </p>
+                            <div className="mt-8">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="rounded-[30px] w-[268px] h-[48px] text-base font-medium uppercase tracking-wide bg-[#40C46C] text-[#024E40] hover:bg-[#40C46C]/90"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif', lineHeight: '1.2' }}
+                                    size="lg"
+                                    className="h-12 px-8 rounded-lg text-base font-medium bg-white text-primary hover:bg-white/95"
                                 >
-                                    Schedule London Address
+                                    Get Started
                                 </Button>
                             </div>
                         </div>
