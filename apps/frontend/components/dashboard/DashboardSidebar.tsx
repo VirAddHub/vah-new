@@ -18,6 +18,16 @@ import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
 import { CertificateDownload } from './CertificateDownload';
 
+/**
+ * Premium Dashboard Sidebar
+ * 
+ * Design principles from design-system.ts:
+ * - Clean, minimal navigation
+ * - Consistent spacing (12px/16px/24px)
+ * - Subtle active states
+ * - lucide-react icons with strokeWidth={2}
+ */
+
 interface NavItem {
     label: string;
     href: string;
@@ -91,39 +101,35 @@ export function DashboardSidebar() {
     const isMailActive = activeView === 'mail' || pathname === '/mail';
 
     const SidebarContent = () => (
-        <nav 
-            className="w-[220px] flex-shrink-0 bg-white border-r border-[#E5E7EB] h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col z-30"
-            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-        >
-            <div className="flex-1 overflow-y-auto p-4 pt-6">
+        <nav className="w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col z-30">
+            <div className="flex-1 overflow-y-auto p-6">
                 {/* Main Navigation */}
-                <div className="mb-6">
-                    <div className="flex flex-col gap-2">
-                        {/* Mail Inbox - Use state instead of Link */}
+                <div className="mb-8">
+                    <div className="space-y-1">
+                        {/* Mail Inbox */}
                         <button
                             onClick={() => handleMainNavClick('mail')}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
                                 isMailActive
-                                    ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
-                                    : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                             )}
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
-                            <Mail className={cn("w-5 h-5", isMailActive ? "text-[#024E40]" : "text-[#666666]")} />
+                            <Mail className="w-5 h-5" strokeWidth={2} />
                             Mail Inbox
                         </button>
                     </div>
                 </div>
 
                 {/* Account Section */}
-                <div className="mb-6">
-                    <div className="px-4 py-2 mb-2">
-                        <h3 className="text-[12px] font-medium text-[#666666] uppercase tracking-wide">
+                <div>
+                    <div className="px-3 mb-2">
+                        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                             Account
                         </h3>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="space-y-1">
                         {accountNavItems.map((item) => {
                             const Icon = item.icon;
                             const active = isActive(item.href);
@@ -133,14 +139,13 @@ export function DashboardSidebar() {
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
+                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                                         active
-                                            ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
-                                            : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                     )}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
-                                    <Icon className={cn("w-5 h-5", active ? "text-[#024E40]" : "text-[#666666]")} />
+                                    <Icon className="w-5 h-5" strokeWidth={2} />
                                     {item.label}
                                 </Link>
                             );
@@ -163,9 +168,9 @@ export function DashboardSidebar() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsOpen(true)}
-                    className="lg:hidden fixed top-20 left-4 z-50 bg-white border border-[#E5E7EB] rounded-lg shadow-sm h-10 w-10"
+                    className="lg:hidden fixed top-20 left-4 z-50 bg-white border border-neutral-200 rounded-lg shadow-sm h-10 w-10"
                 >
-                    <Menu className="h-5 w-5 text-[#1A1A1A]" />
+                    <Menu className="h-5 w-5 text-neutral-900" strokeWidth={2} />
                 </Button>
 
                 {/* Mobile Sidebar Overlay */}
@@ -177,49 +182,48 @@ export function DashboardSidebar() {
                         />
                         <div className="fixed left-0 top-0 h-full z-50 lg:hidden w-[280px]">
                             <div className="relative h-full bg-white shadow-xl flex flex-col">
-                                <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
-                                    <h2 className="text-lg font-medium text-[#1A1A1A]">Menu</h2>
+                                <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+                                    <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setIsOpen(false)}
                                         className="h-8 w-8"
                                     >
-                                        <X className="h-5 w-5" />
+                                        <X className="h-5 w-5" strokeWidth={2} />
                                     </Button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-4">
+                                <div className="flex-1 overflow-y-auto p-6">
                                     {/* Main Navigation */}
-                                    <div className="mb-6">
-                                        <div className="flex flex-col gap-2">
-                                            {/* Mail Inbox - Use state instead of Link */}
+                                    <div className="mb-8">
+                                        <div className="space-y-1">
+                                            {/* Mail Inbox */}
                                             <button
                                                 onClick={() => {
                                                     handleMainNavClick('mail');
                                                     setIsOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors text-left",
+                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
                                                     isMailActive
-                                                        ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
-                                                        : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                                        ? "bg-primary/10 text-primary"
+                                                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                                 )}
-                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                             >
-                                                <Mail className={cn("w-5 h-5", isMailActive ? "text-[#024E40]" : "text-[#666666]")} />
+                                                <Mail className="w-5 h-5" strokeWidth={2} />
                                                 Mail Inbox
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Account Section */}
-                                    <div className="mb-6">
-                                        <div className="px-4 py-2 mb-2">
-                                            <h3 className="text-[12px] font-medium text-[#666666] uppercase tracking-wide">
+                                    <div>
+                                        <div className="px-3 mb-2">
+                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                                 Account
                                             </h3>
                                         </div>
-                                        <div className="flex flex-col gap-2">
+                                        <div className="space-y-1">
                                             {accountNavItems.map((item) => {
                                                 const Icon = item.icon;
                                                 const active = isActive(item.href);
@@ -230,14 +234,13 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-normal leading-[1.4] transition-colors",
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                                                             active
-                                                                ? "bg-[#F0FDF4] text-[#024E40] font-medium border-l-2 border-[#206039]"
-                                                                : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                                                ? "bg-primary/10 text-primary"
+                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                                         )}
-                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                                     >
-                                                        <Icon className={cn("w-5 h-5", active ? "text-[#024E40]" : "text-[#666666]")} />
+                                                        <Icon className="w-5 h-5" strokeWidth={2} />
                                                         {item.label}
                                                     </Link>
                                                 );
@@ -246,8 +249,8 @@ export function DashboardSidebar() {
                                     </div>
                                 </div>
                                 
-                                {/* Certificate Download - Mobile (Fixed at bottom) */}
-                                <div className="border-t border-[#E5E7EB]">
+                                {/* Certificate Download - Mobile */}
+                                <div className="border-t border-neutral-200">
                                     <CertificateDownload />
                                 </div>
                             </div>

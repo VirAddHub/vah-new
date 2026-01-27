@@ -10,6 +10,17 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, MapPin, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 
+/**
+ * Premium Account Overview Page
+ * 
+ * Design principles from design-system.ts:
+ * - Clean, spacious layout
+ * - Consistent spacing (16px/24px/32px)
+ * - Subtle borders, no heavy shadows
+ * - Clear typography hierarchy
+ * - lucide-react icons with strokeWidth={2}
+ */
+
 export default function AccountOverviewPage() {
     const router = useRouter();
 
@@ -79,38 +90,38 @@ export default function AccountOverviewPage() {
     }, [accountData, o, profile, user]);
 
     return (
-        <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+        <div className="w-full">
             {/* Page Header */}
             <div className="mb-8">
-                <h1 className="text-[54px] font-medium leading-[1.2] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">
                     Account Overview
                 </h1>
-                <p className="text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <p className="text-base text-neutral-600 leading-relaxed">
                     View your account status and quick actions
                 </p>
             </div>
 
             {/* Account Status Card */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
+            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                <CardContent className="p-6">
                     <div className="flex items-center justify-between">
-                        <div className="flex flex-col gap-2">
-                            <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <div className="flex flex-col gap-3">
+                            <h2 className="text-xl font-semibold text-neutral-900">
                                 Account Status
                             </h2>
                             <div className="flex items-center gap-3">
                                 {accountSummary.status === 'active' ? (
-                                    <Badge className="bg-[#5AE094] text-[#024E40] border-0 px-4 py-1.5 text-[14px] font-medium">
-                                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-sm font-medium">
+                                        <CheckCircle2 className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Active
                                     </Badge>
                                 ) : accountSummary.status === 'action_required' ? (
-                                    <Badge className="bg-[#FEF3C7] text-[#92400E] border-0 px-4 py-1.5 text-[14px] font-medium">
-                                        <AlertCircle className="w-4 h-4 mr-2" />
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-sm font-medium">
+                                        <AlertCircle className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Action Required
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-[#F3F4F6] text-[#666666] border-0 px-4 py-1.5 text-[14px] font-medium">
+                                    <Badge className="bg-neutral-100 text-neutral-600 border-0 px-3 py-1 text-sm font-medium">
                                         {accountSummary.status === 'cancelled' ? 'Cancelled' : 'Unknown'}
                                     </Badge>
                                 )}
@@ -121,44 +132,43 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* Plan & Billing Summary */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
+            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <h2 className="text-xl font-semibold text-neutral-900">
                             Plan & Billing
                         </h2>
                         <Button
                             onClick={() => router.push('/account/billing')}
                             variant="outline"
-                            className="border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                            size="sm"
                         >
                             View Billing
-                            <ArrowRight className="w-4 h-4 ml-2" />
+                            <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
                         </Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="flex flex-col gap-2">
-                            <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-sm text-neutral-500">
                                 Plan
                             </p>
-                            <p className="text-[18px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-base font-medium text-neutral-900">
                                 {accountSummary.planName}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-sm text-neutral-500">
                                 Price
                             </p>
-                            <p className="text-[18px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-base font-medium text-neutral-900">
                                 {accountSummary.priceLabel}/{accountSummary.billingPeriod === 'annual' ? 'year' : 'month'}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-sm text-neutral-500">
                                 Next Billing
                             </p>
-                            <p className="text-[18px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-base font-medium text-neutral-900">
                                 {accountSummary.nextBillingDate}
                             </p>
                         </div>
@@ -167,25 +177,25 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* KYC Status Card */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
+            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
-                                <ShieldCheck className="w-6 h-6 text-[#024E40]" />
-                                <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={2} />
+                                <h2 className="text-xl font-semibold text-neutral-900">
                                     Identity Verification
                                 </h2>
                             </div>
                             <div className="flex items-center gap-3">
                                 {accountSummary.kycStatus === 'verified' ? (
-                                    <Badge className="bg-[#5AE094] text-[#024E40] border-0 px-4 py-1.5 text-[14px] font-medium">
-                                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-sm font-medium">
+                                        <CheckCircle2 className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Verified
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-[#FEF3C7] text-[#92400E] border-0 px-4 py-1.5 text-[14px] font-medium">
-                                        <AlertCircle className="w-4 h-4 mr-2" />
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-sm font-medium">
+                                        <AlertCircle className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Pending
                                     </Badge>
                                 )}
@@ -194,11 +204,10 @@ export default function AccountOverviewPage() {
                         {accountSummary.kycStatus !== 'verified' && (
                             <Button
                                 onClick={() => router.push('/account/verification')}
-                                className="bg-[#206039] text-[#024E40] hover:bg-[#206039]/90"
-                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                size="sm"
                             >
                                 Complete Verification
-                                <ArrowRight className="w-4 h-4 ml-2" />
+                                <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
                             </Button>
                         )}
                     </div>
@@ -206,33 +215,32 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* Business Address Card */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
+            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <MapPin className="w-6 h-6 text-[#024E40]" />
-                            <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <MapPin className="w-6 h-6 text-primary" strokeWidth={2} />
+                            <h2 className="text-xl font-semibold text-neutral-900">
                                 Registered Business Address
                             </h2>
                         </div>
                         <Button
                             onClick={() => router.push('/account/addresses')}
                             variant="outline"
-                            className="border-[#206039] text-[#024E40] hover:bg-[#206039]/10"
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                            size="sm"
                         >
                             Manage Addresses
-                            <ArrowRight className="w-4 h-4 ml-2" />
+                            <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
                         </Button>
                     </div>
                     {accountSummary.businessAddress?.formatted ? (
-                        <div className="bg-[#F9F9F9] rounded-[10px] p-4">
-                            <pre className="whitespace-pre-wrap text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <div className="bg-neutral-50 rounded-lg p-4">
+                            <pre className="whitespace-pre-wrap text-sm text-neutral-600 leading-relaxed">
                                 {accountSummary.businessAddress.formatted}
                             </pre>
                         </div>
                     ) : (
-                        <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <p className="text-sm text-neutral-600 leading-relaxed">
                             No business address configured
                         </p>
                     )}
