@@ -222,61 +222,54 @@ router.get('/verify', async (req: Request, res: Response) => {
  * Start identity verification for a business owner (public, no auth required)
  * 
  * Body: { token: string }
+ * Returns: { ok: true, data: { started: true, sumsubToken: string, applicantId: string } }
  */
 router.post('/verify/start', async (req: Request, res: Response) => {
     try {
         const { token } = req.body;
         
         if (!token) {
-            return res.json({
-                ok: true,
-                data: {
-                    started: false,
-                    message: 'Token is required',
-                },
+            return res.status(400).json({
+                ok: false,
+                error: 'validation_error',
+                message: 'Token is required',
             });
         }
         
         const owner = await businessOwnersService.verifyBusinessOwnerInviteToken(token);
         
         if (!owner) {
-            return res.json({
-                ok: true,
-                data: {
-                    started: false,
-                    message: 'Invalid or expired token',
-                },
+            return res.status(400).json({
+                ok: false,
+                error: 'invalid_token',
+                message: 'Invalid or expired token',
             });
         }
         
         // Mark invite as used
         await businessOwnersService.markBusinessOwnerInviteUsed(token);
         
-        // TODO: Start Sumsub verification flow
-        // For now, just mark as pending
-        const pool = getPool();
-        await pool.query(
-            `UPDATE business_owner 
-             SET kyc_id_status = 'pending', kyc_updated_at = NOW()
-             WHERE id = $1`,
-            [owner.ownerId]
-        );
+        // Create Sumsub applicant and get access token
+        const { applicantId, accessToken } = await businessOwnersService.createSumsubApplicantForOwner(owner.ownerId);
         
         return res.json({
             ok: true,
             data: {
                 started: true,
-                message: 'Identity verification started',
+                sumsubToken: accessToken,
+                applicantId: applicantId,
+                owner: {
+                    fullName: owner.fullName,
+                    email: owner.email,
+                },
             },
         });
     } catch (error: any) {
         console.error('[POST /api/business-owners/verify/start] error:', error);
-        return res.json({
-            ok: true,
-            data: {
-                started: false,
-                message: 'Error starting verification',
-            },
+        return res.status(500).json({
+            ok: false,
+            error: 'server_error',
+            message: error.message || 'Error starting verification',
         });
     }
 });

@@ -53,24 +53,105 @@ router.post('/', async (req, res) => {
   const rejectReason = payload.reviewResult?.moderationComment || payload.reviewResult?.rejectReason || null;
   const externalUserId = payload.externalUserId || payload.metadata?.externalUserId || null;
 
-  // Resolve the user row: prefer externalUserId if you set it to user.id; fallback by applicantId
+  // Resolve the target: primary user OR business owner
+  // Check if externalUserId starts with "owner_" prefix
+  const isBusinessOwner = externalUserId && String(externalUserId).startsWith('owner_');
+  
   let userRow = null;
-  if (externalUserId) {
-    userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE id = $1', [Number(externalUserId)]);
+  let ownerRow = null;
+  
+  if (isBusinessOwner) {
+    // Extract owner ID from externalUserId (format: "owner_123")
+    const ownerId = Number(String(externalUserId).replace('owner_', ''));
+    ownerRow = await db.get(
+      'SELECT id, user_id, full_name, email, status FROM business_owner WHERE id = $1',
+      [ownerId]
+    );
+    
+    if (!ownerRow && applicantId) {
+      // Fallback: lookup by applicant ID
+      ownerRow = await db.get(
+        'SELECT id, user_id, full_name, email, status FROM business_owner WHERE sumsub_applicant_id = $1',
+        [applicantId]
+      );
+    }
+  } else {
+    // Primary user lookup
+    if (externalUserId) {
+      userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE id = $1', [Number(externalUserId)]);
+    }
+    if (!userRow && applicantId) {
+      userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE sumsub_applicant_id = $1', [applicantId]);
+    }
   }
-  if (!userRow && applicantId) {
-    userRow = await db.get('SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE sumsub_applicant_id = $1', [applicantId]);
-  }
-  if (!userRow) {
+  
+  if (!userRow && !ownerRow) {
     // store orphan webhook for audit, then 200 (Sumsub expects 2xx)
-    console.warn('[sumsub] user not found for webhook', { applicantId, externalUserId });
+    console.warn('[sumsub] user/owner not found for webhook', { applicantId, externalUserId });
     return res.json({ ok: true, ignored: true });
   }
 
-  const previousKycStatus = userRow.kyc_status;
   const now = Date.now();
   const statusText = reviewAnswer || reviewStatus || 'unknown';
   const reviewIsGreen = reviewAnswer === 'GREEN' || reviewStatus === 'completed';
+
+  // Handle business owner verification
+  if (ownerRow) {
+    const previousStatus = ownerRow.status;
+    
+    // Determine new status
+    let newStatus = 'pending';
+    if (reviewIsGreen) {
+      newStatus = 'verified';
+    } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
+      newStatus = 'rejected';
+    }
+    
+    await db.transaction(async (txDb) => {
+      await txDb.run(`
+        UPDATE business_owner
+        SET sumsub_applicant_id = COALESCE(sumsub_applicant_id, $1),
+            status = $2,
+            kyc_updated_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $3
+      `, [applicantId || null, newStatus, ownerRow.id]);
+      
+      console.log(`[SumsubWebhook] Updated business owner ${ownerRow.id} status to: ${newStatus}`);
+    });
+    
+    // Send notification email if verified or rejected
+    if (newStatus === 'verified' && previousStatus !== 'verified') {
+      // Fire-and-forget email send
+      import('../src/lib/mailer').then(({ sendKycApproved }) => {
+        sendKycApproved({
+          email: ownerRow.email,
+          firstName: ownerRow.full_name.split(' ')[0] || ownerRow.full_name,
+        }).catch((err) => {
+          console.error('[SumsubWebhook] Failed to send owner verification email:', err);
+        });
+      }).catch((err) => {
+        console.error('[SumsubWebhook] Failed to import mailer:', err);
+      });
+    } else if (newStatus === 'rejected' && previousStatus !== 'rejected') {
+      import('../src/lib/mailer').then(({ sendKycRejected }) => {
+        sendKycRejected({
+          email: ownerRow.email,
+          firstName: ownerRow.full_name.split(' ')[0] || ownerRow.full_name,
+          reason: rejectReason || "Verification was not approved. Please check your documents and try again.",
+        }).catch((err) => {
+          console.error('[SumsubWebhook] Failed to send owner rejection email:', err);
+        });
+      }).catch((err) => {
+        console.error('[SumsubWebhook] Failed to import mailer:', err);
+      });
+    }
+    
+    return res.json({ ok: true });
+  }
+  
+  // Handle primary user verification
+  const previousKycStatus = userRow.kyc_status;
 
   await db.transaction(async (txDb) => {
     // Update Sumsub-specific fields

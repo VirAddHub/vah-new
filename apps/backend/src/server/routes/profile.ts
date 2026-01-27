@@ -181,7 +181,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
 
         // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
-        const compliance = computeIdentityCompliance(user);
+        const compliance = await computeIdentityCompliance(user);
 
         // Derived field: controllers_verification_required
         // True if user declared they are NOT the sole controller
@@ -732,9 +732,9 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
 
         // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
-        const compliance = computeIdentityCompliance(user);
+        const compliance = await computeIdentityCompliance(user);
 
-        // Gate the address - only return if KYC is approved
+        // Gate the address - only return if KYC is approved AND all required owners verified
         const { isKycApproved } = await import('../services/kyc-guards');
         if (!isKycApproved(user.kyc_status)) {
             return res.status(403).json({

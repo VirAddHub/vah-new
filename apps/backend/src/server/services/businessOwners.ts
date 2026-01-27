@@ -7,13 +7,17 @@ import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 
+// Import Sumsub (CommonJS module)
+const { sumsubFetch } = require('../../lib/sumsub');
+
 /**
  * Create business owner and send verification invite
  */
 export async function createBusinessOwner(
     userId: number,
     fullName: string,
-    email: string
+    email: string,
+    role: 'director' | 'psc' = 'director'
 ): Promise<{ id: number; inviteToken: string }> {
     const pool = getPool();
     
@@ -30,12 +34,15 @@ export async function createBusinessOwner(
         throw new Error('Business owner with this email already exists');
     }
     
-    // Insert business owner
+    // Insert business owner with role and requires_verification
     const ownerResult = await pool.query(
-        `INSERT INTO business_owner (user_id, full_name, email, created_at)
-         VALUES ($1, $2, $3, NOW())
+        `INSERT INTO business_owner (
+            user_id, full_name, email, role, requires_verification, 
+            status, created_at, updated_at
+        )
+         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
          RETURNING id`,
-        [userId, fullName.trim(), normalisedEmail]
+        [userId, fullName.trim(), normalisedEmail, role, true, 'not_started']
     );
     
     const ownerId = ownerResult.rows[0].id;
@@ -202,33 +209,159 @@ export async function markBusinessOwnerInviteUsed(token: string): Promise<void> 
 }
 
 /**
+ * Create Sumsub applicant for a business owner
+ */
+export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
+    applicantId: string;
+    accessToken: string;
+}> {
+    const pool = getPool();
+    
+    // Get owner details
+    const ownerResult = await pool.query(
+        'SELECT id, user_id, full_name, email, sumsub_applicant_id FROM business_owner WHERE id = $1',
+        [ownerId]
+    );
+    
+    if (ownerResult.rows.length === 0) {
+        throw new Error('Business owner not found');
+    }
+    
+    const owner = ownerResult.rows[0];
+    
+    // If applicant already exists, generate new token
+    if (owner.sumsub_applicant_id) {
+        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || 'basic-kyc';
+        
+        const tokenBody = {
+            userId: `owner_${owner.id}`,
+            levelName: levelName,
+            ttlInSecs: 600,
+            applicantIdentifiers: {
+                email: owner.email,
+            },
+        };
+        
+        const tokenResp = await sumsubFetch(
+            'POST',
+            '/resources/accessTokens/sdk',
+            tokenBody
+        );
+        
+        if (!tokenResp?.token) {
+            throw new Error('No token in Sumsub response');
+        }
+        
+        return {
+            applicantId: owner.sumsub_applicant_id,
+            accessToken: tokenResp.token,
+        };
+    }
+    
+    // Create new Sumsub applicant
+    const [firstName, ...lastNameParts] = owner.full_name.split(' ');
+    const lastName = lastNameParts.join(' ') || firstName;
+    
+    const payload = {
+        externalUserId: `owner_${owner.id}`, // Prefix to distinguish from primary users
+        email: owner.email,
+        info: {
+            firstName: firstName || '',
+            lastName: lastName || '',
+            country: '',
+        },
+    };
+    
+    const created = await sumsubFetch('POST', '/resources/applicants', payload);
+    const applicantId = created?.id;
+    
+    if (!applicantId) {
+        throw new Error('No applicant id from Sumsub');
+    }
+    
+    // Store applicant ID
+    await pool.query(
+        `UPDATE business_owner 
+         SET sumsub_applicant_id = $1, status = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [applicantId, 'pending', owner.id]
+    );
+    
+    // Generate access token
+    const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || 'basic-kyc';
+    
+    const tokenBody = {
+        userId: `owner_${owner.id}`,
+        levelName: levelName,
+        ttlInSecs: 600,
+        applicantIdentifiers: {
+            email: owner.email,
+        },
+    };
+    
+    const tokenResp = await sumsubFetch(
+        'POST',
+        '/resources/accessTokens/sdk',
+        tokenBody
+    );
+    
+    if (!tokenResp?.token) {
+        throw new Error('No token in Sumsub response');
+    }
+    
+    return {
+        applicantId,
+        accessToken: tokenResp.token,
+    };
+}
+
+/**
  * Get all business owners for a user
  */
 export async function getBusinessOwners(userId: number): Promise<Array<{
     id: number;
     fullName: string;
+    firstName: string;
+    lastName: string;
     email: string;
-    kycIdStatus: string;
+    role: string;
+    requiresVerification: boolean;
+    status: string;
+    sumsubApplicantId: string | null;
     kycUpdatedAt: Date | null;
     createdAt: Date;
 }>> {
     const pool = getPool();
     
     const result = await pool.query(
-        `SELECT id, full_name, email, kyc_id_status, kyc_updated_at, created_at
+        `SELECT 
+            id, full_name, email, role, requires_verification, status,
+            sumsub_applicant_id, kyc_updated_at, created_at
          FROM business_owner
          WHERE user_id = $1
          ORDER BY created_at ASC`,
         [userId]
     );
     
-    return result.rows.map(row => ({
-        id: row.id,
-        fullName: row.full_name,
-        email: row.email,
-        kycIdStatus: row.kyc_id_status,
-        kycUpdatedAt: row.kyc_updated_at,
-        createdAt: row.created_at,
-    }));
+    return result.rows.map(row => {
+        // Split full_name into first and last name
+        const nameParts = (row.full_name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        return {
+            id: row.id,
+            fullName: row.full_name,
+            firstName,
+            lastName,
+            email: row.email,
+            role: row.role,
+            requiresVerification: row.requires_verification,
+            status: row.status,
+            sumsubApplicantId: row.sumsub_applicant_id,
+            kycUpdatedAt: row.kyc_updated_at,
+            createdAt: row.created_at,
+        };
+    });
 }
 

@@ -4,7 +4,7 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
 /**
  * POST /api/bff/business-owners/[id]/resend
- * Resend verification invite for a business owner
+ * Resend verification email to a business owner
  */
 export async function POST(
   request: NextRequest,
@@ -65,9 +65,8 @@ export async function POST(
     }
     console.error(`[BFF business-owners resend] Exception:`, error);
     return NextResponse.json(
-      { ok: false, error: { code: 'BFF_EXCEPTION', message: error?.message || 'Failed to resend invite' } },
+      { ok: false, error: { code: 'BFF_EXCEPTION', message: error?.message || 'Failed to resend verification' } },
       { status: 500 }
     );
   }
 }
-

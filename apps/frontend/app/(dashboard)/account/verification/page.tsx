@@ -14,11 +14,15 @@ const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => (
 
 interface BusinessOwner {
     id: string | number;
-    first_name: string;
-    last_name: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
+    requiresVerification?: boolean;
     requires_verification?: boolean;
-    status: 'verified' | 'pending' | 'not_started';
+    status: 'verified' | 'pending' | 'not_started' | 'rejected';
 }
 
 export default function AccountVerificationPage() {
@@ -42,7 +46,7 @@ export default function AccountVerificationPage() {
     // Check if there are other owners requiring verification
     const pendingOwners = useMemo(() => {
         return owners.filter(owner => 
-            owner.requires_verification && 
+            (owner.requiresVerification || owner.requires_verification) && 
             owner.status !== 'verified'
         );
     }, [owners]);
@@ -167,7 +171,7 @@ export default function AccountVerificationPage() {
                                             >
                                                 <div className="flex-1">
                                                     <p className="text-sm font-medium text-neutral-900">
-                                                        {owner.first_name} {owner.last_name}
+                                                        {owner.fullName || owner.firstName || owner.first_name} {owner.lastName || owner.last_name || ''}
                                                     </p>
                                                     {owner.email && (
                                                         <p className="text-sm text-neutral-600 mt-1">
