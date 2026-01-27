@@ -5,157 +5,265 @@ import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck, CheckCircle2, AlertCircle, Lock, Mail } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
+interface BusinessOwner {
+    id: string | number;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    requires_verification?: boolean;
+    status: 'verified' | 'pending' | 'not_started';
+}
+
 export default function AccountVerificationPage() {
+    const router = useRouter();
+    
     // Fetch profile data for KYC status
     const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
     const { data: userData } = useSWR('/api/bff/auth/whoami', swrFetcher);
+    const { data: ownersData, mutate: mutateOwners } = useSWR('/api/bff/business-owners', swrFetcher);
 
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
+    const owners: BusinessOwner[] = ownersData?.data?.owners || [];
 
-    // Get KYC status
-    const kycStatus = useMemo(() => {
+    // Get primary user KYC status
+    const primaryKycStatus = useMemo(() => {
         const status = profile?.kyc_status || user?.kyc_status || 'pending';
-        return {
-            status: status === 'approved' || status === 'verified' ? 'verified' : 'pending',
-            label: status === 'approved' || status === 'verified' ? 'Verified' : 'Pending',
-            description: status === 'approved' || status === 'verified' 
-                ? 'Your identity has been verified. You have full access to all features.'
-                : 'Complete identity verification to activate your account and access all features.',
-        };
+        return status === 'approved' || status === 'verified' ? 'verified' : 'pending';
     }, [profile, user]);
 
+    // Check if there are other owners requiring verification
+    const pendingOwners = useMemo(() => {
+        return owners.filter(owner => 
+            owner.requires_verification && 
+            owner.status !== 'verified'
+        );
+    }, [owners]);
+
+    // Determine overall verification state
+    const verificationState = useMemo(() => {
+        if (primaryKycStatus === 'verified' && pendingOwners.length === 0) {
+            return 'verified';
+        } else if (primaryKycStatus === 'verified' && pendingOwners.length > 0) {
+            return 'pending_others';
+        } else {
+            return 'action_required';
+        }
+    }, [primaryKycStatus, pendingOwners]);
+
+    // Handle resend verification email
+    const handleResend = async (ownerId: string | number) => {
+        try {
+            const response = await fetch(`/api/bff/business-owners/${ownerId}/resend`, {
+                method: 'POST',
+            });
+            
+            if (response.ok) {
+                alert('Verification email resent successfully');
+            } else {
+                alert('Failed to resend verification email');
+            }
+        } catch (error) {
+            console.error('Error resending verification:', error);
+            alert('An error occurred');
+        }
+    };
+
     return (
-        <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+        <div className="w-full max-w-3xl">
             {/* Page Header */}
             <div className="mb-8">
-                <h1 className="text-[54px] font-medium leading-[1.2] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">
                     Identity Verification
                 </h1>
-                <p className="text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                    Verify your identity to activate your account and access all features
+                <p className="text-base text-neutral-600 leading-relaxed">
+                    {verificationState === 'verified' 
+                        ? 'Your identity has been verified'
+                        : verificationState === 'pending_others'
+                        ? 'Waiting for other directors to complete verification'
+                        : 'Complete verification to access your business address'
+                    }
                 </p>
             </div>
 
-            {/* KYC Status Card */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                                kycStatus.status === 'verified' ? 'bg-[#5AE094]' : 'bg-[#FEF3C7]'
-                            }`}>
-                                {kycStatus.status === 'verified' ? (
-                                    <CheckCircle2 className="w-8 h-8 text-[#024E40]" />
-                                ) : (
-                                    <ShieldCheck className="w-8 h-8 text-[#92400E]" />
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <h2 className="text-[32px] font-semibold leading-[1.2] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    {kycStatus.label}
-                                </h2>
-                                <Badge className={`w-fit ${
-                                    kycStatus.status === 'verified' 
-                                        ? 'bg-[#5AE094] text-[#024E40] border-0' 
-                                        : 'bg-[#FEF3C7] text-[#92400E] border-0'
-                                } px-4 py-1.5 text-[14px] font-medium`}>
-                                    {kycStatus.status === 'verified' ? 'Identity Verified' : 'Verification Required'}
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-[16px] font-normal leading-[1.4] text-[#666666] mb-6" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                        {kycStatus.description}
-                    </p>
-                </CardContent>
-            </Card>
-
-            {/* Why Verification is Required */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
-                    <div className="flex items-start gap-3 mb-4">
-                        <Info className="w-6 h-6 text-[#024E40] flex-shrink-0 mt-1" />
-                        <div className="flex-1">
-                            <h3 className="text-[20px] font-semibold leading-[1.2] text-[#1A1A1A] mb-3" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                Why Verification is Required
-                            </h3>
-                            <p className="text-[16px] font-normal leading-[1.4] text-[#666666] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                As a regulated virtual address service, we are required by UK law to verify the identity of all account holders. This helps us:
-                            </p>
-                            <ul className="list-disc list-inside space-y-2 text-[16px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                <li>Comply with Anti-Money Laundering (AML) regulations</li>
-                                <li>Prevent fraud and identity theft</li>
-                                <li>Protect your account and mail</li>
-                                <li>Meet Companies House and HMRC requirements</li>
-                            </ul>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* What Happens After Verification */}
-            <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white mb-6">
-                <CardContent className="p-8">
-                    <h3 className="text-[20px] font-semibold leading-[1.2] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                        What Happens After Verification
-                    </h3>
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-[#5AE094] flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-[16px] font-medium leading-[1.4] text-[#1A1A1A] mb-1" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Full Account Access
-                                </p>
-                                <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Access all features including mail forwarding, document scanning, and business address services
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-[#5AE094] flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-[16px] font-medium leading-[1.4] text-[#1A1A1A] mb-1" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Companies House Registration
-                                </p>
-                                <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Use your verified address for official business registrations
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-[#5AE094] flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-[16px] font-medium leading-[1.4] text-[#1A1A1A] mb-1" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Secure Mail Handling
-                                </p>
-                                <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Receive and manage sensitive business correspondence with confidence
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* KYC Widget */}
-            {kycStatus.status !== 'verified' && (
-                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white">
+            {/* STATE: VERIFIED */}
+            {verificationState === 'verified' && (
+                <Card className="rounded-2xl border border-neutral-200 bg-white">
                     <CardContent className="p-8">
-                        <h3 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Start Verification
-                        </h3>
-                        <p className="text-[16px] font-normal leading-[1.4] text-[#666666] mb-6" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Upload government-issued ID to verify your identity. The process typically takes 5-10 minutes.
-                        </p>
-                        <SumsubKycWidget />
+                        <div className="flex items-start gap-6">
+                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                    Verification Complete
+                                </h2>
+                                <p className="text-base text-neutral-600 leading-relaxed mb-6">
+                                    Your identity has been verified. You have full access to your business address and all account features.
+                                </p>
+                                <Button
+                                    onClick={() => router.push('/account/overview')}
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    View Account
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* STATE: PENDING - OTHER DIRECTORS/PSCs */}
+            {verificationState === 'pending_others' && (
+                <>
+                    {/* Primary User Verified */}
+                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-6">
+                                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                        Your Verification Complete
+                                    </h2>
+                                    <p className="text-base text-neutral-600 leading-relaxed">
+                                        You are verified. Waiting for other directors to complete their verification.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pending Owners */}
+                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-6 mb-6">
+                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                    <AlertCircle className="w-6 h-6 text-yellow-700" strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                        Pending Verification
+                                    </h2>
+                                    <p className="text-base text-neutral-600 leading-relaxed mb-6">
+                                        The following individuals must complete verification before your business address becomes available.
+                                    </p>
+                                    
+                                    {/* Owners List */}
+                                    <div className="space-y-3">
+                                        {pendingOwners.map((owner) => (
+                                            <div 
+                                                key={owner.id}
+                                                className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
+                                            >
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-neutral-900">
+                                                        {owner.first_name} {owner.last_name}
+                                                    </p>
+                                                    {owner.email && (
+                                                        <p className="text-sm text-neutral-600 mt-1">
+                                                            {owner.email}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Badge className="bg-yellow-100 text-yellow-800 border-0">
+                                                        {owner.status === 'pending' ? 'Pending' : 'Not Started'}
+                                                    </Badge>
+                                                    {owner.email && (
+                                                        <Button
+                                                            onClick={() => handleResend(owner.id)}
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-primary hover:text-primary/80"
+                                                        >
+                                                            <Mail className="w-4 h-4 mr-2" strokeWidth={2} />
+                                                            Resend
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Address Locked Notice */}
+                    <Card className="rounded-2xl border border-neutral-200 bg-white">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-6">
+                                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                                    <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                        Address Unavailable
+                                    </h2>
+                                    <p className="text-base text-neutral-600 leading-relaxed">
+                                        Your business address will be available once all required individuals complete verification.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
+            {/* STATE: ACTION REQUIRED */}
+            {verificationState === 'action_required' && (
+                <>
+                    {/* Verification Required Card */}
+                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-6 mb-6">
+                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                    <ShieldCheck className="w-6 h-6 text-yellow-700" strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                        Verification Required
+                                    </h2>
+                                    <p className="text-base text-neutral-600 leading-relaxed mb-6">
+                                        Complete identity verification to access your business address. This typically takes 5-10 minutes.
+                                    </p>
+                                    
+                                    {/* Sumsub Widget */}
+                                    <SumsubKycWidget />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Address Locked Notice */}
+                    <Card className="rounded-2xl border border-neutral-200 bg-white">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-6">
+                                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                                    <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                        Address Unavailable
+                                    </h2>
+                                    <p className="text-base text-neutral-600 leading-relaxed">
+                                        Your business address will be available once verification is complete.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
             )}
         </div>
     );
