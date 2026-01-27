@@ -76,122 +76,136 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
 
     return (
         <div className="bg-white">
-            <section className="py-16 lg:py-24">
+            <section className="py-12 lg:py-16">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
                     {/* Header */}
-                    <div className="mb-16">
+                    <div className="mb-12">
                         <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 leading-tight tracking-tight">
                             Pricing
                         </h1>
-                        <p className="mt-3 text-base text-neutral-600 leading-relaxed">
+                        <p className="mt-2 text-base text-neutral-600">
                             One plan. Everything included.
                         </p>
                     </div>
 
-                    {/* Two-column layout: Decision (left) + Understanding (right) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+                    {/* Pricing card container */}
+                    <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+                        {/* Brand accent line */}
+                        <div className="h-0.5 bg-primary"></div>
                         
-                        {/* LEFT COLUMN: Decision */}
-                        <div>
-                            {/* Plan name */}
-                            <h2 className="text-xl font-semibold text-neutral-900 mb-6">
-                                Virtual Mailbox — London
-                            </h2>
+                        <div className="p-8 lg:p-12">
+                            {/* Two-column layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+                                
+                                {/* LEFT: Decision */}
+                                <div>
+                                    <h2 className="text-xl font-semibold text-neutral-900 mb-6">
+                                        Virtual Mailbox — London
+                                    </h2>
 
-                            {/* Billing toggle */}
-                            <div role="group" aria-label="Billing period" className="bg-neutral-100 flex h-10 w-fit items-center rounded-lg p-1 mb-6">
-                                <button
-                                    onClick={() => setIsAnnual(false)}
-                                    className={`h-full rounded-md px-6 text-sm font-medium transition-all ${!isAnnual
-                                        ? 'bg-white text-neutral-900 shadow-sm'
-                                        : 'text-neutral-600 hover:text-neutral-900'
-                                        }`}
-                                >
-                                    Monthly
-                                </button>
-                                <button
-                                    onClick={() => setIsAnnual(true)}
-                                    className={`h-full rounded-md px-6 text-sm font-medium transition-all ${isAnnual
-                                        ? 'bg-white text-neutral-900 shadow-sm'
-                                        : 'text-neutral-600 hover:text-neutral-900'
-                                        }`}
-                                >
-                                    Annual
-                                </button>
-                            </div>
+                                    {/* Billing toggle */}
+                                    <div role="group" aria-label="Billing period" className="bg-neutral-100 flex h-10 w-fit items-center rounded-lg p-1 mb-8">
+                                        <button
+                                            onClick={() => setIsAnnual(false)}
+                                            className={`h-full rounded-md px-6 text-sm font-medium transition-all ${!isAnnual
+                                                ? 'bg-white text-neutral-900 shadow-sm'
+                                                : 'text-neutral-600 hover:text-neutral-900'
+                                                }`}
+                                        >
+                                            Monthly
+                                        </button>
+                                        <button
+                                            onClick={() => setIsAnnual(true)}
+                                            className={`h-full rounded-md px-6 text-sm font-medium transition-all ${isAnnual
+                                                ? 'bg-primary text-white shadow-sm'
+                                                : 'text-neutral-600 hover:text-neutral-900'
+                                                }`}
+                                        >
+                                            Annual
+                                        </button>
+                                    </div>
 
-                            {/* Error Display - inline, neutral */}
-                            {error && (
-                                <p className="text-sm text-neutral-600 mb-6">
-                                    Pricing temporarily unavailable. Please refresh.
-                                </p>
-                            )}
+                                    {/* Error Display */}
+                                    {error && (
+                                        <p className="text-sm text-neutral-600 mb-6">
+                                            Pricing temporarily unavailable. Please refresh.
+                                        </p>
+                                    )}
 
-                            {/* Price display */}
-                            <div className="mb-8">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl lg:text-6xl font-semibold text-neutral-900">
-                                        {isAnnual ? (annualPrice ? `£${annualPrice}` : '—') : (monthlyPrice ? `£${monthlyPrice}` : '—')}
-                                    </span>
-                                    <span className="text-xl text-neutral-600">
-                                        {isAnnual ? '/ year' : '/ month'}
-                                    </span>
+                                    {/* Price */}
+                                    <div className="mb-8">
+                                        <div className="flex items-baseline gap-2 mb-2">
+                                            <span className="text-5xl lg:text-6xl font-semibold text-neutral-900">
+                                                {isAnnual ? (annualPrice ? `£${annualPrice}` : '—') : (monthlyPrice ? `£${monthlyPrice}` : '—')}
+                                            </span>
+                                            <span className="text-xl text-neutral-600">
+                                                {isAnnual ? '/ year' : '/ month'}
+                                            </span>
+                                        </div>
+                                        <div className="inline-block border-b-2 border-primary/20 pb-0.5">
+                                            <p className="text-sm text-neutral-600">
+                                                {isAnnual ? '2 months free. Billed annually.' : 'Everything included. Cancel anytime.'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <Button
+                                        onClick={handleSelectPlan}
+                                        disabled={loading || !!error}
+                                        size="lg"
+                                        className="h-12 px-8 w-full sm:w-auto rounded-lg font-medium mb-2"
+                                    >
+                                        Get Started
+                                    </Button>
+
+                                    <p className="text-sm text-neutral-500">
+                                        {isAnnual 
+                                            ? monthlyEquivalent ? `Equivalent to £${monthlyEquivalent} / month` : ''
+                                            : 'Switch to annual anytime and save 2 months'
+                                        }
+                                    </p>
                                 </div>
-                                <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
-                                    {isAnnual ? '2 months free. Billed annually.' : 'Everything included. Cancel anytime.'}
-                                </p>
-                            </div>
 
-                            {/* Primary CTA */}
-                            <Button
-                                onClick={handleSelectPlan}
-                                disabled={loading || !!error}
-                                size="lg"
-                                className="h-12 px-8 w-full sm:w-auto rounded-lg font-medium mb-3"
-                            >
-                                Get Started
-                            </Button>
+                                {/* RIGHT: Understanding */}
+                                <div className="space-y-10">
+                                    {/* What's included */}
+                                    <div>
+                                        <h3 className="text-base font-semibold text-neutral-900 mb-4">
+                                            What's included
+                                        </h3>
+                                        <ul className="space-y-3">
+                                            {explanatoryFeatures.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-3 text-sm text-neutral-700 leading-relaxed">
+                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <p className="mt-4 text-xs text-neutral-500 leading-relaxed">
+                                            You only pay for physical forwarding when you need it.
+                                        </p>
+                                    </div>
 
-                            {/* Helper text below CTA */}
-                            <p className="text-sm text-neutral-500">
-                                {isAnnual 
-                                    ? monthlyEquivalent ? `Equivalent to £${monthlyEquivalent} / month.` : ''
-                                    : 'Switch to annual anytime and save 2 months.'
-                                }
-                            </p>
-                        </div>
-
-                        {/* RIGHT COLUMN: Understanding */}
-                        <div>
-                            {/* Explanatory block */}
-                            <div className="mb-10">
-                                <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-                                    Your mail. Your rules.
-                                </h3>
-                                <ul className="space-y-3 text-base text-neutral-600">
-                                    {explanatoryFeatures.map((feature, index) => (
-                                        <li key={index} className="leading-relaxed">
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <p className="mt-6 text-sm text-neutral-500 leading-relaxed">
-                                    You only pay for physical forwarding when you need it.
-                                </p>
-                            </div>
-
-                            {/* At a glance */}
-                            <div>
-                                <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-                                    At a glance
-                                </h3>
-                                <ul className="space-y-3 text-base text-neutral-600">
-                                    {atAGlanceFeatures.map((feature, index) => (
-                                        <li key={index} className="leading-relaxed">
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
+                                    {/* Compliance */}
+                                    <div>
+                                        <h3 className="text-base font-semibold text-neutral-900 mb-4">
+                                            Compliance & trust
+                                        </h3>
+                                        <ul className="space-y-3">
+                                            {atAGlanceFeatures.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-3 text-sm text-neutral-700 leading-relaxed">
+                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
