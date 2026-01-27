@@ -160,9 +160,7 @@ export default async function BlogPostPage({
   const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-      <HeaderWithNav />
-      <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
+    <div className="bg-[#F6F6F7]">
         {/* Main Content Area */}
         <div className="max-w-[1440px] mx-auto px-[80px] py-[80px]">
           <div className="flex gap-[40px] items-start">
@@ -344,8 +342,6 @@ export default async function BlogPostPage({
             </div>
           </div>
         </div>
-      </main>
-      <FooterWithNav />
     </div>
   );
 }

@@ -1,7 +1,4 @@
 import type { Metadata } from 'next';
-import { TermsPage } from '@/components/TermsPage';
-import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
-import { FooterWithNav } from '@/components/layout/FooterWithNav';
 import { TermsPageClient } from './TermsPageClient';
 
 export const metadata: Metadata = {
@@ -17,14 +14,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 export const revalidate = false;
 
+/**
+ * Terms Page
+ * 
+ * Uses shared (public) layout - no duplicate header/footer
+ */
 export default function Terms() {
-    return (
-        <div className="min-h-screen flex flex-col relative">
-            <HeaderWithNav />
-            <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
-                <TermsPageClient />
-            </main>
-            <FooterWithNav />
-        </div>
-    );
+    return <TermsPageClient />;
 }

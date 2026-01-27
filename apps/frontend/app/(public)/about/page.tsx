@@ -1,7 +1,5 @@
 import { Metadata } from 'next'
 import { generateMetadata, businessSchema } from '@/lib/seo'
-import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
-import { FooterWithNav } from '@/components/layout/FooterWithNav';
 
 export const metadata: Metadata = generateMetadata({
     title: 'About VirtualAddressHub - Professional London Business Address Service',
@@ -17,11 +15,14 @@ export const metadata: Metadata = generateMetadata({
     canonical: '/about',
 })
 
+/**
+ * About Page
+ * 
+ * Uses shared (public) layout - no duplicate header/footer
+ */
 export default function AboutPage() {
     return (
-        <div className="min-h-screen flex flex-col relative">
-            <HeaderWithNav />
-            <main id="main-content" role="main" className="flex-1 relative z-0 w-full bg-background">
+        <div className="bg-background">
                 <div className="container mx-auto px-4 py-16">
                     <article className="max-w-4xl mx-auto">
                         <header className="text-center mb-12">
@@ -182,8 +183,6 @@ export default function AboutPage() {
                         __html: JSON.stringify(businessSchema)
                     }}
                 />
-            </main>
-            <FooterWithNav />
         </div>
     )
 }

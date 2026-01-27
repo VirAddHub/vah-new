@@ -1,23 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { HelpPage } from '@/components/HelpPage';
 import { createNavigationHandler } from '@/lib/navigation-handler';
 
+/**
+ * Help Centre Client Component
+ * 
+ * Wiring only - no layout, no scroll manipulation
+ * Scroll behavior handled by Next.js App Router automatically
+ */
 export function HelpPageClient() {
     const router = useRouter();
-
-    // Scroll to top on mount
-    useEffect(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, []);
-
     const handleNavigate = createNavigationHandler(router);
 
     const handleGoBack = () => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        window.history.back();
+        router.back();
     };
 
     return <HelpPage onNavigate={handleNavigate} onGoBack={handleGoBack} />;

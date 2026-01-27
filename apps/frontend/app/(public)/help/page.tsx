@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
-import { FooterWithNav } from '@/components/layout/FooterWithNav';
 import { HelpPageClient } from './HelpPageClient';
 
 export const metadata: Metadata = {
@@ -13,14 +11,12 @@ export const metadata: Metadata = {
     },
 };
 
+/**
+ * Help Centre Page
+ * 
+ * Uses shared (public) layout - no duplicate header/footer
+ * Layout provides: HeaderWithNav, main wrapper, FooterWithNav
+ */
 export default function Help() {
-    return (
-        <div className="min-h-screen flex flex-col relative">
-            <HeaderWithNav />
-            <main id="main-content" role="main" className="flex-1 relative z-0 w-full">
-                <HelpPageClient />
-            </main>
-            <FooterWithNav />
-        </div>
-    );
+    return <HelpPageClient />;
 }
