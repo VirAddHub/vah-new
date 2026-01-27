@@ -15,7 +15,7 @@ export interface ButtonProps
 }
 
 const base =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none ring-offset-background"
+    "inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none ring-offset-background"
 
 const sizes: Record<Size, string> = {
     sm: "h-9 px-3 text-sm",

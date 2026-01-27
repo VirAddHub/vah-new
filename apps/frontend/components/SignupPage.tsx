@@ -37,31 +37,32 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
     // If signup is complete, show success message
     if (isComplete) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="min-h-screen bg-white flex items-center justify-center p-6">
                 <div className="w-full max-w-2xl text-center">
-                    <div className="mb-8">
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <div className="mb-12">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mb-4 text-primary">Welcome to VirtualAddressHub!</h1>
-                        <p className="text-lg text-muted-foreground mb-8">
-                            Your account has been created successfully. We've emailed you a secure link to your dashboard, where you'll complete
-                            identity verification (KYC) and start using your London address.
+                        <h1 className="text-4xl lg:text-5xl font-semibold text-neutral-900 mb-4 leading-tight tracking-tight">
+                            Welcome to VirtualAddressHub
+                        </h1>
+                        <p className="text-lg text-neutral-600 leading-relaxed max-w-xl mx-auto">
+                            Your account has been created successfully. We've emailed you a secure link to your dashboard, where you'll complete identity verification and start using your London address.
                         </p>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3 max-w-md mx-auto">
                         <button
                             onClick={() => onNavigate?.('home')}
-                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-md px-6"
+                            className="w-full flex items-center justify-center whitespace-nowrap text-base font-medium transition-colors bg-primary text-white hover:bg-primary/90 h-12 rounded-lg px-6"
                         >
                             Return to Home
                         </button>
                         <button
                             onClick={resetSignup}
-                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-12 rounded-md px-6"
+                            className="w-full flex items-center justify-center whitespace-nowrap text-base font-medium transition-colors border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 h-12 rounded-lg px-6"
                         >
                             Start Another Signup
                         </button>
