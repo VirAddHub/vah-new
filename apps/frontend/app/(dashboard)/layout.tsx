@@ -12,16 +12,16 @@ export default function DashboardLayout({
             <div className="min-h-screen flex flex-col bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                 <Navigation />
                 <div className="flex flex-1 pt-10 md:pt-16">
-                    {/* Sidebar - Fixed on desktop, overlay on mobile */}
+                    {/* Sidebar - Inline on desktop, overlay on mobile */}
                     <DashboardSidebar />
                     
-                    {/* Main Content - Add left margin on desktop to account for sidebar */}
+                    {/* Main Content - Flows beside sidebar on desktop */}
                     <main 
                         id="main-content" 
                         role="main" 
-                        className="flex-1 overflow-y-auto lg:ml-[220px]"
+                        className="flex-1 overflow-y-auto w-full lg:w-auto"
                     >
-                        <div className="w-full py-3 md:py-6 px-4 md:px-0">
+                        <div className="w-full py-3 md:py-6 px-4 md:px-6">
                             {children}
                         </div>
                     </main>

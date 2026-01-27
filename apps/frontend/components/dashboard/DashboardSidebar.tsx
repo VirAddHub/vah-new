@@ -102,7 +102,7 @@ export function DashboardSidebar() {
     const isMailActive = activeView === 'mail' || pathname === '/mail';
 
     const SidebarContent = () => (
-        <nav className="w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] fixed left-0 top-16 flex flex-col z-30">
+        <nav className="hidden lg:flex w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] sticky top-16 flex-col">
             <div className="flex-1 overflow-y-auto p-6">
                 {/* Main Navigation */}
                 <div className="mb-8">
