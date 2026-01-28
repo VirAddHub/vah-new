@@ -214,8 +214,9 @@ export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
 }> {
     const pool = getPool();
     
-    // Dynamic import of CommonJS module
-    const { sumsubFetch } = await import('../../lib/sumsub');
+    // Dynamic import of CommonJS module using require (TypeScript-friendly)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { sumsubFetch } = require('../../lib/sumsub');
     
     // Get owner details
     const ownerResult = await pool.query(

@@ -6,7 +6,7 @@
         "target": "ES2020",
         "rootDir": "src",
         "outDir": "dist/src",
-        "allowJs": false,
+        "allowJs": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
@@ -22,16 +22,18 @@
     "include": [
         "src/**/*.ts",
         "src/**/*.d.ts",
-        "src/**/*.tsx"
+        "src/**/*.tsx",
+        "lib/**/*.d.ts",
+        "src/types/**/*.d.ts"
     ],
     "exclude": [
         "node_modules",
         ".next",
         "dist",
         "app",
-        "lib/**",
+        "lib/**/*.js",
         "**/*.test.ts",
-        "**/*.js",
-        "**/*.mjs"
+        "src/**/*.js",
+        "src/**/*.mjs"
     ]
 }
