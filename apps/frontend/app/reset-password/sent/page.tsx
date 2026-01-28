@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering (this page passes function props)
-export const dynamic = 'force-dynamic';
-
 import { ForgotPasswordPage } from '@/components/ForgotPasswordPage';
 import { useRouter } from 'next/navigation';
 

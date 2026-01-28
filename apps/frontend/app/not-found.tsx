@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering (this page cannot be statically generated)
-export const dynamic = 'force-dynamic';
-
 import { NavigationProvider } from '@/contexts/NavigationContext';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { Navigation } from '@/components/Navigation';

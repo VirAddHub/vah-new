@@ -1,8 +1,5 @@
 "use client";
 
-// Force dynamic rendering (this page requires authentication)
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";

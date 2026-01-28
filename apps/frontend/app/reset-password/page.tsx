@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { ForgotPasswordPage } from '@/components/ForgotPasswordPage';
 import { useRouter } from 'next/navigation';
 

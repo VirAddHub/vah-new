@@ -1,8 +1,5 @@
 'use client';
 
-// Force dynamic rendering (this page passes function props and uses searchParams)
-export const dynamic = 'force-dynamic';
-
 import { ForgotPasswordPage } from '@/components/ForgotPasswordPage';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';

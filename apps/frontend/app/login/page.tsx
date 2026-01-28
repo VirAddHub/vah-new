@@ -1,8 +1,5 @@
 "use client";
 
-// Force dynamic rendering (this page uses searchParams and requires authentication)
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,7 +18,7 @@ function getLoginErrorMessage(backendError: string | undefined): { message: stri
     }
 
     const errorLower = backendError.toLowerCase().trim();
-    
+
     // Map technical error codes to friendly messages
     if (errorLower === 'invalid_credentials' || errorLower.includes('invalid') || errorLower.includes('credentials')) {
         return {
@@ -29,21 +26,21 @@ function getLoginErrorMessage(backendError: string | undefined): { message: stri
             showResetHint: true,
         };
     }
-    
+
     if (errorLower.includes('not found') || errorLower.includes('user not found')) {
         return {
             message: 'The email or password you entered is incorrect.',
             showResetHint: true,
         };
     }
-    
+
     if (errorLower.includes('password')) {
         return {
             message: 'The email or password you entered is incorrect.',
             showResetHint: true,
         };
     }
-    
+
     // For other errors, use a generic message
     return {
         message: 'We couldn\'t sign you in. Please check your details or reset your password.',
@@ -74,13 +71,13 @@ export default function LoginPage() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
+
         // Hard guard to prevent double-submit
         if (isSubmittingRef.current) {
             console.warn('[Login] Submit blocked - already submitting');
             return;
         }
-        
+
         isSubmittingRef.current = true;
         setError('');
         setShowResetHint(false);
