@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
