@@ -751,36 +751,34 @@ export default function MailInboxPage() {
     }, [forwardInlineNotice]);
 
     return (
-        <div className="w-full -mx-4 md:mx-0 px-4 md:px-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Page Header - Mobile-first: compact on mobile, full on desktop */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-6 gap-3 md:gap-0">
-                {/* Title - Mobile: "Mail (count)", Desktop: "Mail Inbox (count)" */}
-                <div className="flex items-center gap-2 md:gap-3">
-                    <h1 className="text-xl md:text-3xl font-semibold text-[#1A1A1A]">
+        <div className="w-full -mx-4 md:mx-0 px-4 md:px-0">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
+                <div className="flex items-baseline gap-3">
+                    <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 tracking-tight">
                         <span className="md:hidden">Mail</span>
-                        <span className="hidden md:inline">Mail Inbox</span>
+                        <span className="hidden md:inline">Mail</span>
                     </h1>
-                    <span className="text-sm text-[#666666]">({inboxCount})</span>
+                    <span className="text-sm text-neutral-500 font-normal">{inboxCount} items</span>
                 </div>
 
-                {/* Search Input - Full width on mobile, fixed width on desktop */}
-                <div className="relative w-full md:w-[300px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666666]" />
+                {/* Search */}
+                <div className="relative w-full md:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                     <Input
                         type="text"
                         placeholder="Search mail..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-9 rounded-md bg-[#F9F9F9] border-0 text-sm focus-visible:ring-1 focus-visible:ring-[#206039]"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        className="pl-9 h-10 rounded-lg border-neutral-200 bg-white text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                     />
                 </div>
             </div>
 
             {/* Tag Filter Indicator */}
             {selectedTagFilter && activeTab === 'inbox' && (
-                <div className="mb-4 flex items-center gap-2">
-                    <span className="text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50 border border-neutral-200">
+                    <span className="text-sm text-neutral-600 font-medium">
                         Filtered by:
                     </span>
                     <TagDot tag={selectedTagFilter} label={getTagLabel(selectedTagFilter)} />
@@ -788,72 +786,68 @@ export default function MailInboxPage() {
                         variant="ghost"
                         size="sm"
                         onClick={clearTagFilter}
-                        className="h-7 px-2 text-xs text-[#666666] hover:text-[#1A1A1A]"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        className="h-7 px-2 text-xs text-neutral-600 hover:text-neutral-900 ml-auto"
                     >
-                        <X className="h-3 w-3 mr-1" />
-                        Clear filter
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Clear
                     </Button>
                 </div>
             )}
 
-            {/* Horizontal Tabs - Sticky segmented control on mobile, regular tabs on desktop */}
+            {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(v) => {
                 setActiveTab(v as 'inbox' | 'archived' | 'tags');
                 // Clear tag filter when switching tabs
                 if (v !== 'inbox') {
                     setSelectedTagFilter(null);
                 }
-            }} className="mb-4 md:mb-6">
-                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-2 md:pb-0 border-b border-[#E5E7EB] md:border-b">
+            }} className="mb-6 md:mb-8">
+                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-3 md:pb-0">
                     <TabsList className={cn(
                         "bg-transparent border-b-0 rounded-none p-0 h-auto",
-                        "md:border-b md:border-[#E5E7EB]"
+                        "md:border-b md:border-neutral-200"
                     )}>
                         <TabsTrigger
                             value="inbox"
                             className={cn(
-                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
                                 "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
-                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
-                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
+                                "text-neutral-600 hover:text-neutral-900",
                                 "transition-all"
                             )}
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             <span className="md:hidden">Inbox</span>
-                            <span className="hidden md:inline">Inbox ({inboxCount})</span>
+                            <span className="hidden md:inline">Inbox · {inboxCount}</span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="archived"
                             className={cn(
-                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
                                 "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
-                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
-                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
+                                "text-neutral-600 hover:text-neutral-900",
                                 "transition-all"
                             )}
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             <span className="md:hidden">Archived</span>
-                            <span className="hidden md:inline">Archived ({archivedCount})</span>
+                            <span className="hidden md:inline">Archived · {archivedCount}</span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="tags"
                             className={cn(
-                                "flex-1 md:flex-none px-3 md:px-4 py-2.5 md:py-2 text-sm font-medium",
+                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
                                 "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-[#206039] data-[state=active]:text-white",
-                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-[#024E40] md:data-[state=active]:border-[#206039]",
-                                "text-[#666666] hover:text-[#1A1A1A] md:hover:text-[#1A1A1A]",
+                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
+                                "text-neutral-600 hover:text-neutral-900",
                                 "transition-all"
                             )}
-                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                         >
                             <span className="md:hidden">Tags</span>
-                            <span className="hidden md:inline">Tags ({tagsCount})</span>
+                            <span className="hidden md:inline">Tags · {tagsCount}</span>
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -890,23 +884,28 @@ export default function MailInboxPage() {
                 </div>
             ) : (
                 /* Mail List View */
-                <div className="w-full space-y-3">
+                <div className="w-full space-y-2">
                     {mailLoading ? (
-                        <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Loading mail...
+                        <div className="py-16 text-center">
+                            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent mb-4"></div>
+                            <p className="text-sm text-neutral-600">Loading mail...</p>
                         </div>
                     ) : mailError ? (
-                        <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Failed to load mail. Please try again.
+                        <div className="py-16 text-center">
+                            <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" strokeWidth={1.5} />
+                            <p className="text-sm text-neutral-600 font-medium mb-1">Failed to load mail</p>
+                            <p className="text-xs text-neutral-500">Please refresh the page to try again</p>
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="py-12 text-center text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            No mail items found.
+                        <div className="py-16 text-center">
+                            <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" strokeWidth={1.5} />
+                            <p className="text-sm text-neutral-600 font-medium mb-1">No mail items</p>
+                            <p className="text-xs text-neutral-500">Your mail will appear here when it arrives</p>
                         </div>
                     ) : activeTab === 'tags' && groupedByTag && groupedByTag.length > 0 ? (
                         /* Grouped Tags View */
-                        <div className="space-y-8">
-                            {/* Manage Tags Button - Hidden on mobile */}
+                        <div className="space-y-6">
+                            {/* Manage Tags Button */}
                             <div className="hidden md:flex justify-end">
                                 <Button
                                     variant="outline"
@@ -927,36 +926,38 @@ export default function MailInboxPage() {
                                 const colorClass = getTagColor(tag);
                                 
                                 return (
-                                <div key={tag} className="space-y-4">
-                                    {/* Tag Header - Clickable to filter inbox, collapsible */}
-                                    <div className="sticky top-0 z-10 bg-white pb-2 border-b border-[#E5E7EB]">
-                                        <div className="flex items-center gap-2 -mx-2 px-2 py-1">
+                                <div key={tag} className="space-y-3">
+                                    {/* Tag Header */}
+                                    <div className="sticky top-0 z-10 bg-white py-2 border-b border-neutral-200">
+                                        <div className="flex items-center gap-3">
                                             <button
                                                 onClick={(e) => handleCollapseToggle(tag, e)}
-                                                className="flex-shrink-0 p-1 hover:bg-[#F9F9F9] rounded transition-colors"
+                                                className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors"
                                                 aria-label={isCollapsed ? "Expand" : "Collapse"}
                                             >
                                                 {isCollapsed ? (
-                                                    <ChevronRight className="h-4 w-4 text-[#666666]" />
+                                                    <ChevronRight className="h-4 w-4 text-neutral-500" strokeWidth={2} />
                                                 ) : (
-                                                    <ChevronDown className="h-4 w-4 text-[#666666]" />
+                                                    <ChevronDown className="h-4 w-4 text-neutral-500" strokeWidth={2} />
                                                 )}
                                             </button>
                                             <button
                                                 onClick={() => handleTagHeaderClick(tag)}
-                                                className="flex-1 flex items-center gap-2 hover:bg-[#F9F9F9] -mx-1 px-1 py-1 rounded transition-colors group text-left"
+                                                className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors group text-left"
                                             >
                                                 <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
-                                                <h2 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                    {getTagLabel(tag)}
-                                                    <span className="text-sm font-normal text-[#666666]">({count})</span>
-                                                </h2>
+                                                <div className="flex items-baseline gap-2">
+                                                    <h2 className="text-base font-semibold text-neutral-900 tracking-tight">
+                                                        {getTagLabel(tag)}
+                                                    </h2>
+                                                    <span className="text-sm font-normal text-neutral-500">{count} items</span>
+                                                </div>
                                             </button>
                                         </div>
                                     </div>
-                                    {/* Mail Items for this Tag - Collapsible */}
+                                    {/* Mail Items for this Tag */}
                                     {!isCollapsed && (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 pb-6">
                                             {items.map((item) => {
                                             const Icon = getMailIcon(item);
                                             const senderName = getSenderName(item);
@@ -968,62 +969,60 @@ export default function MailInboxPage() {
                                                     key={item.id}
                                                     onClick={() => handleMailClick(item)}
                                                     className={cn(
-                                                        "flex items-center gap-3 md:gap-4 rounded-lg border px-4 md:px-6 py-3 md:py-4",
-                                                        "bg-white hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-all",
-                                                        "border-[#E5E7EB] hover:border-[#206039]/30",
-                                                        "cursor-pointer min-h-[48px] md:min-h-0"
+                                                        "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
+                                                        "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
+                                                        "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
+                                                        "cursor-pointer min-h-[56px] md:min-h-0"
                                                     )}
                                                 >
-                                                    {/* Mobile: Icon + Sender/Tag + Date only */}
+                                                    {/* Mobile: Icon + Sender + Date */}
                                                     <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
                                                         <div className="flex-shrink-0">
                                                             <Icon className={cn(
                                                                 "h-5 w-5",
-                                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
-                                                            )} />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className={cn(
-                                                                    "text-base leading-5 truncate",
-                                                                    isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
-                                                                )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                                    {senderName}
-                                                                </p>
-                                                                {item.tag && (
-                                                                    <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs text-[#999999] whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                            {date}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Desktop: Full layout with actions */}
-                                                    <div className="hidden md:flex items-center gap-5 flex-1 min-w-0">
-                                                        <div className="flex-shrink-0">
-                                                            <Icon className={cn(
-                                                                "h-6 w-6",
-                                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
+                                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
                                                             )} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className={cn(
-                                                                "text-lg leading-6 truncate",
-                                                                isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
-                                                            )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                "text-[15px] leading-tight truncate",
+                                                                isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                                            )}>
+                                                                {senderName}
+                                                            </p>
+                                                        </div>
+                                                        <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
+                                                            {date}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Desktop: Sender/Subject + Date */}
+                                                    <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
+                                                        <div className="flex-shrink-0">
+                                                            <Icon className={cn(
+                                                                "h-5 w-5",
+                                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                            )} strokeWidth={2} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={cn(
+                                                                "text-[15px] leading-tight truncate mb-0.5",
+                                                                isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                            )}>
                                                                 {senderName}
                                                             </p>
                                                             {item.subject && item.subject !== senderName && (
-                                                                <p className="text-sm text-[#999999] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                <p className="text-sm text-neutral-500 truncate leading-tight">
                                                                     {item.subject}
                                                                 </p>
                                                             )}
                                                         </div>
+                                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
+                                                            {date}
+                                                        </span>
                                                     </div>
                                                     
-                                                    {/* Desktop: Tag Selector + Archive + Date */}
+                                                    {/* Desktop: Hidden section for Tags view (no actions needed) */}
                                                     <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                         <CreatableTagSelect
                                                             value={item.tag ?? null}
@@ -1055,7 +1054,7 @@ export default function MailInboxPage() {
                             })}
                         </div>
                     ) : (
-                        /* Flat List View (Inbox/Archived) - Mobile-first design */
+                        /* Flat List View (Inbox/Archived) */
                         filteredItems.map((item) => {
                             const Icon = getMailIcon(item);
                             const senderName = getSenderName(item);
@@ -1067,26 +1066,26 @@ export default function MailInboxPage() {
                                     key={item.id}
                                     onClick={() => handleMailClick(item)}
                                     className={cn(
-                                        "flex items-center gap-3 md:gap-4 rounded-lg border px-4 md:px-6 py-3 md:py-4",
-                                        "bg-white hover:bg-[#F9F9F9] active:bg-[#F0F0F0] transition-all",
-                                        "border-[#E5E7EB] hover:border-[#206039]/30",
-                                        "cursor-pointer min-h-[48px] md:min-h-0"
+                                        "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
+                                        "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
+                                        "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
+                                        "cursor-pointer min-h-[56px] md:min-h-0"
                                     )}
                                 >
-                                    {/* Mobile: Icon + Sender/Tag + Date only */}
+                                    {/* Mobile: Icon + Sender/Tag + Date */}
                                     <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
                                                 "h-5 w-5",
-                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
+                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
                                             )} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <p className={cn(
-                                                    "text-base leading-5 truncate",
-                                                    isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
-                                                )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                    "text-[15px] leading-tight truncate",
+                                                    isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                                )}>
                                                     {senderName}
                                                 </p>
                                                 {item.tag && (
@@ -1094,37 +1093,36 @@ export default function MailInboxPage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="text-xs text-[#999999] whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
                                             {date}
                                         </span>
                                     </div>
 
-                                    {/* Desktop: Full layout with actions */}
-                                    <div className="hidden md:flex items-center gap-5 flex-1 min-w-0">
+                                    {/* Desktop: Sender/Subject */}
+                                    <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
-                                                "h-6 w-6",
-                                                isRead ? 'text-[#999999]' : 'text-[#1A1A1A]'
-                                            )} />
+                                                "h-5 w-5",
+                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                            )} strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className={cn(
-                                                "text-lg leading-6 truncate",
-                                                isRead ? 'font-normal text-[#666666]' : 'font-semibold text-[#1A1A1A]'
-                                            )} style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                "text-[15px] leading-tight truncate mb-0.5",
+                                                isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                            )}>
                                                 {senderName}
                                             </p>
                                             {item.subject && item.subject !== senderName && (
-                                                <p className="text-sm text-[#999999] mt-0.5 truncate" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                <p className="text-sm text-neutral-500 truncate leading-tight">
                                                     {item.subject}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
                                     
-                                    {/* Desktop: Tag Selector + Archive + Date */}
-                                    <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                        {/* Tag Selector */}
+                                    {/* Desktop: Tag + Archive + Date */}
+                                    <div className="hidden md:flex items-center gap-4 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                         <CreatableTagSelect
                                             value={item.tag ?? null}
                                             availableTags={availableTags}
@@ -1132,20 +1130,17 @@ export default function MailInboxPage() {
                                             getTagLabel={getTagLabel}
                                         />
                                         
-                                        {/* Archive Button */}
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={(e) => handleArchive(item, e)}
-                                            className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                            className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
                                         >
-                                            <Archive className="h-4 w-4 mr-1.5" />
+                                            <Archive className="h-4 w-4 mr-1.5" strokeWidth={2} />
                                             Archive
                                         </Button>
                                         
-                                        {/* Date */}
-                                        <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
                                             {date}
                                         </span>
                                     </div>
