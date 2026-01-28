@@ -2,6 +2,9 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { Navigation } from '@/components/Navigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
 
+// Force dynamic rendering for all dashboard pages (they require authentication)
+export const dynamic = 'force-dynamic';
+
 export default function DashboardLayout({
     children,
 }: {
