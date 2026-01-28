@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering (this page passes function props and requires authentication)
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';

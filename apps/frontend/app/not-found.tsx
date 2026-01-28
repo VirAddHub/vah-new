@@ -1,12 +1,22 @@
+'use client';
+
+// Force dynamic rendering (this page cannot be statically generated)
+export const dynamic = 'force-dynamic';
+
 import { NavigationProvider } from '@/contexts/NavigationContext';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { useRouter } from 'next/navigation';
 
 export default function NotFound() {
+  const router = useRouter();
+  
   const handleNavigate = (page: string) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = `/${page === 'home' ? '' : page}`;
+    if (page === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
     }
   };
 

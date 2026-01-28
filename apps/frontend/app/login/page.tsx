@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering (this page uses searchParams and requires authentication)
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
