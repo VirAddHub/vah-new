@@ -93,13 +93,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-5xl font-semibold text-neutral-900">£9.99</span>
                                     <span className="text-lg text-neutral-500">/ month</span>
-                                </div>
+                            </div>
                                 <div className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
                                     <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                     <span>Everything included</span>
-                                </div>
+                            </div>
                             </div>
 
                             {/* CTA */}
@@ -120,13 +120,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         {/* Image */}
                         <div className="relative flex items-center justify-center lg:justify-end">
                             <Image
-                                src="/figma/hero-photo.png"
+                                    src="/figma/hero-photo.png"
                                 alt=""
                                 width={520}
                                 height={400}
                                 priority
                                 className="w-full max-w-[520px] h-auto rounded-2xl"
-                            />
+                                />
                         </div>
                     </div>
                 </div>
@@ -153,23 +153,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </h2>
 
                             <ul className="mt-8 space-y-6">
-                                {[
-                                    {
-                                        title: "Registered Office And Director's Service Address",
-                                        description: "Use our Central London address for Companies House and HMRC filings.",
-                                    },
-                                    {
-                                        title: "Professional Business Address",
+                                    {[
+                                        {
+                                            title: "Registered Office And Director's Service Address",
+                                            description: "Use our Central London address for Companies House and HMRC filings.",
+                                        },
+                                        {
+                                            title: "Professional Business Address",
                                         description: "Use the same address on invoices, websites, contracts, and correspondence.",
-                                    },
-                                    {
-                                        title: "Same Day Mail Scanning And Instant Alerts",
+                                        },
+                                        {
+                                            title: "Same Day Mail Scanning And Instant Alerts",
                                         description: "Letters are scanned the day they arrive and uploaded to your secure dashboard.",
-                                    },
-                                    {
-                                        title: "Secure Online Dashboard",
+                                        },
+                                        {
+                                            title: "Secure Online Dashboard",
                                         description: "View, download, and organise your mail in one place with full control.",
-                                    },
+                                        },
                                     {
                                         title: "UK Based Support",
                                         description: "Support provided during standard business hours.",
@@ -178,20 +178,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         title: "Privacy Protection",
                                         description: "Keep your home address off public records and business documents.",
                                     },
-                                ].map((item) => (
-                                    <li key={item.title} className="flex items-start gap-3">
+                                    ].map((item) => (
+                                        <li key={item.title} className="flex items-start gap-3">
                                         <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                        <div>
+                                            <div>
                                             <p className="font-medium text-neutral-900 leading-snug">
                                                 {item.title}
                                             </p>
                                             <p className="mt-1 text-sm text-neutral-600 leading-relaxed">
                                                 {item.description}
                                             </p>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
                         </div>
                     </div>
                 </div>
@@ -413,11 +413,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="relative overflow-hidden rounded-2xl bg-primary p-12 lg:p-16">
                         <div className="max-w-2xl">
                             <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
-                                Get your London Business Address Today
-                            </h2>
+                                        Get your London Business Address Today
+                                    </h2>
                             <p className="mt-4 text-lg text-white/90">
                                 Everything included for £9.99 per month.
-                            </p>
+                                    </p>
                             <div className="mt-8">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}

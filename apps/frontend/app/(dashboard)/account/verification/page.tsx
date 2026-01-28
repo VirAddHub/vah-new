@@ -100,7 +100,7 @@ export default function AccountVerificationPage() {
             {/* STATE: VERIFIED */}
             {verificationState === 'verified' && (
                 <Card className="rounded-2xl border border-neutral-200 bg-white">
-                    <CardContent className="p-8">
+                <CardContent className="p-8">
                         <div className="flex items-start gap-6">
                             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                 <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
@@ -121,8 +121,8 @@ export default function AccountVerificationPage() {
                                 </Button>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                </CardContent>
+            </Card>
             )}
 
             {/* STATE: PENDING - OTHER DIRECTORS/PSCs */}
@@ -130,26 +130,26 @@ export default function AccountVerificationPage() {
                 <>
                     {/* Primary User Verified */}
                     <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                        <CardContent className="p-8">
+                <CardContent className="p-8">
                             <div className="flex items-start gap-6">
                                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                     <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
                                 </div>
-                                <div className="flex-1">
+                        <div className="flex-1">
                                     <h2 className="text-xl font-semibold text-neutral-900 mb-2">
                                         Your Verification Complete
                                     </h2>
                                     <p className="text-base text-neutral-600 leading-relaxed">
                                         You are verified. Waiting for other directors to complete their verification.
                                     </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
                     {/* Pending Owners */}
                     <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                        <CardContent className="p-8">
+                <CardContent className="p-8">
                             <div className="flex items-start gap-6 mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <AlertCircle className="w-6 h-6 text-yellow-700" strokeWidth={2} />
@@ -209,7 +209,7 @@ export default function AccountVerificationPage() {
                             <div className="flex items-start gap-6">
                                 <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
                                     <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
-                                </div>
+                        </div>
                                 <div className="flex-1">
                                     <h2 className="text-xl font-semibold text-neutral-900 mb-2">
                                         Address Unavailable
@@ -233,7 +233,7 @@ export default function AccountVerificationPage() {
                             <div className="flex items-start gap-6 mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <ShieldCheck className="w-6 h-6 text-yellow-700" strokeWidth={2} />
-                                </div>
+                        </div>
                                 <div className="flex-1">
                                     <h2 className="text-xl font-semibold text-neutral-900 mb-2">
                                         Verification Required
@@ -244,14 +244,14 @@ export default function AccountVerificationPage() {
                                     
                                     {/* Sumsub Widget */}
                                     <SumsubKycWidget />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
                     {/* Address Locked Notice */}
                     <Card className="rounded-2xl border border-neutral-200 bg-white">
-                        <CardContent className="p-8">
+                    <CardContent className="p-8">
                             <div className="flex items-start gap-6">
                                 <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
                                     <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
@@ -262,11 +262,11 @@ export default function AccountVerificationPage() {
                                     </h2>
                                     <p className="text-base text-neutral-600 leading-relaxed">
                                         Your business address will be available once verification is complete.
-                                    </p>
+                        </p>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                    </CardContent>
+                </Card>
                 </>
             )}
         </div>

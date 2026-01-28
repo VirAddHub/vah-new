@@ -499,17 +499,17 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                 {sidebarCategories.map((category) => {
                   const isActive = category === activeCategory;
                   return (
-                    <button
+                      <button
                       key={category}
-                      onClick={() => setActiveCategory(category)}
+                        onClick={() => setActiveCategory(category)}
                       className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                        isActive 
+                          isActive 
                           ? 'bg-white text-neutral-900 shadow-sm' 
                           : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
-                      }`}
-                    >
-                      {category}
-                    </button>
+                        }`}
+                      >
+                        {category}
+                      </button>
                   );
                 })}
               </nav>
@@ -519,47 +519,47 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           {/* Right Column - FAQ Accordions */}
           <div>
             <h2 className="text-2xl font-semibold text-neutral-900 mb-6">
-              {activeCategory}
-            </h2>
+                  {activeCategory}
+                </h2>
             <div className="space-y-3">
-              {activeFAQs.map((f) => {
-                const isOpen = openItems.has(f.id);
-                return (
-                  <div
-                    key={f.id}
+                  {activeFAQs.map((f) => {
+                    const isOpen = openItems.has(f.id);
+                    return (
+                      <div
+                        key={f.id}
                     className={`border border-neutral-200 rounded-lg overflow-hidden transition-colors ${
                       isOpen ? 'bg-neutral-50' : 'bg-white'
-                    }`}
-                  >
-                    <button
-                      onClick={() => toggleItem(f.id)}
+                        }`}
+                      >
+                        <button
+                          onClick={() => toggleItem(f.id)}
                       className="w-full flex items-center justify-between p-4 lg:p-5 text-left group"
-                    >
+                        >
                       <span className="text-sm lg:text-base font-medium text-neutral-900 leading-snug flex-1 pr-4">
-                        {f.q}
-                      </span>
+                            {f.q}
+                          </span>
                       <div className="flex-shrink-0">
-                        {isOpen ? (
+                            {isOpen ? (
                           <Minus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
-                        ) : (
+                            ) : (
                           <Plus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
-                        )}
-                      </div>
-                    </button>
-                    {isOpen && (
+                            )}
+                          </div>
+                        </button>
+                        {isOpen && (
                       <div className="px-4 lg:px-5 pb-4 lg:pb-5">
                         <div className="text-sm lg:text-base text-neutral-600 leading-relaxed">
-                          {typeof f.a === 'string' ? (
+                              {typeof f.a === 'string' ? (
                             <div className="whitespace-pre-line">{f.a}</div>
-                          ) : (
+                              ) : (
                             <div>{f.a}</div>
-                          )}
-                        </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
             </div>
           </div>
         </div>

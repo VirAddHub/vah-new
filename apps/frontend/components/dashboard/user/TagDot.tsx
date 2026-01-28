@@ -51,7 +51,7 @@ export function TagDot({ tag, label, className, showDot = true }: TagDotProps) {
       )}
       <span className={cn(
         "text-sm font-normal",
-        isUntagged ? "text-[#999999]" : "text-[#666666]"
+        isUntagged ? "text-neutral-400" : "text-neutral-600"
       )}>
         {displayLabel}
       </span>

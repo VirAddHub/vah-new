@@ -138,120 +138,122 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Request Mail Forwarding</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-150">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
+          <CardTitle className="text-xl font-semibold text-neutral-900">Request Mail Forwarding</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 transition-all duration-150">
+            <X className="h-4 w-4" strokeWidth={2} />
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-sm text-gray-700 mb-1">Mail Item Details</h4>
-            <p className="text-sm text-gray-600">
-              <strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Received:</strong> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}
-            </p>
+        <CardContent className="space-y-6">
+          <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+            <h4 className="font-medium text-sm text-neutral-700 mb-3">Mail Item</h4>
+            <div className="space-y-2 text-sm text-neutral-600">
+              <p>
+                <span className="font-medium text-neutral-900">Document:</span> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}
+              </p>
+              <p>
+                <span className="font-medium text-neutral-900">Source:</span> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}
+              </p>
+              <p>
+                <span className="font-medium text-neutral-900">Received:</span> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}
+              </p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="p-3 bg-primary-50 rounded-lg">
-              <h4 className="font-medium text-sm text-primary-700 mb-2">Forwarding Address (from Profile)</h4>
-              <div className="text-sm text-primary-800 whitespace-pre-line">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <h4 className="font-medium text-sm text-neutral-900 mb-3">Forwarding Address</h4>
+              <div className="text-sm text-neutral-700 whitespace-pre-line mb-3">
                 {forwardingAddress || "No forwarding address configured. Please add one in Profile settings."}
               </div>
-              <p className="text-xs text-primary-600 mt-1">
+              <p className="text-xs text-neutral-500">
                 This address will be used automatically. To change it, update your Profile settings.
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="to_name">Recipient Name *</Label>
-              <Input
-                id="to_name"
-                value={formData.to_name}
-                onChange={(e) => handleChange("to_name", e.target.value)}
-                placeholder="Full name"
-                required
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="address1">Address Line 1 *</Label>
-              <Input
-                id="address1"
-                value={formData.address1}
-                onChange={(e) => handleChange("address1", e.target.value)}
-                placeholder="Street address, house number"
-                required
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="address2">Address Line 2</Label>
-              <Input
-                id="address2"
-                value={formData.address2}
-                onChange={(e) => handleChange("address2", e.target.value)}
-                placeholder="Apartment, suite, unit, etc. (optional)"
-                disabled
-                className="bg-gray-50"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="to_name" className="text-sm font-medium text-neutral-700">Recipient Name *</Label>
                 <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleChange("city", e.target.value)}
-                  placeholder="City"
+                  id="to_name"
+                  value={formData.to_name}
+                  onChange={(e) => handleChange("to_name", e.target.value)}
+                  placeholder="Full name"
                   required
                   disabled
-                  className="bg-gray-50"
+                  className="bg-neutral-50 mt-1.5"
                 />
               </div>
+
               <div>
-                <Label htmlFor="state">State/Province</Label>
+                <Label htmlFor="address1" className="text-sm font-medium text-neutral-700">Address Line 1 *</Label>
                 <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) => handleChange("state", e.target.value)}
-                  placeholder="State or province"
-                  disabled
-                  className="bg-gray-50"
-                />
-              </div>
-              <div>
-                <Label htmlFor="postal">Postal Code *</Label>
-                <Input
-                  id="postal"
-                  value={formData.postal}
-                  onChange={(e) => handleChange("postal", e.target.value)}
-                  placeholder="Postal code"
+                  id="address1"
+                  value={formData.address1}
+                  onChange={(e) => handleChange("address1", e.target.value)}
+                  placeholder="Street address, house number"
                   required
                   disabled
-                  className="bg-gray-50"
+                  className="bg-neutral-50 mt-1.5"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="country">Country *</Label>
+                <Label htmlFor="address2" className="text-sm font-medium text-neutral-700">Address Line 2</Label>
+                <Input
+                  id="address2"
+                  value={formData.address2}
+                  onChange={(e) => handleChange("address2", e.target.value)}
+                  placeholder="Apartment, suite, unit, etc. (optional)"
+                  disabled
+                  className="bg-neutral-50 mt-1.5"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="city" className="text-sm font-medium text-neutral-700">City *</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => handleChange("city", e.target.value)}
+                    placeholder="City"
+                    required
+                    disabled
+                    className="bg-neutral-50 mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state" className="text-sm font-medium text-neutral-700">State/Province</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) => handleChange("state", e.target.value)}
+                    placeholder="State or province"
+                    disabled
+                    className="bg-neutral-50 mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postal" className="text-sm font-medium text-neutral-700">Postal Code *</Label>
+                  <Input
+                    id="postal"
+                    value={formData.postal}
+                    onChange={(e) => handleChange("postal", e.target.value)}
+                    placeholder="Postal code"
+                    required
+                    disabled
+                    className="bg-neutral-50 mt-1.5"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="country" className="text-sm font-medium text-neutral-700">Country *</Label>
                 <Select value={formData.country} onValueChange={(value) => handleChange("country", value)} disabled>
-                  <SelectTrigger className="bg-gray-50">
+                  <SelectTrigger className="bg-neutral-50 mt-1.5">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,23 +274,23 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
               </div>
             </div>
 
-            <div className="bg-primary-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-sm text-foreground mb-3">Forwarding cost</h4>
-              <div className="space-y-2 text-sm text-foreground">
+            <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+              <h4 className="font-semibold text-sm text-neutral-900 mb-3">Forwarding Cost</h4>
+              <div className="space-y-2 text-sm text-neutral-600">
                 <p>
-                  <strong>HMRC & Companies House:</strong> <span className="text-primary-700 font-medium">Free</span>
+                  <span className="font-medium text-neutral-900">HMRC & Companies House:</span> <span className="text-primary font-medium">Free</span>
                 </p>
                 <p>
-                  <strong>All other mail:</strong> <span className="text-primary-700 font-medium">£2 per item</span> (added to your monthly invoice)
+                  <span className="font-medium text-neutral-900">All other mail:</span> <span className="text-primary font-medium">£2 per item</span> (added to your monthly invoice)
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <div className="flex justify-end space-x-3 pt-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="transition-all duration-150">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="transition-all duration-150">
                 {isSubmitting ? "Creating Request..." : "Create Forwarding Request"}
               </Button>
             </div>

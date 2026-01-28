@@ -232,7 +232,7 @@ router.post('/verify/start', async (req: Request, res: Response) => {
             return res.status(400).json({
                 ok: false,
                 error: 'validation_error',
-                message: 'Token is required',
+                    message: 'Token is required',
             });
         }
         
@@ -242,7 +242,7 @@ router.post('/verify/start', async (req: Request, res: Response) => {
             return res.status(400).json({
                 ok: false,
                 error: 'invalid_token',
-                message: 'Invalid or expired token',
+                    message: 'Invalid or expired token',
             });
         }
         

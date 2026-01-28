@@ -45,34 +45,35 @@ export function MailDetail({
   const title = item.sender_name || item.subject || item.tag || 'Mail';
 
   return (
-    <div className="bg-white w-full">
-      <div className="flex flex-col gap-6">
+    <div className="bg-background w-full">
+      <div className="flex flex-col gap-8">
         {/* Back to Inbox button */}
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-[#4A5565] hover:text-[#101828] transition-colors text-sm font-normal w-fit"
+          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           Back to Inbox
         </button>
 
         {/* Mail title */}
-        <h2 
-          className="text-2xl font-semibold text-[#101828]"
-          style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.4' }}
-        >
-          {title}
-        </h2>
+        <div className="space-y-3">
+          <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
+            {title}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            Received {formatTime(item.created_at)}
+          </p>
+        </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-[10px] flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
             type="button"
             onClick={onView}
-            variant="outline"
-            className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
-            style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
+            size="default"
+            className="h-10 px-5 transition-all duration-150"
           >
             View Scan
           </Button>
@@ -82,8 +83,8 @@ export function MailDetail({
             onClick={onDownload}
             disabled={isDownloading}
             variant="outline"
-            className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
+            size="default"
+            className="h-10 px-5 transition-all duration-150"
           >
             {isDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
@@ -93,10 +94,10 @@ export function MailDetail({
               type="button"
               onClick={onArchive}
               variant="outline"
-              className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
-              style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
+              size="default"
+              className="h-10 px-5 transition-all duration-150"
             >
-              <Archive className="h-4 w-4 mr-2" />
+              <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
               Archive
             </Button>
           )}
@@ -106,8 +107,8 @@ export function MailDetail({
               type="button"
               onClick={onForward}
               variant="outline"
-              className="h-12 px-[10px] rounded-[30px] border-[#206039] bg-white text-[#161B1A] hover:bg-[#206039]/10 font-medium text-base"
-              style={{ fontFamily: 'Poppins, sans-serif', lineHeight: '1.2' }}
+              size="default"
+              className="h-10 px-5 transition-all duration-150"
             >
               Request Forwarding
             </Button>
@@ -115,18 +116,17 @@ export function MailDetail({
             {forwardInlineNotice && (
               <div
                 role="alert"
-                className="absolute top-full mt-3 z-20 w-[min(420px,90vw)] rounded-xl border border-neutral-200 bg-white shadow-lg p-4"
-                style={{ left: '50%', transform: 'translateX(-50%)' }}
+                className="absolute top-full mt-3 z-20 w-[min(420px,90vw)] rounded-xl border border-neutral-200 bg-white shadow-lg p-4 transition-opacity duration-150"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="text-sm font-semibold text-neutral-900">Cannot Forward Mail</div>
                   <button
                     type="button"
                     onClick={onDismissForwardNotice}
-                    className="shrink-0 rounded-md p-1 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors"
+                    className="shrink-0 rounded-md p-1 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-all duration-150"
                     aria-label="Dismiss"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4" strokeWidth={2} />
                   </button>
                 </div>
                 <div className="mt-2 text-sm text-neutral-600 leading-relaxed">{forwardInlineNotice}</div>
@@ -136,23 +136,19 @@ export function MailDetail({
         </div>
 
         {/* Subtle divider */}
-        <div className="border-t border-[#E5E7EB] my-6" />
+        <div className="border-t border-neutral-200" />
 
         {/* PDF Viewer - Embedded container */}
-        <div className="rounded-lg border border-[#E5E7EB] bg-[#F9F9F9] p-4">
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-6">
           {miniViewerLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px] py-12">
+            <div className="flex flex-col items-center justify-center min-h-[400px] py-16">
               <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
-              <div 
-                className="mt-4 text-base font-medium text-[#161B1A]"
-              >
+              <p className="mt-6 text-base font-medium text-neutral-900">
                 Loading preview…
-              </div>
-              <div 
-                className="mt-2 text-sm text-[#666666]"
-              >
+              </p>
+              <p className="mt-2 text-sm text-neutral-500">
                 Fetching your scanned document
-              </div>
+              </p>
             </div>
           ) : miniViewerUrl ? (
             <div className="relative w-full" style={{ minHeight: '600px' }}>
@@ -171,18 +167,14 @@ export function MailDetail({
               </object>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center min-h-[400px] py-12 text-center">
-              <FileText className="h-10 w-10 mx-auto text-[#666666]" />
-              <div 
-                className="mt-4 text-lg font-medium text-[#161B1A]"
-              >
+            <div className="flex flex-col items-center justify-center min-h-[400px] py-16 text-center">
+              <FileText className="h-12 w-12 mx-auto text-neutral-300" strokeWidth={1.5} />
+              <p className="mt-6 text-base font-medium text-neutral-900">
                 {miniViewerError ? 'Preview unavailable' : 'No preview available'}
-              </div>
-              <div 
-                className="mt-2 text-sm text-[#666666]"
-              >
+              </p>
+              <p className="mt-2 text-sm text-neutral-500">
                 {miniViewerError ? 'Click "View Scan" to open full document' : 'Click "View Scan" to view the document'}
-              </div>
+              </p>
             </div>
           )}
         </div>
