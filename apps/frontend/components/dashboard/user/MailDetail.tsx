@@ -72,7 +72,6 @@ export function MailDetail({
           <Button
             type="button"
             onClick={onView}
-            size="default"
             className="h-10 px-5 transition-all duration-150"
           >
             View Scan
@@ -83,7 +82,6 @@ export function MailDetail({
             onClick={onDownload}
             disabled={isDownloading}
             variant="outline"
-            size="default"
             className="h-10 px-5 transition-all duration-150"
           >
             {isDownloading ? 'Downloading...' : 'Download PDF'}
@@ -94,7 +92,6 @@ export function MailDetail({
               type="button"
               onClick={onArchive}
               variant="outline"
-              size="default"
               className="h-10 px-5 transition-all duration-150"
             >
               <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
@@ -107,7 +104,6 @@ export function MailDetail({
               type="button"
               onClick={onForward}
               variant="outline"
-              size="default"
               className="h-10 px-5 transition-all duration-150"
             >
               Request Forwarding
