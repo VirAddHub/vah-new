@@ -70,120 +70,107 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     };
 
     return (
-        <header
-            className={cn(
-                "sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border/50"
-            )}
-        >
-            <div className={cn(
-                "safe-pad mx-auto flex max-w-[1440px] items-center justify-between px-6 sm:px-8 lg:px-16",
-                isDashboard ? "py-2.5 md:py-4" : "py-4"
-            )}>
-                {/* Brand Name - Hidden on mobile in dashboard */}
-                <div className={cn(isDashboard && "hidden md:block")}>
-                    <VAHLogo
-                        onNavigate={onNavigate}
-                        size={isDashboard ? "md" : "lg"}
-                    />
-                </div>
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                <div className="flex items-center justify-between h-16">
+                    {/* Logo */}
+                    <VAHLogo onNavigate={onNavigate} size="lg" />
 
-                {/* Desktop Navigation */}
-                {!isDashboard && (
-                    <nav
-                        aria-label="Main navigation"
-                        className={cn(
-                            "hidden md:flex gap-6 text-sm lg:text-base leading-tight text-muted-foreground"
-                        )}
-                    >
-                        {navItems.map((item: any) => (
-                            <button
-                                key={item.label}
-                                onClick={() => handleNavClick(item.page, item.href)}
-                                className="font-medium transition-colors hover:text-foreground"
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                    </nav>
-                )}
-
-                {/* Auth Buttons / Sign Out */}
-                <div className="hidden md:flex items-center gap-3">
-                    {isDashboard ? (
-                        <Button
-                            onClick={handleLogout}
-                            variant="ghost"
-                            className="flex items-center gap-2 text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            Sign out
-                        </Button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => handleNavClick('login')}
-                                className="text-sm lg:text-base leading-[1.2] font-medium transition-colors text-muted-foreground hover:text-foreground"
-                            >
-                                Login
-                            </button>
-                            <Button
-                                onClick={() => handleNavClick('signup')}
-                                className="rounded-full px-4 py-2 text-sm lg:text-base leading-[1.2] font-medium transition-all duration-200 bg-[#206039] text-white hover:bg-[#206039]/90"
-                            >
-                                Get started
-                            </Button>
-                        </>
+                    {/* Desktop Navigation */}
+                    {!isDashboard && (
+                        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
+                            {navItems.map((item: any) => (
+                                <button
+                                    key={item.label}
+                                    onClick={() => handleNavClick(item.page, item.href)}
+                                    className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </nav>
                     )}
-                </div>
 
-                {/* Mobile menu button */}
-                <div className="md:hidden">
-                    <Button
-                        variant="ghost"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="tt-min p-2"
-                    >
-                        {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </Button>
-                </div>
-            </div>
-
-            {/* Mobile menu */}
-            {isMenuOpen && (
-                <div className="md:hidden border-t border-border/50 bg-background">
-                    <div className="safe-pad pt-3 pb-5 space-y-1.5">
+                    {/* Desktop Auth */}
+                    <div className="hidden md:flex items-center gap-4">
                         {isDashboard ? (
-                            // Dashboard mobile - just sign out
                             <Button
                                 onClick={handleLogout}
                                 variant="ghost"
-                                className="tt-min flex items-center gap-2 px-4 py-3 rounded-lg w-full text-left text-sm font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-background"
+                                className="flex items-center gap-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
                             >
                                 <LogOut className="h-4 w-4" />
                                 Sign out
                             </Button>
                         ) : (
-                            // Public site mobile navigation
+                            <>
+                                <button
+                                    onClick={() => handleNavClick('login')}
+                                    className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                >
+                                    Log in
+                                </button>
+                                <Button
+                                    onClick={() => handleNavClick('signup')}
+                                    size="sm"
+                                    className="rounded-lg px-4 h-9"
+                                >
+                                    Get started
+                                </Button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="md:hidden p-2 -mr-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                    >
+                        {isMenuOpen ? (
+                            <X className="h-5 w-5" strokeWidth={2} />
+                        ) : (
+                            <Menu className="h-5 w-5" strokeWidth={2} />
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="md:hidden border-t border-neutral-200 bg-white">
+                    <div className="px-6 py-6 space-y-1">
+                        {isDashboard ? (
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
+                            >
+                                <LogOut className="h-4 w-4" />
+                                Sign out
+                            </Button>
+                        ) : (
                             <>
                                 {navItems.map((item: any) => (
                                     <button
                                         key={item.label}
                                         onClick={() => handleNavClick(item.page, item.href)}
-                                        className="tt-min block w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-background"
+                                        className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
                                     >
                                         {item.label}
                                     </button>
                                 ))}
-                                <div className="pt-4 space-y-3">
+                                
+                                <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
                                     <button
                                         onClick={() => handleNavClick('login')}
-                                        className="tt-min w-full px-4 py-2 text-sm font-medium transition-colors text-center text-muted-foreground hover:text-foreground"
+                                        className="block w-full text-center px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                                     >
-                                        Login
+                                        Log in
                                     </button>
                                     <Button
                                         onClick={() => handleNavClick('signup')}
-                                        className="tt-min w-full rounded-full font-medium transition-all duration-200 bg-[#206039] text-[#024E40] hover:bg-[#206039]/90"
+                                        className="w-full rounded-lg h-10"
                                     >
                                         Get started
                                     </Button>
