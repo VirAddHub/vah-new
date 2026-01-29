@@ -373,51 +373,69 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   );
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-md relative">
-        {/* Back Button */}
-        <button
-          onClick={onGoBack}
-          className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg z-10"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium hidden sm:inline">Back</span>
-        </button>
-
-        {/* Main Card */}
-        <Card className="p-4 sm:p-6 md:p-8 shadow-lg border-border/50 bg-card/80 backdrop-blur-sm">
-          {step === 'email' && renderEmailStep()}
-          {step === 'sent' && renderSentStep()}
-          {step === 'reset' && renderResetStep()}
-        </Card>
-
-        {/* Message Alert */}
-        {message && (
-          <Alert 
-            variant={message.type === 'error' ? 'destructive' : 'default'}
-            className={`mt-4 ${message.type === 'error'
-              ? 'border-destructive/50 bg-destructive/10'
-              : 'border-primary/50 bg-primary/10'
-            }`}
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex items-center justify-center flex-1 p-4 sm:p-6 pb-20">
+        <div className="w-full max-w-md relative">
+          {/* Back Button */}
+          <button
+            onClick={onGoBack}
+            className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg z-10"
           >
-            {message.type === 'error' ? (
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            ) : (
-              <CheckCircle className="h-4 w-4 text-primary" />
-            )}
-            <AlertDescription className={message.type === 'error' ? 'text-destructive' : 'text-foreground'}>
-              {message.text}
-            </AlertDescription>
-          </Alert>
-        )}
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium hidden sm:inline">Back</span>
+          </button>
 
-        {/* Footer */}
-        <div className="text-center mt-6 sm:mt-8">
-          <p className="text-xs text-muted-foreground">
-            © 2024 VirtualAddressHub. All rights reserved.
-          </p>
+          {/* Main Card */}
+          <Card className="p-4 sm:p-6 md:p-8 shadow-lg border-border/50 bg-card/80 backdrop-blur-sm">
+            {step === 'email' && renderEmailStep()}
+            {step === 'sent' && renderSentStep()}
+            {step === 'reset' && renderResetStep()}
+          </Card>
+
+          {/* Message Alert */}
+          {message && (
+            <Alert 
+              variant={message.type === 'error' ? 'destructive' : 'default'}
+              className={`mt-4 ${message.type === 'error'
+                ? 'border-destructive/50 bg-destructive/10'
+                : 'border-primary/50 bg-primary/10'
+              }`}
+            >
+              {message.type === 'error' ? (
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              ) : (
+                <CheckCircle className="h-4 w-4 text-primary" />
+              )}
+              <AlertDescription className={message.type === 'error' ? 'text-destructive' : 'text-foreground'}>
+                {message.text}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
+
+      {/* Fixed Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 py-4 px-6 bg-transparent z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center md:justify-end gap-3 text-xs text-neutral-500">
+            <button
+              type="button"
+              onClick={() => onNavigate('terms')}
+              className="hover:text-neutral-700 transition-colors"
+            >
+              Terms of Service
+            </button>
+            <span className="text-neutral-400">·</span>
+            <button
+              type="button"
+              onClick={() => onNavigate('privacy')}
+              className="hover:text-neutral-700 transition-colors"
+            >
+              Privacy Policy
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

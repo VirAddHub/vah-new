@@ -132,7 +132,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F6F6F7]">
+        <div className="min-h-screen bg-[#F6F6F7] flex flex-col">
             {/* Back Button */}
             <div className="absolute top-6 left-6 z-10">
                 <Button
@@ -142,12 +142,12 @@ export default function LoginPage() {
                     className="flex items-center gap-2 bg-background/90 backdrop-blur-md border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    Back to home
+                    Back to homepage
                 </Button>
             </div>
 
             {/* Main Content */}
-            <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="flex items-center justify-center flex-1 p-4 pb-20">
                 <div className="w-full max-w-md">
                     <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
                         {/* Header */}
@@ -240,6 +240,29 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Fixed Footer */}
+            <footer className="fixed bottom-0 left-0 right-0 py-4 px-6 bg-transparent z-10">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex items-center justify-center md:justify-end gap-3 text-xs text-neutral-500">
+                        <button
+                            type="button"
+                            onClick={() => router.push('/terms')}
+                            className="hover:text-neutral-700 transition-colors"
+                        >
+                            Terms of Service
+                        </button>
+                        <span className="text-neutral-400">·</span>
+                        <button
+                            type="button"
+                            onClick={() => router.push('/privacy')}
+                            className="hover:text-neutral-700 transition-colors"
+                        >
+                            Privacy Policy
+                        </button>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
