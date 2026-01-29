@@ -609,5 +609,36 @@ router.get('/tags', requireAuth, async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * POST /api/tags/delete
+ * Delete a tag from all active mail items (archived mail keeps its tag)
+ */
+router.post('/tags/delete', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { tag } = req.body;
+    const pool = getPool();
+
+    const normalizedTag = normalizeTagBackend(tag);
+
+    if (!normalizedTag) {
+        return res.status(400).json({ ok: false, error: 'invalid_tag' });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE mail_item 
+             SET tag = NULL, updated_at = $1 
+             WHERE user_id = $2 AND deleted = false AND tag = $3 
+             RETURNING id`,
+            [Date.now(), userId, normalizedTag]
+        );
+
+        return res.json({ ok: true, updatedCount: result.rowCount });
+    } catch (error: any) {
+        logger.error('[mail] delete tag error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
 
 export default router;

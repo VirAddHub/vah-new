@@ -29,7 +29,7 @@ export default function MailInboxPage() {
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null); // Filter inbox by tag
     const [collapsedTags, setCollapsedTags] = useState<Set<string>>(new Set()); // Collapsed tag groups
     const [showManageTagsModal, setShowManageTagsModal] = useState(false);
-    const [manageTagAction, setManageTagAction] = useState<'rename' | 'merge' | null>(null);
+    const [manageTagAction, setManageTagAction] = useState<'rename' | 'merge' | 'delete' | null>(null);
     const [selectedTagForManage, setSelectedTagForManage] = useState<string | null>(null);
     const [newTagName, setNewTagName] = useState('');
     const [mergeTargetTag, setMergeTargetTag] = useState<string | null>(null);
@@ -268,6 +268,56 @@ export default function MailInboxPage() {
         }
     }, [selectedTagForManage, mergeTargetTag, toast, mutateMailItems, mutateTags]);
 
+    // Handle tag delete (removes tag from all active mail items)
+    const handleTagDelete = useCallback(async () => {
+        if (!selectedTagForManage) return;
+
+        try {
+            const csrfToken = typeof window !== 'undefined' ? localStorage.getItem('csrfToken') : null;
+
+            const response = await fetch('/api/bff/tags/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-csrf-token': csrfToken || '',
+                },
+                body: JSON.stringify({ tag: selectedTagForManage }),
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                toast({
+                    title: "Tag Deleted",
+                    description: `Removed tag from ${data.updatedCount} active mail item(s). Archived mail is unaffected.`,
+                    durationMs: 5000,
+                });
+
+                // Refresh mail items and tags
+                await Promise.all([mutateMailItems(), mutateTags()]);
+
+                // Reset modal state
+                setSelectedTagForManage(null);
+                setShowManageTagsModal(false);
+            } else {
+                toast({
+                    title: "Delete Failed",
+                    description: data.error || "Failed to delete tag. Please try again.",
+                    variant: "destructive",
+                    durationMs: 5000,
+                });
+            }
+        } catch (error) {
+            console.error('Error deleting tag:', error);
+            toast({
+                title: "Delete Failed",
+                description: "Failed to delete tag. Please try again.",
+                variant: "destructive",
+                durationMs: 5000,
+            });
+        }
+    }, [selectedTagForManage, toast, mutateMailItems, mutateTags]);
+
     // Get unique tags from stable server endpoint (not derived from mailItems)
     const availableTags = useMemo(() => {
         if (!tagsData?.ok) return [];
@@ -349,6 +399,18 @@ export default function MailInboxPage() {
             return;
         }
 
+        // Optimistic update: Update cache immediately for instant UI feedback
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.id === item.id
+                        ? { ...mailItem, tag: normalizedNewTag }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
+
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}`, {
                 method: 'PATCH',
@@ -362,14 +424,16 @@ export default function MailInboxPage() {
             const data = await response.json();
 
             if (response.ok) {
-                // SWR will auto-refetch
+                // Single revalidation after success
+                mutateMailItems();
                 toast({
                     title: "Tag Updated",
                     description: normalizedNewTag ? `Tag set to "${getTagLabel(normalizedNewTag)}"` : "Tag removed",
                     durationMs: 2000,
                 });
             } else if (data.error === 'no_changes') {
-                // Tag is already set to this value - show a friendly info message
+                // Tag is already set to this value - revalidate to ensure sync
+                mutateMailItems();
                 toast({
                     title: "No Change Needed",
                     description: data.message || "Tag is already set to this value",
@@ -377,10 +441,14 @@ export default function MailInboxPage() {
                 });
                 return;
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 throw new Error(data.error || 'Failed to update tag');
             }
         } catch (error) {
             console.error('Error updating tag:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Update Failed",
                 description: "Failed to update tag. Please try again.",
@@ -388,7 +456,7 @@ export default function MailInboxPage() {
                 durationMs: 3000,
             });
         }
-    }, [toast, getTagLabel]);
+    }, [toast, getTagLabel, mailData, mutateMailItems]);
 
     // Handle archive mail item
     const handleArchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
@@ -1227,24 +1295,34 @@ export default function MailInboxPage() {
                             </div>
                             
                             {selectedTagForManage && (
-                                <div className="flex gap-2">
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => {
+                                                setManageTagAction('rename');
+                                                setNewTagName(selectedTagForManage);
+                                            }}
+                                            className="flex-1"
+                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                        >
+                                            Rename Tag
+                                        </Button>
+                                        <Button
+                                            onClick={() => setManageTagAction('merge')}
+                                            variant="outline"
+                                            className="flex-1"
+                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                        >
+                                            Merge Tag
+                                        </Button>
+                                    </div>
                                     <Button
-                                        onClick={() => {
-                                            setManageTagAction('rename');
-                                            setNewTagName(selectedTagForManage);
-                                        }}
-                                        className="flex-1"
+                                        onClick={() => setManageTagAction('delete')}
+                                        variant="destructive"
+                                        className="w-full"
                                         style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                     >
-                                        Rename Tag
-                                    </Button>
-                                    <Button
-                                        onClick={() => setManageTagAction('merge')}
-                                        variant="outline"
-                                        className="flex-1"
-                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                    >
-                                        Merge Tag
+                                        Delete Tag
                                     </Button>
                                 </div>
                             )}
@@ -1331,6 +1409,37 @@ export default function MailInboxPage() {
                                     style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Merge
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    ) : (
+                        /* Delete Tag Confirmation */
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <p className="text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    This will remove the tag <strong>"{getTagLabel(selectedTagForManage)}"</strong> from all active mail items. 
+                                    Archived mail is unaffected.
+                                </p>
+                                <p className="text-sm font-medium text-destructive" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    This action cannot be undone.
+                                </p>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setManageTagAction(null);
+                                    }}
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleTagDelete}
+                                    variant="destructive"
+                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                >
+                                    Delete Tag
                                 </Button>
                             </DialogFooter>
                         </div>
