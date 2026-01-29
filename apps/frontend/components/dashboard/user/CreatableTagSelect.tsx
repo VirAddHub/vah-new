@@ -50,10 +50,14 @@ export function CreatableTagSelect({
       setFilteredTags(availableTags);
     } else {
       const normalized = normalizeTag(inputValue);
-      const filtered = availableTags.filter(tag =>
-        tag.toLowerCase().includes(normalized) || normalized.includes(tag.toLowerCase())
-      );
-      setFilteredTags(filtered);
+      if (normalized) {
+        const filtered = availableTags.filter(tag =>
+          tag.toLowerCase().includes(normalized) || normalized.includes(tag.toLowerCase())
+        );
+        setFilteredTags(filtered);
+      } else {
+        setFilteredTags([]);
+      }
     }
   }, [inputValue, availableTags]);
 
