@@ -76,9 +76,26 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <span className="text-5xl font-semibold text-neutral-900">£9.99</span>
                                     <span className="text-lg text-neutral-500">/ month</span>
                                 </div>
-                                <p className="mt-3 text-sm text-neutral-600">
-                                    One plan
-                                </p>
+                                <div className="mt-3 space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                        <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>One plan</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                        <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Everything included</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-neutral-600">
+                                        <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>No surprises</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* CTA */}
@@ -91,7 +108,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     Get Started
                                 </Button>
                                 <p className="mt-4 text-sm text-neutral-500/80">
-                                    Fully compliant with UK Companies House and HMRC requirements
+                                    UK Companies House & HMRC compliant.
                                 </p>
                             </div>
                         </div>
