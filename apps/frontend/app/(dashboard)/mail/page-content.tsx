@@ -1299,8 +1299,8 @@ export default function MailInboxPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableTags
-                                            .filter(tag => tag !== selectedTagForManage)
-                                            .map(tag => (
+                                            .filter((tag: string) => tag !== selectedTagForManage)
+                                            .map((tag: string) => (
                                                 <SelectItem key={tag} value={tag}>
                                                     <div className="flex items-center gap-2">
                                                         <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
