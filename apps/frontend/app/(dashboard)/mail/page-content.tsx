@@ -516,6 +516,18 @@ export default function MailInboxPage() {
     const handleArchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent opening mail detail
         
+        // Optimistic update: Update cache immediately for instant UI feedback
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.id === item.id
+                        ? { ...mailItem, deleted: true }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
+        
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}`, {
                 method: 'DELETE',
@@ -531,12 +543,16 @@ export default function MailInboxPage() {
                     description: "Mail item has been moved to archive",
                     durationMs: 2000,
                 });
-                // SWR will auto-refetch
+                mutateMailItems(); // Single revalidation after success
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 throw new Error('Failed to archive mail');
             }
         } catch (error) {
             console.error('Error archiving mail:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Archive Failed",
                 description: "Failed to archive mail. Please try again.",
@@ -544,10 +560,22 @@ export default function MailInboxPage() {
                 durationMs: 3000,
             });
         }
-    }, [toast]);
+    }, [toast, mailData, mutateMailItems]);
 
     const handleUnarchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent opening mail detail
+        
+        // Optimistic update: Update cache immediately for instant UI feedback
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.id === item.id
+                        ? { ...mailItem, deleted: false }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
         
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}/restore`, {
@@ -564,12 +592,16 @@ export default function MailInboxPage() {
                     description: "Mail item has been moved back to inbox",
                     durationMs: 2000,
                 });
-                // SWR will auto-refetch
+                mutateMailItems(); // Single revalidation after success
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 throw new Error('Failed to restore mail');
             }
         } catch (error) {
             console.error('Error restoring mail:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Restore Failed",
                 description: "Failed to restore mail. Please try again.",
@@ -577,7 +609,7 @@ export default function MailInboxPage() {
                 durationMs: 3000,
             });
         }
-    }, [toast]);
+    }, [toast, mailData, mutateMailItems]);
 
 
     // Handle mail item click - open in-place (replace list view)
