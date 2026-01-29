@@ -11,7 +11,6 @@ interface MailDetailProps {
   item: MailItem;
   onBack: () => void;
   onView: () => void;
-  onDownload: () => void;
   onForward: () => void;
   onArchive?: () => void;
   forwardInlineNotice: string | null;
@@ -19,7 +18,6 @@ interface MailDetailProps {
   miniViewerLoading: boolean;
   miniViewerUrl: string | null;
   miniViewerError: string | null;
-  isDownloading?: boolean;
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
@@ -29,7 +27,6 @@ export function MailDetail({
   item,
   onBack,
   onView,
-  onDownload,
   onForward,
   onArchive,
   forwardInlineNotice,
@@ -37,7 +34,6 @@ export function MailDetail({
   miniViewerLoading,
   miniViewerUrl,
   miniViewerError,
-  isDownloading = false,
   mailTypeIcon,
   mailStatusMeta,
   formatTime,
@@ -75,16 +71,6 @@ export function MailDetail({
             className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
           >
             View Scan
-          </Button>
-
-          <Button
-            type="button"
-            onClick={onDownload}
-            disabled={isDownloading}
-            variant="outline"
-            className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
-          >
-            {isDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
 
           {onArchive && (

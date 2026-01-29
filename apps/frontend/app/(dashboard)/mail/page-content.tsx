@@ -597,71 +597,6 @@ export default function MailInboxPage() {
         }
     }, [selectedMailDetail]);
 
-    // Download handler
-    const [isDownloading, setIsDownloading] = useState(false);
-    const handleDownload = useCallback(async () => {
-        console.log('[MailDetail] handleDownload called', { selectedMailDetail: selectedMailDetail?.id, isDownloading });
-        if (!selectedMailDetail) {
-            console.warn('[MailDetail] No selected mail detail, cannot download');
-            toast({
-                title: 'No Mail Selected',
-                description: 'Please select a mail item to download.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        
-        if (isDownloading) {
-            console.log('[MailDetail] Download already in progress');
-            return;
-        }
-        
-        setIsDownloading(true);
-        try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-            const downloadUrl = `/api/bff/mail-items/${selectedMailDetail.id}/download?disposition=attachment`;
-            console.log('[MailDetail] Fetching download URL:', downloadUrl);
-            
-            const response = await fetch(downloadUrl, {
-                credentials: 'include',
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            
-            console.log('[MailDetail] Download response status:', response.status, response.ok);
-            
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => 'Unknown error');
-                throw new Error(`Download failed: ${response.status} ${errorText}`);
-            }
-            
-            const blob = await response.blob();
-            console.log('[MailDetail] Blob received, size:', blob.size);
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mail-${selectedMailDetail.id}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            toast({
-                title: 'Download Started',
-                description: 'Your file download has started.',
-                durationMs: 2000,
-            });
-        } catch (error) {
-            console.error('[MailDetail] Download error:', error);
-            toast({
-                title: 'Download Failed',
-                description: error instanceof Error ? error.message : 'Unable to download file. Please try again.',
-                variant: 'destructive',
-                durationMs: 5000,
-            });
-        } finally {
-            setIsDownloading(false);
-        }
-    }, [selectedMailDetail, isDownloading, toast]);
 
     // Forward handler - open forwarding modal
     const handleForward = useCallback(() => {
@@ -685,7 +620,7 @@ export default function MailInboxPage() {
             
             if (daysDiff > 30) {
                 console.log('[MailDetail] Mail is GDPR expired, cannot forward');
-                setForwardInlineNotice('This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.');
+                setForwardInlineNotice('This mail item is older than 30 days and cannot be forwarded due to GDPR compliance.');
                 return;
             }
         }
@@ -992,7 +927,6 @@ export default function MailInboxPage() {
                             item={selectedMailDetail}
                             onBack={handleBack}
                             onView={handleView}
-                            onDownload={handleDownload}
                             onForward={handleForward}
                             onArchive={async () => {
                                 const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
@@ -1005,7 +939,6 @@ export default function MailInboxPage() {
                             miniViewerLoading={miniViewerLoading}
                             miniViewerUrl={miniViewerUrl}
                             miniViewerError={miniViewerError}
-                            isDownloading={isDownloading}
                             mailTypeIcon={mailTypeIcon}
                             mailStatusMeta={mailStatusMeta}
                             formatTime={formatTime}
