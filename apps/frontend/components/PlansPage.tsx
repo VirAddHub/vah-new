@@ -117,7 +117,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         <button
                                             onClick={() => setIsAnnual(true)}
                                             className={`h-full rounded-md px-6 text-sm font-medium transition-all ${isAnnual
-                                                ? 'bg-primary text-white shadow-sm'
+                                                ? 'bg-primary text-white shadow-sm hover:bg-primary'
                                                 : 'text-neutral-600 hover:text-neutral-900'
                                                 }`}
                                         >
