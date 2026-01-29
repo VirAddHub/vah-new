@@ -67,7 +67,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </p>
 
                             <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-                                Use a trusted Central London address as your Registered Office, Director's Service Address, and official business address — without using your home address.
+                                Use a trusted Central London address as your <strong className="font-semibold text-neutral-900">Registered Office</strong>, <strong className="font-semibold text-neutral-900">Director's Service Address</strong>, and <strong className="font-semibold text-neutral-900">official business address</strong> — without using your home address.
                             </p>
 
                             {/* Pricing - No Box */}
@@ -76,12 +76,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <span className="text-5xl font-semibold text-neutral-900">£9.99</span>
                                     <span className="text-lg text-neutral-500">/ month</span>
                                 </div>
-                                <div className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
-                                    <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>Everything included</span>
-                                </div>
+                                <p className="mt-3 text-sm text-neutral-600">
+                                    One plan
+                                </p>
                             </div>
 
                             {/* CTA */}
