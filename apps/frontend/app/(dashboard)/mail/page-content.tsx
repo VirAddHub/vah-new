@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, Mail } from 'lucide-react';
+import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, ArchiveRestore, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -546,6 +546,39 @@ export default function MailInboxPage() {
         }
     }, [toast]);
 
+    const handleUnarchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
+        event.stopPropagation(); // Prevent opening mail detail
+        
+        try {
+            const response = await fetch(`/api/bff/mail-items/${item.id}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Mail Restored",
+                    description: "Mail item has been moved back to inbox",
+                    durationMs: 2000,
+                });
+                // SWR will auto-refetch
+            } else {
+                throw new Error('Failed to restore mail');
+            }
+        } catch (error) {
+            console.error('Error restoring mail:', error);
+            toast({
+                title: "Restore Failed",
+                description: "Failed to restore mail. Please try again.",
+                variant: "destructive",
+                durationMs: 3000,
+            });
+        }
+    }, [toast]);
+
 
     // Handle mail item click - open in-place (replace list view)
     const handleMailClick = useCallback((item: MailItem) => {
@@ -928,12 +961,18 @@ export default function MailInboxPage() {
                             onBack={handleBack}
                             onView={handleView}
                             onForward={handleForward}
-                            onArchive={async () => {
+                            onArchive={selectedMailDetail.deleted ? undefined : async () => {
                                 const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
                                 await handleArchive(selectedMailDetail, fakeEvent);
                                 // Navigate back to list after archiving
                                 handleBack();
                             }}
+                            onUnarchive={selectedMailDetail.deleted ? async () => {
+                                const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
+                                await handleUnarchive(selectedMailDetail, fakeEvent);
+                                // Navigate back to list after unarchiving
+                                handleBack();
+                            } : undefined}
                             forwardInlineNotice={forwardInlineNotice}
                             onDismissForwardNotice={() => setForwardInlineNotice(null)}
                             miniViewerLoading={miniViewerLoading}
@@ -1097,16 +1136,29 @@ export default function MailInboxPage() {
                                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                                             getTagLabel={getTagLabel}
                                                         />
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={(e) => handleArchive(item, e)}
-                                                            className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                                        >
-                                                            <Archive className="h-4 w-4 mr-1.5" />
-                                                            Archive
-                                                        </Button>
+                                                        {item.deleted ? (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => handleUnarchive(item, e)}
+                                                                className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                                            >
+                                                                <ArchiveRestore className="h-4 w-4 mr-1.5" />
+                                                                Unarchive
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => handleArchive(item, e)}
+                                                                className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                                            >
+                                                                <Archive className="h-4 w-4 mr-1.5" />
+                                                                Archive
+                                                            </Button>
+                                                        )}
                                                         <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                                             {date}
                                                         </span>
@@ -1197,15 +1249,27 @@ export default function MailInboxPage() {
                                             getTagLabel={getTagLabel}
                                         />
                                         
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => handleArchive(item, e)}
-                                            className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
-                                        >
-                                            <Archive className="h-4 w-4 mr-1.5" strokeWidth={2} />
-                                            Archive
-                                        </Button>
+                                        {item.deleted ? (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => handleUnarchive(item, e)}
+                                                className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+                                            >
+                                                <ArchiveRestore className="h-4 w-4 mr-1.5" strokeWidth={2} />
+                                                Unarchive
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => handleArchive(item, e)}
+                                                className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+                                            >
+                                                <Archive className="h-4 w-4 mr-1.5" strokeWidth={2} />
+                                                Archive
+                                            </Button>
+                                        )}
                                         
                                         <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
                                             {date}

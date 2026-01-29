@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText, X, ArrowLeft, Archive } from 'lucide-react';
+import { FileText, X, ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { MailItem } from './types';
 
@@ -13,6 +13,7 @@ interface MailDetailProps {
   onView: () => void;
   onForward: () => void;
   onArchive?: () => void;
+  onUnarchive?: () => void;
   forwardInlineNotice: string | null;
   onDismissForwardNotice: () => void;
   miniViewerLoading: boolean;
@@ -29,6 +30,7 @@ export function MailDetail({
   onView,
   onForward,
   onArchive,
+  onUnarchive,
   forwardInlineNotice,
   onDismissForwardNotice,
   miniViewerLoading,
@@ -73,7 +75,17 @@ export function MailDetail({
             View Scan
           </Button>
 
-          {onArchive && (
+          {item.deleted && onUnarchive ? (
+            <Button
+              type="button"
+              onClick={onUnarchive}
+              variant="outline"
+              className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
+            >
+              <ArchiveRestore className="h-4 w-4 mr-2" strokeWidth={2} />
+              Unarchive
+            </Button>
+          ) : !item.deleted && onArchive ? (
             <Button
               type="button"
               onClick={onArchive}
@@ -83,7 +95,7 @@ export function MailDetail({
               <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
               Archive
             </Button>
-          )}
+          ) : null}
 
           <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
             <Button
