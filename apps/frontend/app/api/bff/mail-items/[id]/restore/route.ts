@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
-import { getCsrfToken } from '@/lib/server/csrf';
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic';
@@ -25,14 +24,33 @@ export async function POST(
 
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
-    const csrfToken = getCsrfToken(request);
+
+    // Fetch CSRF token before making POST request
+    const csrfResponse = await fetch(`${backend}/api/csrf`, {
+      method: 'GET',
+      headers: {
+        'Cookie': cookie,
+      },
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    let csrfToken: string | null = null;
+    if (csrfResponse.ok) {
+      try {
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrfToken || null;
+      } catch (e) {
+        console.error('[BFF mail-items restore] Failed to parse CSRF token response:', e);
+      }
+    }
 
     const response = await fetch(`${backend}/api/mail-items/${id}/restore`, {
       method: 'POST',
       headers: {
         'Cookie': cookie,
         'Content-Type': 'application/json',
-        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
       credentials: 'include',
       cache: 'no-store',
