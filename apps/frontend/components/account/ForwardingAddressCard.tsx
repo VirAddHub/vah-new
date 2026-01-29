@@ -14,7 +14,7 @@ import type { AddressSuggestion } from '@/lib/account/addressTypes';
 
 interface ForwardingAddressCardProps {
   address: Address | null;
-  businessAddress?: Address | null;
+  businessAddress?: Address | null; // Kept for backward compatibility but not displayed
   onSave: (address: Address) => Promise<void>;
 }
 
@@ -225,39 +225,17 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
           {/* Header */}
           <div className="flex items-center gap-[77px]">
             <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-              Addresss
+              Mail Forwarding Address
             </h3>
             <div className="w-[12px] h-[12px] border border-[#E5E7EB] rounded-[8px]"></div>
           </div>
           
           <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
 
-          {/* Business Address Section */}
-          <div className="flex flex-col gap-[10px]">
-            <Label className="text-[14px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-              Business Address
-            </Label>
-            <div className="flex flex-col gap-[6px]">
-              {businessAddress?.formatted ? (
-                businessAddress.formatted.split('\n').map((line, index) => (
-                  <p key={index} className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                    {line}
-                  </p>
-                ))
-              ) : (
-                <p className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                  No business address configured
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
-
           {/* Forwarding Address Section */}
           <div className="flex flex-col gap-[10px]">
             <Label className="text-[14px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-              Following Address
+              Mail Forwarding Address
             </Label>
             {address ? (
               <div className="flex flex-col gap-[6px]">
@@ -266,6 +244,9 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                     {line}
                   </p>
                 ))}
+                <p className="text-[12px] font-normal leading-[1.4] text-[#666666] mt-2" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                  This is where your physical mail will be forwarded. You can update this address at any time.
+                </p>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="w-fit mt-2 text-[12px] text-[#206039] hover:text-[#206039]/80" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
@@ -376,6 +357,9 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
               <div className="flex flex-col gap-[6px]">
                 <p className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                   No forwarding address configured
+                </p>
+                <p className="text-[12px] font-normal leading-[1.4] text-[#666666] mt-2" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                  This is where your physical mail will be forwarded. You can update this address at any time.
                 </p>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>

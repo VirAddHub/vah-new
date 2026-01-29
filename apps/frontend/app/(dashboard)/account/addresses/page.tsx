@@ -127,25 +127,25 @@ export default function AccountAddressesPage() {
 
             <div className="space-y-6">
                 {/* Registered Office Address (Companies House) */}
-                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white">
+                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#FAFAFA]">
                     <CardContent className="p-8">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                     Registered Office Address
                                 </h2>
-                                <Badge variant="outline" className="border-[#E5E7EB] text-[#666666]">
+                                <Badge variant="outline" className="border-[#D1D5DB] bg-white text-[#666666]">
                                     <Lock className="w-3 h-3 mr-1" />
                                     Companies House
                                 </Badge>
                             </div>
                         </div>
                         <p className="text-[14px] font-normal leading-[1.4] text-[#666666] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            This is your registered office address used for Companies House registration. It cannot be edited here.
+                            This is your official registered office address on record with Companies House. For compliance reasons, it cannot be edited here.
                         </p>
                         {addresses.businessAddress?.formatted ? (
-                            <div className="bg-[#F9F9F9] rounded-[10px] p-4">
-                                <pre className="whitespace-pre-wrap text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <div className="bg-white rounded-[10px] p-4 border border-[#E5E7EB]">
+                                <pre className="whitespace-pre-wrap text-[14px] font-normal leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                     {addresses.businessAddress.formatted}
                                 </pre>
                             </div>
