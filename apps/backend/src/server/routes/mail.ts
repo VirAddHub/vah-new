@@ -618,7 +618,7 @@ router.post('/tags/delete', requireAuth, async (req: Request, res: Response) => 
     const { tag } = req.body;
     const pool = getPool();
 
-    const normalizedTag = normalizeTagBackend(tag);
+    const normalizedTag = normalizeTag(tag);
 
     if (!normalizedTag) {
         return res.status(400).json({ ok: false, error: 'invalid_tag' });
