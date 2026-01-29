@@ -1415,7 +1415,7 @@ export default function MailInboxPage() {
                                 </Button>
                             </DialogFooter>
                         </div>
-                    ) : (
+                    ) : manageTagAction === 'merge' ? (
                         /* Merge Tag */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
