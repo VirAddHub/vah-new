@@ -54,6 +54,13 @@ export function App() {
     document.head.appendChild(link);
   }, []);
 
+  // Redirect to actual Next.js login route when navigating to 'login'
+  useEffect(() => {
+    if (currentPage === 'login') {
+      window.location.href = '/login';
+    }
+  }, [currentPage]);
+
   const handleNavigate = (page: string, data?: any) => {
     if (page === 'signup' && data) {
       setSignupData(data);
@@ -92,18 +99,11 @@ export function App() {
       case 'contact':
         return <ContactPage onNavigate={navigate} />;
       case 'login':
-        // Placeholder for login page
+        // Redirect handled by useEffect above
         return (
           <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Login Page</h1>
-              <p className="text-muted-foreground mb-4">Login functionality coming soon</p>
-              <button
-                onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Back to Home
-              </button>
+              <p className="text-muted-foreground">Redirecting to login...</p>
             </div>
           </div>
         );
