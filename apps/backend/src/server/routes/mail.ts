@@ -9,6 +9,25 @@ import { logger } from '../../lib/logger';
 
 const router = Router();
 
+/**
+ * Normalize tag to canonical format (lowercase, underscores, alphanumeric only)
+ * Returns null for empty/invalid tags
+ * This is the authoritative normalization - frontend normalization is UX only
+ */
+function normalizeTag(tag: unknown): string | null {
+    if (tag === null || tag === undefined) return null;
+
+    const str = String(tag)
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/_{2,}/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    return str.length > 0 ? str : null;
+}
+
 /** Resolve a downloadable URL for a mail item, regardless of source - Fixed SQL query */
 async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean = false) {
     const pool = getPool();
@@ -193,7 +212,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
         }
 
         const currentTag = check.rows[0].tag || null;
-        const normalizedNewTag = (tag === null || tag === undefined || tag === '') ? null : String(tag).trim() || null;
+        const normalizedNewTag = normalizeTag(tag);
 
         // Allow updating is_read, subject, tag, and updated_at
         const updates: string[] = [];
@@ -217,8 +236,8 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
                 // Tag is already set to this value - this is not an error, just no change needed
                 // But we still need to check if other fields changed
                 if (typeof is_read !== 'boolean' && typeof subject !== 'string') {
-                    return res.status(400).json({ 
-                        ok: false, 
+                    return res.status(400).json({
+                        ok: false,
                         error: 'no_changes',
                         message: 'Tag is already set to this value'
                     });
@@ -236,8 +255,8 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
         values.push(mailId);
 
         if (updates.length === 1) { // Only updated_at
-            return res.status(400).json({ 
-                ok: false, 
+            return res.status(400).json({
+                ok: false,
                 error: 'no_changes',
                 message: 'No fields were provided to update'
             });
@@ -269,7 +288,9 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
-    if (typeof tag !== 'string' || !tag.trim()) {
+    const normalizedTag = normalizeTag(tag);
+
+    if (normalizedTag === null) {
         return res.status(400).json({ ok: false, error: 'invalid_tag' });
     }
 
@@ -287,7 +308,7 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
         // Update tag
         const result = await pool.query(
             'UPDATE mail_item SET tag = $1, updated_at = $2 WHERE id = $3 RETURNING *',
-            [tag.trim(), Date.now(), mailId]
+            [normalizedTag, Date.now(), mailId]
         );
 
         return res.json({ ok: true, data: result.rows[0] });
@@ -467,6 +488,124 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         if (!res.headersSent) {
             res.status(500).json({ ok: false, error: 'internal_error', message: err.message });
         }
+    }
+});
+
+/**
+ * POST /api/tags/rename
+ * Atomically rename a tag across all user's mail items
+ */
+router.post('/tags/rename', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { from, to } = req.body;
+    const pool = getPool();
+
+    const normalizedFrom = normalizeTag(from);
+    const normalizedTo = normalizeTag(to);
+
+    if (!normalizedFrom) {
+        return res.status(400).json({ ok: false, error: 'invalid_from_tag' });
+    }
+
+    if (!normalizedTo) {
+        return res.status(400).json({ ok: false, error: 'invalid_to_tag' });
+    }
+
+    if (normalizedFrom === normalizedTo) {
+        return res.status(400).json({ ok: false, error: 'same_tag', message: 'Source and target tags are identical' });
+    }
+
+    try {
+        // Atomic update - all items with old tag get new tag
+        const result = await pool.query(
+            `UPDATE mail_item 
+             SET tag = $1, updated_at = $2 
+             WHERE user_id = $3 AND tag = $4 AND deleted = false
+             RETURNING id`,
+            [normalizedTo, Date.now(), userId, normalizedFrom]
+        );
+
+        return res.json({
+            ok: true,
+            updated: result.rowCount || 0,
+            from: normalizedFrom,
+            to: normalizedTo
+        });
+    } catch (error: any) {
+        logger.error('[mail] tag rename error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * POST /api/tags/merge
+ * Atomically merge one tag into another across all user's mail items
+ */
+router.post('/tags/merge', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { source, target } = req.body;
+    const pool = getPool();
+
+    const normalizedSource = normalizeTag(source);
+    const normalizedTarget = normalizeTag(target);
+
+    if (!normalizedSource) {
+        return res.status(400).json({ ok: false, error: 'invalid_source_tag' });
+    }
+
+    if (!normalizedTarget) {
+        return res.status(400).json({ ok: false, error: 'invalid_target_tag' });
+    }
+
+    if (normalizedSource === normalizedTarget) {
+        return res.status(400).json({ ok: false, error: 'same_tag', message: 'Source and target tags are identical' });
+    }
+
+    try {
+        // Atomic merge - all items with source tag get target tag
+        const result = await pool.query(
+            `UPDATE mail_item 
+             SET tag = $1, updated_at = $2 
+             WHERE user_id = $3 AND tag = $4 AND deleted = false
+             RETURNING id`,
+            [normalizedTarget, Date.now(), userId, normalizedSource]
+        );
+
+        return res.json({
+            ok: true,
+            merged: result.rowCount || 0,
+            source: normalizedSource,
+            target: normalizedTarget
+        });
+    } catch (error: any) {
+        logger.error('[mail] tag merge error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
+ * GET /api/tags
+ * Get list of all tags used by user (distinct, sorted)
+ */
+router.get('/tags', requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+
+    try {
+        const result = await pool.query(
+            `SELECT DISTINCT tag 
+             FROM mail_item 
+             WHERE user_id = $1 AND deleted = false AND tag IS NOT NULL
+             ORDER BY tag`,
+            [userId]
+        );
+
+        const tags = result.rows.map(row => row.tag);
+
+        return res.json({ ok: true, tags });
+    } catch (error: any) {
+        logger.error('[mail] tags list error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
     }
 });
 

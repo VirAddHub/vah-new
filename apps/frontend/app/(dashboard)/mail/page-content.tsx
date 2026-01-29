@@ -53,7 +53,7 @@ export default function MailInboxPage() {
     const { toast } = useToast();
 
     // Fetch mail items
-    const { data: mailData, error: mailError, isLoading: mailLoading } = useSWR(
+    const { data: mailData, error: mailError, isLoading: mailLoading, mutate: mutateMailItems } = useSWR(
         '/api/bff/mail-items?includeArchived=true',
         swrFetcher,
         {
@@ -62,6 +62,9 @@ export default function MailInboxPage() {
             dedupingInterval: 60000,
         }
     );
+
+    // Fetch tags (stable server-side list)
+    const { data: tagsData, mutate: mutateTags } = useSWR('/api/bff/tags', swrFetcher);
 
     // Fetch profile for forwarding address
     const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
@@ -111,21 +114,34 @@ export default function MailInboxPage() {
         return items;
     }, [mailItems, activeTab, searchQuery, selectedTagFilter]);
 
-    // Tag mapping: slug -> display label
+    // Tag mapping: slug -> display label (predefined tags only)
     const tagMeta: Record<string, { label: string }> = {
         hmrc: { label: "HMRC" },
         companies_house: { label: "Companies House" },
-        bank: { label: "BANK" },
+        companieshouse: { label: "Companies House" },
+        bank: { label: "Bank" },
         insurance: { label: "Insurance" },
         utilities: { label: "Utilities" },
         other: { label: "Other" },
     };
 
+    /**
+     * Humanize tag slug to display label
+     * Converts: "my_custom_tag" → "My Custom Tag"
+     */
+    const humanizeTag = useCallback((slug: string): string => {
+        return slug
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }, []);
+
     // Get tag display label
     const getTagLabel = useCallback((tag: string | null | undefined): string => {
-        if (!tag || tag === 'untagged') return "Untagged";
-        return tagMeta[tag]?.label || tag.toUpperCase().replace(/_/g, ' ');
-    }, []);
+        if (!tag) return "Untagged";
+        // Use predefined label if exists, otherwise humanize the slug
+        return tagMeta[tag]?.label || humanizeTag(tag);
+    }, [humanizeTag]);
 
     // Handle tag header click - filter inbox
     const handleTagHeaderClick = useCallback((tag: string) => {
@@ -158,43 +174,42 @@ export default function MailInboxPage() {
         toggleTagCollapse(tag);
     }, [toggleTagCollapse]);
 
-    // Handle tag rename
+    // Handle tag rename (atomic bulk operation)
     const handleTagRename = useCallback(async () => {
         if (!selectedTagForManage || !newTagName.trim()) return;
 
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
             const oldTag = selectedTagForManage;
-            const newTag = newTagName.trim().toLowerCase().replace(/\s+/g, '_');
+            const newTag = newTagName.trim();
 
-            // Get all items with this tag
-            const itemsToUpdate = mailItems.filter((item: MailItem) => item.tag === oldTag && !item.deleted);
-            
-            // Update each item
-            const updatePromises = itemsToUpdate.map((item: MailItem) =>
-                fetch(`/api/bff/mail-items/${item.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ tag: newTag }),
-                })
-            );
-
-            await Promise.all(updatePromises);
-            
-            toast({
-                title: "Tag Renamed",
-                description: `Tag "${oldTag}" has been renamed to "${newTag}".`,
-                durationMs: 3000,
+            // Single atomic bulk rename
+            const response = await fetch('/api/bff/tags/rename', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ from: oldTag, to: newTag }),
             });
 
-            setShowManageTagsModal(false);
-            setSelectedTagForManage(null);
-            setNewTagName('');
-            // SWR will auto-refetch
+            const data = await response.json();
+
+            if (response.ok && data.ok) {
+                toast({
+                    title: "Tag Renamed",
+                    description: `Tag "${oldTag}" has been renamed to "${data.to}". ${data.updated} item(s) updated.`,
+                    durationMs: 3000,
+                });
+
+                setShowManageTagsModal(false);
+                setSelectedTagForManage(null);
+                setNewTagName('');
+                
+                // Refresh both mail items and tags
+                await Promise.all([mutateMailItems(), mutateTags()]);
+            } else {
+                throw new Error(data.error || 'Failed to rename tag');
+            }
         } catch (error) {
             console.error('Error renaming tag:', error);
             toast({
@@ -204,45 +219,44 @@ export default function MailInboxPage() {
                 durationMs: 5000,
             });
         }
-    }, [selectedTagForManage, newTagName, mailItems, toast]);
+    }, [selectedTagForManage, newTagName, toast, mutateMailItems, mutateTags]);
 
-    // Handle tag merge
+    // Handle tag merge (atomic bulk operation)
     const handleTagMerge = useCallback(async () => {
         if (!selectedTagForManage || !mergeTargetTag) return;
 
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
             const sourceTag = selectedTagForManage;
             const targetTag = mergeTargetTag;
 
-            // Get all items with source tag
-            const itemsToUpdate = mailItems.filter((item: MailItem) => item.tag === sourceTag && !item.deleted);
-            
-            // Update each item to target tag
-            const updatePromises = itemsToUpdate.map((item: MailItem) =>
-                fetch(`/api/bff/mail-items/${item.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ tag: targetTag }),
-                })
-            );
-
-            await Promise.all(updatePromises);
-            
-            toast({
-                title: "Tags Merged",
-                description: `Tag "${sourceTag}" has been merged into "${targetTag}".`,
-                durationMs: 3000,
+            // Single atomic bulk merge
+            const response = await fetch('/api/bff/tags/merge', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ source: sourceTag, target: targetTag }),
             });
 
-            setShowManageTagsModal(false);
-            setSelectedTagForManage(null);
-            setMergeTargetTag(null);
-            // SWR will auto-refetch
+            const data = await response.json();
+
+            if (response.ok && data.ok) {
+                toast({
+                    title: "Tags Merged",
+                    description: `Tag "${sourceTag}" has been merged into "${data.target}". ${data.merged} item(s) updated.`,
+                    durationMs: 3000,
+                });
+
+                setShowManageTagsModal(false);
+                setSelectedTagForManage(null);
+                setMergeTargetTag(null);
+                
+                // Refresh both mail items and tags
+                await Promise.all([mutateMailItems(), mutateTags()]);
+            } else {
+                throw new Error(data.error || 'Failed to merge tags');
+            }
         } catch (error) {
             console.error('Error merging tags:', error);
             toast({
@@ -252,18 +266,13 @@ export default function MailInboxPage() {
                 durationMs: 5000,
             });
         }
-    }, [selectedTagForManage, mergeTargetTag, mailItems, toast]);
+    }, [selectedTagForManage, mergeTargetTag, toast, mutateMailItems, mutateTags]);
 
-    // Get unique tags
+    // Get unique tags from stable server endpoint (not derived from mailItems)
     const availableTags = useMemo(() => {
-        const tags = new Set<string>();
-        mailItems.forEach((item: MailItem) => {
-            if (item.tag && !item.deleted) {
-                tags.add(item.tag);
-            }
-        });
-        return Array.from(tags).sort();
-    }, [mailItems]);
+        if (!tagsData?.ok) return [];
+        return Array.isArray(tagsData.tags) ? tagsData.tags : [];
+    }, [tagsData]);
 
     // Group items by tag for Tags tab
     const groupedByTag = useMemo(() => {

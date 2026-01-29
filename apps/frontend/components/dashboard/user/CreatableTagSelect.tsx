@@ -17,15 +17,18 @@ interface CreatableTagSelectProps {
 
 /**
  * Normalize tag to lowercase slug format
+ * Returns null for empty/invalid tags (treated as "untagged")
  */
-function normalizeTag(tag: string): string {
-  return tag
+function normalizeTag(tag: string): string | null {
+  const normalized = tag
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9_]/g, '')
     .replace(/_{2,}/g, '_')
-    .replace(/^_+|_+$/g, '') || 'untagged';
+    .replace(/^_+|_+$/g, '');
+
+  return normalized.length > 0 ? normalized : null;
 }
 
 export function CreatableTagSelect({
@@ -90,7 +93,7 @@ export function CreatableTagSelect({
     }
 
     const normalized = normalizeTag(trimmed);
-    if (normalized === 'untagged') {
+    if (normalized === null) {
       handleSelectTag(null);
       return;
     }
@@ -110,7 +113,8 @@ export function CreatableTagSelect({
 
   const currentTag = value || null;
   const displayLabel = getTagLabel(currentTag);
-  const isCreatingNew = inputValue.trim() && !availableTags.includes(normalizeTag(inputValue));
+  const normalizedInput = normalizeTag(inputValue);
+  const isCreatingNew = inputValue.trim() && normalizedInput !== null && !availableTags.includes(normalizedInput);
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -152,10 +156,10 @@ export function CreatableTagSelect({
               className="h-8 text-sm"
               autoFocus
             />
-            {isCreatingNew && (
+            {isCreatingNew && normalizedInput && (
               <div className="mt-1 text-xs text-neutral-600 flex items-center gap-1">
                 <Plus className="h-3 w-3" strokeWidth={2} />
-                <span>Press Enter to create "{normalizeTag(inputValue)}"</span>
+                <span>Press Enter to create "{normalizedInput}"</span>
               </div>
             )}
           </div>
