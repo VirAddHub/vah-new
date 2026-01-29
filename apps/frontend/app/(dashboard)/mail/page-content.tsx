@@ -64,7 +64,11 @@ export default function MailInboxPage() {
     );
 
     // Fetch tags (stable server-side list)
-    const { data: tagsData, mutate: mutateTags } = useSWR('/api/bff/tags', swrFetcher);
+    const { data: tagsData, mutate: mutateTags } = useSWR('/api/bff/tags', swrFetcher, {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        dedupingInterval: 60000,
+    });
 
     // Fetch profile for forwarding address
     const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
@@ -178,10 +182,22 @@ export default function MailInboxPage() {
     const handleTagRename = useCallback(async () => {
         if (!selectedTagForManage || !newTagName.trim()) return;
 
-        try {
-            const oldTag = selectedTagForManage;
-            const newTag = newTagName.trim();
+        const oldTag = selectedTagForManage;
+        const newTag = newTagName.trim();
 
+        // Optimistic update: Rename tags immediately in cache
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.tag === oldTag
+                        ? { ...mailItem, tag: newTag }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
+
+        try {
             // Single atomic bulk rename
             const response = await fetch('/api/bff/tags/rename', {
                 method: 'POST',
@@ -205,13 +221,17 @@ export default function MailInboxPage() {
                 setSelectedTagForManage(null);
                 setNewTagName('');
                 
-                // Refresh both mail items and tags
+                // Single revalidation for both mail items and tags
                 await Promise.all([mutateMailItems(), mutateTags()]);
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 throw new Error(data.error || 'Failed to rename tag');
             }
         } catch (error) {
             console.error('Error renaming tag:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Rename Failed",
                 description: "Failed to rename tag. Please try again.",
@@ -219,16 +239,28 @@ export default function MailInboxPage() {
                 durationMs: 5000,
             });
         }
-    }, [selectedTagForManage, newTagName, toast, mutateMailItems, mutateTags]);
+    }, [selectedTagForManage, newTagName, toast, mailData, mutateMailItems, mutateTags]);
 
     // Handle tag merge (atomic bulk operation)
     const handleTagMerge = useCallback(async () => {
         if (!selectedTagForManage || !mergeTargetTag) return;
 
-        try {
-            const sourceTag = selectedTagForManage;
-            const targetTag = mergeTargetTag;
+        const sourceTag = selectedTagForManage;
+        const targetTag = mergeTargetTag;
 
+        // Optimistic update: Merge tags immediately in cache
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.tag === sourceTag
+                        ? { ...mailItem, tag: targetTag }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
+
+        try {
             // Single atomic bulk merge
             const response = await fetch('/api/bff/tags/merge', {
                 method: 'POST',
@@ -252,13 +284,17 @@ export default function MailInboxPage() {
                 setSelectedTagForManage(null);
                 setMergeTargetTag(null);
                 
-                // Refresh both mail items and tags
+                // Single revalidation for both mail items and tags
                 await Promise.all([mutateMailItems(), mutateTags()]);
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 throw new Error(data.error || 'Failed to merge tags');
             }
         } catch (error) {
             console.error('Error merging tags:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Merge Failed",
                 description: "Failed to merge tags. Please try again.",
@@ -266,11 +302,25 @@ export default function MailInboxPage() {
                 durationMs: 5000,
             });
         }
-    }, [selectedTagForManage, mergeTargetTag, toast, mutateMailItems, mutateTags]);
+    }, [selectedTagForManage, mergeTargetTag, toast, mailData, mutateMailItems, mutateTags]);
 
     // Handle tag delete (removes tag from all active mail items)
     const handleTagDelete = useCallback(async () => {
         if (!selectedTagForManage) return;
+
+        const tagToDelete = selectedTagForManage;
+
+        // Optimistic update: Remove tags immediately in cache
+        if (mailData?.ok && Array.isArray(mailData.data)) {
+            mutateMailItems({
+                ...mailData,
+                data: mailData.data.map((mailItem: MailItem) =>
+                    mailItem.tag === tagToDelete && !mailItem.deleted
+                        ? { ...mailItem, tag: null }
+                        : mailItem
+                ),
+            }, false); // false = don't revalidate yet
+        }
 
         try {
             const csrfToken = typeof window !== 'undefined' ? localStorage.getItem('csrfToken') : null;
@@ -281,7 +331,7 @@ export default function MailInboxPage() {
                     'Content-Type': 'application/json',
                     'x-csrf-token': csrfToken || '',
                 },
-                body: JSON.stringify({ tag: selectedTagForManage }),
+                body: JSON.stringify({ tag: tagToDelete }),
             });
 
             const data = await response.json();
@@ -293,13 +343,15 @@ export default function MailInboxPage() {
                     durationMs: 5000,
                 });
 
-                // Refresh mail items and tags
+                // Single revalidation for both mail items and tags
                 await Promise.all([mutateMailItems(), mutateTags()]);
 
                 // Reset modal state
                 setSelectedTagForManage(null);
                 setShowManageTagsModal(false);
             } else {
+                // Revert optimistic update on error
+                mutateMailItems();
                 toast({
                     title: "Delete Failed",
                     description: data.error || "Failed to delete tag. Please try again.",
@@ -309,6 +361,8 @@ export default function MailInboxPage() {
             }
         } catch (error) {
             console.error('Error deleting tag:', error);
+            // Revert optimistic update on error
+            mutateMailItems();
             toast({
                 title: "Delete Failed",
                 description: "Failed to delete tag. Please try again.",
@@ -316,7 +370,7 @@ export default function MailInboxPage() {
                 durationMs: 5000,
             });
         }
-    }, [selectedTagForManage, toast, mutateMailItems, mutateTags]);
+    }, [selectedTagForManage, toast, mailData, mutateMailItems, mutateTags]);
 
     // Get unique tags from stable server endpoint (not derived from mailItems)
     const availableTags = useMemo(() => {
