@@ -46,19 +46,19 @@ export function MailDetail({
 
   return (
     <div className="bg-background w-full">
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6 md:gap-8">
         {/* Back to Inbox button */}
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit"
+          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit -ml-1"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           Back to Inbox
         </button>
 
         {/* Mail title */}
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
             {title}
           </h1>
@@ -68,11 +68,11 @@ export function MailDetail({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-wrap">
           <Button
             type="button"
             onClick={onView}
-            className="h-10 px-5 transition-all duration-150"
+            className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
           >
             View Scan
           </Button>
@@ -82,7 +82,7 @@ export function MailDetail({
             onClick={onDownload}
             disabled={isDownloading}
             variant="outline"
-            className="h-10 px-5 transition-all duration-150"
+            className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
           >
             {isDownloading ? 'Downloading...' : 'Download PDF'}
           </Button>
@@ -92,19 +92,19 @@ export function MailDetail({
               type="button"
               onClick={onArchive}
               variant="outline"
-              className="h-10 px-5 transition-all duration-150"
+              className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
             >
               <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
               Archive
             </Button>
           )}
 
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
             <Button
               type="button"
               onClick={onForward}
               variant="outline"
-              className="h-10 px-5 transition-all duration-150"
+              className="h-10 px-5 transition-all duration-150 w-full sm:w-auto"
             >
               Request Forwarding
             </Button>
@@ -112,7 +112,7 @@ export function MailDetail({
             {forwardInlineNotice && (
               <div
                 role="alert"
-                className="absolute top-full mt-3 z-20 w-[min(420px,90vw)] rounded-xl border border-neutral-200 bg-white shadow-lg p-4 transition-opacity duration-150"
+                className="absolute top-full left-0 right-0 sm:left-auto sm:right-auto sm:w-[min(420px,90vw)] mt-3 z-20 rounded-xl border border-neutral-200 bg-white shadow-lg p-4 transition-opacity duration-150"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="text-sm font-semibold text-neutral-900">Cannot Forward Mail</div>
@@ -135,9 +135,9 @@ export function MailDetail({
         <div className="border-t border-neutral-200" />
 
         {/* PDF Viewer - Embedded container */}
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-6">
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 md:p-6">
           {miniViewerLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px] py-16">
+            <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16">
               <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
               <p className="mt-6 text-base font-medium text-neutral-900">
                 Loading preview…
@@ -147,23 +147,23 @@ export function MailDetail({
               </p>
             </div>
           ) : miniViewerUrl ? (
-            <div className="relative w-full" style={{ minHeight: '600px' }}>
+            <div className="relative w-full" style={{ minHeight: '400px' }}>
               <object 
                 data={miniViewerUrl} 
                 type="application/pdf" 
                 className="w-full h-full rounded"
-                style={{ minHeight: '600px' }}
+                style={{ minHeight: '400px' }}
               >
                 <iframe
                   title="Mail Scan Preview"
                   src={miniViewerUrl}
                   className="w-full h-full rounded border-0"
-                  style={{ minHeight: '600px' }}
+                  style={{ minHeight: '400px' }}
                 />
               </object>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center min-h-[400px] py-16 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16 text-center">
               <FileText className="h-12 w-12 mx-auto text-neutral-300" strokeWidth={1.5} />
               <p className="mt-6 text-base font-medium text-neutral-900">
                 {miniViewerError ? 'Preview unavailable' : 'No preview available'}

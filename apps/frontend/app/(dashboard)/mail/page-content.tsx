@@ -756,21 +756,20 @@ export default function MailInboxPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
                 <div className="flex items-baseline gap-3">
                     <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 tracking-tight">
-                        <span className="md:hidden">Mail</span>
-                        <span className="hidden md:inline">Mail</span>
+                        Mail
                     </h1>
                     <span className="text-sm text-neutral-500 font-normal">{inboxCount} items</span>
                 </div>
 
                 {/* Search */}
                 <div className="relative w-full md:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" strokeWidth={2} />
                     <Input
                         type="text"
                         placeholder="Search mail..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-10 rounded-lg border-neutral-200 bg-white text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                        className="pl-9 h-10 rounded-lg border-neutral-200 bg-white text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all duration-150"
                     />
                 </div>
             </div>
@@ -786,9 +785,9 @@ export default function MailInboxPage() {
                         variant="ghost"
                         size="sm"
                         onClick={clearTagFilter}
-                        className="h-7 px-2 text-xs text-neutral-600 hover:text-neutral-900 ml-auto"
+                        className="h-7 px-2 text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 ml-auto transition-colors duration-150"
                     >
-                        <X className="h-3.5 w-3.5 mr-1" />
+                        <X className="h-3.5 w-3.5 mr-1" strokeWidth={2} />
                         Clear
                     </Button>
                 </div>
@@ -802,10 +801,10 @@ export default function MailInboxPage() {
                     setSelectedTagFilter(null);
                 }
             }} className="mb-6 md:mb-8">
-                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-3 md:pb-0">
+                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-3 md:pb-0 border-b border-neutral-200 md:border-b-0">
                     <TabsList className={cn(
-                        "bg-transparent border-b-0 rounded-none p-0 h-auto",
-                        "md:border-b md:border-neutral-200"
+                        "bg-transparent border-b-0 rounded-none p-0 h-auto gap-1",
+                        "md:border-b md:border-neutral-200 md:gap-0"
                     )}>
                         <TabsTrigger
                             value="inbox"
@@ -815,7 +814,7 @@ export default function MailInboxPage() {
                                 "data-[state=active]:bg-primary data-[state=active]:text-white",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                 "text-neutral-600 hover:text-neutral-900",
-                                "transition-all"
+                                "transition-all duration-150"
                             )}
                         >
                             <span className="md:hidden">Inbox</span>
@@ -829,7 +828,7 @@ export default function MailInboxPage() {
                                 "data-[state=active]:bg-primary data-[state=active]:text-white",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                 "text-neutral-600 hover:text-neutral-900",
-                                "transition-all"
+                                "transition-all duration-150"
                             )}
                         >
                             <span className="md:hidden">Archived</span>
@@ -843,7 +842,7 @@ export default function MailInboxPage() {
                                 "data-[state=active]:bg-primary data-[state=active]:text-white",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                 "text-neutral-600 hover:text-neutral-900",
-                                "transition-all"
+                                "transition-all duration-150"
                             )}
                         >
                             <span className="md:hidden">Tags</span>
@@ -857,7 +856,7 @@ export default function MailInboxPage() {
             {selectedMailDetail ? (
                 /* Mail Detail View - Full-screen on mobile, in-place on desktop */
                 <div className="w-full md:relative fixed inset-0 md:inset-auto bg-white md:bg-transparent z-50 md:z-auto overflow-y-auto md:overflow-visible md:static">
-                    <div className="p-4 md:p-0 max-w-full md:max-w-none">
+                    <div className="p-4 md:p-0 max-w-full md:max-w-none pb-8 md:pb-0">
                         <MailDetail
                             item={selectedMailDetail}
                             onBack={handleBack}
@@ -886,18 +885,18 @@ export default function MailInboxPage() {
                 /* Mail List View */
                 <div className="w-full space-y-2">
                     {mailLoading ? (
-                        <div className="py-16 text-center">
+                        <div className="py-16 md:py-16 text-center">
                             <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent mb-4"></div>
                             <p className="text-sm text-neutral-600">Loading mail...</p>
                         </div>
                     ) : mailError ? (
-                        <div className="py-16 text-center">
+                        <div className="py-16 md:py-16 text-center">
                             <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" strokeWidth={1.5} />
                             <p className="text-sm text-neutral-600 font-medium mb-1">Failed to load mail</p>
                             <p className="text-xs text-neutral-500">Please refresh the page to try again</p>
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="py-16 text-center">
+                        <div className="py-16 md:py-16 text-center">
                             <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" strokeWidth={1.5} />
                             <p className="text-sm text-neutral-600 font-medium mb-1">No mail items</p>
                             <p className="text-xs text-neutral-500">Your mail will appear here when it arrives</p>
@@ -906,7 +905,7 @@ export default function MailInboxPage() {
                         /* Grouped Tags View */
                         <div className="space-y-6">
                             {/* Manage Tags Button */}
-                            <div className="hidden md:flex justify-end">
+                            <div className="flex justify-end">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -914,10 +913,9 @@ export default function MailInboxPage() {
                                         setShowManageTagsModal(true);
                                         setManageTagAction(null);
                                     }}
-                                    className="h-9 px-3 rounded-md"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                    className="h-9 px-3 rounded-lg transition-all duration-150"
                                 >
-                                    <Tag className="h-4 w-4 mr-2" />
+                                    <Tag className="h-4 w-4 mr-2" strokeWidth={2} />
                                     Manage Tags
                                 </Button>
                             </div>
@@ -928,11 +926,11 @@ export default function MailInboxPage() {
                                 return (
                                 <div key={tag} className="space-y-3">
                                     {/* Tag Header */}
-                                    <div className="sticky top-0 z-10 bg-white py-2 border-b border-neutral-200">
+                                    <div className="sticky top-[56px] md:top-0 z-10 bg-white py-2.5 md:py-2 border-b border-neutral-200">
                                         <div className="flex items-center gap-3">
                                             <button
                                                 onClick={(e) => handleCollapseToggle(tag, e)}
-                                                className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors"
+                                                className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors duration-150"
                                                 aria-label={isCollapsed ? "Expand" : "Collapse"}
                                             >
                                                 {isCollapsed ? (
@@ -943,7 +941,7 @@ export default function MailInboxPage() {
                                             </button>
                                             <button
                                                 onClick={() => handleTagHeaderClick(tag)}
-                                                className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors group text-left"
+                                                className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors duration-150 group text-left"
                                             >
                                                 <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
                                                 <div className="flex items-baseline gap-2">
@@ -957,7 +955,7 @@ export default function MailInboxPage() {
                                     </div>
                                     {/* Mail Items for this Tag */}
                                     {!isCollapsed && (
-                                        <div className="space-y-2 pb-6">
+                                        <div className="space-y-2 pb-6 md:pb-6">
                                             {items.map((item) => {
                                             const Icon = getMailIcon(item);
                                             const senderName = getSenderName(item);
@@ -975,21 +973,26 @@ export default function MailInboxPage() {
                                                         "cursor-pointer min-h-[56px] md:min-h-0"
                                                     )}
                                                 >
-                                                    {/* Mobile: Icon + Sender + Date */}
+                                                    {/* Mobile: Icon + Sender/Tag + Date */}
                                                     <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
                                                         <div className="flex-shrink-0">
                                                             <Icon className={cn(
                                                                 "h-5 w-5",
                                                                 isRead ? 'text-neutral-400' : 'text-neutral-700'
-                                                            )} />
+                                                            )} strokeWidth={2} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={cn(
-                                                                "text-[15px] leading-tight truncate",
-                                                                isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
-                                                            )}>
-                                                                {senderName}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className={cn(
+                                                                    "text-[15px] leading-tight truncate",
+                                                                    isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                                                )}>
+                                                                    {senderName}
+                                                                </p>
+                                                                {item.tag && (
+                                                                    <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
                                                             {date}
