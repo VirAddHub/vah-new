@@ -1214,7 +1214,7 @@ export default function MailInboxPage() {
                                         <SelectValue placeholder="Choose a tag to manage" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableTags.map(tag => (
+                                        {availableTags.map((tag: string) => (
                                             <SelectItem key={tag} value={tag}>
                                                 <div className="flex items-center gap-2">
                                                     <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
