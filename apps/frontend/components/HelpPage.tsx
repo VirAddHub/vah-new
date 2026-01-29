@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-white relative z-0">
+    <div className="w-full bg-background relative z-0">
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"
