@@ -15,7 +15,6 @@ interface RightPanelProps {
   // Mail detail props
   selectedMailDetail?: MailItem | null;
   onMailView?: () => void;
-  onMailDownload?: () => void;
   onMailForward?: () => void;
   forwardInlineNotice?: string | null;
   onDismissForwardNotice?: () => void;
@@ -37,7 +36,6 @@ export function RightPanel({
   onClose,
   selectedMailDetail,
   onMailView,
-  onMailDownload,
   onMailForward,
   forwardInlineNotice,
   onDismissForwardNotice,
@@ -89,7 +87,6 @@ export function RightPanel({
                   item={selectedMailDetail}
                   onBack={onClose}
                   onView={onMailView || (() => {})}
-                  onDownload={onMailDownload || (() => {})}
                   onForward={onMailForward || (() => {})}
                   forwardInlineNotice={forwardInlineNotice || null}
                   onDismissForwardNotice={onDismissForwardNotice || (() => {})}

@@ -1034,11 +1034,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     setShowPDFModal(true);
                   }
                 }}
-                onMailDownload={() => {
-                  if (selectedMailDetail) {
-                    onDownload(selectedMailDetail);
-                  }
-                }}
                 onMailForward={() => {
                   if (selectedMailDetail) {
                     handleRequestForwarding(selectedMailDetail);
@@ -1160,11 +1155,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             if (selectedMailDetail) {
               setSelectedMailForPDF(selectedMailDetail);
               setShowPDFModal(true);
-            }
-          }}
-          onMailDownload={() => {
-            if (selectedMailDetail) {
-              onDownload(selectedMailDetail);
             }
           }}
           onMailForward={() => {
