@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "./ui/button";
 import { Menu, X, LogOut } from "lucide-react";
@@ -15,6 +15,7 @@ interface NavigationProps {
 export function Navigation({ onNavigate }: NavigationProps = {}) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
 
     // Check if we're in dashboard context
     // Dashboard routes: /dashboard, /account, /mail, /forwarding, /billing
@@ -31,7 +32,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     const publicNavItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'Help Centre', page: 'help', href: '/help' },
+        { label: 'Help Centre', page: 'help' },
     ];
 
     const navItems = publicNavItems;
@@ -50,21 +51,15 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         console.log('[Navigation] pathname:', pathname, 'isDashboard:', isDashboard);
     }
 
-    const handleNavClick = (page: string, href?: string) => {
+    const handleNavClick = (page: string) => {
         // Scroll to top before navigation
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
-        if (href) {
-            window.location.href = href;
-        } else if (page === 'login') {
-            window.location.href = '/login';
-        } else if (page === 'signup') {
-            window.location.href = '/signup';
-        } else if (onNavigate) {
+        if (onNavigate) {
             onNavigate(page);
         } else {
-            // Fallback: use window.location if onNavigate not provided
-            window.location.href = `/${page}`;
+            // Use router.push for client-side navigation (no page reload)
+            router.push(`/${page}`);
         }
         setIsMenuOpen(false);
     };
@@ -82,7 +77,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                             {navItems.map((item: any) => (
                                 <button
                                     key={item.label}
-                                    onClick={() => handleNavClick(item.page, item.href)}
+                                    onClick={() => handleNavClick(item.page)}
                                     className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                                 >
                                     {item.label}
@@ -154,7 +149,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 {navItems.map((item: any) => (
                                     <button
                                         key={item.label}
-                                        onClick={() => handleNavClick(item.page, item.href)}
+                                        onClick={() => handleNavClick(item.page)}
                                         className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
                                     >
                                         {item.label}

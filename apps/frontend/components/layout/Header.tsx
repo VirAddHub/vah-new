@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "../ui/button";
 import { Menu, X } from "lucide-react";
 import { VAHLogo } from "../VAHLogo";
@@ -21,24 +22,22 @@ interface HeaderProps {
  */
 export function Header({ onNavigate }: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const router = useRouter();
 
     const navItems = [
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
-        { label: 'Help Centre', page: 'help', href: '/help' },
+        { label: 'Help Centre', page: 'help' },
     ];
 
-    const handleNavClick = (page: string, href?: string) => {
+    const handleNavClick = (page: string) => {
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
-        if (href) {
-            window.location.href = href;
-        } else if (page === 'login') {
-            window.location.href = '/login';
-        } else if (page === 'signup') {
-            window.location.href = '/signup';
+        if (onNavigate) {
+            onNavigate(page);
         } else {
-            onNavigate?.(page);
+            // Fallback: use router.push for client-side navigation
+            router.push(`/${page}`);
         }
         setIsMenuOpen(false);
     };
@@ -55,7 +54,7 @@ export function Header({ onNavigate }: HeaderProps) {
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
-                                onClick={() => handleNavClick(item.page, (item as any).href)}
+                                onClick={() => handleNavClick(item.page)}
                                 className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                             >
                                 {item.label}
@@ -102,7 +101,7 @@ export function Header({ onNavigate }: HeaderProps) {
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
-                                onClick={() => handleNavClick(item.page, (item as any).href)}
+                                onClick={() => handleNavClick(item.page)}
                                 className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
                             >
                                 {item.label}
