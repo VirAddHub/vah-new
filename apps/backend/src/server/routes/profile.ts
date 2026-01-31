@@ -991,10 +991,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const { VAH_ADDRESS_INLINE } = await import('../../config/address');
         const registeredBusinessAddress = VAH_ADDRESS_INLINE;
 
-        const statement1 = 'Authorised to use as a Registered Office Address.';
-        const statement2 = 'HMRC and Companies House communications are accepted at this address.';
-        const note1 = 'No tenancy or occupation rights are granted.';
-        const note2 = 'Valid subject to an active subscription and UK AML/GDPR compliance.';
+        const statement1 = 'This letter confirms that the company named above is authorised to use the registered business address specified above as its Registered Office Address for Companies House purposes and for the receipt of official correspondence from HM Revenue & Customs (HMRC). This authorisation does not confer any tenancy, lease, or right of physical occupation, and remains valid only while the company maintains an active subscription and complies with applicable UK Anti-Money Laundering (AML), Know Your Customer (KYC), and General Data Protection Regulation (GDPR) requirements.';
+        const statement2 = '';
+        const note1 = 'This document is provided for business address verification purposes only.';
+        const note2 = '';
 
         const measure = (scale: number) => {
             const TYPE = {
@@ -1035,19 +1035,17 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 cardPadding +
                 h('Verified details', FONT.bold, TYPE.small, innerW) +
                 (10 * scale) +
-                hField('Registered Business Address', registeredBusinessAddress) +
+                hField('Registered Office Address', registeredBusinessAddress) +
                 hField('Authorised Company', businessName) +
                 hField('Issued by', signatureCompany) +
-                hField('Date issued', currentDate) +
+                hField('Date of issue', currentDate) +
                 (cardPadding - fieldGap);
 
             const notesCardH =
                 cardPadding +
                 h('Important notes', FONT.bold, TYPE.small, innerW) +
                 (8 * scale) +
-                h(`• ${note1}`, FONT.regular, TYPE.small, innerW) +
-                (6 * scale) +
-                h(`• ${note2}`, FONT.regular, TYPE.small, innerW) +
+                h(note1, FONT.regular, TYPE.small, innerW) +
                 cardPadding;
 
             // Title + cards + statements + signature (date issued appears once in Verified details)
@@ -1059,8 +1057,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             total += verifiedCardH;
             total += cardGap;
 
-            total += h(statement1, FONT.regular, TYPE.body, contentW) + sectionGap;
-            total += h(statement2, FONT.regular, TYPE.body, contentW) + cardGap;
+            total += h(statement1, FONT.regular, TYPE.body, contentW) + cardGap;
 
             total += notesCardH;
             total += cardGap;
@@ -1149,7 +1146,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const fieldGap = 10;
             const hf = (label: string, value: string) =>
                 h(label, FONT.regular, TYPE.small, innerW) + 2 + h(value, FONT.bold, TYPE.body, innerW) + fieldGap;
-            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 10 + hf('Registered Business Address', registeredBusinessAddress) + hf('Authorised Company', businessName) + hf('Issued by', signatureCompany) + hf('Date issued', currentDate) + (pad - fieldGap);
+            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 10 + hf('Registered Office Address', registeredBusinessAddress) + hf('Authorised Company', businessName) + hf('Issued by', signatureCompany) + hf('Date of issue', currentDate) + (pad - fieldGap);
         };
 
         const cardH = calcVerifiedCardHeight();
@@ -1160,15 +1157,14 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y = cardY + pad;
         doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Verified details', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y += 10;
-        writeField('Registered Business Address', registeredBusinessAddress, innerX, innerW);
+        writeField('Registered Office Address', registeredBusinessAddress, innerX, innerW);
         writeField('Authorised Company', businessName, innerX, innerW);
         writeField('Issued by', signatureCompany, innerX, innerW);
-        writeField('Date issued', currentDate, innerX, innerW);
+        writeField('Date of issue', currentDate, innerX, innerW);
         doc.y = cardY + cardH + chosen.cardGap;
 
         // Statements
-        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.sectionGap });
-        writeParagraph(statement2, { color: COLORS.body, gapAfter: chosen.cardGap });
+        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.cardGap });
 
         // Notes card
         const notesY = doc.y;
@@ -1177,7 +1173,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 doc.font(font as any).fontSize(fontSize);
                 return doc.heightOfString(text, { width, lineGap: chosen.lineGap });
             };
-            return pad + h('Notes', FONT.bold, TYPE.small, innerW) + 8 + h(`• ${note1}`, FONT.regular, TYPE.small, innerW) + 6 + h(`• ${note2}`, FONT.regular, TYPE.small, innerW) + pad;
+            return pad + h('Important notes', FONT.bold, TYPE.small, innerW) + 8 + h(note1, FONT.regular, TYPE.small, innerW) + pad;
         };
         const notesH = calcNotesHeight();
         doc.save();
@@ -1186,9 +1182,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y = notesY + pad;
         doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Important notes', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y += 8;
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(`• ${note1}`, innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
-        doc.y += 6 + doc.heightOfString(`• ${note1}`, { width: innerW, lineGap: chosen.lineGap });
-        doc.text(`• ${note2}`, innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
+        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(note1, innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
         doc.y = notesY + notesH + chosen.cardGap;
 
         // Signature (simple)

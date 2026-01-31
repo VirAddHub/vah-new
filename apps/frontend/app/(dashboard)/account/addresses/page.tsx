@@ -127,7 +127,8 @@ export default function AccountAddressesPage() {
 
             <div className="space-y-6">
                 {/* Registered Office Address (Companies House) */}
-                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#FAFAFA]">
+                {/* Enhanced authoritative styling: stronger background tint and clearer official label */}
+                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
                     <CardContent className="p-8">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -140,8 +141,9 @@ export default function AccountAddressesPage() {
                                 </Badge>
                             </div>
                         </div>
-                        <p className="text-[14px] font-normal leading-[1.4] text-[#666666] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            This is your official registered office address on record with Companies House. For compliance reasons, it cannot be edited here.
+                        {/* Updated label to emphasize official status */}
+                        <p className="text-[14px] font-medium leading-[1.4] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            Official address on file with Companies House. For compliance reasons, it cannot be edited here.
                         </p>
                         {addresses.businessAddress?.formatted ? (
                             <div className="bg-white rounded-[10px] p-4 border border-[#E5E7EB]">

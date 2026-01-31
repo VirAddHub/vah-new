@@ -648,6 +648,14 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             WHERE id = $3
         `, [nowTimestamp, nowBigint, userId]);
 
+        // Update subscription status to 'cancelled' when user is soft-deleted
+        const subscriptionUpdateTimestamp = TimestampUtils.forTableField('subscription', 'updated_at');
+        await pool.query(`
+            UPDATE subscription
+            SET status = 'cancelled', updated_at = $1
+            WHERE user_id = $2
+        `, [subscriptionUpdateTimestamp || nowBigint, userId]);
+
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
