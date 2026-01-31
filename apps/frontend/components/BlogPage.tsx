@@ -105,7 +105,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
             <div className="bg-[#F6F6F7] py-[100px] px-20">
                 <div className="max-w-[1280px] mx-auto">
                     <div className="flex flex-col items-center gap-[18px] mb-12">
-                        <h1 className="text-[54px] font-medium text-[#161B1A] leading-[1.2] text-center">
+                        <h1 className="text-[54px] font-semibold text-[#161B1A] leading-[1.2] text-center">
                             Insights & Resources for Modern Businesses
                         </h1>
                         <p className="text-lg text-[#666666] leading-[1.4] text-center max-w-[746px]">
