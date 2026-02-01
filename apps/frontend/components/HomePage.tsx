@@ -66,8 +66,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 A compliant alternative to a physical office.
                             </p>
 
-                            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-                                Use one trusted address for <strong className="font-semibold text-neutral-900">Companies House</strong>, <strong className="font-semibold text-neutral-900">HMRC</strong>, and <strong className="font-semibold text-neutral-900">official business mail</strong> — without using your home address.
+                            <p className="mt-4 text-base text-neutral-700 leading-relaxed">
+                                Use one trusted address for <strong className="font-semibold text-neutral-900">Companies House</strong>, <strong className="font-semibold text-neutral-900">HMRC</strong>, and <strong className="font-semibold text-neutral-900">official business mail</strong> without using your home address.
                             </p>
 
                             {/* Pricing - No Box */}

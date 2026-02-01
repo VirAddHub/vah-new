@@ -1041,12 +1041,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 hField('Date of issue', currentDate) +
                 (cardPadding - fieldGap);
 
-            const notesCardH =
-                cardPadding +
-                h('Important notes', FONT.bold, TYPE.small, innerW) +
+            const notesH =
+                h('Important notes', FONT.bold, TYPE.small, contentW) +
                 (8 * scale) +
-                h(note1, FONT.regular, TYPE.small, innerW) +
-                cardPadding;
+                h(note1, FONT.regular, TYPE.small, contentW);
 
             // Title + cards + statements + signature (date issued appears once in Verified details)
             let total = 0;
@@ -1057,9 +1055,9 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             total += verifiedCardH;
             total += cardGap;
 
-            total += h(statement1, FONT.regular, TYPE.body, contentW) + cardGap;
+            total += h(statement1, FONT.regular, TYPE.body, contentW) + sectionGap;
 
-            total += notesCardH;
+            total += notesH;
             total += cardGap;
 
             total += h(signatureCompany, FONT.bold, TYPE.body, contentW) + signatureGap;
@@ -1164,26 +1162,13 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y = cardY + cardH + chosen.cardGap;
 
         // Statements
-        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.cardGap });
+        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.sectionGap });
 
-        // Notes card
-        const notesY = doc.y;
-        const calcNotesHeight = () => {
-            const h = (text: string, font: string, fontSize: number, width: number) => {
-                doc.font(font as any).fontSize(fontSize);
-                return doc.heightOfString(text, { width, lineGap: chosen.lineGap });
-            };
-            return pad + h('Important notes', FONT.bold, TYPE.small, innerW) + 8 + h(note1, FONT.regular, TYPE.small, innerW) + pad;
-        };
-        const notesH = calcNotesHeight();
-        doc.save();
-        doc.roundedRect(cardX, notesY, cardW, notesH, 8).fill(COLORS.footerBg).stroke(COLORS.border);
-        doc.restore();
-        doc.y = notesY + pad;
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Important notes', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
+        // Important notes (plain text, no card)
+        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Important notes', contentX, doc.y, { width: contentW, lineGap: chosen.lineGap });
         doc.y += 8;
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(note1, innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
-        doc.y = notesY + notesH + chosen.cardGap;
+        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(note1, contentX, doc.y, { width: contentW, lineGap: chosen.lineGap });
+        doc.y += chosen.cardGap;
 
         // Signature (simple)
         doc.fillColor(COLORS.text)
