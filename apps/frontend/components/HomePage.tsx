@@ -403,25 +403,38 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA - Premium, restrained, clear */}
+            {/* FINAL CTA - London landmarks banner */}
             <section className="py-16 lg:py-24 bg-white">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="relative overflow-hidden rounded-2xl bg-primary p-12 lg:p-16">
-                        <div className="max-w-2xl">
-                            <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
-                                        Get your London Business Address Today
-                                    </h2>
-                            <p className="mt-4 text-lg text-white/90">
-                                Everything included for £9.99 per month.
-                                    </p>
-                            <div className="mt-8">
-                                <Button
-                                    onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    size="lg"
-                                    className="h-12 px-8 rounded-lg text-base font-medium bg-white text-primary hover:bg-white/95"
-                                >
-                                    Get Started
-                                </Button>
+                    <div className="relative overflow-hidden rounded-2xl bg-[#024E40] p-12 lg:p-16 min-h-[400px]">
+                        {/* London landmarks background image */}
+                        <div 
+                            className="absolute inset-0 opacity-30"
+                            style={{
+                                backgroundImage: 'url(/images/london_skyline.png)',
+                                backgroundPosition: 'left center',
+                                backgroundSize: 'contain',
+                                backgroundRepeat: 'no-repeat'
+                            }}
+                        />
+                        {/* Content aligned to right */}
+                        <div className="relative flex justify-end">
+                            <div className="max-w-2xl text-right">
+                                <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
+                                    Get your London Business Address Today
+                                </h2>
+                                <p className="mt-4 text-lg text-white/90">
+                                    Everything included for <span className="text-[#40C46C]">£9.99</span> per month.
+                                </p>
+                                <div className="mt-8 flex justify-end">
+                                    <Button
+                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                        size="lg"
+                                        className="h-12 px-8 rounded-lg text-base font-medium bg-[#40C46C] text-white hover:bg-[#33a058]"
+                                    >
+                                        Schedule London Address
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
