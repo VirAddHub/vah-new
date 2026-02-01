@@ -102,7 +102,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section */}
-            <div className="bg-[#F6F6F7] py-[100px] px-20">
+            <div className="bg-white py-[100px] px-20">
                 <div className="max-w-[1280px] mx-auto">
                     <div className="flex flex-col items-center gap-[18px] mb-12">
                         <h1 className="text-[54px] font-semibold text-[#161B1A] leading-[1.2] text-center">
@@ -157,7 +157,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 </div>
             )}
 
-            <div className="bg-[#F6F6F7] py-[100px] px-20">
+            <div className="bg-white py-[100px] px-20">
                 <div className="max-w-[1280px] mx-auto">
                     {/* Blog Posts Grid */}
                     {!loading && !error && gridPosts.length > 0 && (

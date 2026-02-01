@@ -843,7 +843,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         } as const;
 
         const BASE_TYPE = {
-            title: 22,
+            title: 18,
             body: 11.25,
             label: 10,
             small: 9.25,
@@ -867,7 +867,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const headerBottom = headerTop + headerHeight;
         const logoX = contentX;
         const logoY = headerTop + 18;
-        const logoWidth = 110;
+        const logoWidth = 160;
 
         // ===== LOGO/BRAND (Top-left, 40px margin-bottom) =====
         // PDFKit doesn't support SVG well, so we use PNG for PDFs
@@ -977,7 +977,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // So the footer must live inside the content box (above the bottom margin).
         const footerHeight = 110;
         const pageInnerBottom = pageHeight - ((doc as any).page.margins?.bottom ?? 50);
-        const footerTop = pageInnerBottom - footerHeight;
+        const footerTop = pageHeight - footerHeight; // Position footer at actual bottom of page
         const contentTop = headerBottom + 30;
         const contentBottom = footerTop - 24;
         const availableH = contentBottom - contentTop;
@@ -1189,9 +1189,9 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.y = footerTop - 18;
         }
 
-        // Footer background
+        // Footer background - extend to bottom of page
         doc.save();
-        doc.rect(0, footerTop, pageWidth, footerHeight).fill(COLORS.footerBg);
+        doc.rect(0, footerTop, pageWidth, pageHeight - footerTop).fill(COLORS.footerBg);
         doc.restore();
 
         // Footer top border

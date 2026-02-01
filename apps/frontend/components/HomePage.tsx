@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { usePricing } from "@/hooks/usePlans";
 import { Button } from "./ui/button";
@@ -73,7 +74,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             {/* Pricing - No Box */}
                             <div className="mt-10">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-semibold text-neutral-900">£9.99</span>
+                                    <span className="text-5xl font-semibold text-neutral-900">£{Number(monthlyPrice).toFixed(2)}</span>
                                     <span className="text-lg text-neutral-500">/ month</span>
                                 </div>
                                 <div className="mt-3 space-y-2">
@@ -213,7 +214,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 variant="ghost"
                                 className={`rounded-full px-5 py-2 text-sm font-medium transition-all ${billing === "annual"
                                     ? "bg-primary text-primary-foreground shadow-md scale-[1.02]"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground hover:bg-transparent hover:text-muted-foreground"
                                     }`}
                             >
                                 Annual
@@ -391,41 +392,32 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA - London landmarks banner */}
-            <section className="py-16 lg:py-24 bg-white">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="relative overflow-hidden bg-[#014D3F] mx-auto w-full max-w-[1280px] h-[589px] rounded-[30px]">
-                        {/* London street scene background image */}
-                        <div 
-                            className="absolute inset-0"
-                            style={{
-                                backgroundImage: 'url(/images/london_skyline.png)',
-                                backgroundPosition: 'left center',
-                                backgroundSize: 'cover',
-                                backgroundRepeat: 'no-repeat',
-                                opacity: 0.4
-                            }}
-                        />
-                        {/* Content aligned to right */}
-                        <div className="relative z-10 flex justify-end h-full p-12 lg:p-16">
-                            <div className="max-w-2xl text-right">
-                                <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
-                                    Get your London Business Address Today
-                                </h2>
-                                <p className="mt-4 text-lg text-white/90">
-                                    Everything included for <span className="text-[#40C46C]">£9.99</span> per month.
-                                </p>
-                                <div className="mt-8 flex justify-end">
-                                    <Button
-                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        size="lg"
-                                        className="h-12 px-8 rounded-lg text-base font-medium bg-[#40C46C] text-white hover:bg-[#33a058]"
-                                    >
-                                        Schedule London Address
-                                    </Button>
-                                </div>
-                            </div>
+            {/* FINAL CTA - Minimal, premium */}
+            <section className="py-20 lg:py-24 bg-white">
+                <div className="mx-auto max-w-4xl px-6 lg:px-8">
+                    {/* Thin divider */}
+                    <div className="border-t border-neutral-200 mb-16"></div>
+                    
+                    {/* Minimal CTA */}
+                    <div className="text-center space-y-6">
+                        <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-900 leading-tight tracking-tight">
+                            Ready to use your London business address?
+                        </h2>
+                        
+                        <div className="flex justify-center">
+                            <Button
+                                onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                size="lg"
+                                className="h-12 px-8 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                                Get started
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
                         </div>
+                        
+                        <p className="text-sm text-neutral-500">
+                            £{Number(monthlyPrice).toFixed(2)} per month · Cancel anytime
+                        </p>
                     </div>
                 </div>
             </section>
