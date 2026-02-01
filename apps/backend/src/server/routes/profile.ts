@@ -1037,14 +1037,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 (10 * scale) +
                 hField('Registered Office Address', registeredBusinessAddress) +
                 hField('Authorised Company', businessName) +
-                hField('Issued by', signatureCompany) +
                 hField('Date of issue', currentDate) +
                 (cardPadding - fieldGap);
-
-            const notesH =
-                h('Important notes', FONT.bold, TYPE.small, contentW) +
-                (8 * scale) +
-                h(note1, FONT.regular, TYPE.small, contentW);
 
             // Title + cards + statements + signature (date issued appears once in Verified details)
             let total = 0;
@@ -1055,14 +1049,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             total += verifiedCardH;
             total += cardGap;
 
-            total += h(statement1, FONT.regular, TYPE.body, contentW) + sectionGap;
+            total += h(statement1, FONT.regular, TYPE.body, contentW) + cardGap;
 
-            total += notesH;
-            total += cardGap;
-
-            total += h(signatureCompany, FONT.bold, TYPE.body, contentW) + signatureGap;
-            total += h(contactName, FONT.regular, TYPE.small, contentW) + (2 * scale);
-            total += h(supportEmail, FONT.regular, TYPE.small, contentW);
+            total += h('Sincerely', FONT.regular, TYPE.body, contentW) + signatureGap;
+            total += h('VirtualAddressHub Customer Support', FONT.bold, TYPE.body, contentW);
 
             return {
                 total,
@@ -1157,31 +1147,22 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += 10;
         writeField('Registered Office Address', registeredBusinessAddress, innerX, innerW);
         writeField('Authorised Company', businessName, innerX, innerW);
-        writeField('Issued by', signatureCompany, innerX, innerW);
         writeField('Date of issue', currentDate, innerX, innerW);
         doc.y = cardY + cardH + chosen.cardGap;
 
         // Statements
-        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.sectionGap });
+        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.cardGap });
 
-        // Important notes (plain text, no card)
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Important notes', contentX, doc.y, { width: contentW, lineGap: chosen.lineGap });
-        doc.y += 8;
-        doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.regular).text(note1, contentX, doc.y, { width: contentW, lineGap: chosen.lineGap });
-        doc.y += chosen.cardGap;
-
-        // Signature (simple)
+        // Signature
+        doc.fillColor(COLORS.text)
+            .fontSize(TYPE.body)
+            .font(FONT.regular)
+            .text('Sincerely', contentX, doc.y, { width: contentW });
+        doc.y += chosen.signatureGap;
         doc.fillColor(COLORS.text)
             .fontSize(TYPE.body)
             .font(FONT.bold)
-            .text(signatureCompany, contentX, doc.y, { width: contentW });
-        doc.y += chosen.signatureGap;
-        doc.fillColor(COLORS.muted)
-            .fontSize(TYPE.small)
-            .font(FONT.regular)
-            .text(contactName, contentX, doc.y, { width: contentW });
-        doc.y += (TYPE.small + 4);
-        doc.text(supportEmail, contentX, doc.y, { width: contentW });
+            .text('VirtualAddressHub Customer Support', contentX, doc.y, { width: contentW });
 
         // ===== FOOTER (light gray background + centered lines) =====
         // If content runs too low, clamp it (single-page certificate)

@@ -52,9 +52,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* HERO - Premium, calm, spacious with subtle depth */}
             <section className="relative bg-gradient-to-b from-white to-neutral-50 border-b border-neutral-200">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16 lg:py-24">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                    <div className="max-w-3xl mx-auto">
                         {/* Content */}
-                        <div className="max-w-xl">
+                        <div>
                             <h1 className="text-4xl lg:text-5xl font-semibold leading-tight text-neutral-900 tracking-tight">
                                 Your <span className="relative inline-block">
                                     Central London
@@ -111,18 +111,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     UK Companies House & HMRC compliant.
                                 </p>
                             </div>
-                        </div>
-
-                        {/* Image */}
-                        <div className="relative flex items-center justify-center lg:justify-end">
-                            <Image
-                                    src="/figma/hero-photo.png"
-                                alt=""
-                                width={520}
-                                height={400}
-                                priority
-                                className="w-full max-w-[520px] h-auto rounded-2xl"
-                                />
                         </div>
                     </div>
                 </div>
