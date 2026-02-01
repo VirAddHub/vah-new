@@ -843,21 +843,21 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         } as const;
 
         const BASE_TYPE = {
-            title: 18,
+            title: 22,
             body: 11.25,
             label: 10,
             small: 9.25,
         } as const;
 
         const BASE = {
-            lineGap: 3,
-            paragraphGap: 10,
-            titleToDateGap: 10,
-            afterDateGap: 16,
-            cardPadding: 14,
-            cardGap: 14,
-            sectionGap: 10,
-            signatureGap: 10,
+            lineGap: 4,
+            paragraphGap: 16,
+            titleToDateGap: 12,
+            afterDateGap: 24,
+            cardPadding: 18,
+            cardGap: 20,
+            sectionGap: 20,
+            signatureGap: 12,
             footerLineStep: 14,
         } as const;
 
@@ -991,9 +991,9 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         const { VAH_ADDRESS_INLINE } = await import('../../config/address');
         const registeredBusinessAddress = VAH_ADDRESS_INLINE;
 
-        const statement1 = 'This letter confirms that the company named above is authorised to use the registered business address specified above as its Registered Office Address for Companies House purposes and for the receipt of official correspondence from HM Revenue & Customs (HMRC). This authorisation does not confer any tenancy, lease, or right of physical occupation, and remains valid only while the company maintains an active subscription and complies with applicable UK Anti-Money Laundering (AML), Know Your Customer (KYC), and General Data Protection Regulation (GDPR) requirements.';
+        const statement1 = 'This letter confirms that the above-named company is authorised to use the address stated above as its Registered Office Address for Companies House and for the receipt of official correspondence from HM Revenue & Customs (HMRC). The address may also be used as the company\'s business address. This authorisation does not imply physical occupation of the premises.';
         const statement2 = '';
-        const note1 = 'This document is provided for business address verification purposes only.';
+        const note1 = '';
         const note2 = '';
 
         const measure = (scale: number) => {
@@ -1019,14 +1019,14 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             };
 
             const innerW = contentW - cardPadding * 2;
-            const fieldGap = 8 * scale;
+            const fieldGap = 14 * scale;
 
             const hField = (label: string, value: string) => {
-                // label (small) + value (body)
+                // label (small) + value (body, bold for dynamic values)
                 return (
-                    h(label, FONT.bold, TYPE.small, innerW) +
-                    (2 * scale) +
-                    h(value, FONT.regular, TYPE.body, innerW) +
+                    h(label, FONT.regular, TYPE.small, innerW) +
+                    (4 * scale) +
+                    h(value, FONT.bold, TYPE.body, innerW) +
                     fieldGap
                 );
             };
@@ -1034,7 +1034,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const verifiedCardH =
                 cardPadding +
                 h('Verified details', FONT.bold, TYPE.small, innerW) +
-                (10 * scale) +
+                (12 * scale) +
                 hField('Registered Office Address', registeredBusinessAddress) +
                 hField('Authorised Company', businessName) +
                 hField('Date of issue', currentDate) +
@@ -1044,12 +1044,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             let total = 0;
             total += h('Business Address Confirmation', FONT.bold, TYPE.title, contentW);
             total += titleToDateGap;
+            total += 1; // Divider line height
             total += afterDateGap;
 
             total += verifiedCardH;
             total += cardGap;
 
-            total += h(statement1, FONT.regular, TYPE.body, contentW) + cardGap;
+            // Account for improved line height (lineGap: 6 instead of 3)
+            const statementH = h(statement1, FONT.regular, TYPE.body, contentW);
+            total += statementH + 8 + cardGap; // 8px extra spacing before paragraph
 
             total += h('Sincerely', FONT.regular, TYPE.body, contentW) + signatureGap;
             total += h('VirtualAddressHub Customer Support', FONT.bold, TYPE.body, contentW);
@@ -1099,23 +1102,30 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 .fontSize(TYPE.small)
                 .font(FONT.regular)
                 .text(label, x, doc.y, { width, lineGap: chosen.lineGap });
-            doc.y += 2;
+            doc.y += 4;
             doc.fillColor(COLORS.text)
                 .fontSize(TYPE.body)
                 .font(FONT.bold)
                 .text(value, x, doc.y, { width, lineGap: chosen.lineGap });
-            doc.y += 10;
+            doc.y += 14;
         };
 
         // Start main content (fits in one page above footer)
         doc.y = contentTop;
 
-        // Title block
+        // Title block - increased prominence
         doc.fillColor(COLORS.text)
             .fontSize(TYPE.title)
             .font(FONT.bold)
             .text('Business Address Confirmation', contentX, doc.y, { width: contentW });
         doc.y += chosen.titleToDateGap;
+        
+        // Subtle divider under title
+        doc.strokeColor(COLORS.border)
+            .lineWidth(1)
+            .moveTo(contentX, doc.y)
+            .lineTo(contentX + contentW, doc.y)
+            .stroke();
         doc.y += chosen.afterDateGap;
 
         // Verified details card
@@ -1131,10 +1141,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 doc.font(font as any).fontSize(fontSize);
                 return doc.heightOfString(text, { width, lineGap: chosen.lineGap });
             };
-            const fieldGap = 10;
+            const fieldGap = 14;
             const hf = (label: string, value: string) =>
-                h(label, FONT.regular, TYPE.small, innerW) + 2 + h(value, FONT.bold, TYPE.body, innerW) + fieldGap;
-            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 10 + hf('Registered Office Address', registeredBusinessAddress) + hf('Authorised Company', businessName) + hf('Issued by', signatureCompany) + hf('Date of issue', currentDate) + (pad - fieldGap);
+                h(label, FONT.regular, TYPE.small, innerW) + 4 + h(value, FONT.bold, TYPE.body, innerW) + fieldGap;
+            return pad + h('Verified details', FONT.bold, TYPE.small, innerW) + 12 + hf('Registered Office Address', registeredBusinessAddress) + hf('Authorised Company', businessName) + hf('Date of issue', currentDate) + (pad - fieldGap);
         };
 
         const cardH = calcVerifiedCardHeight();
@@ -1144,14 +1154,23 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
         doc.y = cardY + pad;
         doc.fillColor(COLORS.muted).fontSize(TYPE.small).font(FONT.bold).text('Verified details', innerX, doc.y, { width: innerW, lineGap: chosen.lineGap });
-        doc.y += 10;
+        doc.y += 12;
         writeField('Registered Office Address', registeredBusinessAddress, innerX, innerW);
         writeField('Authorised Company', businessName, innerX, innerW);
         writeField('Date of issue', currentDate, innerX, innerW);
         doc.y = cardY + cardH + chosen.cardGap;
 
-        // Statements
-        writeParagraph(statement1, { color: COLORS.body, gapAfter: chosen.cardGap });
+        // Authorisation paragraph with improved spacing and line height
+        doc.y += 8; // Extra spacing before paragraph
+        doc.fillColor(COLORS.body)
+            .fontSize(TYPE.body)
+            .font(FONT.regular)
+            .text(statement1, contentX, doc.y, { 
+                width: contentW, 
+                lineGap: 6,
+                paragraphGap: chosen.paragraphGap
+            });
+        doc.y += chosen.cardGap;
 
         // Signature
         doc.fillColor(COLORS.text)

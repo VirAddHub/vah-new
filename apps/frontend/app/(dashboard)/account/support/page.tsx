@@ -17,21 +17,19 @@ export default function AccountSupportPage() {
                 </p>
             </div>
 
-            {/* Contact Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Support Options List */}
+            <div className="space-y-4">
                 {/* Email Support */}
-                <Card className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Mail className="w-5 h-5 text-primary" />
-                            <h2 className="text-xl font-semibold text-neutral-900">
-                                Email Support
-                            </h2>
-                        </div>
-                        <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                    <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                            Email Support
+                        </h2>
+                        <p className="text-base text-neutral-600 leading-relaxed mb-3">
                             Send us an email and we'll get back to you. We usually respond within 24 hours.
                         </p>
-                        <div className="space-y-2 mb-4">
+                        <div className="space-y-1 mb-4">
                             <p className="text-sm text-neutral-700">
                                 <span className="font-medium">Account:</span> support@virtualaddresshub.co.uk
                             </p>
@@ -41,64 +39,58 @@ export default function AccountSupportPage() {
                         </div>
                         <Button
                             onClick={() => window.location.href = 'mailto:support@virtualaddresshub.co.uk'}
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                             Send Email
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* WhatsApp Support */}
-                <Card className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <MessageCircle className="w-5 h-5 text-primary" />
-                            <h2 className="text-xl font-semibold text-neutral-900">
-                                WhatsApp Support
-                            </h2>
-                        </div>
-                        <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                    <MessageCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                            WhatsApp Support
+                        </h2>
+                        <p className="text-base text-neutral-600 leading-relaxed mb-3">
                             Message us on WhatsApp and our support team will respond as soon as possible
                         </p>
-                        <div className="space-y-2 mb-4">
-                            <p className="text-sm text-neutral-600">
-                                Available: Mon – Fri, 8:00 AM – 6:00 PM
-                            </p>
-                        </div>
+                        <p className="text-sm text-neutral-600 mb-4">
+                            Available: Mon – Fri, 8:00 AM – 6:00 PM
+                        </p>
                         <Button
                             onClick={() => window.open('https://wa.me/447000000000', '_blank', 'noopener,noreferrer')}
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                             Chat on WhatsApp
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
-                    </CardContent>
-                </Card>
-            </div>
+                    </div>
+                </div>
 
-            {/* Help Center */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <HelpCircle className="w-5 h-5 text-primary" />
-                        <h2 className="text-xl font-semibold text-neutral-900">
+                {/* Help Center */}
+                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                    <HelpCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
                             Help Center
                         </h2>
+                        <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                            Browse our help articles and frequently asked questions
+                        </p>
+                        <Button
+                            onClick={() => window.location.href = '/help'}
+                            variant="outline"
+                            className="border-primary text-primary hover:bg-primary/10"
+                        >
+                            Visit Help Center
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
                     </div>
-                    <p className="text-base text-neutral-600 leading-relaxed mb-4">
-                        Browse our help articles and frequently asked questions
-                    </p>
-                    <Button
-                        onClick={() => window.location.href = '/help'}
-                        variant="outline"
-                        className="border-primary text-primary hover:bg-primary/10"
-                    >
-                        Visit Help Center
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

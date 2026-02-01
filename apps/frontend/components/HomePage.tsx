@@ -213,7 +213,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 variant="ghost"
                                 className={`rounded-full px-5 py-2 text-sm font-medium transition-all ${billing === "annual"
                                     ? "bg-primary text-primary-foreground shadow-md scale-[1.02]"
-                                    : "text-muted-foreground hover:text-foreground"
+                                    : "text-muted-foreground"
                                     }`}
                             >
                                 Annual
@@ -394,19 +394,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* FINAL CTA - London landmarks banner */}
             <section className="py-16 lg:py-24 bg-white">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="relative overflow-hidden rounded-2xl bg-[#024E40] p-12 lg:p-16 min-h-[400px]">
-                        {/* London landmarks background image */}
+                    <div className="relative overflow-hidden bg-[#014D3F] mx-auto w-full max-w-[1280px] h-[589px] rounded-[30px]">
+                        {/* London street scene background image */}
                         <div 
-                            className="absolute inset-0 opacity-30"
+                            className="absolute inset-0"
                             style={{
                                 backgroundImage: 'url(/images/london_skyline.png)',
                                 backgroundPosition: 'left center',
-                                backgroundSize: 'contain',
-                                backgroundRepeat: 'no-repeat'
+                                backgroundSize: 'cover',
+                                backgroundRepeat: 'no-repeat',
+                                opacity: 0.4
                             }}
                         />
                         {/* Content aligned to right */}
-                        <div className="relative flex justify-end">
+                        <div className="relative z-10 flex justify-end h-full p-12 lg:p-16">
                             <div className="max-w-2xl text-right">
                                 <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
                                     Get your London Business Address Today

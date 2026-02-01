@@ -100,7 +100,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     }, [blogPosts]);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-white">
             {/* Hero Section */}
             <div className="bg-[#F6F6F7] py-[100px] px-20">
                 <div className="max-w-[1280px] mx-auto">
