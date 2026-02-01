@@ -16,7 +16,9 @@ export default function DashboardLayout({
                 <Navigation />
                 <div className="flex flex-1 pt-10 md:pt-16">
                     {/* Sidebar - Inline on desktop, overlay on mobile */}
-                    <DashboardSidebar />
+                    <div className="lg:pl-6">
+                        <DashboardSidebar />
+                    </div>
                     
                     {/* Main Content - Flows beside sidebar on desktop */}
                     <main 

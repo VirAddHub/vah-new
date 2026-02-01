@@ -392,31 +392,64 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA - Minimal, premium */}
-            <section className="py-20 lg:py-24 bg-white">
-                <div className="mx-auto max-w-4xl px-6 lg:px-8">
-                    {/* Thin divider */}
-                    <div className="border-t border-neutral-200 mb-16"></div>
+            {/* FINAL CTA - Premium, conversion-focused */}
+            <section className="py-24 lg:py-32 bg-gradient-to-b from-white to-neutral-50/50">
+                <div className="mx-auto max-w-3xl px-6 lg:px-8">
+                    {/* Thin divider with subtle green accent */}
+                    <div className="border-t border-neutral-200 mb-20 relative">
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary"></div>
+                    </div>
                     
-                    {/* Minimal CTA */}
-                    <div className="text-center space-y-6">
-                        <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-900 leading-tight tracking-tight">
-                            Ready to use your London business address?
+                    {/* Premium CTA */}
+                    <div className="text-center space-y-8">
+                        {/* Headline */}
+                        <h2 className="text-3xl lg:text-4xl font-semibold text-neutral-900 leading-tight tracking-tight">
+                            Get your official London business address today
                         </h2>
                         
-                        <div className="flex justify-center">
+                        {/* Supporting line */}
+                        <p className="text-lg text-neutral-600 leading-relaxed max-w-2xl mx-auto">
+                            Fully compliant with Companies House & HMRC. Same-day mail scanning.
+                        </p>
+                        
+                        {/* CTA Button */}
+                        <div className="flex flex-col items-center gap-4">
                             <Button
                                 onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                 size="lg"
-                                className="h-12 px-8 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                                className="h-14 px-10 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
                             >
                                 Get started
-                                <ArrowRight className="w-4 h-4 ml-2" />
+                                <ArrowRight className="w-5 h-5 ml-2" />
                             </Button>
+                            
+                            {/* Optional secondary link */}
+                            <button
+                                onClick={() => handleNavClick?.("plans")}
+                                className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+                            >
+                                View what's included
+                            </button>
                         </div>
                         
-                        <p className="text-sm text-neutral-500">
-                            £{Number(monthlyPrice).toFixed(2)} per month · Cancel anytime
+                        {/* Dynamic Pricing */}
+                        {!pricingError && (
+                            <div className="pt-2">
+                                {pricingLoading ? (
+                                    <p className="text-sm text-neutral-400 animate-pulse">
+                                        Loading pricing...
+                                    </p>
+                                ) : hasApiData && monthlyPrice > 0 ? (
+                                    <p className="text-sm text-neutral-500">
+                                        From £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
+                                    </p>
+                                ) : null}
+                            </div>
+                        )}
+                        
+                        {/* Trust micro-signals */}
+                        <p className="text-xs text-neutral-400 pt-2">
+                            No setup fees · No contracts
                         </p>
                     </div>
                 </div>
