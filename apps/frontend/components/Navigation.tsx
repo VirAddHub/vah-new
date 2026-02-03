@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
+import { useDashboardView } from "@/contexts/DashboardViewContext";
 
 interface NavigationProps {
     onNavigate?: (page: string) => void;
@@ -16,6 +17,15 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
+    
+    // Get mobile sidebar state from context (only available in dashboard)
+    let setIsMobileSidebarOpen: ((open: boolean) => void) | null = null;
+    try {
+        const dashboardContext = useDashboardView();
+        setIsMobileSidebarOpen = dashboardContext.setIsMobileSidebarOpen;
+    } catch {
+        // Not in dashboard context, that's fine
+    }
 
     // Check if we're in dashboard context
     // Dashboard routes: /dashboard, /account, /mail, /forwarding, /billing
@@ -68,37 +78,62 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    {/* Logo */}
-                    <VAHLogo onNavigate={onNavigate} size="lg" />
-
-                    {/* Desktop Navigation */}
-                    {!isDashboard && (
-                        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
-                            {navItems.map((item: any) => (
+                    {/* Mobile Dashboard: Hamburger on LEFT, Logo on RIGHT */}
+                    {isDashboard ? (
+                        <>
+                            {/* Mobile Hamburger Menu (Dashboard Navigation) */}
+                            {setIsMobileSidebarOpen && (
                                 <button
-                                    key={item.label}
-                                    onClick={() => handleNavClick(item.page)}
-                                    className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                    onClick={() => setIsMobileSidebarOpen(true)}
+                                    className="md:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                                    aria-label="Open dashboard menu"
                                 >
-                                    {item.label}
+                                    <Menu className="h-5 w-5" strokeWidth={2} />
                                 </button>
-                            ))}
-                        </nav>
-                    )}
+                            )}
+                            
+                            {/* Desktop Logo (left side) */}
+                            <div className="hidden md:block">
+                                <VAHLogo onNavigate={onNavigate} size="lg" />
+                            </div>
+                            
+                            {/* Mobile Logo (right side) */}
+                            <div className="md:hidden ml-auto">
+                                <VAHLogo onNavigate={onNavigate} size="lg" />
+                            </div>
+                            
+                            {/* Desktop Auth */}
+                            <div className="hidden md:flex items-center gap-4">
+                                <Button
+                                    onClick={handleLogout}
+                                    variant="ghost"
+                                    className="flex items-center gap-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    Sign out
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Public Pages: Logo on LEFT */}
+                            <VAHLogo onNavigate={onNavigate} size="lg" />
 
-                    {/* Desktop Auth */}
-                    <div className="hidden md:flex items-center gap-4">
-                        {isDashboard ? (
-                            <Button
-                                onClick={handleLogout}
-                                variant="ghost"
-                                className="flex items-center gap-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                Sign out
-                            </Button>
-                        ) : (
-                            <>
+                            {/* Desktop Navigation */}
+                            <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
+                                {navItems.map((item: any) => (
+                                    <button
+                                        key={item.label}
+                                        onClick={() => handleNavClick(item.page)}
+                                        className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+
+                            {/* Desktop Auth */}
+                            <div className="hidden md:flex items-center gap-4">
                                 <button
                                     onClick={() => handleNavClick('login')}
                                     className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
@@ -112,66 +147,53 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 >
                                     Get started
                                 </Button>
-                            </>
-                        )}
-                    </div>
+                            </div>
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="md:hidden p-2 -mr-2 text-neutral-600 hover:text-neutral-900 transition-colors"
-                        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-                    >
-                        {isMenuOpen ? (
-                            <X className="h-5 w-5" strokeWidth={2} />
-                        ) : (
-                            <Menu className="h-5 w-5" strokeWidth={2} />
-                        )}
-                    </button>
+                            {/* Mobile Menu Button (Public Pages) */}
+                            <button
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="md:hidden p-2 -mr-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                            >
+                                {isMenuOpen ? (
+                                    <X className="h-5 w-5" strokeWidth={2} />
+                                ) : (
+                                    <Menu className="h-5 w-5" strokeWidth={2} />
+                                )}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Mobile Menu */}
-            {isMenuOpen && (
+            {/* Mobile Menu - Only for public pages (dashboard uses sidebar drawer) */}
+            {isMenuOpen && !isDashboard && (
                 <div className="md:hidden border-t border-neutral-200 bg-white">
                     <div className="px-6 py-6 space-y-1">
-                        {isDashboard ? (
-                            <Button
-                                onClick={handleLogout}
-                                variant="ghost"
-                                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
+                        {navItems.map((item: any) => (
+                            <button
+                                key={item.label}
+                                onClick={() => handleNavClick(item.page)}
+                                className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
                             >
-                                <LogOut className="h-4 w-4" />
-                                Sign out
+                                {item.label}
+                            </button>
+                        ))}
+                        
+                        <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
+                            <button
+                                onClick={() => handleNavClick('login')}
+                                className="block w-full text-center px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                            >
+                                Log in
+                            </button>
+                            <Button
+                                onClick={() => handleNavClick('signup')}
+                                className="w-full rounded-lg h-10"
+                            >
+                                Get started
                             </Button>
-                        ) : (
-                            <>
-                                {navItems.map((item: any) => (
-                                    <button
-                                        key={item.label}
-                                        onClick={() => handleNavClick(item.page)}
-                                        className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
-                                
-                                <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
-                                    <button
-                                        onClick={() => handleNavClick('login')}
-                                        className="block w-full text-center px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
-                                    >
-                                        Log in
-                                    </button>
-                                    <Button
-                                        onClick={() => handleNavClick('signup')}
-                                        className="w-full rounded-lg h-10"
-                                    >
-                                        Get started
-                                    </Button>
-                                </div>
-                            </>
-                        )}
+                        </div>
                     </div>
                 </div>
             )}

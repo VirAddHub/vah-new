@@ -11,6 +11,7 @@ import {
     LayoutDashboard,
     Menu,
     X,
+    LogOut,
     type LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,9 +57,17 @@ const accountNavItems: NavItem[] = [
 export function DashboardSidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { activeView, setActiveView } = useDashboardView();
-    const [isOpen, setIsOpen] = useState(false);
+    const { activeView, setActiveView, isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const [isMobile, setIsMobile] = useState(false);
+    
+    // Handle logout
+    const handleLogout = () => {
+        localStorage.removeItem('vah_jwt');
+        localStorage.removeItem('vah_user');
+        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        window.location.href = '/login';
+    };
 
     useEffect(() => {
         const checkMobile = () => {
@@ -76,9 +85,9 @@ export function DashboardSidebar() {
     // Close sidebar when route changes on mobile
     useEffect(() => {
         if (isMobile) {
-            setIsOpen(false);
+            setIsMobileSidebarOpen(false);
         }
-    }, [pathname, isMobile]);
+    }, [pathname, isMobile, setIsMobileSidebarOpen]);
 
     const isActive = (href: string) => {
         if (href === '/account/overview') {
@@ -164,22 +173,12 @@ export function DashboardSidebar() {
     if (isMobile) {
         return (
             <>
-                {/* Hamburger Button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsOpen(true)}
-                    className="lg:hidden fixed top-20 left-4 z-50 bg-white border border-neutral-200 rounded-lg shadow-sm h-10 w-10"
-                >
-                    <Menu className="h-5 w-5 text-neutral-900" strokeWidth={2} />
-                </Button>
-
-                {/* Mobile Sidebar Overlay */}
-                {isOpen && (
+                {/* Mobile Sidebar Overlay - Controlled by Navigation component */}
+                {isMobileSidebarOpen && (
                     <>
                         <div 
                             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                            onClick={() => setIsOpen(false)}
+                            onClick={() => setIsMobileSidebarOpen(false)}
                         />
                         <div className="fixed left-0 top-0 h-full z-50 lg:hidden w-[280px]">
                             <div className="relative h-full bg-white shadow-xl flex flex-col">
@@ -188,7 +187,7 @@ export function DashboardSidebar() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => setIsOpen(false)}
+                                        onClick={() => setIsMobileSidebarOpen(false)}
                                         className="h-8 w-8"
                                     >
                                         <X className="h-5 w-5" strokeWidth={2} />
@@ -202,7 +201,7 @@ export function DashboardSidebar() {
                                             <button
                                                 onClick={() => {
                                                     handleMainNavClick('mail');
-                                                    setIsOpen(false);
+                                                    setIsMobileSidebarOpen(false);
                                                 }}
                                                 className={cn(
                                                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
@@ -233,7 +232,7 @@ export function DashboardSidebar() {
                                                     <Link
                                                         key={item.href}
                                                         href={item.href}
-                                                        onClick={() => setIsOpen(false)}
+                                                        onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                                                             active
@@ -250,9 +249,21 @@ export function DashboardSidebar() {
                                     </div>
                                 </div>
                                 
-                                {/* Certificate Download - Mobile */}
-                                <div className="border-t border-neutral-200">
-                                    <CertificateDownload />
+                                {/* Divider */}
+                                <div className="border-t border-neutral-200"></div>
+                                
+                                {/* Sign Out - Final item at bottom */}
+                                <div className="p-6">
+                                    <button
+                                        onClick={() => {
+                                            handleLogout();
+                                            setIsMobileSidebarOpen(false);
+                                        }}
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+                                    >
+                                        <LogOut className="w-5 h-5" strokeWidth={2} />
+                                        Sign out
+                                    </button>
                                 </div>
                             </div>
                         </div>
