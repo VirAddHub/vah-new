@@ -60,13 +60,28 @@ export function DashboardSidebar() {
     const { activeView, setActiveView, isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const [isMobile, setIsMobile] = useState(false);
     
-    // Handle logout
-    const handleLogout = () => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
-        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login';
+    // Handle logout - use proper API endpoint
+    // Export this so DashboardHeader can use it
+    const handleLogout = async () => {
+        try {
+            // Call logout API endpoint
+            await fetch('/api/bff/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+        } finally {
+            // Always clear client-side state and redirect, even if API call fails
+            localStorage.removeItem('vah_jwt');
+            localStorage.removeItem('vah_user');
+            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/login';
+        }
     };
 
     useEffect(() => {
@@ -177,7 +192,7 @@ export function DashboardSidebar() {
                             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                             onClick={() => setIsMobileSidebarOpen(false)}
                         />
-                        <div className="fixed left-0 top-0 h-full z-50 lg:hidden w-[280px]">
+                        <div className="fixed left-0 top-0 h-dvh z-50 lg:hidden w-[280px]">
                             <div className="relative h-full bg-white shadow-xl flex flex-col">
                                 <div className="flex items-center justify-between p-6 border-b border-neutral-200">
                                     <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
@@ -246,11 +261,8 @@ export function DashboardSidebar() {
                                     </div>
                                 </div>
                                 
-                                {/* Divider */}
-                                <div className="border-t border-neutral-200"></div>
-                                
-                                {/* Sign Out - Final item at bottom */}
-                                <div className="p-6">
+                                {/* Footer with Sign Out - Pinned to bottom */}
+                                <div className="border-t border-neutral-200 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
                                     <button
                                         onClick={() => {
                                             handleLogout();

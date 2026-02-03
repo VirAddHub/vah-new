@@ -45,7 +45,7 @@ export function DashboardHeader({ onNavigate, onLogout, userName, userEmail }: D
             </button>
           </nav>
 
-          {/* User Menu */}
+          {/* User Menu - Sign out on desktop, mobile uses drawer */}
           <div className="flex items-center gap-4">
             <div className="hidden sm:block text-sm text-right">
               <p className="font-medium text-neutral-900">{userName}</p>
@@ -53,11 +53,12 @@ export function DashboardHeader({ onNavigate, onLogout, userName, userEmail }: D
                 <p className="text-xs text-neutral-500">{userEmail}</p>
               )}
             </div>
+            {/* Sign out - desktop only (mobile uses drawer) */}
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onLogout} 
-              className="flex items-center gap-2"
+              className="hidden lg:flex items-center gap-2"
             >
               <LogOut className="h-4 w-4" strokeWidth={2} />
               <span>Sign out</span>

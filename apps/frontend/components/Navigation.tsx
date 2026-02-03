@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "./ui/button";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
@@ -46,15 +46,6 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     ];
 
     const navItems = publicNavItems;
-
-    // Handle logout
-    const handleLogout = () => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
-        document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login';
-    };
 
     // Debug: Log pathname and isDashboard (remove in production)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -102,16 +93,9 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 <VAHLogo onNavigate={onNavigate} size="lg" />
                             </div>
                             
-                            {/* Desktop Auth */}
+                            {/* Desktop Auth - Sign out removed (only in mobile drawer) */}
                             <div className="hidden md:flex items-center gap-4">
-                                <Button
-                                    onClick={handleLogout}
-                                    variant="ghost"
-                                    className="flex items-center gap-2 text-sm font-medium transition-colors text-neutral-600 hover:text-neutral-900"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Sign out
-                                </Button>
+                                {/* Sign out removed - only available in mobile drawer */}
                             </div>
                         </>
                     ) : (
