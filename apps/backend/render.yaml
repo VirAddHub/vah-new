@@ -46,7 +46,7 @@ services:
       - key: INVOICE_LINK_TTL_ADMIN_MIN
         value: "60"
       - key: ALLOWED_ORIGINS
-        value: "https://vah-frontend-final.vercel.app,http://localhost:3000"
+        value: "https://vah-new-frontend-75d6.vercel.app,https://vah-frontend-final.vercel.app,http://localhost:3000"
       # Set these in Render Dashboard (leave unsynced here if you prefer):
       - key: POSTMARK_API_TOKEN
         sync: false

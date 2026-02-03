@@ -189,6 +189,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(cors({
     origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
         const isProd = process.env.NODE_ENV === 'production';
+        
+        // Support both CORS_ORIGINS and ALLOWED_ORIGINS env vars (for backwards compatibility)
+        const corsOriginsEnv = process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '';
+        const envOrigins = corsOriginsEnv
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+        
         const allowedOrigins = [
             // prod domains
             'https://virtualaddresshub.co.uk',
@@ -196,12 +204,10 @@ app.use(cors({
             // explicit staging/frontends
             'https://vah-new-frontend-75d6.vercel.app',
             'https://vah-frontend-final.vercel.app',
-            // local dev only
+            // local dev - only allow in non-production (or if explicitly set in env)
             ...(isProd ? [] : ['http://localhost:3000', 'http://localhost:3001']),
-            // optional extra allowlist via env (comma-separated)
-            ...(process.env.CORS_ORIGINS
-                ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
-                : []),
+            // env-configured origins (from CORS_ORIGINS or ALLOWED_ORIGINS)
+            ...envOrigins,
         ];
 
         // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
