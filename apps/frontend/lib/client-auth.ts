@@ -59,47 +59,35 @@ export class ClientAuthManager {
   private _inFlight: boolean = false; // ✅ Prevent simultaneous /whoami calls
   private _initialized: boolean = false; // ✅ Ensure first-time check logic runs only once
 
+  // apps/frontend/lib/client-auth.ts
+  // ... imports
+
   constructor() {
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token');
-      this.user = parseJSONSafe(localStorage.getItem('user'), null);
-    }
+    // Auth is now cookie-based. No client-side token storage.
   }
 
   isAuthenticated(): boolean {
-    // Phase A: Check either token (legacy) or user (cookie-based session)
-    return !!this.token || !!this.user;
+    return !!this.user;
+  }
+  getUser(): User | null {
+    return this.user;
   }
 
   isAdmin(): boolean {
-    return this.user?.is_admin || false;
-  }
-
-  getUser() {
-    return this.user;
+    return this.user?.is_admin || this.user?.role === 'admin' || false;
   }
 
   setUser(user: User) {
     this.user = user;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user', safeStringify(user));
-    }
   }
 
   setToken(token: string) {
     this.token = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
-    }
   }
 
   clearAuth() {
     this.token = null;
     this.user = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-    }
   }
 
   async checkAuth() {
@@ -112,9 +100,7 @@ export class ClientAuthManager {
     this._inFlight = true;
     try {
       console.log('Checking auth with API client...');
-      const response: ApiResponse<unknown> = await apiClient.get(apiUrl('auth/whoami'), {
-        headers: { Authorization: `Bearer ${tokenManager.get() || ''}` }
-      });
+      const response: ApiResponse<unknown> = await apiClient.get(apiUrl('auth/whoami'));
       console.log('Auth check response:', response);
 
       if (response.ok && 'data' in response) {

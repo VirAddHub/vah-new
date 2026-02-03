@@ -29,24 +29,15 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
 
-const getToken = () => {
-  try {
-    return localStorage.getItem("vah_jwt");
-  } catch {
-    return null;
-  }
-};
-
 export interface ApiDirectOptions extends RequestInit {
   json?: any;
 }
 
 export async function apiDirect(path: string, init: ApiDirectOptions = {}) {
-  const token = getToken();
+  // Auth is now handled via httpOnly cookies
   const headers = {
     "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   const body = init.json !== undefined ? JSON.stringify(init.json) : init.body;

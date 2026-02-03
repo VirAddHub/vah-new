@@ -18,7 +18,6 @@ export async function updateForwardingByAction(id: string, next: string) {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${localStorage.getItem('vah_jwt') || ''}`
     },
     body: JSON.stringify({ action }),
   });

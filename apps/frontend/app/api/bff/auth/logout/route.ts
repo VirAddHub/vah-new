@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   const routePath = '/api/bff/auth/logout';
   let backendUrl = '';
-  
+
   try {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
@@ -38,21 +38,21 @@ export async function POST(request: NextRequest) {
     let json: any = null;
     const contentType = response.headers.get('content-type') || '';
     const looksLikeJson = contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[');
-    
+
     if (looksLikeJson && text.trim().length > 0) {
       try {
         json = JSON.parse(text);
       } catch (parseError) {
         console.error(`[BFF auth/logout] JSON parse failed for ${status} response:`, parseError);
         return NextResponse.json(
-          { 
-            ok: false, 
-            error: { 
-              code: 'BACKEND_NON_JSON', 
-              status, 
-              body: textPreview 
-            } 
-          }, 
+          {
+            ok: false,
+            error: {
+              code: 'BACKEND_NON_JSON',
+              status,
+              body: textPreview
+            }
+          },
           { status: 502 }
         );
       }
@@ -81,6 +81,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Force clear known auth cookies to ensure clean state
+    // This acts as a safety net if backend headers are missing or fail
+    const clearOptions = 'Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+    responseHeaders.append('Set-Cookie', `vah_session=; ${clearOptions}; HttpOnly; SameSite=Lax`);
+    responseHeaders.append('Set-Cookie', `vah_role=; ${clearOptions}; HttpOnly; SameSite=Lax`);
+    responseHeaders.append('Set-Cookie', `vah_user=; ${clearOptions}; HttpOnly; SameSite=Lax`);
+    // Also clear client-accessible tokens if they exist effectively
+    responseHeaders.append('Set-Cookie', `vah_jwt=; ${clearOptions}`);
+    responseHeaders.append('Set-Cookie', `vah_csrf_token=; ${clearOptions}`);
+
     // Always return success for logout (even if backend fails, we want to clear client-side state)
     return NextResponse.json(json ?? { ok: true, message: 'Logged out successfully' }, {
       status: 200,
@@ -91,22 +101,22 @@ export async function POST(request: NextRequest) {
     if (isBackendOriginConfigError(error)) {
       console.error(`[BFF auth/logout] Server misconfigured:`, error.message);
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: 'Server misconfigured', 
-          details: error.message 
-        }, 
+        {
+          ok: false,
+          error: 'Server misconfigured',
+          details: error.message
+        },
         { status: 500 }
       );
     }
 
     console.error(`[BFF auth/logout] Unexpected error:`, error);
     return NextResponse.json(
-      { 
-        ok: false, 
+      {
+        ok: false,
         error: 'internal_error',
-        message: "An error occurred during logout" 
-      }, 
+        message: "An error occurred during logout"
+      },
       { status: 500 }
     );
   }
