@@ -172,14 +172,14 @@ export default function BusinessOwnersPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-[100dvh] bg-background flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-[100dvh] bg-background">
             <div className="safe-pad mx-auto max-w-4xl py-8">
                 <div className="mb-6">
                     <Link

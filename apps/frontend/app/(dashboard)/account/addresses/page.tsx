@@ -130,7 +130,7 @@ export default function AccountAddressesPage() {
                 {/* Enhanced authoritative styling: stronger background tint and clearer official label */}
                 <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
                     <CardContent className="p-8">
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                     Registered Office Address

@@ -150,7 +150,7 @@ export default function AccountPage() {
   const invoices: InvoiceRow[] = data.invoices || [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-[100dvh] flex flex-col bg-background">
       <Navigation onNavigate={() => { }} />
       <main id="main-content" role="main" className="flex-1">
         <div className="max-w-6xl mx-auto p-6 space-y-8">

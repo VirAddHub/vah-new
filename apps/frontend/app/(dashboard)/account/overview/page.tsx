@@ -104,7 +104,7 @@ export default function AccountOverviewPage() {
             {/* Account Status Card */}
             <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
                 <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-3">
                             <h2 className="text-xl font-semibold text-neutral-900">
                                 Account Status
@@ -134,7 +134,7 @@ export default function AccountOverviewPage() {
             {/* Plan & Billing Summary */}
             <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
                 <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
                         <h2 className="text-xl font-semibold text-neutral-900">
                             Plan & Billing
                         </h2>
@@ -142,6 +142,7 @@ export default function AccountOverviewPage() {
                             onClick={() => router.push('/account/billing')}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                         >
                             View Billing
                             <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
@@ -179,7 +180,7 @@ export default function AccountOverviewPage() {
             {/* KYC Status Card */}
             <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
                 <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={2} />
@@ -217,7 +218,7 @@ export default function AccountOverviewPage() {
             {/* Business Address Card */}
             <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
                 <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <MapPin className="w-6 h-6 text-primary" strokeWidth={2} />
                             <h2 className="text-xl font-semibold text-neutral-900">
@@ -226,6 +227,7 @@ export default function AccountOverviewPage() {
                         </div>
                         <Button
                             onClick={() => router.push('/account/addresses')}
+                            className="w-full sm:w-auto"
                             variant="outline"
                             size="sm"
                         >

@@ -24,8 +24,8 @@ export default function AccountSupportPage() {
                     <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                         <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-                            Email Support
-                        </h2>
+                                Email Support
+                            </h2>
                         <p className="text-base text-neutral-600 leading-relaxed mb-3">
                             Send us an email and we'll get back to you. We usually respond within 24 hours.
                         </p>
@@ -52,14 +52,14 @@ export default function AccountSupportPage() {
                     <MessageCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                         <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-                            WhatsApp Support
-                        </h2>
+                                WhatsApp Support
+                            </h2>
                         <p className="text-base text-neutral-600 leading-relaxed mb-3">
                             Message us on WhatsApp and our support team will respond as soon as possible
                         </p>
                         <p className="text-sm text-neutral-600 mb-4">
-                            Available: Mon – Fri, 8:00 AM – 6:00 PM
-                        </p>
+                                Available: Mon – Fri, 8:00 AM – 6:00 PM
+                            </p>
                         <Button
                             onClick={() => window.open('https://wa.me/447000000000', '_blank', 'noopener,noreferrer')}
                             className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -68,9 +68,9 @@ export default function AccountSupportPage() {
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     </div>
-                </div>
+            </div>
 
-                {/* Help Center */}
+            {/* Help Center */}
                 <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
                     <HelpCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
@@ -78,16 +78,16 @@ export default function AccountSupportPage() {
                             Help Center
                         </h2>
                         <p className="text-base text-neutral-600 leading-relaxed mb-4">
-                            Browse our help articles and frequently asked questions
-                        </p>
-                        <Button
-                            onClick={() => window.location.href = '/help'}
-                            variant="outline"
+                        Browse our help articles and frequently asked questions
+                    </p>
+                    <Button
+                        onClick={() => window.location.href = '/help'}
+                        variant="outline"
                             className="border-primary text-primary hover:bg-primary/10"
-                        >
-                            Visit Help Center
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
+                    >
+                        Visit Help Center
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
                     </div>
                 </div>
             </div>

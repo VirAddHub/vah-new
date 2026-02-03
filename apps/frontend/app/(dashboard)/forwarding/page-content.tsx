@@ -222,7 +222,7 @@ export default function ForwardingPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="min-h-[100dvh] flex items-center justify-center bg-background">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Loading forwarding requests...</p>
@@ -240,11 +240,11 @@ export default function ForwardingPage() {
             </div>
 
             {/* Two Column Layout: List on Left, Details on Right */}
-            <div className="flex-1 flex gap-6 px-6 overflow-hidden">
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 px-4 sm:px-6 overflow-x-hidden">
                 {/* Left Column - Request List */}
                 <div className={cn(
-                    "flex-1 overflow-y-auto",
-                    selectedRequest ? "w-1/2" : "w-full"
+                    "flex-1 min-w-0 w-full",
+                    selectedRequest ? "lg:w-1/2" : "w-full"
                 )}>
                     <div className="space-y-3">
                     {forwardingRequests.length === 0 ? (
@@ -315,15 +315,15 @@ export default function ForwardingPage() {
 
                 {/* Right Column - Request Details */}
                 {selectedRequest && (
-                    <div className="w-1/2 border-l border-[#E5E7EB] pl-6 overflow-y-auto">
+                    <div className="w-full lg:w-1/2 min-w-0 border-t lg:border-t-0 lg:border-l border-[#E5E7EB] pt-6 lg:pt-0 lg:pl-6">
                         <div className="sticky top-0 bg-white pb-4 mb-4 border-b border-[#E5E7EB]">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <h2 className="text-xl font-semibold text-[#1A1A1A]">Request Details</h2>
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setSelectedRequest(null)}
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 self-start sm:self-auto"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
