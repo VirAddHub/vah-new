@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "./ui/button";
 import { Menu, X, LogOut } from "lucide-react";
+import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
@@ -79,6 +80,8 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
+            // Phase A: Clear client-side tokens (localStorage + CSRF cookie)
+            clearToken();
             // Redirect to login page
             window.location.href = '/login';
         }

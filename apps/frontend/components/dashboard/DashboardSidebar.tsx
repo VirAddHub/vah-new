@@ -14,6 +14,7 @@ import {
     LogOut,
     type LucideIcon
 } from 'lucide-react';
+import { clearToken } from "@/lib/token-manager";
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,8 @@ export function DashboardSidebar() {
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {
+            // Phase A: Clear client-side tokens (localStorage + CSRF cookie)
+            clearToken();
             // Redirect to login page
             window.location.href = '/login';
         }
