@@ -288,8 +288,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         ) : (
                             <div className="w-full max-w-[420px] rounded-3xl bg-card p-5 lg:p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] flex flex-col border border-border">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-2xl font-semibold leading-[1.2] text-foreground sm:text-3xl lg:text-4xl">
-                                        £{Number(annualPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-muted-foreground">/ year</span>
+                                    <div className="text-2xl font-semibold leading-[1.2] text-neutral-900 sm:text-3xl lg:text-4xl">
+                                        £{Number(annualPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-neutral-600">/ year</span>
                                     </div>
                                     <div className="text-xs font-medium text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-full">20% Save</div>
                                 </div>
@@ -440,8 +440,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Loading pricing...
                                     </p>
                                 ) : hasApiData && monthlyPrice > 0 ? (
-                                    <p className="text-sm text-neutral-500">
-                                        From £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
+                                    <p className="text-sm text-neutral-900">
+                                        £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
                                     </p>
                                 ) : null}
                             </div>
