@@ -138,23 +138,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </h2>
 
                             <ul className="mt-8 space-y-6">
-                                    {[
-                                        {
-                                            title: "Registered Office And Director's Service Address",
-                                            description: "Use our Central London address for Companies House and HMRC filings.",
-                                        },
-                                        {
-                                            title: "Professional Business Address",
+                                {[
+                                    {
+                                        title: "Registered Office And Director's Service Address",
+                                        description: "Use our Central London address for Companies House and HMRC filings.",
+                                    },
+                                    {
+                                        title: "Professional Business Address",
                                         description: "Use the same address on invoices, websites, contracts, and correspondence.",
-                                        },
-                                        {
-                                            title: "Same Day Mail Scanning And Instant Alerts",
+                                    },
+                                    {
+                                        title: "Same Day Mail Scanning And Instant Alerts",
                                         description: "Letters are scanned the day they arrive and uploaded to your secure dashboard.",
-                                        },
-                                        {
-                                            title: "Secure Online Dashboard",
+                                    },
+                                    {
+                                        title: "Secure Online Dashboard",
                                         description: "View, download, and organise your mail in one place with full control.",
-                                        },
+                                    },
                                     {
                                         title: "UK Based Support",
                                         description: "Support provided during standard business hours.",
@@ -163,20 +163,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         title: "Privacy Protection",
                                         description: "Keep your home address off public records and business documents.",
                                     },
-                                    ].map((item) => (
-                                        <li key={item.title} className="flex items-start gap-3">
+                                ].map((item) => (
+                                    <li key={item.title} className="flex items-start gap-3">
                                         <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                            <div>
+                                        <div>
                                             <p className="font-medium text-neutral-900 leading-snug">
                                                 {item.title}
                                             </p>
                                             <p className="mt-1 text-sm text-neutral-600 leading-relaxed">
                                                 {item.description}
                                             </p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -399,20 +399,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="border-t border-neutral-200 mb-16 relative">
                         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary"></div>
                     </div>
-                    
+
                     {/* CTA Container with Deep Brand Green Background */}
                     <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto">
                         {/* Background Image - Decorative Texture */}
                         <img
-                            src="/images/mask-group.jpg"
+                            src="/images/Mask-group.jpg"
                             alt=""
                             aria-hidden="true"
                             className="absolute inset-0 w-full h-full object-cover opacity-[0.18] pointer-events-none select-none"
                         />
-                        
+
                         {/* Brand Green Depth Layer */}
                         <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/95 via-[#0b3d2e]/85 to-[#0b3d2e]/65" aria-hidden="true"></div>
-                        
+
                         {/* Content - Centered and refined */}
                         <div className="relative z-10 py-12 lg:py-16 px-6 lg:px-10">
                             <div className="max-w-2xl mx-auto text-center space-y-5">
@@ -420,12 +420,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-[1.2] tracking-tight">
                                     Get your official London business address today
                                 </h2>
-                                
+
                                 {/* Supporting line - Clearly secondary */}
                                 <p className="text-base lg:text-lg text-white/75 leading-relaxed max-w-xl mx-auto">
                                     Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                 </p>
-                                
+
                                 {/* CTA Button - Elegant and dominant */}
                                 <div className="flex flex-col items-center gap-3 pt-1">
                                     <Button
@@ -436,7 +436,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Get started
                                         <ArrowRight className="w-5 h-5 ml-2" />
                                     </Button>
-                                    
+
                                     {/* Optional secondary link */}
                                     <button
                                         onClick={() => handleNavClick?.("plans")}
@@ -445,7 +445,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         View what's included
                                     </button>
                                 </div>
-                                
+
                                 {/* Dynamic Pricing - Calm and understated */}
                                 {!pricingError && (
                                     <div className="pt-1">
@@ -460,14 +460,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ) : null}
                                     </div>
                                 )}
-                                
+
                                 {/* Trust micro-signals - Understated */}
                                 <p className="text-xs text-white/60 pt-1">
                                     No setup fees · No contracts
                                 </p>
                             </div>
                         </div>
-                        
+
                         {/* Overlay Screenshot - Desktop Only, Subtle, No Label */}
                         <img
                             src="/images/dashboard-overlay.png"
