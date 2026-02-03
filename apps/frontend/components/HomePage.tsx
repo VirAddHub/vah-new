@@ -392,90 +392,88 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA - Premium, conversion-focused */}
-            <section className="py-24 lg:py-32">
+            {/* FINAL CTA - Refined closing prompt */}
+            <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
                     {/* Thin divider with subtle green accent */}
-                    <div className="border-t border-neutral-200 mb-20 relative">
+                    <div className="border-t border-neutral-200 mb-16 relative">
                         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary"></div>
                     </div>
                     
-                    {/* CTA Container with Background Image and Overlay */}
-                    <div className="relative">
-                        {/* Background Container with Rounded Corners */}
-                        <div className="relative rounded-2xl overflow-hidden">
-                            {/* Background Image */}
-                            <img
-                                src="/images/Mask-group.jpg"
-                                alt=""
-                                className="absolute inset-0 w-full h-full object-cover"
-                                aria-hidden="true"
-                            />
-                            
-                            {/* Soft Gradient Overlay for Contrast */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-black/0" aria-hidden="true"></div>
-                            
-                            {/* Content */}
-                            <div className="relative z-10 py-16 lg:py-24 px-6 lg:px-12">
-                                <div className="max-w-3xl mx-auto text-center space-y-8">
-                                    {/* Headline */}
-                                    <h2 className="text-3xl lg:text-4xl font-semibold text-white leading-tight tracking-tight">
-                                        Get your official London business address today
-                                    </h2>
+                    {/* CTA Container with Subtle Decorative Background */}
+                    <div className="relative bg-neutral-50 rounded-2xl overflow-hidden">
+                        {/* Decorative Green Gradient Background Layer (::before equivalent) */}
+                        <div 
+                            className="absolute bottom-0 left-0 w-full h-full pointer-events-none"
+                            style={{
+                                background: 'radial-gradient(ellipse at bottom left, rgba(32, 96, 58, 0.25) 0%, rgba(32, 96, 58, 0.15) 40%, transparent 70%)',
+                                maskImage: 'radial-gradient(ellipse at bottom left, black 0%, black 40%, transparent 70%)',
+                                WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, black 40%, transparent 70%)'
+                            }}
+                            aria-hidden="true"
+                        />
+                        
+                        {/* Content - Slightly shifted left for optical centering */}
+                        <div className="relative z-10 py-16 lg:py-20 px-6 lg:px-12">
+                            <div className="max-w-2xl mx-auto lg:mx-0 lg:ml-8 text-center lg:text-left space-y-6">
+                                {/* Headline - Smaller than hero, confident but not dominant */}
+                                <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-900 leading-tight tracking-tight">
+                                    Get your official London business address today
+                                </h2>
+                                
+                                {/* Supporting line */}
+                                <p className="text-base lg:text-lg text-neutral-600 leading-relaxed max-w-xl">
+                                    Fully compliant with Companies House & HMRC. Same-day mail scanning.
+                                </p>
+                                
+                                {/* CTA Button - Primary but not oversized */}
+                                <div className="flex flex-col items-center lg:items-start gap-3 pt-2">
+                                    <Button
+                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                        size="lg"
+                                        className="h-12 px-8 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                                    >
+                                        Get started
+                                        <ArrowRight className="w-5 h-5 ml-2" />
+                                    </Button>
                                     
-                                    {/* Supporting line */}
-                                    <p className="text-lg text-white/90 leading-relaxed max-w-2xl mx-auto">
-                                        Fully compliant with Companies House & HMRC. Same-day mail scanning.
-                                    </p>
-                                    
-                                    {/* CTA Button */}
-                                    <div className="flex flex-col items-center gap-4">
-                                        <Button
-                                            onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                            size="lg"
-                                            className="h-14 px-10 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all"
-                                        >
-                                            Get started
-                                            <ArrowRight className="w-5 h-5 ml-2" />
-                                        </Button>
-                                        
-                                        {/* Optional secondary link */}
-                                        <button
-                                            onClick={() => handleNavClick?.("plans")}
-                                            className="text-sm text-white/80 hover:text-white transition-colors"
-                                        >
-                                            View what's included
-                                        </button>
-                                    </div>
-                                    
-                                    {/* Dynamic Pricing */}
-                                    {!pricingError && (
-                                        <div className="pt-2">
-                                            {pricingLoading ? (
-                                                <p className="text-sm text-white/60 animate-pulse">
-                                                    Loading pricing...
-                                                </p>
-                                            ) : hasApiData && monthlyPrice > 0 ? (
-                                                <p className="text-sm text-white">
-                                                    £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    )}
-                                    
-                                    {/* Trust micro-signals */}
-                                    <p className="text-xs text-white/60 pt-2">
-                                        No setup fees · No contracts
-                                    </p>
+                                    {/* Optional secondary link */}
+                                    <button
+                                        onClick={() => handleNavClick?.("plans")}
+                                        className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+                                    >
+                                        View what's included
+                                    </button>
                                 </div>
+                                
+                                {/* Dynamic Pricing - Supportive, understated */}
+                                {!pricingError && (
+                                    <div className="pt-1">
+                                        {pricingLoading ? (
+                                            <p className="text-sm text-neutral-400 animate-pulse">
+                                                Loading pricing...
+                                            </p>
+                                        ) : hasApiData && monthlyPrice > 0 ? (
+                                            <p className="text-sm text-neutral-600">
+                                                £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                )}
+                                
+                                {/* Trust micro-signals */}
+                                <p className="text-xs text-neutral-500 pt-1">
+                                    No setup fees · No contracts
+                                </p>
                             </div>
                         </div>
                         
-                        {/* Overlay Screenshot - Desktop Only (positioned outside rounded container) */}
+                        {/* Overlay Screenshot - Desktop Only, Subtle, No Label */}
                         <img
                             src="/images/dashboard-overlay.png"
-                            alt="Dashboard preview"
-                            className="hidden lg:block absolute right-[-2rem] top-1/2 -translate-y-1/2 w-[420px] max-w-[80%] rounded-xl shadow-2xl z-20 pointer-events-none"
+                            alt=""
+                            className="hidden lg:block absolute right-[-2rem] top-1/2 -translate-y-1/2 w-[380px] max-w-[75%] rounded-xl shadow-xl z-20 pointer-events-none opacity-90"
+                            aria-hidden="true"
                         />
                     </div>
                 </div>
