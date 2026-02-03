@@ -124,9 +124,9 @@ export function DashboardSidebar() {
 
     const SidebarContent = () => (
         <nav className="hidden lg:flex w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] sticky top-16 flex-col">
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4">
                 {/* Main Navigation */}
-                <div className="mb-8">
+                <div className="mb-4">
                     <div className="space-y-1">
                         {/* Mail Inbox */}
                         <button
@@ -145,7 +145,7 @@ export function DashboardSidebar() {
                 </div>
 
                 {/* Account Section */}
-                <div>
+                <div className="mt-4 pt-4 border-t border-neutral-200">
                     <div className="px-3 mb-2">
                         <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                             Account

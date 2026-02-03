@@ -395,11 +395,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* FINAL CTA - Refined closing prompt */}
             <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
-                    {/* Thin divider with subtle green accent */}
-                    <div className="border-t border-neutral-200 mb-16 relative">
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary"></div>
-                    </div>
-
                     {/* CTA Container with Deep Brand Green Background */}
                     <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto">
                         {/* Background Image - Decorative Texture */}
@@ -407,27 +402,26 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             src="/images/Mask-group.jpg"
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover opacity-[0.18] pointer-events-none select-none"
+                            className="absolute inset-0 w-full h-full object-cover opacity-[0.8] pointer-events-none select-none"
                         />
 
-                        {/* Brand Green Depth Layer */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/95 via-[#0b3d2e]/85 to-[#0b3d2e]/65" aria-hidden="true"></div>
+                        {/* Brand Green Depth Layer - Removed to show landmarks clearly */}
 
-                        {/* Content - Centered and refined */}
+                        {/* Content - Right-aligned to show landmarks on left */}
                         <div className="relative z-10 py-12 lg:py-16 px-6 lg:px-10">
-                            <div className="max-w-2xl mx-auto text-center space-y-5">
+                            <div className="max-w-2xl ml-auto text-left lg:text-left space-y-5">
                                 {/* Headline - Prominent but compact */}
                                 <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-[1.2] tracking-tight">
                                     Get your official London business address today
                                 </h2>
 
                                 {/* Supporting line - Clearly secondary */}
-                                <p className="text-base lg:text-lg text-white/75 leading-relaxed max-w-xl mx-auto">
+                                <p className="text-base lg:text-lg text-white/75 leading-relaxed max-w-xl">
                                     Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                 </p>
 
                                 {/* CTA Button - Elegant and dominant */}
-                                <div className="flex flex-col items-center gap-3 pt-1">
+                                <div className="flex flex-col items-start gap-3 pt-1">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                         size="lg"

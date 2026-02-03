@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "./ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { VAHLogo } from "./VAHLogo";
 import { cn } from "@/lib/utils";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
@@ -65,6 +65,29 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         setIsMenuOpen(false);
     };
 
+    // Handle logout - use proper API endpoint
+    const handleLogout = async () => {
+        try {
+            // Call logout API endpoint
+            await fetch('/api/bff/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+        } finally {
+            // Always clear client-side state and redirect, even if API call fails
+            localStorage.removeItem('vah_jwt');
+            localStorage.removeItem('vah_user');
+            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/login';
+        }
+    };
+
     return (
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -93,9 +116,17 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 <VAHLogo onNavigate={onNavigate} size="lg" />
                             </div>
                             
-                            {/* Desktop Auth - Sign out removed (only in mobile drawer) */}
-                            <div className="hidden md:flex items-center gap-4">
-                                {/* Sign out removed - only available in mobile drawer */}
+                            {/* Desktop Auth - Sign out on desktop (lg+), mobile uses drawer */}
+                            <div className="hidden lg:flex items-center gap-4">
+                                <Button
+                                    onClick={handleLogout}
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                >
+                                    <LogOut className="h-4 w-4" strokeWidth={2} />
+                                    <span>Sign out</span>
+                                </Button>
                             </div>
                         </>
                     ) : (
