@@ -401,7 +401,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     
                     {/* CTA Container with Deep Brand Green Background */}
-                    <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e]">
+                    <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto">
                         {/* Background Image - Decorative Texture */}
                         <img
                             src="/images/mask-group.jpg"
@@ -413,25 +413,25 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         {/* Brand Green Depth Layer */}
                         <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/95 via-[#0b3d2e]/85 to-[#0b3d2e]/65" aria-hidden="true"></div>
                         
-                        {/* Content - Slightly shifted left for optical centering */}
-                        <div className="relative z-10 py-16 lg:py-20 px-6 lg:px-12">
-                            <div className="max-w-2xl mx-auto lg:mx-0 lg:ml-8 text-center lg:text-left space-y-6">
-                                {/* Headline - Smaller than hero, confident but not dominant */}
-                                <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-tight tracking-tight">
+                        {/* Content - Centered and refined */}
+                        <div className="relative z-10 py-12 lg:py-16 px-6 lg:px-10">
+                            <div className="max-w-2xl mx-auto text-center space-y-5">
+                                {/* Headline - Prominent but compact */}
+                                <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-[1.2] tracking-tight">
                                     Get your official London business address today
                                 </h2>
                                 
-                                {/* Supporting line */}
-                                <p className="text-base lg:text-lg text-white/90 leading-relaxed max-w-xl">
+                                {/* Supporting line - Clearly secondary */}
+                                <p className="text-base lg:text-lg text-white/75 leading-relaxed max-w-xl mx-auto">
                                     Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                 </p>
                                 
-                                {/* CTA Button - Primary but not oversized */}
-                                <div className="flex flex-col items-center lg:items-start gap-3 pt-2">
+                                {/* CTA Button - Elegant and dominant */}
+                                <div className="flex flex-col items-center gap-3 pt-1">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                         size="lg"
-                                        className="h-12 px-8 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                                        className="h-11 px-7 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
                                     >
                                         Get started
                                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -440,29 +440,29 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     {/* Optional secondary link */}
                                     <button
                                         onClick={() => handleNavClick?.("plans")}
-                                        className="text-sm text-white/80 hover:text-white transition-colors"
+                                        className="text-sm text-white/70 hover:text-white/90 transition-colors"
                                     >
                                         View what's included
                                     </button>
                                 </div>
                                 
-                                {/* Dynamic Pricing - Supportive, understated */}
+                                {/* Dynamic Pricing - Calm and understated */}
                                 {!pricingError && (
                                     <div className="pt-1">
                                         {pricingLoading ? (
-                                            <p className="text-sm text-white/60 animate-pulse">
+                                            <p className="text-sm text-white/50 animate-pulse">
                                                 Loading pricing...
                                             </p>
                                         ) : hasApiData && monthlyPrice > 0 ? (
-                                            <p className="text-sm text-white/90">
+                                            <p className="text-sm text-white/75">
                                                 £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
                                             </p>
                                         ) : null}
                                     </div>
                                 )}
                                 
-                                {/* Trust micro-signals */}
-                                <p className="text-xs text-white/70 pt-1">
+                                {/* Trust micro-signals - Understated */}
+                                <p className="text-xs text-white/60 pt-1">
                                     No setup fees · No contracts
                                 </p>
                             </div>
