@@ -400,29 +400,29 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-primary"></div>
                     </div>
                     
-                    {/* CTA Container with Subtle Decorative Background */}
-                    <div className="relative bg-neutral-50 rounded-2xl overflow-hidden">
-                        {/* Decorative Green Gradient Background Layer (::before equivalent) */}
-                        <div 
-                            className="absolute bottom-0 left-0 w-full h-full pointer-events-none"
-                            style={{
-                                background: 'radial-gradient(ellipse at bottom left, rgba(32, 96, 58, 0.25) 0%, rgba(32, 96, 58, 0.15) 40%, transparent 70%)',
-                                maskImage: 'radial-gradient(ellipse at bottom left, black 0%, black 40%, transparent 70%)',
-                                WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, black 40%, transparent 70%)'
-                            }}
+                    {/* CTA Container with Deep Brand Green Background */}
+                    <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e]">
+                        {/* Background Image - Decorative Texture */}
+                        <img
+                            src="/images/mask-group.jpg"
+                            alt=""
                             aria-hidden="true"
+                            className="absolute inset-0 w-full h-full object-cover opacity-[0.18] pointer-events-none select-none"
                         />
+                        
+                        {/* Brand Green Depth Layer */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/95 via-[#0b3d2e]/85 to-[#0b3d2e]/65" aria-hidden="true"></div>
                         
                         {/* Content - Slightly shifted left for optical centering */}
                         <div className="relative z-10 py-16 lg:py-20 px-6 lg:px-12">
                             <div className="max-w-2xl mx-auto lg:mx-0 lg:ml-8 text-center lg:text-left space-y-6">
                                 {/* Headline - Smaller than hero, confident but not dominant */}
-                                <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-900 leading-tight tracking-tight">
+                                <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-tight tracking-tight">
                                     Get your official London business address today
                                 </h2>
                                 
                                 {/* Supporting line */}
-                                <p className="text-base lg:text-lg text-neutral-600 leading-relaxed max-w-xl">
+                                <p className="text-base lg:text-lg text-white/90 leading-relaxed max-w-xl">
                                     Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                 </p>
                                 
@@ -440,7 +440,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     {/* Optional secondary link */}
                                     <button
                                         onClick={() => handleNavClick?.("plans")}
-                                        className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
+                                        className="text-sm text-white/80 hover:text-white transition-colors"
                                     >
                                         View what's included
                                     </button>
@@ -450,11 +450,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 {!pricingError && (
                                     <div className="pt-1">
                                         {pricingLoading ? (
-                                            <p className="text-sm text-neutral-400 animate-pulse">
+                                            <p className="text-sm text-white/60 animate-pulse">
                                                 Loading pricing...
                                             </p>
                                         ) : hasApiData && monthlyPrice > 0 ? (
-                                            <p className="text-sm text-neutral-600">
+                                            <p className="text-sm text-white/90">
                                                 £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
                                             </p>
                                         ) : null}
@@ -462,7 +462,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 )}
                                 
                                 {/* Trust micro-signals */}
-                                <p className="text-xs text-neutral-500 pt-1">
+                                <p className="text-xs text-white/70 pt-1">
                                     No setup fees · No contracts
                                 </p>
                             </div>
