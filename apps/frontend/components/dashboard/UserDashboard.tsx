@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import useSWR from 'swr';
-import { getToken } from '@/lib/token-manager';
 import Link from "next/link";
 import {
   Building2,
@@ -72,38 +71,50 @@ function formatUkDate(d: Date | string | number) {
 
 // Token helper is imported from @/lib/token-manager
 
-// SWR fetcher function
-const fetcher = (url: string) => {
-  const token = getToken();
-  const headers: Record<string, string> = { 'Accept': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
+// SWR fetcher function - simple wrapper for fetch with credentials
+const fetcher = async (url: string) => {
   // BFF routes should be relative (handled by Next.js), not absolute backend URLs
-  // If url already starts with /api/bff, use it as-is (relative - handled by Next.js)
-  // If url starts with http, use it as-is (absolute URL)
-  // Otherwise, it's a backend route - prepend API_BASE
   const finalUrl = url.startsWith('/api/bff') || url.startsWith('http')
     ? url
     : `${API_BASE}${url}`;
 
-  return fetch(finalUrl, {
-    headers,
+  const res = await fetch(finalUrl, {
+    headers: { 'Accept': 'application/json' },
     credentials: 'include'
-  }).then(r => {
-    if (!r.ok) {
-      // Create error with status for better handling
-      const error = new Error(`HTTP ${r.status}`);
-      (error as any).status = r.status;
-      throw error;
-    }
-    return r.json();
   });
+
+  if (!res.ok) {
+    const error = new Error(`HTTP ${res.status}`);
+    (error as any).status = res.status;
+    throw error;
+  }
+  return res.json();
 };
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const { toast } = useToast();
+  // useMe handles fetching user profile via cookies without localStorage
+  const { data: profileData, error: profileError, isLoading: profileLoading, mutate: refreshProfile } = useSWR(
+    '/api/profile',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000
+    }
+  );
+
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Sync profile data to local state
+  useEffect(() => {
+    if (profileData?.ok && profileData?.data) {
+      setUserProfile(profileData.data);
+    }
+    setLoading(profileLoading);
+  }, [profileData, profileLoading]);
+
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
@@ -195,47 +206,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     return { newCount, needsForwardingCount };
   }, [mailItems]);
 
-  // SWR hook for user profile - we avoid refreshInterval/polling here.
-  // Profile is revalidated via explicit mutate() after important actions
-  // (e.g. CH upload) to keep the dashboard stable.
-  // IMPORTANT: No refreshInterval, no router.refresh() loops, no setInterval polling.
-  const { data: profileData, error: profileError, isLoading: profileLoading, mutate: refreshProfile } = useSWR(
-    '/api/profile',
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-      // No refreshInterval - prevents constant API calls
-      onSuccess: (data) => {
-        // Update localStorage with fresh data when profile loads
-        if (data?.ok && data?.data) {
-          localStorage.setItem('vah_user', JSON.stringify(data.data));
-          setUserProfile(data.data);
-        }
-      }
-    }
-  );
-
-  // Initialize user profile from SWR data or localStorage
-  useEffect(() => {
-    if (profileData?.ok && profileData?.data) {
-      setUserProfile(profileData.data);
-    } else {
-      // Fallback to localStorage for immediate display
-      const storedUser = localStorage.getItem('vah_user');
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          setUserProfile(user);
-        } catch (e) {
-          console.error('Failed to parse stored user:', e);
-        }
-      }
-    }
-    setLoading(profileLoading);
-  }, [profileData, profileLoading]);
-
   // Select/Deselect functions
   const toggleSelectMail = (id: string) => {
     setSelectedMail(prev =>
@@ -265,17 +235,13 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   // Mark mail item as read
   const markAsRead = useCallback(async (item: MailItem) => {
     try {
-      const token = getToken();
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
       const res = await fetch(`${API_BASE}/api/mail-items/${item.id}`, {
         method: 'PATCH',
-        headers,
-        body: JSON.stringify({ is_read: true })
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        credentials: "include"
       });
 
       if (res.ok) {
@@ -386,12 +352,10 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         // Use BFF route (relative path - handled by Next.js)
         const url = `/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(mailItemId))}&disposition=inline`;
 
-        const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
         const res = await fetch(url, {
           credentials: 'include',
           cache: 'no-store',
           signal: ctrl.signal,
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (!res.ok) {
           const txt = await res.text().catch(() => '');
@@ -570,7 +534,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
         // Refresh mail items to update status
         refreshMail();
-        
+
         // Refresh forwarding requests if forwarding panel is open
         if (rightPanelView === 'forwarding') {
           loadForwardingRequests();

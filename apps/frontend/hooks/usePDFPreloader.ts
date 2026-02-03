@@ -30,12 +30,10 @@ export function usePDFPreloader({ apiBase, useBlobFallback = true }: PDFPreloade
                     return url;
                 }
 
-                // Fetch with JWT token
-                const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
+                // Fetch with httpOnly cookies
                 const res = await fetch(url, {
                     credentials: 'include',
                     cache: 'default',
-                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
 
                 if (!res.ok) {

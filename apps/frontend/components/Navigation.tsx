@@ -17,7 +17,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
-    
+
     // Get mobile sidebar state from context (only available in dashboard)
     let setIsMobileSidebarOpen: ((open: boolean) => void) | null = null;
     try {
@@ -30,8 +30,8 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     // Check if we're in dashboard context
     // Dashboard routes: /dashboard, /account, /mail, /forwarding, /billing
     const isDashboard = Boolean(pathname && (
-        pathname.startsWith('/dashboard') || 
-        pathname.startsWith('/account') || 
+        pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/account') ||
         pathname.startsWith('/mail') ||
         pathname.startsWith('/forwarding') ||
         pathname.startsWith('/billing')
@@ -68,7 +68,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     // Handle logout - use proper API endpoint
     const handleLogout = async () => {
         try {
-            // Call logout API endpoint
+            // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
@@ -79,11 +79,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
-            // Always clear client-side state and redirect, even if API call fails
-            localStorage.removeItem('vah_jwt');
-            localStorage.removeItem('vah_user');
-            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            // Redirect to login page
             window.location.href = '/login';
         }
     };
@@ -105,17 +101,17 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                     <Menu className="h-5 w-5" strokeWidth={2} />
                                 </button>
                             )}
-                            
+
                             {/* Desktop Logo (left side) */}
                             <div className="hidden md:block">
                                 <VAHLogo onNavigate={onNavigate} size="lg" />
                             </div>
-                            
+
                             {/* Mobile Logo (right side) */}
                             <div className="md:hidden ml-auto">
                                 <VAHLogo onNavigate={onNavigate} size="lg" />
                             </div>
-                            
+
                             {/* Desktop Auth - Sign out on desktop (lg+), mobile uses drawer */}
                             <div className="hidden lg:flex items-center gap-4">
                                 <Button
@@ -194,7 +190,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
                                 {item.label}
                             </button>
                         ))}
-                        
+
                         <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
                             <button
                                 onClick={() => handleNavClick('login')}

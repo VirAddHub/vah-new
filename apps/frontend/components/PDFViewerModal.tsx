@@ -66,12 +66,10 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                // Forward JWT via header so BFF can auth to backend
-                const token = (typeof window !== 'undefined') ? localStorage.getItem('vah_jwt') : null;
+                // Forward httpOnly cookies via credentials
                 const res = await fetch(url, {
                     credentials: 'include',
                     cache: 'default',
-                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
                 });
                 if (!res.ok) {
                     const txt = await safeText(res);

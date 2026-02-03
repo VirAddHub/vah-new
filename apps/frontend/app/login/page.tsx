@@ -105,20 +105,19 @@ export default function LoginPage() {
                 return;
             }
 
-            // Store token in localStorage and cookie
+            // Backend sets httpOnly cookies (vah_session, vah_role, vah_user)
+            // Phase A: Also store in localStorage for legacy support
             const token = data.data?.token || data.token;
             if (token) {
                 localStorage.setItem('vah_jwt', token);
-                if (data.data?.user) {
-                    localStorage.setItem('vah_user', JSON.stringify(data.data.user));
-                }
+            }
 
-                // Set cookie for middleware (must match middleware cookie name: vah_session)
-                document.cookie = `vah_session=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+            const user = data.data?.user || data.user;
+            if (user) {
+                localStorage.setItem('vah_user', JSON.stringify(user));
             }
 
             // Redirect to mail inbox (or admin dashboard for admins)
-            const user = data.data?.user || data.user;
             const isAdmin = user?.is_admin || user?.role === 'admin';
             window.location.href = isAdmin ? '/admin/dashboard' : '/mail';
 

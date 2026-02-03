@@ -11,19 +11,10 @@ export const http = axios.create({
     timeout: 30000, // 30 second timeout
 });
 
-// Add request interceptor for authentication and logging
+// Add request interceptor for logging
 http.interceptors.request.use(
     (config) => {
-        // Add JWT token for admin endpoints
-        if (config.url?.includes('/api/admin/')) {
-            const token = localStorage.getItem('vah_jwt');
-            console.log(`[HTTP] Admin request to ${config.url}, token found: ${!!token}`);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            } else {
-                console.warn(`[HTTP] No JWT token found for admin request to ${config.url}`);
-            }
-        }
+        // Authentication is handled via httpOnly cookies (credentials: true)
         console.log(`[HTTP] ${config.method?.toUpperCase()} ${config.url}`);
         return config;
     },

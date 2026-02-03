@@ -409,7 +409,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         {/* Content - Right-aligned to show landmarks on left */}
                         <div className="relative z-10 py-12 lg:py-16 px-6 lg:px-10">
-                            <div className="max-w-2xl ml-auto text-left lg:text-left space-y-5">
+                            <div className="max-w-2xl mx-auto text-center space-y-5">
                                 {/* Headline - Prominent but compact */}
                                 <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-[1.2] tracking-tight">
                                     Get your official London business address today

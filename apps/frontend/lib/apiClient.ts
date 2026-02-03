@@ -37,6 +37,7 @@ import type { ApiResponse } from '../types/api';
 import type { MailItem, MailItemDetails } from '../types/mail';
 import type { User } from '../types/user';
 import type { ForwardingRequest } from './api-client';
+
 import { getToken } from './token-manager';
 
 type ReqInit = RequestInit & { headers?: HeadersInit };
@@ -53,16 +54,22 @@ async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> 
             ? path  // BFF routes are relative to frontend origin
             : `${API_BASE}${path}`;
     const isForm = init.body instanceof FormData;
+
+    // Phase A: Support both Cookie and Token
     const token = getToken();
 
     const headers: HeadersInit = {
         accept: 'application/json',
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(init.headers || {}),
         ...(!isForm && init.body && typeof init.body === 'object'
             ? { 'content-type': 'application/json' }
             : {}),
     };
+
+    // Phase A: Add Authorization header if token exists (fallback)
+    if (token) {
+        (headers as any)['Authorization'] = `Bearer ${token}`;
+    }
 
     const res = await fetch(url, { ...init, credentials: 'include', headers, body: j(init.body) });
     const text = await res.text();

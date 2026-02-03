@@ -12,6 +12,8 @@ export type User = {
   email: string;
   role?: 'admin' | 'user';
   name?: string;
+  first_name?: string;
+  last_name?: string;
   is_admin?: boolean;
   /** Optional – present after KYC calls */
   kyc_status?: string; // 'pending' | 'approved' | 'rejected' | string
@@ -43,6 +45,8 @@ export function toClientUser(u: ApiUser): User {
     id: u.user_id,
     email: u.email,
     name: u.name,
+    first_name: u.first_name,
+    last_name: u.last_name,
     is_admin: u.is_admin,
     role,
     kyc_status: u.kyc_status
@@ -63,7 +67,8 @@ export class ClientAuthManager {
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    // Phase A: Check either token (legacy) or user (cookie-based session)
+    return !!this.token || !!this.user;
   }
 
   isAdmin(): boolean {

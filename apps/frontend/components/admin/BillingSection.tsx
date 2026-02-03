@@ -113,11 +113,9 @@ export function BillingSection({ }: BillingSectionProps) {
     const loadInvoices = async () => {
         try {
             // Use BFF route (browser traffic should be BFF-only)
-            const token = localStorage.getItem('vah_jwt');
             const r = await fetch('/api/bff/admin/invoices?page=1&page_size=25', {
                 method: 'GET',
                 headers: {
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     Accept: 'application/json',
                 },
                 credentials: 'include',

@@ -2,11 +2,11 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-    Mail, 
-    CreditCard, 
-    MapPin, 
-    ShieldCheck, 
+import {
+    Mail,
+    CreditCard,
+    MapPin,
+    ShieldCheck,
     HelpCircle,
     LayoutDashboard,
     Menu,
@@ -59,27 +59,20 @@ export function DashboardSidebar() {
     const router = useRouter();
     const { activeView, setActiveView, isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const [isMobile, setIsMobile] = useState(false);
-    
+
     // Handle logout - use proper API endpoint
     // Export this so DashboardHeader can use it
     const handleLogout = async () => {
         try {
-            // Call logout API endpoint
+            // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
             });
         } catch (error) {
-            console.error('Logout API call failed:', error);
+            console.error('Logout failed:', error);
         } finally {
-            // Always clear client-side state and redirect, even if API call fails
-            localStorage.removeItem('vah_jwt');
-            localStorage.removeItem('vah_user');
-            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            // Redirect to login page
             window.location.href = '/login';
         }
     };
@@ -88,7 +81,7 @@ export function DashboardSidebar() {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 1024);
         };
-        
+
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
@@ -155,7 +148,7 @@ export function DashboardSidebar() {
                         {accountNavItems.map((item) => {
                             const Icon = item.icon;
                             const active = isActive(item.href);
-                            
+
                             return (
                                 <Link
                                     key={item.href}
@@ -175,7 +168,7 @@ export function DashboardSidebar() {
                     </div>
                 </div>
             </div>
-            
+
             {/* Certificate Download - Bottom Left */}
             <CertificateDownload />
         </nav>
@@ -188,7 +181,7 @@ export function DashboardSidebar() {
                 {/* Mobile Sidebar Overlay - Controlled by Navigation component */}
                 {isMobileSidebarOpen && (
                     <>
-                        <div 
+                        <div
                             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                             onClick={() => setIsMobileSidebarOpen(false)}
                         />
@@ -239,7 +232,7 @@ export function DashboardSidebar() {
                                             {accountNavItems.map((item) => {
                                                 const Icon = item.icon;
                                                 const active = isActive(item.href);
-                                                
+
                                                 return (
                                                     <Link
                                                         key={item.href}
@@ -260,7 +253,7 @@ export function DashboardSidebar() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {/* Footer with Sign Out - Pinned to bottom */}
                                 <div className="border-t border-neutral-200 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
                                     <button

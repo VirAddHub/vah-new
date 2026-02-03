@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { LogOut, Mail, Truck, CreditCard, Settings, User } from 'lucide-react';
 import { VAHLogo } from './VAHLogo';
 
+import { useMe } from '@/hooks/useMe';
+
 interface SimpleUserDashboardProps {
     onLogout: () => void;
     onNavigate: (page: string) => void;
@@ -13,26 +15,14 @@ interface SimpleUserDashboardProps {
 }
 
 export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUserDashboardProps) {
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
+    const { user, loading } = useMe();
 
+    // Log user for debugging if needed
     useEffect(() => {
-        console.log('SimpleUserDashboard: Component mounted');
-
-        // Get user from localStorage
-        const storedUser = localStorage.getItem('vah_user');
-        if (storedUser) {
-            try {
-                const parsedUser = JSON.parse(storedUser);
-                console.log('SimpleUserDashboard: User loaded:', parsedUser);
-                setUser(parsedUser);
-            } catch (e) {
-                console.error('SimpleUserDashboard: Failed to parse user:', e);
-            }
+        if (user) {
+            console.log('SimpleUserDashboard: User loaded via useMe:', user);
         }
-
-        setLoading(false);
-    }, []);
+    }, [user]);
 
     if (loading) {
         return (
