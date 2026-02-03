@@ -88,8 +88,8 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
-            <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="w-full h-full flex items-center">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8 w-full">
                 <div className="flex items-center justify-between h-16">
                     {/* Mobile Dashboard: Hamburger on LEFT, Logo on RIGHT */}
                     {isDashboard ? (

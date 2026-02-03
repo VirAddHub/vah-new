@@ -120,7 +120,7 @@ export function DashboardSidebar() {
 
     const SidebarContent = () => (
         <nav className="hidden lg:flex w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] sticky top-16 flex-col">
-            <div className="flex-1 overflow-y-auto px-4 pt-0 pb-4">
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
                 {/* Main Navigation */}
                 <div className="mb-4">
                     <div className="space-y-1">

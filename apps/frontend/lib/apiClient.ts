@@ -58,6 +58,29 @@ async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> 
     // Phase B: Cookie-only auth
     // No explicit Authorization header needed - automatic via credentials: 'include'
 
+    // Phase D: CSRF Protection
+    // Read vah_csrf_token from document.cookie (client-side only behavior)
+    let csrfToken = '';
+    const getCookie = (name: string) => {
+        if (typeof document === 'undefined') return '';
+        const match = document.cookie.match(new RegExp(`(^|;)\\s*${name}=([^;]+)`));
+        return match ? match[2] : '';
+    };
+
+    if (init.method && !['GET', 'HEAD', 'OPTIONS'].includes(init.method.toUpperCase())) {
+        csrfToken = getCookie('vah_csrf_token');
+        if (!csrfToken) {
+            // Safety fallback: if missing, force a refresh via HEAD request
+            // This ensures the backend sets the cookie if it wasn't there
+            try {
+                await fetch('/api/auth/csrf', { method: 'HEAD', cache: 'no-store' });
+                csrfToken = getCookie('vah_csrf_token');
+            } catch (e) {
+                console.warn('Failed to refresh CSRF token', e);
+            }
+        }
+    }
+
     const headers: HeadersInit = {
         accept: 'application/json',
         ...(init.headers || {}),
@@ -65,6 +88,11 @@ async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> 
             ? { 'content-type': 'application/json' }
             : {}),
     };
+
+    // Attach CSRF token for mutating requests
+    if (csrfToken && init.method && !['GET', 'HEAD', 'OPTIONS'].includes(init.method.toUpperCase())) {
+        (headers as any)['X-CSRF-Token'] = csrfToken;
+    }
 
 
 

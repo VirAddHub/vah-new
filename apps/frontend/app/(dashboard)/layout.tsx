@@ -12,15 +12,18 @@ export default function DashboardLayout({
 }) {
     return (
         <DashboardViewProvider>
-            <div className="min-h-[100dvh] w-full overflow-x-hidden flex flex-col bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                <Navigation />
-                <div className="flex w-full min-h-[100dvh] overflow-x-hidden flex-1 pt-10 md:pt-16">
-                    {/* Sidebar - Inline on desktop, overlay on mobile */}
-                    <div className="lg:pl-6">
+            <div className="min-h-[100dvh] w-full overflow-x-hidden bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                {/* Fixed navbar at top */}
+                <div className="fixed top-0 inset-x-0 z-50 h-16 bg-white border-b border-neutral-200">
+                    <Navigation />
+                </div>
+
+                {/* Content area with top offset for fixed navbar */}
+                <div className="flex pt-16">
+                    {/* Sidebar - Sticky, flush under navbar */}
                     <DashboardSidebar />
-                    </div>
                     
-                    {/* Main Content - Flows beside sidebar on desktop */}
+                    {/* Main Content */}
                     <main 
                         id="main-content" 
                         role="main" 
