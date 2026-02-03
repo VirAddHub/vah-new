@@ -99,7 +99,7 @@ export function DashboardSidebar() {
         // Navigate to main dashboard with view param
         router.push('/dashboard?view=' + view);
         if (isMobile) {
-            setIsOpen(false);
+            setIsMobileSidebarOpen(false);
         }
     };
 
