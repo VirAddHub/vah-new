@@ -68,6 +68,9 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
 
     // Handle logout - use proper API endpoint
     const handleLogout = async () => {
+        // Close mobile menu if open before logout
+        setIsMenuOpen(false);
+        
         try {
             // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
@@ -80,7 +83,7 @@ export function Navigation({ onNavigate }: NavigationProps = {}) {
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
-            // Phase A: Clear client-side tokens (localStorage + CSRF cookie)
+            // Clear client-side tokens (localStorage + CSRF cookie)
             clearToken();
             // Redirect to login page
             window.location.href = '/login';

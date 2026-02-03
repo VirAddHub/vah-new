@@ -64,6 +64,11 @@ export function DashboardSidebar() {
     // Handle logout - use proper API endpoint
     // Export this so DashboardHeader can use it
     const handleLogout = async () => {
+        // Close mobile sidebar first (before async operations)
+        if (setIsMobileSidebarOpen) {
+            setIsMobileSidebarOpen(false);
+        }
+        
         try {
             // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
@@ -73,7 +78,7 @@ export function DashboardSidebar() {
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {
-            // Phase A: Clear client-side tokens (localStorage + CSRF cookie)
+            // Clear client-side tokens (localStorage + CSRF cookie)
             clearToken();
             // Redirect to login page
             window.location.href = '/login';
@@ -119,62 +124,67 @@ export function DashboardSidebar() {
     const isMailActive = activeView === 'mail' || pathname === '/mail';
 
     const SidebarContent = () => (
-        <nav className="hidden lg:flex w-[240px] flex-shrink-0 bg-white border-r border-neutral-200 h-[calc(100vh-4rem)] sticky top-16 flex-col">
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-                {/* Main Navigation */}
-                <div className="mb-4">
-                    <div className="space-y-1">
-                        {/* Mail Inbox */}
-                        <button
-                            onClick={() => handleMainNavClick('mail')}
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
-                                isMailActive
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                            )}
-                        >
-                            <Mail className="w-5 h-5" strokeWidth={2} />
-                            Mail Inbox
-                        </button>
+        <aside className="hidden lg:flex lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:border-r lg:border-neutral-200 bg-white">
+            <div className="flex h-[calc(100dvh-4rem)] flex-col w-full">
+                {/* Nav area - scrollable if needed */}
+                <nav className="flex-1 overflow-y-auto px-4 py-4">
+                    {/* Main Navigation */}
+                    <div className="mb-4">
+                        <div className="space-y-1">
+                            {/* Mail Inbox */}
+                            <button
+                                onClick={() => handleMainNavClick('mail')}
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
+                                    isMailActive
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                )}
+                            >
+                                <Mail className="w-5 h-5" strokeWidth={2} />
+                                Mail Inbox
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* Account Section */}
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                    <div className="px-3 mb-2">
-                        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                            Account
-                        </h3>
-                    </div>
-                    <div className="space-y-1">
-                        {accountNavItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.href);
+                    {/* Account Section */}
+                    <div className="mt-4 pt-4 border-t border-neutral-200">
+                        <div className="px-3 mb-2">
+                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                Account
+                            </h3>
+                        </div>
+                        <div className="space-y-1">
+                            {accountNavItems.map((item) => {
+                                const Icon = item.icon;
+                                const active = isActive(item.href);
 
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                                        active
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                    )}
-                                >
-                                    <Icon className="w-5 h-5" strokeWidth={2} />
-                                    {item.label}
-                                </Link>
-                            );
-                        })}
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={cn(
+                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                            active
+                                                ? "bg-primary/10 text-primary"
+                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                        )}
+                                    >
+                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                        {item.label}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
+                </nav>
+
+                {/* Certificate Download - Pinned to bottom */}
+                <div className="shrink-0 bg-white">
+                    <CertificateDownload />
                 </div>
             </div>
-
-            {/* Certificate Download - Bottom Left */}
-            <CertificateDownload />
-        </nav>
+        </aside>
     );
 
     // Mobile: Use Sheet/Drawer
@@ -188,9 +198,10 @@ export function DashboardSidebar() {
                             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                             onClick={() => setIsMobileSidebarOpen(false)}
                         />
-                        <div className="fixed left-0 top-0 h-dvh z-50 lg:hidden w-[280px]">
-                            <div className="relative h-full bg-white shadow-xl flex flex-col">
-                                <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+                        <div className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[280px] max-w-[85vw]">
+                            <div className="flex h-[100dvh] flex-col bg-white shadow-xl">
+                                {/* Header - Fixed at top */}
+                                <div className="shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
                                     <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
                                     <Button
                                         variant="ghost"
@@ -201,7 +212,9 @@ export function DashboardSidebar() {
                                         <X className="h-5 w-5" strokeWidth={2} />
                                     </Button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-6">
+
+                                {/* Nav area - Scrollable */}
+                                <div className="flex-1 overflow-y-auto px-6 py-6">
                                     {/* Main Navigation */}
                                     <div className="mb-8">
                                         <div className="space-y-1">
@@ -258,12 +271,12 @@ export function DashboardSidebar() {
                                 </div>
 
                                 {/* Footer with Sign Out - Pinned to bottom */}
-                                <div className="border-t border-neutral-200 px-6 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+                                <div 
+                                    className="shrink-0 border-t border-neutral-200 px-6 py-4 bg-white"
+                                    style={{ paddingBottom: `max(env(safe-area-inset-bottom), 16px)` }}
+                                >
                                     <button
-                                        onClick={() => {
-                                            handleLogout();
-                                            setIsMobileSidebarOpen(false);
-                                        }}
+                                        onClick={handleLogout}
                                         className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
                                     >
                                         <LogOut className="w-5 h-5" strokeWidth={2} />

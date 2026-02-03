@@ -569,11 +569,24 @@ router.post("/login", async (req, res) => {
 // --- LOGOUT ---
 router.post("/logout", (req, res) => {
     try {
-        // Clear the HttpOnly cookie
+        // Determine secure environment (matches how cookies are set in login/signup)
+        const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
+        
+        // Clear vah_session cookie with SAME attributes as when set
+        // Matches: httpOnly: true, secure: true, sameSite: 'none', path: '/'
         res.clearCookie('vah_session', {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
+            path: '/',
+        });
+
+        // Clear CSRF token cookie with SAME attributes as when set
+        // Matches: httpOnly: false, secure: isSecure, sameSite: isSecure ? 'none' : 'lax', path: '/'
+        res.clearCookie('vah_csrf_token', {
+            httpOnly: false,
+            secure: isSecure,
+            sameSite: isSecure ? 'none' : 'lax',
             path: '/',
         });
 

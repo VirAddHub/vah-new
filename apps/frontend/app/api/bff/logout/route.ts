@@ -6,11 +6,14 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/bff/auth/logout
- * Proxy logout request to backend
+ * POST /api/bff/logout
+ * Logout endpoint - clears auth cookies (vah_session and csrf cookie) using Set-Cookie with the SAME attributes as when set.
+ * Returns { ok: true }.
+ * 
+ * This is an alias for /api/bff/auth/logout for consistency.
  */
 export async function POST(request: NextRequest) {
-  const routePath = '/api/bff/auth/logout';
+  const routePath = '/api/bff/logout';
   let backendUrl = '';
 
   try {
@@ -32,7 +35,7 @@ export async function POST(request: NextRequest) {
     const textPreview = text.substring(0, 300);
 
     // Log backend response for debugging
-    console.log(`[BFF auth/logout] Backend response: ${status} from ${backendUrl}`);
+    console.log(`[BFF logout] Backend response: ${status} from ${backendUrl}`);
 
     // Attempt JSON parse only if content looks like JSON
     let json: any = null;
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
       try {
         json = JSON.parse(text);
       } catch (parseError) {
-        console.error(`[BFF auth/logout] JSON parse failed for ${status} response:`, parseError);
+        console.error(`[BFF logout] JSON parse failed for ${status} response:`, parseError);
         return NextResponse.json(
           {
             ok: false,
@@ -66,9 +69,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Forward all Set-Cookie headers from backend (to clear HttpOnly cookies)
+    // Backend now clears both vah_session and vah_csrf_token with matching attributes
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
-      console.log(`[BFF auth/logout] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
+      console.log(`[BFF logout] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
       setCookieHeaders.forEach(cookie => {
         responseHeaders.append('Set-Cookie', cookie);
       });
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
       // Also check for single Set-Cookie header
       const setCookie = response.headers.get('set-cookie');
       if (setCookie) {
-        console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
+        console.log(`[BFF logout] Forwarding Set-Cookie header to browser`);
         responseHeaders.set('Set-Cookie', setCookie);
       }
     }
@@ -100,14 +104,14 @@ export async function POST(request: NextRequest) {
     responseHeaders.append('Set-Cookie', `vah_jwt=; ${baseClearOptions}; SameSite=${sameSiteValue}${secureFlag}`);
 
     // Always return success for logout (even if backend fails, we want to clear client-side state)
-    return NextResponse.json(json ?? { ok: true, message: 'Logged out successfully' }, {
+    return NextResponse.json(json ?? { ok: true }, {
       status: 200,
       headers: responseHeaders,
     });
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error(`[BFF auth/logout] Server misconfigured:`, error.message);
+      console.error(`[BFF logout] Server misconfigured:`, error.message);
       return NextResponse.json(
         {
           ok: false,
@@ -118,7 +122,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error(`[BFF auth/logout] Unexpected error:`, error);
+    console.error(`[BFF logout] Unexpected error:`, error);
     return NextResponse.json(
       {
         ok: false,

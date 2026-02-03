@@ -75,7 +75,7 @@ export function CertificateDownload() {
     };
 
     return (
-        <div className="px-4 pb-6 pt-4 border-t border-[#E5E7EB] mt-auto">
+        <div className="px-4 pb-6 pt-4 border-t border-[#E5E7EB]">
             <div className="flex flex-col gap-2">
                 {isKycApproved ? (
                     <>
