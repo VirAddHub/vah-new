@@ -1039,17 +1039,17 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const hRow = (label: string, value: string) => {
                 const labelH = h(label, FONT.bold, TYPE.small, labelColW);
                 const valueH = h(value, FONT.regular, TYPE.small, valueColW);
-                return Math.max(labelH, valueH) + (12 * scale); // Reduced gap (closer spacing)
+                return Math.max(labelH, valueH) + (10 * scale); // Further reduced gap (8px -> 10px scaled)
             };
             
             const verifiedSectionH = 
-                (24 * scale) + // Reduced gap after title
+                (16 * scale) + // Further reduced gap after title (12px -> 16px scaled)
                 hRow('Registered Office Address', formattedAddr) +
                 hRow('Authorised Company', businessName) +
                 hRow('Date of issue', currentDate) +
-                (24 * scale) + // pb-8 equivalent (reduced)
+                (16 * scale) + // pb-8 equivalent (further reduced)
                 1 + // border line
-                (24 * scale); // mb-10 equivalent (reduced)
+                (16 * scale); // mb-10 equivalent (further reduced)
 
             // Title + verified details + statements + signature
             let total = 0;
@@ -1058,11 +1058,11 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
             // Body paragraph
             const statementH = h(statement1, FONT.regular, TYPE.body, contentW);
-            total += statementH + (32 * scale); // Reduced spacing (mb-12 -> mb-8) to fit on one page
+            total += statementH + (20 * scale); // Further reduced spacing to fit on one page
 
             // Signature block
-            total += (32 * scale); // pt-8
-            total += h('Sincerely', FONT.regular, TYPE.body, contentW) + (24 * scale); // mb-6
+            total += (20 * scale); // Reduced pt-8
+            total += h('Sincerely', FONT.regular, TYPE.body, contentW) + (16 * scale); // Reduced mb-6
             total += h('VirtualAddressHub Customer Support', FONT.regular, TYPE.body * 1.125, contentW); // text-base equivalent, NOT bold
 
             return {
@@ -1081,14 +1081,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         };
 
         let chosen = measure(1.0);
-        for (const s of [0.97, 0.94, 0.91, 0.88, 0.85, 0.82]) {
+        // More aggressive scaling to ensure one page fit
+        for (const s of [0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65]) {
             if (chosen.total <= availableH) break;
             chosen = measure(s);
         }
 
         if (chosen.total > availableH) {
             logger.warn('[Certificate] content_still_exceeds_single_page_target_clamping');
-            chosen = measure(0.80);
+            chosen = measure(0.60); // More aggressive fallback
         }
 
         const TYPE = chosen.TYPE;
@@ -1126,7 +1127,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .fontSize(TYPE.title) // text-2xl equivalent
             .font(FONT.bold)
             .text('Business Address Confirmation', contentX, doc.y, { width: contentW });
-        doc.y += 24; // Reduced gap (bring fields closer)
+        doc.y += 16; // Further reduced gap (bring fields closer, ensure one page)
 
         // Verified details section - Two-column grid layout (closer spacing)
         // Labels column: fixed 200px, Values column: flexible
@@ -1148,7 +1149,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += Math.max(
             doc.heightOfString('Registered Office Address', { width: labelColWidth }),
             doc.heightOfString(formattedAddress, { width: valueColWidth, lineGap: chosen.lineGap })
-        ) + 12; // Reduced gap (closer spacing)
+        ) + 10; // Further reduced gap (closer spacing, ensure one page)
         
         // Row 2: Authorised Company
         doc.fillColor('#6b7280') // gray-500
@@ -1162,7 +1163,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += Math.max(
             doc.heightOfString('Authorised Company', { width: labelColWidth }),
             doc.heightOfString(businessName, { width: valueColWidth })
-        ) + 12; // Reduced gap (closer spacing)
+        ) + 10; // Further reduced gap (closer spacing, ensure one page)
         
         // Row 3: Date of issue
         doc.fillColor('#6b7280') // gray-500
@@ -1176,7 +1177,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += Math.max(
             doc.heightOfString('Date of issue', { width: labelColWidth }),
             doc.heightOfString(currentDate, { width: valueColWidth })
-        ) + 24; // pb-8 equivalent (reduced)
+        ) + 16; // pb-8 equivalent (further reduced)
         
         // Bottom border for verified details section
         doc.strokeColor(COLORS.border) // #e5e7eb
@@ -1184,7 +1185,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .moveTo(contentX, doc.y)
             .lineTo(contentX + contentW, doc.y)
             .stroke();
-        doc.y += 24; // mb-10 equivalent (reduced)
+        doc.y += 16; // mb-10 equivalent (further reduced)
 
         // Body paragraph section - exact wording preserved
         doc.fillColor('#1f2937') // gray-800
@@ -1192,17 +1193,17 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .font(FONT.regular)
             .text(statement1, contentX, doc.y, { 
                 width: contentW, 
-                lineGap: 7, // leading-7 equivalent (line-height: 1.75rem = 28px, with 11.25px font = ~7px gap)
+                lineGap: 6, // Slightly reduced line gap to fit on one page
             });
-        doc.y += 32; // Reduced spacing (mb-12 -> mb-8) to fit on one page
+        doc.y += 20; // Further reduced spacing to fit on one page
 
         // Signature block
-        doc.y += 32; // pt-8 equivalent
+        doc.y += 20; // Reduced pt-8
         doc.fillColor(COLORS.text) // #111827
             .fontSize(TYPE.body) // text-sm
             .font(FONT.regular)
             .text('Sincerely', contentX, doc.y, { width: contentW });
-        doc.y += 24; // mb-6 equivalent
+        doc.y += 16; // Reduced mb-6
         doc.fillColor(COLORS.text) // #111827
             .fontSize(11.25 * 1.125) // text-base equivalent (~12.66px, close to 14px)
             .font(FONT.regular) // NOT bold (removed bold)

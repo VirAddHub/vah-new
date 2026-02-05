@@ -4,8 +4,6 @@ import useSWR, { SWRConfiguration } from "swr";
 import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "https://vah-api-staging.onrender.com";
-
 function resolveToken(ctx: ReturnType<typeof useAuth>): string | null {
   if (!ctx) return null;
   // support either `token` or `getToken()` in the context
@@ -40,9 +38,15 @@ function makeFetcher(token?: string | null) {
       throw new Error('Invalid key format');
     }
 
-    console.log('[useAuthedSWR] Fetching:', `${API}${url}`);
-    const res = await fetch(`${API}${url}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    // Use relative paths to go through BFF routes instead of direct backend calls
+    // This ensures proper cookie forwarding, CSRF handling, and CORS compliance
+    const fullUrl = url.startsWith('/') ? url : `/${url}`;
+    console.log('[useAuthedSWR] Fetching:', fullUrl);
+    const res = await fetch(fullUrl, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
       credentials: 'include', // Include cookies for session
     });
 
