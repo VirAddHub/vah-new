@@ -58,7 +58,7 @@ const accountNavItems: NavItem[] = [
 export function DashboardSidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { activeView, setActiveView, isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
+    const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const [isMobile, setIsMobile] = useState(false);
 
     // Handle logout - use proper API endpoint
@@ -68,7 +68,7 @@ export function DashboardSidebar() {
         if (setIsMobileSidebarOpen) {
             setIsMobileSidebarOpen(false);
         }
-        
+
         try {
             // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
@@ -109,19 +109,16 @@ export function DashboardSidebar() {
         return pathname === href || pathname?.startsWith(href + '/');
     };
 
-    // Handle Mail clicks - use state instead of navigation
-    const handleMainNavClick = (view: 'mail') => {
-        setActiveView(view);
-        // Navigate to main dashboard with view param
-        router.push('/dashboard?view=' + view);
+    // Handle Mail navigation
+    const handleMailClick = () => {
+        router.push('/mail');
         if (isMobile) {
             setIsMobileSidebarOpen(false);
         }
     };
 
-    // Check if mail is active based on view state
-    // Use context activeView for main nav items, pathname for account items
-    const isMailActive = activeView === 'mail' || pathname === '/mail';
+    // Check if mail is active based on pathname
+    const isMailActive = pathname === '/mail' || pathname === '/mail/';
 
     const SidebarContent = () => (
         <aside className="hidden lg:flex lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:border-r lg:border-neutral-200 bg-white">
@@ -133,7 +130,7 @@ export function DashboardSidebar() {
                         <div className="space-y-1">
                             {/* Mail Inbox */}
                             <button
-                                onClick={() => handleMainNavClick('mail')}
+                                onClick={handleMailClick}
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
                                     isMailActive
@@ -221,7 +218,7 @@ export function DashboardSidebar() {
                                             {/* Mail Inbox */}
                                             <button
                                                 onClick={() => {
-                                                    handleMainNavClick('mail');
+                                                    handleMailClick();
                                                     setIsMobileSidebarOpen(false);
                                                 }}
                                                 className={cn(
@@ -271,7 +268,7 @@ export function DashboardSidebar() {
                                 </div>
 
                                 {/* Footer with Sign Out - Pinned to bottom */}
-                                <div 
+                                <div
                                     className="shrink-0 border-t border-neutral-200 px-6 py-4 bg-white"
                                     style={{ paddingBottom: `max(env(safe-area-inset-bottom), 16px)` }}
                                 >

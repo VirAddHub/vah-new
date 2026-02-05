@@ -66,19 +66,31 @@ export async function POST(request: NextRequest) {
     });
 
     // Forward all Set-Cookie headers from backend (to clear HttpOnly cookies)
+    // Check both getSetCookie() (Next.js) and get('set-cookie') (standard)
     const setCookieHeaders = response.headers.getSetCookie();
+    const setCookieRaw = response.headers.get('set-cookie');
+    
+    console.log(`[BFF auth/logout] Backend Set-Cookie headers:`, {
+      getSetCookie: setCookieHeaders,
+      raw: setCookieRaw,
+      allHeaders: Object.fromEntries(response.headers.entries())
+    });
+    
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       console.log(`[BFF auth/logout] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
       setCookieHeaders.forEach(cookie => {
         responseHeaders.append('Set-Cookie', cookie);
       });
-    } else {
+    } else if (setCookieRaw) {
       // Also check for single Set-Cookie header
-      const setCookie = response.headers.get('set-cookie');
-      if (setCookie) {
-        console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
-        responseHeaders.set('Set-Cookie', setCookie);
-      }
+      console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
+      // Handle multiple Set-Cookie headers (they come as comma-separated or array)
+      const cookies = Array.isArray(setCookieRaw) ? setCookieRaw : setCookieRaw.split(', ');
+      cookies.forEach(cookie => {
+        responseHeaders.append('Set-Cookie', cookie.trim());
+      });
+    } else {
+      console.warn(`[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing`);
     }
 
     // Force clear known auth cookies to ensure clean state (safety net if backend headers fail)

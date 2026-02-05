@@ -23,7 +23,7 @@ import { CreatableTagSelect } from '@/components/dashboard/user/CreatableTagSele
 
 export default function MailInboxPage() {
     const router = useRouter();
-    const { setActiveView } = useDashboardView();
+    const { isMobileSidebarOpen } = useDashboardView();
     const [activeTab, setActiveTab] = useState<'inbox' | 'archived' | 'tags'>('inbox');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null); // Filter inbox by tag
@@ -34,11 +34,6 @@ export default function MailInboxPage() {
     const [newTagName, setNewTagName] = useState('');
     const [mergeTargetTag, setMergeTargetTag] = useState<string | null>(null);
 
-    // Set the active view when this component mounts
-    useEffect(() => {
-        setActiveView('mail');
-    }, [setActiveView]);
-    
     // Mail detail state - in-place replacement view
     const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
     const [showPDFModal, setShowPDFModal] = useState(false);
@@ -220,7 +215,7 @@ export default function MailInboxPage() {
                 setShowManageTagsModal(false);
                 setSelectedTagForManage(null);
                 setNewTagName('');
-                
+
                 // Single revalidation for both mail items and tags
                 await Promise.all([mutateMailItems(), mutateTags()]);
             } else {
@@ -283,7 +278,7 @@ export default function MailInboxPage() {
                 setShowManageTagsModal(false);
                 setSelectedTagForManage(null);
                 setMergeTargetTag(null);
-                
+
                 // Single revalidation for both mail items and tags
                 await Promise.all([mutateMailItems(), mutateTags()]);
             } else {
@@ -381,7 +376,7 @@ export default function MailInboxPage() {
     // Group items by tag for Tags tab
     const groupedByTag = useMemo(() => {
         if (activeTab !== 'tags') return null;
-        
+
         const groups: Record<string, MailItem[]> = {};
         filteredItems.forEach((item: MailItem) => {
             const tag = item.tag || 'untagged';
@@ -390,14 +385,14 @@ export default function MailInboxPage() {
             }
             groups[tag].push(item);
         });
-        
+
         // Sort tags: tagged items first (alphabetically), then untagged
         const sortedTags = Object.keys(groups).sort((a, b) => {
             if (a === 'untagged') return 1;
             if (b === 'untagged') return -1;
             return a.localeCompare(b);
         });
-        
+
         return sortedTags.map(tag => ({
             tag,
             items: groups[tag],
@@ -427,7 +422,7 @@ export default function MailInboxPage() {
         const sender = (item.sender_name || '').toLowerCase();
         const subject = (item.subject || '').toLowerCase();
         const combined = `${tag} ${sender} ${subject}`;
-        
+
         if (combined.includes('bank') || combined.includes('barclays') || combined.includes('hsbc') || combined.includes('lloyds')) {
             return Landmark;
         }
@@ -447,7 +442,7 @@ export default function MailInboxPage() {
         // Normalize both values for comparison (null vs undefined vs empty string)
         const currentTag = item.tag || null;
         const normalizedNewTag = newTag || null;
-        
+
         // Skip API call if tag hasn't changed
         if (currentTag === normalizedNewTag) {
             return;
@@ -515,7 +510,7 @@ export default function MailInboxPage() {
     // Handle archive mail item
     const handleArchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent opening mail detail
-        
+
         // Optimistic update: Update cache immediately for instant UI feedback
         if (mailData?.ok && Array.isArray(mailData.data)) {
             mutateMailItems({
@@ -527,7 +522,7 @@ export default function MailInboxPage() {
                 ),
             }, false); // false = don't revalidate yet
         }
-        
+
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}`, {
                 method: 'DELETE',
@@ -564,7 +559,7 @@ export default function MailInboxPage() {
 
     const handleUnarchive = useCallback(async (item: MailItem, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent opening mail detail
-        
+
         // Optimistic update: Update cache immediately for instant UI feedback
         if (mailData?.ok && Array.isArray(mailData.data)) {
             mutateMailItems({
@@ -576,7 +571,7 @@ export default function MailInboxPage() {
                 ),
             }, false); // false = don't revalidate yet
         }
-        
+
         try {
             const response = await fetch(`/api/bff/mail-items/${item.id}/restore`, {
                 method: 'POST',
@@ -675,21 +670,21 @@ export default function MailInboxPage() {
             });
             return;
         }
-        
+
         // Check if GDPR expired (older than 30 days)
         const receivedDate = selectedMailDetail.received_date || selectedMailDetail.created_at;
         if (receivedDate) {
             const received = new Date(receivedDate);
             const now = new Date();
             const daysDiff = Math.floor((now.getTime() - received.getTime()) / (1000 * 60 * 60 * 24));
-            
+
             if (daysDiff > 30) {
                 console.log('[MailDetail] Mail is GDPR expired, cannot forward');
                 setForwardInlineNotice('This mail item is older than 30 days and cannot be forwarded due to GDPR compliance.');
                 return;
             }
         }
-        
+
         // Open forwarding modal
         console.log('[MailDetail] Opening forwarding modal for mail:', selectedMailDetail.id);
         setSelectedMailForForwarding(selectedMailDetail);
@@ -736,7 +731,7 @@ export default function MailInboxPage() {
                 }
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                
+
                 // Handle incomplete forwarding address error
                 if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
                     const missingFields = errorData.fields || [];
@@ -842,14 +837,14 @@ export default function MailInboxPage() {
                 const mailItemId = selectedMailDetail.id;
                 const url = `/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(mailItemId))}&disposition=inline`;
                 const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
-                
+
                 const res = await fetch(url, {
                     credentials: 'include',
                     cache: 'no-store',
                     signal: ctrl.signal,
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
-                
+
                 if (!res.ok) {
                     const txt = await res.text().catch(() => '');
                     throw new Error(txt || `Failed to load preview (${res.status})`);
@@ -994,13 +989,13 @@ export default function MailInboxPage() {
                             onView={handleView}
                             onForward={handleForward}
                             onArchive={selectedMailDetail.deleted ? undefined : async () => {
-                                const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
+                                const fakeEvent = { stopPropagation: () => { } } as React.MouseEvent;
                                 await handleArchive(selectedMailDetail, fakeEvent);
                                 // Navigate back to list after archiving
                                 handleBack();
                             }}
                             onUnarchive={selectedMailDetail.deleted ? async () => {
-                                const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
+                                const fakeEvent = { stopPropagation: () => { } } as React.MouseEvent;
                                 await handleUnarchive(selectedMailDetail, fakeEvent);
                                 // Navigate back to list after unarchiving
                                 handleBack();
@@ -1057,151 +1052,151 @@ export default function MailInboxPage() {
                             {groupedByTag.map(({ tag, items, count }) => {
                                 const isCollapsed = collapsedTags.has(tag);
                                 const colorClass = getTagColor(tag);
-                                
+
                                 return (
-                                <div key={tag} className="space-y-3">
-                                    {/* Tag Header */}
-                                    <div className="sticky top-[56px] md:top-0 z-10 bg-white py-2.5 md:py-2 border-b border-neutral-200">
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={(e) => handleCollapseToggle(tag, e)}
-                                                className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors duration-150"
-                                                aria-label={isCollapsed ? "Expand" : "Collapse"}
-                                            >
-                                                {isCollapsed ? (
-                                                    <ChevronRight className="h-4 w-4 text-neutral-500" strokeWidth={2} />
-                                                ) : (
-                                                    <ChevronDown className="h-4 w-4 text-neutral-500" strokeWidth={2} />
-                                                )}
-                                            </button>
-                                            <button
-                                                onClick={() => handleTagHeaderClick(tag)}
-                                                className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors duration-150 group text-left"
-                                            >
-                                                <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
-                                                <div className="flex items-baseline gap-2">
-                                                    <h2 className="text-base font-semibold text-neutral-900 tracking-tight">
-                                                        {getTagLabel(tag)}
-                                                    </h2>
-                                                    <span className="text-sm font-normal text-neutral-500">{count} items</span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {/* Mail Items for this Tag */}
-                                    {!isCollapsed && (
-                                        <div className="space-y-2 pb-6 md:pb-6">
-                                            {items.map((item) => {
-                                            const Icon = getMailIcon(item);
-                                            const senderName = getSenderName(item);
-                                            const date = formatDate(item.received_date || item.created_at);
-                                            const isRead = item.is_read ?? true;
-                                            
-                                            return (
-                                                <div
-                                                    key={item.id}
-                                                    onClick={() => handleMailClick(item)}
-                                                    className={cn(
-                                                        "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
-                                                        "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
-                                                        "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
-                                                        "cursor-pointer min-h-[56px] md:min-h-0"
-                                                    )}
+                                    <div key={tag} className="space-y-3">
+                                        {/* Tag Header */}
+                                        <div className="sticky top-[56px] md:top-0 z-10 bg-white py-2.5 md:py-2 border-b border-neutral-200">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={(e) => handleCollapseToggle(tag, e)}
+                                                    className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors duration-150"
+                                                    aria-label={isCollapsed ? "Expand" : "Collapse"}
                                                 >
-                                                    {/* Mobile: Icon + Sender/Tag + Date */}
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
-                                                        <div className="flex-shrink-0">
-                                                            <Icon className={cn(
-                                                                "h-5 w-5",
-                                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
-                                                            )} strokeWidth={2} />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className={cn(
-                                                                    "text-[15px] leading-tight truncate",
-                                                                    isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
-                                                                )}>
-                                                                    {senderName}
-                                                                </p>
-                                                                {item.tag && (
-                                                                    <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                    {isCollapsed ? (
+                                                        <ChevronRight className="h-4 w-4 text-neutral-500" strokeWidth={2} />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4 text-neutral-500" strokeWidth={2} />
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleTagHeaderClick(tag)}
+                                                    className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors duration-150 group text-left"
+                                                >
+                                                    <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
+                                                    <div className="flex items-baseline gap-2">
+                                                        <h2 className="text-base font-semibold text-neutral-900 tracking-tight">
+                                                            {getTagLabel(tag)}
+                                                        </h2>
+                                                        <span className="text-sm font-normal text-neutral-500">{count} items</span>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Mail Items for this Tag */}
+                                        {!isCollapsed && (
+                                            <div className="space-y-2 pb-6 md:pb-6">
+                                                {items.map((item) => {
+                                                    const Icon = getMailIcon(item);
+                                                    const senderName = getSenderName(item);
+                                                    const date = formatDate(item.received_date || item.created_at);
+                                                    const isRead = item.is_read ?? true;
+
+                                                    return (
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => handleMailClick(item)}
+                                                            className={cn(
+                                                                "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
+                                                                "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
+                                                                "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
+                                                                "cursor-pointer min-h-[56px] md:min-h-0"
+                                                            )}
+                                                        >
+                                                            {/* Mobile: Icon + Sender/Tag + Date */}
+                                                            <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
+                                                                <div className="flex-shrink-0">
+                                                                    <Icon className={cn(
+                                                                        "h-5 w-5",
+                                                                        isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                                    )} strokeWidth={2} />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className={cn(
+                                                                            "text-[15px] leading-tight truncate",
+                                                                            isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                                                        )}>
+                                                                            {senderName}
+                                                                        </p>
+                                                                        {item.tag && (
+                                                                            <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
+                                                                    {date}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Desktop: Sender/Subject + Date */}
+                                                            <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
+                                                                <div className="flex-shrink-0">
+                                                                    <Icon className={cn(
+                                                                        "h-5 w-5",
+                                                                        isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                                    )} strokeWidth={2} />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={cn(
+                                                                        "text-[15px] leading-tight truncate mb-0.5",
+                                                                        isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                                    )}>
+                                                                        {senderName}
+                                                                    </p>
+                                                                    {item.subject && item.subject !== senderName && (
+                                                                        <p className="text-sm text-neutral-500 truncate leading-tight">
+                                                                            {item.subject}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
+                                                                    {date}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Desktop: Hidden section for Tags view (no actions needed) */}
+                                                            <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                                                <CreatableTagSelect
+                                                                    value={item.tag ?? null}
+                                                                    availableTags={availableTags}
+                                                                    onValueChange={(newTag) => handleTagUpdate(item, newTag)}
+                                                                    getTagLabel={getTagLabel}
+                                                                />
+                                                                {item.deleted ? (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={(e) => handleUnarchive(item, e)}
+                                                                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                                                    >
+                                                                        <ArchiveRestore className="h-4 w-4 mr-1.5" />
+                                                                        Unarchive
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={(e) => handleArchive(item, e)}
+                                                                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                                                                    >
+                                                                        <Archive className="h-4 w-4 mr-1.5" />
+                                                                        Archive
+                                                                    </Button>
                                                                 )}
+                                                                <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                    {date}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                        <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
-                                                            {date}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Desktop: Sender/Subject + Date */}
-                                                    <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
-                                                        <div className="flex-shrink-0">
-                                                            <Icon className={cn(
-                                                                "h-5 w-5",
-                                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
-                                                            )} strokeWidth={2} />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={cn(
-                                                                "text-[15px] leading-tight truncate mb-0.5",
-                                                                isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
-                                                            )}>
-                                                                {senderName}
-                                                            </p>
-                                                            {item.subject && item.subject !== senderName && (
-                                                                <p className="text-sm text-neutral-500 truncate leading-tight">
-                                                                    {item.subject}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
-                                                            {date}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                    {/* Desktop: Hidden section for Tags view (no actions needed) */}
-                                                    <div className="hidden md:flex items-center gap-3 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                                        <CreatableTagSelect
-                                                            value={item.tag ?? null}
-                                                            availableTags={availableTags}
-                                                            onValueChange={(newTag) => handleTagUpdate(item, newTag)}
-                                                            getTagLabel={getTagLabel}
-                                                        />
-                                                        {item.deleted ? (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => handleUnarchive(item, e)}
-                                                                className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                                            >
-                                                                <ArchiveRestore className="h-4 w-4 mr-1.5" />
-                                                                Unarchive
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => handleArchive(item, e)}
-                                                                className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                                                            >
-                                                                <Archive className="h-4 w-4 mr-1.5" />
-                                                                Archive
-                                                            </Button>
-                                                        )}
-                                                        <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                                            {date}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        </div>
-                                    )}
-                                </div>
-                            );
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
                             })}
                         </div>
                     ) : (
@@ -1211,7 +1206,7 @@ export default function MailInboxPage() {
                             const senderName = getSenderName(item);
                             const date = formatDate(item.received_date || item.created_at);
                             const isRead = item.is_read ?? true;
-                            
+
                             return (
                                 <div
                                     key={item.id}
@@ -1271,7 +1266,7 @@ export default function MailInboxPage() {
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     {/* Desktop: Tag + Archive + Date */}
                                     <div className="hidden md:flex items-center gap-4 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                         <CreatableTagSelect
@@ -1280,7 +1275,7 @@ export default function MailInboxPage() {
                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                             getTagLabel={getTagLabel}
                                         />
-                                        
+
                                         {item.deleted ? (
                                             <Button
                                                 variant="ghost"
@@ -1302,7 +1297,7 @@ export default function MailInboxPage() {
                                                 Archive
                                             </Button>
                                         )}
-                                        
+
                                         <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
                                             {date}
                                         </span>
@@ -1325,7 +1320,7 @@ export default function MailInboxPage() {
                     mailItemId={selectedMailForPDF.id ? Number(selectedMailForPDF.id) : null}
                     mailItemSubject={selectedMailForPDF.subject || 'Mail Preview'}
                 />
-                                        )}
+            )}
 
             {/* Forwarding Request Modal */}
             {showForwardingModal && selectedMailForForwarding && (
@@ -1349,7 +1344,7 @@ export default function MailInboxPage() {
                             Manage Tags
                         </DialogTitle>
                     </DialogHeader>
-                    
+
                     {!manageTagAction ? (
                         /* Action Selection */
                         <div className="space-y-4 py-4">
@@ -1376,7 +1371,7 @@ export default function MailInboxPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            
+
                             {selectedTagForManage && (
                                 <div className="space-y-2">
                                     <div className="flex gap-2">
@@ -1500,7 +1495,7 @@ export default function MailInboxPage() {
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <p className="text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    This will remove the tag <strong>"{getTagLabel(selectedTagForManage)}"</strong> from all active mail items. 
+                                    This will remove the tag <strong>"{getTagLabel(selectedTagForManage)}"</strong> from all active mail items.
                                     Archived mail is unaffected.
                                 </p>
                                 <p className="text-sm font-medium text-destructive" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>

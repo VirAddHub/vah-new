@@ -572,6 +572,7 @@ router.post("/logout", (req, res) => {
         // Determine secure environment (matches how cookies are set in login/signup)
         const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
         
+        // Clear cookies using clearCookie (works for direct browser requests)
         // Clear vah_session cookie with SAME attributes as when set
         // Matches: httpOnly: true, secure: true, sameSite: 'none', path: '/'
         res.clearCookie('vah_session', {
@@ -589,6 +590,17 @@ router.post("/logout", (req, res) => {
             sameSite: isSecure ? 'none' : 'lax',
             path: '/',
         });
+
+        // Also explicitly set Set-Cookie headers to ensure they're forwarded by BFF proxy
+        // This ensures cookies are cleared even when request comes through Next.js BFF
+        // Express requires each Set-Cookie header to be appended individually
+        const baseClearOptions = 'Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
+        const secureFlag = isSecure ? '; Secure' : '';
+        const sameSiteValue = isSecure ? 'None' : 'Lax';
+        
+        // Set explicit Set-Cookie headers for clearing (for BFF forwarding)
+        res.append('Set-Cookie', `vah_session=; ${baseClearOptions}; HttpOnly; SameSite=${sameSiteValue}${secureFlag}`);
+        res.append('Set-Cookie', `vah_csrf_token=; ${baseClearOptions}; SameSite=${sameSiteValue}${secureFlag}`);
 
         res.json({ ok: true, message: "Logged out successfully" });
     } catch (error) {

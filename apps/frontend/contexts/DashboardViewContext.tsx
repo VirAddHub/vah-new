@@ -2,11 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-type DashboardView = 'mail' | 'forwarding' | null;
-
 interface DashboardViewContextType {
-    activeView: DashboardView;
-    setActiveView: (view: DashboardView) => void;
     isMobileSidebarOpen: boolean;
     setIsMobileSidebarOpen: (open: boolean) => void;
 }
@@ -14,11 +10,10 @@ interface DashboardViewContextType {
 const DashboardViewContext = createContext<DashboardViewContextType | undefined>(undefined);
 
 export function DashboardViewProvider({ children }: { children: ReactNode }) {
-    const [activeView, setActiveView] = useState<DashboardView>('mail'); // Default to mail
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
     return (
-        <DashboardViewContext.Provider value={{ activeView, setActiveView, isMobileSidebarOpen, setIsMobileSidebarOpen }}>
+        <DashboardViewContext.Provider value={{ isMobileSidebarOpen, setIsMobileSidebarOpen }}>
             {children}
         </DashboardViewContext.Provider>
     );
