@@ -20,7 +20,7 @@ import { FontLoader } from './FontLoader';
 
 // Lazy load AccountPage to avoid circular dependencies
 const AccountPage = dynamic(() => import('../app/(dashboard)/account/page'), { ssr: false });
-import { Navigation } from './Navigation';
+import { MarketingNavigation } from './MarketingNavigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
 import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
@@ -182,7 +182,7 @@ export function App() {
       <FontLoader />
 
       <div className="min-h-screen flex flex-col">
-        <Navigation onNavigate={navigate} />
+        <MarketingNavigation onNavigate={navigate} />
         <main className="flex-1">
           {renderPage()}
         </main>

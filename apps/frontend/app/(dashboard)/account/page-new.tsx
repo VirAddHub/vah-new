@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { AccountBillingCard } from '@/components/account/AccountBillingCard';
 import { BusinessContactCard } from '@/components/account/BusinessContactCard';
@@ -151,7 +150,6 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
-      <Navigation onNavigate={() => { }} />
       <main id="main-content" role="main" className="flex-1">
         <div className="max-w-6xl mx-auto p-6 space-y-8">
           <div className="flex items-center gap-3">

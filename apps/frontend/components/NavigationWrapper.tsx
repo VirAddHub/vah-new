@@ -1,6 +1,6 @@
 "use client";
 
-import { Navigation } from './Navigation';
+import { MarketingNavigation } from './MarketingNavigation';
 
 export function NavigationWrapper() {
     const handleNavigate = (page: string, data?: any) => {
@@ -59,5 +59,5 @@ export function NavigationWrapper() {
         }
     };
 
-    return <Navigation onNavigate={handleNavigate} />;
+    return <MarketingNavigation onNavigate={handleNavigate} />;
 }

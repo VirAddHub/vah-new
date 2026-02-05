@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Header } from './Header';
+import { MarketingNavigation } from '../MarketingNavigation';
 import { createNavigationHandler } from '@/lib/navigation-handler';
 
 export function HeaderWithNav() {
     const router = useRouter();
     const handleNavigate = createNavigationHandler(router);
-    return <Header onNavigate={handleNavigate} />;
+    return <MarketingNavigation onNavigate={handleNavigate} />;
 }
 

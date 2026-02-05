@@ -2,13 +2,13 @@
 
 import { NavigationProvider } from '@/contexts/NavigationContext';
 import { NotFoundPage } from '@/components/NotFoundPage';
-import { Navigation } from '@/components/Navigation';
+import { MarketingNavigation } from '@/components/MarketingNavigation';
 import { Footer } from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 
 export default function NotFound() {
   const router = useRouter();
-  
+
   const handleNavigate = (page: string) => {
     if (page === 'home') {
       router.push('/');
@@ -20,7 +20,7 @@ export default function NotFound() {
   return (
     <NavigationProvider>
       <div className="min-h-screen flex flex-col">
-        <Navigation onNavigate={handleNavigate} />
+        <MarketingNavigation onNavigate={handleNavigate} />
         <main className="flex-1">
           <NotFoundPage onNavigate={handleNavigate} />
         </main>
