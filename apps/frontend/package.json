@@ -45,6 +45,8 @@
         "@types/node": "^20.0.0",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1",
         "@vah/shared": "file:../../packages/shared",
         "autoprefixer": "^10.4.0",
         "axios": "^1.6.0",
@@ -56,14 +58,16 @@
         "critters": "^0.0.23",
         "date-fns": "^2.30.0",
         "dotenv": "^16.3.0",
+        "eslint": "^8.57.1",
+        "eslint-config-next": "^16.0.5",
         "express-rate-limit": "^7.1.0",
         "helmet": "^7.1.0",
         "jsonwebtoken": "^9.0.2",
         "lucide-react": "^0.292.0",
         "multer": "^1.4.5-lts.1",
-        "next": "^14.0.0",
+        "next": "^15.5.12",
         "next-mdx-remote": "^5.0.0",
-        "nodemailer": "^7.0.11",
+        "nodemailer": "^7.0.13",
         "pg": "^8.11.0",
         "postcss": "^8.4.0",
         "postmark": "^4.0.5",
@@ -85,11 +89,7 @@
         "vaul": "^0.9.5",
         "web-vitals": "^5.1.0",
         "winston": "^3.11.0",
-        "zod": "^3.22.0",
-        "eslint": "^8.57.1",
-        "eslint-config-next": "^16.0.5",
-        "@typescript-eslint/eslint-plugin": "^8.44.1",
-        "@typescript-eslint/parser": "^8.44.1"
+        "zod": "^3.22.0"
     },
     "devDependencies": {
         "@next/bundle-analyzer": "^15.5.6",
@@ -105,7 +105,8 @@
         "canvas": "^3.2.0",
         "husky": "^9.1.7",
         "jest": "^29.7.0",
-        "jest-environment-jsdom": "^29.7.0"
+        "jest-environment-jsdom": "^29.7.0",
+        "tar": "^7.5.7"
     },
     "repository": {
         "type": "git",

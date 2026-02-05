@@ -51,7 +51,6 @@ const nextConfig = {
 
   // Experimental features for performance
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
     // Turborepo monorepo support
     outputFileTracingRoot: path.join(__dirname, '../../'),
