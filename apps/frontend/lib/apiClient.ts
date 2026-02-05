@@ -46,11 +46,11 @@ const j = (v: any) =>
     v && typeof v === 'object' && !(v instanceof FormData) ? JSON.stringify(v) : v;
 
 async function fetchJson<T = any>(path: string, init: ReqInit = {}): Promise<T> {
-    // BFF routes are on the same origin (frontend), so use relative path
-    // Backend routes need API_BASE prefix
+    // All /api/admin/* and /api/bff/* routes are BFF routes (relative paths)
+    // Only use API_BASE for legacy direct backend calls (should be avoided)
     const url = path.startsWith('http')
         ? path
-        : path.startsWith('/api/bff')
+        : path.startsWith('/api/bff') || path.startsWith('/api/admin')
             ? path  // BFF routes are relative to frontend origin
             : `${API_BASE}${path}`;
     const isForm = init.body instanceof FormData;

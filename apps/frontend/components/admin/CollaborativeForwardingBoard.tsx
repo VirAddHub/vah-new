@@ -125,8 +125,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Unlock a request
   const unlockRequest = async (requestId: number): Promise<void> => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
-      await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/unlock`, {
+      // Use BFF route instead of direct backend call
+      await fetch(`/api/admin/forwarding/requests/${requestId}/unlock`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -148,8 +148,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Force unlock a request (admin override)
   const forceUnlockRequest = async (requestId: number): Promise<boolean> => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
-      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/force-unlock`, {
+      // Use BFF route instead of direct backend call
+      const response = await fetch(`/api/admin/forwarding/requests/${requestId}/force-unlock`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -196,8 +196,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   // Load locks from server
   const loadLocks = useCallback(async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://vah-api-staging.onrender.com';
-      const response = await fetch(`${API_BASE}/api/admin/forwarding/locks`, {
+      // Use BFF route instead of direct backend call
+      const response = await fetch(`/api/admin/forwarding/locks`, {
         credentials: 'include',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
@@ -390,9 +390,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     try {
       console.log(`[CollaborativeBoard] Updating request ${requestId} to UI status "${newStatus}" (canonical: "${canonicalStatus}")`);
 
-      // Use the new status-based API instead of action-based API
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://vah-api-staging.onrender.com';
-      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}/status`, {
+      // Use BFF route instead of direct backend call
+      const response = await fetch(`/api/admin/forwarding/requests/${requestId}/status`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -491,8 +490,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
     setDeletingRequest(requestId);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://vah-api-staging.onrender.com';
-      const response = await fetch(`${API_BASE}/api/admin/forwarding/requests/${requestId}`, {
+      // Use BFF route instead of direct backend call
+      const response = await fetch(`/api/admin/forwarding/requests/${requestId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

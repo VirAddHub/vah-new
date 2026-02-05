@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // Create a single axios instance with proper configuration
+// Use relative paths to go through BFF routes instead of direct backend calls
+// This ensures proper cookie forwarding, CSRF handling, and CORS compliance
 export const http = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE ?? 'https://vah-api-staging.onrender.com',
+    baseURL: '', // Use relative paths - BFF routes handle backend proxying
     withCredentials: true, // Critical for cookies across domains
     headers: {
         'Content-Type': 'application/json',
