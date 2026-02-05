@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
+import { useSWRConfig } from 'swr';
+import { useMail, useTags, useProfile, KEYS } from '@/hooks/useDashboardData';
 import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, ArchiveRestore, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import { CreatableTagSelect } from '@/components/dashboard/user/CreatableTagSele
 
 export default function MailInboxPage() {
     const router = useRouter();
+    const { mutate } = useSWRConfig(); // Global mutator
     const { isMobileSidebarOpen } = useDashboardView();
     const [activeTab, setActiveTab] = useState<'inbox' | 'archived' | 'tags'>('inbox');
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,26 +48,14 @@ export default function MailInboxPage() {
     const [scrollPosition, setScrollPosition] = useState(0);
     const { toast } = useToast();
 
-    // Fetch mail items
-    const { data: mailData, error: mailError, isLoading: mailLoading, mutate: mutateMailItems } = useSWR(
-        '/api/bff/mail-items?includeArchived=true',
-        swrFetcher,
-        {
-            revalidateOnFocus: false,
-            revalidateOnReconnect: false,
-            dedupingInterval: 60000,
-        }
-    );
+    // Fetch mail items using stable hook
+    const { data: mailData, error: mailError, isLoading: mailLoading, mutate: mutateMailItems } = useMail();
 
-    // Fetch tags (stable server-side list)
-    const { data: tagsData, mutate: mutateTags } = useSWR('/api/bff/tags', swrFetcher, {
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        dedupingInterval: 60000,
-    });
+    // Fetch tags using stable hook
+    const { data: tagsData, mutate: mutateTags } = useTags();
 
-    // Fetch profile for forwarding address
-    const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
+    // Fetch profile for forwarding address using stable hook
+    const { data: profileData } = useProfile();
     const profile = profileData?.data;
 
     // 🔍 STEP 3: Log frontend profile fetch (mail page)

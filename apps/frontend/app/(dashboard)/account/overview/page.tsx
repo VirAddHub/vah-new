@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
+import { useAccount, useBillingOverview, useWhoAmI, useProfile } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,11 +23,11 @@ import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 export default function AccountOverviewPage() {
     const router = useRouter();
 
-    // Fetch account data
-    const { data: accountData } = useSWR<{ ok: boolean; data: any }>('/api/bff/account', swrFetcher);
-    const { data: overview } = useSWR('/api/bff/billing/overview', swrFetcher);
-    const { data: userData } = useSWR('/api/bff/auth/whoami', swrFetcher);
-    const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
+    // Fetch account data using stable hooks
+    const { data: accountData } = useAccount();
+    const { data: overview } = useBillingOverview();
+    const { data: userData } = useWhoAmI();
+    const { data: profileData } = useProfile();
 
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
@@ -46,7 +45,7 @@ export default function AccountOverviewPage() {
         let nextBillingLabel = 'N/A';
         if (nextBillingDate) {
             try {
-                const date = typeof nextBillingDate === 'string' 
+                const date = typeof nextBillingDate === 'string'
                     ? new Date(nextBillingDate + 'T00:00:00Z')
                     : new Date(nextBillingDate);
                 if (!isNaN(date.getTime())) {

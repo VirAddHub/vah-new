@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
+import { useBillingOverview, useInvoices } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubscriptionSummary } from '@/lib/account/types';
@@ -12,9 +11,9 @@ const AccountBillingCard = dynamic(() => import('@/components/account/AccountBil
 const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(mod => ({ default: mod.InvoicesCard })), { ssr: false });
 
 export default function AccountBillingPage() {
-    // Fetch billing data
-    const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
-    const { data: invoicesData, mutate: mutateInvoices } = useSWR('/api/bff/billing/invoices?page=1&page_size=12', swrFetcher);
+    // Fetch billing data using stable hooks
+    const { data: overview, mutate: mutateOverview } = useBillingOverview();
+    const { data: invoicesData, mutate: mutateInvoices } = useInvoices();
 
     const o = overview?.data;
     const invoicesRaw = invoicesData?.data?.items || [];
