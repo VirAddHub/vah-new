@@ -5,10 +5,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const revalidate = 0;
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/admin/forwarding/requests/${params.id}`);
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return proxy(req, `/admin/forwarding/requests/${id}`);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/admin/forwarding/requests/${params.id}`);
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return proxy(req, `/admin/forwarding/requests/${id}`);
 }

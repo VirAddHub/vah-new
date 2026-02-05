@@ -5,8 +5,8 @@ import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const id = params?.id;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   if (!id || id === "undefined" || id === "null" || id.trim() === "") {
     return NextResponse.json({ ok: false, error: "invalid_invoice_id" }, { status: 400 });
   }

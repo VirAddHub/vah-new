@@ -8,16 +8,16 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const routePath = '/api/bff/forwarding/requests/[id]';
   let backendBase = '';
 
   try {
+    const { id } = await params;
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
     backendBase = backend;
-    const id = params.id;
 
     const response = await fetch(`${backend}/api/forwarding/requests/${id}`, {
       headers: { 'Cookie': cookie, 'Content-Type': 'application/json' },

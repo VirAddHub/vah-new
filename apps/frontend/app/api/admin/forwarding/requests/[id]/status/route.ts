@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const revalidate = 0;
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxy(req, `/admin/forwarding/requests/${params.id}/status`);
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return proxy(req, `/admin/forwarding/requests/${id}/status`);
 }

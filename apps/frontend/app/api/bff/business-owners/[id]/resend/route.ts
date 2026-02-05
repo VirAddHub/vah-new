@@ -8,15 +8,16 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const routePath = `/api/bff/business-owners/${params.id}/resend`;
+  const { id } = await params;
+  const routePath = `/api/bff/business-owners/${id}/resend`;
   let backendUrl = '';
   
   try {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
-    backendUrl = `${backend}/api/business-owners/${params.id}/resend`;
+    backendUrl = `${backend}/api/business-owners/${id}/resend`;
 
     const response = await fetch(backendUrl, {
       method: 'POST',

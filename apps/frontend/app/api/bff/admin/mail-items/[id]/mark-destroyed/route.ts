@@ -7,9 +7,9 @@ export const runtime = "nodejs";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params?.id;
+  const { id } = await params;
 
   console.log("[BFF Admin Mail Item Mark Destroyed] called", { id });
 

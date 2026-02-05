@@ -8,18 +8,16 @@ export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // Log immediately to confirm route is being hit
   console.log('[BFF PDF DOWNLOAD] Route handler called', {
     url: request.url,
     method: request.method,
-    params,
+    id,
     timestamp: new Date().toISOString(),
   });
-
-  // Next.js 14: params is synchronous, not a Promise
-  const id = params?.id;
 
   // Validate invoice ID
   if (!id || id === 'undefined' || id === 'null' || id.trim() === '') {

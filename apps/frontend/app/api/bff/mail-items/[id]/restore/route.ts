@@ -11,10 +11,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params?.id;
+    const { id } = await params;
     if (!id || id === 'undefined' || id === 'null') {
       return NextResponse.json(
         { ok: false, error: 'invalid_mail_item_id' },
