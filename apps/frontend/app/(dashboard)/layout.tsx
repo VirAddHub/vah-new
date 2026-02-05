@@ -13,14 +13,13 @@ export default function DashboardLayout({
     return (
         <DashboardViewProvider>
             <div className="min-h-[100dvh] w-full bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                {/* Fixed navbar at top */}
-                <div className="fixed top-0 inset-x-0 z-50 h-16 bg-white border-b border-neutral-200">
+                {/* Sticky navbar at top - stays in document flow */}
+                <div className="sticky top-0 z-50 h-16 bg-white border-b border-neutral-200">
                     <DashboardNavigation />
                 </div>
 
-                {/* Content area with top offset for fixed navbar */}
-                {/* Removed overflow-x-hidden from parent to allow sticky sidebar to work */}
-                <div className="flex min-h-[100dvh] pt-16">
+                {/* Content area - no padding hack needed with sticky header */}
+                <div className="flex min-h-[calc(100dvh-4rem)]">
                     {/* Sidebar - Sticky, flush under navbar */}
                     <DashboardSidebar />
 
@@ -30,7 +29,8 @@ export default function DashboardLayout({
                         role="main"
                         className="min-w-0 flex-1 w-full overflow-x-hidden"
                     >
-                        <div className="w-full max-w-full py-3 md:py-6 px-4 sm:px-6">
+                        {/* Top padding inside main content container (not on wrapper) */}
+                        <div className="w-full max-w-full pt-4 md:pt-6 pb-3 md:pb-6 px-4 sm:px-6">
                             {children}
                         </div>
                     </main>
