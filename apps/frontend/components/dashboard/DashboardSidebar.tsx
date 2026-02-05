@@ -17,9 +17,17 @@ import {
 import { clearToken } from "@/lib/token-manager";
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
-import { CertificateDownload } from './CertificateDownload';
+import { useProfile } from '@/hooks/useDashboardData';
+
+// Lazy load CertificateDownload to avoid unnecessary bundle size
+// Only load when sidebar is rendered (not on every page)
+const CertificateDownload = dynamic(
+    () => import('./CertificateDownload').then(mod => ({ default: mod.CertificateDownload })),
+    { ssr: false }
+);
 
 /**
  * Premium Dashboard Sidebar
@@ -60,6 +68,11 @@ export function DashboardSidebar() {
     const router = useRouter();
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const [isMobile, setIsMobile] = useState(false);
+    
+    // Fetch profile data once (shared across dashboard, no duplicate fetches)
+    // This data is used by CertificateDownload component
+    const { data: profileData } = useProfile();
+    const profile = profileData?.data;
 
     // Handle logout - use proper API endpoint
     // Export this so DashboardHeader can use it
@@ -177,8 +190,9 @@ export function DashboardSidebar() {
                 </nav>
 
                 {/* Certificate Download - Pinned to bottom */}
+                {/* Pass profile data to avoid duplicate fetch */}
                 <div className="shrink-0 bg-white">
-                    <CertificateDownload />
+                    <CertificateDownload profile={profile} />
                 </div>
             </div>
         </aside>
@@ -345,18 +359,24 @@ export function DashboardSidebar() {
                                 </div>
                             </div>
 
-                            {/* Footer with Sign Out - Pinned to bottom */}
-                            <div
-                                className="shrink-0 border-t border-neutral-200 px-6 py-4 bg-white"
-                                style={{ paddingBottom: `max(env(safe-area-inset-bottom), 16px)` }}
-                            >
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+                            {/* Footer with Certificate Download and Sign Out - Pinned to bottom */}
+                            <div className="shrink-0 border-t border-neutral-200 bg-white">
+                                {/* Certificate Download - Component has its own padding and border-top */}
+                                <CertificateDownload profile={profile} />
+                                
+                                {/* Sign Out */}
+                                <div
+                                    className="px-6 pb-4"
+                                    style={{ paddingBottom: `max(env(safe-area-inset-bottom), 16px)` }}
                                 >
-                                    <LogOut className="w-5 h-5" strokeWidth={2} />
-                                    Sign out
-                                </button>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+                                    >
+                                        <LogOut className="w-5 h-5" strokeWidth={2} />
+                                        Sign out
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

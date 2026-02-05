@@ -1,21 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-export function CertificateDownload() {
+interface CertificateDownloadProps {
+    /**
+     * Profile data containing KYC status
+     * If not provided, component will show disabled state
+     */
+    profile?: {
+        kyc_status?: string;
+        [key: string]: any;
+    } | null;
+}
+
+export function CertificateDownload({ profile }: CertificateDownloadProps) {
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
     
-    // Fetch profile data to check KYC status
-    const { data: profileData } = useSWR('/api/bff/profile', swrFetcher);
-    const profile = profileData?.data;
-    
-    // Check if KYC is approved
+    // Check if KYC is approved (use profile prop instead of fetching)
     const kycStatus = profile?.kyc_status || 'pending';
     const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified';
     
