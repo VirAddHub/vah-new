@@ -49,19 +49,22 @@ const nextConfig = {
     ];
   },
 
+  // Output file tracing root (moved from experimental in Next.js 15)
+  outputFileTracingRoot: path.join(__dirname, '../../'),
+
+  // Turbopack configuration (replaces experimental.turbo in Next.js 15)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+
   // Experimental features for performance
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    // Turborepo monorepo support
-    outputFileTracingRoot: path.join(__dirname, '../../'),
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
 
   // Webpack optimizations
