@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "./ui/button";
 import { Menu, LogOut } from "lucide-react";
 import { clearToken } from "@/lib/token-manager";
@@ -13,10 +13,28 @@ interface DashboardNavigationProps {
 }
 
 export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {}) {
-    // Get mobile sidebar state from context (only available in dashboard)
-    // We can assume we are in dashboard context here as this component is for dashboard
-    const { setIsMobileSidebarOpen } = useDashboardView();
+    // Get mobile sidebar state from context
+    const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const router = useRouter();
+    const pathname = usePathname();
+    const hamburgerRef = useRef<HTMLButtonElement>(null);
+    const prevIsOpenRef = useRef(isMobileSidebarOpen);
+    const prevPathnameRef = useRef(pathname);
+
+    // Focus Restoration
+    useEffect(() => {
+        // If sidebar was open and now is closed
+        if (prevIsOpenRef.current && !isMobileSidebarOpen) {
+            // And we happen to be on the same page (didn't navigate away)
+            if (pathname === prevPathnameRef.current) {
+                hamburgerRef.current?.focus();
+            }
+        }
+
+        // Update refs
+        prevIsOpenRef.current = isMobileSidebarOpen;
+        prevPathnameRef.current = pathname;
+    }, [isMobileSidebarOpen, pathname]);
 
     // Handle logout - use proper API endpoint
     const handleLogout = async () => {
@@ -47,6 +65,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
 
                     {/* Mobile Hamburger Menu (Dashboard Navigation) */}
                     <button
+                        ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
                         className="md:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
                         aria-label="Open dashboard menu"

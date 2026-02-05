@@ -186,6 +186,114 @@ export function DashboardSidebar() {
 
     // Mobile: Use Sheet/Drawer
     if (isMobile) {
+        // Accessibility: Scroll Lock
+        useEffect(() => {
+            if (isMobileSidebarOpen) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+            return () => {
+                document.body.style.overflow = '';
+            };
+        }, [isMobileSidebarOpen]);
+
+        // Accessibility: Escape Key to Close
+        useEffect(() => {
+            const handleEscape = (e: KeyboardEvent) => {
+                if (isMobileSidebarOpen && e.key === 'Escape') {
+                    setIsMobileSidebarOpen(false);
+                }
+            };
+            window.addEventListener('keydown', handleEscape);
+            return () => window.removeEventListener('keydown', handleEscape);
+        }, [isMobileSidebarOpen, setIsMobileSidebarOpen]);
+
+        // Accessibility: Focus Trap
+        const drawerRef = (node: HTMLDivElement | null) => {
+            if (node && isMobileSidebarOpen) {
+                // Focus the close button or first focusable element
+                const closeBtn = node.querySelector('button[aria-label="Close menu"]') as HTMLElement;
+                if (closeBtn) {
+                    closeBtn.focus();
+                }
+
+                const handleTab = (e: KeyboardEvent) => {
+                    if (e.key === 'Tab') {
+                        const focusableElements = node.querySelectorAll(
+                            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                        );
+                        const firstElement = focusableElements[0] as HTMLElement;
+                        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+                        if (e.shiftKey) { // Shift + Tab
+                            if (document.activeElement === firstElement) {
+                                e.preventDefault();
+                                lastElement.focus();
+                            }
+                        } else { // Tab
+                            if (document.activeElement === lastElement) {
+                                e.preventDefault();
+                                firstElement.focus();
+                            }
+                        }
+                    }
+                };
+
+                node.addEventListener('keydown', handleTab);
+                // Clean up listener is tricky with ref callback, but acceptable for this use case 
+                // as react handles node lifecycle.
+                // A better approach would be a useEffect with a stable ref.
+            }
+        };
+
+        // Use a separate effect for focus trap listener to be cleaner
+        useEffect(() => {
+            if (!isMobileSidebarOpen) return;
+
+            const handleTrap = (e: KeyboardEvent) => {
+                const node = document.getElementById('mobile-sidebar-drawer');
+                if (!node) return;
+
+                if (e.key === 'Tab') {
+                    const focusableElements = node.querySelectorAll(
+                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                    );
+                    if (focusableElements.length === 0) return;
+
+                    const firstElement = focusableElements[0] as HTMLElement;
+                    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+                    if (e.shiftKey) { // Shift + Tab
+                        if (document.activeElement === firstElement) {
+                            e.preventDefault();
+                            lastElement.focus();
+                        }
+                    } else { // Tab
+                        if (document.activeElement === lastElement) {
+                            e.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+                }
+            };
+
+            window.addEventListener('keydown', handleTrap);
+            return () => window.removeEventListener('keydown', handleTrap);
+        }, [isMobileSidebarOpen]);
+
+
+        // Focus initial element on open
+        useEffect(() => {
+            if (isMobileSidebarOpen) {
+                // Small timeout to ensure DOM is rendered
+                setTimeout(() => {
+                    const closeBtn = document.querySelector('[aria-label="Close menu"]') as HTMLElement;
+                    if (closeBtn) closeBtn.focus();
+                }, 50);
+            }
+        }, [isMobileSidebarOpen]);
+
         return (
             <>
                 {/* Mobile Sidebar Overlay - Controlled by Navigation component */}
@@ -194,8 +302,15 @@ export function DashboardSidebar() {
                         <div
                             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
                             onClick={() => setIsMobileSidebarOpen(false)}
+                            aria-hidden="true"
                         />
-                        <div className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[280px] max-w-[85vw]">
+                        <div
+                            id="mobile-sidebar-drawer"
+                            className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[280px] max-w-[85vw]"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Navigation Menu"
+                        >
                             <div className="flex h-[100dvh] flex-col bg-white shadow-xl">
                                 {/* Header - Fixed at top */}
                                 <div className="shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
@@ -205,6 +320,7 @@ export function DashboardSidebar() {
                                         size="icon"
                                         onClick={() => setIsMobileSidebarOpen(false)}
                                         className="h-8 w-8"
+                                        aria-label="Close menu"
                                     >
                                         <X className="h-5 w-5" strokeWidth={2} />
                                     </Button>
