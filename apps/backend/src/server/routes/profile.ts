@@ -1032,39 +1032,38 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             const innerW = contentW - cardPadding * 2;
             const fieldGap = 14 * scale;
 
-            // Calculate verified details section height (two-column grid, not card)
+            // Calculate verified details section height (two-column grid, closer spacing)
             const labelColW = 200;
             const valueColW = contentW - labelColW - 32; // 32px gap
+            const formattedAddr = registeredBusinessAddress.replace('SE1 3PH', 'SE1\n3PH');
             const hRow = (label: string, value: string) => {
                 const labelH = h(label, FONT.bold, TYPE.small, labelColW);
                 const valueH = h(value, FONT.regular, TYPE.small, valueColW);
-                return Math.max(labelH, valueH) + (20 * scale); // gap-y-5 (20px)
+                return Math.max(labelH, valueH) + (12 * scale); // Reduced gap (closer spacing)
             };
             
             const verifiedSectionH = 
-                h('Verified details', FONT.regular, TYPE.small, contentW) +
-                (40 * scale) + // mb-10
-                hRow('Registered Office Address', registeredBusinessAddress) +
+                (24 * scale) + // Reduced gap after title
+                hRow('Registered Office Address', formattedAddr) +
                 hRow('Authorised Company', businessName) +
                 hRow('Date of issue', currentDate) +
-                (32 * scale) + // pb-8
+                (24 * scale) + // pb-8 equivalent (reduced)
                 1 + // border line
-                (40 * scale); // mb-10
+                (24 * scale); // mb-10 equivalent (reduced)
 
             // Title + verified details + statements + signature
             let total = 0;
             total += h('Business Address Confirmation', FONT.bold, TYPE.title, contentW);
-            total += (4 * scale); // gap before subheading
             total += verifiedSectionH;
 
             // Body paragraph
             const statementH = h(statement1, FONT.regular, TYPE.body, contentW);
-            total += statementH + (48 * scale); // mb-12
+            total += statementH + (32 * scale); // Reduced spacing (mb-12 -> mb-8) to fit on one page
 
             // Signature block
             total += (32 * scale); // pt-8
             total += h('Sincerely', FONT.regular, TYPE.body, contentW) + (24 * scale); // mb-6
-            total += h('VirtualAddressHub Customer Support', FONT.bold, TYPE.body * 1.125, contentW); // text-base equivalent
+            total += h('VirtualAddressHub Customer Support', FONT.regular, TYPE.body * 1.125, contentW); // text-base equivalent, NOT bold
 
             return {
                 total,
@@ -1127,20 +1126,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .fontSize(TYPE.title) // text-2xl equivalent
             .font(FONT.bold)
             .text('Business Address Confirmation', contentX, doc.y, { width: contentW });
-        doc.y += 4; // Small gap before subheading
-        
-        // "Verified details" as subheading beneath title
-        doc.fillColor('#6b7280') // gray-500
-            .fontSize(TYPE.small) // text-sm
-            .font(FONT.regular)
-            .text('Verified details', contentX, doc.y, { width: contentW });
-        doc.y += 40; // mb-10 equivalent
+        doc.y += 24; // Reduced gap (bring fields closer)
 
-        // Verified details section - Two-column grid layout (not a card)
+        // Verified details section - Two-column grid layout (closer spacing)
         // Labels column: fixed 200px, Values column: flexible
         const labelColWidth = 200;
         const valueColWidth = contentW - labelColWidth - 32; // 32px gap (gap-x-8)
-        const verifiedStartY = doc.y;
+        
+        // Format address with line break after SE1
+        const formattedAddress = registeredBusinessAddress.replace('SE1 3PH', 'SE1\n3PH');
         
         // Row 1: Registered Office Address
         doc.fillColor('#6b7280') // gray-500
@@ -1150,11 +1144,11 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor(COLORS.text) // #111827
             .fontSize(TYPE.small) // text-sm
             .font(FONT.regular) // font-normal
-            .text(registeredBusinessAddress, contentX + labelColWidth + 32, doc.y, { width: valueColWidth, lineGap: chosen.lineGap });
+            .text(formattedAddress, contentX + labelColWidth + 32, doc.y, { width: valueColWidth, lineGap: chosen.lineGap });
         doc.y += Math.max(
             doc.heightOfString('Registered Office Address', { width: labelColWidth }),
-            doc.heightOfString(registeredBusinessAddress, { width: valueColWidth, lineGap: chosen.lineGap })
-        ) + 20; // gap-y-5 (20px)
+            doc.heightOfString(formattedAddress, { width: valueColWidth, lineGap: chosen.lineGap })
+        ) + 12; // Reduced gap (closer spacing)
         
         // Row 2: Authorised Company
         doc.fillColor('#6b7280') // gray-500
@@ -1168,7 +1162,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += Math.max(
             doc.heightOfString('Authorised Company', { width: labelColWidth }),
             doc.heightOfString(businessName, { width: valueColWidth })
-        ) + 20; // gap-y-5 (20px)
+        ) + 12; // Reduced gap (closer spacing)
         
         // Row 3: Date of issue
         doc.fillColor('#6b7280') // gray-500
@@ -1182,7 +1176,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += Math.max(
             doc.heightOfString('Date of issue', { width: labelColWidth }),
             doc.heightOfString(currentDate, { width: valueColWidth })
-        ) + 32; // pb-8 equivalent
+        ) + 24; // pb-8 equivalent (reduced)
         
         // Bottom border for verified details section
         doc.strokeColor(COLORS.border) // #e5e7eb
@@ -1190,7 +1184,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .moveTo(contentX, doc.y)
             .lineTo(contentX + contentW, doc.y)
             .stroke();
-        doc.y += 40; // mb-10 equivalent
+        doc.y += 24; // mb-10 equivalent (reduced)
 
         // Body paragraph section - exact wording preserved
         doc.fillColor('#1f2937') // gray-800
@@ -1200,7 +1194,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 width: contentW, 
                 lineGap: 7, // leading-7 equivalent (line-height: 1.75rem = 28px, with 11.25px font = ~7px gap)
             });
-        doc.y += 48; // mb-12 equivalent
+        doc.y += 32; // Reduced spacing (mb-12 -> mb-8) to fit on one page
 
         // Signature block
         doc.y += 32; // pt-8 equivalent
@@ -1211,7 +1205,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.y += 24; // mb-6 equivalent
         doc.fillColor(COLORS.text) // #111827
             .fontSize(11.25 * 1.125) // text-base equivalent (~12.66px, close to 14px)
-            .font(FONT.bold) // font-semibold
+            .font(FONT.regular) // NOT bold (removed bold)
             .text('VirtualAddressHub Customer Support', contentX, doc.y, { width: contentW });
 
         // ===== FOOTER (light gray background + centered lines) =====
