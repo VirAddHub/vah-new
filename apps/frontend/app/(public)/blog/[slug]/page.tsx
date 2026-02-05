@@ -122,9 +122,10 @@ async function getPopularPosts(currentSlug: string): Promise<BlogPostListItem[]>
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) {
     return {
       title: 'Post Not Found | VirtualAddressHub Blog',
@@ -140,7 +141,7 @@ export async function generateMetadata({
     openGraph: {
       title: post.title,
       description,
-      url: `https://virtualaddresshub.com/blog/${params.slug}`,
+      url: `https://virtualaddresshub.com/blog/${slug}`,
     },
   };
 }
@@ -148,10 +149,11 @@ export async function generateMetadata({
 export default async function BlogPostPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const post = await getPost(params.slug);
-  const popularPosts = await getPopularPosts(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
+  const popularPosts = await getPopularPosts(slug);
 
   if (!post) {
     return notFound();
