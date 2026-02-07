@@ -402,11 +402,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             src="/images/Mask-group.jpg"
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-y-0 left-0 w-full md:w-[58%] h-full object-cover object-left-bottom opacity-12 md:opacity-20 pointer-events-none select-none"
+                            className="absolute inset-y-0 left-0 w-[64%] md:w-[58%] h-full object-cover object-left-bottom opacity-[0.22] md:opacity-[0.34] pointer-events-none select-none z-0"
                         />
 
-                        {/* Gradient Overlay - Left to right fade for readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/30 via-[#0b3d2e]/70 to-[#0b3d2e]/95" />
+                        {/* Gradient Overlay - Softened left to right fade for readability */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/20 via-[#0b3d2e]/45 to-[#0b3d2e]/86 z-0" />
+
+                        {/* Subtle local glow behind right text for readability */}
+                        <div className="absolute inset-y-0 right-0 w-[58%] bg-[radial-gradient(ellipse_at_center,rgba(11,61,46,0.28)_0%,rgba(11,61,46,0)_70%)] z-0" />
 
                         {/* Content Grid - Left spacer + Right content */}
                         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 min-h-[320px] md:min-h-[360px]">
