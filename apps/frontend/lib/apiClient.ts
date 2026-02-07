@@ -136,10 +136,10 @@ const billing = {
     getSubscriptionStatus: () => get<{ subscription: any }>('/api/billing/subscription-status'),
     createRedirectFlow: () => post<{ redirect_url: string }>('/api/billing/create-redirect-flow'),
     getInvoiceLink: (invoiceId: string) => get<{ url: string }>(`/api/admin/invoices/${invoiceId}/link`), // admin link
-    getAdminTransactions: (params: { page?: number; page_size?: number }) => {
+    getAdminTransactions: (params: { page?: number; pageSize?: number }) => {
         const searchParams = new URLSearchParams();
         if (params.page) searchParams.set('page', String(params.page));
-        if (params.page_size) searchParams.set('page_size', String(params.page_size));
+        if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
         return get<{ items: any[]; total?: number }>(`/api/admin/transactions?${searchParams.toString()}`);
     },
     manageSubscription: (action: 'pause' | 'resume' | 'cancel') =>
