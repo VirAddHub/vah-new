@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Package } from "lucide-react";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
@@ -58,8 +59,22 @@ export default function FilenameGeneratorPage() {
   const [results, setResults] = useState<AdminUserHit[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUserHit | null>(null);
   const [tag, setTag] = useState("");
+  const [tagInputMode, setTagInputMode] = useState<'select' | 'custom'>('select');
   const [date, setDate] = useState(todayString());
   const [copied, setCopied] = useState(false);
+
+  // Common mail tags
+  const commonTags = [
+    'HMRC',
+    'CompaniesHouse',
+    'Bank',
+    'DVLA',
+    'NHS',
+    'DWP',
+    'HSE',
+    'ICO',
+    'Other'
+  ];
 
   // Check authentication
   useEffect(() => {
@@ -87,6 +102,7 @@ export default function FilenameGeneratorPage() {
   useEffect(() => {
     setDate(todayString());
     setTag("");
+    setTagInputMode('select');
   }, [selectedUser?.id]);
 
   const sanitizedTag = useMemo(() => {
@@ -350,14 +366,46 @@ export default function FilenameGeneratorPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="tag">Mail tag</Label>
-                <Input
-                  id="tag"
-                  value={tag}
-                  onChange={(e) => setTag(e.target.value)}
-                  placeholder="HMRC, CompaniesHouse, Bank…"
-                />
+                <div className="space-y-2">
+                  <Select
+                    value={tagInputMode === 'select' && tag ? tag : undefined}
+                    onValueChange={(value) => {
+                      if (value === 'custom') {
+                        setTagInputMode('custom');
+                        setTag('');
+                      } else {
+                        setTagInputMode('select');
+                        setTag(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="tag">
+                      <SelectValue placeholder="Select a tag or choose custom" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {commonTags.map((commonTag) => (
+                        <SelectItem key={commonTag} value={commonTag}>
+                          {commonTag}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">Custom tag...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {tagInputMode === 'custom' && (
+                    <Input
+                      id="tag-custom"
+                      value={tag}
+                      onChange={(e) => setTag(e.target.value)}
+                      placeholder="Enter custom tag (e.g. HMRC, CompaniesHouse, Bank…)"
+                      autoFocus
+                    />
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Spaces will be removed automatically.
+                  {tagInputMode === 'select' 
+                    ? "Select a common tag or choose 'Custom tag...' to enter your own."
+                    : "Spaces will be removed automatically."}
                 </p>
               </div>
             </div>
