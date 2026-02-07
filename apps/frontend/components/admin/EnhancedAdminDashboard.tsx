@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthedSWR } from "@/lib/useAuthedSWR";
 // Monitoring hooks removed - using Sentry instead
 // import { useAdminOverview, useAdminHealth, useAdminActivity, useForwardingStats } from "@/lib/hooks/useAdminOverview";
@@ -68,8 +68,23 @@ type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [activeSection, setActiveSection] = useState<AdminSection>("users");
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Sync activeSection with URL query param
+    useEffect(() => {
+        const sectionParam = searchParams.get('section');
+        if (sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog'].includes(sectionParam)) {
+            setActiveSection(sectionParam as AdminSection);
+        }
+    }, [searchParams]);
+
+    // Update URL when activeSection changes
+    const handleSectionChange = useCallback((section: AdminSection) => {
+        setActiveSection(section);
+        router.push(`/admin/dashboard?section=${section}`, { scroll: false });
+    }, [router]);
 
     // Pagination state
     const [usersPage, setUsersPage] = useState(1);
@@ -199,7 +214,7 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 onNavigate={onNavigate}
                 menuItems={menuItems}
                 activeSection={activeSection}
-                onSelectSection={(section) => setActiveSection(section as AdminSection)}
+                onSelectSection={(section) => handleSectionChange(section as AdminSection)}
                 mobileMenuOpen={mobileMenuOpen}
                 setMobileMenuOpen={setMobileMenuOpen}
                 onLogout={onLogout}

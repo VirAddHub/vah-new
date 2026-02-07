@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
-import { Users, Truck, FileText, Settings, Package } from "lucide-react";
+import { Users, Truck, FileText, Package } from "lucide-react";
 
 type AdminInvoiceRow = {
   id: number;
@@ -251,7 +251,6 @@ export default function AdminInvoicesPage() {
     { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
     { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
     { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
   ] as const;
 
   return (
@@ -265,7 +264,6 @@ export default function AdminInvoicesPage() {
           else if (section === 'forwarding') router.push('/admin/dashboard?section=forwarding');
           else if (section === 'plans') router.push('/admin/dashboard?section=plans');
           else if (section === 'blog') router.push('/admin/dashboard?section=blog');
-          else if (section === 'settings') router.push('/admin/dashboard?section=settings');
           else router.push('/admin/dashboard');
         }}
         mobileMenuOpen={mobileMenuOpen}
