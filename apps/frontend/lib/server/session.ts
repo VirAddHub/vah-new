@@ -8,8 +8,8 @@ export interface SessionData {
   authenticated: boolean;
 }
 
-export function getSessionFromCookies(): SessionData {
-  const cookieStore = cookies();
+export async function getSessionFromCookies(): Promise<SessionData> {
+  const cookieStore = await cookies();
   const token = cookieStore.get('vah_session')?.value ?? '';
   const role = (cookieStore.get('vah_role')?.value ?? 'user') as 'user' | 'admin';
   const userStr = cookieStore.get('vah_user')?.value ?? '';
