@@ -57,7 +57,7 @@ export default function AdminMailDetailPage() {
     const storedUser = localStorage.getItem("vah_user");
 
     if (!t) {
-      router.push("/login");
+      router.push("/admin/login");
       return;
     }
 
@@ -70,7 +70,7 @@ export default function AdminMailDetailPage() {
         }
         setUser(u);
       } catch {
-        router.push("/login");
+        router.push("/admin/login");
         return;
       }
     }
